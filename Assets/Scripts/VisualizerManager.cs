@@ -39,6 +39,9 @@ namespace TiltBrush
 
     public class VisualizerManager : MonoBehaviour
     {
+        private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
+        private const float kAndroidLogInterval = 2.0f;
+
         public class Fft
         {
             public virtual void Add(float[] samples, int count) { }
@@ -115,6 +118,8 @@ namespace TiltBrush
 
         private int m_VisualsRequestCount;
         private bool m_VisualsActive;
+        private float m_NextAndroidProcessLogTime;
+        private int m_ProcessAudioLogCount;
 
         public int FFTSize { get { return m_FFTSize; } }
 
@@ -142,10 +147,12 @@ namespace TiltBrush
             m_VisualizerObjects = new List<GameObject>();
             Shader.DisableKeyword("AUDIO_REACTIVE");
             // Two channels, 512 values.
-#if DISABLE_AUDIO_CAPTURE || UNITY_OSX || UNITY_EDITOR_OSX
-    m_FFT = new Fft();
-#else
+#if DISABLE_AUDIO_ANALYSIS
+            m_FFT = new Fft();
+#elif !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
             m_FFT = new VisualizerCSCoreFft(1, 512);
+#else
+            m_FFT = new VisualizerManagedFft(1, 512);
 #endif
             m_FFTResult = new float[m_FFTSize];
             m_PeakFFTResult = new float[m_FFTSize];
@@ -291,6 +298,9 @@ namespace TiltBrush
             }
 
             SetVisualizerObjectActive(bEnable);
+#if UNITY_ANDROID
+            Debug.Log($"{kAndroidAppAudioLogPrefix} ActivateVisuals({bEnable}) AUDIO_REACTIVE={Shader.IsKeywordEnabled("AUDIO_REACTIVE")} requests={m_VisualsRequestCount}");
+#endif
             if (m_Reaktor)
             {
                 m_Reaktor.enabled = bEnable;
@@ -301,13 +311,18 @@ namespace TiltBrush
         public void SetSampleRate(int sampleRate)
         {
             m_SampleRate = sampleRate;
-#if DISABLE_AUDIO_CAPTURE || UNITY_OSX || UNITY_EDITOR_OSX
-    m_LowPassFilter = new Filter();
-    m_HighPassFilter = new Filter();
-#else
+#if DISABLE_AUDIO_ANALYSIS
+            m_LowPassFilter = new Filter();
+            m_HighPassFilter = new Filter();
+#elif !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
             m_LowPassFilter = new VisualizerCSCoreFilter(VisualizerCSCoreFilter.FilterType.Low,
                 m_SampleRate, m_LowPassFreq);
             m_HighPassFilter = new VisualizerCSCoreFilter(VisualizerCSCoreFilter.FilterType.High,
+                m_SampleRate, m_HighPassFreq);
+#else
+            m_LowPassFilter = new VisualizerManagedFilter(VisualizerManagedFilter.FilterType.Low,
+                m_SampleRate, m_LowPassFreq);
+            m_HighPassFilter = new VisualizerManagedFilter(VisualizerManagedFilter.FilterType.High,
                 m_SampleRate, m_HighPassFreq);
 #endif
         }
@@ -383,22 +398,12 @@ namespace TiltBrush
             }
             if (m_SystemAudioInjectorLowPass)
             {
-                m_SystemAudioInjectorLowPass.ProcessAudio(m_AudioSamples);
+                m_SystemAudioInjectorLowPass.ProcessAudio(m_LChannelLowPass);
             }
             if (m_SystemAudioInjectorHighPass)
             {
-                m_SystemAudioInjectorHighPass.ProcessAudio(m_AudioSamples);
+                m_SystemAudioInjectorHighPass.ProcessAudio(m_LChannelHighPass);
             }
-
-            //
-            // Update Shaders
-            //
-            Shader.SetGlobalTexture("_WaveFormTex", m_WaveFormTexture);
-            Shader.SetGlobalVector("_PeakBandLevels", m_BandPeakLevelsOutput);
-            Shader.SetGlobalTexture("_FFTTex", m_FFTTexture);
-            Shader.SetGlobalVector("_BeatOutput", m_BeatOutput);
-            Shader.SetGlobalVector("_BeatOutputAccum", m_BeatOutputAccum);
-            Shader.SetGlobalVector("_AudioVolume", m_AudioVolume);
 
             m_BandPeakLevelsOutput = new Vector4(m_BandPeakLevels[0], m_BandPeakLevels[1], m_BandPeakLevels[2], m_BandPeakLevels[3]);
 
@@ -419,9 +424,48 @@ namespace TiltBrush
             float val3 = (60.0f + m_ReaktorLowPass.outputDb) / 60.0f;
             val3 = Mathf.Clamp(val3, 0.0f, 1.0f);
             float val4 = (60.0f + m_ReaktorHighPass.outputDb) / 60.0f;
-            val4 = Mathf.Clamp(val3, 0.0f, 1.0f);
+            val4 = Mathf.Clamp(val4, 0.0f, 1.0f);
             m_AudioVolume = new Vector4(val1, val2, val3, val4);
+
+            //
+            // Update Shaders
+            //
+            Shader.SetGlobalTexture("_WaveFormTex", m_WaveFormTexture);
+            Shader.SetGlobalVector("_PeakBandLevels", m_BandPeakLevelsOutput);
+            Shader.SetGlobalTexture("_FFTTex", m_FFTTexture);
+            Shader.SetGlobalVector("_BeatOutput", m_BeatOutput);
+            Shader.SetGlobalVector("_BeatOutputAccum", m_BeatOutputAccum);
+            Shader.SetGlobalVector("_AudioVolume", m_AudioVolume);
+
+#if UNITY_ANDROID
+            LogAndroidProcessAudio(AudioData, SampleRate);
+#endif
         }
+
+#if UNITY_ANDROID
+        private void LogAndroidProcessAudio(float[] audioData, int sampleRate)
+        {
+            if (Time.unscaledTime < m_NextAndroidProcessLogTime && m_ProcessAudioLogCount >= 3)
+            {
+                return;
+            }
+
+            float peak = 0.0f;
+            float sumSquares = 0.0f;
+            for (int i = 0; i < audioData.Length; ++i)
+            {
+                float sample = audioData[i];
+                peak = Mathf.Max(peak, Mathf.Abs(sample));
+                sumSquares += sample * sample;
+            }
+
+            float rms = Mathf.Sqrt(sumSquares / audioData.Length);
+            bool audioReactiveEnabled = Shader.IsKeywordEnabled("AUDIO_REACTIVE");
+            Debug.Log($"{kAndroidAppAudioLogPrefix} VisualizerManager ProcessAudio sampleRate={sampleRate} peak={peak:F5} rms={rms:F5} AUDIO_REACTIVE={audioReactiveEnabled} fft0={m_FFTResult[0]:F5} band0={m_BandNormalizedLevels[0]:F5} beat={m_BeatOutput} volume={m_AudioVolume}");
+            m_NextAndroidProcessLogTime = Time.unscaledTime + kAndroidLogInterval;
+            ++m_ProcessAudioLogCount;
+        }
+#endif
 
         int FrequencyToSpectrumIndex(float f)
         {
@@ -431,23 +475,23 @@ namespace TiltBrush
 
         private void ConvertRawSpectrumToBandLevels()
         {
-            for (var i = 0; i < m_Bands.Length; i++)
+            for (var bi = 0; bi < m_BandLevels.Length; bi++)
             {
-                for (var bi = 0; bi < m_BandLevels.Length; bi++)
+                int imin = FrequencyToSpectrumIndex(m_Bands[bi] / m_Bandwidth);
+                int imax = FrequencyToSpectrumIndex(m_Bands[bi] * m_Bandwidth);
+
+                var bandMax = 0.0f;
+                for (var fi = imin; fi <= imax; fi++)
                 {
-                    int imin = FrequencyToSpectrumIndex(m_Bands[bi] / m_Bandwidth);
-                    int imax = FrequencyToSpectrumIndex(m_Bands[bi] * m_Bandwidth);
-
-                    var bandMax = 0.0f;
-                    for (var fi = imin; fi <= imax; fi++)
-                    {
-                        bandMax = Mathf.Max(bandMax, m_FFTResult[fi]);
-                    }
-
-                    m_BandLevels[bi] = bandMax;
-                    m_BandPeakLevels[bi] = Mathf.Max(m_BandPeakLevels[bi] * m_BandPeakDecay, bandMax);
-                    m_BandNormalizedLevels[bi] = Mathf.Lerp(m_BandLevels[bi] / m_BandPeakLevels[bi], m_BandNormalizedLevels[bi], m_NormalizedBandPeakLerp);
+                    bandMax = Mathf.Max(bandMax, m_FFTResult[fi]);
                 }
+
+                m_BandLevels[bi] = bandMax;
+                m_BandPeakLevels[bi] = Mathf.Max(m_BandPeakLevels[bi] * m_BandPeakDecay, bandMax);
+                float normalizedLevel = m_BandPeakLevels[bi] > 0.00001f
+                    ? m_BandLevels[bi] / m_BandPeakLevels[bi]
+                    : 0.0f;
+                m_BandNormalizedLevels[bi] = Mathf.Lerp(normalizedLevel, m_BandNormalizedLevels[bi], m_NormalizedBandPeakLerp);
             }
         }
 

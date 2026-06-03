@@ -43,6 +43,8 @@ namespace TiltBrush
 
     public class AudioCaptureManager : MonoBehaviour
     {
+        private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
+
         // Number of seconds to delay before searching for active audio device.
         // From experimentation this seems to be the minimum to ensure we don't pick up
         // any residual audio.
@@ -75,9 +77,14 @@ namespace TiltBrush
             m_Instance = this;
             if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
 #if UNITY_ANDROID || UNITY_IOS
+            // Mobile audio reactivity listens only to Unity's mixed app output.
+            // Mic, system audio, and other-app audio are separate unsupported sources.
             m_Type = AudioCaptureType.App;
 #else
             m_Type = AudioCaptureType.System;
+#endif
+#if UNITY_ANDROID
+            Debug.Log($"{kAndroidAppAudioLogPrefix} ResetAudioCaptureType selected {m_Type}");
 #endif
             m_CaptureRequestedCount = 0;
 
@@ -184,9 +191,9 @@ namespace TiltBrush
         {
             switch (m_Type)
             {
-                case AudioCaptureType.File: return "Listening to Mic'";
+                case AudioCaptureType.File: return "Listening to audio file";
                 case AudioCaptureType.System: return m_SystemAudio.GetCaptureStatusMessage();
-                case AudioCaptureType.App: return "Jammin'";
+                case AudioCaptureType.App: return "Listening to app audio";
                 case AudioCaptureType.Script: return "Scripted Waveform";
             }
             return "";
@@ -224,7 +231,15 @@ namespace TiltBrush
                     }
                     break;
                 case AudioCaptureType.App:
-                    m_AppAudio.SetActive(bCapture);
+                    bool appAudioWasActive = m_AppAudio.activeSelf;
+                    m_AppAudio.SetActive(CaptureRequested);
+                    if (appAudioWasActive != m_AppAudio.activeSelf)
+                    {
+                        VisualizerManager.m_Instance.AudioCaptureStatusChange(m_AppAudio.activeSelf);
+                    }
+#if UNITY_ANDROID
+                    Debug.Log($"{kAndroidAppAudioLogPrefix} CaptureAudio({bCapture}) set AppAudio active={m_AppAudio.activeSelf} requests={m_CaptureRequestedCount}");
+#endif
                     break;
                 case AudioCaptureType.Script:
                     break;

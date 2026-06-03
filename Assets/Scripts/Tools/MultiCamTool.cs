@@ -1618,7 +1618,11 @@ namespace TiltBrush
                 else
                 {
                     m_VideoRecordAudioHeader.text = m_AudioLookingText;
+#if UNITY_ANDROID || UNITY_IOS
+                    m_VideoRecordAudioDesc.text = "Play audio in the app";
+#else
                     m_VideoRecordAudioDesc.text = "Play some sound or music on your computer";
+#endif
                 }
             }
             else if (m_AudioFoundCountdown > 0.0f)
