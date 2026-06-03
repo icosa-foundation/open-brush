@@ -48,6 +48,7 @@ namespace TiltBrush
         private GameObject m_RuntimeGridRoot;
         private RectTransform m_RuntimeTabBarRect;
         private RectTransform m_RuntimeGridRect;
+        private NoHeadsetSketchGridLayout m_SketchGridLayout;
         private Vector2Int m_LastScreenSize;
         private Sprite m_LoadingSprite;
         private Sprite m_UnknownSprite;
@@ -64,6 +65,8 @@ namespace TiltBrush
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
         private const int LocalThumbnailLoadsPerFrame = 8;
+        private const float LocalGridCellAspect = 0.95f;
+        private const float RemoteGridCellAspect = 1.12f;
         private const string LogPrefix = "NOXR_GRID";
 
         public static InitNoHeadsetMode m_Instance;
@@ -75,6 +78,8 @@ namespace TiltBrush
             public int SketchIndex;
             public SceneFileInfo SceneFileInfo;
             public string DisplayName;
+            public string AuthorLabel;
+            public bool AuthorMetadataAssigned;
             public bool ThumbnailAssigned;
         }
 
@@ -216,6 +221,7 @@ namespace TiltBrush
                 m_SelectedSetType = GetFirstSelectableSetType(userCount, curatedCount, likedCount);
             }
             UpdateCategoryTabs(userCount, curatedCount, likedCount);
+            UpdateGridCellAspect();
 
             List<SketchGridEntry> visibleSketches = new List<SketchGridEntry>();
             switch (m_SelectedSetType)
@@ -241,6 +247,7 @@ namespace TiltBrush
             }
             else
             {
+                RefreshVisibleSketchEntries(visibleSketches);
                 RefreshVisibleTileText();
             }
 
@@ -324,6 +331,7 @@ namespace TiltBrush
                 }
 
                 string sketchName = sketchset.GetSketchName(i);
+                string authorLabel = GetInitialAuthorLabel(setType, info);
                 entries.Add(new SketchGridEntry
                 {
                     SketchSet = sketchset,
@@ -332,9 +340,22 @@ namespace TiltBrush
                     SceneFileInfo = info,
                     DisplayName = string.IsNullOrEmpty(sketchName)
                         ? info.HumanName
-                        : sketchName
+                        : sketchName,
+                    AuthorLabel = authorLabel,
+                    AuthorMetadataAssigned = !ShouldShowAuthor(setType)
+                        || !string.IsNullOrEmpty(authorLabel)
                 });
             }
+        }
+
+        private string GetInitialAuthorLabel(SketchSetType setType, SceneFileInfo info)
+        {
+            if (!ShouldShowAuthor(setType) || !(info is IcosaSceneFileInfo icosaInfo))
+            {
+                return null;
+            }
+
+            return string.IsNullOrWhiteSpace(icosaInfo.Author) ? null : icosaInfo.Author;
         }
 
         private string GetSketchListSignature(SketchSetType setType, List<SketchGridEntry> entries)
@@ -376,16 +397,39 @@ namespace TiltBrush
                 if (active)
                 {
                     SketchGridEntry entry = m_Sketches[i];
+                    item.SetThumbnailFrame(UsesLocalThumbnailFrame(entry));
                     item.Init(i, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
+                    item.SetAuthor(GetVisibleAuthorLabel(entry));
                     item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
                 }
                 else
                 {
+                    item.SetThumbnailFrame(false);
                     item.ClearListeners();
                 }
             }
 
             RequestVisibleThumbnailMetadata();
+        }
+
+        private bool UsesLocalThumbnailFrame(SketchGridEntry entry)
+        {
+            return entry != null && entry.SetType == SketchSetType.User;
+        }
+
+        private bool ShouldShowAuthor(SketchGridEntry entry)
+        {
+            return entry != null && ShouldShowAuthor(entry.SetType);
+        }
+
+        private bool ShouldShowAuthor(SketchSetType setType)
+        {
+            return setType == SketchSetType.Curated || setType == SketchSetType.Liked;
+        }
+
+        private string GetVisibleAuthorLabel(SketchGridEntry entry)
+        {
+            return ShouldShowAuthor(entry) ? entry.AuthorLabel : null;
         }
 
         private void RefreshVisibleTileText()
@@ -396,8 +440,32 @@ namespace TiltBrush
                 if (m_GridItems[i] != null && m_GridItems[i].gameObject.activeSelf)
                 {
                     m_GridItems[i].SetTitle(m_Sketches[i].DisplayName);
+                    m_GridItems[i].SetAuthor(GetVisibleAuthorLabel(m_Sketches[i]));
                     m_GridItems[i].SetAvailableVisual(m_Sketches[i].SceneFileInfo != null
                         && m_Sketches[i].SceneFileInfo.Available);
+                }
+            }
+        }
+
+        private void RefreshVisibleSketchEntries(List<SketchGridEntry> visibleSketches)
+        {
+            int count = Mathf.Min(m_Sketches.Count, visibleSketches.Count);
+            for (int i = 0; i < count; i++)
+            {
+                SketchGridEntry current = m_Sketches[i];
+                SketchGridEntry refreshed = visibleSketches[i];
+                current.DisplayName = refreshed.DisplayName;
+                current.SceneFileInfo = refreshed.SceneFileInfo;
+
+                if (!string.IsNullOrEmpty(refreshed.AuthorLabel))
+                {
+                    current.AuthorLabel = refreshed.AuthorLabel;
+                    current.AuthorMetadataAssigned = true;
+                }
+                else if (!ShouldShowAuthor(current))
+                {
+                    current.AuthorLabel = null;
+                    current.AuthorMetadataAssigned = true;
                 }
             }
         }
@@ -728,6 +796,7 @@ namespace TiltBrush
 
             NoHeadsetSketchGridLayout layout =
                 m_SketchGridContent.GetComponent<NoHeadsetSketchGridLayout>();
+            m_SketchGridLayout = layout;
             if (layout != null && scrollRect.viewport != null)
             {
                 layout.SetViewport(scrollRect.viewport);
@@ -758,6 +827,7 @@ namespace TiltBrush
                     {
                         NoHeadsetSketchGridLayout layout =
                             m_SketchGridContent.GetComponent<NoHeadsetSketchGridLayout>();
+                        m_SketchGridLayout = layout;
                         if (layout != null)
                         {
                             layout.SetViewport(scrollRect.viewport);
@@ -876,6 +946,18 @@ namespace TiltBrush
             UpdateCategoryTab(SketchSetType.Curated, curatedCount);
             UpdateCategoryTab(SketchSetType.Liked, likedCount, App.IcosaIsLoggedIn);
             RefreshRuntimeGridFrame(force: true);
+        }
+
+        private void UpdateGridCellAspect()
+        {
+            if (m_SketchGridLayout == null)
+            {
+                return;
+            }
+
+            m_SketchGridLayout.SetCellAspect(m_SelectedSetType == SketchSetType.User
+                ? LocalGridCellAspect
+                : RemoteGridCellAspect);
         }
 
         private void UpdateCategoryTab(SketchSetType setType, int count, bool visible = true)
@@ -1087,6 +1169,7 @@ namespace TiltBrush
                 if (entry.ThumbnailAssigned)
                 {
                     NoHeadsetSketchGridItem item = m_GridItems[i];
+                    RefreshAuthorMetadata(entry, item);
                     if (item != null && item.HasLoadedThumbnailTexture())
                     {
                         continue;
@@ -1100,7 +1183,7 @@ namespace TiltBrush
                 }
 
                 if (!entry.SketchSet.GetSketchIcon(entry.SketchIndex, out Texture2D icon,
-                        out string[] _, out string __))
+                        out string[] authors, out string __))
                 {
                     if (localThumbnailLoads < LocalThumbnailLoadsPerFrame
                         && entry.SketchSet is FileSketchSet
@@ -1112,6 +1195,8 @@ namespace TiltBrush
                     }
                     continue;
                 }
+
+                SetAuthorMetadata(entry, m_GridItems[i], authors);
 
                 if (icon != null)
                 {
@@ -1130,6 +1215,47 @@ namespace TiltBrush
                 ResetVisibleThumbnailAssignments();
                 RequestVisibleThumbnailMetadata(force: true);
             }
+        }
+
+        private void RefreshAuthorMetadata(SketchGridEntry entry, NoHeadsetSketchGridItem item)
+        {
+            if (entry == null || entry.AuthorMetadataAssigned)
+            {
+                return;
+            }
+
+            if (!ShouldShowAuthor(entry))
+            {
+                SetAuthorMetadata(entry, item, null);
+                return;
+            }
+
+            if (entry.SketchSet.GetSketchIcon(entry.SketchIndex, out Texture2D _,
+                    out string[] authors, out string __))
+            {
+                SetAuthorMetadata(entry, item, authors);
+            }
+        }
+
+        private void SetAuthorMetadata(SketchGridEntry entry, NoHeadsetSketchGridItem item,
+            string[] authors)
+        {
+            entry.AuthorLabel = ShouldShowAuthor(entry) ? GetAuthorLabel(authors) : null;
+            entry.AuthorMetadataAssigned = true;
+            if (item != null)
+            {
+                item.SetAuthor(GetVisibleAuthorLabel(entry));
+            }
+        }
+
+        private string GetAuthorLabel(string[] authors)
+        {
+            if (authors == null || authors.Length == 0)
+            {
+                return null;
+            }
+
+            return string.Join(", ", authors);
         }
 
         private bool TryCreateLocalThumbnailSprite(SceneFileInfo sceneFileInfo, out Sprite sprite)

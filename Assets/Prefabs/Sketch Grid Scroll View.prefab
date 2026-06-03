@@ -527,6 +527,6 @@ MonoBehaviour:
   m_MinCellWidth: 78
   m_MaxCellWidth: 132
   m_CellAspect: 1.32
-  m_Spacing: {x: 8, y: 8}
+  m_Spacing: {x: 2, y: 2}
   m_MinColumns: 2
   m_MaxColumns: 5

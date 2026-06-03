@@ -54,12 +54,16 @@ namespace TiltBrush
     {
         [SerializeField] private Button m_Button;
         [SerializeField] private Image m_Thumbnail;
+        [SerializeField] private Image m_LocalThumbnail;
+        [SerializeField] private Image m_RemoteThumbnail;
         [SerializeField] private TextMeshProUGUI m_Title;
         [SerializeField] private TextMeshProUGUI m_Source;
         [SerializeField] private GameObject m_LoadingIndicator;
 
         private int m_Index;
         private Action<int> m_OnClick;
+        private string m_TitleText;
+        private string m_AuthorText;
 
         public void SetReferences(Button button, Image thumbnail, TextMeshProUGUI title,
             TextMeshProUGUI source, GameObject loadingIndicator)
@@ -79,13 +83,17 @@ namespace TiltBrush
 
             if (m_Title != null)
             {
-                m_Title.text = title;
+                m_Title.richText = true;
             }
+            m_TitleText = title ?? "";
+            m_AuthorText = null;
+            UpdateTitleText();
             if (m_Source != null)
             {
                 m_Source.text = sourceLabel;
                 m_Source.gameObject.SetActive(!string.IsNullOrEmpty(sourceLabel));
             }
+            SetAuthor(null);
 
             SetThumbnail(thumbnail, loading);
 
@@ -93,6 +101,24 @@ namespace TiltBrush
             {
                 m_Button.onClick.RemoveAllListeners();
                 m_Button.onClick.AddListener(() => m_OnClick?.Invoke(m_Index));
+            }
+        }
+
+        public void SetThumbnailFrame(bool square)
+        {
+            if (m_LocalThumbnail != null)
+            {
+                m_LocalThumbnail.gameObject.SetActive(square);
+            }
+            if (m_RemoteThumbnail != null)
+            {
+                m_RemoteThumbnail.gameObject.SetActive(!square);
+            }
+
+            Image selectedThumbnail = square ? m_LocalThumbnail : m_RemoteThumbnail;
+            if (selectedThumbnail != null)
+            {
+                m_Thumbnail = selectedThumbnail;
             }
         }
 
@@ -127,10 +153,30 @@ namespace TiltBrush
 
         public void SetTitle(string title)
         {
-            if (m_Title != null)
+            m_TitleText = title ?? "";
+            UpdateTitleText();
+        }
+
+        public void SetAuthor(string author)
+        {
+            m_AuthorText = author ?? "";
+            UpdateTitleText();
+        }
+
+        private void UpdateTitleText()
+        {
+            if (m_Title == null)
             {
-                m_Title.text = title;
+                return;
             }
+
+            if (string.IsNullOrEmpty(m_AuthorText))
+            {
+                m_Title.text = m_TitleText;
+                return;
+            }
+
+            m_Title.text = $"{m_TitleText}\n<color=\"grey\"><size=75%>{m_AuthorText}</size></color>";
         }
 
         public void SetAvailableVisual(bool available)

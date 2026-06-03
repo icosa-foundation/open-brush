@@ -59,6 +59,17 @@ namespace TiltBrush
             RefreshLayout();
         }
 
+        public void SetCellAspect(float cellAspect)
+        {
+            if (cellAspect <= 0f || Mathf.Approximately(m_CellAspect, cellAspect))
+            {
+                return;
+            }
+
+            m_CellAspect = cellAspect;
+            RefreshLayout();
+        }
+
         private void RefreshLayout()
         {
             if (m_Grid == null)
