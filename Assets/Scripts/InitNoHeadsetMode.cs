@@ -38,9 +38,14 @@ namespace TiltBrush
             new Dictionary<SketchSetType, SketchSet>();
         private readonly Dictionary<SketchSetType, Button> m_CategoryTabs =
             new Dictionary<SketchSetType, Button>();
+        private readonly HashSet<string> m_DownloadingSketchKeys = new HashSet<string>();
         private readonly List<Sprite> m_GeneratedSprites = new List<Sprite>();
         private readonly List<Sprite> m_ThumbnailSprites = new List<Sprite>();
         private readonly List<Texture2D> m_OwnedThumbnailTextures = new List<Texture2D>();
+        private static bool sm_HasSavedGridState;
+        private static SketchSetType sm_SavedSetType = SketchSetType.User;
+        private static readonly Dictionary<SketchSetType, float> sm_SavedScrollPositions =
+            new Dictionary<SketchSetType, float>();
         private TMP_Dropdown m_Dropdown;
         private GameObject m_ViewSketchButton;
         private RectTransform m_BlankSketchButtonRect;
@@ -48,6 +53,7 @@ namespace TiltBrush
         private GameObject m_RuntimeGridRoot;
         private RectTransform m_RuntimeTabBarRect;
         private RectTransform m_RuntimeGridRect;
+        private ScrollRect m_SketchGridScrollRect;
         private NoHeadsetSketchGridLayout m_SketchGridLayout;
         private Vector2Int m_LastScreenSize;
         private Sprite m_LoadingSprite;
@@ -61,6 +67,7 @@ namespace TiltBrush
         private string m_VisibleSketchSignature = "";
         private string m_ThumbnailRequestSignature = "";
         private bool m_CuratedDownloadsActive;
+        private bool m_RestoreSavedScrollOnNextRefresh;
 
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
@@ -70,6 +77,12 @@ namespace TiltBrush
         private const string LogPrefix = "NOXR_GRID";
 
         public static InitNoHeadsetMode m_Instance;
+        public static bool UseKeyboardMouseNavigationAfterLoad { get; private set; }
+
+        public static void ClearKeyboardMouseNavigationAfterLoad()
+        {
+            UseKeyboardMouseNavigationAfterLoad = false;
+        }
 
         private class SketchGridEntry
         {
@@ -86,6 +99,12 @@ namespace TiltBrush
         void Start()
         {
             m_Instance = this;
+            UseKeyboardMouseNavigationAfterLoad = false;
+            if (sm_HasSavedGridState)
+            {
+                m_SelectedSetType = sm_SavedSetType;
+                m_RestoreSavedScrollOnNextRefresh = true;
+            }
             App.Instance.m_NoVrUi.SetActive(true);
             CacheAndShowCursor();
             InitializeGridUi();
@@ -259,7 +278,11 @@ namespace TiltBrush
             SetGridActive(m_Sketches.Count > 0
                 || HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
 
-            Debug.Log($"{LogPrefix} refreshed grid with {m_Sketches.Count} sketches");
+            if (m_RestoreSavedScrollOnNextRefresh)
+            {
+                m_RestoreSavedScrollOnNextRefresh = false;
+                StartCoroutine(RestoreGridScrollPositionAfterLayout());
+            }
         }
 
         private int CountSelectableSketches(SketchSet sketchset)
@@ -401,6 +424,7 @@ namespace TiltBrush
                     item.Init(i, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
                     item.SetAuthor(GetVisibleAuthorLabel(entry));
                     item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
+                    item.SetInteractionEnabled(!IsDownloadInFlight(entry));
                 }
                 else
                 {
@@ -443,6 +467,11 @@ namespace TiltBrush
                     m_GridItems[i].SetAuthor(GetVisibleAuthorLabel(m_Sketches[i]));
                     m_GridItems[i].SetAvailableVisual(m_Sketches[i].SceneFileInfo != null
                         && m_Sketches[i].SceneFileInfo.Available);
+                    m_GridItems[i].SetInteractionEnabled(!IsDownloadInFlight(m_Sketches[i]));
+                    if (IsDownloadInFlight(m_Sketches[i]))
+                    {
+                        m_GridItems[i].SetThumbnail(m_LoadingSprite, true);
+                    }
                 }
             }
         }
@@ -547,23 +576,56 @@ namespace TiltBrush
                 && (entry.SetType == SketchSetType.Curated || entry.SetType == SketchSetType.Liked)
                 && entry.SketchSet is IcosaSketchSet icosaSketchSet)
             {
-                if (m_GridItems[index] != null)
+                string downloadKey = GetDownloadKey(entry);
+                if (!m_DownloadingSketchKeys.Add(downloadKey))
                 {
-                    m_GridItems[index].SetThumbnail(m_LoadingSprite, true);
+                    Debug.Log($"{LogPrefix} download already in flight for {downloadKey}");
+                    return;
                 }
-                StartCoroutine(DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex));
+
+                SetTileDownloading(index);
+                StartCoroutine(DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex, downloadKey));
                 return;
             }
 
             IssueSketchbookLoadCommand(entry);
         }
 
-        private IEnumerator DownloadAndLoadSketchEntry(IcosaSketchSet sketchSet, int sketchIndex)
+        private bool IsDownloadInFlight(SketchGridEntry entry)
         {
+            return entry != null && m_DownloadingSketchKeys.Contains(GetDownloadKey(entry));
+        }
+
+        private string GetDownloadKey(SketchGridEntry entry)
+        {
+            return $"{entry.SetType}:{entry.SketchIndex}";
+        }
+
+        private void SetTileDownloading(int index)
+        {
+            if (index >= 0 && index < m_GridItems.Count && m_GridItems[index] != null)
+            {
+                m_GridItems[index].SetThumbnail(m_LoadingSprite, true);
+                m_GridItems[index].SetInteractionEnabled(false);
+            }
+        }
+
+        private IEnumerator DownloadAndLoadSketchEntry(IcosaSketchSet sketchSet, int sketchIndex,
+            string downloadKey)
+        {
+            bool downloadRefreshReceived = false;
             yield return StartCoroutine(sketchSet.DownloadFilesCoroutine(new List<int> { sketchIndex }, () =>
             {
+                m_DownloadingSketchKeys.Remove(downloadKey);
+                downloadRefreshReceived = true;
                 RefreshSketchGrid();
             }));
+
+            if (!downloadRefreshReceived)
+            {
+                m_DownloadingSketchKeys.Remove(downloadKey);
+                RefreshSketchGrid();
+            }
 
             if (!sketchSet.IsSketchIndexValid(sketchIndex))
             {
@@ -604,6 +666,7 @@ namespace TiltBrush
 
         private void IssueSketchbookLoadCommand(SketchGridEntry entry)
         {
+            UseKeyboardMouseNavigationAfterLoad = true;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                 entry.SketchIndex,
@@ -613,6 +676,7 @@ namespace TiltBrush
 
         private void ShutdownSelf()
         {
+            SaveGridState();
             DestroyGeneratedSprites();
             RestoreCursorState();
             m_Instance = null;
@@ -621,6 +685,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            SaveGridState();
             DestroyGeneratedSprites();
             RestoreCursorState();
             m_Instance = null;
@@ -657,6 +722,7 @@ namespace TiltBrush
                 return;
             }
 
+            NoHeadsetPointerCursor.ResetCursor();
             Cursor.visible = m_PreviousCursorVisible;
             Cursor.lockState = m_PreviousCursorLockState;
             m_HasSavedCursorState = false;
@@ -792,6 +858,7 @@ namespace TiltBrush
 
             m_RuntimeGridRoot = scrollViewTransform.gameObject;
             m_RuntimeGridRect = scrollViewTransform as RectTransform;
+            m_SketchGridScrollRect = scrollRect;
             m_SketchGridContent = scrollRect.content;
 
             NoHeadsetSketchGridLayout layout =
@@ -823,6 +890,7 @@ namespace TiltBrush
                 {
                     m_RuntimeGridRoot = scrollRect.gameObject;
                     m_RuntimeGridRect = scrollRect.transform as RectTransform;
+                    m_SketchGridScrollRect = scrollRect;
                     if (scrollRect.viewport != null)
                     {
                         NoHeadsetSketchGridLayout layout =
@@ -936,8 +1004,45 @@ namespace TiltBrush
                 return;
             }
 
+            SaveCurrentScrollPosition();
             m_SelectedSetType = setType;
+            sm_HasSavedGridState = true;
+            sm_SavedSetType = m_SelectedSetType;
+            m_RestoreSavedScrollOnNextRefresh = true;
             RefreshSketchGrid();
+        }
+
+        private void SaveGridState()
+        {
+            sm_HasSavedGridState = true;
+            sm_SavedSetType = m_SelectedSetType;
+            SaveCurrentScrollPosition();
+        }
+
+        private void SaveCurrentScrollPosition()
+        {
+            if (m_SketchGridScrollRect == null)
+            {
+                return;
+            }
+            sm_SavedScrollPositions[m_SelectedSetType] =
+                m_SketchGridScrollRect.verticalNormalizedPosition;
+        }
+
+        private IEnumerator RestoreGridScrollPositionAfterLayout()
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            if (m_SketchGridScrollRect == null)
+            {
+                yield break;
+            }
+
+            float position = sm_SavedScrollPositions.TryGetValue(m_SelectedSetType,
+                out float savedPosition)
+                ? savedPosition
+                : 1f;
+            m_SketchGridScrollRect.verticalNormalizedPosition = position;
         }
 
         private void UpdateCategoryTabs(int userCount, int curatedCount, int likedCount)
@@ -1166,6 +1271,16 @@ namespace TiltBrush
             for (int i = 0; i < count; i++)
             {
                 SketchGridEntry entry = m_Sketches[i];
+                if (IsDownloadInFlight(entry))
+                {
+                    if (m_GridItems[i] != null)
+                    {
+                        m_GridItems[i].SetThumbnail(m_LoadingSprite, true);
+                        m_GridItems[i].SetInteractionEnabled(false);
+                    }
+                    continue;
+                }
+
                 if (entry.ThumbnailAssigned)
                 {
                     NoHeadsetSketchGridItem item = m_GridItems[i];

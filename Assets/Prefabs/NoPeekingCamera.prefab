@@ -110,12 +110,14 @@ MonoBehaviour:
   m_Heading: {fileID: 2983092942286120586}
   m_SketchLoadingUi: {fileID: 286790923345576475}
   m_NonXRHelpURL: https://docs.openbrush.app/user-guide/monoscopic-mode
-  m_SketchGridContent: {fileID: 6892734818684951436}
+  m_SketchGridContent: {fileID: 1690831256598435295}
   m_SketchGridItemPrefab: {fileID: 7806660072164990958, guid: c285177024fd8f74395ff699739c872e,
     type: 3}
   m_EmptySketchListMessage: {fileID: 0}
-  m_UnknownImageTexture: {fileID: 0}
-  m_LoadingImageTexture: {fileID: 0}
+  m_UnknownImageTexture: {fileID: 2800000, guid: b68201fa2e266264089f97700761a547,
+    type: 3}
+  m_LoadingImageTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b,
+    type: 3}
 --- !u!1 &140238
 GameObject:
   m_ObjectHideFlags: 0
@@ -2943,7 +2945,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0.08442587, y: 0.64909506, z: 0.05726683, w: 0.7119994}
+  m_margin: {x: 0.08442587, y: 0.64909506, z: 0.05726683, w: 0.6578319}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   _SortingLayer: 0
@@ -3471,22 +3473,22 @@ PrefabInstance:
     - target: {fileID: 6973854430055675643, guid: 80a6c130ea1d2d549a6c289c762a6dea,
         type: 3}
       propertyPath: m_Value
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 80a6c130ea1d2d549a6c289c762a6dea, type: 3}
---- !u!224 &1932449467056290871 stripped
+--- !u!224 &1690831256598435295 stripped
 RectTransform:
-  m_CorrespondingSourceObject: {fileID: 5909166160717017700, guid: 80a6c130ea1d2d549a6c289c762a6dea,
+  m_CorrespondingSourceObject: {fileID: 6892734818684951436, guid: 80a6c130ea1d2d549a6c289c762a6dea,
     type: 3}
   m_PrefabInstance: {fileID: 5246944106730720851}
   m_PrefabAsset: {fileID: 0}
---- !u!224 &6892734818684951436 stripped
+--- !u!224 &1932449467056290871 stripped
 RectTransform:
-  m_CorrespondingSourceObject: {fileID: 6892734818684951436, guid: 80a6c130ea1d2d549a6c289c762a6dea,
+  m_CorrespondingSourceObject: {fileID: 5909166160717017700, guid: 80a6c130ea1d2d549a6c289c762a6dea,
     type: 3}
   m_PrefabInstance: {fileID: 5246944106730720851}
   m_PrefabAsset: {fileID: 0}
