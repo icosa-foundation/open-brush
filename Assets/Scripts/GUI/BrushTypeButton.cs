@@ -137,12 +137,6 @@ namespace TiltBrush
         override protected void OnButtonPressed()
         {
             BrushController.m_Instance.SetActiveBrush(m_Brush);
-#if UNITY_ANDROID || UNITY_IOS
-            if (m_Brush.m_AudioReactive != App.Instance.RequestingAudioReactiveMode)
-            {
-                App.Instance.ToggleAudioReactiveBrushesRequest();
-            }
-#endif
         }
 
         override public void ResetState()
