@@ -3504,11 +3504,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: No VR hardware found
+    m_Localized: Open Brush Sketch Viewer
     m_Metadata:
       m_Items: []
   - m_Id: 218558579745579008
-    m_Localized: More info on using Open Brush without VR
+    m_Localized: XR not enabled or found. More info on using Open Brush without VR
     m_Metadata:
       m_Items: []
   - m_Id: 176764812224364544
@@ -3628,9 +3628,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: "<b>PC Controls:</b>\r\nMouse: view direction (press I to invert
-      up/down) \r\nW,A,S,D: move forward/back/left/right\r\nQ,E: move up/down\r\nShift:
-      move faster"
+    m_Localized: 'Mouse: Look around
+
+      W,A,S,D: forward/sideways Q,E: up/down
+      (Hold Shift to speed up)'
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104
