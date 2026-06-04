@@ -481,6 +481,14 @@ namespace TiltBrush
                     m_SdkMode = SdkMode.Monoscopic;
                     UnityEngine.XR.XRSettings.enabled = false;
                 }
+                else if (args[i] == "--EnableMonoscopicMode")
+                {
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                }
+                else if (args[i] == "--DisableXrMode")
+                {
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                }
                 else if (args[i].Contains("."))
                 {
                     if (i == args.Length - 1)
@@ -561,7 +569,68 @@ namespace TiltBrush
                     Application.Quit();
                 }
             }
-#elif !(UNITY_ANDROID || UNITY_IOS)
+#elif UNITY_ANDROID
+            try
+            {
+                using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using var intent = activity.Call<AndroidJavaObject>("getIntent");
+
+                // Intent extras: set by dynamic shortcuts, ADB, or activity aliases.
+                bool enableMonoscopic = intent.Call<bool>("getBooleanExtra", "EnableMonoscopicMode", false);
+                bool disableXr = intent.Call<bool>("getBooleanExtra", "DisableXrMode", false);
+
+                // Activity alias: when launched via an alias, getComponent() returns the alias class name.
+                using var component = intent.Call<AndroidJavaObject>("getComponent");
+                if (component != null)
+                {
+                    string className = component.Call<string>("getClassName");
+                    if (className.EndsWith(".MonoscopicModeActivity"))
+                        enableMonoscopic = true;
+                    else if (className.EndsWith(".DisableXrModeActivity"))
+                        disableXr = true;
+                }
+
+                if (enableMonoscopic)
+                {
+                    ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
+                    m_SdkMode = SdkMode.Monoscopic;
+                    UnityEngine.XR.XRSettings.enabled = false;
+                }
+                else if (disableXr)
+                {
+                    ParseUserSetting("--Flags.DisableXrMode", "true");
+                    UnityEngine.XR.XRSettings.enabled = false;
+                }
+
+                // Register dynamic shortcuts on a background thread — setDynamicShortcuts() is a
+                // Binder IPC call that can block for minutes on Quest's launcher service.
+                var thread = new System.Threading.Thread(() =>
+                {
+                    try
+                    {
+                        AndroidJNI.AttachCurrentThread();
+                        using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                        using var act = player.GetStatic<AndroidJavaObject>("currentActivity");
+                        RegisterDynamicShortcuts(act);
+                    }
+                    catch (Exception e)
+                    {
+                        UnityEngine.Debug.LogWarning($"[OB-Shortcuts] background registration failed: {e.Message}");
+                    }
+                    finally
+                    {
+                        AndroidJNI.DetachCurrentThread();
+                    }
+                });
+                thread.IsBackground = true;
+                thread.Start();
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogException(e);
+            }
+#elif !UNITY_IOS
             try
             {
                 ParseArgs(System.Environment.GetCommandLineArgs());
@@ -579,6 +648,59 @@ namespace TiltBrush
                 m_BrushReplacement.Add(new Guid(brush.FromGuid), new Guid(brush.ToGuid));
             }
         }
+
+#if UNITY_ANDROID
+        private static void RegisterDynamicShortcuts(AndroidJavaObject activity)
+        {
+            try
+            {
+                using var context = activity.Call<AndroidJavaObject>("getApplicationContext");
+                using var shortcutManager = context.Call<AndroidJavaObject>("getSystemService", "shortcut");
+                if (shortcutManager == null) return;
+
+                string packageName = context.Call<string>("getPackageName");
+                using var resources = context.Call<AndroidJavaObject>("getResources");
+                int iconResId = resources.Call<int>("getIdentifier", "app_icon", "mipmap", packageName);
+
+                var shortcuts = new AndroidJavaObject("java.util.ArrayList");
+                shortcuts.Call<bool>("add", BuildShortcut(context, packageName, iconResId,
+                    "monoscopic_mode", "Flat Mode", "Launch in Flat (Monoscopic) Mode",
+                    "EnableMonoscopicMode"));
+                shortcuts.Call<bool>("add", BuildShortcut(context, packageName, iconResId,
+                    "disable_xr_mode", "No VR Mode", "Launch without VR/XR",
+                    "DisableXrMode"));
+
+                shortcutManager.Call<bool>("setDynamicShortcuts", shortcuts);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"RegisterDynamicShortcuts failed: {e.Message}");
+            }
+        }
+
+        private static AndroidJavaObject BuildShortcut(AndroidJavaObject context, string packageName,
+            int iconResId, string id, string shortLabel, string longLabel, string extraKey)
+        {
+            var intent = new AndroidJavaObject("android.content.Intent");
+            intent.Call<AndroidJavaObject>("setAction", "android.intent.action.MAIN");
+            intent.Call<AndroidJavaObject>("setClassName", packageName, "com.unity3d.player.UnityPlayerActivity");
+            intent.Call<AndroidJavaObject>("putExtra", extraKey, true);
+
+            var builder = new AndroidJavaObject("android.content.pm.ShortcutInfo$Builder", context, id);
+            builder.Call<AndroidJavaObject>("setShortLabel", shortLabel);
+            builder.Call<AndroidJavaObject>("setLongLabel", longLabel);
+            builder.Call<AndroidJavaObject>("setIntent", intent);
+
+            if (iconResId != 0)
+            {
+                using var iconClass = new AndroidJavaClass("android.graphics.drawable.Icon");
+                var icon = iconClass.CallStatic<AndroidJavaObject>("createWithResource", context, iconResId);
+                builder.Call<AndroidJavaObject>("setIcon", icon);
+            }
+
+            return builder.Call<AndroidJavaObject>("build");
+        }
+#endif
 
         /// Parses a setting taken from the command line of the form --Section.Setting value
         /// Where Section and Setting should be valid members of UserConfig.
