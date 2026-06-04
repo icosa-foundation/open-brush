@@ -11,6 +11,8 @@ import android.media.MediaRecorder;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 public class OpenBrushAudioPlaybackCapture {
@@ -21,6 +23,7 @@ public class OpenBrushAudioPlaybackCapture {
 
     private static Activity sActivity;
     private static MediaProjection sProjection;
+    private static MediaProjection.Callback sProjectionCallback;
     private static AudioRecord sAudioRecord;
     private static Thread sThread;
     private static boolean sRunning;
@@ -60,21 +63,33 @@ public class OpenBrushAudioPlaybackCapture {
 
     static void onProjectionResult(int resultCode, Intent data) {
         sRequestPending = false;
-        if (sActivity == null) {
-            sLastError = "Unity activity is not initialized";
-            Log.w(TAG, sLastError);
-            return;
-        }
-        if (resultCode != Activity.RESULT_OK || data == null) {
-            sLastError = "MediaProjection permission denied";
-            Log.w(TAG, sLastError);
-            return;
-        }
+        try {
+            if (sActivity == null) {
+                sLastError = "Unity activity is not initialized";
+                Log.w(TAG, sLastError);
+                return;
+            }
+            if (resultCode != Activity.RESULT_OK || data == null) {
+                sLastError = "MediaProjection permission denied";
+                Log.w(TAG, sLastError);
+                return;
+            }
 
-        MediaProjectionManager manager =
-                (MediaProjectionManager)sActivity.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        sProjection = manager.getMediaProjection(resultCode, data);
-        startAudioRecord();
+            MediaProjectionManager manager =
+                    (MediaProjectionManager)sActivity.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            sProjection = manager.getMediaProjection(resultCode, data);
+            if (sProjection == null) {
+                sLastError = "MediaProjection result did not create a projection";
+                Log.w(TAG, sLastError);
+                return;
+            }
+            registerProjectionCallback();
+            startAudioRecord();
+        } catch (Exception e) {
+            sLastError = e.toString();
+            Log.w(TAG, "MediaProjection result failed", e);
+            stop();
+        }
     }
 
     public static void stop() {
@@ -99,6 +114,7 @@ public class OpenBrushAudioPlaybackCapture {
             sProjection.stop();
             sProjection = null;
         }
+        sProjectionCallback = null;
     }
 
     public static boolean isCapturing() {
@@ -192,6 +208,22 @@ public class OpenBrushAudioPlaybackCapture {
             sAudioRecord.release();
             sAudioRecord = null;
         }
+    }
+
+    private static void registerProjectionCallback() {
+        if (sProjection == null) {
+            return;
+        }
+        sProjectionCallback = new MediaProjection.Callback() {
+            @Override
+            public void onStop() {
+                Log.i(TAG, "MediaProjection stopped");
+                stopAudioRecordOnly();
+                sProjection = null;
+                sProjectionCallback = null;
+            }
+        };
+        sProjection.registerCallback(sProjectionCallback, new Handler(Looper.getMainLooper()));
     }
 
     private static void readLoop() {
