@@ -1308,7 +1308,6 @@ namespace TiltBrush
             }
             SketchSurfacePanel.m_Instance.RequestHideActiveTool(false);
             SketchControlsScript.m_Instance.RestoreFloatingPanels();
-            ConfigureNoHeadsetControlsAfterLoad();
             PointerManager.m_Instance.RequestPointerRendering(
                 SketchSurfacePanel.m_Instance.ShouldShowPointer());
             PointerManager.m_Instance.RestoreBrushInfo();
@@ -1329,20 +1328,6 @@ namespace TiltBrush
             }
 
             Scene.BroadcastCanvasUpdate();
-        }
-
-        private void ConfigureNoHeadsetControlsAfterLoad()
-        {
-            if (VrSdk.IsHmdInitialized()
-                || !InitNoHeadsetMode.UseKeyboardMouseNavigationAfterLoad)
-            {
-                return;
-            }
-
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-#if DEBUG
-            Debug.Log("NOXR_NAV activated fly tool after no-headset sketch load");
-#endif
         }
 
         private IEnumerator<Timeslice> DelayedSketchLoadedCard(float delay)

@@ -22,7 +22,6 @@ public class ViewModeUI : MonoBehaviour
         if (InitNoHeadsetMode.m_Instance == null)
         {
             // We're viewing a sketch so close it and open the loading dialog
-            InitNoHeadsetMode.ClearKeyboardMouseNavigationAfterLoad();
             ApiMethods.NewSketch();
             SketchSurfacePanel.m_Instance.DisableSpecificTool(BaseTool.ToolType.FlyTool);
             App.Instance.CreateFailedToDetectVrDialog();

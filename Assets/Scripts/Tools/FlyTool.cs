@@ -90,6 +90,11 @@ namespace TiltBrush
             return !m_Armed;
         }
 
+        public override bool AvailableDuringLoading()
+        {
+            return true;
+        }
+
         public override void HideTool(bool bHide)
         {
             base.HideTool(bHide);

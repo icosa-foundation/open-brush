@@ -77,12 +77,6 @@ namespace TiltBrush
         private const string LogPrefix = "NOXR_GRID";
 
         public static InitNoHeadsetMode m_Instance;
-        public static bool UseKeyboardMouseNavigationAfterLoad { get; private set; }
-
-        public static void ClearKeyboardMouseNavigationAfterLoad()
-        {
-            UseKeyboardMouseNavigationAfterLoad = false;
-        }
 
         private class SketchGridEntry
         {
@@ -99,7 +93,6 @@ namespace TiltBrush
         void Start()
         {
             m_Instance = this;
-            UseKeyboardMouseNavigationAfterLoad = false;
             if (sm_HasSavedGridState)
             {
                 m_SelectedSetType = sm_SavedSetType;
@@ -570,7 +563,6 @@ namespace TiltBrush
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             SketchGridEntry entry = m_Sketches[index];
             if (entry.SceneFileInfo != null && !entry.SceneFileInfo.Available
                 && (entry.SetType == SketchSetType.Curated || entry.SetType == SketchSetType.Liked)
@@ -666,7 +658,7 @@ namespace TiltBrush
 
         private void IssueSketchbookLoadCommand(SketchGridEntry entry)
         {
-            UseKeyboardMouseNavigationAfterLoad = true;
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                 entry.SketchIndex,
