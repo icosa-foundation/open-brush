@@ -1,58 +1,74 @@
 ﻿using UnityEngine;
 
+/// @class ControllerUpVectorVisualizer
+/// @brief Visualizes the controller up vector used by the Markov pen.
+///
+/// Finds the runtime-generated controller, draws its local up vector,
+/// and helps inspect where the Markov pen stem curve is created.
 public class ControllerUpVectorVisualizer : MonoBehaviour
 {
-    public string targetName = "monterey_controller_R";
+    public string TargetName = "monterey_controller_R";
 
-    public float length = 10f;
-    public float width = 0.01f;
+    public float Length = 10f;
+    public float Width = 0.01f;
 
-    private Transform target;
-    private LineRenderer line;
+    private Transform m_Target;
+    private LineRenderer m_Line;
 
-    void Awake()
+    private void Awake()
     {
-        line = gameObject.AddComponent<LineRenderer>();
-        line.positionCount = 2;
-        line.startWidth = width;
-        line.endWidth = width;
-        line.useWorldSpace = true;
-
-        line.material = new Material(Shader.Find("Sprites/Default"));
+        m_Line = gameObject.AddComponent<LineRenderer>();
+        m_Line.positionCount = 2;
+        m_Line.startWidth = Width;
+        m_Line.endWidth = Width;
+        m_Line.useWorldSpace = true;
+        m_Line.material = new Material(Shader.Find("Sprites/Default"));
     }
 
-    void Update()
+    private void Update()
     {
-        if (target == null)
+        if (m_Target == null)
         {
-            GameObject obj = GameObject.Find(targetName);
+            TryFindTarget();
 
-            if (obj != null)
-            {
-                target = obj.transform;
-                Debug.Log("Found controller target: " + GetPath(target), obj);
-            }
-            else
+            if (m_Target == null)
             {
                 return;
             }
         }
 
-        Vector3 start = target.position;
-        Vector3 end = start + target.up * length;
-
-        line.SetPosition(0, start);
-        line.SetPosition(1, end);
+        DrawUpVector();
     }
 
-    string GetPath(Transform t)
+    private void TryFindTarget()
     {
-        string path = t.name;
+        GameObject targetObject = GameObject.Find(TargetName);
 
-        while (t.parent != null)
+        if (targetObject == null)
         {
-            t = t.parent;
-            path = t.name + "/" + path;
+            return;
+        }
+
+        m_Target = targetObject.transform;
+    }
+
+    private void DrawUpVector()
+    {
+        Vector3 startPosition = m_Target.position;
+        Vector3 endPosition = startPosition + m_Target.up * Length;
+
+        m_Line.SetPosition(0, startPosition);
+        m_Line.SetPosition(1, endPosition);
+    }
+
+    private string GetPath(Transform targetTransform)
+    {
+        string path = targetTransform.name;
+
+        while (targetTransform.parent != null)
+        {
+            targetTransform = targetTransform.parent;
+            path = targetTransform.name + "/" + path;
         }
 
         return path;
