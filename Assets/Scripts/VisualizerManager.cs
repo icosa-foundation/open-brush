@@ -460,8 +460,24 @@ namespace TiltBrush
             }
 
             float rms = Mathf.Sqrt(sumSquares / audioData.Length);
+            float fftMax = 0.0f;
+            for (int i = 0; i < m_FFTResult.Length; ++i)
+            {
+                fftMax = Mathf.Max(fftMax, m_FFTResult[i]);
+            }
+            float bandMax = 0.0f;
+            for (int i = 0; i < m_BandNormalizedLevels.Length; ++i)
+            {
+                bandMax = Mathf.Max(bandMax, m_BandNormalizedLevels[i]);
+            }
+            float volumeMax = Mathf.Max(
+                Mathf.Max(m_AudioVolume.x, m_AudioVolume.y),
+                Mathf.Max(m_AudioVolume.z, m_AudioVolume.w));
+            float beatMax = Mathf.Max(
+                Mathf.Max(m_BeatOutput.x, m_BeatOutput.y),
+                Mathf.Max(m_BeatOutput.z, m_BeatOutput.w));
             bool audioReactiveEnabled = Shader.IsKeywordEnabled("AUDIO_REACTIVE");
-            Debug.Log($"{kAndroidAppAudioLogPrefix} VisualizerManager ProcessAudio sampleRate={sampleRate} peak={peak:F5} rms={rms:F5} AUDIO_REACTIVE={audioReactiveEnabled} fft0={m_FFTResult[0]:F5} band0={m_BandNormalizedLevels[0]:F5} beat={m_BeatOutput} volume={m_AudioVolume}");
+            Debug.Log($"{kAndroidAppAudioLogPrefix} VisualizerManager ProcessAudio sampleRate={sampleRate} peak={peak:F5} rms={rms:F5} AUDIO_REACTIVE={audioReactiveEnabled} fftMax={fftMax:F5} bandMax={bandMax:F5} volumeMax={volumeMax:F5} beatMax={beatMax:F5} beat={m_BeatOutput} volume={m_AudioVolume}");
             m_NextAndroidProcessLogTime = Time.unscaledTime + kAndroidLogInterval;
             ++m_ProcessAudioLogCount;
         }
