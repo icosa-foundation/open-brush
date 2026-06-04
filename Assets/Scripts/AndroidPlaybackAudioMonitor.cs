@@ -1,0 +1,199 @@
+// Copyright 2020 The Tilt Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using UnityEngine;
+
+namespace TiltBrush
+{
+    public class AndroidPlaybackAudioMonitor : MonoBehaviour
+    {
+        private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
+        private const float kAndroidLogInterval = 2.0f;
+
+#if UNITY_ANDROID
+        private AndroidJavaClass m_Plugin;
+#endif
+        private bool m_CaptureRequested;
+        private bool m_RequestSent;
+        private float[] m_Samples;
+        private float m_NextAndroidLogTime;
+        private int m_NonZeroLogCount;
+        private float m_LastPeak;
+
+        public float LastPeak { get { return m_LastPeak; } }
+        public int SampleRate
+        {
+            get
+            {
+#if UNITY_ANDROID
+                return PluginReady ? m_Plugin.CallStatic<int>("getSampleRate") : 48000;
+#else
+                return 48000;
+#endif
+            }
+        }
+
+        public bool IsCapturing
+        {
+            get
+            {
+#if UNITY_ANDROID
+                return PluginReady && m_Plugin.CallStatic<bool>("isCapturing");
+#else
+                return false;
+#endif
+            }
+        }
+
+        public bool IsRequestPending
+        {
+            get
+            {
+#if UNITY_ANDROID
+                return PluginReady && m_Plugin.CallStatic<bool>("isRequestPending");
+#else
+                return false;
+#endif
+            }
+        }
+
+#if UNITY_ANDROID
+        private bool PluginReady
+        {
+            get { return m_Plugin != null; }
+        }
+#endif
+
+        public void Activate(bool active)
+        {
+            m_CaptureRequested = active;
+            if (active)
+            {
+                RequestCapture();
+            }
+            else
+            {
+                StopCapture();
+            }
+        }
+
+        void Update()
+        {
+            if (!m_CaptureRequested || !IsCapturing)
+            {
+                return;
+            }
+
+            EnsureSampleBuffer();
+#if UNITY_ANDROID
+            float[] latest = m_Plugin.CallStatic<float[]>("readLatest", m_Samples.Length);
+            if (latest == null || latest.Length != m_Samples.Length)
+            {
+                return;
+            }
+            latest.CopyTo(m_Samples, 0);
+            LogAndroidPlaybackSamples();
+            VisualizerManager.m_Instance.ProcessAudio(m_Samples, SampleRate);
+#endif
+        }
+
+        private void RequestCapture()
+        {
+#if UNITY_ANDROID
+            EnsurePlugin();
+            if (!PluginReady || IsCapturing || m_RequestSent)
+            {
+                return;
+            }
+
+            if (!m_Plugin.CallStatic<bool>("isSupported"))
+            {
+                Debug.LogWarning($"{kAndroidPlaybackAudioLogPrefix} AudioPlaybackCapture is not supported on this Android version");
+                return;
+            }
+
+            m_RequestSent = true;
+            m_NextAndroidLogTime = 0.0f;
+            m_NonZeroLogCount = 0;
+            m_Plugin.CallStatic("requestCapture");
+            Debug.Log($"{kAndroidPlaybackAudioLogPrefix} requested MediaProjection playback capture");
+#endif
+        }
+
+        private void StopCapture()
+        {
+#if UNITY_ANDROID
+            if (PluginReady)
+            {
+                m_Plugin.CallStatic("stop");
+                Debug.Log($"{kAndroidPlaybackAudioLogPrefix} playback capture stopped");
+            }
+#endif
+            m_RequestSent = false;
+            m_LastPeak = 0.0f;
+        }
+
+        private void EnsureSampleBuffer()
+        {
+            if (m_Samples == null || m_Samples.Length != VisualizerManager.m_Instance.FFTSize)
+            {
+                m_Samples = new float[VisualizerManager.m_Instance.FFTSize];
+            }
+        }
+
+#if UNITY_ANDROID
+        private void EnsurePlugin()
+        {
+            if (m_Plugin != null)
+            {
+                return;
+            }
+
+            m_Plugin = new AndroidJavaClass("org.openbrush.audio.OpenBrushAudioPlaybackCapture");
+            using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            {
+                AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                m_Plugin.CallStatic("initialize", activity);
+            }
+        }
+
+        private void LogAndroidPlaybackSamples()
+        {
+            float peak = 0.0f;
+            float sumSquares = 0.0f;
+            for (int i = 0; i < m_Samples.Length; ++i)
+            {
+                float sample = m_Samples[i];
+                peak = Mathf.Max(peak, Mathf.Abs(sample));
+                sumSquares += sample * sample;
+            }
+
+            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
+            m_LastPeak = peak;
+            bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
+            if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
+            {
+                bool audioReactiveEnabled = Shader.IsKeywordEnabled("AUDIO_REACTIVE");
+                string error = m_Plugin.CallStatic<string>("getLastError");
+                Debug.Log($"{kAndroidPlaybackAudioLogPrefix} playback samples peak={peak:F5} rms={rms:F5} sampleRate={SampleRate} AUDIO_REACTIVE={audioReactiveEnabled} error='{error}'");
+                m_NextAndroidLogTime = Time.unscaledTime + kAndroidLogInterval;
+                if (peak > 0.0001f)
+                {
+                    ++m_NonZeroLogCount;
+                }
+            }
+        }
+#endif
+    }
+}

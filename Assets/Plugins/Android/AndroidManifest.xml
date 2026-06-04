@@ -15,6 +15,11 @@
                 <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="org.openbrush.audio.OpenBrushAudioPlaybackCaptureActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
         <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>

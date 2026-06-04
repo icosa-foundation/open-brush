@@ -45,6 +45,9 @@ namespace TiltBrush
     {
         private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
         private const string kAndroidMicAudioLogPrefix = "AR_ANDROID_MIC_AUDIO_20260604";
+        private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
+        private const float kAndroidSourceProbeSeconds = 6.0f;
+        private const float kAndroidSignalThreshold = 0.0001f;
 
         // Number of seconds to delay before searching for active audio device.
         // From experimentation this seems to be the minimum to ensure we don't pick up
@@ -55,6 +58,7 @@ namespace TiltBrush
         {
             File,
             System,
+            SystemPlayback,
             App,
             Mic,
             Script
@@ -67,12 +71,15 @@ namespace TiltBrush
         [SerializeField] private GameObject m_AppAudio;
 
         private AudioCaptureType m_Type;
+        private AndroidPlaybackAudioMonitor m_PlaybackAudio;
         private AndroidMicAudioMonitor m_MicAudio;
         private int m_CaptureRequestedCount;
+        private float m_AndroidSourceProbeStartTime;
 
         void Awake()
         {
             m_Instance = this;
+            EnsurePlaybackAudioMonitor();
             EnsureMicAudioMonitor();
             ResetAudioCaptureType();
         }
@@ -82,9 +89,8 @@ namespace TiltBrush
             m_Instance = this;
             if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
 #if UNITY_ANDROID
-            // Android audio reactivity listens to the headset microphone by default.
-            // Other-app/system playback capture requires a separate MediaProjection path.
-            m_Type = AudioCaptureType.Mic;
+            // Probe Android external sources in order: other-app/system playback, app audio, mic.
+            m_Type = AudioCaptureType.SystemPlayback;
 #elif UNITY_IOS
             m_Type = AudioCaptureType.App;
 #else
@@ -95,6 +101,19 @@ namespace TiltBrush
 #endif
             m_CaptureRequestedCount = 0;
 
+        }
+
+        private void EnsurePlaybackAudioMonitor()
+        {
+            if (m_PlaybackAudio != null)
+            {
+                return;
+            }
+
+            var playbackAudio = new GameObject("AndroidPlaybackAudio");
+            playbackAudio.transform.SetParent(transform, false);
+            playbackAudio.SetActive(true);
+            m_PlaybackAudio = playbackAudio.AddComponent<AndroidPlaybackAudioMonitor>();
         }
 
         private void EnsureMicAudioMonitor()
@@ -119,6 +138,7 @@ namespace TiltBrush
         {
             m_FileAudio.SetActive(false);
             m_AppAudio.SetActive(false);
+            m_PlaybackAudio.Activate(false);
             m_MicAudio.Activate(false);
             m_SystemAudio.gameObject.SetActive(false);
             m_Type = AudioCaptureType.Script;
@@ -138,6 +158,7 @@ namespace TiltBrush
             {
                 LuaManager.Instance.VisualizerScriptingEnabled = false;
                 m_AppAudio.SetActive(false);
+                m_PlaybackAudio.Activate(false);
                 m_MicAudio.Activate(false);
                 m_SystemAudio.Deactivate();
                 m_SystemAudio.gameObject.SetActive(false);
@@ -181,6 +202,8 @@ namespace TiltBrush
                         return 0;
                     case AudioCaptureType.System:
                         return m_SystemAudio.GetAudioDeviceSampleRate();
+                    case AudioCaptureType.SystemPlayback:
+                        return m_PlaybackAudio.SampleRate;
                     case AudioCaptureType.App:
                         return AudioSettings.outputSampleRate;
                     case AudioCaptureType.Mic:
@@ -202,6 +225,8 @@ namespace TiltBrush
                         return m_FileAudio.activeSelf;
                     case AudioCaptureType.System:
                         return m_SystemAudio.gameObject.activeSelf && m_SystemAudio.AudioDeviceSelected();
+                    case AudioCaptureType.SystemPlayback:
+                        return m_PlaybackAudio.IsCapturing;
                     case AudioCaptureType.App:
                         return m_AppAudio.activeSelf;
                     case AudioCaptureType.Mic:
@@ -219,6 +244,7 @@ namespace TiltBrush
             {
                 case AudioCaptureType.File: return "Listening to audio file";
                 case AudioCaptureType.System: return m_SystemAudio.GetCaptureStatusMessage();
+                case AudioCaptureType.SystemPlayback: return "Listening to system audio";
                 case AudioCaptureType.App: return "Listening to app audio";
                 case AudioCaptureType.Mic: return "Listening to microphone";
                 case AudioCaptureType.Script: return "Scripted Waveform";
@@ -257,6 +283,14 @@ namespace TiltBrush
                         m_SystemAudio.gameObject.SetActive(false);
                     }
                     break;
+                case AudioCaptureType.SystemPlayback:
+                    m_PlaybackAudio.Activate(CaptureRequested);
+                    VisualizerManager.m_Instance.AudioCaptureStatusChange(CaptureRequested);
+                    ResetAndroidSourceProbeTimer();
+#if UNITY_ANDROID
+                    Debug.Log($"{kAndroidPlaybackAudioLogPrefix} CaptureAudio({bCapture}) set PlaybackAudio active={m_PlaybackAudio.IsCapturing} requests={m_CaptureRequestedCount}");
+#endif
+                    break;
                 case AudioCaptureType.App:
                     bool appAudioWasActive = m_AppAudio.activeSelf;
                     m_AppAudio.SetActive(CaptureRequested);
@@ -279,5 +313,76 @@ namespace TiltBrush
                     break;
             }
         }
+
+#if UNITY_ANDROID
+        void Update()
+        {
+            if (!CaptureRequested)
+            {
+                return;
+            }
+
+            if (m_Type == AudioCaptureType.SystemPlayback)
+            {
+                if (m_PlaybackAudio.IsRequestPending)
+                {
+                    ResetAndroidSourceProbeTimer();
+                    return;
+                }
+                if (m_PlaybackAudio.LastPeak > kAndroidSignalThreshold)
+                {
+                    return;
+                }
+                if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
+                {
+                    Debug.Log($"{kAndroidPlaybackAudioLogPrefix} no playback signal; falling back to app audio");
+                    SwitchAndroidCaptureSource(AudioCaptureType.App);
+                }
+            }
+            else if (m_Type == AudioCaptureType.App)
+            {
+                var appMonitor = m_AppAudio.GetComponent<AppAudioMonitor>();
+                if (appMonitor != null && appMonitor.LastPeak > kAndroidSignalThreshold)
+                {
+                    return;
+                }
+                if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
+                {
+                    Debug.Log($"{kAndroidAppAudioLogPrefix} no app-audio signal; falling back to microphone");
+                    SwitchAndroidCaptureSource(AudioCaptureType.Mic);
+                }
+            }
+        }
+
+        private void SwitchAndroidCaptureSource(AudioCaptureType nextType)
+        {
+            m_PlaybackAudio.Activate(false);
+            m_AppAudio.SetActive(false);
+            m_MicAudio.Activate(false);
+
+            m_Type = nextType;
+            ResetAndroidSourceProbeTimer();
+
+            if (m_Type == AudioCaptureType.App)
+            {
+                m_AppAudio.SetActive(true);
+                VisualizerManager.m_Instance.AudioCaptureStatusChange(true);
+            }
+            else if (m_Type == AudioCaptureType.Mic)
+            {
+                m_MicAudio.Activate(true);
+                VisualizerManager.m_Instance.AudioCaptureStatusChange(true);
+            }
+
+            Debug.Log($"{kAndroidPlaybackAudioLogPrefix} switched Android capture source to {m_Type}");
+        }
+
+        private void ResetAndroidSourceProbeTimer()
+        {
+            m_AndroidSourceProbeStartTime = Time.unscaledTime;
+        }
+#else
+        private void ResetAndroidSourceProbeTimer() { }
+#endif
     }
 }

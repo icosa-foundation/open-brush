@@ -29,6 +29,9 @@ namespace TiltBrush
         private float[] m_WaveformFloats;
         private float m_NextAndroidLogTime;
         private int m_NonZeroLogCount;
+        private float m_LastPeak;
+
+        public float LastPeak { get { return m_LastPeak; } }
 
         void Start()
         {
@@ -75,6 +78,7 @@ namespace TiltBrush
             }
 
             float rms = Mathf.Sqrt(sumSquares / m_WaveformFloats.Length);
+            m_LastPeak = peak;
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
             if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
             {

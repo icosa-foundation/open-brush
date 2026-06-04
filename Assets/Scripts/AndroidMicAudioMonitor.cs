@@ -35,9 +35,11 @@ namespace TiltBrush
         private int m_NonZeroLogCount;
         private bool m_CaptureRequested;
         private bool m_WaitingForPermission;
+        private float m_LastPeak;
 
         public int SampleRate { get { return m_SampleRate; } }
         public bool IsCapturing { get { return m_MicClip != null && Microphone.IsRecording(m_DeviceName); } }
+        public float LastPeak { get { return m_LastPeak; } }
 
         public void Activate(bool active)
         {
@@ -184,6 +186,7 @@ namespace TiltBrush
             }
 
             float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
+            m_LastPeak = peak;
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
             if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
             {
