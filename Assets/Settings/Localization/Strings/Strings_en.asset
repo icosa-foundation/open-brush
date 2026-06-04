@@ -3628,10 +3628,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: 'Mouse: Look around
-
-      W,A,S,D: forward/sideways Q,E: up/down
-      (Hold Shift to speed up)'
+    m_Localized: 'Mouse: Look around, W,A,S,D: forward/sideways Q,E: up/down (Hold
+      Shift to speed up)'
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104

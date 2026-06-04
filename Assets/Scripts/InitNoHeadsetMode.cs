@@ -48,9 +48,8 @@ namespace TiltBrush
             new Dictionary<SketchSetType, float>();
         private TMP_Dropdown m_Dropdown;
         private GameObject m_ViewSketchButton;
-        private RectTransform m_BlankSketchButtonRect;
-        private RectTransform m_HelpTextRect;
         private GameObject m_RuntimeGridRoot;
+        private RectTransform m_RuntimeStackRect;
         private RectTransform m_RuntimeTabBarRect;
         private RectTransform m_RuntimeGridRect;
         private ScrollRect m_SketchGridScrollRect;
@@ -720,60 +719,11 @@ namespace TiltBrush
             m_HasSavedCursorState = false;
         }
 
-        private void CacheOriginalControlRects(Transform uiParent)
-        {
-            Transform blankSketchButton = uiParent.Find("Blank Sketch Button");
-            if (blankSketchButton != null)
-            {
-                m_BlankSketchButtonRect = blankSketchButton as RectTransform;
-            }
-
-            Transform helpText = uiParent.Find("Help Text");
-            if (helpText != null)
-            {
-                m_HelpTextRect = helpText as RectTransform;
-            }
-        }
-
-        private void AttachPointerCursorHandlers(Transform parent)
-        {
-            Button[] buttons = parent.GetComponentsInChildren<Button>(true);
-            for (int i = 0; i < buttons.Length; i++)
-            {
-                AttachPointerCursorHandler(buttons[i].gameObject);
-            }
-        }
-
         private void AttachPointerCursorHandler(GameObject target)
         {
             if (target != null && target.GetComponent<NoHeadsetPointerCursor>() == null)
             {
                 target.AddComponent<NoHeadsetPointerCursor>();
-            }
-        }
-
-        private void StyleExistingButton(RectTransform buttonRect, float fontSize)
-        {
-            if (buttonRect == null)
-            {
-                return;
-            }
-
-            Image[] images = buttonRect.GetComponentsInChildren<Image>(true);
-            for (int i = 0; i < images.Length; i++)
-            {
-                images[i].color = new Color(0f, 0f, 0f, 0.32f);
-            }
-
-            TextMeshProUGUI[] labels = buttonRect.GetComponentsInChildren<TextMeshProUGUI>(true);
-            for (int i = 0; i < labels.Length; i++)
-            {
-                labels[i].fontSize = fontSize;
-                labels[i].fontSizeMax = fontSize;
-                labels[i].fontSizeMin = Mathf.Max(8f, fontSize - 3f);
-                labels[i].enableAutoSizing = true;
-                labels[i].color = Color.white;
-                labels[i].fontStyle = FontStyles.Normal;
             }
         }
 
@@ -800,11 +750,6 @@ namespace TiltBrush
                 m_ViewSketchButton = viewButtonTransform.gameObject;
                 m_ViewSketchButton.SetActive(false);
             }
-            CacheOriginalControlRects(uiParent);
-            AttachPointerCursorHandlers(uiParent);
-            StyleExistingButton(m_BlankSketchButtonRect, 11f);
-            StyleExistingButton(m_HelpTextRect, 10f);
-
             RectTransform parentRect = uiParent as RectTransform;
             if (m_SketchGridContent == null)
             {
@@ -898,7 +843,20 @@ namespace TiltBrush
 
             if (m_RuntimeTabBarRect == null && uiParent != null)
             {
+                BindAuthoredTabBar(uiParent);
+            }
+            if (m_RuntimeTabBarRect == null && uiParent != null)
+            {
                 CreateRuntimeTabBar(uiParent);
+            }
+            if (m_RuntimeStackRect == null && uiParent != null)
+            {
+                Transform stack = FindDeepChild(uiParent, "Sketch Viewer Stack");
+                m_RuntimeStackRect = stack as RectTransform;
+                if (m_RuntimeStackRect != null)
+                {
+                    RefreshRuntimeGridFrame(force: true);
+                }
             }
 
             if (m_SketchGridItemPrefab != null)
@@ -937,6 +895,42 @@ namespace TiltBrush
                 }
             }
             return null;
+        }
+
+        private void BindAuthoredTabBar(RectTransform parent)
+        {
+            Transform tabBar = FindDeepChild(parent, "Sketch Category Tabs");
+            if (tabBar == null)
+            {
+                return;
+            }
+
+            m_RuntimeTabBarRect = tabBar as RectTransform;
+            BindCategoryTab(tabBar, SketchSetType.User);
+            BindCategoryTab(tabBar, SketchSetType.Curated);
+            BindCategoryTab(tabBar, SketchSetType.Liked);
+            RefreshRuntimeGridFrame(force: true);
+        }
+
+        private void BindCategoryTab(Transform tabBar, SketchSetType setType)
+        {
+            Transform tabTransform = tabBar.Find(GetTabLabel(setType));
+            if (tabTransform == null)
+            {
+                Debug.LogWarning($"{LogPrefix} authored tab missing: {GetTabLabel(setType)}");
+                return;
+            }
+
+            Button button = tabTransform.GetComponent<Button>();
+            if (button == null)
+            {
+                Debug.LogWarning($"{LogPrefix} authored tab has no Button: {GetTabLabel(setType)}");
+                return;
+            }
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => SelectCategory(setType));
+            m_CategoryTabs[setType] = button;
         }
 
         private void CreateRuntimeTabBar(RectTransform parent)
@@ -1108,28 +1102,25 @@ namespace TiltBrush
             bool smallLandscape = !portrait && screenSize.y < 520;
             Vector2 visibleCanvasSize = GetVisibleCanvasSize();
             float horizontalMargin = portrait ? 18f : 32f;
-            float verticalMargin = portrait ? 110f : smallLandscape ? 70f : 110f;
+            float topMargin = portrait ? 66f : smallLandscape ? 50f : 66f;
+            const float bottomMargin = 4f;
             float maxGridWidth = portrait ? 380f : smallLandscape ? 520f : 620f;
             float availableWidth = Mathf.Max(120f, visibleCanvasSize.x - horizontalMargin);
-            float availableHeight = Mathf.Max(130f, visibleCanvasSize.y - verticalMargin);
             float gridWidth = Mathf.Min(availableWidth, maxGridWidth);
-            float gridHeight = portrait
-                ? Mathf.Clamp(availableHeight * 0.58f, 150f, 280f)
-                : smallLandscape
-                    ? Mathf.Clamp(availableHeight * 0.62f, 120f, 190f)
-                    : Mathf.Clamp(availableHeight * 0.52f, 180f, 250f);
-            float gridCenterY = portrait ? 34f : smallLandscape ? 28f : 42f;
-            float tabY = gridCenterY + gridHeight * 0.5f + 24f;
+            float stackTop = visibleCanvasSize.y * 0.5f - topMargin;
+            float stackBottom = -visibleCanvasSize.y * 0.5f + bottomMargin;
+            float stackHeight = Mathf.Max(130f, stackTop - stackBottom);
+            if (m_RuntimeStackRect != null)
+            {
+                m_RuntimeStackRect.anchoredPosition =
+                    new Vector2(0f, stackBottom + stackHeight * 0.5f);
+                m_RuntimeStackRect.sizeDelta = new Vector2(gridWidth, stackHeight);
+            }
 
             if (m_RuntimeTabBarRect != null)
             {
-                m_RuntimeTabBarRect.anchoredPosition = new Vector2(0f, tabY);
-                m_RuntimeTabBarRect.sizeDelta = new Vector2(gridWidth, 24f);
                 RefreshRuntimeTabWidths(gridWidth);
             }
-            m_RuntimeGridRect.anchoredPosition = new Vector2(0f, gridCenterY);
-            m_RuntimeGridRect.sizeDelta = new Vector2(gridWidth, gridHeight);
-            PositionOriginalControls(gridCenterY, gridHeight, portrait, smallLandscape);
         }
 
         private Vector2 GetVisibleCanvasSize()
@@ -1153,24 +1144,6 @@ namespace TiltBrush
             }
 
             return new Vector2(360f, 360f);
-        }
-
-        private void PositionOriginalControls(float gridCenterY, float gridHeight, bool portrait,
-            bool smallLandscape)
-        {
-            float blankY = gridCenterY - gridHeight * 0.5f - (portrait ? 38f : 34f);
-            if (m_BlankSketchButtonRect != null)
-            {
-                m_BlankSketchButtonRect.anchoredPosition = new Vector2(0f, blankY);
-                m_BlankSketchButtonRect.sizeDelta = new Vector2(portrait ? 128f : 122f, 24f);
-            }
-
-            if (m_HelpTextRect != null)
-            {
-                float helpOffset = portrait ? 52f : smallLandscape ? 42f : 48f;
-                m_HelpTextRect.anchoredPosition = new Vector2(0f, blankY - helpOffset);
-                m_HelpTextRect.sizeDelta = new Vector2(portrait ? 210f : 240f, 38f);
-            }
         }
 
         private void RefreshRuntimeTabWidths(float tabBarWidth)
