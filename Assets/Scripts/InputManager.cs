@@ -227,8 +227,8 @@ namespace TiltBrush
             { (int)KeyboardShortcut.CameraMoveBackwards, new[] { Key.S } },
             { (int)KeyboardShortcut.CameraMoveLeft, new[] { Key.A } },
             { (int)KeyboardShortcut.CameraMoveRight, new[] { Key.D } },
-            { (int)KeyboardShortcut.CameraMoveUp, new[] { Key.Q } },
-            { (int)KeyboardShortcut.CameraMoveDown, new[] { Key.E } },
+            { (int)KeyboardShortcut.CameraMoveUp, new[] { Key.E } },
+            { (int)KeyboardShortcut.CameraMoveDown, new[] { Key.Q } },
             { (int)KeyboardShortcut.FlyMode, new[] { Key.F } }, // Advanced Keyboard Shortcut mode only
             { (int)KeyboardShortcut.InvertLook, new[] { Key.I } },
             { (int)KeyboardShortcut.SprintMode, new[] { Key.LeftShift } },
