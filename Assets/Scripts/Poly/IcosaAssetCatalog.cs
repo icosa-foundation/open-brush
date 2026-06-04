@@ -213,7 +213,7 @@ namespace TiltBrush
         // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
         // once trips it. A small cap keeps throughput while staying under the throttle.
         private const int kMaxConcurrentDownloads = 4;
-        private const string kAssetCacheVersion = "2.28.10";
+        private const string kAssetCacheVersion = "2.28.11";
 
         // This may be a bit broader than an asset id, but it's a safe set of
         // filename characters.
