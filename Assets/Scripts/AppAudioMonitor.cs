@@ -19,16 +19,20 @@ namespace TiltBrush
 
     public class AppAudioMonitor : MonoBehaviour
     {
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
         private const float kAndroidLogInterval = 2.0f;
+#endif
 
         [SerializeField] private bool m_DebugPlayTestTone;
         [SerializeField] private float m_DebugTestToneFrequency = 440.0f;
         [SerializeField] private float m_DebugTestToneVolume = 0.05f;
 
         private float[] m_WaveformFloats;
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private float m_NextAndroidLogTime;
         private int m_NonZeroLogCount;
+#endif
         private float m_LastPeak;
 
         public float LastPeak { get { return m_LastPeak; } }
@@ -44,7 +48,7 @@ namespace TiltBrush
 #endif
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         void OnEnable()
         {
             Debug.Log($"{kAndroidAppAudioLogPrefix} AppAudioMonitor enabled sampleRate={AudioSettings.outputSampleRate}");
@@ -60,25 +64,30 @@ namespace TiltBrush
         {
             AudioListener.GetOutputData(m_WaveformFloats, 0);
 #if UNITY_ANDROID
-            LogAndroidAudioSamples();
+            UpdateAndroidAudioPeak();
 #endif
             VisualizerManager.m_Instance.ProcessAudio(m_WaveformFloats, AudioSettings.outputSampleRate);
         }
 
 #if UNITY_ANDROID
-        private void LogAndroidAudioSamples()
+        private void UpdateAndroidAudioPeak()
         {
             float peak = 0.0f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             float sumSquares = 0.0f;
+#endif
             for (int i = 0; i < m_WaveformFloats.Length; ++i)
             {
                 float sample = m_WaveformFloats[i];
                 peak = Mathf.Max(peak, Mathf.Abs(sample));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 sumSquares += sample * sample;
+#endif
             }
 
-            float rms = Mathf.Sqrt(sumSquares / m_WaveformFloats.Length);
             m_LastPeak = peak;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float rms = Mathf.Sqrt(sumSquares / m_WaveformFloats.Length);
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
             if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
             {
@@ -90,6 +99,7 @@ namespace TiltBrush
                     ++m_NonZeroLogCount;
                 }
             }
+#endif
         }
 #endif
 
@@ -114,7 +124,9 @@ namespace TiltBrush
             debugTestToneSource.spatialBlend = 0.0f;
             debugTestToneSource.Play();
 #if UNITY_ANDROID
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"{kAndroidAppAudioLogPrefix} Debug test tone enabled frequency={m_DebugTestToneFrequency:F1} volume={m_DebugTestToneVolume:F3} sampleRate={sampleRate}");
+#endif
 #endif
         }
 #endif

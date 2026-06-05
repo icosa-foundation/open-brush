@@ -18,8 +18,10 @@ namespace TiltBrush
 {
     public class AndroidPlaybackAudioMonitor : MonoBehaviour
     {
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
         private const float kAndroidLogInterval = 2.0f;
+#endif
 
 #if UNITY_ANDROID
         private AndroidJavaClass m_Plugin;
@@ -27,8 +29,10 @@ namespace TiltBrush
         private bool m_CaptureRequested;
         private bool m_RequestSent;
         private float[] m_Samples;
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private float m_NextAndroidLogTime;
         private int m_NonZeroLogCount;
+#endif
         private float m_LastPeak;
 
         public float LastPeak { get { return m_LastPeak; } }
@@ -119,15 +123,21 @@ namespace TiltBrush
 
             if (!m_Plugin.CallStatic<bool>("isSupported"))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"{kAndroidPlaybackAudioLogPrefix} AudioPlaybackCapture is not supported on this Android version");
+#endif
                 return;
             }
 
             m_RequestSent = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             m_NextAndroidLogTime = 0.0f;
             m_NonZeroLogCount = 0;
+#endif
             m_Plugin.CallStatic("requestCapture");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"{kAndroidPlaybackAudioLogPrefix} requested MediaProjection playback capture");
+#endif
 #endif
         }
 
@@ -137,7 +147,9 @@ namespace TiltBrush
             if (PluginReady)
             {
                 m_Plugin.CallStatic("stop");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"{kAndroidPlaybackAudioLogPrefix} playback capture stopped");
+#endif
             }
 #endif
             m_RequestSent = false;
@@ -171,16 +183,21 @@ namespace TiltBrush
         private void LogAndroidPlaybackSamples()
         {
             float peak = 0.0f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             float sumSquares = 0.0f;
+#endif
             for (int i = 0; i < m_Samples.Length; ++i)
             {
                 float sample = m_Samples[i];
                 peak = Mathf.Max(peak, Mathf.Abs(sample));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 sumSquares += sample * sample;
+#endif
             }
 
-            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
             m_LastPeak = peak;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
             if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
             {
@@ -193,6 +210,7 @@ namespace TiltBrush
                     ++m_NonZeroLogCount;
                 }
             }
+#endif
         }
 #endif
     }

@@ -43,9 +43,11 @@ namespace TiltBrush
 
     public class AudioCaptureManager : MonoBehaviour
     {
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
         private const string kAndroidMicAudioLogPrefix = "AR_ANDROID_MIC_AUDIO_20260604";
         private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
+#endif
         private const float kAndroidSourceProbeSeconds = 6.0f;
         private const float kAndroidSignalThreshold = 0.0001f;
 
@@ -96,7 +98,7 @@ namespace TiltBrush
 #else
             m_Type = AudioCaptureType.System;
 #endif
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             Debug.Log($"{kAndroidMicAudioLogPrefix} ResetAudioCaptureType selected {m_Type}");
 #endif
             m_CaptureRequestedCount = 0;
@@ -287,7 +289,7 @@ namespace TiltBrush
                     m_PlaybackAudio.Activate(CaptureRequested);
                     VisualizerManager.m_Instance.AudioCaptureStatusChange(CaptureRequested);
                     ResetAndroidSourceProbeTimer();
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
                     Debug.Log($"{kAndroidPlaybackAudioLogPrefix} CaptureAudio({bCapture}) set PlaybackAudio active={m_PlaybackAudio.IsCapturing} requests={m_CaptureRequestedCount}");
 #endif
                     break;
@@ -298,14 +300,14 @@ namespace TiltBrush
                     {
                         VisualizerManager.m_Instance.AudioCaptureStatusChange(m_AppAudio.activeSelf);
                     }
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
                     Debug.Log($"{kAndroidAppAudioLogPrefix} CaptureAudio({bCapture}) set AppAudio active={m_AppAudio.activeSelf} requests={m_CaptureRequestedCount}");
 #endif
                     break;
                 case AudioCaptureType.Mic:
                     m_MicAudio.Activate(CaptureRequested);
                     VisualizerManager.m_Instance.AudioCaptureStatusChange(CaptureRequested);
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
                     Debug.Log($"{kAndroidMicAudioLogPrefix} CaptureAudio({bCapture}) set MicAudio active={m_MicAudio.IsCapturing} requests={m_CaptureRequestedCount}");
 #endif
                     break;
@@ -335,7 +337,9 @@ namespace TiltBrush
                 }
                 if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"{kAndroidPlaybackAudioLogPrefix} no playback signal; falling back to app audio");
+#endif
                     SwitchAndroidCaptureSource(AudioCaptureType.App);
                 }
             }
@@ -348,7 +352,9 @@ namespace TiltBrush
                 }
                 if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"{kAndroidAppAudioLogPrefix} no app-audio signal; falling back to microphone");
+#endif
                     SwitchAndroidCaptureSource(AudioCaptureType.Mic);
                 }
             }
@@ -374,7 +380,9 @@ namespace TiltBrush
                 VisualizerManager.m_Instance.AudioCaptureStatusChange(true);
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"{kAndroidPlaybackAudioLogPrefix} switched Android capture source to {m_Type}");
+#endif
         }
 
         private void ResetAndroidSourceProbeTimer()

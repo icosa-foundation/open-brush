@@ -21,8 +21,10 @@ namespace TiltBrush
 {
     public class AndroidMicAudioMonitor : MonoBehaviour
     {
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidMicAudioLogPrefix = "AR_ANDROID_MIC_AUDIO_20260604";
         private const float kAndroidLogInterval = 2.0f;
+#endif
         private const int kBufferSeconds = 1;
         private const int kPreferredSampleRate = 48000;
 
@@ -31,8 +33,10 @@ namespace TiltBrush
         private string m_DeviceName = "";
         private int m_SampleRate = kPreferredSampleRate;
         private int m_ClipSampleCount;
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private float m_NextAndroidLogTime;
         private int m_NonZeroLogCount;
+#endif
         private bool m_CaptureRequested;
         private bool m_WaitingForPermission;
         private float m_LastPeak;
@@ -94,7 +98,7 @@ namespace TiltBrush
 
             if (!m_MicClip.GetData(m_Samples, readPosition))
             {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
                 Debug.LogWarning($"{kAndroidMicAudioLogPrefix} microphone GetData failed readPosition={readPosition}");
 #endif
                 return;
@@ -120,7 +124,9 @@ namespace TiltBrush
             {
                 m_WaitingForPermission = true;
                 Permission.RequestUserPermission(Permission.Microphone);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"{kAndroidMicAudioLogPrefix} requested microphone permission");
+#endif
                 return;
             }
 #endif
@@ -128,10 +134,12 @@ namespace TiltBrush
             SelectDeviceAndSampleRate();
             m_MicClip = Microphone.Start(m_DeviceName, true, kBufferSeconds, m_SampleRate);
             m_ClipSampleCount = m_MicClip != null ? m_MicClip.samples : 0;
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             m_NextAndroidLogTime = 0.0f;
             m_NonZeroLogCount = 0;
+#endif
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             Debug.Log($"{kAndroidMicAudioLogPrefix} microphone started device='{m_DeviceName}' sampleRate={m_SampleRate} clipSamples={m_ClipSampleCount}");
 #endif
         }
@@ -144,7 +152,7 @@ namespace TiltBrush
             }
             m_MicClip = null;
             m_WaitingForPermission = false;
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             Debug.Log($"{kAndroidMicAudioLogPrefix} microphone stopped");
 #endif
         }
@@ -177,16 +185,21 @@ namespace TiltBrush
         private void LogAndroidMicSamples()
         {
             float peak = 0.0f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             float sumSquares = 0.0f;
+#endif
             for (int i = 0; i < m_Samples.Length; ++i)
             {
                 float sample = m_Samples[i];
                 peak = Mathf.Max(peak, Mathf.Abs(sample));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 sumSquares += sample * sample;
+#endif
             }
 
-            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
             m_LastPeak = peak;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
             if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
             {
@@ -198,6 +211,7 @@ namespace TiltBrush
                     ++m_NonZeroLogCount;
                 }
             }
+#endif
         }
 #endif
     }

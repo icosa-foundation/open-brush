@@ -39,8 +39,10 @@ namespace TiltBrush
 
     public class VisualizerManager : MonoBehaviour
     {
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
         private const float kAndroidLogInterval = 2.0f;
+#endif
 
         public class Fft
         {
@@ -118,8 +120,10 @@ namespace TiltBrush
 
         private int m_VisualsRequestCount;
         private bool m_VisualsActive;
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private float m_NextAndroidProcessLogTime;
         private int m_ProcessAudioLogCount;
+#endif
 
         public int FFTSize { get { return m_FFTSize; } }
 
@@ -298,7 +302,7 @@ namespace TiltBrush
             }
 
             SetVisualizerObjectActive(bEnable);
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             Debug.Log($"{kAndroidAppAudioLogPrefix} ActivateVisuals({bEnable}) AUDIO_REACTIVE={Shader.IsKeywordEnabled("AUDIO_REACTIVE")} requests={m_VisualsRequestCount}");
 #endif
             if (m_Reaktor)
@@ -437,12 +441,12 @@ namespace TiltBrush
             Shader.SetGlobalVector("_BeatOutputAccum", m_BeatOutputAccum);
             Shader.SetGlobalVector("_AudioVolume", m_AudioVolume);
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
             LogAndroidProcessAudio(AudioData, SampleRate);
 #endif
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private void LogAndroidProcessAudio(float[] audioData, int sampleRate)
         {
             if (Time.unscaledTime < m_NextAndroidProcessLogTime && m_ProcessAudioLogCount >= 3)
