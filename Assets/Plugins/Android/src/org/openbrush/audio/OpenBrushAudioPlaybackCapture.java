@@ -16,10 +16,11 @@ import android.os.Looper;
 import android.util.Log;
 
 public class OpenBrushAudioPlaybackCapture {
-    private static final String TAG = "OpenBrushAudioPlayback";
+    private static final String TAG = "AR_AUDIO_DBG_20260605";
     private static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_COUNT = 2;
     private static final int RING_SAMPLES = 8192;
+    private static final int READ_LOG_INTERVAL = 60;
 
     private static Activity sActivity;
     private static MediaProjection sProjection;
@@ -32,9 +33,14 @@ public class OpenBrushAudioPlaybackCapture {
     private static final Object sLock = new Object();
     private static final float[] sRing = new float[RING_SAMPLES];
     private static long sSamplesWritten;
+    private static int sLastReadResult;
+    private static int sReadLogCountdown;
 
     public static void initialize(Activity activity) {
         sActivity = activity;
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture initialize activityNull=" + (activity == null)
+                + " sdk=" + Build.VERSION.SDK_INT
+                + " supported=" + isSupported());
     }
 
     public static boolean isSupported() {
@@ -53,16 +59,20 @@ public class OpenBrushAudioPlaybackCapture {
             return;
         }
         if (isCapturing()) {
+            Log.i(TAG, "OpenBrushAudioPlaybackCapture requestCapture skipped; already capturing");
             return;
         }
 
         sRequestPending = true;
         Intent intent = new Intent(sActivity, OpenBrushAudioPlaybackCaptureActivity.class);
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture requestCapture starting permission activity");
         sActivity.startActivity(intent);
     }
 
     static void onProjectionResult(int resultCode, Intent data) {
         sRequestPending = false;
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture onProjectionResult resultCode=" + resultCode
+                + " dataNull=" + (data == null));
         try {
             if (sActivity == null) {
                 sLastError = "Unity activity is not initialized";
@@ -93,6 +103,12 @@ public class OpenBrushAudioPlaybackCapture {
     }
 
     public static void stop() {
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture stop running=" + sRunning
+                + " hasAudioRecord=" + (sAudioRecord != null)
+                + " hasProjection=" + (sProjection != null)
+                + " samplesWritten=" + sSamplesWritten
+                + " lastRead=" + sLastReadResult
+                + " lastError='" + sLastError + "'");
         sRunning = false;
         Thread thread = sThread;
         sThread = null;
@@ -133,6 +149,16 @@ public class OpenBrushAudioPlaybackCapture {
         return sLastError;
     }
 
+    public static long getSamplesWritten() {
+        synchronized (sLock) {
+            return sSamplesWritten;
+        }
+    }
+
+    public static int getLastReadResult() {
+        return sLastReadResult;
+    }
+
     public static float[] readLatest(int sampleCount) {
         float[] result = new float[sampleCount];
         synchronized (sLock) {
@@ -167,6 +193,8 @@ public class OpenBrushAudioPlaybackCapture {
             int minBuffer = AudioRecord.getMinBufferSize(
                     SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
             int bufferSize = Math.max(minBuffer, 4096 * CHANNEL_COUNT * 2);
+            Log.i(TAG, "OpenBrushAudioPlaybackCapture startAudioRecord minBuffer=" + minBuffer
+                    + " bufferSize=" + bufferSize);
 
             sAudioRecord = new AudioRecord.Builder()
                     .setAudioFormat(format)
@@ -184,12 +212,15 @@ public class OpenBrushAudioPlaybackCapture {
             sAudioRecord.startRecording();
             sRunning = true;
             sLastError = "";
+            sLastReadResult = 0;
+            sReadLogCountdown = 0;
             synchronized (sLock) {
                 sSamplesWritten = 0;
             }
             sThread = new Thread(OpenBrushAudioPlaybackCapture::readLoop, "OpenBrushAudioPlaybackCapture");
             sThread.start();
-            Log.i(TAG, "AudioPlaybackCapture started");
+            Log.i(TAG, "OpenBrushAudioPlaybackCapture AudioRecord started recordingState="
+                    + sAudioRecord.getRecordingState());
         } catch (Exception e) {
             sLastError = e.toString();
             Log.w(TAG, "AudioPlaybackCapture failed", e);
@@ -198,6 +229,10 @@ public class OpenBrushAudioPlaybackCapture {
     }
 
     private static void stopAudioRecordOnly() {
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture stopAudioRecordOnly running=" + sRunning
+                + " hasAudioRecord=" + (sAudioRecord != null)
+                + " samplesWritten=" + sSamplesWritten
+                + " lastRead=" + sLastReadResult);
         sRunning = false;
         sRequestPending = false;
         if (sAudioRecord != null) {
@@ -217,7 +252,7 @@ public class OpenBrushAudioPlaybackCapture {
         sProjectionCallback = new MediaProjection.Callback() {
             @Override
             public void onStop() {
-                Log.i(TAG, "MediaProjection stopped");
+                Log.i(TAG, "OpenBrushAudioPlaybackCapture MediaProjection stopped");
                 stopAudioRecordOnly();
                 sProjection = null;
                 sProjectionCallback = null;
@@ -228,9 +263,19 @@ public class OpenBrushAudioPlaybackCapture {
 
     private static void readLoop() {
         short[] buffer = new short[1024 * CHANNEL_COUNT];
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture readLoop start");
         while (sRunning && sAudioRecord != null) {
             int read = sAudioRecord.read(buffer, 0, buffer.length);
+            sLastReadResult = read;
             if (read <= 0) {
+                if (sReadLogCountdown <= 0) {
+                    Log.w(TAG, "OpenBrushAudioPlaybackCapture readLoop read=" + read
+                            + " recordingState=" + sAudioRecord.getRecordingState()
+                            + " samplesWritten=" + sSamplesWritten);
+                    sReadLogCountdown = READ_LOG_INTERVAL;
+                } else {
+                    --sReadLogCountdown;
+                }
                 continue;
             }
 
@@ -242,6 +287,17 @@ public class OpenBrushAudioPlaybackCapture {
                     ++sSamplesWritten;
                 }
             }
+            if (sReadLogCountdown <= 0) {
+                Log.i(TAG, "OpenBrushAudioPlaybackCapture readLoop read=" + read
+                        + " samplesWritten=" + sSamplesWritten);
+                sReadLogCountdown = READ_LOG_INTERVAL;
+            } else {
+                --sReadLogCountdown;
+            }
         }
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture readLoop exit running=" + sRunning
+                + " hasAudioRecord=" + (sAudioRecord != null)
+                + " samplesWritten=" + sSamplesWritten
+                + " lastRead=" + sLastReadResult);
     }
 }

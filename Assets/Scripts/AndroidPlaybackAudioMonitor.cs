@@ -18,6 +18,10 @@ namespace TiltBrush
 {
     public class AndroidPlaybackAudioMonitor : MonoBehaviour
     {
+#if UNITY_ANDROID
+        private const string kAndroidAudioDebugPrefix = "AR_AUDIO_DBG_20260605";
+        private const float kAndroidDebugLogInterval = 2.0f;
+#endif
 #if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
         private const float kAndroidLogInterval = 2.0f;
@@ -29,6 +33,9 @@ namespace TiltBrush
         private bool m_CaptureRequested;
         private bool m_RequestSent;
         private float[] m_Samples;
+#if UNITY_ANDROID
+        private float m_NextAndroidDebugLogTime;
+#endif
 #if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private float m_NextAndroidLogTime;
         private int m_NonZeroLogCount;
@@ -60,6 +67,27 @@ namespace TiltBrush
             }
         }
 
+#if UNITY_ANDROID
+        public string LastError
+        {
+            get { return PluginReady ? m_Plugin.CallStatic<string>("getLastError") : "plugin not ready"; }
+        }
+
+        public long SamplesWritten
+        {
+            get { return PluginReady ? m_Plugin.CallStatic<long>("getSamplesWritten") : 0; }
+        }
+
+        public int LastReadResult
+        {
+            get { return PluginReady ? m_Plugin.CallStatic<int>("getLastReadResult") : 0; }
+        }
+#else
+        public string LastError { get { return ""; } }
+        public long SamplesWritten { get { return 0; } }
+        public int LastReadResult { get { return 0; } }
+#endif
+
         public bool IsRequestPending
         {
             get
@@ -81,6 +109,9 @@ namespace TiltBrush
 
         public void Activate(bool active)
         {
+#if UNITY_ANDROID
+            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor Activate active={active} wasRequested={m_CaptureRequested} pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} lastError='{LastError}'");
+#endif
             m_CaptureRequested = active;
             if (active)
             {
@@ -101,9 +132,11 @@ namespace TiltBrush
 
             EnsureSampleBuffer();
 #if UNITY_ANDROID
+            LogAndroidDebugState("Update", force: false);
             float[] latest = m_Plugin.CallStatic<float[]>("readLatest", m_Samples.Length);
             if (latest == null || latest.Length != m_Samples.Length)
             {
+                Debug.LogWarning($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor readLatest invalid latestNull={latest == null} latestLength={(latest == null ? -1 : latest.Length)} expected={m_Samples.Length} lastRead={LastReadResult} samplesWritten={SamplesWritten} lastError='{LastError}'");
                 return;
             }
             latest.CopyTo(m_Samples, 0);
@@ -118,6 +151,7 @@ namespace TiltBrush
             EnsurePlugin();
             if (!PluginReady || IsCapturing || m_RequestSent)
             {
+                Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor RequestCapture skipped pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} lastError='{LastError}'");
                 return;
             }
 
@@ -126,6 +160,7 @@ namespace TiltBrush
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"{kAndroidPlaybackAudioLogPrefix} AudioPlaybackCapture is not supported on this Android version");
 #endif
+                Debug.LogWarning($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor AudioPlaybackCapture unsupported lastError='{LastError}'");
                 return;
             }
 
@@ -135,6 +170,7 @@ namespace TiltBrush
             m_NonZeroLogCount = 0;
 #endif
             m_Plugin.CallStatic("requestCapture");
+            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor requested MediaProjection playback capture requestPending={IsRequestPending} requestSent={m_RequestSent} lastError='{LastError}'");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"{kAndroidPlaybackAudioLogPrefix} requested MediaProjection playback capture");
 #endif
@@ -147,6 +183,7 @@ namespace TiltBrush
             if (PluginReady)
             {
                 m_Plugin.CallStatic("stop");
+                Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor stop requested samplesWritten={SamplesWritten} lastRead={LastReadResult} lastError='{LastError}'");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"{kAndroidPlaybackAudioLogPrefix} playback capture stopped");
 #endif
@@ -177,7 +214,19 @@ namespace TiltBrush
             {
                 AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
                 m_Plugin.CallStatic("initialize", activity);
+                Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor plugin initialized activityNull={activity == null} supported={m_Plugin.CallStatic<bool>("isSupported")} lastError='{LastError}'");
             }
+        }
+
+        private void LogAndroidDebugState(string reason, bool force)
+        {
+            if (!force && Time.unscaledTime < m_NextAndroidDebugLogTime)
+            {
+                return;
+            }
+
+            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor {reason} requested={m_CaptureRequested} pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} lastPeak={m_LastPeak:F5} samplesWritten={SamplesWritten} lastRead={LastReadResult} sampleRate={SampleRate} lastError='{LastError}'");
+            m_NextAndroidDebugLogTime = Time.unscaledTime + kAndroidDebugLogInterval;
         }
 
         private void LogAndroidPlaybackSamples()
@@ -196,6 +245,7 @@ namespace TiltBrush
             }
 
             m_LastPeak = peak;
+            LogAndroidDebugState("Samples", force: false);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
             bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
