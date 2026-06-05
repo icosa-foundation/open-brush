@@ -143,6 +143,7 @@ namespace TiltBrush
 
         private readonly FilterType m_Type;
         private readonly int m_SampleRate;
+        private const double kFrequencyChangeEpsilon = 1e-6;
         private double m_Frequency;
         private double m_B0;
         private double m_B1;
@@ -182,7 +183,13 @@ namespace TiltBrush
             set
             {
                 double nyquist = m_SampleRate * 0.5;
-                m_Frequency = Math.Max(1.0, Math.Min(value, Math.Max(1.0, nyquist - 1.0)));
+                double clampedFrequency = Math.Max(1.0, Math.Min(value, Math.Max(1.0, nyquist - 1.0)));
+                if (Math.Abs(clampedFrequency - m_Frequency) <= kFrequencyChangeEpsilon)
+                {
+                    return;
+                }
+
+                m_Frequency = clampedFrequency;
                 UpdateCoefficients();
             }
         }
