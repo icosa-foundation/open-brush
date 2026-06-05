@@ -21,6 +21,7 @@ namespace TiltBrush
 #if UNITY_ANDROID
         private const string kAndroidAudioDebugPrefix = "AR_AUDIO_DBG_20260605";
         private const float kAndroidDebugLogInterval = 2.0f;
+        private string m_LastAndroidEvent = "";
 #endif
 #if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidPlaybackAudioLogPrefix = "AR_ANDROID_PLAYBACK_AUDIO_20260604";
@@ -82,10 +83,22 @@ namespace TiltBrush
         {
             get { return PluginReady ? m_Plugin.CallStatic<int>("getLastReadResult") : 0; }
         }
+
+        public bool RequestSent
+        {
+            get { return m_RequestSent; }
+        }
+
+        public string LastAndroidEvent
+        {
+            get { return m_LastAndroidEvent; }
+        }
 #else
         public string LastError { get { return ""; } }
         public long SamplesWritten { get { return 0; } }
         public int LastReadResult { get { return 0; } }
+        public bool RequestSent { get { return false; } }
+        public string LastAndroidEvent { get { return ""; } }
 #endif
 
         public bool IsRequestPending
@@ -193,6 +206,14 @@ namespace TiltBrush
             m_LastPeak = 0.0f;
         }
 
+#if UNITY_ANDROID
+        public void OnAndroidPlaybackCaptureEvent(string message)
+        {
+            m_LastAndroidEvent = message;
+            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor UnityEvent message='{message}' requested={m_CaptureRequested} pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} samplesWritten={SamplesWritten} lastRead={LastReadResult} lastError='{LastError}'");
+        }
+#endif
+
         private void EnsureSampleBuffer()
         {
             if (m_Samples == null || m_Samples.Length != VisualizerManager.m_Instance.FFTSize)
@@ -225,7 +246,7 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor {reason} requested={m_CaptureRequested} pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} lastPeak={m_LastPeak:F5} samplesWritten={SamplesWritten} lastRead={LastReadResult} sampleRate={SampleRate} lastError='{LastError}'");
+            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidPlaybackAudioMonitor {reason} requested={m_CaptureRequested} pluginReady={PluginReady} isCapturing={IsCapturing} requestPending={IsRequestPending} requestSent={m_RequestSent} lastPeak={m_LastPeak:F5} samplesWritten={SamplesWritten} lastRead={LastReadResult} sampleRate={SampleRate} lastEvent='{m_LastAndroidEvent}' lastError='{LastError}'");
             m_NextAndroidDebugLogTime = Time.unscaledTime + kAndroidDebugLogInterval;
         }
 

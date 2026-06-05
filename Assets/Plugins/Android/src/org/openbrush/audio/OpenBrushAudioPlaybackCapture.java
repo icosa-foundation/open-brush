@@ -14,9 +14,12 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import com.unity3d.player.UnityPlayer;
 
 public class OpenBrushAudioPlaybackCapture {
     private static final String TAG = "AR_AUDIO_DBG_20260605";
+    private static final String UNITY_CALLBACK_OBJECT = "AndroidPlaybackAudio";
+    private static final String UNITY_CALLBACK_METHOD = "OnAndroidPlaybackCaptureEvent";
     private static final int SAMPLE_RATE = 48000;
     private static final int CHANNEL_COUNT = 2;
     private static final int RING_SAMPLES = 8192;
@@ -41,6 +44,9 @@ public class OpenBrushAudioPlaybackCapture {
         Log.i(TAG, "OpenBrushAudioPlaybackCapture initialize activityNull=" + (activity == null)
                 + " sdk=" + Build.VERSION.SDK_INT
                 + " supported=" + isSupported());
+        sendUnityEvent("initialize activityNull=" + (activity == null)
+                + " sdk=" + Build.VERSION.SDK_INT
+                + " supported=" + isSupported());
     }
 
     public static boolean isSupported() {
@@ -51,21 +57,25 @@ public class OpenBrushAudioPlaybackCapture {
         if (!isSupported()) {
             sLastError = "AudioPlaybackCapture requires Android 10/API 29";
             Log.w(TAG, sLastError);
+            sendUnityEvent("requestCapture unsupported error='" + sLastError + "'");
             return;
         }
         if (sActivity == null) {
             sLastError = "Unity activity is not initialized";
             Log.w(TAG, sLastError);
+            sendUnityEvent("requestCapture noActivity error='" + sLastError + "'");
             return;
         }
         if (isCapturing()) {
             Log.i(TAG, "OpenBrushAudioPlaybackCapture requestCapture skipped; already capturing");
+            sendUnityEvent("requestCapture alreadyCapturing");
             return;
         }
 
         sRequestPending = true;
         Intent intent = new Intent(sActivity, OpenBrushAudioPlaybackCaptureActivity.class);
         Log.i(TAG, "OpenBrushAudioPlaybackCapture requestCapture starting permission activity");
+        sendUnityEvent("requestCapture startPermissionActivity");
         sActivity.startActivity(intent);
     }
 
@@ -73,15 +83,18 @@ public class OpenBrushAudioPlaybackCapture {
         sRequestPending = false;
         Log.i(TAG, "OpenBrushAudioPlaybackCapture onProjectionResult resultCode=" + resultCode
                 + " dataNull=" + (data == null));
+        sendUnityEvent("onProjectionResult resultCode=" + resultCode + " dataNull=" + (data == null));
         try {
             if (sActivity == null) {
                 sLastError = "Unity activity is not initialized";
                 Log.w(TAG, sLastError);
+                sendUnityEvent("onProjectionResult noActivity error='" + sLastError + "'");
                 return;
             }
             if (resultCode != Activity.RESULT_OK || data == null) {
                 sLastError = "MediaProjection permission denied";
                 Log.w(TAG, sLastError);
+                sendUnityEvent("onProjectionResult denied error='" + sLastError + "'");
                 return;
             }
 
@@ -91,6 +104,7 @@ public class OpenBrushAudioPlaybackCapture {
             if (sProjection == null) {
                 sLastError = "MediaProjection result did not create a projection";
                 Log.w(TAG, sLastError);
+                sendUnityEvent("onProjectionResult nullProjection error='" + sLastError + "'");
                 return;
             }
             registerProjectionCallback();
@@ -98,12 +112,19 @@ public class OpenBrushAudioPlaybackCapture {
         } catch (Exception e) {
             sLastError = e.toString();
             Log.w(TAG, "MediaProjection result failed", e);
+            sendUnityEvent("onProjectionResult exception error='" + sLastError + "'");
             stop();
         }
     }
 
     public static void stop() {
         Log.i(TAG, "OpenBrushAudioPlaybackCapture stop running=" + sRunning
+                + " hasAudioRecord=" + (sAudioRecord != null)
+                + " hasProjection=" + (sProjection != null)
+                + " samplesWritten=" + sSamplesWritten
+                + " lastRead=" + sLastReadResult
+                + " lastError='" + sLastError + "'");
+        sendUnityEvent("stop running=" + sRunning
                 + " hasAudioRecord=" + (sAudioRecord != null)
                 + " hasProjection=" + (sProjection != null)
                 + " samplesWritten=" + sSamplesWritten
@@ -195,6 +216,7 @@ public class OpenBrushAudioPlaybackCapture {
             int bufferSize = Math.max(minBuffer, 4096 * CHANNEL_COUNT * 2);
             Log.i(TAG, "OpenBrushAudioPlaybackCapture startAudioRecord minBuffer=" + minBuffer
                     + " bufferSize=" + bufferSize);
+            sendUnityEvent("startAudioRecord minBuffer=" + minBuffer + " bufferSize=" + bufferSize);
 
             sAudioRecord = new AudioRecord.Builder()
                     .setAudioFormat(format)
@@ -205,6 +227,7 @@ public class OpenBrushAudioPlaybackCapture {
             if (sAudioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 sLastError = "AudioRecord failed to initialize";
                 Log.w(TAG, sLastError);
+                sendUnityEvent("startAudioRecord initFailed error='" + sLastError + "'");
                 stopAudioRecordOnly();
                 return;
             }
@@ -221,9 +244,11 @@ public class OpenBrushAudioPlaybackCapture {
             sThread.start();
             Log.i(TAG, "OpenBrushAudioPlaybackCapture AudioRecord started recordingState="
                     + sAudioRecord.getRecordingState());
+            sendUnityEvent("startAudioRecord started recordingState=" + sAudioRecord.getRecordingState());
         } catch (Exception e) {
             sLastError = e.toString();
             Log.w(TAG, "AudioPlaybackCapture failed", e);
+            sendUnityEvent("startAudioRecord exception error='" + sLastError + "'");
             stopAudioRecordOnly();
         }
     }
@@ -253,6 +278,8 @@ public class OpenBrushAudioPlaybackCapture {
             @Override
             public void onStop() {
                 Log.i(TAG, "OpenBrushAudioPlaybackCapture MediaProjection stopped");
+                sendUnityEvent("projectionStopped samplesWritten=" + sSamplesWritten
+                        + " lastRead=" + sLastReadResult);
                 stopAudioRecordOnly();
                 sProjection = null;
                 sProjectionCallback = null;
@@ -264,6 +291,7 @@ public class OpenBrushAudioPlaybackCapture {
     private static void readLoop() {
         short[] buffer = new short[1024 * CHANNEL_COUNT];
         Log.i(TAG, "OpenBrushAudioPlaybackCapture readLoop start");
+        sendUnityEvent("readLoop start");
         while (sRunning && sAudioRecord != null) {
             int read = sAudioRecord.read(buffer, 0, buffer.length);
             sLastReadResult = read;
@@ -299,5 +327,32 @@ public class OpenBrushAudioPlaybackCapture {
                 + " hasAudioRecord=" + (sAudioRecord != null)
                 + " samplesWritten=" + sSamplesWritten
                 + " lastRead=" + sLastReadResult);
+        sendUnityEvent("readLoop exit running=" + sRunning
+                + " hasAudioRecord=" + (sAudioRecord != null)
+                + " samplesWritten=" + sSamplesWritten
+                + " lastRead=" + sLastReadResult);
+    }
+
+    static void sendUnityEvent(String message) {
+        final String eventMessage = message;
+        Activity activity = sActivity;
+        if (activity == null) {
+            sendUnityEventNow(eventMessage);
+            return;
+        }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                sendUnityEventNow(eventMessage);
+            }
+        });
+    }
+
+    private static void sendUnityEventNow(String message) {
+        try {
+            UnityPlayer.UnitySendMessage(UNITY_CALLBACK_OBJECT, UNITY_CALLBACK_METHOD, message);
+        } catch (Exception e) {
+            Log.w(TAG, "Unity callback failed message=" + message, e);
+        }
     }
 }

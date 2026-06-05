@@ -46,6 +46,7 @@ namespace TiltBrush
 #if UNITY_ANDROID
         private const string kAndroidAudioDebugPrefix = "AR_AUDIO_DBG_20260605";
         private const float kAndroidDebugLogInterval = 1.0f;
+        private const bool kHoldSystemPlaybackDiagnostics = true;
 #endif
 #if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
         private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
@@ -270,7 +271,7 @@ namespace TiltBrush
             m_CaptureRequestedCount += bCapture ? 1 : -1;
             Debug.Assert(m_CaptureRequestedCount >= 0);
 #if UNITY_ANDROID
-            Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager CaptureAudio input={bCapture} type={m_Type} wasRequested={bWasRequested} nowRequested={CaptureRequested} requests={m_CaptureRequestedCount} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackError='{m_PlaybackAudio.LastError}'");
+            Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager CaptureAudio input={bCapture} type={m_Type} wasRequested={bWasRequested} nowRequested={CaptureRequested} requests={m_CaptureRequestedCount} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackRequestSent={m_PlaybackAudio.RequestSent} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackEvent='{m_PlaybackAudio.LastAndroidEvent}' playbackError='{m_PlaybackAudio.LastError}'");
 #endif
 
             switch (m_Type)
@@ -345,6 +346,11 @@ namespace TiltBrush
                     ResetAndroidSourceProbeTimer();
                     return;
                 }
+                if (kHoldSystemPlaybackDiagnostics && m_PlaybackAudio.RequestSent && !m_PlaybackAudio.IsCapturing)
+                {
+                    ResetAndroidSourceProbeTimer();
+                    return;
+                }
                 if (m_PlaybackAudio.LastPeak > kAndroidSignalThreshold)
                 {
                     return;
@@ -354,7 +360,7 @@ namespace TiltBrush
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"{kAndroidPlaybackAudioLogPrefix} no playback signal; falling back to app audio");
 #endif
-                    Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager fallback SystemPlayback->App elapsed={Time.unscaledTime - m_AndroidSourceProbeStartTime:F2} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackError='{m_PlaybackAudio.LastError}'");
+                    Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager fallback SystemPlayback->App elapsed={Time.unscaledTime - m_AndroidSourceProbeStartTime:F2} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackRequestSent={m_PlaybackAudio.RequestSent} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackEvent='{m_PlaybackAudio.LastAndroidEvent}' playbackError='{m_PlaybackAudio.LastError}'");
                     SwitchAndroidCaptureSource(AudioCaptureType.App);
                 }
             }
@@ -417,7 +423,7 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager probe reason={reason} type={m_Type} elapsed={Time.unscaledTime - m_AndroidSourceProbeStartTime:F2} requests={m_CaptureRequestedCount} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackError='{m_PlaybackAudio.LastError}' micCapturing={m_MicAudio.IsCapturing} micPeak={m_MicAudio.LastPeak:F5}");
+            Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager probe reason={reason} type={m_Type} elapsed={Time.unscaledTime - m_AndroidSourceProbeStartTime:F2} requests={m_CaptureRequestedCount} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} playbackRequestSent={m_PlaybackAudio.RequestSent} playbackPeak={m_PlaybackAudio.LastPeak:F5} playbackSamples={m_PlaybackAudio.SamplesWritten} playbackRead={m_PlaybackAudio.LastReadResult} playbackEvent='{m_PlaybackAudio.LastAndroidEvent}' playbackError='{m_PlaybackAudio.LastError}' micCapturing={m_MicAudio.IsCapturing} micPeak={m_MicAudio.LastPeak:F5}");
             m_NextAndroidDebugLogTime = Time.unscaledTime + kAndroidDebugLogInterval;
         }
 #else
