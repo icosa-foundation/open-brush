@@ -99,6 +99,9 @@ namespace TiltBrush
             m_Instance = this;
             if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
 #if UNITY_ANDROID
+            StopAndroidCaptureSources();
+#endif
+#if UNITY_ANDROID
             // Probe Android external sources in order: other-app/system playback, app audio, mic.
             m_Type = AudioCaptureType.SystemPlayback;
 #elif UNITY_IOS
@@ -300,7 +303,15 @@ namespace TiltBrush
                     }
                     break;
                 case AudioCaptureType.SystemPlayback:
+#if UNITY_ANDROID
+                    StopAndroidCaptureSources();
+                    if (CaptureRequested)
+                    {
+                        m_PlaybackAudio.Activate(true);
+                    }
+#else
                     m_PlaybackAudio.Activate(CaptureRequested);
+#endif
                     VisualizerManager.m_Instance.AudioCaptureStatusChange(CaptureRequested);
                     ResetAndroidSourceProbeTimer();
 #if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
@@ -387,9 +398,7 @@ namespace TiltBrush
         private void SwitchAndroidCaptureSource(AudioCaptureType nextType)
         {
             AudioCaptureType previousType = m_Type;
-            m_PlaybackAudio.Activate(false);
-            m_AppAudio.SetActive(false);
-            m_MicAudio.Activate(false);
+            StopAndroidCaptureSources();
 
             m_Type = nextType;
             ResetAndroidSourceProbeTimer();
@@ -409,6 +418,14 @@ namespace TiltBrush
             Debug.Log($"{kAndroidPlaybackAudioLogPrefix} switched Android capture source to {m_Type}");
 #endif
             Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager switched Android capture source {previousType}->{m_Type} playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} micCapturing={m_MicAudio.IsCapturing}");
+        }
+
+        private void StopAndroidCaptureSources()
+        {
+            m_PlaybackAudio.Activate(false);
+            m_AppAudio.SetActive(false);
+            m_MicAudio.Activate(false);
+            Debug.Log($"{kAndroidAudioDebugPrefix} AudioCaptureManager stopped Android capture sources playbackCapturing={m_PlaybackAudio.IsCapturing} playbackPending={m_PlaybackAudio.IsRequestPending} appActive={m_AppAudio.activeSelf} micCapturing={m_MicAudio.IsCapturing}");
         }
 
         private void ResetAndroidSourceProbeTimer()
