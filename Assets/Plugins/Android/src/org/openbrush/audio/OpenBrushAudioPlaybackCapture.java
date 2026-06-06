@@ -98,23 +98,54 @@ public class OpenBrushAudioPlaybackCapture {
                 return;
             }
 
-            MediaProjectionManager manager =
-                    (MediaProjectionManager)sActivity.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-            sProjection = manager.getMediaProjection(resultCode, data);
-            if (sProjection == null) {
-                sLastError = "MediaProjection result did not create a projection";
-                Log.w(TAG, sLastError);
-                sendUnityEvent("onProjectionResult nullProjection error='" + sLastError + "'");
-                return;
-            }
-            registerProjectionCallback();
-            startAudioRecord();
+            OpenBrushMediaProjectionService.startProjection(sActivity, resultCode, data);
+            sendUnityEvent("onProjectionResult foregroundServiceStartRequested");
         } catch (Exception e) {
             sLastError = e.toString();
             Log.w(TAG, "MediaProjection result failed", e);
             sendUnityEvent("onProjectionResult exception error='" + sLastError + "'");
             stop();
         }
+    }
+
+    static void onForegroundServiceReady(Context context, int resultCode, Intent data) {
+        Log.i(TAG, "OpenBrushAudioPlaybackCapture onForegroundServiceReady resultCode=" + resultCode
+                + " dataNull=" + (data == null));
+        sendUnityEvent("onForegroundServiceReady resultCode=" + resultCode
+                + " dataNull=" + (data == null));
+        try {
+            if (resultCode != Activity.RESULT_OK || data == null) {
+                sLastError = "MediaProjection permission denied";
+                Log.w(TAG, sLastError);
+                sendUnityEvent("onForegroundServiceReady denied error='" + sLastError + "'");
+                return;
+            }
+
+            MediaProjectionManager manager =
+                    (MediaProjectionManager)context.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+            sProjection = manager.getMediaProjection(resultCode, data);
+            if (sProjection == null) {
+                sLastError = "MediaProjection result did not create a projection";
+                Log.w(TAG, sLastError);
+                sendUnityEvent("onForegroundServiceReady nullProjection error='" + sLastError + "'");
+                return;
+            }
+            registerProjectionCallback();
+            startAudioRecord();
+        } catch (Exception e) {
+            sLastError = e.toString();
+            Log.w(TAG, "MediaProjection foreground service failed", e);
+            sendUnityEvent("onForegroundServiceReady exception error='" + sLastError + "'");
+            stop();
+        }
+    }
+
+    static void onForegroundServiceFailed(String error) {
+        sRequestPending = false;
+        sLastError = error;
+        Log.w(TAG, "OpenBrushAudioPlaybackCapture foreground service failed error=" + error);
+        sendUnityEvent("onForegroundServiceFailed error='" + sLastError + "'");
+        stop();
     }
 
     public static void stop() {
@@ -151,6 +182,7 @@ public class OpenBrushAudioPlaybackCapture {
             sProjection.stop();
             sProjection = null;
         }
+        OpenBrushMediaProjectionService.stopProjection(sActivity);
         sProjectionCallback = null;
     }
 
