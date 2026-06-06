@@ -6,14 +6,15 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.immersive-foundation.imm-stroke-reader": {
-      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
       },
-      "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
+      "hash": "a2a5edf8d8e3f715881c0db4589c18feff7c379f"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
@@ -101,6 +102,16 @@
       "source": "registry",
       "dependencies": {
         "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.collections": {
+      "version": "1.2.4",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.6.6",
+        "com.unity.test-framework": "1.1.31"
       },
       "url": "https://packages.unity.com"
     },
@@ -364,13 +375,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.valvesoftware.steamaudio": {
-      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
-    },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
       "depth": 0,
@@ -393,7 +397,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "13e7544ef6f48c26ce692a346b328467e01bfe69"
+      "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
       "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
@@ -401,11 +405,14 @@
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
         "com.unity.shadergraph": "10.0.0",
-        "com.unity.mathematics": "1.0.0"
+        "com.unity.mathematics": "1.0.0",
+        "com.unity.collections": "1.0.0"
       },
-      "hash": "b0185be3587079d2bb3479298ecacb14f1278b58"
+      "hash": "ce6a5dce952d84cfd47c81755e7e1b0bc69fefe5"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
