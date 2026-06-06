@@ -23,7 +23,6 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
-
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
@@ -753,6 +752,59 @@ namespace TiltBrush
         public static void EnableRamLogging(bool active)
         {
             App.Instance.RamLoggingActive = active;
+        }
+
+        [ApiEndpoint("audio.reactive", "Enable or disable audio-reactive mode", "true")]
+        public static string EnableAudioReactiveMode(bool active)
+        {
+            if (App.Instance.RequestingAudioReactiveMode != active)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.reactive={App.Instance.RequestingAudioReactiveMode}";
+        }
+
+        [ApiEndpoint("audio.music.play", "Play in-app music and enable audio-reactive mode", "0")]
+        public static string PlayAudioReactiveMusic(int index)
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            if (index < 0 || index >= AudioManager.m_Instance.NumGameMusics())
+            {
+                string message = $"Invalid game music index: {index}";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.PlayGameMusic(index);
+            if (!App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.music.play={index}";
+        }
+
+        [ApiEndpoint("audio.music.stop", "Stop in-app music and disable audio-reactive mode")]
+        public static string StopAudioReactiveMusic()
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.StopMusic();
+            if (App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return "audio.music.stop";
         }
 
         [ApiEndpoint(
