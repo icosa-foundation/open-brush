@@ -39,11 +39,6 @@ namespace TiltBrush
 
     public class VisualizerManager : MonoBehaviour
     {
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
-        private const float kAndroidLogInterval = 2.0f;
-#endif
-
         public class Fft
         {
             public virtual void Add(float[] samples, int count) { }
@@ -120,10 +115,6 @@ namespace TiltBrush
 
         private int m_VisualsRequestCount;
         private bool m_VisualsActive;
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private float m_NextAndroidProcessLogTime;
-        private int m_ProcessAudioLogCount;
-#endif
 
         public int FFTSize { get { return m_FFTSize; } }
 
@@ -302,9 +293,6 @@ namespace TiltBrush
             }
 
             SetVisualizerObjectActive(bEnable);
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidAppAudioLogPrefix} ActivateVisuals({bEnable}) AUDIO_REACTIVE={Shader.IsKeywordEnabled("AUDIO_REACTIVE")} requests={m_VisualsRequestCount}");
-#endif
             if (m_Reaktor)
             {
                 m_Reaktor.enabled = bEnable;
@@ -440,52 +428,7 @@ namespace TiltBrush
             Shader.SetGlobalVector("_BeatOutput", m_BeatOutput);
             Shader.SetGlobalVector("_BeatOutputAccum", m_BeatOutputAccum);
             Shader.SetGlobalVector("_AudioVolume", m_AudioVolume);
-
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            LogAndroidProcessAudio(AudioData, SampleRate);
-#endif
         }
-
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private void LogAndroidProcessAudio(float[] audioData, int sampleRate)
-        {
-            if (Time.unscaledTime < m_NextAndroidProcessLogTime && m_ProcessAudioLogCount >= 3)
-            {
-                return;
-            }
-
-            float peak = 0.0f;
-            float sumSquares = 0.0f;
-            for (int i = 0; i < audioData.Length; ++i)
-            {
-                float sample = audioData[i];
-                peak = Mathf.Max(peak, Mathf.Abs(sample));
-                sumSquares += sample * sample;
-            }
-
-            float rms = Mathf.Sqrt(sumSquares / audioData.Length);
-            float fftMax = 0.0f;
-            for (int i = 0; i < m_FFTResult.Length; ++i)
-            {
-                fftMax = Mathf.Max(fftMax, m_FFTResult[i]);
-            }
-            float bandMax = 0.0f;
-            for (int i = 0; i < m_BandNormalizedLevels.Length; ++i)
-            {
-                bandMax = Mathf.Max(bandMax, m_BandNormalizedLevels[i]);
-            }
-            float volumeMax = Mathf.Max(
-                Mathf.Max(m_AudioVolume.x, m_AudioVolume.y),
-                Mathf.Max(m_AudioVolume.z, m_AudioVolume.w));
-            float beatMax = Mathf.Max(
-                Mathf.Max(m_BeatOutput.x, m_BeatOutput.y),
-                Mathf.Max(m_BeatOutput.z, m_BeatOutput.w));
-            bool audioReactiveEnabled = Shader.IsKeywordEnabled("AUDIO_REACTIVE");
-            Debug.Log($"{kAndroidAppAudioLogPrefix} VisualizerManager ProcessAudio sampleRate={sampleRate} peak={peak:F5} rms={rms:F5} AUDIO_REACTIVE={audioReactiveEnabled} fftMax={fftMax:F5} bandMax={bandMax:F5} volumeMax={volumeMax:F5} beatMax={beatMax:F5} beat={m_BeatOutput} volume={m_AudioVolume}");
-            m_NextAndroidProcessLogTime = Time.unscaledTime + kAndroidLogInterval;
-            ++m_ProcessAudioLogCount;
-        }
-#endif
 
         int FrequencyToSpectrumIndex(float f)
         {

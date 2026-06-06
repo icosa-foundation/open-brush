@@ -23,10 +23,6 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private const string kAndroidAppAudioLogPrefix = "AR_ANDROID_APP_AUDIO_20260603";
-#endif
-
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
@@ -739,9 +735,6 @@ namespace TiltBrush
             {
                 App.Instance.ToggleAudioReactiveBrushesRequest();
             }
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidAppAudioLogPrefix} API audio.reactive active={App.Instance.RequestingAudioReactiveMode}");
-#endif
             return $"audio.reactive={App.Instance.RequestingAudioReactiveMode}";
         }
 
@@ -751,22 +744,14 @@ namespace TiltBrush
             if (AudioManager.m_Instance == null)
             {
                 const string message = "AudioManager is not initialized";
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                Debug.LogError($"{kAndroidAppAudioLogPrefix} API audio.music.play error={message}");
-#else
                 Debug.LogError(message);
-#endif
                 return $"error: {message}";
             }
 
             if (index < 0 || index >= AudioManager.m_Instance.NumGameMusics())
             {
                 string message = $"Invalid game music index: {index}";
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                Debug.LogError($"{kAndroidAppAudioLogPrefix} API audio.music.play error={message}");
-#else
                 Debug.LogError(message);
-#endif
                 return $"error: {message}";
             }
 
@@ -775,9 +760,6 @@ namespace TiltBrush
             {
                 App.Instance.ToggleAudioReactiveBrushesRequest();
             }
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidAppAudioLogPrefix} API audio.music.play index={index} active={App.Instance.RequestingAudioReactiveMode}");
-#endif
             return $"audio.music.play={index}";
         }
 
@@ -787,11 +769,7 @@ namespace TiltBrush
             if (AudioManager.m_Instance == null)
             {
                 const string message = "AudioManager is not initialized";
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                Debug.LogError($"{kAndroidAppAudioLogPrefix} API audio.music.stop error={message}");
-#else
                 Debug.LogError(message);
-#endif
                 return $"error: {message}";
             }
 
@@ -800,9 +778,6 @@ namespace TiltBrush
             {
                 App.Instance.ToggleAudioReactiveBrushesRequest();
             }
-#if (UNITY_ANDROID || UNITY_IOS) && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidAppAudioLogPrefix} API audio.music.stop active={App.Instance.RequestingAudioReactiveMode}");
-#endif
             return "audio.music.stop";
         }
 

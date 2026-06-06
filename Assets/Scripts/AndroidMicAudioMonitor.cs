@@ -21,14 +21,6 @@ namespace TiltBrush
 {
     public class AndroidMicAudioMonitor : MonoBehaviour
     {
-#if UNITY_ANDROID
-        private const string kAndroidAudioDebugPrefix = "AR_AUDIO_DBG_20260605";
-        private const float kAndroidDebugLogInterval = 2.0f;
-#endif
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private const string kAndroidMicAudioLogPrefix = "AR_ANDROID_MIC_AUDIO_20260604";
-        private const float kAndroidLogInterval = 2.0f;
-#endif
         private const int kBufferSeconds = 1;
         private const int kPreferredSampleRate = 48000;
 
@@ -37,13 +29,6 @@ namespace TiltBrush
         private string m_DeviceName = "";
         private int m_SampleRate = kPreferredSampleRate;
         private int m_ClipSampleCount;
-#if UNITY_ANDROID
-        private float m_NextAndroidDebugLogTime;
-#endif
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-        private float m_NextAndroidLogTime;
-        private int m_NonZeroLogCount;
-#endif
         private bool m_CaptureRequested;
         private bool m_WaitingForPermission;
         private float m_LastPeak;
@@ -54,9 +39,6 @@ namespace TiltBrush
 
         public void Activate(bool active)
         {
-#if UNITY_ANDROID
-            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor Activate active={active} wasRequested={m_CaptureRequested} isCapturing={IsCapturing} waitingForPermission={m_WaitingForPermission} lastPeak={m_LastPeak:F5}");
-#endif
             m_CaptureRequested = active;
             if (active)
             {
@@ -80,7 +62,6 @@ namespace TiltBrush
             {
                 if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
                 {
-                    LogAndroidDebugState("WaitingForPermission");
                     return;
                 }
                 m_WaitingForPermission = false;
@@ -109,17 +90,11 @@ namespace TiltBrush
 
             if (!m_MicClip.GetData(m_Samples, readPosition))
             {
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-                Debug.LogWarning($"{kAndroidMicAudioLogPrefix} microphone GetData failed readPosition={readPosition}");
-#endif
-#if UNITY_ANDROID
-                Debug.LogWarning($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor GetData failed readPosition={readPosition} micPosition={micPosition} clipSamples={m_ClipSampleCount}");
-#endif
                 return;
             }
 
 #if UNITY_ANDROID
-            LogAndroidMicSamples();
+            UpdateAndroidMicPeak();
 #endif
             VisualizerManager.m_Instance.ProcessAudio(m_Samples, m_SampleRate);
         }
@@ -138,12 +113,6 @@ namespace TiltBrush
             {
                 m_WaitingForPermission = true;
                 Permission.RequestUserPermission(Permission.Microphone);
-#if UNITY_ANDROID
-                Debug.Log($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor requested microphone permission");
-#endif
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"{kAndroidMicAudioLogPrefix} requested microphone permission");
-#endif
                 return;
             }
 #endif
@@ -151,17 +120,6 @@ namespace TiltBrush
             SelectDeviceAndSampleRate();
             m_MicClip = Microphone.Start(m_DeviceName, true, kBufferSeconds, m_SampleRate);
             m_ClipSampleCount = m_MicClip != null ? m_MicClip.samples : 0;
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            m_NextAndroidLogTime = 0.0f;
-            m_NonZeroLogCount = 0;
-#endif
-
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidMicAudioLogPrefix} microphone started device='{m_DeviceName}' sampleRate={m_SampleRate} clipSamples={m_ClipSampleCount}");
-#endif
-#if UNITY_ANDROID
-            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor microphone started device='{m_DeviceName}' sampleRate={m_SampleRate} clipSamples={m_ClipSampleCount} micClipNull={m_MicClip == null} isCapturing={IsCapturing}");
-#endif
         }
 
         private void StopCapture()
@@ -172,12 +130,6 @@ namespace TiltBrush
             }
             m_MicClip = null;
             m_WaitingForPermission = false;
-#if UNITY_ANDROID && (UNITY_EDITOR || DEVELOPMENT_BUILD)
-            Debug.Log($"{kAndroidMicAudioLogPrefix} microphone stopped");
-#endif
-#if UNITY_ANDROID
-            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor microphone stopped");
-#endif
         }
 
         private void EnsureSampleBuffer()
@@ -205,48 +157,16 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID
-        private void LogAndroidMicSamples()
+        private void UpdateAndroidMicPeak()
         {
             float peak = 0.0f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float sumSquares = 0.0f;
-#endif
             for (int i = 0; i < m_Samples.Length; ++i)
             {
                 float sample = m_Samples[i];
                 peak = Mathf.Max(peak, Mathf.Abs(sample));
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                sumSquares += sample * sample;
-#endif
             }
 
             m_LastPeak = peak;
-            LogAndroidDebugState("Samples");
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float rms = Mathf.Sqrt(sumSquares / m_Samples.Length);
-            bool shouldLog = m_NonZeroLogCount < 3 && peak > 0.0001f;
-            if (Time.unscaledTime >= m_NextAndroidLogTime || shouldLog)
-            {
-                bool audioReactiveEnabled = Shader.IsKeywordEnabled("AUDIO_REACTIVE");
-                Debug.Log($"{kAndroidMicAudioLogPrefix} microphone samples peak={peak:F5} rms={rms:F5} sampleRate={m_SampleRate} AUDIO_REACTIVE={audioReactiveEnabled}");
-                m_NextAndroidLogTime = Time.unscaledTime + kAndroidLogInterval;
-                if (peak > 0.0001f)
-                {
-                    ++m_NonZeroLogCount;
-                }
-            }
-#endif
-        }
-
-        private void LogAndroidDebugState(string reason)
-        {
-            if (Time.unscaledTime < m_NextAndroidDebugLogTime)
-            {
-                return;
-            }
-
-            Debug.Log($"{kAndroidAudioDebugPrefix} AndroidMicAudioMonitor {reason} requested={m_CaptureRequested} waitingForPermission={m_WaitingForPermission} isCapturing={IsCapturing} device='{m_DeviceName}' sampleRate={m_SampleRate} clipSamples={m_ClipSampleCount} lastPeak={m_LastPeak:F5}");
-            m_NextAndroidDebugLogTime = Time.unscaledTime + kAndroidDebugLogInterval;
         }
 #endif
     }
