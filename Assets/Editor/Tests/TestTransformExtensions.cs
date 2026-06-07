@@ -79,6 +79,50 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestFindSubtreeRootUsesUniqueSuffixes()
+        {
+            var root = new GameObject("ImportedObjRoot").transform;
+            var firstGroup = new GameObject("group[ob:0]").transform;
+            var secondGroup = new GameObject("group[ob:1]").transform;
+            firstGroup.parent = root;
+            secondGroup.parent = root;
+
+            try
+            {
+                var result = ModelWidget.FindSubtreeRoot(root, "/ImportedObjRoot[ob:0]/group[ob:1].mesh");
+
+                Assert.AreSame(secondGroup, result.node);
+                Assert.IsTrue(result.excludeChildren);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root.gameObject);
+            }
+        }
+
+        [Test]
+        public void TestFindSubtreeRootUsesUniqueSuffixesForUnsuffixedDuplicateSiblings()
+        {
+            var root = new GameObject("Root").transform;
+            var firstWheel = new GameObject("Wheel").transform;
+            var secondWheel = new GameObject("Wheel").transform;
+            firstWheel.parent = root;
+            secondWheel.parent = root;
+
+            try
+            {
+                var result = ModelWidget.FindSubtreeRoot(root, "Root/Wheel[ob:1]");
+
+                Assert.AreSame(secondWheel, result.node);
+                Assert.IsFalse(result.excludeChildren);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root.gameObject);
+            }
+        }
+
+        [Test]
         public void TestGlobalAccessor()
         {
             var AsGlobal = new TransformExtensions.GlobalAccessor();
