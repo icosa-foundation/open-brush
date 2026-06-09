@@ -68,7 +68,7 @@ namespace OpenBrush.Multiplayer
                 m_Runner.ProvideInput = true;
                 m_Runner.AddCallbacks(this);
 
-                Log.LogLevel = Fusion.LogType.Error;
+
 
             }
             catch (Exception ex)

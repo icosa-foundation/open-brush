@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -325,6 +326,10 @@ namespace TiltBrush
         {
             get
             {
+                if (GraphicsSettings.currentRenderPipeline != null)
+                {
+                    return true;
+                }
                 return !m_SelectionTool.IsHot || ShouldRemoveFromSelection();
             }
         }
@@ -578,6 +583,16 @@ namespace TiltBrush
         // Register highlights for all selected objects
         void RegisterHighlights()
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                foreach (GrabWidget widget in m_SelectedWidgets)
+                {
+                    widget.RegisterHighlight();
+                }
+                App.Scene.SelectionCanvas.RegisterHighlight();
+                return;
+            }
+
             bool showHighlight =
                 !SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget() ||
                 SketchControlsScript.m_Instance.IsUserIntersectingWithSelectionWidget() ||
@@ -588,9 +603,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
-#endif
             }
         }
 

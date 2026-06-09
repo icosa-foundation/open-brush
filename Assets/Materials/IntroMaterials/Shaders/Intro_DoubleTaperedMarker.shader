@@ -20,8 +20,9 @@ Category {
   Cull Off Lighting Off
 
   SubShader {
-    Tags{ "DisableBatching" = "True" }
+    Tags{ "RenderPipeline"="UniversalPipeline" "DisableBatching" = "True" }
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
       #pragma vertex vert

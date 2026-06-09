@@ -417,10 +417,27 @@ namespace TiltBrush
             }
         }
 
+        /// Reads m_RenderFace from a ShaderGraph JSON file and maps it to a cull bool.
+        /// m_RenderFace: 0 = Front (Cull Back), 1 = Back (Cull Front), 2 = Both (Cull Off)
+        private static bool? GetShaderGraphCullValue(string filename)
+        {
+            if (!File.Exists(filename)) { throw new ExportException("Missing {0}", filename); }
+            string text = File.ReadAllText(filename);
+            var match = Regex.Match(text, @"""m_RenderFace""\s*:\s*(\d+)");
+            if (!match.Success) { return null; }
+            int renderFace = int.Parse(match.Groups[1].Value);
+            return renderFace != 2; // Both (2) = Cull Off = false; Front (0) or Back (1) = true
+        }
+
         /// Returns true iff the gltf shader requires backface culling
         /// Raises ExportException if it can't be determined.
         private static bool GetEnableCull(BrushDescriptor descriptor)
         {
+            if (descriptor.Material == null || !descriptor.Material)
+            {
+                Debug.LogWarning($"GlTF export: brush '{descriptor.name}' has a missing m_Material — defaulting enableCull to true");
+                return true;
+            }
             string projectPath = Path.GetDirectoryName(Application.dataPath);
             string shaderPath = AssetDatabase.GetAssetPath(descriptor.Material.shader);
             if (shaderPath == null)
@@ -428,6 +445,15 @@ namespace TiltBrush
                 throw new ArgumentException("Cannot find Unity shader for brush {0}", descriptor.name);
             }
             shaderPath = Path.Combine(projectPath, shaderPath);
+            if (shaderPath.EndsWith(".shadergraph", System.StringComparison.OrdinalIgnoreCase))
+            {
+                bool? sgValue = GetShaderGraphCullValue(shaderPath);
+                if (sgValue == null)
+                {
+                    throw new ExportException("Cannot find m_RenderFace in shadergraph {0}", shaderPath);
+                }
+                return sgValue.Value;
+            }
             bool? value = GetBackfaceCullValue(shaderPath, "gltfcull");
             if (value == null)
             {
@@ -503,6 +529,13 @@ namespace TiltBrush
             string shaderFmt = "{0}-v{1}-{2}.glsl";
 
             var exp = new ExportGlTF.ExportedBrush();
+            Material material = descriptor.Material;
+            if (material == null || !material)
+            {
+                throw new ExportException(
+                    "_btb_null_brush_material_20260515_ Brush '{0}' ({1}, {2}) has no material",
+                    descriptor.name, descriptor.m_DurableName, descriptor.m_Guid);
+            }
             exp.name = descriptor.m_DurableName;
             exp.guid = descriptor.m_Guid;
             exp.folderName = string.Format(brushFolderNameFmt, exp.name, exp.guid.ToString("D"));
@@ -514,7 +547,6 @@ namespace TiltBrush
 
             // And the material
             {
-                Material material = descriptor.Material;
                 Shader shader = material.shader;
                 for (int i = 0; i < ShaderUtil.GetPropertyCount(shader); i++)
                 {

@@ -18,11 +18,10 @@ Properties {
 }
 
 SubShader {
-  Tags { "RenderType"="Opaque" }
+  Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
   LOD 100
 
   Pass {
-    Lighting Off
     Cull Off
 
     CGPROGRAM

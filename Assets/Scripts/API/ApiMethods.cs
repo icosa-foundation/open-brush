@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,12 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -52,6 +54,483 @@ namespace TiltBrush
         public static void OpenExportFolder()
         {
             OpenUserFolder(App.UserExportPath());
+        }
+
+        [ApiEndpoint(
+            "capture.snapshot",
+            "Saves a MultiCam snapshot to the user's Snapshots folder",
+            "snapshot.png,1024,768,1,true"
+        )]
+        public static string CaptureSnapshot(
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot");
+
+            string fullPath = BuildCapturePath(filename, "snapshot.png", ".png");
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            if (rig == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: MultiCamCaptureRig is missing.");
+                return null;
+            }
+
+            ScreenshotManager rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+            if (rMgr == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: snapshot ScreenshotManager is missing.");
+                return null;
+            }
+
+            RenderTexture tmp = null;
+            RenderWrapper wrapper = null;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+
+                tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper != null ? wrapper.SuperSampling : 1f;
+                if (wrapper != null)
+                {
+                    wrapper.SuperSampling = superSampling;
+                }
+
+                try
+                {
+                    rMgr.RenderToTexture(tmp, includePostProcessing: usePostProcessing);
+                }
+                finally
+                {
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                }
+
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
+                }
+
+                Debug.Log(
+                    $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
+                    $"superSampling={superSampling} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (tmp != null)
+                {
+                    RenderTexture.ReleaseTemporary(tmp);
+                }
+
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.autogif",
+            "Queues an Auto GIF capture to the user's Snapshots folder",
+            "autogif.gif,true"
+        )]
+        public static string CaptureAutoGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "autogif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "autogif.gif", ".gif");
+            return cam.CaptureAutoGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.timegif",
+            "Queues a Time GIF capture to the user's Snapshots folder",
+            "timegif.gif,true"
+        )]
+        public static string CaptureTimeGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "timegif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "timegif.gif", ".gif");
+            return cam.CaptureTimeGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.saveicon",
+            "Renders the save-icon/sketch-thumbnail camera to a PNG in the user's Snapshots folder",
+            "saveicon.png"
+        )]
+        public static string CaptureSaveIcon(string filename)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            string fullPath = BuildCapturePath(filename, "saveicon.png", ".png");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                SketchControlsScript.m_Instance.GenerateBestGuessSaveIcon();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(
+                        fs,
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                        bSaveAsPng: true);
+                }
+
+                Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Save-icon capture failed: {e}");
+                return null;
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.dropcam",
+            "Renders the spectator/dropcam camera to a PNG in the user's Snapshots folder",
+            "dropcam.png,1024,576,true"
+        )]
+        public static string CaptureDropCam(
+            string filename,
+            int width = 1024,
+            int height = 576,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "dropcam");
+
+            string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
+            DropCamWidget dropCam = null;
+            bool wasActive = false;
+            bool shouldRestoreDropCam = false;
+            try
+            {
+                dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                wasActive = dropCam.gameObject.activeSelf;
+                shouldRestoreDropCam = true;
+                dropCam.ShowInstantly(true);
+
+                Camera camera = dropCam.GetComponentInChildren<Camera>(includeInactive: true);
+                if (camera == null)
+                {
+                    Debug.LogError($"{logPrefix} Dropcam capture failed: camera is missing.");
+                    return null;
+                }
+
+                RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
+
+                Debug.Log(
+                    $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
+                    $"post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Dropcam capture failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (shouldRestoreDropCam && dropCam != null)
+                {
+                    dropCam.ShowInstantly(wasActive);
+                }
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.video",
+            "Records a short MultiCam video-camera frame-sequence smoke test into the user's Videos folder",
+            "video.mp4,1.0,true"
+        )]
+        public static string CaptureVideo(
+            string filename,
+            float seconds = 1.0f,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "video");
+
+            string fullPath = BuildCapturePath(filename, "video.mp4", ".mp4", App.VideosPath());
+            App.Instance.StartCoroutine(CaptureVideoCoroutine(
+                fullPath,
+                Mathf.Max(0.1f, seconds),
+                usePostProcessing));
+            Debug.Log(
+                $"{logPrefix} Queued video capture path={fullPath} " +
+                $"seconds={seconds} post={usePostProcessing}.");
+            return fullPath;
+        }
+
+        [ApiEndpoint(
+            "capture.360",
+            "Queues a 360/ODS snapshot to the user's Snapshots folder",
+            "snapshot360.png,1024,true"
+        )]
+        public static string Capture360(
+            string filename,
+            int width = 1024,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "360");
+
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = "snapshot360.png";
+            }
+            if (!safeFilename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += ".png";
+            }
+
+            try
+            {
+                TrTransform captureTransform = TrTransform.T(new Vector3(0f, 12f, 3f));
+                AppApiWrapper.Take360Snapshot(
+                    captureTransform,
+                    safeFilename,
+                    width,
+                    usePostProcessing);
+                string fullPath = Path.Combine(App.SnapshotPath(), safeFilename);
+                Debug.Log(
+                    $"{logPrefix} Queued 360 capture path={fullPath} " +
+                    $"width={width} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} 360 capture failed: {e}");
+                return null;
+            }
+        }
+
+        private static MultiCamTool GetMultiCamToolForCaptureApi(string logPrefix)
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: SketchSurfacePanel is missing.");
+                return null;
+            }
+
+            MultiCamTool cam =
+                SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+            if (cam == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: MultiCamTool is missing.");
+                return null;
+            }
+
+            return cam;
+        }
+
+        private static bool ParseCapturePostProcessingOption(
+            string value,
+            string logPrefix,
+            string captureKind)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (bool.TryParse(value, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"{logPrefix} Invalid post-processing value '{value}' for {captureKind}; " +
+                $"using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
+        }
+
+        private static IEnumerator CaptureVideoCoroutine(
+            string fullPath,
+            float seconds,
+            bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool initialVideoObjectActive = false;
+            bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
+            bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCaptureObject(MultiCamStyle.Video, true);
+                initialVideoObjectActive = true;
+
+                ScreenshotManager manager = rig.ManagerFromStyle(MultiCamStyle.Video);
+                VideoRecorder recorder = manager.GetComponent<VideoRecorder>();
+                Camera camera = manager.LeftEye;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = true;
+                App.UserConfig.Video.UsePngForFrameSequence = true;
+
+                if (!VideoRecorderUtils.StartVideoCapture(fullPath, recorder, null))
+                {
+                    Debug.LogError($"{logPrefix} Video capture failed to start path={fullPath}.");
+                    yield break;
+                }
+
+                float endTime = Time.time + seconds;
+                float captureTime = 0f;
+                while (Time.time < endTime)
+                {
+                    VideoRecorderUtils.SerializerNewUsdFrame();
+                    if (VideoRecorderUtils.ActiveStillFrameExporter != null)
+                    {
+                        captureTime += 1f / App.UserConfig.Video.FPS;
+                        VideoRecorderUtils.ActiveStillFrameExporter.CaptureFrame(captureTime);
+                    }
+                    yield return null;
+                }
+
+                VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                Debug.Log(
+                    $"{logPrefix} Video capture finished path={fullPath} " +
+                    $"seconds={seconds} post={includePostProcessing}.");
+            }
+            finally
+            {
+                if (VideoRecorderUtils.ActiveVideoRecording != null ||
+                    VideoRecorderUtils.ActiveStillFrameExporter != null)
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = forceFrameSequenceRestore;
+                App.UserConfig.Video.UsePngForFrameSequence = usePngRestore;
+                if (initialVideoObjectActive)
+                {
+                    rig.EnableCaptureObject(MultiCamStyle.Video, false);
+                }
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        private static void RenderCameraToPng(
+            Camera camera, string fullPath, int width, int height, bool includePostProcessing)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            RenderTexture target = RenderTexture.GetTemporary(
+                width,
+                height,
+                24,
+                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
+            RenderTexture previousTarget = camera.targetTexture;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            try
+            {
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                camera.targetTexture = target;
+                camera.Render();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, target, bSaveAsPng: true);
+                }
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        private static string BuildCapturePath(string filename, string defaultFilename, string extension)
+        {
+            return BuildCapturePath(filename, defaultFilename, extension, App.SnapshotPath());
+        }
+
+        private static string BuildCapturePath(
+            string filename, string defaultFilename, string extension, string folder)
+        {
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = defaultFilename;
+            }
+            if (!safeFilename.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += extension;
+            }
+
+            return Path.Combine(folder, safeFilename);
         }
 
         private static void OpenUserFolder(string path)

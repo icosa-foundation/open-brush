@@ -38,11 +38,14 @@ CGINCLUDE
         float2 texcoord : TEXCOORD0;
         float4 pos : POSITION;
 
-        UNITY_VERTEX_OUTPUT_STEREO
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {
         "Queue"="AlphaTest+20"
         "IgnoreProjector"="True"
@@ -54,38 +57,13 @@ SubShader {
     LOD 100
 
     Pass {
+        Name "ForwardUnlit"
+        Tags { "LightMode"="UniversalForward" }
         CGPROGRAM
 
         #pragma vertex vert
         #pragma fragment frag
-
-        v2f vert(appdata_t v)
-        {
-            v2f o;
-
-            UNITY_SETUP_INSTANCE_ID(v);
-            UNITY_INITIALIZE_OUTPUT(v2f, o);
-            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-            v.vertex.z += v.vertex.z + 0.05;
-            o.pos = UnityObjectToClipPos(v.vertex);
-            o.texcoord = v.texcoord;
-            return o;
-        }
-
-        fixed4 frag(v2f i) : SV_Target
-        {
-            return encodeHdr(fixed4(0,0,0,0));
-        }
-
-        ENDCG
-        }
-
-    Pass {
-        CGPROGRAM
-
-        #pragma vertex vert
-        #pragma fragment frag
+        #pragma multi_compile_instancing
 
         v2f vert (appdata_t v)
         {
@@ -93,8 +71,9 @@ SubShader {
 
             UNITY_SETUP_INSTANCE_ID(v);
             UNITY_INITIALIZE_OUTPUT(v2f, o);
+            UNITY_TRANSFER_INSTANCE_ID(v, o);
             UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-            
+
             o.pos = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;
             return o;
@@ -104,6 +83,7 @@ SubShader {
         // Tilt Brush "circle" mode
         fixed4 frag (v2f i) : SV_Target
         {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
             float3 base_rgb = hue06_to_base_rgb(_Slider01 * 6);
             float2 uv = i.texcoord;
             return fixed4(sv_to_rgb(base_rgb, uv.x, uv.y), 1) * _Color;

@@ -179,7 +179,7 @@ namespace TiltBrush
             if (hiResTexture != null)
             {
                 tool.CurrentCameraRigState = iconXform;
-                saveIconScreenshotManager.RenderToTexture(hiResTexture);
+                saveIconScreenshotManager.RenderToTexture(hiResTexture, includePostProcessing: true);
                 yield return null;
             }
 
@@ -192,7 +192,7 @@ namespace TiltBrush
                 for (int i = 0; i < gifTextures.Length; ++i)
                 {
                     m_SaveIconCapture.SetSaveIconTransformForGifFrame(basePos, baseRot, i);
-                    saveIconScreenshotManager.RenderToTexture(gifTextures[i]);
+                    saveIconScreenshotManager.RenderToTexture(gifTextures[i], includePostProcessing: true);
                     yield return null;
                 }
             }

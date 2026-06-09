@@ -1249,10 +1249,8 @@ namespace TiltBrush
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
 
-                    Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
                     tr_CS.translation = firstTr_CS.translation;
-                    tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
+                    tr_CS.rotation = secondTr_CS.rotation;
                     tr_CS.scale = quantizedVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;

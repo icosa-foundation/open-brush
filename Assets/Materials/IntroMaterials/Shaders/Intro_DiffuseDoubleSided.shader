@@ -17,41 +17,82 @@ Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
   _MainTex ("Base (RGB) Trans (A)", 2D) = "white" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+  _IntroDissolve ("Intro Dissolve", Range(0,1)) = 0
 }
 
 SubShader {
-  Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-  LOD 200
-  Cull Off
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" }
 
-CGPROGRAM
-#pragma surface surf Lambert vertex:vert alphatest:_Cutoff addshadow
-#include "Assets/Shaders/Include/Brush.cginc"
+  Pass {
+    Tags { "LightMode"="UniversalForward" }
+    Cull Off
 
-sampler2D _MainTex;
-fixed4 _Color;
-half _IntroDissolve;
+    HLSLPROGRAM
+    #pragma target 3.0
+    #pragma vertex Vert
+    #pragma fragment Frag
 
-struct Input {
-  float2 uv_MainTex;
-  float4 color : COLOR;
-};
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-void vert (inout appdata_full v) {
-  PrepForOds(v.vertex);
-  v.color = TbVertToNative(v.color);
-  // Custom curve for the intro dissolve effect
-  v.color.a *= lerp(1.0, v.texcoord.y * (1.0 - _IntroDissolve), pow(_IntroDissolve, .05));
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
 
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    float4 _MainTex_ST;
+    half _Cutoff;
+    half _IntroDissolve;
+    CBUFFER_END
+
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float3 normalOS : NORMAL;
+      float2 uv : TEXCOORD0;
+      half4 color : COLOR;
+    };
+
+    struct Varyings {
+      float4 positionCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+      half4 color : COLOR;
+      float3 normalWS : TEXCOORD1;
+      float3 positionWS : TEXCOORD2;
+    };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+
+      VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
+      VertexNormalInputs normal = GetVertexNormalInputs(IN.normalOS);
+      OUT.positionCS = pos.positionCS;
+      OUT.positionWS = pos.positionWS;
+      OUT.normalWS = normal.normalWS;
+      OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+
+      half fade = lerp(1.0h, IN.uv.y * (1.0h - _IntroDissolve), pow(_IntroDissolve, 0.05h));
+      OUT.color = IN.color;
+      OUT.color.a *= fade;
+      return OUT;
+    }
+
+    half4 Frag(Varyings IN, bool isFrontFace : SV_IsFrontFace) : SV_Target {
+      half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+      half alpha = tex.a * IN.color.a;
+      clip(alpha - _Cutoff);
+
+      half faceSign = isFrontFace ? 1.0h : -1.0h;
+      half3 normalWS = normalize(IN.normalWS * faceSign);
+      Light mainLight = GetMainLight(TransformWorldToShadowCoord(IN.positionWS));
+      half3 lighting = SampleSH(normalWS);
+      lighting += saturate(dot(normalWS, mainLight.direction)) * mainLight.color * mainLight.shadowAttenuation;
+
+      half3 rgb = tex.rgb * _Color.rgb * IN.color.rgb * lighting;
+      return half4(rgb, 1.0h);
+    }
+    ENDHLSL
+  }
 }
 
-void surf (Input IN, inout SurfaceOutput o) {
-  fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-  o.Albedo = c.rgb * IN.color.rgb;
-  o.Alpha = c.a * IN.color.a;
-}
-ENDCG
-}
-
-Fallback "Transparent/Cutout/VertexLit"
+Fallback Off
 }

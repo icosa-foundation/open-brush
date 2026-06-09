@@ -316,6 +316,8 @@ namespace TiltBrush
         private DriveSync m_DriveSync;
         private GoogleUserSettings m_GoogleUserSettings;
 
+        public bool AccountLoginsDisabled { get; private set; }
+
         // ------------------------------------------------------------
         // Properties
         // ------------------------------------------------------------
@@ -493,10 +495,21 @@ namespace TiltBrush
                 m_IntroSketchRenderers = m_IntroSketch.GetComponentsInChildren<Renderer>();
                 for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
                 {
-                    m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve", 1);
-                    m_IntroSketchRenderers[i].material.SetFloat("_GreyScale", 0);
+                    SetIntroSketchMaterialFade(m_IntroSketchRenderers[i].material, 1);
                 }
             }
+        }
+
+        void SetIntroSketchMaterialFade(Material material, float introDissolve)
+        {
+            material.SetFloat("_IntroDissolve", introDissolve);
+
+            if (material.HasProperty("_Dissolve"))
+            {
+                material.SetFloat("_Dissolve", 1 - introDissolve);
+            }
+
+            material.SetFloat("_GreyScale", 0);
         }
 
         void DestroyIntroSketch()
@@ -537,7 +550,12 @@ namespace TiltBrush
             Log($"SdkMode: {App.Config.m_SdkMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
-            Physics.autoSimulation = false;
+            Physics.simulationMode = SimulationMode.Script;
+
+#if UNITY_ANDROID
+            // TODO
+            // AccountLoginsDisabled = AndroidUtils.IsGreatFirewalled();
+#endif // UNITY_ANDROID
 
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
@@ -1689,7 +1707,8 @@ namespace TiltBrush
 
             for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
             {
-                m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve",
+                SetIntroSketchMaterialFade(
+                    m_IntroSketchRenderers[i].material,
                     Mathf.SmoothStep(0, 1, Math.Abs(1 - m_IntroFadeTimer)));
             }
 
