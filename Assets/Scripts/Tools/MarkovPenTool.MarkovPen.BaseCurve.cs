@@ -66,19 +66,19 @@ namespace TiltBrush
                         ? (0.25f * upVector + 0.75f * m_UpVectors.Last()).normalized
                         : upVector);
 
-                if (_controlPoints.Count < 4)
+                if (m_ControlPoints.Count < 4)
                 {
                     return;
                 }
 
-                while (m_Tap <= _arcLengthPositions.Last() - _arcLengthPositions[m_SmoothNormals.Count])
+                while (m_Tap <= m_ArcLengthPositions.Last() - m_ArcLengthPositions[m_SmoothNormals.Count])
                 {
                     int index = m_SmoothNormals.Count;
 
                     m_SmoothNormals.Add(
                         ComputeSmoothNormal(
                             m_UpVectors[index],
-                            ComputeSmoothTangent(_arcLengthPositions[index])));
+                            ComputeSmoothTangent(m_ArcLengthPositions[index])));
 
                     if (m_SmoothNormals.Count > 1 &&
                         Vector3.Dot(m_SmoothNormals[^1], m_SmoothNormals[^2]) < 0)
@@ -182,7 +182,7 @@ namespace TiltBrush
                 if (m_Tap == 0)
                 {
                     Vector3 line =
-                        Vector3.Normalize(_controlPoints.Last() - _controlPoints.First());
+                        Vector3.Normalize(m_ControlPoints.Last() - m_ControlPoints.First());
 
                     return new Vector3(-line.y, line.x, 0f);
                 }
@@ -193,7 +193,7 @@ namespace TiltBrush
                 {
                     return m_SmoothNormals[0];
                 }
-                else if (l >= _arcLengthPositions.Last())
+                else if (l >= m_ArcLengthPositions.Last())
                 {
                     return m_SmoothNormals.Last();
                 }
@@ -203,7 +203,7 @@ namespace TiltBrush
 
                     int index = SegmentIndex(t);
 
-                    Debug.Log("index: " + (_controlPoints.Count - index));
+                    Debug.Log("index: " + (m_ControlPoints.Count - index));
 
                     if (index >= 0 && index + 2 <= m_SmoothNormals.Count)
                     {
@@ -252,7 +252,7 @@ namespace TiltBrush
                     return 0;
                 }
 
-                return _arcLengthPositions[Math.Max(m_SmoothNormals.Count - 1, 0)];
+                return m_ArcLengthPositions[Math.Max(m_SmoothNormals.Count - 1, 0)];
             }
 
             /// @brief Retrieve the tangent vector at a specified arc length along the curve.
@@ -267,20 +267,20 @@ namespace TiltBrush
                 {
                     firstDerivative =
                         ComputeTangent(
-                            _controlPoints[0],
-                            _controlPoints[0],
-                            _controlPoints[1],
+                            m_ControlPoints[0],
+                            m_ControlPoints[0],
+                            m_ControlPoints[1],
                             0,
                             0,
                             0);
                 }
-                else if (l >= _arcLengthPositions.Last())
+                else if (l >= m_ArcLengthPositions.Last())
                 {
                     firstDerivative =
                         ComputeTangent(
-                            _controlPoints[_controlPoints.Count - 2],
-                            _controlPoints[_controlPoints.Count - 1],
-                            _controlPoints[_controlPoints.Count - 1],
+                            m_ControlPoints[m_ControlPoints.Count - 2],
+                            m_ControlPoints[m_ControlPoints.Count - 1],
+                            m_ControlPoints[m_ControlPoints.Count - 1],
                             0,
                             0,
                             0);
@@ -313,32 +313,32 @@ namespace TiltBrush
                 List<float> projections = new List<float>();
 
                 Vector3 line =
-                    Vector3.Normalize(_controlPoints.Last() - _controlPoints.First());
+                    Vector3.Normalize(m_ControlPoints.Last() - m_ControlPoints.First());
 
                 Vector3 normal = new Vector3(-line.y, line.x, 0f);
 
-                for (int index = 1; index < _arcLengthPositions.Count; ++index)
+                for (int index = 1; index < m_ArcLengthPositions.Count; ++index)
                 {
                     Project(
                         toProject,
-                        _arcLengthPositions[index - 1],
-                        _arcLengthPositions[index],
+                        m_ArcLengthPositions[index - 1],
+                        m_ArcLengthPositions[index],
                         projections,
                         normal);
                 }
 
                 if (projections.Count == 0)
                 {
-                    if (Vector3.Distance(toProject, _controlPoints[0]) <
-                        Vector3.Distance(toProject, _controlPoints[^1]))
+                    if (Vector3.Distance(toProject, m_ControlPoints[0]) <
+                        Vector3.Distance(toProject, m_ControlPoints[^1]))
                     {
-                        Vector3 toPoint = toProject - _controlPoints[0];
+                        Vector3 toPoint = toProject - m_ControlPoints[0];
 
                         Vector3 tangentFirst =
                             -ComputeTangent(
-                                    _controlPoints[0],
-                                    _controlPoints[0],
-                                    _controlPoints[1],
+                                    m_ControlPoints[0],
+                                    m_ControlPoints[0],
+                                    m_ControlPoints[1],
                                     0,
                                     0,
                                     0)
@@ -350,13 +350,13 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Vector3 toPoint = toProject - _controlPoints[^2];
+                        Vector3 toPoint = toProject - m_ControlPoints[^2];
 
                         Vector3 tangentLast =
                             ComputeTangent(
-                                    _controlPoints[^2],
-                                    _controlPoints[^1],
-                                    _controlPoints[^1],
+                                    m_ControlPoints[^2],
+                                    m_ControlPoints[^1],
+                                    m_ControlPoints[^1],
                                     0,
                                     0,
                                     0)
@@ -364,7 +364,7 @@ namespace TiltBrush
 
                         float l2 = Vector3.Dot(toPoint, tangentLast);
 
-                        projections.Add(_arcLengthPositions.Last() + l2);
+                        projections.Add(m_ArcLengthPositions.Last() + l2);
                     }
                 }
 
@@ -444,20 +444,20 @@ namespace TiltBrush
             {
                 base.Finish();
 
-                if (_controlPoints.Count < 2 || m_Tap == 0)
+                if (m_ControlPoints.Count < 2 || m_Tap == 0)
                 {
                     return;
                 }
 
                 for (
                     int index = m_SmoothNormals.Count;
-                    index < _controlPoints.Count;
+                    index < m_ControlPoints.Count;
                     index++)
                 {
                     m_SmoothNormals.Add(
                         ComputeSmoothNormal(
                             m_UpVectors[index],
-                            ComputeSmoothTangent(_arcLengthPositions[index])));
+                            ComputeSmoothTangent(m_ArcLengthPositions[index])));
                 }
             }
         }
