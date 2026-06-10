@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4129315277569005284}
   - component: {fileID: 4137345068356748778}
   - component: {fileID: 4169653906974077554}
-  - component: {fileID: -825941051814851546}
+  - component: {fileID: -8369141295484889352}
   m_Layer: 16
   m_Name: MarkovPenButton_Save
   m_TagString: Untagged
@@ -106,7 +106,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.1}
   m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
---- !u!114 &-825941051814851546
+--- !u!114 &-8369141295484889352
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -142,7 +142,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 0587c00d6a70771429600032d601daad, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: e53030bfa0bbd6044a24cc0acc001c48, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0

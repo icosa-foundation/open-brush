@@ -131,7 +131,6 @@ Transform:
   - {fileID: 8792413665768559611}
   - {fileID: 2739257957728501744}
   - {fileID: 171700896320577272}
-  - {fileID: 6712904683592286999}
   m_Father: {fileID: 449684}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &136490
@@ -222,6 +221,7 @@ Transform:
   - {fileID: 3236897924602123529}
   - {fileID: 4000013861244948}
   - {fileID: 496394}
+  - {fileID: 6712904683592286999}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6752917534685641465
@@ -290,6 +290,9 @@ MonoBehaviour:
   m_PopUpGazeDuration: 0.2
   m_PromoBorders: []
   m_DrawingCollider: {fileID: 6574194}
+  m_ButtonCollider: {fileID: 6755927110866752587}
+  m_ForceStraightRotation: 1
+  m_StraightEulerRotation: {x: 0, y: 0, z: 0}
   references:
     version: 2
     RefIds: []
@@ -717,12 +720,17 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 496394}
+    m_TransformParent: {fileID: 449684}
     m_Modifications:
+    - target: {fileID: -825941051814851546, guid: 87a94f44288e4e145a80aae5b7ae94c1,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4122287848348296494, guid: 87a94f44288e4e145a80aae5b7ae94c1,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.783
+      value: -1.0293
       objectReference: {fileID: 0}
     - target: {fileID: 4122287848348296494, guid: 87a94f44288e4e145a80aae5b7ae94c1,
         type: 3}
@@ -732,7 +740,7 @@ PrefabInstance:
     - target: {fileID: 4122287848348296494, guid: 87a94f44288e4e145a80aae5b7ae94c1,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.037
+      value: 0.0007
       objectReference: {fileID: 0}
     - target: {fileID: 4122287848348296494, guid: 87a94f44288e4e145a80aae5b7ae94c1,
         type: 3}
@@ -774,7 +782,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: MarkovPenButton_Save
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 4123316529645228206, guid: 87a94f44288e4e145a80aae5b7ae94c1,
+        type: 3}
+      propertyPath: m_TagString
+      value: Save_Btn
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 0}
+    - {fileID: 3301664537149362663, guid: 87a94f44288e4e145a80aae5b7ae94c1, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -782,6 +797,12 @@ PrefabInstance:
 --- !u!4 &6712904683592286999 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4122287848348296494, guid: 87a94f44288e4e145a80aae5b7ae94c1,
+    type: 3}
+  m_PrefabInstance: {fileID: 7213721840611927609}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &6755927110866752587 stripped
+BoxCollider:
+  m_CorrespondingSourceObject: {fileID: 4169653906974077554, guid: 87a94f44288e4e145a80aae5b7ae94c1,
     type: 3}
   m_PrefabInstance: {fileID: 7213721840611927609}
   m_PrefabAsset: {fileID: 0}

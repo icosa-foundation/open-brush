@@ -1931,7 +1931,7 @@ GameObject:
   - component: {fileID: 6871730866536266446}
   - component: {fileID: 6162588891430300780}
   - component: {fileID: 2253603259398294613}
-  - component: {fileID: 1669061388885915448}
+  - component: {fileID: 5697030550621363792}
   m_Layer: 16
   m_Name: Button_MarkovPen
   m_TagString: Untagged
@@ -2025,7 +2025,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1669061388885915448
+--- !u!114 &5697030550621363792
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2034,17 +2034,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 8881849456079198540}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: 200876bac21a46479372042f14e5a662, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: TOOLS_PANEL_MARKOV_BUTTON_DESCRIPTION
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName: 
     m_TableEntryReference:
-      m_KeyId: 494326859362373632
+      m_KeyId: 0
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2061,18 +2061,21 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 009d708f5cf2bc04a982a72f4460c8f7, type: 3}
+  m_ButtonTexture: {fileID: 0}
   m_AtlasTexture: 1
-  m_ToggleButton: 1
+  m_ToggleButton: 0
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
   m_ZAdjustHover: -0.02
-  m_ZAdjustClick: 0.02
+  m_ZAdjustClick: 0.05
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 11002
-  m_EatGazeInputOnPress: 1
+  m_Type: 99999
+  m_AlwaysSpawn: 0
+  m_LongPressDuration: 0.3
+  m_NormalPressTool: 11002
+  m_LongPressTool: 11003
   references:
     version: 2
     RefIds: []

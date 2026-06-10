@@ -61,7 +61,6 @@ namespace TiltBrush
 
         override public void EnableTool(bool bEnable)
         {
-
             base.EnableTool(bEnable);
             if (!bEnable)
             {
@@ -82,7 +81,6 @@ namespace TiltBrush
 
         override public void UpdateTool()
         {
-
             // Don't call base.UpdateTool() because we have a different 'stop eating input' check
             // for FreePaintTool.
             m_wandTriggerRatio = InputManager.Wand.GetTriggerRatio();
@@ -120,42 +118,12 @@ namespace TiltBrush
                 m_RequestExit = true;
 
             PositionPointer();
+
             if (PanelManager.m_Instance.AdvancedModeActive() && !m_BimanualTape && !m_PaintingActive && m_wandTrigger && !InputManager.Wand.GetControllerGrip() && SketchControlsScript.m_Instance.IsFreepaintToolReady())
                 BeginBimanualTape();
 
             m_PaintingActive = !m_EatInput && !m_ToolHidden && (m_brushTrigger || (m_PaintingActive && !m_RevolverActive && m_LazyInputActive && m_BimanualTape && m_wandTrigger));
-            if (MarkovPenDrawingPanel.IsOpen && MarkovPenDrawingPanel.Instance != null)
-            {
-                // Constrain pointer to MarkovPenDrawingPanel surface and allow 2D painting there.
-                Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
-                if (attach != null)
-                {
 
-                    Ray ray = new Ray(attach.position, attach.forward);
-                    Vector2 panel2D;
-                    Vector3 worldPoint;
-                    if (MarkovPenDrawingPanel.Instance.TryGetPanel2DPoint(ray, out panel2D, out worldPoint))
-                    {
-
-                        // Place and orient pointer flat on the panel so strokes are created in 2D on the panel.
-                        PointerManager.m_Instance.SetPointerTransform(InputManager.ControllerName.Brush, worldPoint, MarkovPenDrawingPanel.Instance.transform.rotation);
-                        // Allow painting only while trigger is held and app allows painting.
-                        m_PaintingActive = !m_EatInput && m_brushTrigger && !m_ToolHidden && App.Instance.IsInStateThatAllowsPainting();
-                    }
-                    else
-                    {
-                        m_PaintingActive = false;
-                    }
-                }
-                else
-                {
-                    m_PaintingActive = false;
-                }
-            }
-            else if (MarkovPenSketchbookPanel.IsOpen && MarkovPenSketchbookPanel.Instance != null)
-            {
-                m_PaintingActive = false;
-            }
             // Allow Multiplayer to override painting mode
             if (MultiplayerManager.m_Instance.IsViewOnly)
             {
@@ -215,6 +183,7 @@ namespace TiltBrush
                 else
                     m_LazyInputActive = !m_LazyInputActive;
             }
+
             PointerManager.m_Instance.EnableLine(m_PaintingActive);
             PointerManager.m_Instance.PointerPressure = m_brushTriggerRatio;
 

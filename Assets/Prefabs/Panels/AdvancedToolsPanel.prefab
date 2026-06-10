@@ -2596,6 +2596,9 @@ MonoBehaviour:
   m_Type: 99999
   m_AlwaysSpawn: 0
   m_LongPressDuration: 0.3
+  m_NormalPressTool: 11002
+  m_LongPressTool: 11003
+  m_LongPressPanelType: 99999
   references:
     version: 2
     RefIds: []

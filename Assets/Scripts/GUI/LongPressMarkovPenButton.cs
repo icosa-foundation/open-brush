@@ -2,43 +2,52 @@
 
 namespace TiltBrush
 {
-    /// Represents a panel button that opens the Markov pen sketchbook panel by long press.
-    /// Tracks the current press duration while the button is held.
-    /// Triggers the assigned panel action only after the required long press duration.
+    /// @brief Provides a Markov pen button with separate normal press and long press behavior.
+    /// A normal press replays stored Markov control points, while a long press activates the
+    /// configured long press tool and opens the assigned panel action through the base button logic.
     public class LongPressMarkovPenButton : PanelButton
     {
         [SerializeField] private float m_LongPressDuration = 0.3f;
 
+        [Header("Normal Press")]
+        [SerializeField] private BaseTool.ToolType m_NormalPressTool;
+
+        [Header("Long Press")]
+        [SerializeField] private BaseTool.ToolType m_LongPressTool;
+
         private float m_PressTimer;
         private bool m_HasLongPressTriggered;
+        private MarkovPenPointFollower m_PointFollower;
 
-        /// Initialises the long press Markov pen button.
-        /// Calls the base button setup and configures the target panel type.
-        /// Disables hold focus so the button can manage its own long press state.
+        /// @brief Initialize the long press Markov pen button.
+        /// Creates the point follower component and disables hold focus so this button can
+        /// handle the long press state manually.
         protected override void Awake()
         {
             base.Awake();
 
+            m_PointFollower = gameObject.AddComponent<MarkovPenPointFollower>();
             m_HoldFocus = false;
-            m_Type = BasePanel.PanelType.MarkovPenSketchbookPanel;
         }
 
-        /// Handles the initial button press interaction.
-        /// Moves and scales the button into its pressed visual state.
-        /// Resets the long press timer and trigger state.
+        /// @brief Handle the initial button press interaction.
+        /// Moves the button into its pressed visual state and resets long press tracking.
         /// @param raycastHitInfo Raycast hit information from the button interaction.
         public override void ButtonPressed(RaycastHit raycastHitInfo)
         {
-            AdjustButtonPositionAndScale(m_ZAdjustClick, m_HoverScale, m_HoverBoxColliderGrow);
+            AdjustButtonPositionAndScale(
+                m_ZAdjustClick,
+                m_HoverScale,
+                m_HoverBoxColliderGrow);
 
             m_CurrentButtonState = ButtonState.Held;
             m_PressTimer = 0.0f;
             m_HasLongPressTriggered = false;
         }
 
-        /// Handles the button hold interaction.
-        /// Increases the press timer while the button remains held.
-        /// Triggers the assigned panel action once the long press duration is reached.
+        /// @brief Handle the button hold interaction.
+        /// Increases the press timer while the button remains held and executes the long press
+        /// behavior once the configured duration is reached.
         /// @param raycastHitInfo Raycast hit information from the button interaction.
         public override void ButtonHeld(RaycastHit raycastHitInfo)
         {
@@ -49,54 +58,48 @@ namespace TiltBrush
 
             m_PressTimer += Time.deltaTime;
 
-            if (m_PressTimer >= m_LongPressDuration)
+            if (m_PressTimer < m_LongPressDuration)
             {
-                m_HasLongPressTriggered = true;
-
-                if (IsAvailable())
-                {
-                    OnButtonPressed();
-
-                    if (m_ButtonHasPressedAudio)
-                    {
-                        AudioManager.m_Instance.ItemSelect(transform.position);
-                    }
-                }
-
-                m_CurrentButtonState = ButtonState.Untouched;
-                ResetScale();
+                return;
             }
+
+            m_HasLongPressTriggered = true;
+
+            if (IsAvailable())
+            {
+                ActivateLongPressTool();
+                OnButtonPressed();
+                PlayPressedAudio();
+            }
+
+            SetButtonUntouched();
         }
 
-        /// Handles the button release interaction.
-        /// Resets the button state after a completed long press.
-        /// Restores the button scale without triggering a short press action.
+        /// @brief Handle the button release interaction.
+        /// Executes the normal press behavior if no long press was triggered.
         public override void ButtonReleased()
         {
             if (m_HasLongPressTriggered)
             {
                 m_HasLongPressTriggered = false;
-                m_CurrentButtonState = ButtonState.Untouched;
-                ResetScale();
-
+                SetButtonUntouched();
                 return;
             }
 
-            if (m_CurrentButtonState == ButtonState.Held)
-            {
-                m_CurrentButtonState = ButtonState.Untouched;
-            }
-
-            ResetScale();
+            StartPointFollower();
+            //ActivateNormalPressTool();
+            PlayPressedAudio();
+            SetButtonUntouched();
         }
 
-        /// Handles the button focus interaction.
-        /// Moves and scales the button into its hover visual state.
-        /// Plays hover audio when the button is not already pressed.
-        /// Resets the long press state when focus is gained.
+        /// @brief Handle the button focus interaction.
+        /// Moves the button into its hover visual state, plays hover audio, and resets long press tracking.
         public override void GainFocus()
         {
-            AdjustButtonPositionAndScale(m_ZAdjustHover, m_HoverScale, m_HoverBoxColliderGrow);
+            AdjustButtonPositionAndScale(
+                m_ZAdjustHover,
+                m_HoverScale,
+                m_HoverBoxColliderGrow);
 
             if (m_CurrentButtonState != ButtonState.Pressed)
             {
@@ -108,6 +111,59 @@ namespace TiltBrush
 
             m_PressTimer = 0.0f;
             m_HasLongPressTriggered = false;
+        }
+
+        /// @brief Activate the tool assigned to the normal press action.
+        private void ActivateNormalPressTool()
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError("LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
+                return;
+            }
+
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_NormalPressTool);
+        }
+
+        /// @brief Activate the tool assigned to the long press action.
+        private void ActivateLongPressTool()
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError("LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
+                return;
+            }
+
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_LongPressTool);
+        }
+
+        /// @brief Start following the saved Markov control points with the pointer follower.
+        private void StartPointFollower()
+        {
+            if (m_PointFollower == null)
+            {
+                m_PointFollower = gameObject.AddComponent<MarkovPenPointFollower>();
+            }
+
+            m_PointFollower.StartFollowing(MarkovPenDrawingFreepaint.s_ControlPoints);
+        }
+
+        /// @brief Play the button pressed audio feedback if it is enabled.
+        private void PlayPressedAudio()
+        {
+            if (!m_ButtonHasPressedAudio)
+            {
+                return;
+            }
+
+            AudioManager.m_Instance.ItemSelect(transform.position);
+        }
+
+        /// @brief Reset the button state and visual scale to the untouched state.
+        private void SetButtonUntouched()
+        {
+            m_CurrentButtonState = ButtonState.Untouched;
+            ResetScale();
         }
     }
 }
