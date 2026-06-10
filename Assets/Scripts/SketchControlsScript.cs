@@ -1344,7 +1344,7 @@ namespace TiltBrush
                 bScaleInputActive
                 && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
                 && m_GrabBrush.grabbingWorld == false
-                && m_CurrentGazeObject == -1 // free up swipe for use by gaze object
+                && m_CurrentGazeObject == -1                                                                     // free up swipe for use by gaze object
                 && (m_ControlsType != ControlsType.SixDofControllers || InputManager.Brush.IsTrackedObjectValid) // TODO:Mikesky - very hacky
                 && SketchSurfacePanel.m_Instance.ActiveTool.m_Type != BaseTool.ToolType.MultiCamTool;
 
@@ -1416,7 +1416,7 @@ namespace TiltBrush
                     camTool.ExternalObjectNextCameraStyle(); // For monoscopic mode
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                             InputManager.KeyboardShortcut.ViewOnly))
+                    InputManager.KeyboardShortcut.ViewOnly))
                 {
                     IssueGlobalCommand(GlobalCommands.ViewOnly);
                 }
@@ -1529,7 +1529,7 @@ namespace TiltBrush
                     App.Instance.SetDesiredState(App.AppState.LoadingBrushesAndLighting);
                 }
                 else if (InputManager.m_Instance.GetKeyboardShortcutDown(
-                             InputManager.KeyboardShortcut.FlyMode))
+                    InputManager.KeyboardShortcut.FlyMode))
                 {
                     SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
                 }
@@ -1562,7 +1562,7 @@ namespace TiltBrush
             if (!m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
-                m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
+                m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1) // don't allow tool to change while pointing at panel because there is no visual indication
             {
                 m_SketchSurfacePanel.EnableDefaultTool();
                 AudioManager.m_Instance.PlayPinCushionSound(true);
@@ -2984,12 +2984,12 @@ namespace TiltBrush
             int iPrevGazeObject = m_CurrentGazeObject;
             m_CurrentGazeObject = -1;
             bool bGazeAllowed = (m_CurrentInputState == InputState.Standard)
-                && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
-                && !m_SketchSurfacePanel.ActiveTool.InputBlocked()
-                && (m_GrabWidgetState == GrabWidgetState.None)
-                && !m_GrabBrush.grabbingWorld
-                && !m_PinCushion.IsShowing()
-                && !PointerManager.MainPointerIsPainting()
+                    && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
+                    && !m_SketchSurfacePanel.ActiveTool.InputBlocked()
+                    && (m_GrabWidgetState == GrabWidgetState.None)
+                    && !m_GrabBrush.grabbingWorld
+                    && !m_PinCushion.IsShowing()
+                    && !PointerManager.MainPointerIsPainting()
                 ;
 
             bool bGazeDeactivationOverrideWithInput = false;
@@ -5108,11 +5108,6 @@ namespace TiltBrush
                         SketchCatalog.m_Instance.UpdateSearchText(currentSet, KeyboardPopUpWindow.m_LastInput, forceRefresh: true);
                         DismissPopupOnCurrentGazeObject(false);
                         break;
-                    }
-                case GlobalCommands.MarkovPenPanel: { // Spawn at brush controller and open the MarkovPen floating
-                    var spawn = TrTransform.FromTransform(InputManager.Brush.Geometry.transform); 
-                    OpenPanelOfType((BasePanel.PanelType)99999, spawn, forced: true); EatGazeObjectInput();
-                    break;
                     }
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:

@@ -28332,12 +28332,6 @@ MonoBehaviour:
     m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 1
-  - m_PanelPrefab: {fileID: 176644, guid: 8789b34e63f619c499e93e36e52cba41, type: 3}
-    m_ModeVr: 1
-    m_ModeMono: 1
-    m_ModeQuest: 1
-    m_Basic: 1
-    m_Advanced: 1
   m_WandPanelsRotationFeedbackInterval: 20
   m_WandPanelsRotationScalar: 200
   m_WandPanelsRotationVelocityScalar: 7500
