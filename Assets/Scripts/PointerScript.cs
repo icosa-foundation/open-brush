@@ -908,36 +908,6 @@ namespace TiltBrush
                 desc, m_CurrentColor, jitteredBrushSize);
         }
 
-        // Create a new line parented to an arbitrary transform (e.g., a panel), so the stroke
-        // moves with that transform. xf_parent is the initial transform in the parent's local space.
-        public void CreateNewLineOnTransform(Transform parent, TrTransform xf_parent,
-                                            ParametricStrokeCreator creator, BrushDescriptor overrideDesc = null)
-        {
-            BrushDescriptor desc = overrideDesc != null ? overrideDesc : m_CurrentBrush;
-            m_CurrentCreator = creator;
-
-            if (m_CurrentCreator != null)
-            {
-                m_ParametricCreatorBackupStrokeSize = m_CurrentBrushSize;
-                m_CurrentBrushSize = m_CurrentCreator.ProcessBrushSize(m_CurrentBrushSize);
-            }
-
-            // Use parent's uniform scale as the canvas scale approximation.
-            float parentScale = parent.GetUniformScale();
-            m_LastUsedBrushSize_CS = (1 / parentScale) * BrushSizeAbsolute;
-            m_LineLength_CS = 0.0f;
-
-            float jitteredBrushSize = m_CurrentBrushSize;
-            if (PointerManager.m_Instance.JitterEnabled)
-            {
-                jitteredBrushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, m_CurrentBrushSize);
-            }
-
-            m_CurrentLine = BaseBrushScript.Create(
-                parent, xf_parent,
-                desc, m_CurrentColor, jitteredBrushSize);
-        }
-
         /// Like BeginLineFromMemory + EndLineFromMemory
         /// To help catch bugs in higher-level stroke code, it is considered
         /// an error unless the stroke is in state NotCreated.
@@ -1071,7 +1041,7 @@ namespace TiltBrush
                         m_LineLength_CS,
                         m_CurrentLine.RandomSeed,
                         isFinalStroke
-                        );
+                    );
                 }
                 else
                 {

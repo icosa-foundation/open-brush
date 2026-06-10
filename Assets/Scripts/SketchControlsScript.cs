@@ -200,8 +200,7 @@ namespace TiltBrush
             OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000,
-            MarkovPenPanel = 99999
+            OpenNumericInputPopup = 12000
         }
 
         public enum ControlsType
@@ -5435,7 +5434,6 @@ namespace TiltBrush
         public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)
         {
             m_PanelManager.OpenPanel(type, trSpawnXf, forced);
-            Debug.Log($"Opened panel {type} at {trSpawnXf}");
             EatGazeObjectInput();
         }
 

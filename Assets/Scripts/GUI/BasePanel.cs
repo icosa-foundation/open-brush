@@ -115,7 +115,6 @@ namespace TiltBrush
             TransformPanel = 12000,
             WhatsNewPanel = 20300,
             BlocksPromoPanel = 20301,
-            MarkovPenSketchbookPanel = 99998,
             MarkovPenDrawingPanel = 99999,
         }
 

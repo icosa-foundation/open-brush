@@ -27,7 +27,7 @@ namespace TiltBrush
             m_HoldFocus = false;
         }
 
-        protected virtual void OnLongPress()
+        void OnLongPress()
         {
             if (m_Manager)
             {
