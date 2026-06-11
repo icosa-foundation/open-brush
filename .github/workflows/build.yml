@@ -627,7 +627,7 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -706,7 +706,7 @@ jobs:
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -869,7 +869,7 @@ jobs:
           zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
@@ -992,6 +992,11 @@ jobs:
         with:
           name: Linux
           path: build_linux
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Upload Build
         run: |
           cd build_macos
@@ -1002,6 +1007,7 @@ jobs:
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          jinjanate Support/steam/main_depot.android.vdf.j2 > build_android_openxr/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
@@ -1012,6 +1018,7 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BRUSH_ANDROID_DEPOT_ID: ${{ vars.STEAM_ANDROID_DEPOT_ID }}
           OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
@@ -1149,7 +1156,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1296,7 +1303,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1434,7 +1441,7 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-latest
+    runs-on: macos-26
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1457,12 +1464,6 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
-
-      - name: Use xcode 26.2 / ios 26.2
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer  # The default in macos-latest (i.e., 15) is currently 16.4.
-          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
-          xcodebuild -downloadPlatform iOS # -buildVersion 26.2 ## Removed because it says 26.2 is not available to download, but if you run with no version specified you get.... 26.2
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v8

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,9 +54,12 @@ namespace TiltBrush
         }
 
         private static ProfilingManager m_Instance;
+        private const string kPerfLogPrefix = "[OB_PERF]";
         private bool m_Profiling;
         private Mode m_Mode;
         private List<float> m_FrameTimes;
+        private List<float> m_GpuUtilizationPercentages;
+        private string m_ActiveProfileName;
         private const int k_NumFrames = 75 * 6; // enough space for six seconds of samples.
         private Coroutine m_UpdateCoroutine;
         private int[] m_ValidFramerates = { 90, 75, 60, 40, 1 };
@@ -74,10 +77,18 @@ namespace TiltBrush
             }
         }
 
-        public void StartProfiling(Mode mode)
+        public bool IsProfiling
+        {
+            get { return m_Profiling; }
+        }
+
+        public void StartProfiling(Mode mode, string profileName = null)
         {
             Debug.Assert(m_Profiling == false);
             m_Mode = mode;
+            m_ActiveProfileName = string.IsNullOrEmpty(profileName)
+                ? App.UserConfig.Profiling.ProfileName
+                : profileName;
             switch (m_Mode)
             {
                 case Mode.Standard:
@@ -116,6 +127,7 @@ namespace TiltBrush
             }
 
             m_FrameTimes = new List<float>(k_NumFrames);
+            m_GpuUtilizationPercentages = new List<float>(k_NumFrames);
             m_Profiling = true;
             m_UpdateCoroutine = App.Instance.StartCoroutine(Update());
         }
@@ -146,6 +158,7 @@ namespace TiltBrush
             m_Profiling = false;
             OutputStats();
             m_Samples = new List<Sample>();
+            m_ActiveProfileName = null;
         }
 
         private string GetProfilingFilename()
@@ -166,6 +179,14 @@ namespace TiltBrush
             while (true)
             {
                 m_FrameTimes.Add(Time.unscaledDeltaTime * 1000f);
+                if (App.VrSdk != null)
+                {
+                    float gpuUtilization = App.VrSdk.GetGpuUtilization() * 100f;
+                    if (gpuUtilization > 0f)
+                    {
+                        m_GpuUtilizationPercentages.Add(gpuUtilization);
+                    }
+                }
                 yield return null;
                 foreach (var sample in m_Samples)
                 {
@@ -202,15 +223,15 @@ namespace TiltBrush
             float percentScale = 100f / m_FrameTimes.Count;
             float[] frameRatePercentages = frameRateBuckets.Select(x => x * percentScale).ToArray();
 
-            var profileName = App.UserConfig.Profiling.ProfileName;
+            var profileName = ActiveProfileName;
             var humanName = SaveLoadScript.m_Instance.GetLastFileHumanName();
             var fileName = System.IO.Path.GetFileNameWithoutExtension(
                 SaveLoadScript.m_Instance.SceneFile.FullPath);
 
             StringBuilder message = new StringBuilder();
-            string file = string.IsNullOrEmpty(App.UserConfig.Profiling.ProfileName)
+            string file = string.IsNullOrEmpty(profileName)
                 ? SaveLoadScript.m_Instance.GetLastFileHumanName()
-                : App.UserConfig.Profiling.ProfileName;
+                : profileName;
             message.AppendLine("TBProfile: START");
 #if UNITY_EDITOR
             string branch = GitUtils.GetGitBranchName();
@@ -218,6 +239,7 @@ namespace TiltBrush
 #endif
             message.AppendLine($"Build: {App.GetStartupString()}");
             message.AppendLine($"Profile name: {profileName} Filename: {fileName} Human name: {humanName}");
+            message.AppendLine(BuildComparisonLine(stats, numBatches, numTriangles));
 
             if (App.UserConfig.Profiling.PerfgateOutput)
             {
@@ -242,6 +264,101 @@ namespace TiltBrush
                 App.UserPath(),
                 $"{GetProfilingFilename()}_summary.txt");
             File.WriteAllText(path, message.ToString());
+        }
+
+        private string BuildComparisonLine(Statistics.Summary stats, int numBatches, int numTriangles)
+        {
+            float[] frameTimes = m_FrameTimes.ToArray();
+            float meanFps = stats.Mean > 0f ? 1000f / stats.Mean : 0f;
+            float medianFps = stats.Median > 0f ? 1000f / stats.Median : 0f;
+            string gpuSummary = BuildGpuSummary();
+            string profileName = ActiveProfileName;
+
+            return string.Format(
+                "{0} summary profile=\"{1}\" build=\"{2}\" platform=\"{3}\" mobile={4} quality={5} frames={6} mean_ms={7:F2} median_ms={8:F2} p90_ms={9:F2} p95_ms={10:F2} p99_ms={11:F2} max_ms={12:F2} mean_fps={13:F1} median_fps={14:F1} at_or_above_90fps_pct={15:F1} at_or_above_75fps_pct={16:F1} at_or_above_72fps_pct={17:F1} at_or_above_60fps_pct={18:F1} batches={19} tris={20}{21}",
+                kPerfLogPrefix,
+                EscapeMetricValue(profileName),
+                EscapeMetricValue(App.GetStartupString()),
+                Application.platform,
+                App.Config.IsMobileHardware,
+                QualitySettings.GetQualityLevel(),
+                m_FrameTimes.Count,
+                stats.Mean,
+                stats.Median,
+                Percentile(frameTimes, 0.90f),
+                Percentile(frameTimes, 0.95f),
+                Percentile(frameTimes, 0.99f),
+                stats.Max,
+                meanFps,
+                medianFps,
+                PercentageAtOrAboveFrameRate(frameTimes, 90),
+                PercentageAtOrAboveFrameRate(frameTimes, 75),
+                PercentageAtOrAboveFrameRate(frameTimes, 72),
+                PercentageAtOrAboveFrameRate(frameTimes, 60),
+                numBatches,
+                numTriangles,
+                gpuSummary);
+        }
+
+        private string ActiveProfileName
+        {
+            get
+            {
+                return string.IsNullOrEmpty(m_ActiveProfileName)
+                    ? App.UserConfig.Profiling.ProfileName
+                    : m_ActiveProfileName;
+            }
+        }
+
+        private string BuildGpuSummary()
+        {
+            if (m_GpuUtilizationPercentages == null || m_GpuUtilizationPercentages.Count == 0)
+            {
+                return " gpu_util_mean_pct=0.0 gpu_util_median_pct=0.0 gpu_util_samples=0";
+            }
+
+            Statistics.Summary gpuStats =
+                new Statistics.Summary(m_GpuUtilizationPercentages.ToArray());
+            return string.Format(
+                " gpu_util_mean_pct={0:F1} gpu_util_median_pct={1:F1} gpu_util_samples={2}",
+                gpuStats.Mean,
+                gpuStats.Median,
+                m_GpuUtilizationPercentages.Count);
+        }
+
+        private static float PercentageAtOrAboveFrameRate(float[] frameTimes, int frameRate)
+        {
+            if (frameTimes.Length == 0)
+            {
+                return 0f;
+            }
+
+            float frameLimit = 1000f / frameRate + 0.5f;
+            int framesAtOrAbove = frameTimes.Count(x => x < frameLimit);
+            return framesAtOrAbove * 100f / frameTimes.Length;
+        }
+
+        private static float Percentile(float[] data, float percentile)
+        {
+            if (data.Length == 0)
+            {
+                return 0f;
+            }
+
+            float[] sortedData = new float[data.Length];
+            data.CopyTo(sortedData, 0);
+            Array.Sort(sortedData);
+
+            int index = Mathf.Clamp(
+                Mathf.CeilToInt(percentile * sortedData.Length) - 1,
+                0,
+                sortedData.Length - 1);
+            return sortedData[index];
+        }
+
+        private static string EscapeMetricValue(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "" : value.Replace("\"", "'");
         }
 
         private void HumanReadableOutput(StringBuilder output, Statistics.Summary stats, int numBatches,

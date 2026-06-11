@@ -168,7 +168,7 @@ namespace TiltBrush
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
-                    string ext = Path.GetExtension(modelWidget.Model.RelativePath).ToLower();
+                    string ext = modelWidget.Model.GetLocation().Extension;
                     if (ext == ".svg")
                     {
                         return false;
@@ -1244,4 +1244,3 @@ namespace TiltBrush
     }
 
 } // namespace TiltBrush
-

@@ -112,7 +112,7 @@ namespace TiltBrush
                 }
             }
 
-            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
+            public string Extension => Path.GetExtension(AbsolutePath)?.ToLowerInvariant() ?? "";
 
             public string AssetId
             {
@@ -895,6 +895,10 @@ namespace TiltBrush
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
+                // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time
+                // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
+                var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
+                int __icosaStartFrame = Time.frameCount;
                 if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
@@ -950,6 +954,11 @@ namespace TiltBrush
                 {
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
+                __icosaSw.Stop();
+                int __icosaFrames = Time.frameCount - __icosaStartFrame + 1;
+                Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
+                    $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
+                    $"(valid={m_Valid} error={m_LoadError.HasValue})");
             }
 
         }
