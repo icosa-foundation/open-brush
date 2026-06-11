@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
+using ODS;
 using TMPro;
 using UnityEngine.Serialization;
 #if USD_SUPPORTED
@@ -2462,6 +2463,8 @@ namespace TiltBrush
 
             ODS.HybridCamera cam = driver.OdsCamera;
             cam.CollapseIpd = Config.m_OdsCollapseIpd;
+            // Use slice rendering for higher-quality 360 captures
+            cam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
             if (Config.m_SdkMode == SdkMode.Ods)
             {

@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using MoonSharp.Interpreter;
-using ODS;
 using UnityAsyncAwaitUtil;
 using UnityEngine;
 
@@ -236,8 +235,6 @@ namespace TiltBrush
             odsDriver.OdsCamera.basename = filename;
             odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
             odsDriver.OdsCamera.imageWidth = width;
-            odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
-            odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
             AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
