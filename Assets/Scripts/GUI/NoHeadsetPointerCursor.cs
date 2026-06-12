@@ -43,6 +43,10 @@ namespace TiltBrush
         public void OnPointerEnter(PointerEventData eventData)
         {
             ForcePointerVisible();
+            if (m_IsShowingClickCursor)
+            {
+                return;
+            }
             if (!IsInteractableSelectable())
             {
                 return;
@@ -73,6 +77,14 @@ namespace TiltBrush
         public void OnPointerUp(PointerEventData eventData)
         {
             ForcePointerVisible();
+        }
+
+        private void Update()
+        {
+            if (m_IsShowingClickCursor && !IsInteractableSelectable())
+            {
+                ClearHoverCursor();
+            }
         }
 
         private bool IsInteractableSelectable()

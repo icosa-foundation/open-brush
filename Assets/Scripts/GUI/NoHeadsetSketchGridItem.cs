@@ -166,11 +166,6 @@ namespace TiltBrush
             {
                 m_Button.interactable = enabled;
             }
-
-            if (!enabled)
-            {
-                NoHeadsetPointerCursor.ResetCursor();
-            }
         }
 
         public void ClearListeners()
