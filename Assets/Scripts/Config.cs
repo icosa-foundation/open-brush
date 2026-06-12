@@ -576,7 +576,7 @@ namespace TiltBrush
                 using var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
                 using var intent = activity.Call<AndroidJavaObject>("getIntent");
 
-                // Intent extras: set by dynamic shortcuts, ADB, or activity aliases.
+                // Intent extras: set by dynamic shortcuts or ADB.
                 bool enableMonoscopic = intent.Call<bool>("getBooleanExtra", "EnableMonoscopicMode", false);
                 bool disableXr = intent.Call<bool>("getBooleanExtra", "DisableXrMode", false);
 
