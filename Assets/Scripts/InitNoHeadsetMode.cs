@@ -1418,7 +1418,7 @@ namespace TiltBrush
             }
 
             Texture2D texture = new Texture2D(128, 128, TextureFormat.RGB24, true);
-            if (!texture.LoadImage(thumbnailBytes))
+            if (!texture.LoadImage(thumbnailBytes, markNonReadable: true))
             {
                 Destroy(texture);
                 sprite = m_UnknownSprite;
