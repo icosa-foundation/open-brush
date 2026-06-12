@@ -30,6 +30,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_EmptySketchListMessage;
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private Texture2D m_LoadingImageTexture;
+        [SerializeField] public Texture2D m_ClickCursor;
 
         private readonly List<SketchGridEntry> m_Sketches = new List<SketchGridEntry>();
         private readonly List<NoHeadsetSketchGridItem> m_GridItems =
@@ -43,7 +44,6 @@ namespace TiltBrush
         private readonly List<Sprite> m_ThumbnailSprites = new List<Sprite>();
         private readonly List<Texture2D> m_OwnedThumbnailTextures = new List<Texture2D>();
         private static bool sm_HasSavedGridState;
-        private static SketchSetType sm_SavedSetType = SketchSetType.User;
         private static readonly Dictionary<SketchSetType, float> sm_SavedScrollPositions =
             new Dictionary<SketchSetType, float>();
         private TMP_Dropdown m_Dropdown;
@@ -57,7 +57,7 @@ namespace TiltBrush
         private Vector2Int m_LastScreenSize;
         private Sprite m_LoadingSprite;
         private Sprite m_UnknownSprite;
-        private SketchSetType m_SelectedSetType = SketchSetType.User;
+        private SketchSetType m_SelectedSetType = SketchSetType.Curated;
         private TMP_FontAsset m_RuntimeFontAsset;
         private Material m_RuntimeFontMaterial;
         private bool m_HasSavedCursorState;
@@ -92,11 +92,12 @@ namespace TiltBrush
         void Start()
         {
             m_Instance = this;
+            m_SelectedSetType = SketchSetType.Curated;
             if (sm_HasSavedGridState)
             {
-                m_SelectedSetType = sm_SavedSetType;
                 m_RestoreSavedScrollOnNextRefresh = true;
             }
+            Debug.Log($"{LogPrefix} startup selected tab {m_SelectedSetType}");
             App.Instance.m_NoVrUi.SetActive(true);
             CacheAndShowCursor();
             InitializeGridUi();
@@ -227,9 +228,16 @@ namespace TiltBrush
             int curatedCount = CountSelectableSketches(curatedSketchSet);
             int likedCount = App.IcosaIsLoggedIn ? CountSelectableSketches(likedSketchSet) : 0;
 
-            if (!HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount))
+            if (m_SelectedSetType != SketchSetType.Curated
+                && !HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount))
             {
                 m_SelectedSetType = GetFirstSelectableSetType(userCount, curatedCount, likedCount);
+            }
+            bool selectedSetLoading = IsSetLoading(m_SelectedSetType, userSketchSet,
+                curatedSketchSet, likedSketchSet);
+            if (m_SelectedSetType == SketchSetType.Curated && curatedCount == 0)
+            {
+                selectedSetLoading = true;
             }
             UpdateCategoryTabs(userCount, curatedCount, likedCount);
             UpdateGridCellAspect();
@@ -264,10 +272,13 @@ namespace TiltBrush
 
             if (m_EmptySketchListMessage != null)
             {
-                m_EmptySketchListMessage.SetActive(m_Sketches.Count == 0
-                    && HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
+                bool showStatusMessage = m_Sketches.Count == 0
+                    && (selectedSetLoading
+                        || HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
+                SetSketchListStatusMessage(showStatusMessage, selectedSetLoading);
             }
             SetGridActive(m_Sketches.Count > 0
+                || selectedSetLoading
                 || HasSelectableSketchesForSet(m_SelectedSetType, userCount, curatedCount, likedCount));
 
             if (m_RestoreSavedScrollOnNextRefresh)
@@ -312,21 +323,75 @@ namespace TiltBrush
             }
         }
 
+        private bool IsSetLoading(SketchSetType setType, SketchSet userSketchSet,
+            SketchSet curatedSketchSet, SketchSet likedSketchSet)
+        {
+            SketchSet sketchSet = null;
+            switch (setType)
+            {
+                case SketchSetType.User:
+                    sketchSet = userSketchSet;
+                    break;
+                case SketchSetType.Curated:
+                    sketchSet = curatedSketchSet;
+                    break;
+                case SketchSetType.Liked:
+                    sketchSet = likedSketchSet;
+                    break;
+            }
+
+            if (sketchSet == null)
+            {
+                return false;
+            }
+            return !sketchSet.IsReadyForAccess || sketchSet.IsActivelyRefreshingSketches
+                || (setType == SketchSetType.Curated && m_CuratedDownloadsActive);
+        }
+
+        private void SetSketchListStatusMessage(bool active, bool loading)
+        {
+            m_EmptySketchListMessage.SetActive(active);
+            if (!active)
+            {
+                return;
+            }
+
+            TextMeshProUGUI text = m_EmptySketchListMessage.GetComponent<TextMeshProUGUI>();
+            if (text == null)
+            {
+                return;
+            }
+            text.text = loading ? GetLoadingMessage(m_SelectedSetType) : "No sketches are ready to load.";
+        }
+
+        private string GetLoadingMessage(SketchSetType setType)
+        {
+            switch (setType)
+            {
+                case SketchSetType.Curated:
+                    return "Loading featured sketches...";
+                case SketchSetType.Liked:
+                    return "Loading liked sketches...";
+                default:
+                    return "Loading sketches...";
+            }
+        }
+
         private SketchSetType GetFirstSelectableSetType(int userCount, int curatedCount, int likedCount)
         {
-            if (userCount > 0)
-            {
-                return SketchSetType.User;
-            }
             if (curatedCount > 0)
             {
                 return SketchSetType.Curated;
+            }
+            if (userCount > 0)
+            {
+                return SketchSetType.User;
             }
             if (App.IcosaIsLoggedIn && likedCount > 0)
             {
                 return SketchSetType.Liked;
             }
-            return SketchSetType.User;
+            return SketchSetType.Curated;
         }
 
         private void AddSketchGridEntries(SketchSet sketchset, SketchSetType setType,
@@ -993,7 +1058,6 @@ namespace TiltBrush
             SaveCurrentScrollPosition();
             m_SelectedSetType = setType;
             sm_HasSavedGridState = true;
-            sm_SavedSetType = m_SelectedSetType;
             m_RestoreSavedScrollOnNextRefresh = true;
             RefreshSketchGrid();
         }
@@ -1001,7 +1065,6 @@ namespace TiltBrush
         private void SaveGridState()
         {
             sm_HasSavedGridState = true;
-            sm_SavedSetType = m_SelectedSetType;
             SaveCurrentScrollPosition();
         }
 

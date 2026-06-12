@@ -21,7 +21,7 @@ namespace TiltBrush
     public class NoHeadsetPointerCursor : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler,
         IPointerDownHandler, IPointerUpHandler
     {
-        [SerializeField] private Texture2D m_ClickCursor;
+        private Texture2D m_ClickCursor;
         [SerializeField] private Vector2 m_ClickHotspot = Vector2.zero;
 
         private static int sm_ClickHoverCount;
@@ -83,9 +83,11 @@ namespace TiltBrush
 
         private Texture2D GetCursorTexture()
         {
-            return m_ClickCursor != null
-                ? m_ClickCursor
-                : Resources.Load<Texture2D>("Icons/pointingarrow");
+            if (m_ClickCursor == null)
+            {
+                m_ClickCursor = GetComponentInParent<InitNoHeadsetMode>().m_ClickCursor;
+            }
+            return m_ClickCursor;
         }
 
         private void OnDisable()
