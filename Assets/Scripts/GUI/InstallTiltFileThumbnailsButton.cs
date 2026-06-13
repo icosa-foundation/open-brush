@@ -91,7 +91,7 @@ namespace TiltBrush
         {
 #if UNITY_EDITOR_WIN
             return Path.GetFullPath(Path.Combine(
-                Application.dataPath, "..", "Support", "steam", "tools", kInstallerFilename));
+                Application.dataPath, "..", "Support", "windows", "tools", kInstallerFilename));
 #else
             return Path.GetFullPath(Path.Combine(Application.dataPath, "..", kInstallerFilename));
 #endif
