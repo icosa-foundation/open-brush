@@ -51,6 +51,7 @@ namespace TiltBrush
         private GameObject m_RuntimeGridRoot;
         private RectTransform m_RuntimeStackRect;
         private RectTransform m_RuntimeTabBarRect;
+        private GameObject m_LowerControls;
         private RectTransform m_RuntimeGridRect;
         private ScrollRect m_SketchGridScrollRect;
         private NoHeadsetSketchGridLayout m_SketchGridLayout;
@@ -67,6 +68,7 @@ namespace TiltBrush
         private string m_ThumbnailRequestSignature = "";
         private bool m_CuratedDownloadsActive;
         private bool m_RestoreSavedScrollOnNextRefresh;
+        private bool m_LoadInProgress;
 
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
@@ -107,6 +109,11 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (m_LoadInProgress)
+            {
+                UpdateLoadingTeardown();
+                return;
+            }
             NoHeadsetPointerCursor.ForcePointerVisible();
             RefreshRuntimeGridFrame();
             RefreshVisibleThumbnails();
@@ -214,6 +221,10 @@ namespace TiltBrush
 
         public void RefreshSketchGrid()
         {
+            if (m_LoadInProgress)
+            {
+                return;
+            }
             if (m_SketchGridContent == null || m_SketchGridItemPrefab == null)
             {
                 Debug.LogError($"{LogPrefix} missing sketch grid UI references");
@@ -624,6 +635,10 @@ namespace TiltBrush
                 return;
             }
 
+            // Replace the whole grid with a loading message as soon as the user clicks, so they get
+            // feedback during both the (optional) download and the sketch load itself.
+            BeginSketchLoadingState();
+
             var cameraPos = App.VrSdk.GetVrCamera().transform.position;
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
@@ -639,6 +654,7 @@ namespace TiltBrush
                     return;
                 }
 
+                SetLoadingMessage("Downloading sketch...");
                 SetTileDownloading(index);
                 StartCoroutine(DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex, downloadKey));
                 return;
@@ -722,12 +738,66 @@ namespace TiltBrush
 
         private void IssueSketchbookLoadCommand(SketchGridEntry entry)
         {
+            // Download (if any) is done; switch the message back from "Downloading" to "Loading" for
+            // the brief file-prep window before stroke playback starts.
+            SetLoadingMessage("Loading sketch...");
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                 entry.SketchIndex,
                 (int)entry.SetType);
-            ShutdownSelf();
+        }
+
+        // Replace the grid with a centered "Loading sketch..." message so the user gets feedback
+        // while the sketch loads. Teardown is deferred to UpdateLoadingTeardown so the message stays
+        // visible until the load actually completes.
+        private void BeginSketchLoadingState()
+        {
+            if (m_LoadInProgress)
+            {
+                return;
+            }
+            m_LoadInProgress = true;
+
+            SetGridActive(false);
+            if (m_RuntimeTabBarRect != null)
+            {
+                m_RuntimeTabBarRect.gameObject.SetActive(false);
+            }
+            if (m_LowerControls != null)
+            {
+                m_LowerControls.SetActive(false);
+            }
+
+            SetLoadingMessage("Loading sketch...");
+            Debug.Log($"{LogPrefix} showing loading message and waiting for sketch playback to start");
+        }
+
+        private void SetLoadingMessage(string message)
+        {
+            if (m_EmptySketchListMessage == null)
+            {
+                return;
+            }
+            m_EmptySketchListMessage.SetActive(true);
+            TextMeshProUGUI text = m_EmptySketchListMessage.GetComponent<TextMeshProUGUI>();
+            if (text != null)
+            {
+                text.text = message;
+            }
+        }
+
+        // The no-headset selector sits in AppState.Loading the whole time, so app state can't tell us
+        // when our sketch starts drawing. Keep the message up through the download and file prep, then
+        // tear down once stroke playback actually begins so the user can watch the sketch draw. The
+        // Standard fallback covers sketches that complete without us catching a playback frame.
+        private void UpdateLoadingTeardown()
+        {
+            if (SketchMemoryScript.m_Instance.IsPlayingBack
+                || App.CurrentState == App.AppState.Standard)
+            {
+                ShutdownSelf();
+            }
         }
 
         private void ShutdownSelf()
@@ -922,6 +992,12 @@ namespace TiltBrush
                 {
                     RefreshRuntimeGridFrame(force: true);
                 }
+            }
+
+            if (m_LowerControls == null && uiParent != null)
+            {
+                Transform lowerControls = FindDeepChild(uiParent, "Lower Controls");
+                m_LowerControls = lowerControls != null ? lowerControls.gameObject : null;
             }
 
             if (m_SketchGridItemPrefab != null)
