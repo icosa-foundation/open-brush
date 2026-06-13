@@ -81,10 +81,11 @@ public class OBJ : MonoBehaviour
 
     private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
     {
-        yield return OverlayManager.m_Instance.RunInCompositor(
-            OverlayType.LoadModel,
-            _Load(path),
-            0.25f);
+        // Don't raise the compositor overlay here: _Load already time-slices (it yields between
+        // chunks), and this path is used for background preload while the user is browsing the
+        // panel - popping a fullscreen loading overlay mid-browse is wrong. Explicit foreground
+        // spawns still get the overlay from the higher-level wrapper (Model.LoadFullyCoroutine).
+        yield return StartCoroutine(_Load(path));
         tcs.SetResult(true);
     }
 

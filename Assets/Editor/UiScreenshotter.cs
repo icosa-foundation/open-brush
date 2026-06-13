@@ -25,6 +25,10 @@ namespace TiltBrush
 {
     public class UiScreenshotter : Editor
     {
+        private const float kBrushScreenshotTime = 0.5f;
+        private const int kScreenshotSupersampling = 2;
+        private const int kScreenshotMsaaSamples = 4;
+        private const string kScreenshotOutputDirectory = "Support/Screenshots";
 
         private static bool IsPlaying()
         {
@@ -106,13 +110,31 @@ namespace TiltBrush
                 path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
             }
 
-            foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
+            var batchManager = App.Scene.ActiveCanvas.BatchManager;
+            bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
+            bool wasForceDeterministicBirthTimeForExport = App.Config.m_ForceDeterministicBirthTimeForExport;
+            batchManager.OneStrokePerBatch = true;
+            App.Config.m_ForceDeterministicBirthTimeForExport = true;
+
+            try
             {
-                PointerManager.m_Instance.SetBrushForAllPointers(brush);
-                await Task.Delay(100);
-                DrawStrokes.DrawNestedTrList(new List<IEnumerable<TrTransform>> { path }, TrTransform.T(origin));
-                SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
-                ApiMethods.DeleteStroke(0);
+                foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
+                {
+                    PointerManager.m_Instance.SetBrushForAllPointers(brush);
+                    await Task.Delay(100);
+                    var strokes = DrawStrokes.DrawNestedTrList(
+                        new List<IEnumerable<TrTransform>> { path },
+                        TrTransform.T(origin));
+                    SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                    batchManager.FlushMeshUpdates();
+                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                    DeleteStrokes(strokes);
+                }
+            }
+            finally
+            {
+                App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
+                batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
         }
 
@@ -182,20 +204,89 @@ namespace TiltBrush
             return cam;
         }
 
+        private static void SetFixedShaderTime(IEnumerable<Stroke> strokes, float time)
+        {
+            Vector4 timeValue = new Vector4(time / 20f, time, time * 2f, time * 3f);
+            foreach (var stroke in strokes)
+            {
+                try
+                {
+                    var material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
+                    if (!material.HasFloat("_TimeBlend") ||
+                        !material.HasVector("_TimeOverrideValue"))
+                    {
+                        continue;
+                    }
+                    stroke.SetShaderFloat("_TimeBlend", 1f);
+                    stroke.SetShaderVector(
+                        "_TimeOverrideValue",
+                        timeValue.x,
+                        timeValue.y,
+                        timeValue.z,
+                        timeValue.w);
+                }
+                catch (StrokeShaderModifierException)
+                {
+                    // Static brushes do not expose the time override properties.
+                }
+            }
+        }
+
+        private static void DeleteStrokes(IEnumerable<Stroke> strokes)
+        {
+            foreach (var stroke in strokes)
+            {
+                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                stroke.Uncreate();
+            }
+        }
+
         static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
         {
-            RenderTexture rt = new RenderTexture(resWidth, resHeight, 24);
-            cameraToCapture.targetTexture = rt;
-            Texture2D screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
-            cameraToCapture.Render();
-            RenderTexture.active = rt;
-            screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
-            cameraToCapture.targetTexture = null;
-            RenderTexture.active = null;
-            Destroy(rt);
-            byte[] bytes = screenShot.EncodeToPNG();
-            string filePath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), fileName);
-            File.WriteAllBytes(filePath, bytes);
+            int renderWidth = resWidth * kScreenshotSupersampling;
+            int renderHeight = resHeight * kScreenshotSupersampling;
+            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = kScreenshotMsaaSamples,
+                filterMode = FilterMode.Bilinear
+            };
+            RenderTexture downsampledRt = new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
+            {
+                filterMode = FilterMode.Bilinear
+            };
+            Texture2D screenShot = null;
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture previousTarget = cameraToCapture.targetTexture;
+            bool previousAllowMsaa = cameraToCapture.allowMSAA;
+            try
+            {
+                cameraToCapture.allowMSAA = true;
+                cameraToCapture.targetTexture = rt;
+                screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
+                cameraToCapture.Render();
+                Graphics.Blit(rt, downsampledRt);
+                RenderTexture.active = downsampledRt;
+                screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
+                byte[] bytes = screenShot.EncodeToPNG();
+                string outputDirectory = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    kScreenshotOutputDirectory);
+                Directory.CreateDirectory(outputDirectory);
+                string filePath = Path.Combine(outputDirectory, fileName);
+                File.WriteAllBytes(filePath, bytes);
+            }
+            finally
+            {
+                cameraToCapture.targetTexture = previousTarget;
+                cameraToCapture.allowMSAA = previousAllowMsaa;
+                RenderTexture.active = previousActive;
+                if (screenShot != null)
+                {
+                    Destroy(screenShot);
+                }
+                Destroy(rt);
+                Destroy(downsampledRt);
+            }
         }
     }
 }
