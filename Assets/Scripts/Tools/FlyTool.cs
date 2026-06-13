@@ -26,6 +26,11 @@ namespace TiltBrush
 
         public GameObject m_NonVRFlyingUi;
 
+        [Header("Touchscreen controls")]
+        [SerializeField] private TouchJoystick m_MoveJoystick;
+        [SerializeField] private TouchscreenVirtualKey m_UpButton;
+        [SerializeField] private TouchscreenVirtualKey m_DownButton;
+
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
         [SerializeField]
@@ -146,22 +151,32 @@ namespace TiltBrush
                     }
                 }
 
-                var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
+                Vector3 touchTranslation = Vector3.zero;
 
                 if (m_IsTouchScreen)
                 {
-                    TouchscreenVirtualKey[] btns = m_NonVRFlyingUi.GetComponentsInChildren<TouchscreenVirtualKey>();
-                    bool virtualButtonPressed = false;
-                    foreach (var btn in btns)
+                    // On-screen controls take priority; while one is held we don't also
+                    // treat the touch as a look-drag.
+                    bool uiControlTouched = false;
+
+                    if (m_MoveJoystick != null && m_MoveJoystick.IsPressed)
                     {
-                        if (btn.m_IsPressed)
-                        {
-                            virtualButtons[btn.m_Key] = true;
-                            virtualButtonPressed = true;
-                        }
+                        Vector2 j = m_MoveJoystick.Value;
+                        touchTranslation += new Vector3(j.x, 0f, j.y);
+                        uiControlTouched = true;
+                    }
+                    if (m_UpButton != null && m_UpButton.m_IsPressed)
+                    {
+                        touchTranslation += Vector3.up;
+                        uiControlTouched = true;
+                    }
+                    if (m_DownButton != null && m_DownButton.m_IsPressed)
+                    {
+                        touchTranslation += Vector3.down;
+                        uiControlTouched = true;
                     }
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
+                    if (!uiControlTouched && EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0)
                     {
                         var t = Touch.activeTouches[0];
                         Vector2 delta = t.delta;
@@ -201,7 +216,7 @@ namespace TiltBrush
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
 
-                Vector3 cameraTranslation = Vector3.zero;
+                Vector3 cameraTranslation = touchTranslation;
 
                 bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
                                    (gamepad != null && gamepad.leftStickButton.isPressed);
@@ -215,11 +230,11 @@ namespace TiltBrush
                     cameraTranslation += Vector3.up * upDown;
                 }
 
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward) || virtualButtons['W'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward))
                 {
                     cameraTranslation += Vector3.forward;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards))
                 {
                     cameraTranslation += Vector3.back;
                 }
@@ -231,11 +246,11 @@ namespace TiltBrush
                 {
                     cameraTranslation += Vector3.down;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft))
                 {
                     cameraTranslation += Vector3.left;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight))
                 {
                     cameraTranslation += Vector3.right;
                 }
