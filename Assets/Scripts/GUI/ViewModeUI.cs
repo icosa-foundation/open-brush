@@ -1,8 +1,5 @@
 using TiltBrush;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.UI;
 
 public class ViewModeUI : MonoBehaviour
 {
@@ -10,11 +7,11 @@ public class ViewModeUI : MonoBehaviour
     public GameObject m_CloseButton;
     public GameObject m_MenuButton;
 
-    public static ViewModeUI m_Instance;
+    // Authored in the prefab so its appearance/placement can be tweaked in the editor. Wire its
+    // Button OnClick to HandleSkipPlaybackButton. Shown only while a sketch is playing back.
+    public GameObject m_SkipPlaybackButton;
 
-    // Runtime-created so we don't depend on prefab wiring; cloned from the close button to inherit
-    // its styling, pointer-cursor handling and canvas placement.
-    private GameObject m_SkipPlaybackButton;
+    public static ViewModeUI m_Instance;
 
     void Awake()
     {
@@ -24,64 +21,19 @@ public class ViewModeUI : MonoBehaviour
 
     void Update()
     {
-        // Only relevant in the non-VR UI, and only while a sketch is actively playing back.
-        bool showSkip = m_UiRoot != null && m_UiRoot.activeInHierarchy
-            && SketchMemoryScript.m_Instance != null
-            && SketchMemoryScript.m_Instance.IsPlayingBack;
-
-        if (showSkip)
-        {
-            EnsureSkipPlaybackButton();
-        }
-        if (m_SkipPlaybackButton != null && m_SkipPlaybackButton.activeSelf != showSkip)
-        {
-            m_SkipPlaybackButton.SetActive(showSkip);
-        }
-    }
-
-    private void EnsureSkipPlaybackButton()
-    {
-        if (m_SkipPlaybackButton != null || m_CloseButton == null)
+        if (m_SkipPlaybackButton == null)
         {
             return;
         }
 
-        m_SkipPlaybackButton = Instantiate(m_CloseButton, m_CloseButton.transform.parent);
-        m_SkipPlaybackButton.name = "Skip Playback";
-
-        RectTransform rect = m_SkipPlaybackButton.GetComponent<RectTransform>();
-        if (rect != null)
+        // Only relevant in the non-VR UI, and only while a sketch is actively playing back.
+        bool showSkip = m_UiRoot != null && m_UiRoot.activeInHierarchy
+            && SketchMemoryScript.m_Instance != null
+            && SketchMemoryScript.m_Instance.IsPlayingBack;
+        if (m_SkipPlaybackButton.activeSelf != showSkip)
         {
-            // Bottom-right corner, clear of the top-right close button.
-            rect.anchorMin = new Vector2(1f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.anchoredPosition = new Vector2(-30f, 30f);
-            rect.sizeDelta = new Vector2(120f, 50f);
+            m_SkipPlaybackButton.SetActive(showSkip);
         }
-
-        TextMeshProUGUI label = m_SkipPlaybackButton.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (label != null)
-        {
-            label.text = "Skip »";
-            label.enableAutoSizing = false;
-            label.fontSize = 26f;
-        }
-
-        Button button = m_SkipPlaybackButton.GetComponent<Button>();
-        if (button != null)
-        {
-            // RemoveAllListeners only clears runtime listeners; the close button's HandleCloseButton
-            // is a serialized persistent call that came along with the clone, so disable it explicitly.
-            for (int i = 0; i < button.onClick.GetPersistentEventCount(); i++)
-            {
-                button.onClick.SetPersistentListenerState(i, UnityEventCallState.Off);
-            }
-            button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(HandleSkipPlaybackButton);
-        }
-
-        m_SkipPlaybackButton.SetActive(false);
     }
 
     public void HandleSkipPlaybackButton()
