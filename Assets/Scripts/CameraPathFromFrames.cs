@@ -219,9 +219,9 @@ namespace TiltBrush
                 float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
                 speedKnot.PathT = new PathT(pathT);
                 
-                // Set speed based on recorded movement speed (normalized to reasonable camera path speeds)
-                float normalizedSpeed = Mathf.Clamp(frame.speed * 0.5f, 0.1f, 2.0f); // Scale and clamp speed
-                speedKnot.SpeedValue = normalizedSpeed;
+                // Set camera speed based on recorded movement speed. SpeedValue is the
+                // control offset, so let the knot convert from camera speed to that value.
+                speedKnot.SetCameraSpeed(frame.speed * 0.5f);
                 
                 // Position the speed knot at the recorded frame position
                 knotGo.transform.position = frame.position;
