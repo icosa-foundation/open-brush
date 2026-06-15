@@ -114,7 +114,7 @@ namespace TiltBrush
         private static CameraPathWidget CreateCameraPathWidget()
         {
             // Use the widget manager to create a camera path widget properly
-            TrTransform xfSpawn = new TrTransform();
+            TrTransform xfSpawn = TrTransform.identity;
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.CameraPathWidgetPrefab, xfSpawn, Quaternion.identity, true
             );
