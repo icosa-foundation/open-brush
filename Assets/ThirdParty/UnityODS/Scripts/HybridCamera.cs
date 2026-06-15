@@ -21,6 +21,9 @@ public class HybridCamera : MonoBehaviour {
 
   const int MaxRenders = 1000;
   const int MaxImageWidth = 8192;
+  // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
+  // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
+  // platform bound; maxTextureSize is not itself a render-texture guarantee.
   const int MaxRenderTextureWidth = 8192;
                        
   public float interPupillaryDistance = 0.05f;
@@ -140,9 +143,10 @@ public class HybridCamera : MonoBehaviour {
   public IEnumerator Render(Transform node) {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
-      // Round image width to a mutiple of four to keep symmetry with the image height.
+      // Round image width to a multiple of four to keep symmetry with the image height.
       // Account for bloom padding because stitched/bloomed render textures are wider than the final image.
       int bloomPaddingMultiplier = vr180 ? 4 : 2;
+      // Clamp against the intermediate render texture width, not just the final image width.
       int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
       int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
       bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
