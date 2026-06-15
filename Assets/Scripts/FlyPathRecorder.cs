@@ -196,20 +196,22 @@ namespace TiltBrush
         {
             if (m_VrCamera == null) return Vector3.zero;
             
-            // Convert from camera space to scene space
+            // Camera paths store knots in scene/canvas space. The VR camera transform is
+            // already in global/room space, so convert it back through the scene pose.
             TrTransform scenePose = App.Scene.Pose;
-            Vector3 cameraPos_RS = m_VrCamera.transform.position;
-            return scenePose.MultiplyPoint(cameraPos_RS);
+            Vector3 cameraPos_GS = m_VrCamera.transform.position;
+            return scenePose.inverse.MultiplyPoint(cameraPos_GS);
         }
 
         private Quaternion GetCameraWorldRotation()
         {
             if (m_VrCamera == null) return Quaternion.identity;
             
-            // Convert from camera space to scene space
+            // Camera paths store knots in scene/canvas space. The VR camera transform is
+            // already in global/room space, so convert it back through the scene pose.
             TrTransform scenePose = App.Scene.Pose;
-            Quaternion cameraRot_RS = m_VrCamera.transform.rotation;
-            return scenePose.rotation * cameraRot_RS;
+            Quaternion cameraRot_GS = m_VrCamera.transform.rotation;
+            return scenePose.rotation.TrueInverse() * cameraRot_GS;
         }
 
         /// <summary>
