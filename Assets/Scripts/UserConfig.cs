@@ -181,6 +181,16 @@ namespace TiltBrush
                 }
                 set { m_IcosaModelPreload = value; }
             }
+
+            // Models whose reported triangle count exceeds this are not auto-preloaded or previewed in
+            // the Icosa panel (they still load when explicitly selected). 0 or negative disables the
+            // limit. Triangle count is the only size signal the Icosa API exposes before download.
+            private int? m_IcosaMaxPreviewTriangleCount;
+            public int IcosaMaxPreviewTriangleCount
+            {
+                get { return m_IcosaMaxPreviewTriangleCount ?? 200000; }
+                set { m_IcosaMaxPreviewTriangleCount = value; }
+            }
         }
 
         public FlagsConfig Flags;
@@ -464,6 +474,7 @@ namespace TiltBrush
             }
 
             int? m_OfflineResolution;
+            public bool OfflineResolutionValid { get { return m_OfflineResolution != null; } }
             public int OfflineResolution
             {
                 get { return m_OfflineResolution ?? kDefaultOfflineRes; }

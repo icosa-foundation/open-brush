@@ -5,20 +5,27 @@ using UnityEngine;
 public class MobileButtonSwap : MonoBehaviour
 {
 
-    public GameObject m_LabsButtonDesktop;
-    public GameObject m_LabsButtonMobile;
+    public List<GameObject> m_DesktopOnlyButtons;
+    public List<GameObject> m_MobileOnlyButtons;
+    public List<GameObject> m_WindowsOnlyButtons;
 
     void Start()
     {
-        if (Application.isMobilePlatform)
+        bool isMobile = Application.isMobilePlatform;
+        bool isDesktop = !Application.isMobilePlatform;
+        bool isWindows = Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor;
+
+        foreach (var btn in m_DesktopOnlyButtons)
         {
-            m_LabsButtonDesktop.SetActive(false);
-            m_LabsButtonMobile.SetActive(true);
+            btn.SetActive(isDesktop);
         }
-        else
+        foreach (var btn in m_MobileOnlyButtons)
         {
-            m_LabsButtonDesktop.SetActive(true);
-            m_LabsButtonMobile.SetActive(false);
+            btn.SetActive(isMobile);
+        }
+        foreach (var btn in m_WindowsOnlyButtons)
+        {
+            btn.SetActive(isWindows);
         }
     }
 }

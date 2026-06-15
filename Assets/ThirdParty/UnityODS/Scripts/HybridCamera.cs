@@ -20,7 +20,7 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
-  const int MaxImageWidth = 6000;
+  const int MaxImageWidth = 8192;
                        
   public float interPupillaryDistance = 0.05f;
   public int imageWidth = 4096;
@@ -140,7 +140,14 @@ public class HybridCamera : MonoBehaviour {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
       // Round image width to a mutiple of four to keep symmetry with the image height.
-      imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, MaxImageWidth );
+      // Account for bloom padding because stitched/bloomed render textures are wider than the final image.
+      int bloomPaddingMultiplier = vr180 ? 4 : 2;
+      int maxBloomRadius = Math.Max(0, (SystemInfo.maxRenderTextureSize - 4) / bloomPaddingMultiplier);
+      bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
+      int bloomPadding = bloomPaddingMultiplier * bloomRadius;
+      int maxImageWidth = Math.Min(MaxImageWidth, SystemInfo.maxRenderTextureSize - bloomPadding);
+      maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
+      imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, maxImageWidth );
 
       SetupTextures();
 
