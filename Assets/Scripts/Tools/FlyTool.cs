@@ -64,6 +64,7 @@ namespace TiltBrush
             if (m_PathRecorder == null)
             {
                 GameObject recorderGo = new GameObject("FlyPathRecorder");
+                recorderGo.transform.SetParent(App.Instance.transform);
                 m_PathRecorder = recorderGo.AddComponent<FlyPathRecorder>();
             }
         }
