@@ -60,6 +60,13 @@ namespace TiltBrush
 
         void Awake()
         {
+            Debug.Assert(m_Instance == null || m_Instance == this);
+            if (m_Instance != null && m_Instance != this)
+            {
+                enabled = false;
+                return;
+            }
+
             m_Instance = this;
             m_RecordedFrames = new List<RecordedFrame>();
         }
