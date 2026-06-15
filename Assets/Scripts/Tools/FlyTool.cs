@@ -136,29 +136,15 @@ namespace TiltBrush
 
                 Gamepad gamepad = Gamepad.current;
                 Vector2 mv = Vector2.zero;
-                if (Mouse.current != null && Mouse.current.leftButton.isPressed)
-                {
-                    mv += InputManager.m_Instance.GetMouseMoveDelta();
-                }
-                if (gamepad != null)
-                {
-                    Vector2 look = gamepad.rightStick.ReadValue();
-                    look = new Vector2(look.x * Mathf.Abs(look.x), look.y * Mathf.Abs(look.y));
-                    mv += look * LookSpeed;
-                    if (gamepad.rightStickButton.wasPressedThisFrame)
-                    {
-                        m_InvertLook = !m_InvertLook;
-                    }
-                }
-
                 Vector3 touchTranslation = Vector3.zero;
 
+                // Read the on-screen touch controls first. While one is held it takes
+                // priority, so a drag on it doesn't also get treated as a look-drag
+                // (this also keeps mouse-look from fighting the joystick when testing
+                // the touch UI in the editor).
+                bool uiControlTouched = false;
                 if (m_IsTouchScreen)
                 {
-                    // On-screen controls take priority; while one is held we don't also
-                    // treat the touch as a look-drag.
-                    bool uiControlTouched = false;
-
                     if (m_MoveJoystick != null && m_MoveJoystick.IsPressed)
                     {
                         Vector2 j = m_MoveJoystick.Value;
@@ -175,20 +161,36 @@ namespace TiltBrush
                         touchTranslation += Vector3.down;
                         uiControlTouched = true;
                     }
+                }
 
-                    if (!uiControlTouched && EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0)
+                if (!uiControlTouched && Mouse.current != null && Mouse.current.leftButton.isPressed)
+                {
+                    mv += InputManager.m_Instance.GetMouseMoveDelta();
+                }
+                if (gamepad != null)
+                {
+                    Vector2 look = gamepad.rightStick.ReadValue();
+                    look = new Vector2(look.x * Mathf.Abs(look.x), look.y * Mathf.Abs(look.y));
+                    mv += look * LookSpeed;
+                    if (gamepad.rightStickButton.wasPressedThisFrame)
                     {
-                        var t = Touch.activeTouches[0];
-                        Vector2 delta = t.delta;
-
-                        // Normalize to screen size
-                        delta.x /= Screen.width;
-                        delta.y /= Screen.height;
-
-                        // Sensitivity tuning
-                        float touchLookSensitivity = 300f; // tweak as needed
-                        mv = delta * touchLookSensitivity;
+                        m_InvertLook = !m_InvertLook;
                     }
+                }
+
+                if (m_IsTouchScreen && !uiControlTouched
+                    && EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0)
+                {
+                    var t = Touch.activeTouches[0];
+                    Vector2 delta = t.delta;
+
+                    // Normalize to screen size
+                    delta.x /= Screen.width;
+                    delta.y /= Screen.height;
+
+                    // Sensitivity tuning
+                    float touchLookSensitivity = 300f; // tweak as needed
+                    mv = delta * touchLookSensitivity;
                 }
 
                 if (mv != Vector2.zero)
