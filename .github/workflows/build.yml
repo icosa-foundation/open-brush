@@ -562,6 +562,10 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
+      - name: Add bundled Windows tools
+        if: matrix.targetPlatform == 'StandaloneWindows64'
+        run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
+
       - name: Upload build/
         uses: actions/upload-artifact@v7
         with:
