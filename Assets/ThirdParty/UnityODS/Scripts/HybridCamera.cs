@@ -21,6 +21,7 @@ public class HybridCamera : MonoBehaviour {
 
   const int MaxRenders = 1000;
   const int MaxImageWidth = 8192;
+  const int MaxRenderTextureWidth = 8192;
                        
   public float interPupillaryDistance = 0.05f;
   public int imageWidth = 4096;
@@ -142,10 +143,11 @@ public class HybridCamera : MonoBehaviour {
       // Round image width to a mutiple of four to keep symmetry with the image height.
       // Account for bloom padding because stitched/bloomed render textures are wider than the final image.
       int bloomPaddingMultiplier = vr180 ? 4 : 2;
-      int maxBloomRadius = Math.Max(0, (SystemInfo.maxRenderTextureSize - 4) / bloomPaddingMultiplier);
+      int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
+      int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
       bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
       int bloomPadding = bloomPaddingMultiplier * bloomRadius;
-      int maxImageWidth = Math.Min(MaxImageWidth, SystemInfo.maxRenderTextureSize - bloomPadding);
+      int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
       maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
       imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, maxImageWidth );
 
