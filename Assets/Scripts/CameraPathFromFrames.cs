@@ -45,25 +45,16 @@ namespace TiltBrush
             List<FlyPathRecorder.RecordedFrame> simplifiedFrames = SimplifyFrames(frames, simplificationThreshold, maxKnots);
             Debug.Log($"CameraPathFromFrames: Simplified to {simplifiedFrames.Count} key frames");
 
-            // Create the camera path widget
-            CameraPathWidget pathWidget = CreateCameraPathWidget();
+            CreateCameraPathFromFramesCommand command =
+                new CreateCameraPathFromFramesCommand(simplifiedFrames);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+
+            CameraPathWidget pathWidget = command.Widget;
             if (pathWidget == null)
             {
                 Debug.LogError("CameraPathFromFrames: Failed to create camera path widget");
                 return null;
             }
-
-            // Create position knots from simplified frames
-            CreatePositionKnots(pathWidget, simplifiedFrames);
-
-            // Create rotation knots at key points
-            CreateRotationKnots(pathWidget, simplifiedFrames);
-
-            // Create speed knots based on recorded speeds
-            CreateSpeedKnots(pathWidget, simplifiedFrames);
-
-            // Refresh the path to build splines
-            pathWidget.Path.RefreshEntirePath();
 
             Debug.Log($"CameraPathFromFrames: Created camera path with {pathWidget.Path.PositionKnots.Count} position knots");
 
@@ -109,141 +100,6 @@ namespace TiltBrush
             }
 
             return simplified;
-        }
-
-        private static CameraPathWidget CreateCameraPathWidget()
-        {
-            // Use the widget manager to create a camera path widget properly
-            TrTransform xfSpawn = TrTransform.identity;
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.CameraPathWidgetPrefab, xfSpawn, Quaternion.identity, true
-            );
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-
-            CameraPathWidget pathWidget = createCommand.Widget as CameraPathWidget;
-            if (pathWidget == null)
-            {
-                Debug.LogError("CameraPathFromFrames: Failed to create CameraPathWidget");
-                return null;
-            }
-
-            return pathWidget;
-        }
-
-        private static void CreatePositionKnots(CameraPathWidget pathWidget, List<FlyPathRecorder.RecordedFrame> frames)
-        {
-            for (int i = 0; i < frames.Count; i++)
-            {
-                var frame = frames[i];
-
-                // Create position knot
-                GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathPositionKnotPrefab);
-                CameraPathPositionKnot posKnot = knotGo.GetComponent<CameraPathPositionKnot>();
-
-                if (posKnot == null)
-                {
-                    Debug.LogError("CameraPathFromFrames: Position knot prefab missing CameraPathPositionKnot component");
-                    continue;
-                }
-
-                // Set position directly from recorded frame
-                knotGo.transform.position = frame.position;
-                knotGo.transform.rotation = Quaternion.LookRotation(GetDirectionToNext(frames, i), Vector3.up);
-
-                // Set tangent magnitude based on distance to next knot
-                if (i < frames.Count - 1)
-                {
-                    float distance = Vector3.Distance(frame.position, frames[i + 1].position);
-                    posKnot.TangentMagnitude = distance * 0.3f; // 30% of distance as tangent length
-                }
-                else
-                {
-                    posKnot.TangentMagnitude = 1.0f; // Default for last knot
-                }
-
-                // Add to path using proper method
-                pathWidget.Path.InsertPositionKnot(posKnot, pathWidget.Path.PositionKnots.Count);
-            }
-        }
-
-        private static void CreateRotationKnots(CameraPathWidget pathWidget, List<FlyPathRecorder.RecordedFrame> frames)
-        {
-            // Create rotation knots at key points (every few position knots to avoid overcomplicating)
-            int rotationKnotInterval = Mathf.Max(1, frames.Count / 10); // Up to 10 rotation knots
-
-            for (int i = 0; i < frames.Count; i += rotationKnotInterval)
-            {
-                var frame = frames[i];
-
-                GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathRotationKnotPrefab);
-                CameraPathRotationKnot rotKnot = knotGo.GetComponent<CameraPathRotationKnot>();
-
-                if (rotKnot == null)
-                {
-                    Debug.LogError("CameraPathFromFrames: Rotation knot prefab missing CameraPathRotationKnot component");
-                    continue;
-                }
-
-                // Set rotation knot at the corresponding path position
-                float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
-                rotKnot.PathT = new PathT(pathT);
-
-                // Set position and rotation directly from recorded frame
-                knotGo.transform.position = frame.position;
-                knotGo.transform.rotation = frame.rotation;
-
-                // Add to path
-                pathWidget.Path.AddRotationKnot(rotKnot, rotKnot.PathT);
-            }
-        }
-
-        private static void CreateSpeedKnots(CameraPathWidget pathWidget, List<FlyPathRecorder.RecordedFrame> frames)
-        {
-            // Create speed knots to preserve the timing of the original flight
-            int speedKnotInterval = Mathf.Max(1, frames.Count / 8); // Up to 8 speed knots
-
-            for (int i = 0; i < frames.Count; i += speedKnotInterval)
-            {
-                var frame = frames[i];
-
-                GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathSpeedKnotPrefab);
-                CameraPathSpeedKnot speedKnot = knotGo.GetComponent<CameraPathSpeedKnot>();
-
-                if (speedKnot == null)
-                {
-                    Debug.LogError("CameraPathFromFrames: Speed knot prefab missing CameraPathSpeedKnot component");
-                    continue;
-                }
-
-                // Set speed knot at the corresponding path position
-                float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
-                speedKnot.PathT = new PathT(pathT);
-
-                // Set camera speed based on recorded movement speed. SpeedValue is the
-                // control offset, so let the knot convert from camera speed to that value.
-                speedKnot.SetCameraSpeed(frame.speed * 0.5f);
-
-                // Position the speed knot at the recorded frame position
-                knotGo.transform.position = frame.position;
-
-                // Add to path
-                pathWidget.Path.AddSpeedKnot(speedKnot, speedKnot.PathT);
-            }
-        }
-
-        private static Vector3 GetDirectionToNext(List<FlyPathRecorder.RecordedFrame> frames, int currentIndex)
-        {
-            if (currentIndex >= frames.Count - 1)
-            {
-                // For the last frame, use the previous direction
-                if (currentIndex > 0)
-                {
-                    return (frames[currentIndex].position - frames[currentIndex - 1].position).normalized;
-                }
-                return Vector3.forward; // Fallback
-            }
-
-            return (frames[currentIndex + 1].position - frames[currentIndex].position).normalized;
         }
     }
 }
