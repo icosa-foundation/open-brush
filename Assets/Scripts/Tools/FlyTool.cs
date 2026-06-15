@@ -365,7 +365,7 @@ namespace TiltBrush
         /// <summary>
         /// Stop recording and get the recorded frames
         /// </summary>
-        public System.Collections.Generic.List<FlyPathRecorder.RecordedFrame> StopPathRecording()
+        public List<FlyPathRecorder.RecordedFrame> StopPathRecording()
         {
             if (m_PathRecorder == null)
             {
