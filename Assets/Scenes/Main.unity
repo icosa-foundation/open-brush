@@ -714,7 +714,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -7127,7 +7127,7 @@ GameObject:
   - component: {fileID: 383974629}
   - component: {fileID: 383974628}
   m_Layer: 0
-  m_Name: Canvas
+  m_Name: Watermark Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7212,7 +7212,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -12084,7 +12084,7 @@ PrefabInstance:
     - target: {fileID: 6842633082699724058, guid: 0c5d269964c951141a203f4061e37d9b,
         type: 3}
       propertyPath: m_Name
-      value: NonVRTouchControls
+      value: NonVRTouchControls Canvas
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -13978,12 +13978,7 @@ PrefabInstance:
     - target: {fileID: 3905978450790232543, guid: 92e391d518590d14daf354590d888efe,
         type: 3}
       propertyPath: m_Name
-      value: View Mode Non-VR UI
-      objectReference: {fileID: 0}
-    - target: {fileID: 3905978450790232543, guid: 92e391d518590d14daf354590d888efe,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
+      value: View Mode Non-VR UI Canvas
       objectReference: {fileID: 0}
     - target: {fileID: 7434812335299418614, guid: 92e391d518590d14daf354590d888efe,
         type: 3}
@@ -14085,19 +14080,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 7604052091494556080, guid: 92e391d518590d14daf354590d888efe,
-        type: 3}
-      propertyPath: m_AdditionalShaderChannelsFlag
-      value: 25
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3905978450790232543, guid: 92e391d518590d14daf354590d888efe,
-        type: 3}
-      insertIndex: 2
-      addedObject: {fileID: 964513052}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 92e391d518590d14daf354590d888efe, type: 3}
 --- !u!1 &964513047 stripped
 GameObject:
@@ -14111,29 +14097,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 964513046}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &964513052
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 964513047}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_UiScaleMode: 1
-  m_ReferencePixelsPerUnit: 100
-  m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
-  m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
-  m_PhysicalUnit: 3
-  m_FallbackScreenDPI: 96
-  m_DefaultSpriteDPI: 96
-  m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
 --- !u!1 &976470539
 GameObject:
   m_ObjectHideFlags: 0
@@ -21245,7 +21208,7 @@ GameObject:
   - component: {fileID: 1560708732}
   - component: {fileID: 1560708735}
   m_Layer: 5
-  m_Name: ProfileData
+  m_Name: ProfileData Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21311,7 +21274,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!223 &1560708734
 Canvas:
   m_ObjectHideFlags: 0
@@ -28029,7 +27992,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
@@ -28842,7 +28805,7 @@ MonoBehaviour:
   lensDirtScatterFactor: 0.5
   lensDirtIntensity: 0.05
   lensDirtTexture: {fileID: 0}
-  inputIsHDR: 0
+  inputIsHDR: 1
   lowQuality: 1
   depthBlending: 0
   depthBlendFunction: 0
