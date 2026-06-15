@@ -29,7 +29,7 @@ namespace TiltBrush
             public Quaternion rotation;
             public float timestamp;
             public float speed; // Movement speed at this frame
-            
+
             public RecordedFrame(Vector3 pos, Quaternion rot, float time, float moveSpeed)
             {
                 position = pos;
@@ -53,7 +53,7 @@ namespace TiltBrush
         private Vector3 m_LastRecordedPosition;
         private Camera m_VrCamera;
         private Vector3 m_LastFramePosition;
-        
+
         public bool IsRecording => m_IsRecording;
         public int RecordedFrameCount => m_RecordedFrames?.Count ?? 0;
         public List<RecordedFrame> RecordedFrames => m_RecordedFrames;
@@ -112,10 +112,10 @@ namespace TiltBrush
             m_LastFramePosition = m_LastRecordedPosition;
 
             Debug.Log("FlyPathRecorder: Started recording camera path");
-            
+
             // Record initial frame
             RecordCurrentFrame();
-            
+
             return true;
         }
 
@@ -133,9 +133,9 @@ namespace TiltBrush
             // Record final frame
             RecordCurrentFrame(force: true);
             m_IsRecording = false;
-            
+
             Debug.Log($"FlyPathRecorder: Stopped recording. Captured {m_RecordedFrames.Count} frames over {GetRecordingDuration():F2} seconds");
-            
+
             return new List<RecordedFrame>(m_RecordedFrames);
         }
 
@@ -171,14 +171,14 @@ namespace TiltBrush
 
             float currentTime = Time.time;
             Vector3 currentPosition = GetCameraWorldPosition();
-            
+
             // Check minimum time interval
             if (!force && currentTime - m_LastRecordTime < m_MinRecordingInterval)
             {
                 m_LastFramePosition = currentPosition;
                 return;
             }
-            
+
             // Check minimum movement threshold (except for first and forced frames)
             float distanceMoved = Vector3.Distance(currentPosition, m_LastRecordedPosition);
             if (!force && m_RecordedFrames.Count > 0 && distanceMoved < m_MinMovementThreshold)
@@ -204,7 +204,7 @@ namespace TiltBrush
         private Vector3 GetCameraWorldPosition()
         {
             if (m_VrCamera == null) return Vector3.zero;
-            
+
             // Camera paths store knots in scene/canvas space. The VR camera transform is
             // already in global/room space, so convert it back through the scene pose.
             TrTransform scenePose = App.Scene.Pose;
@@ -215,7 +215,7 @@ namespace TiltBrush
         private Quaternion GetCameraWorldRotation()
         {
             if (m_VrCamera == null) return Quaternion.identity;
-            
+
             // Camera paths store knots in scene/canvas space. The VR camera transform is
             // already in global/room space, so convert it back through the scene pose.
             TrTransform scenePose = App.Scene.Pose;
@@ -229,23 +229,23 @@ namespace TiltBrush
         public string GetRecordingStats()
         {
             if (m_RecordedFrames.Count == 0) return "No frames recorded";
-            
+
             float duration = GetRecordingDuration();
             float avgSpeed = 0f;
             float totalDistance = 0f;
-            
+
             for (int i = 1; i < m_RecordedFrames.Count; i++)
             {
-                float dist = Vector3.Distance(m_RecordedFrames[i].position, m_RecordedFrames[i-1].position);
+                float dist = Vector3.Distance(m_RecordedFrames[i].position, m_RecordedFrames[i - 1].position);
                 totalDistance += dist;
                 avgSpeed += m_RecordedFrames[i].speed;
             }
-            
+
             if (m_RecordedFrames.Count > 1)
             {
                 avgSpeed /= (m_RecordedFrames.Count - 1);
             }
-            
+
             return $"Frames: {m_RecordedFrames.Count}, Duration: {duration:F2}s, Distance: {totalDistance:F2}m, Avg Speed: {avgSpeed:F2}m/s";
         }
     }

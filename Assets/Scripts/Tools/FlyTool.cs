@@ -28,7 +28,7 @@ namespace TiltBrush
 
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
-        
+
         private FlyPathRecorder m_PathRecorder;
         [SerializeField]
         [Range(0f, 2f)]
@@ -58,7 +58,7 @@ namespace TiltBrush
         {
             base.Init();
             _toolDirectionIndicator = transform.Find("DirectionIndicator").gameObject;
-            
+
             // Find or create the FlyPathRecorder
             m_PathRecorder = FindObjectOfType<FlyPathRecorder>();
             if (m_PathRecorder == null)

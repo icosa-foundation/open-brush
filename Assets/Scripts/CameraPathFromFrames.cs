@@ -29,8 +29,8 @@ namespace TiltBrush
         /// <param name="simplificationThreshold">Distance threshold for removing intermediate points</param>
         /// <param name="maxKnots">Maximum number of knots to create (0 = no limit)</param>
         /// <returns>Created CameraPathWidget or null if failed</returns>
-        public static CameraPathWidget CreateCameraPath(List<FlyPathRecorder.RecordedFrame> frames, 
-                                                       float simplificationThreshold = 0.5f, 
+        public static CameraPathWidget CreateCameraPath(List<FlyPathRecorder.RecordedFrame> frames,
+                                                       float simplificationThreshold = 0.5f,
                                                        int maxKnots = 50)
         {
             if (frames == null || frames.Count < 2)
@@ -64,50 +64,50 @@ namespace TiltBrush
 
             // Refresh the path to build splines
             pathWidget.Path.RefreshEntirePath();
-            
+
             Debug.Log($"CameraPathFromFrames: Created camera path with {pathWidget.Path.PositionKnots.Count} position knots");
-            
+
             return pathWidget;
         }
 
-        private static List<FlyPathRecorder.RecordedFrame> SimplifyFrames(List<FlyPathRecorder.RecordedFrame> frames, 
-                                                                         float threshold, 
+        private static List<FlyPathRecorder.RecordedFrame> SimplifyFrames(List<FlyPathRecorder.RecordedFrame> frames,
+                                                                         float threshold,
                                                                          int maxKnots)
         {
             List<FlyPathRecorder.RecordedFrame> simplified = new List<FlyPathRecorder.RecordedFrame>();
-            
+
             // Always keep the first frame
             simplified.Add(frames[0]);
-            
+
             int step = maxKnots > 0 ? Mathf.Max(1, frames.Count / maxKnots) : 1;
-            
+
             for (int i = 1; i < frames.Count - 1; i += step)
             {
                 var current = frames[i];
                 var last = simplified[simplified.Count - 1];
-                
+
                 // Check if this frame is far enough from the last kept frame
                 float distance = Vector3.Distance(current.position, last.position);
                 float rotationDiff = Quaternion.Angle(current.rotation, last.rotation);
-                
+
                 if (distance >= threshold || rotationDiff >= 10f) // 10 degrees rotation threshold
                 {
                     simplified.Add(current);
                 }
-                
+
                 // Limit the number of simplified frames
                 if (maxKnots > 0 && simplified.Count >= maxKnots - 1)
                 {
                     break;
                 }
             }
-            
+
             // Always keep the last frame
             if (simplified[simplified.Count - 1] != frames[frames.Count - 1])
             {
                 simplified.Add(frames[frames.Count - 1]);
             }
-            
+
             return simplified;
         }
 
@@ -119,14 +119,14 @@ namespace TiltBrush
                 WidgetManager.m_Instance.CameraPathWidgetPrefab, xfSpawn, Quaternion.identity, true
             );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            
+
             CameraPathWidget pathWidget = createCommand.Widget as CameraPathWidget;
             if (pathWidget == null)
             {
                 Debug.LogError("CameraPathFromFrames: Failed to create CameraPathWidget");
                 return null;
             }
-            
+
             return pathWidget;
         }
 
@@ -135,21 +135,21 @@ namespace TiltBrush
             for (int i = 0; i < frames.Count; i++)
             {
                 var frame = frames[i];
-                
+
                 // Create position knot
                 GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathPositionKnotPrefab);
                 CameraPathPositionKnot posKnot = knotGo.GetComponent<CameraPathPositionKnot>();
-                
+
                 if (posKnot == null)
                 {
                     Debug.LogError("CameraPathFromFrames: Position knot prefab missing CameraPathPositionKnot component");
                     continue;
                 }
-                
+
                 // Set position directly from recorded frame
                 knotGo.transform.position = frame.position;
                 knotGo.transform.rotation = Quaternion.LookRotation(GetDirectionToNext(frames, i), Vector3.up);
-                
+
                 // Set tangent magnitude based on distance to next knot
                 if (i < frames.Count - 1)
                 {
@@ -160,7 +160,7 @@ namespace TiltBrush
                 {
                     posKnot.TangentMagnitude = 1.0f; // Default for last knot
                 }
-                
+
                 // Add to path using proper method
                 pathWidget.Path.InsertPositionKnot(posKnot, pathWidget.Path.PositionKnots.Count);
             }
@@ -170,28 +170,28 @@ namespace TiltBrush
         {
             // Create rotation knots at key points (every few position knots to avoid overcomplicating)
             int rotationKnotInterval = Mathf.Max(1, frames.Count / 10); // Up to 10 rotation knots
-            
+
             for (int i = 0; i < frames.Count; i += rotationKnotInterval)
             {
                 var frame = frames[i];
-                
+
                 GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathRotationKnotPrefab);
                 CameraPathRotationKnot rotKnot = knotGo.GetComponent<CameraPathRotationKnot>();
-                
+
                 if (rotKnot == null)
                 {
                     Debug.LogError("CameraPathFromFrames: Rotation knot prefab missing CameraPathRotationKnot component");
                     continue;
                 }
-                
+
                 // Set rotation knot at the corresponding path position
                 float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
                 rotKnot.PathT = new PathT(pathT);
-                
+
                 // Set position and rotation directly from recorded frame
                 knotGo.transform.position = frame.position;
                 knotGo.transform.rotation = frame.rotation;
-                
+
                 // Add to path
                 pathWidget.Path.AddRotationKnot(rotKnot, rotKnot.PathT);
             }
@@ -201,31 +201,31 @@ namespace TiltBrush
         {
             // Create speed knots to preserve the timing of the original flight
             int speedKnotInterval = Mathf.Max(1, frames.Count / 8); // Up to 8 speed knots
-            
+
             for (int i = 0; i < frames.Count; i += speedKnotInterval)
             {
                 var frame = frames[i];
-                
+
                 GameObject knotGo = Object.Instantiate(WidgetManager.m_Instance.CameraPathSpeedKnotPrefab);
                 CameraPathSpeedKnot speedKnot = knotGo.GetComponent<CameraPathSpeedKnot>();
-                
+
                 if (speedKnot == null)
                 {
                     Debug.LogError("CameraPathFromFrames: Speed knot prefab missing CameraPathSpeedKnot component");
                     continue;
                 }
-                
+
                 // Set speed knot at the corresponding path position
                 float pathT = (float)i / (frames.Count - 1) * (pathWidget.Path.PositionKnots.Count - 1);
                 speedKnot.PathT = new PathT(pathT);
-                
+
                 // Set camera speed based on recorded movement speed. SpeedValue is the
                 // control offset, so let the knot convert from camera speed to that value.
                 speedKnot.SetCameraSpeed(frame.speed * 0.5f);
-                
+
                 // Position the speed knot at the recorded frame position
                 knotGo.transform.position = frame.position;
-                
+
                 // Add to path
                 pathWidget.Path.AddSpeedKnot(speedKnot, speedKnot.PathT);
             }
@@ -242,7 +242,7 @@ namespace TiltBrush
                 }
                 return Vector3.forward; // Fallback
             }
-            
+
             return (frames[currentIndex + 1].position - frames[currentIndex].position).normalized;
         }
     }
