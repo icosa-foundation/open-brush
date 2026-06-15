@@ -36,9 +36,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -30, y: 30}
+  m_AnchoredPosition: {x: -15, y: 75}
   m_SizeDelta: {x: 120, y: 60}
-  m_Pivot: {x: 1, y: 0}
+  m_Pivot: {x: 1, y: 1}
 --- !u!222 &8800003
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -429,7 +429,7 @@ RectTransform:
   m_GameObject: {fileID: 2717577101887433273}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1637615418592780102}
@@ -437,9 +437,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -60, y: -60}
+  m_AnchoredPosition: {x: -15, y: -65}
   m_SizeDelta: {x: 50, y: 50}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 1, y: 0}
 --- !u!222 &543707680322808875
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -592,7 +592,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -614,7 +614,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1366, y: 768}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 1
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -681,8 +681,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7957630612980966693}
   - {fileID: 5480192321494645310}
+  - {fileID: 7957630612980966693}
   - {fileID: 8800002}
   m_Father: {fileID: 7434812335299418614}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -704,12 +704,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: NonVR Menu UI
       objectReference: {fileID: 0}
-    - target: {fileID: 2040737298705332481, guid: eec2c6d84d06c8243a91c52d96d79404,
-        type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 4413f4774e5410945873d36d030f1c15,
-        type: 3}
     - target: {fileID: 3114756803188682520, guid: eec2c6d84d06c8243a91c52d96d79404,
         type: 3}
       propertyPath: m_Pivot.x
