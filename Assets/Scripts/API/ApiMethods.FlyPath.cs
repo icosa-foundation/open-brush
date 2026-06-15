@@ -35,7 +35,12 @@ namespace TiltBrush
         public static void StopFlyPathRecording()
         {
             FlyTool flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
-            if (flyTool == null) return;
+            if (flyTool == null)
+            {
+                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+                flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
+                if (flyTool == null) return;
+            }
             List<FlyPathRecorder.RecordedFrame> frames = flyTool.StopPathRecording();
             if (frames != null && frames.Count > 1)
             {
