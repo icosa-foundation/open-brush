@@ -52,7 +52,6 @@ namespace TiltBrush
         private float m_LastRecordTime = 0f;
         private Vector3 m_LastRecordedPosition;
         private Camera m_VrCamera;
-        private Vector3 m_LastFramePosition;
 
         public bool IsRecording => m_IsRecording;
         public int RecordedFrameCount => m_RecordedFrames?.Count ?? 0;
@@ -109,7 +108,6 @@ namespace TiltBrush
             m_IsRecording = true;
             m_LastRecordTime = Time.time - m_MinRecordingInterval;
             m_LastRecordedPosition = GetCameraWorldPosition();
-            m_LastFramePosition = m_LastRecordedPosition;
 
             Debug.Log("FlyPathRecorder: Started recording camera path");
 
@@ -175,7 +173,6 @@ namespace TiltBrush
             // Check minimum time interval
             if (!force && currentTime - m_LastRecordTime < m_MinRecordingInterval)
             {
-                m_LastFramePosition = currentPosition;
                 return;
             }
 
@@ -183,13 +180,12 @@ namespace TiltBrush
             float distanceMoved = Vector3.Distance(currentPosition, m_LastRecordedPosition);
             if (!force && m_RecordedFrames.Count > 0 && distanceMoved < m_MinMovementThreshold)
             {
-                m_LastFramePosition = currentPosition;
                 return;
             }
 
             // Calculate movement speed
             float deltaTime = currentTime - m_LastRecordTime;
-            float speed = deltaTime > 0f ? Vector3.Distance(currentPosition, m_LastFramePosition) / deltaTime : 0f;
+            float speed = deltaTime > 0f ? distanceMoved / deltaTime : 0f;
 
             // Record the frame
             Quaternion currentRotation = GetCameraWorldRotation();
@@ -198,7 +194,6 @@ namespace TiltBrush
 
             m_LastRecordTime = currentTime;
             m_LastRecordedPosition = currentPosition;
-            m_LastFramePosition = currentPosition;
         }
 
         private Vector3 GetCameraWorldPosition()
