@@ -100,7 +100,7 @@ namespace TiltBrush
 
             m_RecordedFrames.Clear();
             m_IsRecording = true;
-            m_LastRecordTime = Time.time;
+            m_LastRecordTime = Time.time - m_MinRecordingInterval;
             m_LastRecordedPosition = GetCameraWorldPosition();
             m_LastFramePosition = m_LastRecordedPosition;
 
