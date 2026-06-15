@@ -30,6 +30,8 @@
         </activity-alias>
 
         <!-- Alias that launches with XR/VR disabled -->
+        <!-- The oculus VR category is added so the Quest library surfaces this as its
+             own launch tile; without it the Quest launcher hides non-VR launcher entries. -->
         <activity-alias
             android:name=".DisableXrModeActivity"
             android:targetActivity="com.unity3d.player.UnityPlayerActivity"
@@ -39,6 +41,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
             <meta-data android:name="DisableXrMode" android:value="true" />
         </activity-alias>
