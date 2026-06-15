@@ -123,10 +123,9 @@ namespace TiltBrush
                 return null;
             }
 
-            m_IsRecording = false;
-            
             // Record final frame
-            RecordCurrentFrame();
+            RecordCurrentFrame(force: true);
+            m_IsRecording = false;
             
             Debug.Log($"FlyPathRecorder: Stopped recording. Captured {m_RecordedFrames.Count} frames over {GetRecordingDuration():F2} seconds");
             
@@ -151,12 +150,15 @@ namespace TiltBrush
             return m_RecordedFrames[m_RecordedFrames.Count - 1].timestamp - m_RecordedFrames[0].timestamp;
         }
 
-        private void RecordCurrentFrame()
+        private void RecordCurrentFrame(bool force = false)
         {
             if (m_RecordedFrames.Count >= m_MaxFrames)
             {
                 Debug.LogWarning($"FlyPathRecorder: Maximum frame count ({m_MaxFrames}) reached, stopping recording");
-                StopRecording();
+                if (!force)
+                {
+                    StopRecording();
+                }
                 return;
             }
 
@@ -164,7 +166,7 @@ namespace TiltBrush
             Vector3 currentPosition = GetCameraWorldPosition();
             
             // Check minimum time interval
-            if (currentTime - m_LastRecordTime < m_MinRecordingInterval)
+            if (!force && currentTime - m_LastRecordTime < m_MinRecordingInterval)
             {
                 m_LastFramePosition = currentPosition;
                 return;
@@ -172,7 +174,7 @@ namespace TiltBrush
             
             // Check minimum movement threshold (except for first and forced frames)
             float distanceMoved = Vector3.Distance(currentPosition, m_LastRecordedPosition);
-            if (m_RecordedFrames.Count > 0 && distanceMoved < m_MinMovementThreshold)
+            if (!force && m_RecordedFrames.Count > 0 && distanceMoved < m_MinMovementThreshold)
             {
                 m_LastFramePosition = currentPosition;
                 return;
