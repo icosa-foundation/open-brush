@@ -31,6 +31,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private Texture2D m_LoadingImageTexture;
         [SerializeField] public Texture2D m_ClickCursor;
+        [SerializeField] public GameObject m_PcControlsText;
 
         private readonly List<SketchGridEntry> m_Sketches = new List<SketchGridEntry>();
         private readonly List<NoHeadsetSketchGridItem> m_GridItems =
@@ -822,6 +823,11 @@ namespace TiltBrush
             if (m_SketchLoadingUi != null)
             {
                 m_SketchLoadingUi.SetActive(active);
+                if (m_PcControlsText != null)
+                {
+                    // TODO We should really do a specific "is mouse/keyboard" check here
+                    m_SketchLoadingUi.SetActive(!Application.isMobilePlatform);
+                }
             }
         }
 

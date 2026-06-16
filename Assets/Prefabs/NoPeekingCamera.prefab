@@ -113,12 +113,13 @@ MonoBehaviour:
   m_SketchGridContent: {fileID: 1690831256598435295}
   m_SketchGridItemPrefab: {fileID: 7806660072164990958, guid: c285177024fd8f74395ff699739c872e,
     type: 3}
-  m_EmptySketchListMessage: {fileID: 0}
+  m_EmptySketchListMessage: {fileID: 5586032132397395313}
   m_UnknownImageTexture: {fileID: 2800000, guid: b68201fa2e266264089f97700761a547,
     type: 3}
   m_LoadingImageTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b,
     type: 3}
   m_ClickCursor: {fileID: 2800000, guid: f51c3e3167192de47a8f802ba3b18bd6, type: 3}
+  m_PcControlsText: {fileID: 5786663856570495902}
 --- !u!1 &140238
 GameObject:
   m_ObjectHideFlags: 0
@@ -3104,7 +3105,7 @@ PrefabInstance:
     - target: {fileID: 6973854430055675643, guid: 80a6c130ea1d2d549a6c289c762a6dea,
         type: 3}
       propertyPath: m_Size
-      value: 0.73195785
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6973854430055675643, guid: 80a6c130ea1d2d549a6c289c762a6dea,
         type: 3}
