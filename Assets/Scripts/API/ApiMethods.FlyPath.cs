@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
-
 namespace TiltBrush
 {
     public static partial class ApiMethods
@@ -21,31 +19,13 @@ namespace TiltBrush
         [ApiEndpoint("tool.fly.recordpath.start", "Start recording camera path while using fly tool")]
         public static void StartFlyPathRecording()
         {
-            FlyTool flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
-            if (flyTool == null)
-            {
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-                flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
-                if (flyTool == null) return;
-            }
-            flyTool.StartPathRecording();
+            FlyPathCapture.StartRecording();
         }
 
         [ApiEndpoint("tool.fly.recordpath.stop", "Stop recording and create camera path from recorded frames")]
         public static void StopFlyPathRecording()
         {
-            FlyTool flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
-            if (flyTool == null)
-            {
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-                flyTool = SketchSurfacePanel.m_Instance.ActiveTool as FlyTool;
-                if (flyTool == null) return;
-            }
-            List<FlyPathRecorder.RecordedFrame> frames = flyTool.StopPathRecording();
-            if (frames != null && frames.Count > 1)
-            {
-                CameraPathFromFrames.CreateCameraPath(frames);
-            }
+            FlyPathCapture.StopRecordingAndCreatePath();
         }
     }
 }
