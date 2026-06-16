@@ -826,7 +826,7 @@ namespace TiltBrush
                 if (m_PcControlsText != null)
                 {
                     // TODO We should really do a specific "is mouse/keyboard" check here
-                    m_SketchLoadingUi.SetActive(!Application.isMobilePlatform);
+                    m_PcControlsText.SetActive(!Application.isMobilePlatform);
                 }
             }
         }
