@@ -418,7 +418,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        SteamOverlayBrowser.OpenUrl(deviceCodeUrl)
+                        SteamOverlayBrowser.OpenUrl(deviceCodeUrl);
                         //App.OpenURL(deviceCodeUrl);
                     }
                     ShowIcosaLogin();
