@@ -28,6 +28,8 @@ namespace TiltBrush
             typeof(App).GetField("m_Instance", BindingFlags.Static | BindingFlags.NonPublic);
         private static readonly MethodInfo sm_ValidModelCache =
             typeof(IcosaAssetCatalog).GetMethod("ValidModelCache", BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo sm_AppendQueryParam =
+            typeof(VrAssetService).GetMethod("AppendQueryParam", BindingFlags.Static | BindingFlags.NonPublic);
 
         private readonly List<string> m_CachePathsToCleanup = new List<string>();
         private GameObject m_AppObject;
@@ -254,10 +256,89 @@ namespace TiltBrush
             Assert.IsNull(formatType);
         }
 
+        [Test]
+        public void IcosaSceneFileInfo_ToleratesMissingFields()
+        {
+            Assert.DoesNotThrow(() => new IcosaSceneFileInfo(new JObject()));
+
+            var info = new IcosaSceneFileInfo(new JObject());
+            Assert.IsFalse(info.Valid);
+            Assert.IsFalse(info.Exists);
+            Assert.AreEqual("Untitled", info.HumanName);
+            Assert.AreEqual(1, info.TriangleCount);
+        }
+
+        [Test]
+        public void IcosaSceneFileInfo_InvalidWithoutTiltDownloadUrl()
+        {
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "missing-tilt-url",
+                "Missing Tilt Url",
+                FormatJson("GLTF2", "https://assets.example.com/model.gltf")));
+
+            Assert.IsFalse(info.Valid);
+            Assert.IsNull(info.TiltFileUrl);
+        }
+
+        [Test]
+        public void IcosaSceneFileInfo_DefaultsMalformedTriangleCount()
+        {
+            JObject gltf = FormatJson("GLTF2", "https://assets.example.com/model.gltf");
+            gltf["formatComplexity"] = new JObject
+            {
+                ["triangleCount"] = "not-a-number"
+            };
+
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "bad-triangle-count",
+                "Bad Triangle Count",
+                FormatJson("TILT", "https://assets.example.com/sketch.tilt"),
+                gltf));
+
+            Assert.IsTrue(info.Valid);
+            Assert.AreEqual(1, info.TriangleCount);
+        }
+
+        [Test]
+        public void IcosaSceneFileInfo_ValidWithTiltDownloadUrl()
+        {
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "valid-tilt",
+                "Valid Tilt",
+                FormatJson("TILT", "https://assets.example.com/sketch.tilt")));
+
+            Assert.IsTrue(info.Valid);
+            Assert.IsTrue(info.Exists);
+            Assert.AreEqual("https://assets.example.com/sketch.tilt", info.TiltFileUrl);
+        }
+
+        [Test]
+        public void AppendQueryParam_EscapesReservedCharacters()
+        {
+            object[] args = { "https://api.example.com/assets?", "name", "space & equals=question?" };
+
+            sm_AppendQueryParam.Invoke(null, args);
+
+            string uri = (string)args[0];
+            Assert.AreEqual(
+                "https://api.example.com/assets?name=space%20%26%20equals%3Dquestion%3F&",
+                uri);
+        }
+
         private static JObject AssetJson(params JObject[] formats)
         {
             return new JObject
             {
+                ["formats"] = new JArray(formats)
+            };
+        }
+
+        private static JObject SketchAssetJson(string assetId, string displayName, params JObject[] formats)
+        {
+            return new JObject
+            {
+                ["assetId"] = assetId,
+                ["displayName"] = displayName,
                 ["formats"] = new JArray(formats)
             };
         }

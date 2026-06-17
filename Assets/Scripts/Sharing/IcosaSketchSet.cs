@@ -476,6 +476,11 @@ namespace TiltBrush
                 for (int i = 0; i < infos.Count; i++)
                 {
                     IcosaSceneFileInfo info = infos[i];
+                    if (info == null || !info.Valid)
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Skipping invalid Icosa sketch metadata at index {i}");
+                        continue;
+                    }
                     IcosaSketch sketch;
                     if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
                     {
@@ -517,7 +522,6 @@ namespace TiltBrush
                     if (fromEmpty)
                     {
                         yield return DownloadIconsCoroutine(sketches);
-                        sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                         // Copying sketches to m_Sketches before sketches has completed populating is a bit
                         // dangerous, but as long as they're copied and then listeners are notified
                         // immediately afterward with OnChanged(), there data should be stable.
@@ -543,7 +547,6 @@ namespace TiltBrush
                 if (changed)
                 {
                     yield return DownloadIconsCoroutine(sketches);
-                    sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                 }
 
                 // PruneOldSketchesCoroutine relies on m_AssetIds being up to date, so set these before
@@ -571,14 +574,6 @@ namespace TiltBrush
                 yield return PruneOldSketchesCoroutine();
                 OnChanged();
             }
-        }
-
-        // If we have not managed to download a tilt file or its icon, we should remove it from the
-        // sketches list so as not to confuse the user.
-        private void RemoveFailedDownloads(List<IcosaSketch> sketches)
-        {
-            sketches.RemoveAll(x => !x.IcosaSceneFileInfo.TiltDownloaded ||
-                !x.IcosaSceneFileInfo.IconDownloaded);
         }
 
         private bool IsCachedTiltValid(IcosaSceneFileInfo sceneFileInfo)
@@ -651,7 +646,11 @@ namespace TiltBrush
                 // TODO(b/36270116): Check filesizes when Icosa can give it to us to detect incomplete downloads
                 if (!sceneFileInfo.IconDownloaded)
                 {
-                    if (File.Exists(sceneFileInfo.IconPath))
+                    if (string.IsNullOrEmpty(sceneFileInfo.IconUrl))
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Missing icon URL for {sceneFileInfo.HumanName}");
+                    }
+                    else if (File.Exists(sceneFileInfo.IconPath))
                     {
                         sceneFileInfo.IconDownloaded = true;
                     }
@@ -905,9 +904,14 @@ namespace TiltBrush
             {
                 foreach (int i in m_RequestedIcons)
                 {
+                    if (i < 0 || i >= m_Sketches.Count)
+                    {
+                        continue;
+                    }
+
                     IcosaSketch sketch = m_Sketches[i];
                     string path = sketch.IcosaSceneFileInfo.IconPath;
-                    if (sketch.IcosaSceneFileInfo.IconDownloaded)
+                    if (sketch.IcosaSceneFileInfo.IconDownloaded && File.Exists(path))
                     {
                         byte[] data = File.ReadAllBytes(path);
                         Texture2D t = new Texture2D(2, 2);
@@ -978,31 +982,41 @@ namespace TiltBrush
         private TiltFile m_DownloadedFile;
         private bool m_IconDownloaded;
 
-        public bool IsValid => m_TiltFileUrl != null;
+        public bool IsValid => !string.IsNullOrEmpty(m_AssetId) &&
+            !string.IsNullOrEmpty(m_HumanName) &&
+            !string.IsNullOrEmpty(m_TiltFileUrl);
 
         // Populate metadata from the JSON returned by Icosa for a single asset
         // See go/vr-assets-service-api
         public IcosaSceneFileInfo(JToken json)
         {
-            m_AssetId = json["assetId"].ToString();
-            m_HumanName = json["displayName"].ToString();
+            m_AssetId = json?["assetId"]?.ToString();
+            m_HumanName = json?["displayName"]?.ToString();
+            if (string.IsNullOrWhiteSpace(m_HumanName))
+            {
+                m_HumanName = string.IsNullOrWhiteSpace(m_AssetId) ? "Untitled" : m_AssetId;
+            }
 
             TiltDownloadStrategy strategy = VrAssetService.m_Instance != null
                 ? VrAssetService.m_Instance.m_TiltDownloadStrategy
                 : TiltDownloadStrategy.AvoidArchive;
-            JToken format = SelectTiltFormat(json["formats"], strategy);
+            JToken formats = json?["formats"];
+            JToken format = SelectTiltFormat(formats, strategy);
             m_TiltFileUrl = format?["root"]?["url"]?.ToString();
-            m_IconUrl = json["thumbnail"]?["url"]?.ToString();
-            m_License = json["license"]?.ToString();
+            m_IconUrl = json?["thumbnail"]?["url"]?.ToString();
+            m_License = json?["license"]?.ToString();
 
             // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
-            var validFormat = json["formats"].FirstOrDefault(x =>
-                x["formatType"].ToString() == "GLTF2" ||
-                x["formatType"].ToString() == "GLTF" ||
-                x["formatType"].ToString() == "OBJ"
+            var validFormat = formats?.FirstOrDefault(x =>
+                x["formatType"]?.ToString() == "GLTF2" ||
+                x["formatType"]?.ToString() == "GLTF" ||
+                x["formatType"]?.ToString() == "OBJ"
             );
             string triCount = validFormat?["formatComplexity"]?["triangleCount"]?.ToString();
-            m_GltfTriangleCount = Int32.Parse(triCount ?? "1");
+            if (!Int32.TryParse(triCount, out m_GltfTriangleCount) || m_GltfTriangleCount < 1)
+            {
+                m_GltfTriangleCount = 1;
+            }
 
             m_DownloadedFile = null;
             m_IconDownloaded = false;
@@ -1081,10 +1095,7 @@ namespace TiltBrush
         // Allow setting since it is not in the asset json object itself
         public string Author { get; set; }
 
-        public bool Valid
-        {
-            get { return true; }
-        }
+        public bool Valid => IsValid;
 
         public bool Available
         {
@@ -1096,10 +1107,7 @@ namespace TiltBrush
             get { return m_localTiltFile; }
         }
 
-        public bool Exists
-        {
-            get { return true; }
-        }
+        public bool Exists => Valid;
 
         public bool ReadOnly
         {

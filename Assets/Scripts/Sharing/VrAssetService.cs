@@ -1109,6 +1109,12 @@ namespace TiltBrush
             return $"{uriPath}{separator}{additionalParams}";
         }
 
+        private static void AppendQueryParam(ref string uri, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) { return; }
+            uri += $"{key}={UnityWebRequest.EscapeURL(value)}&";
+        }
+
         public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
         {
             string filteredUriPath = null;
@@ -1132,12 +1138,12 @@ namespace TiltBrush
                     break;
             }
             string uri = $"{IcosaApiRoot}{filteredUriPath}&";
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
             return new AssetLister(uri, errorMessage);
         }
 
@@ -1185,16 +1191,16 @@ namespace TiltBrush
             {
                 uri += $"format={format}&";
             }
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "triangleCountMax", queryParams.TriangleCountMax.ToString());
             // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
             // at least one such model is pathologically large, so exclude them server-side.
             uri += "triangleCountMin=1&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
