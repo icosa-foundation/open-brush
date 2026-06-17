@@ -1076,7 +1076,8 @@ namespace TiltBrush
                 // update tools.
                 if (bWidgetGrabOK && !m_GrabBrush.grabbingWorld)
                 {
-                    if (m_CurrentGazeObject != -1 && !m_WorldBeingGrabbed)
+
+                    if (m_CurrentGazeObject != -1 && !m_WorldBeingGrabbed && !MarkovPenDrawingPanel.IsOpen)
                     {
                         UpdateActiveGazeObject();
 
@@ -4415,6 +4416,7 @@ namespace TiltBrush
                             m_DraftingVisibility = option;
                             UpdateDraftingVisibility();
                         }
+                        Debug.LogWarning("Drafting visibility set to " + option);
                         break;
                     }
                 case GlobalCommands.MergeBrushStrokes:

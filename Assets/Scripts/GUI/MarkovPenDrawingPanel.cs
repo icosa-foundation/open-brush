@@ -14,13 +14,19 @@ namespace TiltBrush
 
         [Header("Markov Panel Colliders")]
         [SerializeField] private Collider m_DrawingCollider;
-
-        [SerializeField] private Collider m_ButtonCollider;
+        [SerializeField] private Collider m_SaveButtonCollider;
+        [SerializeField] private Collider m_CloseButtonCollider;
 
         [Header("Panel Alignment")]
         [SerializeField] private bool m_ForceStraightRotation = true;
-
         [SerializeField] private Vector3 m_StraightEulerRotation = Vector3.zero;
+
+        [Header("Panel Placement")]
+        [SerializeField] private float m_DistanceFromUser = 1.75f;
+        [SerializeField] private float m_HeightOffsetFromHead = -0.1f;
+        [SerializeField] private float m_SizeMultiplier = 0.85f;
+
+        private Vector3 m_InitialLocalScale;
 
         public static MarkovPenDrawingPanel Instance
         {
@@ -37,21 +43,29 @@ namespace TiltBrush
             get { return m_DrawingCollider; }
         }
 
-        public Collider ButtonCollider
+        public Collider SaveButtonCollider
         {
-            get { return m_ButtonCollider; }
+            get { return m_SaveButtonCollider; }
         }
 
-        /// @brief Initialize the Markov drawing panel instance reference.
+
+        public Collider CloseeButtonCollider
+        {
+            get { return m_CloseButtonCollider; }
+        }
+
+
+        /// @brief Initializes the Markov drawing panel instance reference.
         protected override void Awake()
         {
             base.Awake();
 
             s_Instance = this;
+            m_InitialLocalScale = transform.localScale;
         }
 
-        /// @brief Handle panel activation.
-        /// Marks the panel as open, starts stroke capture, aligns the panel to the user,
+        /// @brief Handles panel activation.
+        /// Marks the panel as open, starts stroke capture, positions the panel in front of the user,
         /// and resets the Markov drawing tool state.
         protected override void OnEnablePanel()
         {
@@ -61,14 +75,60 @@ namespace TiltBrush
 
             MarkovPenSketchMemoryScript.BeginMarkovStrokeCapture();
 
+            PositionPanelInFrontOfUser();
+            ApplyPanelScale();
             FaceUserButStayUpright();
+
             MarkovPenDrawingFreepaint.OnPanelOpened();
         }
 
-        /// @brief Face the user horizontally while keeping the panel upright.
+        /// @brief Places the panel in front of the user at a fixed distance.
+        private void PositionPanelInFrontOfUser()
+        {
+            Transform head = ViewpointScript.Head;
+
+            if (head == null)
+            {
+                return;
+            }
+
+            Vector3 forward = head.forward;
+            forward.y = 0f;
+
+            if (forward.sqrMagnitude < 0.001f)
+            {
+                forward = transform.forward;
+                forward.y = 0f;
+            }
+
+            if (forward.sqrMagnitude < 0.001f)
+            {
+                return;
+            }
+
+            forward.Normalize();
+
+            Vector3 targetPosition = head.position + forward * m_DistanceFromUser;
+            targetPosition.y = head.position.y + m_HeightOffsetFromHead;
+
+            transform.position = targetPosition;
+        }
+
+        /// @brief Applies the configured panel size without accumulating scale changes.
+        private void ApplyPanelScale()
+        {
+            transform.localScale = m_InitialLocalScale * m_SizeMultiplier;
+        }
+
+        /// @brief Faces the user horizontally while keeping the panel upright.
         private void FaceUserButStayUpright()
         {
             Transform head = ViewpointScript.Head;
+
+            if (head == null)
+            {
+                return;
+            }
 
             Vector3 direction = transform.position - head.position;
             direction.y = 0f;
@@ -78,10 +138,16 @@ namespace TiltBrush
                 return;
             }
 
+            if (m_ForceStraightRotation)
+            {
+                transform.rotation = Quaternion.Euler(m_StraightEulerRotation);
+                return;
+            }
+
             transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        /// @brief Handle panel deactivation.
+        /// @brief Handles panel deactivation.
         /// Marks the panel as closed, ends stroke capture, and resets the Markov drawing tool state.
         protected override void OnDisablePanel()
         {
@@ -93,7 +159,7 @@ namespace TiltBrush
             MarkovPenDrawingFreepaint.OnPanelClosed();
         }
 
-        /// @brief Try to get a drawing point from the drawing collider using a ray.
+        /// @brief Tries to get a drawing point from the drawing collider using a ray.
         /// @param ray The ray used to test the drawing collider.
         /// @param point2D The resulting local two-dimensional point on the drawing panel.
         /// @param worldPoint The resulting world-space point on the drawing panel.
@@ -125,35 +191,36 @@ namespace TiltBrush
             return true;
         }
 
-        /// @brief Try to get a button point from the button collider using a ray.
+        /// @brief Tries to get a button point from the button collider using a ray.
         /// @param ray The ray used to test the button collider.
         /// @param worldPoint The resulting world-space point on the button collider.
         /// @return True if the ray hit the button collider.
-        public bool TryGetButtonPoint(Ray ray, out Vector3 worldPoint)
+        public Collider TryGetButtonPoint(Ray ray, out Vector3 worldPoint)
         {
             worldPoint = Vector3.zero;
 
-            if (m_ButtonCollider == null)
-            {
-                return false;
-            }
-
             RaycastHit raycastHit;
-            if (!m_ButtonCollider.Raycast(ray, out raycastHit, k_RaycastMaxDistance))
-            {
-                return false;
-            }
 
-            worldPoint = raycastHit.point;
 
-            return true;
+
+            if (m_SaveButtonCollider.Raycast(ray, out raycastHit, k_RaycastMaxDistance))
+                return m_SaveButtonCollider;
+
+            if (m_CloseButtonCollider.Raycast(ray, out raycastHit, k_RaycastMaxDistance))
+                return m_CloseButtonCollider;
+
+            return null;
         }
 
-        /// @brief Handle the Markov drawing panel button press.
+        /// @brief Handles the Markov drawing panel button press.
         /// Stops active drawing, deletes the visible strokes captured since panel opening,
         /// and hides the drawing panel while keeping saved point lists available.
-        public void OnButtonPressed()
+        public void OnButtonPressed(Collider buttonCollider)
         {
+            if (buttonCollider == m_CloseButtonCollider)
+            {
+                MarkovPenDrawingFreepaint.clearList();
+            }
             if (PointerManager.m_Instance != null)
             {
                 PointerManager.m_Instance.EnableLine(false);
