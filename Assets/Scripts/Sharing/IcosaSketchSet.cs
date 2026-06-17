@@ -689,53 +689,19 @@ namespace TiltBrush
         private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches, Action onDownload = null)
         {
             bool notifyOnError = true;
-            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            void NotifyDownloadResult(IcosaSceneFileInfo sceneFileInfo, IcosaTiltDownloadResult result)
             {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogException(ex);
-                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Out of disk space?";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Could not update the cached file.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogException(ex);
-                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
-            {
-                try
+                if (result == null || result.Succeeded || result.Status == IcosaTiltDownloadStatus.Canceled)
                 {
-                    if (File.Exists(sceneFileInfo.TiltPath))
-                    {
-                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
-                    }
-                    else
-                    {
-                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
-                    }
-                    return true;
+                    return;
                 }
-                catch (Exception ex)
+                ControllerConsoleScript.m_Instance.AddNewLine(result.UserMessage, notifyOnError);
+                notifyOnError = false;
+                if (result.Exception != null)
                 {
-                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
-                    return false;
+                    Debug.LogException(result.Exception);
                 }
+                Debug.LogError($"ICOSATILT_LOAD {result.Status}: {result.Details ?? sceneFileInfo.TiltPath}");
             }
 
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
@@ -750,48 +716,15 @@ namespace TiltBrush
                     }
                     else
                     {
-                        string tempTiltPath = sceneFileInfo.TiltPath + ".download";
-                        using (UnityWebRequest www = UnityWebRequest.Get(sceneFileInfo.TiltFileUrl))
+                        IcosaTiltDownloadResult result = null;
+                        yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                            sceneFileInfo, sceneFileInfo.TiltPath, downloadBuffer,
+                            isCanceled: null,
+                            onRequestChanged: null,
+                            onComplete: r => result = r);
+                        if (result != null && !result.Succeeded)
                         {
-                            DownloadHandlerFastFile downloadHandler;
-                            try
-                            {
-                                File.Delete(tempTiltPath);
-                                downloadHandler = new DownloadHandlerFastFile(tempTiltPath, downloadBuffer);
-                            }
-                            catch (Exception ex)
-                            {
-                                NotifyCreateError(sceneFileInfo, "sketch", ex);
-                                continue;
-                            }
-                            www.downloadHandler = downloadHandler;
-                            yield return www.SendWebRequest();
-                            if (www.isNetworkError || www.responseCode >= 400 || !string.IsNullOrEmpty(www.error))
-                            {
-                                NotifyWriteError(sceneFileInfo, "sketch", www);
-                            }
-                            else if (!new TiltFile(tempTiltPath).IsHeaderValid())
-                            {
-                                Debug.LogError($"Downloaded invalid sketch file {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-                            }
-                            else
-                            {
-                                if (TryReplaceCachedTilt(sceneFileInfo, tempTiltPath))
-                                {
-                                    sceneFileInfo.TiltDownloaded = true;
-                                }
-                            }
-                        }
-                        try
-                        {
-                            if (File.Exists(tempTiltPath))
-                            {
-                                File.Delete(tempTiltPath);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.LogWarning($"Could not clean up failed download: {ex}");
+                            NotifyDownloadResult(sceneFileInfo, result);
                         }
                     }
                     onDownload?.Invoke();
