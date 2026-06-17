@@ -15,10 +15,12 @@
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace TiltBrush
 {
@@ -32,6 +34,7 @@ namespace TiltBrush
             typeof(VrAssetService).GetMethod("AppendQueryParam", BindingFlags.Static | BindingFlags.NonPublic);
 
         private readonly List<string> m_CachePathsToCleanup = new List<string>();
+        private readonly List<string> m_FilePathsToCleanup = new List<string>();
         private GameObject m_AppObject;
         private GameObject m_CatalogObject;
 
@@ -59,6 +62,20 @@ namespace TiltBrush
                 }
             }
             m_CachePathsToCleanup.Clear();
+
+            foreach (string filePath in m_FilePathsToCleanup)
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+                string tempDownloadPath = filePath + ".download";
+                if (File.Exists(tempDownloadPath))
+                {
+                    File.Delete(tempDownloadPath);
+                }
+            }
+            m_FilePathsToCleanup.Clear();
         }
 
         [Test]
@@ -323,6 +340,77 @@ namespace TiltBrush
             Assert.AreEqual(
                 "https://api.example.com/assets?name=space%20%26%20equals%3Dquestion%3F&",
                 uri);
+        }
+
+        [Test]
+        public void IcosaTiltDownloader_ReturnsMissingUrlWithoutRequest()
+        {
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "missing-download",
+                "Missing Download",
+                FormatJson("GLTF2", "https://assets.example.com/model.gltf")));
+            IcosaTiltDownloadResult result = null;
+            IEnumerator routine = IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, "unused.tilt", new byte[1024],
+                isCanceled: null,
+                onRequestChanged: null,
+                onComplete: r => result = r);
+
+            while (routine.MoveNext()) { }
+
+            Assert.NotNull(result);
+            Assert.AreEqual(IcosaTiltDownloadStatus.MissingUrl, result.Status);
+        }
+
+        [Test]
+        public void IcosaTiltDownloader_ReturnsInvalidUrlWithoutRequest()
+        {
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "bad-download-url",
+                "Bad Download Url",
+                FormatJson("TILT", "not a url")));
+            IcosaTiltDownloadResult result = null;
+            IEnumerator routine = IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, "unused.tilt", new byte[1024],
+                isCanceled: null,
+                onRequestChanged: null,
+                onComplete: r => result = r);
+
+            while (routine.MoveNext()) { }
+
+            Assert.NotNull(result);
+            Assert.AreEqual(IcosaTiltDownloadStatus.InvalidUrl, result.Status);
+        }
+
+        [UnityTest]
+        public IEnumerator IcosaTiltDownloader_DownloadsFileUrlToTargetPath()
+        {
+            string source = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "..", "Support", "Sketches", "Intro",
+                    "Intro_Sketch_Simple.tilt"));
+            Assert.IsTrue(File.Exists(source), $"Missing test sketch: {source}");
+
+            string target = Path.Combine(
+                Path.GetTempPath(), $"IcosaTiltDownloader-{Guid.NewGuid():N}.tilt");
+            m_FilePathsToCleanup.Add(target);
+
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "file-url-download",
+                "File Url Download",
+                FormatJson("TILT", new Uri(source).AbsoluteUri)));
+            IcosaTiltDownloadResult result = null;
+
+            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, target, new byte[1024 * 1024],
+                isCanceled: null,
+                onRequestChanged: null,
+                onComplete: r => result = r);
+
+            Assert.NotNull(result);
+            Assert.AreEqual(IcosaTiltDownloadStatus.Success, result.Status);
+            Assert.IsTrue(File.Exists(target));
+            Assert.IsTrue(new TiltFile(target).IsHeaderValid());
+            Assert.IsTrue(info.TiltDownloaded);
         }
 
         private static JObject AssetJson(params JObject[] formats)
