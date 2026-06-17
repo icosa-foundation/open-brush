@@ -644,37 +644,6 @@ namespace TiltBrush
                 Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
             }
 
-            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Could not update the cached file.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogException(ex);
-                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
-            {
-                try
-                {
-                    if (File.Exists(sceneFileInfo.TiltPath))
-                    {
-                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
-                    }
-                    else
-                    {
-                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
-                    }
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
-                    return false;
-                }
-            }
-
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
             foreach (IcosaSketch sketch in sketches)
             {
@@ -737,6 +706,37 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
                 notifyOnError = false;
                 Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
+                    "Could not update the cached file.";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogException(ex);
+                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
+            {
+                try
+                {
+                    if (File.Exists(sceneFileInfo.TiltPath))
+                    {
+                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
+                    }
+                    else
+                    {
+                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
+                    return false;
+                }
             }
 
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
@@ -987,8 +987,11 @@ namespace TiltBrush
             m_AssetId = json["assetId"].ToString();
             m_HumanName = json["displayName"].ToString();
 
-            var format = json["formats"].First(x => x["formatType"].ToString() == "TILT")["root"];
-            m_TiltFileUrl = format["url"].ToString();
+            TiltDownloadStrategy strategy = VrAssetService.m_Instance != null
+                ? VrAssetService.m_Instance.m_TiltDownloadStrategy
+                : TiltDownloadStrategy.AvoidArchive;
+            JToken format = SelectTiltFormat(json["formats"], strategy);
+            m_TiltFileUrl = format?["root"]?["url"]?.ToString();
             m_IconUrl = json["thumbnail"]?["url"]?.ToString();
             m_License = json["license"]?.ToString();
 
@@ -1003,6 +1006,61 @@ namespace TiltBrush
 
             m_DownloadedFile = null;
             m_IconDownloaded = false;
+        }
+
+        private static JToken SelectTiltFormat(JToken formats, TiltDownloadStrategy strategy)
+        {
+            if (formats == null)
+            {
+                return null;
+            }
+
+            List<JToken> tiltFormats = formats
+                .Where(x => x["formatType"]?.ToString() == "TILT"
+                    && !string.IsNullOrEmpty(GetFormatUrl(x)))
+                .ToList();
+            if (tiltFormats.Count == 0)
+            {
+                return null;
+            }
+
+            if (strategy == TiltDownloadStrategy.AvoidArchive)
+            {
+                List<JToken> nonArchiveFormats = tiltFormats
+                    .Where(x => !IsArchiveUrl(GetFormatUrl(x)))
+                    .ToList();
+                if (nonArchiveFormats.Count > 0)
+                {
+                    return GetPreferredFormat(nonArchiveFormats) ?? nonArchiveFormats[0];
+                }
+            }
+
+            return GetPreferredFormat(tiltFormats) ?? tiltFormats[0];
+        }
+
+        private static JToken GetPreferredFormat(List<JToken> formats)
+        {
+            return formats.FirstOrDefault(x => x["isPreferredForDownload"]?.Value<bool>() == true);
+        }
+
+        private static string GetFormatUrl(JToken format)
+        {
+            return format?["root"]?["url"]?.ToString();
+        }
+
+        private static bool IsArchiveUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return false;
+            }
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
+            }
+            return url.IndexOf("archive.org", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public override string ToString()

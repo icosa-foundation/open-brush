@@ -57,6 +57,13 @@ namespace TiltBrush
         VOX
     }
 
+    [Serializable]
+    public enum TiltDownloadStrategy
+    {
+        AvoidArchive,
+        UsePreferred
+    }
+
     public class VrAssetService : MonoBehaviour
     {
         // Constants
@@ -327,6 +334,7 @@ namespace TiltBrush
         private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
+        public TiltDownloadStrategy m_TiltDownloadStrategy = TiltDownloadStrategy.AvoidArchive;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
