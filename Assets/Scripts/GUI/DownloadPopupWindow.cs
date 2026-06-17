@@ -31,6 +31,7 @@ namespace TiltBrush
         private TaskAndCts m_DownloadTask;
         private UnityWebRequest m_WebRequest;
         private double m_WebRequestStartTime;
+        private string m_TempTiltPath;
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
         {
@@ -126,9 +127,12 @@ namespace TiltBrush
 
             using (m_WebRequest = UnityWebRequest.Get(info.TiltFileUrl))
             {
+                string tempTiltPath = info.TiltPath + ".download";
+                m_TempTiltPath = tempTiltPath;
                 try
                 {
-                    m_WebRequest.downloadHandler = new DownloadHandlerFastFile(info.TiltPath, buffer);
+                    File.Delete(tempTiltPath);
+                    m_WebRequest.downloadHandler = new DownloadHandlerFastFile(tempTiltPath, buffer);
                 }
                 catch (Exception ex)
                 {
@@ -163,9 +167,27 @@ namespace TiltBrush
                     }
                     else
                     {
-                        info.TiltDownloaded = true;
+                        if (!new TiltFile(tempTiltPath).IsHeaderValid())
+                        {
+                            Debug.LogWarning($"Downloaded invalid sketch file {info.HumanName} {info.TiltPath}");
+                            NotifyWriteError(info, "sketch", m_WebRequest);
+                        }
+                        else
+                        {
+                            if (File.Exists(info.TiltPath))
+                            {
+                                File.Delete(info.TiltPath);
+                            }
+                            File.Move(tempTiltPath, info.TiltPath);
+                            info.TiltDownloaded = true;
+                        }
                     }
                 }
+                if (!info.TiltDownloaded && File.Exists(tempTiltPath))
+                {
+                    File.Delete(tempTiltPath);
+                }
+                m_TempTiltPath = null;
             }
             m_WebRequest = null;
         }
@@ -256,11 +278,14 @@ namespace TiltBrush
                 && !icosaSceneFileInfo.TiltDownloaded)
             {
                 // If anything goes wrong we may be left with a partial download
-                // at TiltPath. Attempt to clean it up to prevent failed loads
+                // at the temp path. Attempt to clean it up to prevent failed loads
                 // later.
                 try
                 {
-                    File.Delete(icosaSceneFileInfo.TiltPath);
+                    if (!string.IsNullOrEmpty(m_TempTiltPath))
+                    {
+                        File.Delete(m_TempTiltPath);
+                    }
                 }
                 catch (Exception e)
                 {
