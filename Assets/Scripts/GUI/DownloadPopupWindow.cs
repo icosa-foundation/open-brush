@@ -32,6 +32,7 @@ namespace TiltBrush
         private UnityWebRequest m_WebRequest;
         private double m_WebRequestStartTime;
         private string m_TempTiltPath;
+        private bool m_DownloadFailed;
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
         {
@@ -89,10 +90,13 @@ namespace TiltBrush
             if (info == null)
             {
                 Debug.LogWarning("Unexpected file info type.");
+                MarkDownloadFailed("Could not download sketch.");
                 yield break;
             }
 
             const int kRetryAttempts = 3;
+            bool notifyOnError = true;
+            IcosaTiltDownloadResult lastResult = null;
             for (int i = 0; i < kRetryAttempts; i++)
             {
                 if (info.TiltDownloaded || m_DownloadTask.Cts.IsCancellationRequested)
@@ -100,131 +104,39 @@ namespace TiltBrush
                     break;
                 }
 
-                yield return DownloadTiltCoroutine(info, downloadBuffer);
+                m_TempTiltPath = info.TiltPath + ".download";
+                yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                    info, info.TiltPath, downloadBuffer,
+                    isCanceled: () => m_DownloadTask.Cts.IsCancellationRequested,
+                    onRequestChanged: request =>
+                    {
+                        m_WebRequest = request;
+                        if (request != null)
+                        {
+                            m_WebRequestStartTime = Time.realtimeSinceStartupAsDouble;
+                        }
+                    },
+                    onComplete: result => lastResult = result);
+
+                if (lastResult != null && !lastResult.Succeeded &&
+                    lastResult.Status != IcosaTiltDownloadStatus.Canceled)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(lastResult.UserMessage, notifyOnError);
+                    notifyOnError = false;
+                    if (lastResult.Exception != null)
+                    {
+                        Debug.LogWarning($"{lastResult.Exception} {info.HumanName} {info.TiltPath}");
+                    }
+                    Debug.LogWarning($"ICOSATILT_LOAD {lastResult.Status}: {lastResult.Details ?? info.TiltPath}");
+                }
                 yield return null;
             }
-        }
 
-        private IEnumerator DownloadTiltCoroutine(IcosaSceneFileInfo info, byte[] buffer)
-        {
-            bool notifyOnError = true;
-            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            if (!info.TiltDownloaded && !m_DownloadTask.Cts.IsCancellationRequested)
             {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogWarning($"{ex} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+                MarkDownloadFailed(lastResult?.UserMessage ?? "Could not download sketch.");
             }
-
-            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Out of disk space?";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogWarning($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Could not update the cached file.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogWarning($"{ex} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
-            {
-                try
-                {
-                    if (File.Exists(sceneFileInfo.TiltPath))
-                    {
-                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
-                    }
-                    else
-                    {
-                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
-                    }
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
-                    return false;
-                }
-            }
-
-            using (m_WebRequest = UnityWebRequest.Get(info.TiltFileUrl))
-            {
-                string tempTiltPath = info.TiltPath + ".download";
-                m_TempTiltPath = tempTiltPath;
-                try
-                {
-                    File.Delete(tempTiltPath);
-                    m_WebRequest.downloadHandler = new DownloadHandlerFastFile(tempTiltPath, buffer);
-                }
-                catch (Exception ex)
-                {
-                    NotifyCreateError(info, "sketch", ex);
-                    yield break;
-                }
-
-                // Do request and wait until done.
-                m_WebRequestStartTime = Time.realtimeSinceStartupAsDouble;
-                var op = m_WebRequest.SendWebRequest();
-                while (!op.isDone)
-                {
-                    // Be careful here. The coroutine may be stopped at any
-                    // time, never coming back to this point. If execution does
-                    // not make it to the end of the using block, file handles
-                    // etc will never be released, so this must be done manually
-                    // wherever the coroutine is stopped.
-                    yield return null;
-                    if (m_DownloadTask.Cts.IsCancellationRequested)
-                    {
-                        break;
-                    }
-                }
-
-                if (m_WebRequest.isDone && !m_DownloadTask.Cts.IsCancellationRequested)
-                {
-                    if (m_WebRequest.isNetworkError
-                        || m_WebRequest.responseCode >= 400
-                        || !string.IsNullOrEmpty(m_WebRequest.error))
-                    {
-                        NotifyWriteError(info, "sketch", m_WebRequest);
-                    }
-                    else
-                    {
-                        if (!new TiltFile(tempTiltPath).IsHeaderValid())
-                        {
-                            Debug.LogWarning($"Downloaded invalid sketch file {info.HumanName} {info.TiltPath}");
-                            NotifyWriteError(info, "sketch", m_WebRequest);
-                        }
-                        else
-                        {
-                            if (TryReplaceCachedTilt(info, tempTiltPath))
-                            {
-                                info.TiltDownloaded = true;
-                            }
-                        }
-                    }
-                }
-                try
-                {
-                    if (!info.TiltDownloaded && File.Exists(tempTiltPath))
-                    {
-                        File.Delete(tempTiltPath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"Could not clean up failed download: {ex}");
-                }
-                m_TempTiltPath = null;
-            }
-            m_WebRequest = null;
+            m_TempTiltPath = null;
         }
 
         protected override void UpdateVisuals()
@@ -267,6 +179,10 @@ namespace TiltBrush
         protected override void BaseUpdate()
         {
             base.BaseUpdate();
+            if (m_DownloadFailed)
+            {
+                return;
+            }
             if (m_SceneFileInfo == null || !m_SceneFileInfo.Available)
             {
                 return;
@@ -283,9 +199,23 @@ namespace TiltBrush
             bool close = base.RequestClose(bForceClose);
             if (close)
             {
-                m_DownloadTask.Cts.Cancel();
+                m_DownloadTask?.Cts.Cancel();
             }
             return close;
+        }
+
+        private void MarkDownloadFailed(string message)
+        {
+            m_DownloadFailed = true;
+            if (m_WindowText != null && !string.IsNullOrEmpty(message))
+            {
+                m_WindowText.text = message;
+            }
+            m_ProgressBar.material.SetFloat("_Ratio", 0);
+            if (m_ParentPanel)
+            {
+                m_ParentPanel.ResolveDelayedButtonCommand(false, bKeepOpen: true);
+            }
         }
 
         private void OnDestroy()
