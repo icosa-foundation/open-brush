@@ -644,6 +644,13 @@ namespace TiltBrush
             cameraPos.y = 12;
             App.VrSdk.GetVrCamera().transform.position = cameraPos;
             SketchGridEntry entry = m_Sketches[index];
+            if (entry.SceneFileInfo == null)
+            {
+                RecoverFromSketchLoadFailure("Could not load sketch.");
+                Debug.LogWarning($"{LogPrefix} selected sketch index {index} has no file info");
+                return;
+            }
+
             if (entry.SceneFileInfo != null && !entry.SceneFileInfo.Available
                 && (entry.SetType == SketchSetType.Curated || entry.SetType == SketchSetType.Liked)
                 && entry.SketchSet is IcosaSketchSet icosaSketchSet)
@@ -652,6 +659,7 @@ namespace TiltBrush
                 if (!m_DownloadingSketchKeys.Add(downloadKey))
                 {
                     Debug.Log($"{LogPrefix} download already in flight for {downloadKey}");
+                    RecoverFromSketchLoadFailure("Download already in progress.");
                     return;
                 }
 
@@ -703,6 +711,7 @@ namespace TiltBrush
             if (!sketchSet.IsSketchIndexValid(sketchIndex))
             {
                 Debug.LogWarning($"{LogPrefix} downloaded sketch index {sketchIndex} is no longer valid");
+                RecoverFromSketchLoadFailure("Could not download sketch.");
                 yield break;
             }
 
@@ -731,6 +740,7 @@ namespace TiltBrush
             if (entry.SceneFileInfo == null || !entry.SceneFileInfo.Available)
             {
                 Debug.LogWarning($"{LogPrefix} downloaded sketch index {sketchIndex} is not available");
+                RecoverFromSketchLoadFailure("Could not download sketch.");
                 yield break;
             }
 
@@ -774,6 +784,21 @@ namespace TiltBrush
 
             SetLoadingMessage("Loading sketch...");
             Debug.Log($"{LogPrefix} showing loading message and waiting for sketch playback to start");
+        }
+
+        private void RecoverFromSketchLoadFailure(string message)
+        {
+            m_LoadInProgress = false;
+            if (m_RuntimeTabBarRect != null)
+            {
+                m_RuntimeTabBarRect.gameObject.SetActive(true);
+            }
+            if (m_LowerControls != null)
+            {
+                m_LowerControls.SetActive(true);
+            }
+            SetGridActive(true);
+            SetLoadingMessage(message);
         }
 
         private void SetLoadingMessage(string message)
