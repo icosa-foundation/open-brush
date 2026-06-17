@@ -387,8 +387,14 @@ namespace TiltBrush
 
             // While we're fetching metadata, hold a flag so we can message state in the UI.
             IsActivelyRefreshingSketches = true;
-            yield return PopulateSketchesCoroutine();
-            IsActivelyRefreshingSketches = false;
+            try
+            {
+                yield return PopulateSketchesCoroutine();
+            }
+            finally
+            {
+                IsActivelyRefreshingSketches = false;
+            }
         }
 
         private void ResetLists()
