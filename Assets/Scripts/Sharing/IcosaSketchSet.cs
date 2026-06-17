@@ -581,6 +581,29 @@ namespace TiltBrush
                 !x.IcosaSceneFileInfo.IconDownloaded);
         }
 
+        private bool IsCachedTiltValid(IcosaSceneFileInfo sceneFileInfo)
+        {
+            if (!File.Exists(sceneFileInfo.TiltPath))
+            {
+                return false;
+            }
+
+            if (new TiltFile(sceneFileInfo.TiltPath).IsHeaderValid())
+            {
+                return true;
+            }
+
+            try
+            {
+                File.Delete(sceneFileInfo.TiltPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Could not delete invalid cached sketch: {ex}");
+            }
+            return false;
+        }
+
         public IEnumerator DownloadFilesCoroutine(System.Action onComplete = null, Action onDownload = null)
         {
             yield return DownloadIconsCoroutine(m_Sketches);
@@ -619,6 +642,37 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
                 notifyOnError = false;
                 Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
+                    "Could not update the cached file.";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogException(ex);
+                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
+            {
+                try
+                {
+                    if (File.Exists(sceneFileInfo.TiltPath))
+                    {
+                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
+                    }
+                    else
+                    {
+                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
+                    return false;
+                }
             }
 
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
@@ -691,18 +745,20 @@ namespace TiltBrush
                 IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
                 if (!sceneFileInfo.TiltDownloaded)
                 {
-                    if (File.Exists(sceneFileInfo.TiltPath))
+                    if (IsCachedTiltValid(sceneFileInfo))
                     {
                         sceneFileInfo.TiltDownloaded = true;
                     }
                     else
                     {
+                        string tempTiltPath = sceneFileInfo.TiltPath + ".download";
                         using (UnityWebRequest www = UnityWebRequest.Get(sceneFileInfo.TiltFileUrl))
                         {
                             DownloadHandlerFastFile downloadHandler;
                             try
                             {
-                                downloadHandler = new DownloadHandlerFastFile(sceneFileInfo.TiltPath, downloadBuffer);
+                                File.Delete(tempTiltPath);
+                                downloadHandler = new DownloadHandlerFastFile(tempTiltPath, downloadBuffer);
                             }
                             catch (Exception ex)
                             {
@@ -715,10 +771,28 @@ namespace TiltBrush
                             {
                                 NotifyWriteError(sceneFileInfo, "sketch", www);
                             }
+                            else if (!new TiltFile(tempTiltPath).IsHeaderValid())
+                            {
+                                Debug.LogError($"Downloaded invalid sketch file {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+                            }
                             else
                             {
-                                sceneFileInfo.TiltDownloaded = true;
+                                if (TryReplaceCachedTilt(sceneFileInfo, tempTiltPath))
+                                {
+                                    sceneFileInfo.TiltDownloaded = true;
+                                }
                             }
+                        }
+                        try
+                        {
+                            if (File.Exists(tempTiltPath))
+                            {
+                                File.Delete(tempTiltPath);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogWarning($"Could not clean up failed download: {ex}");
                         }
                     }
                     onDownload?.Invoke();

@@ -125,6 +125,36 @@ namespace TiltBrush
                 Debug.LogWarning($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
             }
 
+            void NotifyReplaceError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
+                    "Could not update the cached file.";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogWarning($"{ex} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            bool TryReplaceCachedTilt(IcosaSceneFileInfo sceneFileInfo, string tempTiltPath)
+            {
+                try
+                {
+                    if (File.Exists(sceneFileInfo.TiltPath))
+                    {
+                        File.Replace(tempTiltPath, sceneFileInfo.TiltPath, null);
+                    }
+                    else
+                    {
+                        File.Move(tempTiltPath, sceneFileInfo.TiltPath);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    NotifyReplaceError(sceneFileInfo, "sketch", ex);
+                    return false;
+                }
+            }
+
             using (m_WebRequest = UnityWebRequest.Get(info.TiltFileUrl))
             {
                 string tempTiltPath = info.TiltPath + ".download";
@@ -174,18 +204,23 @@ namespace TiltBrush
                         }
                         else
                         {
-                            if (File.Exists(info.TiltPath))
+                            if (TryReplaceCachedTilt(info, tempTiltPath))
                             {
-                                File.Delete(info.TiltPath);
+                                info.TiltDownloaded = true;
                             }
-                            File.Move(tempTiltPath, info.TiltPath);
-                            info.TiltDownloaded = true;
                         }
                     }
                 }
-                if (!info.TiltDownloaded && File.Exists(tempTiltPath))
+                try
                 {
-                    File.Delete(tempTiltPath);
+                    if (!info.TiltDownloaded && File.Exists(tempTiltPath))
+                    {
+                        File.Delete(tempTiltPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Could not clean up failed download: {ex}");
                 }
                 m_TempTiltPath = null;
             }
