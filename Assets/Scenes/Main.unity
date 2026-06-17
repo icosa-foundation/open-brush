@@ -10831,6 +10831,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SketchbookRefreshInterval: 10
   m_UseLocalFeaturedSketches: 0
+  m_TiltDownloadStrategy: 0
 --- !u!114 &652605567
 MonoBehaviour:
   m_ObjectHideFlags: 0
