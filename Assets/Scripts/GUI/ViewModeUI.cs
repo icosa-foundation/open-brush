@@ -17,16 +17,6 @@ public class ViewModeUI : MonoBehaviour
     {
         m_UiRoot.SetActive(!App.VrSdk.IsHmdInitialized() || App.Config.m_SdkMode == SdkMode.Monoscopic);
         m_Instance = this;
-
-        var canvas = GetComponent<Canvas>();
-        var scaler = GetComponent<UnityEngine.UI.CanvasScaler>();
-        var uiRect = m_UiRoot != null ? ((RectTransform)m_UiRoot.transform).rect.size : Vector2.zero;
-        Debug.Log($"VMUI_DBG Screen={Screen.width}x{Screen.height} dpi={Screen.dpi} " +
-                  $"orient={Screen.orientation} canvasScaleFactor={(canvas != null ? canvas.scaleFactor : -1f)} " +
-                  $"scalerMode={(scaler != null ? scaler.uiScaleMode.ToString() : "none")} " +
-                  $"refRes={(scaler != null ? scaler.referenceResolution.ToString() : "?")} " +
-                  $"match={(scaler != null ? scaler.matchWidthOrHeight : -1f)} " +
-                  $"uiRootRectSize={uiRect}");
     }
 
     void Update()

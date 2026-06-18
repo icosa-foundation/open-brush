@@ -479,8 +479,6 @@ namespace TiltBrush
             {
                 Debug.LogErrorFormat("Couldn't set dir to {0}: {1}", appDir, e);
             }
-            string curDir = Directory.GetCurrentDirectory();
-            Debug.LogFormat("Dir {0} -> {1}", oldDir, curDir);
 #endif
         }
 
