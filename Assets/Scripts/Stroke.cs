@@ -532,14 +532,14 @@ namespace TiltBrush
         {
             _CheckValidLayerState();
             var batch = m_BatchSubset.m_ParentBatch;
-            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
-            {
-                batch.InstantiatedMaterial.EnableKeyword("SHADER_SCRIPTING_ON");
-            }
             var material = batch.InstantiatedMaterial;
             if (!material.HasFloat(parameter))
             {
                 throw new StrokeShaderModifierException($"Brush material {material.name} does not have a float parameter named {parameter}");
+            }
+            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+            {
+                material.EnableKeyword("SHADER_SCRIPTING_ON");
             }
             material.SetFloat(parameter, value);
         }
@@ -577,7 +577,11 @@ namespace TiltBrush
             {
                 throw new StrokeShaderModifierException($"Brush material {material.name} does not have a vector parameter named {parameter}");
             }
-            batch.InstantiatedMaterial.SetVector(parameter, new Vector4(x, y, z, w));
+            if (ApiManager.ParameterRequiresScriptingKeyword(parameter))
+            {
+                material.EnableKeyword("SHADER_SCRIPTING_ON");
+            }
+            material.SetVector(parameter, new Vector4(x, y, z, w));
         }
     }
 

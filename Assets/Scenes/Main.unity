@@ -10783,6 +10783,10 @@ MonoBehaviour:
     m_Type: 5
   - m_TutorialPrefab: {fileID: 152394, guid: fc52585901841164db56aa2a0a64a869, type: 3}
     m_Type: 6
+  - m_TutorialPrefab: {fileID: 152394, guid: 3630420c40092514aa65b4c2b4289113, type: 3}
+    m_Type: 7
+  - m_TutorialPrefab: {fileID: 152394, guid: 5dc3ba3f9cf6c7e41a4e01f4457b597f, type: 3}
+    m_Type: 8
   - m_TutorialPrefab: {fileID: 152394, guid: 4b4b97a1fbbd091428e6f4f9564b42e7, type: 3}
     m_Type: 9
   - m_TutorialPrefab: {fileID: 152394, guid: 389001cd00a4b6a49b26a73276d14d6d, type: 3}
@@ -19846,20 +19850,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_VrSystem: {fileID: 17776372}
-  m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5, type: 3}
-  m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf, type: 3}
-  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b, type: 3}
-  m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b, type: 3}
-  m_UnityXRWmrControlsPrefab: {fileID: 1000010438099326, guid: 9511be86b17c61c48866b3c74ef77cba, type: 3}
-  m_UnityXRKnucklesControlsPrefab: {fileID: 1268974758188984, guid: 138e87a2f1028a34caeb87d79a452b35, type: 3}
-  m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295, type: 3}
-  m_UnityXRNeo3ControlsPrefab: {fileID: 0}
-  m_UnityXRPhoenixControlsPrefab: {fileID: 0}
-  m_UnityXRZapboxControlsPrefab: {fileID: 1000010438099326, guid: 97b4cb6f2999a4844b837b3883d42ced, type: 3}
-  m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8, type: 3}
-  m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8, type: 3}
-  m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294, type: 3}
-  m_NonVrControlsPrefab: {fileID: 1000011856084730, guid: 9d7a5b25efc95cd429ec738e0ccd19df, type: 3}
+  m_UnityXRUninitializedControlsPrefab: {fileID: 1585114503440396, guid: dcbeb61cc5ebbbb4d9727e864c5c03d5,
+    type: 3}
+  m_UnityXRViveControlsPrefab: {fileID: 1000010438099326, guid: 563752fa90755a246adda5cf3c8291cf,
+    type: 3}
+  m_UnityXRRiftControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
+    type: 3}
+  m_UnityXRQuestControlsPrefab: {fileID: 1000010438099326, guid: dc370ed6d37f7c141bf13df38965130b,
+    type: 3}
+  m_UnityXRWmrControlsPrefab: {fileID: 1000010438099326, guid: 9511be86b17c61c48866b3c74ef77cba,
+    type: 3}
+  m_UnityXRKnucklesControlsPrefab: {fileID: 1268974758188984, guid: 138e87a2f1028a34caeb87d79a452b35,
+    type: 3}
+  m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
+    type: 3}
+  m_UnityXRNeo3ControlsPrefab: {fileID: 1000010438099326, guid: c43e2e934a9409148ad8bfdfeeb98e40,
+    type: 3}
+  m_UnityXRPhoenixControlsPrefab: {fileID: 1000010438099326, guid: 6ec600b382b3e3a4380fae76343440be,
+    type: 3}
+  m_UnityXRZapboxControlsPrefab: {fileID: 1000010438099326, guid: 97b4cb6f2999a4844b837b3883d42ced,
+    type: 3}
+  m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
+    type: 3}
+  m_OculusQuestControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,
+    type: 3}
+  m_GvrPointerControlsPrefab: {fileID: 1118433077968626, guid: 5afb9e0174eb44346ad642958130e294,
+    type: 3}
+  m_NonVrControlsPrefab: {fileID: 1000011856084730, guid: 9d7a5b25efc95cd429ec738e0ccd19df,
+    type: 3}
   m_VrCamera: {fileID: 17776371}
 --- !u!4 &1412532063
 Transform:
@@ -31931,11 +31949,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8454566571192234474, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_Mesh
-      value: 
+      value:
       objectReference: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 8454566571192234475, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_Materials.Array.data[0]
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: 8edcc1cc602f51b4b8195cfcd465578e, type: 2}
     - target: {fileID: 8454566571192234485, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_LocalScale.x
@@ -32023,11 +32041,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8454566571453144859, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_Mesh
-      value: 
+      value:
       objectReference: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 8454566571453144868, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_Materials.Array.data[0]
-      value: 
+      value:
       objectReference: {fileID: 2100000, guid: a0fee68e9219a024f9ed7800b4ccb3f4, type: 2}
     - target: {fileID: 8454566571453144869, guid: 047c579494388e84dbf6a71d8fb33146, type: 3}
       propertyPath: m_LocalScale.x
