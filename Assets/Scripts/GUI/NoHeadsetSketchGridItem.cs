@@ -15,37 +15,43 @@
 using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace TiltBrush
 {
-    public class NoHeadsetSketchGridItem : MonoBehaviour
+    public class NoHeadsetSketchGridItem : MonoBehaviour, ISelectHandler, IDeselectHandler
     {
         [SerializeField] private Button m_Button;
         [SerializeField] private Image m_Thumbnail;
         [SerializeField] private Image m_LocalThumbnail;
         [SerializeField] private Image m_RemoteThumbnail;
         [SerializeField] private TextMeshProUGUI m_Title;
-        [SerializeField] private TextMeshProUGUI m_Source;
+        [FormerlySerializedAs("m_Source")]
+        [SerializeField] private TextMeshProUGUI m_ActionLabel;
+        [SerializeField] private Image m_ActionLabelBackground;
         [SerializeField] private GameObject m_LoadingIndicator;
 
         private int m_Index;
         private Action<int> m_OnClick;
         private string m_TitleText;
         private string m_AuthorText;
+        private string m_ActionLabelText;
+        private bool m_Selected;
+        private bool m_Available;
 
         public void SetReferences(Button button, Image thumbnail, TextMeshProUGUI title,
-            TextMeshProUGUI source, GameObject loadingIndicator)
+            TextMeshProUGUI actionLabel, GameObject loadingIndicator)
         {
             m_Button = button;
             m_Thumbnail = thumbnail;
             m_Title = title;
-            m_Source = source;
+            m_ActionLabel = actionLabel;
             m_LoadingIndicator = loadingIndicator;
         }
 
-        public void Init(int index, string title, string sourceLabel, Sprite thumbnail, bool loading,
-            Action<int> onClick)
+        public void Init(int index, string title, Sprite thumbnail, bool loading, Action<int> onClick)
         {
             m_Index = index;
             m_OnClick = onClick;
@@ -56,12 +62,10 @@ namespace TiltBrush
             }
             m_TitleText = title ?? "";
             m_AuthorText = null;
+            m_Selected = false;
+            m_Available = true;
             UpdateTitleText();
-            if (m_Source != null)
-            {
-                m_Source.text = sourceLabel;
-                m_Source.gameObject.SetActive(!string.IsNullOrEmpty(sourceLabel));
-            }
+            SetActionLabel(null);
             SetAuthor(null);
 
             SetThumbnail(thumbnail, loading);
@@ -150,14 +154,43 @@ namespace TiltBrush
 
         public void SetAvailableVisual(bool available)
         {
-            CanvasGroup canvasGroup = GetComponent<CanvasGroup>();
-            if (canvasGroup == null)
+            m_Available = available;
+            SetActionLabel(available ? "View" : "Download");
+        }
+
+        private void SetActionLabel(string label)
+        {
+            m_ActionLabelText = label ?? "";
+            UpdateActionLabel();
+        }
+
+        private void UpdateActionLabel()
+        {
+            bool showActionLabel = !string.IsNullOrEmpty(m_ActionLabelText)
+                && (!m_Available || m_Selected);
+            if (m_ActionLabelBackground != null)
             {
-                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+                m_ActionLabelBackground.gameObject.SetActive(showActionLabel);
             }
-            canvasGroup.alpha = available ? 1f : 0.55f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
+            if (m_ActionLabel == null)
+            {
+                return;
+            }
+
+            m_ActionLabel.text = m_ActionLabelText;
+            m_ActionLabel.gameObject.SetActive(showActionLabel);
+        }
+
+        public void OnSelect(BaseEventData eventData)
+        {
+            m_Selected = true;
+            UpdateActionLabel();
+        }
+
+        public void OnDeselect(BaseEventData eventData)
+        {
+            m_Selected = false;
+            UpdateActionLabel();
         }
 
         public void SetInteractionEnabled(bool enabled)

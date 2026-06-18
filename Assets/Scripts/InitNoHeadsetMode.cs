@@ -600,7 +600,7 @@ namespace TiltBrush
             {
                 SketchGridEntry entry = m_Sketches[index];
                 item.SetThumbnailFrame(UsesLocalThumbnailFrame(entry));
-                item.Init(index, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
+                item.Init(index, entry.DisplayName, m_LoadingSprite, true, LoadSketchEntry);
                 item.SetAuthor(GetVisibleAuthorLabel(entry));
                 item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
                 item.SetInteractionEnabled(!IsDownloadInFlight(entry));
