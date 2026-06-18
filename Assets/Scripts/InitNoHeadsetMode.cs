@@ -100,7 +100,6 @@ namespace TiltBrush
             {
                 m_RestoreSavedScrollOnNextRefresh = true;
             }
-            Debug.Log($"{LogPrefix} startup selected tab {m_SelectedSetType}");
             App.Instance.m_NoVrUi.SetActive(true);
             CacheAndShowCursor();
             InitializeGridUi();
@@ -516,6 +515,12 @@ namespace TiltBrush
 
         private void ApplyVisibleSketches(List<SketchGridEntry> visibleSketches, string signature)
         {
+            if (IsAppendOnlySketchListUpdate(visibleSketches))
+            {
+                ApplyAppendedVisibleSketches(visibleSketches, signature);
+                return;
+            }
+
             DestroyThumbnailSprites();
             m_Sketches.Clear();
             m_Sketches.AddRange(visibleSketches);
@@ -524,31 +529,87 @@ namespace TiltBrush
             EnsureGridItemCount(m_Sketches.Count);
             for (int i = 0; i < m_GridItems.Count; i++)
             {
-                NoHeadsetSketchGridItem item = m_GridItems[i];
-                if (item == null)
-                {
-                    continue;
-                }
-
-                bool active = i < m_Sketches.Count;
-                item.gameObject.SetActive(active);
-                if (active)
-                {
-                    SketchGridEntry entry = m_Sketches[i];
-                    item.SetThumbnailFrame(UsesLocalThumbnailFrame(entry));
-                    item.Init(i, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
-                    item.SetAuthor(GetVisibleAuthorLabel(entry));
-                    item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
-                    item.SetInteractionEnabled(!IsDownloadInFlight(entry));
-                }
-                else
-                {
-                    item.SetThumbnailFrame(false);
-                    item.ClearListeners();
-                }
+                ConfigureGridItem(i);
             }
 
             RequestVisibleThumbnailMetadata();
+        }
+
+        private void ApplyAppendedVisibleSketches(List<SketchGridEntry> visibleSketches, string signature)
+        {
+            int previousCount = m_Sketches.Count;
+            RefreshVisibleSketchEntries(visibleSketches);
+            for (int i = previousCount; i < visibleSketches.Count; i++)
+            {
+                m_Sketches.Add(visibleSketches[i]);
+            }
+            m_VisibleSketchSignature = signature;
+
+            EnsureGridItemCount(m_Sketches.Count);
+            for (int i = previousCount; i < m_GridItems.Count; i++)
+            {
+                ConfigureGridItem(i);
+            }
+
+            RefreshVisibleTileText();
+            RequestVisibleThumbnailMetadata();
+        }
+
+        private bool IsAppendOnlySketchListUpdate(List<SketchGridEntry> visibleSketches)
+        {
+            if (m_Sketches.Count == 0 || visibleSketches.Count <= m_Sketches.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < m_Sketches.Count; i++)
+            {
+                if (!IsSameVisibleSketch(m_Sketches[i], visibleSketches[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool IsSameVisibleSketch(SketchGridEntry current, SketchGridEntry refreshed)
+        {
+            return current != null
+                && refreshed != null
+                && current.SketchSet == refreshed.SketchSet
+                && current.SetType == refreshed.SetType
+                && current.SketchIndex == refreshed.SketchIndex;
+        }
+
+        private void ConfigureGridItem(int index)
+        {
+            if (index < 0 || index >= m_GridItems.Count)
+            {
+                return;
+            }
+
+            NoHeadsetSketchGridItem item = m_GridItems[index];
+            if (item == null)
+            {
+                return;
+            }
+
+            bool active = index < m_Sketches.Count;
+            item.gameObject.SetActive(active);
+            if (active)
+            {
+                SketchGridEntry entry = m_Sketches[index];
+                item.SetThumbnailFrame(UsesLocalThumbnailFrame(entry));
+                item.Init(index, entry.DisplayName, null, m_LoadingSprite, true, LoadSketchEntry);
+                item.SetAuthor(GetVisibleAuthorLabel(entry));
+                item.SetAvailableVisual(entry.SceneFileInfo != null && entry.SceneFileInfo.Available);
+                item.SetInteractionEnabled(!IsDownloadInFlight(entry));
+            }
+            else
+            {
+                item.SetThumbnailFrame(false);
+                item.ClearListeners();
+            }
         }
 
         private bool UsesLocalThumbnailFrame(SketchGridEntry entry)
