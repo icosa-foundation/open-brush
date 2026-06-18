@@ -665,7 +665,8 @@ namespace TiltBrush
 
                 SetLoadingMessage("Downloading sketch...");
                 SetTileDownloading(index);
-                StartCoroutine(DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex, downloadKey));
+                SketchCatalog.m_Instance.StartCoroutine(
+                    DownloadAndLoadSketchEntry(icosaSketchSet, entry.SketchIndex, downloadKey));
                 return;
             }
 
@@ -695,12 +696,12 @@ namespace TiltBrush
             string downloadKey)
         {
             bool downloadRefreshReceived = false;
-            yield return StartCoroutine(sketchSet.DownloadFilesCoroutine(new List<int> { sketchIndex }, () =>
+            yield return sketchSet.DownloadFilesCoroutine(new List<int> { sketchIndex }, () =>
             {
                 m_DownloadingSketchKeys.Remove(downloadKey);
                 downloadRefreshReceived = true;
                 RefreshSketchGrid();
-            }));
+            });
 
             if (!downloadRefreshReceived)
             {
