@@ -499,6 +499,7 @@ namespace TiltBrush
                         // Set local paths
                         info.TiltPath = Path.Combine(m_CacheDir, String.Format("{0}.tilt", info.AssetId));
                         info.IconPath = Path.Combine(m_CacheDir, String.Format("{0}.png", info.AssetId));
+                        info.TryUseCachedTiltFile();
                         changed = true;
                     }
                     if (assetIds.ContainsKey(info.AssetId))
@@ -584,14 +585,14 @@ namespace TiltBrush
 
         private bool IsCachedTiltValid(IcosaSceneFileInfo sceneFileInfo)
         {
+            if (sceneFileInfo.TryUseCachedTiltFile())
+            {
+                return true;
+            }
+
             if (!File.Exists(sceneFileInfo.TiltPath))
             {
                 return false;
-            }
-
-            if (new TiltFile(sceneFileInfo.TiltPath).IsHeaderValid())
-            {
-                return true;
             }
 
             try
@@ -1129,6 +1130,27 @@ namespace TiltBrush
                     m_DownloadedFile = null;
                 }
             }
+        }
+
+        public bool TryUseCachedTiltFile()
+        {
+            if (m_DownloadedFile != null)
+            {
+                return true;
+            }
+            if (string.IsNullOrEmpty(m_localTiltFile) || !File.Exists(m_localTiltFile))
+            {
+                return false;
+            }
+
+            TiltFile tiltFile = new TiltFile(m_localTiltFile);
+            if (!tiltFile.IsHeaderValid())
+            {
+                return false;
+            }
+
+            m_DownloadedFile = tiltFile;
+            return true;
         }
 
         // Not part of the interface

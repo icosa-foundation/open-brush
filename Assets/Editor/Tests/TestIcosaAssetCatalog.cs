@@ -330,6 +330,30 @@ namespace TiltBrush
         }
 
         [Test]
+        public void IcosaSceneFileInfo_UsesExistingCachedTiltFile()
+        {
+            string source = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "..", "Support", "Sketches", "Intro",
+                    "Intro_Sketch_Simple.tilt"));
+            Assert.IsTrue(File.Exists(source), $"Missing test sketch: {source}");
+
+            string target = Path.Combine(
+                Path.GetTempPath(), $"IcosaSceneFileInfo-{Guid.NewGuid():N}.tilt");
+            m_FilePathsToCleanup.Add(target);
+            File.Copy(source, target);
+
+            var info = new IcosaSceneFileInfo(SketchAssetJson(
+                "cached-tilt",
+                "Cached Tilt",
+                FormatJson("TILT", "https://assets.example.com/sketch.tilt")));
+            info.TiltPath = target;
+
+            Assert.IsFalse(info.Available);
+            Assert.IsTrue(info.TryUseCachedTiltFile());
+            Assert.IsTrue(info.Available);
+        }
+
+        [Test]
         public void AppendQueryParam_EscapesReservedCharacters()
         {
             object[] args = { "https://api.example.com/assets?", "name", "space & equals=question?" };
