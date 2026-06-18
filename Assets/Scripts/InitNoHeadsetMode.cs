@@ -104,8 +104,54 @@ namespace TiltBrush
             App.Instance.m_NoVrUi.SetActive(true);
             CacheAndShowCursor();
             InitializeGridUi();
+            SubscribeSketchSetChangeEvents();
             RefreshSketchGrid();
             StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
+        }
+
+        private void SubscribeSketchSetChangeEvents()
+        {
+            SubscribeSketchSetChangeEvent(SketchSetType.User);
+            SubscribeSketchSetChangeEvent(SketchSetType.Curated);
+            SubscribeSketchSetChangeEvent(SketchSetType.Liked);
+        }
+
+        private void UnsubscribeSketchSetChangeEvents()
+        {
+            UnsubscribeSketchSetChangeEvent(SketchSetType.User);
+            UnsubscribeSketchSetChangeEvent(SketchSetType.Curated);
+            UnsubscribeSketchSetChangeEvent(SketchSetType.Liked);
+        }
+
+        private void SubscribeSketchSetChangeEvent(SketchSetType setType)
+        {
+            if (SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+            SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
+            if (set != null)
+            {
+                set.OnChanged += HandleSketchSetChanged;
+            }
+        }
+
+        private void UnsubscribeSketchSetChangeEvent(SketchSetType setType)
+        {
+            if (SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+            SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
+            if (set != null)
+            {
+                set.OnChanged -= HandleSketchSetChanged;
+            }
+        }
+
+        private void HandleSketchSetChanged()
+        {
+            RefreshSketchGrid();
         }
 
         private void Update()
@@ -840,6 +886,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            UnsubscribeSketchSetChangeEvents();
             SaveGridState();
             DestroyGeneratedSprites();
             RestoreCursorState();
