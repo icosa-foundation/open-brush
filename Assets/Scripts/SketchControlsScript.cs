@@ -4657,7 +4657,16 @@ namespace TiltBrush
                     PointerManager.m_Instance.StraightEdgeGuide.FlipMeter();
                     break;
                 case GlobalCommands.Sketchbook:
-                    m_PanelManager.ToggleSketchbookPanels();
+                    if (m_ViewOnly)
+                    {
+                        // In view-only mode the close button should toggle panel visibility
+                        // rather than transitioning to standard editing panels.
+                        RequestPanelsVisibility(!m_PanelManager.GazePanelsAreVisible());
+                    }
+                    else
+                    {
+                        m_PanelManager.ToggleSketchbookPanels();
+                    }
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
