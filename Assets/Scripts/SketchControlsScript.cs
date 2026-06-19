@@ -568,6 +568,7 @@ namespace TiltBrush
         private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
+        public bool IsViewOnly => m_ViewOnly;
 
         private InputState m_CurrentInputState;
         private InputStateConfig[] m_InputStateConfigs;
@@ -4280,7 +4281,7 @@ namespace TiltBrush
             m_WidgetManager.FollowingPath = false;
             m_WidgetManager.CameraPathsVisible = false;
             m_WidgetManager.DestroyAllWidgets();
-            if (m_PanelManager.SketchbookActive())
+            if (m_PanelManager.SketchbookActive() && !m_ViewOnly)
             {
                 m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             }

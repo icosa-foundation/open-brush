@@ -1328,6 +1328,11 @@ namespace TiltBrush
             }
 
             Scene.BroadcastCanvasUpdate();
+
+            if (SketchControlsScript.m_Instance.IsViewOnly)
+            {
+                SketchControlsScript.m_Instance.ViewOnly(true);
+            }
         }
 
         private IEnumerator<Timeslice> DelayedSketchLoadedCard(float delay)
