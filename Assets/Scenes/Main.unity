@@ -10885,6 +10885,10 @@ MonoBehaviour:
     m_Type: 5
   - m_TutorialPrefab: {fileID: 152394, guid: fc52585901841164db56aa2a0a64a869, type: 3}
     m_Type: 6
+  - m_TutorialPrefab: {fileID: 152394, guid: 3630420c40092514aa65b4c2b4289113, type: 3}
+    m_Type: 7
+  - m_TutorialPrefab: {fileID: 152394, guid: 5dc3ba3f9cf6c7e41a4e01f4457b597f, type: 3}
+    m_Type: 8
   - m_TutorialPrefab: {fileID: 152394, guid: 4b4b97a1fbbd091428e6f4f9564b42e7, type: 3}
     m_Type: 9
   - m_TutorialPrefab: {fileID: 152394, guid: 389001cd00a4b6a49b26a73276d14d6d, type: 3}
@@ -20107,8 +20111,10 @@ MonoBehaviour:
     type: 3}
   m_UnityXRCosmosControlsPrefab: {fileID: 1268974758188984, guid: 85fc13e5ae2f36048a146dc67041a295,
     type: 3}
-  m_UnityXRNeo3ControlsPrefab: {fileID: 0}
-  m_UnityXRPhoenixControlsPrefab: {fileID: 0}
+  m_UnityXRNeo3ControlsPrefab: {fileID: 1000010438099326, guid: c43e2e934a9409148ad8bfdfeeb98e40,
+    type: 3}
+  m_UnityXRPhoenixControlsPrefab: {fileID: 1000010438099326, guid: 6ec600b382b3e3a4380fae76343440be,
+    type: 3}
   m_UnityXRZapboxControlsPrefab: {fileID: 1000010438099326, guid: 97b4cb6f2999a4844b837b3883d42ced,
     type: 3}
   m_OculusRiftControlsPrefab: {fileID: 2302704768686387309, guid: 6fb051841cd1bcb4dbc6c246b98d97c8,

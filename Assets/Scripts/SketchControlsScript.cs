@@ -4252,13 +4252,14 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             var newLayer = App.Scene.AddLayerNow();
             int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> _))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> loadedStrokes))
             {
                 // A new layer will have been created for the merged strokes.
                 // Rename it accordingly
                 App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
-                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
+                // Only render the newly loaded strokes, not all existing strokes in the scene
+                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(loadedStrokes, bDrawFromStart: true, false, false);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
                 // state. App script's ShouldTintControllers allow the controller to be tinted only
@@ -5126,10 +5127,11 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
                 case GlobalCommands.OpenIcosaPanelFilterPopup:
                 case GlobalCommands.OpenSketchbookPanelFilterPopup:
+                case GlobalCommands.OpenScriptParametersPopup:
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
-                    Debug.LogError($"Unrecognized command {rEnum}");
+                    Debug.LogWarning($"Unrecognized command {rEnum}");
                     break;
             }
         }

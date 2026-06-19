@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -854,13 +854,20 @@ namespace TiltBrush
             string exportDir = Path.Combine(tempUploadDir, "sketch_export");
             Directory.CreateDirectory(exportDir);
 
-            // Copy WebViewer files FIRST directly to exportDir (not to a subdirectory)
+            // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
             // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
-            string tempZip = Path.Combine(Application.temporaryCachePath, "webviewer_temp.zip");
-            FileUtils.WriteBytesFromResources("WebViewer", tempZip);
+#if UNITY_EDITOR
+            // Keep the resource asset up to date for editor workflows that still reference it.
+            GenerateViverseViewerBytes();
+            // In editor, copy directly from the source tree so publishing always uses the
+            // latest Support/ViverseViewer contents instead of a potentially stale imported asset.
+            CopyViverseViewerToDirectory(exportDir);
+#else
+            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
+            FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
 
             if (!File.Exists(tempZip))
-                throw new VrAssetServiceException("WebViewer.bytes not found in Resources folder");
+                throw new VrAssetServiceException("ViverseViewer.bytes not found in Resources folder");
 
             using (var zip = ZipFile.OpenRead(tempZip))
             {
@@ -868,9 +875,9 @@ namespace TiltBrush
                 foreach (var entry in zip.Entries)
                 {
                     string entryPath = entry.FullName;
-                    // Strip leading "WebViewer/" folder if present in ZIP
-                    if (entryPath.StartsWith("WebViewer/"))
-                        entryPath = entryPath.Substring("WebViewer/".Length);
+                    // Strip leading "ViverseViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("ViverseViewer/"))
+                        entryPath = entryPath.Substring("ViverseViewer/".Length);
                     if (string.IsNullOrEmpty(entryPath))
                         continue;
 
@@ -887,7 +894,7 @@ namespace TiltBrush
 
                     extractedCount++;
 
-#if !UNITY_EDITOR && !UNITY_STANDALONE
+#if !UNITY_STANDALONE
                     // Yield every 10 files to prevent freezing on mobile
                     if (extractedCount % 10 == 0)
                     {
@@ -899,6 +906,7 @@ namespace TiltBrush
             }
 
             File.Delete(tempZip);
+#endif
 
             // Now create/ensure assets folder exists in exportDir
             string assetsDir = Path.Combine(exportDir, "assets");
@@ -1162,6 +1170,7 @@ namespace TiltBrush
                 IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
                 IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                IcosaSetType.AllModels => $"{IcosaApiRoot}{kListAssetsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
             foreach (var format in queryParams.Formats)
@@ -1170,6 +1179,9 @@ namespace TiltBrush
             }
             uri += $"pageSize={m_AssetsPerPage}&";
             uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
+            // at least one such model is pathologically large, so exclude them server-side.
+            uri += "triangleCountMin=1&";
             uri += $"orderBy={queryParams.OrderBy}&";
             if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
             if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
@@ -1298,6 +1310,102 @@ namespace TiltBrush
             m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
             return m_CurrentDeviceCodeSecret;
         }
+
+#if UNITY_EDITOR
+        private static void CopyViverseViewerToDirectory(string exportDir)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            foreach (string sourcePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                string relativePath = Path.GetRelativePath(sourceDir, sourcePath);
+                string targetPath = Path.Combine(exportDir, relativePath);
+                string targetDir = Path.GetDirectoryName(targetPath);
+
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                File.Copy(sourcePath, targetPath, overwrite: true);
+            }
+        }
+
+        /// <summary>
+        /// Generates Assets/Resources/ViverseViewer.bytes from ViverseViewer/ source directory
+        /// Called automatically in editor before ViveVerse publishing
+        /// </summary>
+        private static void GenerateViverseViewerBytes()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+            string outputFile = Path.Combine(Application.dataPath, "Resources", "ViverseViewer.bytes");
+
+            // Validate source directory exists
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            // Ensure Resources directory exists
+            string resourcesDir = Path.GetDirectoryName(outputFile);
+            if (!Directory.Exists(resourcesDir))
+            {
+                Directory.CreateDirectory(resourcesDir);
+            }
+
+            // Create zip file
+            try
+            {
+                // Delete existing file if present
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                using (var zip = ZipFile.Open(outputFile, ZipArchiveMode.Create))
+                {
+                    AddDirectoryToZip(zip, sourceDir, "");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new VrAssetServiceException(
+                    $"Failed to generate ViverseViewer.bytes: {e.Message}"
+                );
+            }
+        }
+
+        private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string entryPrefix)
+        {
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string relativePath = Path.Combine(entryPrefix, Path.GetFileName(file));
+                // Normalize path separators to forward slashes for zip
+                relativePath = relativePath.Replace('\\', '/');
+                zip.CreateEntryFromFile(file, relativePath, System.IO.Compression.CompressionLevel.Optimal);
+            }
+
+            foreach (string dir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                string newPrefix = Path.Combine(entryPrefix, dirName);
+                AddDirectoryToZip(zip, dir, newPrefix);
+            }
+        }
+#endif
     }
 
 } // namespace TiltBrush

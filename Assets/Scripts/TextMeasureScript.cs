@@ -128,8 +128,22 @@ namespace TiltBrush
             m_TextMesh.fontSize = fFontSize;
             m_TextMesh.font = rFont;
             m_TextMesh.text = sText;
-            m_TextMesh.ForceMeshUpdate(true, true);
-            Vector2 vSize = new Vector2(m_TextMesh.preferredWidth, m_TextMesh.preferredHeight);
+            Vector2 vSize;
+            try
+            {
+                m_TextMesh.ForceMeshUpdate(true, true);
+                vSize = new Vector2(m_TextMesh.preferredWidth, m_TextMesh.preferredHeight);
+            }
+            catch (Exception e)
+            {
+                // Cloud-authored text can contain glyphs that TMP fails on (e.g. emoji, or a dynamic
+                // fallback-atlas material bug in player builds). A throw here must never repeat: if we
+                // don't cache a result, this string is re-measured (and re-throws) every frame, which
+                // produces a per-frame exception storm. Cache a rough estimate so layout still gets a
+                // value and we never retry this string.
+                Debug.LogWarning($"TextMeasureScript: failed to measure \"{sText}\": {e.Message}");
+                vSize = new Vector2(sText.Length * fFontSize * 0.5f, fFontSize);
+            }
             m_StringSizeMap.Add(rParams, vSize);
             return vSize;
         }
