@@ -479,7 +479,11 @@ jobs:
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
-            echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+            if [[ "${{ matrix.androidExportType || 'androidPackage' }}" == "androidAppBundle" ]]; then
+              echo "filename=com.Icosa.$BASENAME.aab" >> $GITHUB_ENV
+            else
+              echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Set build stamp
