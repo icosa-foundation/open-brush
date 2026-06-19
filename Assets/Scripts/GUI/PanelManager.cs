@@ -269,6 +269,7 @@ namespace TiltBrush
         private bool m_IntroSketchbookMode;
         private bool m_FirstSketchLoad = true;
         private bool m_AdvancedPanels;
+        private bool m_SketchbookOnlyMode;
 
         public Color PanelHighlightActiveColor
         {
@@ -1847,6 +1848,31 @@ namespace TiltBrush
             SetInIntroSketchbookMode(true);
         }
 
+        public void EnterSketchbookOnlyMode()
+        {
+            m_SketchbookOnlyMode = true;
+            if (m_PanelsMode != PanelMode.Sketchbook)
+            {
+                ForceModeScale(PanelMode.Sketchbook);
+                RefreshPanelsForAnimations();
+                m_AltModeSwipeAmount = 0.0f;
+                ComputeWandPanelSketchbookOriginAngleFromHead();
+                m_PanelsMode = PanelMode.Sketchbook;
+            }
+        }
+
+        public void ExitSketchbookOnlyMode()
+        {
+            m_SketchbookOnlyMode = false;
+            if (m_PanelsMode == PanelMode.Sketchbook ||
+                m_PanelsMode == PanelMode.StandardToSketchbook)
+            {
+                ForceModeScale(PanelMode.Standard);
+                RefreshPanelsForAnimations();
+                m_PanelsMode = PanelMode.Standard;
+            }
+        }
+
         public void ToggleSketchbookPanels(bool isLoadingSketch = false)
         {
             // We only want to default to the color picker if you load a sketch directly from the gallery
@@ -1906,6 +1932,7 @@ namespace TiltBrush
         // toMode and fromMode define the transition modes to mode.
         void ToggleMode(List<BasePanel> panels, PanelMode mode, PanelMode toMode, PanelMode fromMode)
         {
+            if (m_SketchbookOnlyMode && mode != PanelMode.Sketchbook) return;
             if (panels.Count > 0)
             {
                 // In "standard" mode, transition to target mode.

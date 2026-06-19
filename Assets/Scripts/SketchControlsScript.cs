@@ -3772,8 +3772,6 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
-            // Always false in viewonly mode
-            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
@@ -5137,7 +5135,16 @@ namespace TiltBrush
         }
         public void ViewOnly(bool active)
         {
-            RequestPanelsVisibility(!active);
+            if (active)
+            {
+                m_PanelManager.EnterSketchbookOnlyMode();
+                RequestPanelsVisibility(true);
+            }
+            else
+            {
+                m_PanelManager.ExitSketchbookOnlyMode();
+                RequestPanelsVisibility(true);
+            }
             PointerManager.m_Instance.RequestPointerRendering(!active);
             // TODO - decide if this is a permanent change
             // With this line, you can't set a tool such as fly or teleport
