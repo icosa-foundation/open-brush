@@ -45,6 +45,7 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            public bool ForceViewOnly;
 
             private bool? m_DisableXrMode;
             public bool DisableXrMode

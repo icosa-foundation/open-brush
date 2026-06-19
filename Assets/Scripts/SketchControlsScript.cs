@@ -999,6 +999,12 @@ namespace TiltBrush
 
             m_PanelManager.HidePanelsForStartup();
             RequestPanelsVisibility(false);
+
+            if (App.UserConfig.Flags.ForceViewOnly)
+            {
+                m_ViewOnly = true;
+                ViewOnly(true);
+            }
         }
 
         void Update()
