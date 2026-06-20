@@ -5153,11 +5153,13 @@ namespace TiltBrush
         {
             if (active)
             {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
                 m_PanelManager.EnterSketchbookOnlyMode();
                 RequestPanelsVisibility(true);
             }
             else
             {
+                m_SketchSurfacePanel.DisableSpecificTool(BaseTool.ToolType.FlyTool);
                 m_PanelManager.ExitSketchbookOnlyMode();
                 RequestPanelsVisibility(true);
             }
