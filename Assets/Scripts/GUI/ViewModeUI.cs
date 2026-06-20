@@ -17,13 +17,11 @@ public class ViewModeUI : MonoBehaviour
 
     public void HandleCloseButton()
     {
-        // TODO If we allow other tools than the FlyTool, we should probably have
-        // a better way to test if the load sketch dialog is showing
         if (InitNoHeadsetMode.m_Instance == null)
         {
             // We're viewing a sketch so close it and open the loading dialog
             ApiMethods.NewSketch();
-            SketchSurfacePanel.m_Instance.DisableSpecificTool(BaseTool.ToolType.FlyTool);
+            SketchControlsScript.m_Instance.DisableViewOnlyNavigationTool();
             App.Instance.CreateFailedToDetectVrDialog();
         }
         else

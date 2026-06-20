@@ -47,6 +47,8 @@ namespace TiltBrush
         [SerializeField] Color m_MemoryWarningColor;
         [SerializeField] GameObject m_MultiplayerButton;
         [SerializeField] float m_ButtonRotationAngle = 45f;
+        [SerializeField] GameObject m_FlyToolButton;
+        [SerializeField] GameObject m_TeleportToolButton;
 
         [SerializeField] LocalizedString m_ShareButtonLoggedOutExtraText;
 
@@ -79,11 +81,14 @@ namespace TiltBrush
             m_SettingsButton.SetActive(!advancedMode);
             m_MoreButton.SetActive(advancedMode);
 
-            m_AdvancedModeButton.SetActive(!advancedMode);
-            m_BeginnerModeButton.SetActive(advancedMode);
-
             m_Border.gameObject.SetActive(!advancedMode);
             m_AdvancedModeBorder.SetActive(advancedMode);
+
+            if (m_PanelType != PanelType.AdminPanelViewOnly)
+            {
+                m_AdvancedModeButton.SetActive(!advancedMode);
+                m_BeginnerModeButton.SetActive(advancedMode);
+            }
         }
 
         override public void InitPanel()
@@ -105,6 +110,10 @@ namespace TiltBrush
                 SetShareButtonNotifyActive(false);
                 UpdateShareButtonText();
                 UpdateWhatsNewButtonState();
+            }
+            else
+            {
+                RefreshViewOnlyNavigationToolButtons();
             }
 
             m_MemoryWarningBaseScale = m_MemoryWarning.transform.localScale;
@@ -252,6 +261,30 @@ namespace TiltBrush
             m_MemoryWarning.SetActive(SketchMemoryScript.m_Instance.MemoryExceeded);
             m_MemoryWarningButton.SetActive(SketchMemoryScript.m_Instance.MemoryExceeded);
             m_MemoryWarning.GetComponent<Renderer>().material.SetColor("_Color", m_MemoryWarningColor);
+        }
+
+        public void ToggleFlyTool()
+        {
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            RefreshViewOnlyNavigationToolButtons();
+        }
+
+        public void ToggleTeleportTool()
+        {
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.TeleportTool);
+            RefreshViewOnlyNavigationToolButtons();
+        }
+
+        void RefreshViewOnlyNavigationToolButtons()
+        {
+            if (m_FlyToolButton == null || m_TeleportToolButton == null)
+            {
+                return;
+            }
+
+            BaseTool.ToolType currentTool = SketchSurfacePanel.m_Instance.GetCurrentToolType();
+            m_FlyToolButton.SetActive(currentTool != BaseTool.ToolType.TeleportTool);
+            m_TeleportToolButton.SetActive(currentTool == BaseTool.ToolType.TeleportTool);
         }
     }
 } // namespace TiltBrush

@@ -167,14 +167,16 @@ MonoBehaviour:
   m_ShareButton_Notify: {fileID: 0}
   m_WhatsNewButton: {fileID: 7277718307826432768}
   m_AdvancedModeBorder: {fileID: 1857847558550948}
-  m_BeginnerModeButton: {fileID: 1976071349665942}
-  m_AdvancedModeButton: {fileID: 1960334381407134}
+  m_BeginnerModeButton: {fileID: 0}
+  m_AdvancedModeButton: {fileID: 0}
   m_ButtonRotationContainer: {fileID: 1349288981255934}
   m_MemoryWarning: {fileID: 1603096109966042}
   m_MemoryWarningButton: {fileID: 1712905289553642}
   m_MemoryWarningColor: {r: 0.78676474, g: 0.09256055, b: 0.09256055, a: 1}
   m_MultiplayerButton: {fileID: 5787249127137797294}
   m_ButtonRotationAngle: 45
+  m_FlyToolButton: {fileID: 1976071349665942}
+  m_TeleportToolButton: {fileID: 1960334381407134}
   m_ShareButtonLoggedOutExtraText:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -2108,7 +2110,7 @@ GameObject:
   - component: {fileID: 65285197898322620}
   - component: {fileID: 114459347850906084}
   m_Layer: 16
-  m_Name: Button_AdvancedToggle
+  m_Name: Button_TeleportToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2209,17 +2211,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1960334381407134}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 5065710952488960
+      m_KeyId: 15506782473203712
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2236,7 +2238,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 6e03e392d49d47f428a7fd6e63d14606, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 82be5dbd822a76e42b0484d1bd56c21e, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -2246,35 +2248,21 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 52
-  m_CommandParam: -1
-  m_CommandParam2: -1
-  m_RequiresPopup: 0
-  m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: -0.2}
-  m_PopupText: 
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 1
-  m_LinkedUIObject: {fileID: 0}
+  m_Action:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 114828844590133850}
+        m_TargetAssemblyTypeName: TiltBrush.AdminPanel, Assembly-CSharp
+        m_MethodName: ToggleFlyTool
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   references:
     version: 2
     RefIds: []
@@ -2292,7 +2280,7 @@ GameObject:
   - component: {fileID: 65260802638623656}
   - component: {fileID: 114961917929844728}
   m_Layer: 16
-  m_Name: Button_BeginnerToggle
+  m_Name: Button_FlyToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2393,17 +2381,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1976071349665942}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6859eec74651247968d56b594ac313, type: 3}
+  m_Script: {fileID: 11500000, guid: 07f172f1096366841bb9362060bb0095, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADMIN_PANEL_BEGINNER_BUTTON_DESCRIPTION
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 5065842783657984
+      m_KeyId: 5144159373205504
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2420,7 +2408,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 6a0f5802d408e984bbd72168015e36cd, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 3c2f6d4b151d82d4d8f53c00ffb8589a, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -2430,35 +2418,21 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 52
-  m_CommandParam: -1
-  m_CommandParam2: -1
-  m_RequiresPopup: 0
-  m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: -0.2}
-  m_PopupText: 
-  m_LocalizedPopup:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_ToggleOnDescription: 
-  m_LocalizedToggleOnDescription:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_ToggleOnTexture: {fileID: 0}
-  m_AllowUnavailable: 1
-  m_LinkedUIObject: {fileID: 0}
+  m_Action:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 114828844590133850}
+        m_TargetAssemblyTypeName: TiltBrush.AdminPanel, Assembly-CSharp
+        m_MethodName: ToggleTeleportTool
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   references:
     version: 2
     RefIds: []
