@@ -1875,6 +1875,13 @@ namespace TiltBrush
 
         public void ToggleSketchbookPanels(bool isLoadingSketch = false)
         {
+            if (m_SketchbookOnlyMode && !isLoadingSketch &&
+                (m_PanelsMode == PanelMode.Sketchbook ||
+                 m_PanelsMode == PanelMode.StandardToSketchbook))
+            {
+                return;
+            }
+
             // We only want to default to the color picker if you load a sketch directly from the gallery
             // panel when you first start the program.
             if (isLoadingSketch && m_FirstSketchLoad)
