@@ -1278,6 +1278,11 @@ namespace TiltBrush
             {
                 OverlayManager.m_Instance.PauseRendering(false);
                 OverlayManager.m_Instance.FadeFromCompositor(0);
+                if (SketchControlsScript.m_Instance.IsViewOnly)
+                {
+                    OverlayManager.m_Instance.SetOverlayTransitionRatio(0);
+                }
+                m_QuickLoadInputWasValid = false;
             }
 
             m_DesiredAppState = AppState.Standard;
