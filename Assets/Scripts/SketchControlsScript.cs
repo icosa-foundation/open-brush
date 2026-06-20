@@ -1276,6 +1276,7 @@ namespace TiltBrush
         bool CanUsePinCushion()
         {
             return (m_ControlsType == ControlsType.SixDofControllers) &&
+                !m_ViewOnly &&
                 m_PanelManager.AdvancedModeActive() &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 !InputManager.Brush.GetControllerGrip() &&
@@ -1565,7 +1566,8 @@ namespace TiltBrush
             var mouse = Mouse.current;
 
             // Toggle default tool.
-            if (!m_PanelManager.AdvancedModeActive() &&
+            if (!m_ViewOnly &&
+                !m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
                 m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
