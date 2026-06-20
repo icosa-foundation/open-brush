@@ -25544,6 +25544,7 @@ MonoBehaviour:
     m_ModeQuest: 0
     m_Basic: 0
     m_Advanced: 0
+    m_ViewOnly: 0
     m_Multiplayer: 0
   - m_PanelPrefab: {fileID: 152754, guid: 1f98c5464e57ca042986684865c6c8e0, type: 3}
     m_ModeVr: 1
