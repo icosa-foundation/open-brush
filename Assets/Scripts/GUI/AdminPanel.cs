@@ -99,10 +99,13 @@ namespace TiltBrush
             }
 
             RefreshButtonsForAdvancedMode();
-            SetShareButtonNotifyActive(false);
 
-            UpdateShareButtonText();
-            UpdateWhatsNewButtonState();
+            if (m_PanelType != PanelType.AdminPanelViewOnly)
+            {
+                SetShareButtonNotifyActive(false);
+                UpdateShareButtonText();
+                UpdateWhatsNewButtonState();
+            }
 
             m_MemoryWarningBaseScale = m_MemoryWarning.transform.localScale;
             App.Switchboard.MemoryExceededChanged += OnMemoryExceededChanged;
@@ -116,8 +119,11 @@ namespace TiltBrush
             // Update save buttons availability.
             bool alreadySaved = SaveLoadScript.m_Instance.SceneFile.Valid &&
                 SaveLoadScript.m_Instance.CanOverwriteSource;
-            m_SaveNewButton.SetActive(!alreadySaved);
-            m_SaveOptionsButton.SetActive(alreadySaved);
+            if (m_PanelType != PanelType.AdminPanelViewOnly)
+            {
+                m_SaveNewButton.SetActive(!alreadySaved);
+                m_SaveOptionsButton.SetActive(alreadySaved);
+            }
         }
 
         override public void ForceUpdatePanelVisuals()
@@ -159,8 +165,15 @@ namespace TiltBrush
         override public void OnUpdatePanel(Vector3 vToPanel, Vector3 vHitPoint)
         {
             base.OnUpdatePanel(vToPanel, vHitPoint);
-            UpdateShareButtonText();
             UpdateWhatsNewButtonState();
+
+            // Early out assumes everything after this point doesn't apply in ViewOnly mode
+            if (m_PanelType == PanelType.AdminPanelViewOnly)
+            {
+                return;
+            }
+
+            UpdateShareButtonText();
 
             float uploadProgress = VrAssetService.m_Instance.UploadProgress;
 
@@ -206,8 +219,8 @@ namespace TiltBrush
 
         void SetShareButtonNotifyActive(bool active)
         {
-            m_ShareButton.gameObject.SetActive(!active);
-            m_ShareButton_Notify.gameObject.SetActive(active);
+            m_ShareButton?.gameObject.SetActive(!active);
+            m_ShareButton_Notify?.gameObject.SetActive(active);
         }
 
         void SetWhatsNewButtonNotifyActive(bool active)

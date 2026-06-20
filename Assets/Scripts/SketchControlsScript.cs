@@ -4281,7 +4281,7 @@ namespace TiltBrush
             m_WidgetManager.FollowingPath = false;
             m_WidgetManager.CameraPathsVisible = false;
             m_WidgetManager.DestroyAllWidgets();
-            if (m_PanelManager.SketchbookActive() && !m_ViewOnly)
+            if (m_PanelManager.SketchbookActive())
             {
                 m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             }
@@ -4664,16 +4664,7 @@ namespace TiltBrush
                     PointerManager.m_Instance.StraightEdgeGuide.FlipMeter();
                     break;
                 case GlobalCommands.Sketchbook:
-                    if (m_ViewOnly)
-                    {
-                        // In view-only mode the close button should toggle panel visibility
-                        // rather than transitioning to standard editing panels.
-                        RequestPanelsVisibility(!m_PanelManager.GazePanelsAreVisible());
-                    }
-                    else
-                    {
-                        m_PanelManager.ToggleSketchbookPanels();
-                    }
+                    m_PanelManager.ToggleSketchbookPanels();
                     PointerManager.m_Instance.EatLineEnabledInput();
                     SketchSurfacePanel.m_Instance.EatToolsInput();
                     break;
@@ -5154,13 +5145,13 @@ namespace TiltBrush
             if (active)
             {
                 m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-                m_PanelManager.EnterSketchbookOnlyMode();
+                m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
                 RequestPanelsVisibility(true);
             }
             else
             {
                 m_SketchSurfacePanel.DisableSpecificTool(BaseTool.ToolType.FlyTool);
-                m_PanelManager.ExitSketchbookOnlyMode();
+                m_PanelManager.RestoreEditingPanelAvailabilityMode();
                 RequestPanelsVisibility(true);
             }
             PointerManager.m_Instance.RequestPointerRendering(!active);
