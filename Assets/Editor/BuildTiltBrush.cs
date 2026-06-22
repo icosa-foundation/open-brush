@@ -1042,6 +1042,8 @@ static class BuildTiltBrush
 #elif ZAPBOX_SUPPORTED
             // Zapbox has a separate listing
             new_identifier = "foundation.icosa.openbrushzapbox";
+#elif OPEN_BRUSH_VIEWER
+            new_identifier = "foundation.icosa.openbrushviewer";
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
