@@ -479,8 +479,6 @@ namespace TiltBrush
             {
                 Debug.LogErrorFormat("Couldn't set dir to {0}: {1}", appDir, e);
             }
-            string curDir = Directory.GetCurrentDirectory();
-            Debug.LogFormat("Dir {0} -> {1}", oldDir, curDir);
 #endif
         }
 
@@ -1637,6 +1635,40 @@ namespace TiltBrush
                         m_QuickLoadInputWasValid = false;
                     }
                 }
+            }
+        }
+
+        // Finish the current sketch playback immediately, as if the user had held the Panic input.
+        // Unlike UpdateQuickLoadLogic this is not gated on controller input or AppAllowsCreation, so
+        // it can be driven by an on-screen button (e.g. the non-VR "Skip" button) on any platform.
+        public void RequestQuickLoad()
+        {
+            if (CurrentState != AppState.Loading)
+            {
+                return;
+            }
+
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (!m_QuickLoadInputWasValid)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
+                OverlayManager.m_Instance.PauseRendering(true);
+            }
+
+            m_QuickLoadInputWasValid = true;
+            if (m_CurrentAppState != AppState.QuickLoad)
+            {
+                OverlayManager.m_Instance.SetOverlayTransitionRatio(1.0f);
+                m_QuickloadStallFrames = 1;
+                m_DesiredAppState = AppState.QuickLoad;
+                m_SketchSurfacePanel.EnableRenderer(false);
             }
         }
 
