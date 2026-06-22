@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -20,6 +22,7 @@ namespace TiltBrush
     [System.Serializable]
     public class StrokeData
     {
+
         public Color m_Color;
         public Guid m_BrushGuid;
         // The room-space size of the brush when the stroke was laid down
@@ -36,6 +39,10 @@ namespace TiltBrush
         protected SketchGroupTag m_Group = SketchGroupTag.None;
         public SketchGroupTag Group => m_Group;
         public Guid m_Guid;
+
+        // Optional per-control-point color data (null by default for 0 memory overhead)
+        public List<Color32?> m_OverrideColors;
+        public ColorOverrideMode m_ColorOverrideMode = ColorOverrideMode.None;
 
         // Reference the BrushStrokeCommand that created this stroke with a WeakReference.
         // This allows the garbage collector to collect the BrushStrokeCommand if it's no
@@ -67,7 +74,84 @@ namespace TiltBrush
                 this.m_Group = existing.m_Group;
                 this.m_ControlPoints = new PointerManager.ControlPoint[existing.m_ControlPoints.Length];
                 Array.Copy(existing.m_ControlPoints, this.m_ControlPoints, this.m_ControlPoints.Length);
+
+                // Copy per-point color data if present
+                this.m_ColorOverrideMode = existing.m_ColorOverrideMode;
+                if (existing.m_OverrideColors != null)
+                {
+                    m_OverrideColors = existing.m_OverrideColors.ToList();
+                }
             }
         }
+
+        /// Get the color for a specific control point index.
+        /// Returns m_Color if per-point colors are not used, or blends according to m_ColorMode.
+        public Color32 GetColor(int index)
+        {
+            // If no per-point colors or mode is None, use base color
+            if (m_OverrideColors == null || m_ColorOverrideMode == ColorOverrideMode.None)
+            {
+                return m_Color;
+            }
+
+            // Bounds check
+            if (index < 0 || index >= m_OverrideColors.Count)
+            {
+                return m_Color;
+            }
+
+            Color32? controlpointColor = m_OverrideColors[index];
+            if (controlpointColor == null)
+            {
+                return m_Color;
+            }
+            Color32 calculatedColor;
+
+            // Preserve original alpha — some brushes (e.g. QuillFlatBrush) store
+            // per-vertex opacity in color.a. Override modes only affect RGB.
+            byte originalAlpha = (byte)(m_Color.a * 255);
+
+            switch (m_ColorOverrideMode)
+            {
+                case ColorOverrideMode.Replace:
+                    calculatedColor = controlpointColor.Value;
+                    break;
+
+                case ColorOverrideMode.Multiply:
+                    Color baseColor = m_Color;
+                    Color point = controlpointColor.Value;
+                    calculatedColor = new Color(
+                        baseColor.r * point.r,
+                        baseColor.g * point.g,
+                        baseColor.b * point.b,
+                        baseColor.a
+                    );
+                    break;
+
+                case ColorOverrideMode.Add:
+                    calculatedColor = new Color32(
+                        (byte)Mathf.Min(255, m_Color.r + controlpointColor.Value.r),
+                        (byte)Mathf.Min(255, m_Color.g + controlpointColor.Value.g),
+                        (byte)Mathf.Min(255, m_Color.b + controlpointColor.Value.b),
+                        originalAlpha
+                    );
+                    break;
+
+                default:
+                    Debug.LogWarning($"Unexpected ColorOverrideMode: {m_ColorOverrideMode}");
+                    calculatedColor = m_Color;
+                    break;
+            }
+
+            return calculatedColor;
+        }
+    }
+
+    public enum ColorOverrideMode
+    {
+        None,     // Use m_Color for entire stroke
+        Replace,  // Replace with per-point colors
+        Multiply, // Multiply m_Color with per-point colors
+        Add       // Add per-point colors to m_Color
     }
 } // namespace TiltBrush

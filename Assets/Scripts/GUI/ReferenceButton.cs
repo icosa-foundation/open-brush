@@ -24,7 +24,8 @@ namespace TiltBrush
             AddAssets,
             Videos,
             BackgroundImages,
-            SavedStrokes
+            SavedStrokes,
+            SoundClips
         }
 
         public Type m_ButtonType;

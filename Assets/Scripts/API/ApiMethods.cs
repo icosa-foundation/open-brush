@@ -25,7 +25,6 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
-
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
@@ -1060,11 +1059,7 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(location, "Images");
             }
-
-            ReferenceImage image = _LoadReferenceImage(location);
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            var imageWidget = cmd.Widget as ImageWidget;
+            var imageWidget = _ImportImage(location, _CurrentBrushTransform());
             if (imageWidget != null)
             {
                 // Set consistent size regardless of scene scale
@@ -1073,15 +1068,45 @@ namespace TiltBrush
                 // Now enable preservation to prevent async overrides
                 imageWidget.SetPreserveCustomSize(true);
 
-                imageWidget.ReferenceImage = image;
-                imageWidget.Show(true);
-                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
             }
-
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf)
+        {
+            ReferenceImage image = _LoadReferenceImage(location);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, xf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var imageWidget = cmd.Widget as ImageWidget;
+            if (imageWidget != null)
+            {
+                imageWidget.ReferenceImage = image;
+                imageWidget.Show(true);
+                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
+            }
+            return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf, CanvasScript targetCanvas)
+        {
+            if (targetCanvas == null)
+            {
+                return _ImportImage(location, xf);
+            }
+
+            var previousCanvas = App.Scene.ActiveCanvas;
+            try
+            {
+                App.Scene.ActiveCanvas = targetCanvas;
+                return _ImportImage(location, xf);
+            }
+            finally
+            {
+                App.Scene.ActiveCanvas = previousCanvas;
+            }
         }
 
         // TODO - currently the polygon collider isn't using the imported SVG sprite
@@ -1206,6 +1231,59 @@ namespace TiltBrush
         public static void EnableRamLogging(bool active)
         {
             App.Instance.RamLoggingActive = active;
+        }
+
+        [ApiEndpoint("audio.reactive", "Enable or disable audio-reactive mode", "true")]
+        public static string EnableAudioReactiveMode(bool active)
+        {
+            if (App.Instance.RequestingAudioReactiveMode != active)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.reactive={App.Instance.RequestingAudioReactiveMode}";
+        }
+
+        [ApiEndpoint("audio.music.play", "Play in-app music and enable audio-reactive mode", "0")]
+        public static string PlayAudioReactiveMusic(int index)
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            if (index < 0 || index >= AudioManager.m_Instance.NumGameMusics())
+            {
+                string message = $"Invalid game music index: {index}";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.PlayGameMusic(index);
+            if (!App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.music.play={index}";
+        }
+
+        [ApiEndpoint("audio.music.stop", "Stop in-app music and disable audio-reactive mode")]
+        public static string StopAudioReactiveMusic()
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.StopMusic();
+            if (App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return "audio.music.stop";
         }
 
         [ApiEndpoint(
