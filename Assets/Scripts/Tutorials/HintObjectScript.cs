@@ -68,7 +68,12 @@ namespace TiltBrush
             UpdateScale(0.0f);
 
 #if !ZAPBOX_SUPPORTED
-            SetHintText(m_HintDescription.GetLocalizedStringAsync().Result);
+            // Guard against hint objects whose LocalizedString has no table assigned; calling
+            // GetLocalizedStringAsync on an empty reference throws "Empty Table Reference".
+            if (!m_HintDescription.IsEmpty)
+            {
+                SetHintText(m_HintDescription.GetLocalizedStringAsync().Result);
+            }
 #endif
 
 
