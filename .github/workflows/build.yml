@@ -190,7 +190,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Android Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -226,6 +226,17 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             androidExportType: androidAppBundle
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+
+          - name: Android Viewer
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            androidExportType: androidAppBundle
+            extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Oculus Quest (1)
@@ -1101,6 +1112,53 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
           releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
+          releaseName: ${{ needs.configuration.outputs.version }}
+          status: completed
+          debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+
+  publish_google_play_viewer:
+    name: Publish Google Play Viewer Release
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Viewer)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android Viewer
+          path: build_android_openxr_google_play_viewer
+
+      - name: Prepare Google Play release
+        id: google_play_release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          mkdir releases
+          AAB="$(find build_android_openxr_google_play_viewer -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_openxr_google_play_viewer -name '*.symbols.zip' -print -quit)"
+          if [ -z "$AAB" ]; then
+            echo "No Android App Bundle found in build_android_openxr_google_play_viewer" >&2
+            find build_android_openxr_google_play_viewer -maxdepth 4 -type f >&2
+            exit 1
+          fi
+
+          cp "$AAB" "releases/OpenBrushViewer_OpenXR_$VERSION.aab"
+          if [ -n "$SYMBOLS" ]; then
+            cp "$SYMBOLS" "releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish Google Play Build
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: foundation.icosa.openbrushviewer
+          releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: completed
