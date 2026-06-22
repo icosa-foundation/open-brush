@@ -10228,7 +10228,7 @@ GameObject:
   - component: {fileID: 652605572}
   - component: {fileID: 652605564}
   - component: {fileID: 652605570}
-  - component: {fileID: 652605575}
+  - component: {fileID: 652605577}
   - component: {fileID: 652605574}
   - component: {fileID: 652605575}
   - component: {fileID: 652605576}
@@ -10239,7 +10239,7 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &652605575
+--- !u!114 &652605577
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

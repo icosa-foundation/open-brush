@@ -117,6 +117,7 @@ PlayerSettings:
   xboxEnableGuest: 0
   xboxEnablePIXSampling: 0
   metalFramebufferOnly: 0
+  metalUseMetalDisplayLink: 0
   xboxOneResolution: 0
   xboxOneSResolution: 0
   xboxOneXResolution: 3
@@ -200,7 +201,6 @@ PlayerSettings:
   ForceSDCardPermission: 1
   CreateWallpaper: 0
   androidSplitApplicationBinary: 0
-  APKExpansionFiles: 1
   keepLoadedShadersAlive: 0
   StripUnusedMeshComponents: 0
   strictShaderVariantMatching: 0
@@ -303,7 +303,6 @@ PlayerSettings:
     height: 180
     banner: {fileID: 0}
   androidGamepadSupportLevel: 0
-  chromeosInputEmulation: 1
   AndroidMinifyRelease: 1
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
@@ -919,7 +918,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT
+    Android: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT;STEAMAUDIO_ENABLED
     EmbeddedLinux: TILT_BRUSH;CROSS_PLATFORM_INPUT
     GameCoreScarlett: TILT_BRUSH;CROSS_PLATFORM_INPUT
     GameCoreXboxOne: TILT_BRUSH;CROSS_PLATFORM_INPUT
@@ -930,12 +929,12 @@ PlayerSettings:
     PS5: TILT_BRUSH;CROSS_PLATFORM_INPUT
     QNX: TILT_BRUSH;CROSS_PLATFORM_INPUT
     ReservedCFE: TILT_BRUSH;CROSS_PLATFORM_INPUT
-    Standalone: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME
+    Standalone: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;STEAMAUDIO_ENABLED
     VisionOS: TILT_BRUSH;CROSS_PLATFORM_INPUT
-    WebGL: TILT_BRUSH;CROSS_PLATFORM_INPUT
+    WebGL: TILT_BRUSH;CROSS_PLATFORM_INPUT;STEAMAUDIO_ENABLED
     Windows Store Apps: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME
     XboxOne: TILT_BRUSH;CROSS_PLATFORM_INPUT
-    iPhone: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT
+    iPhone: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT;STEAMAUDIO_ENABLED
     tvOS: TILT_BRUSH;CROSS_PLATFORM_INPUT
   additionalCompilerArguments: {}
   platformArchitecture:
@@ -948,9 +947,9 @@ PlayerSettings:
     Windows Store Apps: 2
     iPhone: 1
   il2cppCompilerConfiguration: {}
-  il2cppStacktraceInformation: {}
   il2cppCodeGeneration:
     Android: 1
+  il2cppStacktraceInformation: {}
   managedStrippingLevel:
     Android: 4
     EmbeddedLinux: 1
