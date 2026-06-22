@@ -20,7 +20,9 @@ using System.Threading.Tasks;
 using Fusion;
 #endif
 using UnityEngine;
+#if OCULUS_SUPPORTED
 using OVRPlatform = Oculus.Platform;
+#endif
 using TiltBrush;
 using UnityEngine.Serialization;
 
