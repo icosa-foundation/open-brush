@@ -205,7 +205,7 @@ namespace TiltBrush
 
             // Let it fail on non-oculus platforms
             //Get Oculus ID
-            var oculusAppId = App.Config.OculusSecrets.ClientId;
+            var oculusAppId = App.Config.OculusSecrets?.ClientId;
             bool packagePresent = true;
 #if UNITY_ANDROID
             oculusAppId = App.Config.OculusMobileSecrets.ClientId;
@@ -215,7 +215,14 @@ namespace TiltBrush
 #endif
             if (packagePresent)
             {
-                Oculus.Platform.Core.Initialize(oculusAppId);
+                try
+                {
+                    Oculus.Platform.Core.Initialize(oculusAppId);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to initialize Oculus Platform SDK. Oculus features will be unavailable. Exception: {e}");
+                }
             }
         }
 
