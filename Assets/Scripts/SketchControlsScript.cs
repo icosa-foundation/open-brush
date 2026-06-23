@@ -5144,6 +5144,7 @@ namespace TiltBrush
         }
         public void ViewOnly(bool active)
         {
+            m_ViewOnly = active;
             if (active)
             {
                 EnsureViewOnlyNavigationTool();
