@@ -2200,8 +2200,9 @@ namespace TiltBrush
             bool panelsActive = masterScaled > 0.0f;
             for (int i = 0; i < panels.Count; ++i)
             {
-                panels[i].SetScale(masterScaled);
-                panels[i].gameObject.SetActive(panelsActive);
+                bool panelActive = panelsActive && IsPanelAvailable(panels[i]);
+                panels[i].SetScale(panelActive ? masterScaled : 0.0f);
+                panels[i].gameObject.SetActive(panelActive);
             }
         }
 
