@@ -1944,8 +1944,14 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
+#if OPEN_BRUSH_GOOGLE_PLAY
+                    // Google Play builds use app-private storage only as a working cache.
+                    // Canonical user-visible files are written through Android SAF.
+                    m_UserPath = OpenBrushStorage.LocalUserPathRoot;
+#else
                     m_UserPath = "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
@@ -2276,6 +2282,12 @@ namespace TiltBrush
 
         static public string UserExportPath()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalExportStagingPath;
+            }
+#endif
             return App.Config.m_ExportPath ?? Path.Combine(UserPath(), "Exports");
         }
 
