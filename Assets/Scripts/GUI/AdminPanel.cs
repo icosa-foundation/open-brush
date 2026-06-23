@@ -179,6 +179,7 @@ namespace TiltBrush
             // Early out assumes everything after this point doesn't apply in ViewOnly mode
             if (m_PanelType == PanelType.AdminPanelViewOnly)
             {
+                RefreshViewOnlyNavigationToolButtons();
                 return;
             }
 
