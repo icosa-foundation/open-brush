@@ -30,6 +30,8 @@ namespace TiltBrush
     {
         private static readonly Dictionary<TMP_FontAsset, TMP_FontAsset> m_Clones =
             new Dictionary<TMP_FontAsset, TMP_FontAsset>();
+        private static readonly HashSet<TMP_FontAsset> m_RuntimeClones =
+            new HashSet<TMP_FontAsset>();
         private static readonly FieldInfo m_AtlasTextureField = typeof(TMP_FontAsset).GetField(
             "m_AtlasTexture", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -37,6 +39,7 @@ namespace TiltBrush
         private static void Reset()
         {
             m_Clones.Clear();
+            m_RuntimeClones.Clear();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -129,6 +132,7 @@ namespace TiltBrush
             TMP_FontAsset clone = Object.Instantiate(source);
             clone.name = source.name + " Runtime";
             clone.hideFlags = HideFlags.DontSave;
+            m_RuntimeClones.Add(clone);
 
             Texture2D[] sourceTextures = source.atlasTextures;
             if (sourceTextures == null)
@@ -165,12 +169,18 @@ namespace TiltBrush
             return clone;
         }
 
+        private static bool IsRuntimeClone(TMP_FontAsset fontAsset)
+        {
+            return m_RuntimeClones.Contains(fontAsset);
+        }
+
         private static bool IsPersistent(Object obj)
         {
 #if UNITY_EDITOR
             return EditorUtility.IsPersistent(obj);
 #else
-            return true;
+            TMP_FontAsset fontAsset = obj as TMP_FontAsset;
+            return fontAsset == null || !IsRuntimeClone(fontAsset);
 #endif
         }
     }
