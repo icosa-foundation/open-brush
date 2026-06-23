@@ -43,7 +43,7 @@
             <meta-data android:name="DisableXrMode" android:value="true" />
         </activity-alias>
 
-        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
+        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
         <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
