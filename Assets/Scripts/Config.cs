@@ -125,13 +125,13 @@ namespace TiltBrush
         [NonSerialized] public bool m_QuickLoad = true;
 
         public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets?[SecretsConfig.Service.Google];
-        public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
-        public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
-        public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
-        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
-        public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
-        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
-        public SecretsConfig.ServiceAuthData ViveSecrets => Secrets[SecretsConfig.Service.Vive];
+        public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets?[SecretsConfig.Service.Sketchfab];
+        public SecretsConfig.ServiceAuthData OculusSecrets => Secrets?[SecretsConfig.Service.Oculus];
+        public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets?[SecretsConfig.Service.OculusMobile];
+        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets?[SecretsConfig.Service.Pimax];
+        public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets?[SecretsConfig.Service.PhotonFusion];
+        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets?[SecretsConfig.Service.PhotonVoice];
+        public SecretsConfig.ServiceAuthData ViveSecrets => Secrets?[SecretsConfig.Service.Vive];
 
         public bool DisableAccountLogins;
 

@@ -277,7 +277,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9571021a85f04ddfb74e8aa5aad9cc5a, type: 3}
   m_Name: UnlitMaterialsExport
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   enabled: 1
 --- !u!114 &-6347874669906414174
 MonoBehaviour:
@@ -316,7 +316,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de1f726221454139bfcce49d994d9d05, type: 3}
   m_Name: ExrImport
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   enabled: 1
 --- !u!114 &-6092789625841630549
 MonoBehaviour:
@@ -329,7 +329,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6843a59b1a844430b7b7c08e8711a6d7, type: 3}
   m_Name: OpenBrushLightsImport
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   enabled: 1
 --- !u!114 &-6014669627118415582
 MonoBehaviour:
@@ -368,7 +368,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5d73111d7b6493da937accca1adfe6a, type: 3}
   m_Name: WebpImport
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   enabled: 1
 --- !u!114 &-5728475199642485532
 MonoBehaviour:
@@ -946,6 +946,7 @@ MonoBehaviour:
   - {fileID: -10028744433108678}
   - {fileID: 5366019203411034798}
   - {fileID: -4482434585190051212}
+  - {fileID: 3114973634942070004}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}
@@ -1332,7 +1333,20 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a3011a000a64498d8297909d5cc472a, type: 3}
   m_Name: SpriteRendererExport
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
+  enabled: 1
+--- !u!114 &3114973634942070004
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26f6af0e137738040920f0910876a03c, type: 3}
+  m_Name: OpenBrushAudioImport
+  m_EditorClassIdentifier:
   enabled: 1
 --- !u!114 &2637272668003332088
 MonoBehaviour:

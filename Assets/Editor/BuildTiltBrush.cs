@@ -1512,7 +1512,7 @@ static class BuildTiltBrush
             ? StereoRenderingPath.SinglePass : StereoRenderingPath.MultiPass))
         using (var unused3 = new TempDefineSymbols(
             target,
-            tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
+            tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))

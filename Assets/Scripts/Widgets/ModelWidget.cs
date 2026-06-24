@@ -289,8 +289,8 @@ namespace TiltBrush
             }
 
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
-            m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+            m_ModelInstance.gameObject.SetActive(true);
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
