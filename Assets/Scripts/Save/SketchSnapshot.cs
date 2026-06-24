@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private ApiMethods.RuntimeVoxSavePayload[] m_RuntimeVoxPayloads;
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -133,6 +134,7 @@ namespace TiltBrush
 
         public SketchMetadata GetSketchMetadata()
         {
+            m_RuntimeVoxPayloads = ApiMethods.VoxGetSavePayloads();
             // Note: This assumes Room space == Global space.
             TrTransform xfThumbnail_RS = SketchControlsScript.m_Instance.GetSaveIconTool()
                 .LastSaveCameraRigState.GetLossyTrTransform();
@@ -165,6 +167,7 @@ namespace TiltBrush
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
+                RuntimeVoxIndex = m_RuntimeVoxPayloads?.Select(x => x.State).ToArray(),
             };
         }
 
@@ -267,6 +270,22 @@ namespace TiltBrush
                         zip.CloseEntry();
                     }
 
+                    if (m_RuntimeVoxPayloads != null)
+                    {
+                        foreach (ApiMethods.RuntimeVoxSavePayload payload in m_RuntimeVoxPayloads)
+                        {
+                            if (payload?.VoxBytes == null || payload.State == null ||
+                                string.IsNullOrEmpty(payload.State.FilePath))
+                            {
+                                continue;
+                            }
+
+                            zip.PutNextEntry(new ZipEntry(payload.State.FilePath));
+                            zip.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            zip.CloseEntry();
+                        }
+                    }
+
                     // Add other necessary files as needed
                 }
 
@@ -309,6 +328,23 @@ namespace TiltBrush
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+
+                    if (m_RuntimeVoxPayloads != null)
+                    {
+                        foreach (ApiMethods.RuntimeVoxSavePayload payload in m_RuntimeVoxPayloads)
+                        {
+                            if (payload?.VoxBytes == null || payload.State == null ||
+                                string.IsNullOrEmpty(payload.State.FilePath))
+                            {
+                                continue;
+                            }
+
+                            using (var stream = tiltWriter.GetWriteStream(payload.State.FilePath))
+                            {
+                                stream.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            }
+                        }
+                    }
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
