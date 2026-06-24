@@ -29,13 +29,33 @@ public class BrushBaker : MonoBehaviour
         m_Instance = this;
     }
 
+    public bool TryGetMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        mapping = default;
+        if (computeShaders == null) return false;
+        foreach (ComputeShaderMapping candidate in computeShaders)
+        {
+            if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                mapping = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public IEnumerable<ComputeShaderMapping> Mappings
+    {
+        get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
+    }
+
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
         ComputeShaderMapping mapping;
         ComputeShader computeShader;
         try
         {
-            mapping = computeShaders.First(x => x.brushGuid == brushGuid);
+            mapping = computeShaders.First(x => string.Equals(x.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase));
             computeShader = mapping.computeShader;
         }
         catch (InvalidOperationException e)
