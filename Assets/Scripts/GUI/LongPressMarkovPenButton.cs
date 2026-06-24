@@ -145,7 +145,7 @@ namespace TiltBrush
                 m_PointFollower = gameObject.AddComponent<MarkovPenPointFollower>();
             }
 
-            m_PointFollower.StartFollowing(MarkovPenDrawingFreepaint.s_ControlPoints);
+            m_PointFollower.StartFollowing(MarkovPenDrawingFreepaint.ControlPoints);
         }
 
         /// @brief Play the button pressed audio feedback if it is enabled.

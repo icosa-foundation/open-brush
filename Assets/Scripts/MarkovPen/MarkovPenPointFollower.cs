@@ -7,7 +7,7 @@ namespace TiltBrush
     /// This component does not record points, does not modify the point list, and does not draw strokes.
     public class MarkovPenPointFollower : MonoBehaviour
     {
-        private List<Vector3> m_Points;
+        private IReadOnlyList<Vector3> m_Points;
         private int m_CurrentIndex;
         private float m_Timer;
         private bool m_IsRunning;
@@ -24,7 +24,7 @@ namespace TiltBrush
 
         /// @brief Start moving the brush pointer along the provided points.
         /// @param points The world-space points that the pointer should follow.
-        public void StartFollowing(List<Vector3> points)
+        public void StartFollowing(IReadOnlyList<Vector3> points)
         {
             if (points == null)
             {
@@ -40,12 +40,11 @@ namespace TiltBrush
 
             m_Points = points;
             m_CurrentIndex = 0;
-            m_Timer = 0f;
+            m_Timer = 0.0f;
             m_IsRunning = true;
 
             ResetPointer();
 
-            Debug.LogError("MarkovPenPointFollower started. Points: " + m_Points.Count);
         }
 
         /// @brief Stop moving the brush pointer and reset the follower state.
@@ -106,7 +105,6 @@ namespace TiltBrush
             PointerManager.m_Instance.EnableLine(false);
             PointerManager.m_Instance.PointerPressure = 0f;
 
-            Debug.LogError("MarkovPenPointFollower point " + m_CurrentIndex + ": " + point);
 
             m_CurrentIndex++;
         }

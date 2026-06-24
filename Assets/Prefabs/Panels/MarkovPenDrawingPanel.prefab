@@ -293,6 +293,9 @@ MonoBehaviour:
   m_DrawingCollider: {fileID: 6574194}
   m_SaveButtonCollider: {fileID: 1781614807875283174}
   m_CloseButtonCollider: {fileID: 253016694749259557}
+  m_SaveButtonHoverTarget: {fileID: 8997693926424858082}
+  m_CloseButtonHoverTarget: {fileID: 4137687989306185316}
+  m_HoverScale: 1.3
   m_ForceStraightRotation: 1
   m_StraightEulerRotation: {x: 0, y: 0, z: 0}
   m_DistanceFromUser: 3

@@ -5,94 +5,193 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// @brief Provides a Markov drawing tool that paints only on the Markov drawing panel.
-    /// Stores all drawn points, separates the base curve from style curve points, and manages
+    /// Stores drawn points, separates base curve and style curve points, and manages
     /// pointer state while the drawing panel is active.
-    class MarkovPenDrawingFreepaint : FreePaintTool
+    public class MarkovPenDrawingFreepaint : FreePaintTool
     {
-        public static readonly List<Vector3> s_ControlPoints = new();
-        public static readonly List<Vector3> s_BaseCurvePoints = new();
-        public static readonly List<Vector3> s_StyleCurvePoints = new();
+        private const float k_MinDirectionIndicatorLength = 0.001f;
+        private const string k_GuideLineObjectName = "GuideLine";
 
-        private static readonly Color s_BaseCurveColor = ParseHexColor("#11bb72");
+        [SerializeField] private LineRenderer m_DirectionIndicator;
+        [SerializeField] private float m_DirectionIndicatorPanelOffset = 0.03f;
+        [SerializeField] private float m_DirectionIndicatorControllerOffset = 0.02f;
+
+        private static readonly List<Vector3> s_ControlPoints = new();
+        private static readonly List<Vector3> s_BaseCurvePoints = new();
+        private static readonly List<Vector3> s_StyleCurvePoints = new();
+
+        private static readonly List<Vector3> s_BackupControlPoints = new();
+        private static readonly List<Vector3> s_BackupBaseCurvePoints = new();
+        private static readonly List<Vector3> s_BackupStyleCurvePoints = new();
+
+        private static readonly Color s_BaseCurveColor = ParseHexColor("#ffffff");
         private static readonly Color s_StyleCurveColor = ParseHexColor("#0090da");
 
         private static Color s_PointerColorBeforeMarkovDrawing = Color.white;
 
-        private static bool s_WasButtonPressed = false;
-        private static bool s_WasPanelOpen = false;
-        private static bool s_IsWaitingForFirstTriggerRelease = false;
-        private static bool s_HasTriggerBeenReleasedWhileWaiting = false;
+        private static bool s_WasButtonPressed;
+        private static bool s_IsWaitingForFirstTriggerRelease;
+        private static bool s_IsBaseCurveDone;
+        private static bool s_IsStyleCurveDone;
+        private static bool s_HasBaseCurveStrokeStarted;
+        private static bool s_HasStyleCurveStrokeStarted;
+        private static bool s_HasSavedPointerColor;
 
-        private static bool s_IsBaseCurveDone = false;
-        private static bool s_IsStyleCurveDone = false;
+        /// @brief Gets all active points drawn on the Markov drawing panel.
+        public static IReadOnlyList<Vector3> ControlPoints => s_ControlPoints;
 
-        private static bool s_HasBaseCurveStrokeStarted = false;
-        private static bool s_HasStyleCurveStrokeStarted = false;
-        private static bool s_HasSavedPointerColor = false;
+        /// @brief Gets all active points belonging to the base curve.
+        public static IReadOnlyList<Vector3> BaseCurvePoints => s_BaseCurvePoints;
+
+        /// @brief Gets all active points belonging to the style curve.
+        public static IReadOnlyList<Vector3> StyleCurvePoints => s_StyleCurvePoints;
+
+        /// @brief Gets the backed-up drawing points from the last saved Markov drawing.
+        public static IReadOnlyList<Vector3> BackupControlPoints => s_BackupControlPoints;
+
+        /// @brief Gets the backed-up base curve points from the last saved Markov drawing.
+        public static IReadOnlyList<Vector3> BackupBaseCurvePoints => s_BackupBaseCurvePoints;
+
+        /// @brief Gets the backed-up style curve points from the last saved Markov drawing.
+        public static IReadOnlyList<Vector3> BackupStyleCurvePoints => s_BackupStyleCurvePoints;
 
         /// @brief Gets whether the Markov drawing panel is currently open and available.
         private static bool IsDrawingPanelOpen =>
-            MarkovPenDrawingPanel.IsOpen && MarkovPenDrawingPanel.Instance != null;
+            MarkovPenDrawingPanel.IsOpen &&
+            MarkovPenDrawingPanel.Instance != null;
 
-        /// @brief Parses a HTML hex color string.
-        /// @param hex The hex color string, for example "#11bb72".
+        /// @brief Parses an HTML hexadecimal color string.
+        /// @param hexColorString The hexadecimal color string, for example "#11bb72".
         /// @return The parsed color, or white if parsing fails.
-        private static Color ParseHexColor(string hex)
+        private static Color ParseHexColor(string hexColorString)
         {
-            if (ColorUtility.TryParseHtmlString(hex, out Color color))
+            if (ColorUtility.TryParseHtmlString(hexColorString, out Color parsedColor))
             {
-                return color;
+                return parsedColor;
             }
 
             return Color.white;
         }
 
-        /// @brief Updates the tool and redirects painting input to the Markov drawing panel when it is open.
+        /// @brief Updates the direction indicator between the controller and drawing panel.
+        /// @param ray The ray extending from the brush controller.
+        private void UpdateDirectionIndicator(Ray ray)
+        {
+            if (m_DirectionIndicator == null)
+            {
+                return;
+            }
+
+            MarkovPenDrawingPanel drawingPanel = MarkovPenDrawingPanel.Instance;
+
+            if (drawingPanel == null ||
+                !drawingPanel.TryGetClosestPanelPoint(ray, out Vector3 panelHitPoint))
+            {
+                SetDirectionIndicatorActive(false);
+                return;
+            }
+
+            if (ray.direction.sqrMagnitude < k_MinDirectionIndicatorLength)
+            {
+                SetDirectionIndicatorActive(false);
+                return;
+            }
+
+            Vector3 normalizedDirection = ray.direction.normalized;
+            Vector3 startPoint =
+                ray.origin + normalizedDirection * m_DirectionIndicatorControllerOffset;
+
+            float hitDistance = Vector3.Distance(ray.origin, panelHitPoint);
+            float lineLength = Mathf.Max(
+                0.0f,
+                hitDistance -
+                m_DirectionIndicatorControllerOffset -
+                m_DirectionIndicatorPanelOffset);
+
+            if (lineLength <= k_MinDirectionIndicatorLength)
+            {
+                SetDirectionIndicatorActive(false);
+                return;
+            }
+
+            Vector3 endPoint = startPoint + normalizedDirection * lineLength;
+
+            m_DirectionIndicator.positionCount = 2;
+            m_DirectionIndicator.useWorldSpace = true;
+            m_DirectionIndicator.SetPosition(0, startPoint);
+            m_DirectionIndicator.SetPosition(1, endPoint);
+
+            SetDirectionIndicatorActive(true);
+        }
+
+        /// @brief Enables or disables the direction indicator.
+        /// @param isActive True when the direction indicator should be visible.
+        private void SetDirectionIndicatorActive(bool isActive)
+        {
+            if (m_DirectionIndicator != null)
+            {
+                m_DirectionIndicator.enabled = isActive;
+            }
+        }
+
+        /// @brief Updates the tool and redirects painting input to the Markov drawing panel.
         public override void UpdateTool()
         {
             bool isPanelOpen = IsDrawingPanelOpen;
 
-
-            if (isPanelOpen && !s_WasPanelOpen)
-            {
-                OnPanelOpened();
-            }
-            else if (!isPanelOpen && s_WasPanelOpen)
-            {
-                OnPanelClosed();
-            }
-
-            s_WasPanelOpen = isPanelOpen;
-
-
             base.UpdateTool();
-            if (isPanelOpen)
+
+            if (!isPanelOpen)
             {
-                ApplyMarkovPanelPaintingOverride();
+                SetDirectionIndicatorActive(false);
+                return;
             }
 
+            ApplyMarkovPanelPaintingOverride();
         }
+
         /// @brief Resets drawing state when the Markov drawing panel is opened.
-        /// Clears all saved point lists and waits for the first trigger release before drawing is allowed.
+        /// Clears active point lists and waits for the first trigger release before drawing is allowed.
         public static void OnPanelOpened()
         {
-            clearList();
+            ClearPaintPointLists();
 
             s_WasButtonPressed = false;
             s_IsWaitingForFirstTriggerRelease = true;
-            s_HasTriggerBeenReleasedWhileWaiting = false;
-
             s_IsBaseCurveDone = false;
             s_IsStyleCurveDone = false;
-
             s_HasBaseCurveStrokeStarted = false;
             s_HasStyleCurveStrokeStarted = false;
             s_HasSavedPointerColor = false;
 
+            SetGuideLinesActive(false);
             ResetPointer();
         }
 
-        public static void clearList()
+        /// @brief Copies the active point lists into the backup point lists.
+        public static void BackupPaintPointLists()
+        {
+            s_BackupControlPoints.Clear();
+            s_BackupBaseCurvePoints.Clear();
+            s_BackupStyleCurvePoints.Clear();
+
+            s_BackupControlPoints.AddRange(s_ControlPoints);
+            s_BackupBaseCurvePoints.AddRange(s_BaseCurvePoints);
+            s_BackupStyleCurvePoints.AddRange(s_StyleCurvePoints);
+        }
+
+        /// @brief Restores the active point lists from the backup point lists.
+        public static void RestorePaintPointListsFromBackup()
+        {
+            ClearPaintPointLists();
+
+            s_ControlPoints.AddRange(s_BackupControlPoints);
+            s_BaseCurvePoints.AddRange(s_BackupBaseCurvePoints);
+            s_StyleCurvePoints.AddRange(s_BackupStyleCurvePoints);
+        }
+
+        /// @brief Clears all active points stored for the Markov drawing panel.
+        public static void ClearPaintPointLists()
         {
             s_ControlPoints.Clear();
             s_BaseCurvePoints.Clear();
@@ -100,22 +199,45 @@ namespace TiltBrush
         }
 
         /// @brief Resets interaction state when the Markov drawing panel is closed.
-        /// Keeps the saved point lists unchanged so they can be used after closing the panel.
+        /// Keeps backup point lists unchanged so they can be used after closing the panel.
         public static void OnPanelClosed()
         {
             RestorePointerColorIfNeeded();
 
             s_WasButtonPressed = false;
             s_IsWaitingForFirstTriggerRelease = false;
-            s_HasTriggerBeenReleasedWhileWaiting = false;
-
             s_IsBaseCurveDone = false;
             s_IsStyleCurveDone = false;
-
             s_HasBaseCurveStrokeStarted = false;
             s_HasStyleCurveStrokeStarted = false;
 
+            SetGuideLinesActive(true);
             ResetPointer();
+        }
+
+        /// @brief Enables or disables all scene guide lines.
+        /// @param isActive True when the guide lines should be active.
+        private static void SetGuideLinesActive(bool isActive)
+        {
+            Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
+
+            foreach (Transform currentTransform in transforms)
+            {
+                if (currentTransform == null ||
+                    currentTransform.name != k_GuideLineObjectName)
+                {
+                    continue;
+                }
+
+                GameObject guideLineObject = currentTransform.gameObject;
+
+                if (!guideLineObject.scene.IsValid())
+                {
+                    continue;
+                }
+
+                guideLineObject.SetActive(isActive);
+            }
         }
 
         /// @brief Resets pointer state and stops any active line drawing.
@@ -128,11 +250,11 @@ namespace TiltBrush
 
             PointerManager.m_Instance.StraightEdgeModeEnabled = false;
             PointerManager.m_Instance.EnableLine(false);
-            PointerManager.m_Instance.PointerPressure = 0f;
+            PointerManager.m_Instance.PointerPressure = 0.0f;
             PointerManager.m_Instance.EatLineEnabledInput();
         }
 
-        /// @brief Saves the current pointer color before Markov drawing changes it.
+        /// @brief Saves the pointer color before Markov drawing changes it.
         private static void SavePointerColorIfNeeded()
         {
             if (PointerManager.m_Instance == null || s_HasSavedPointerColor)
@@ -144,7 +266,7 @@ namespace TiltBrush
             s_HasSavedPointerColor = true;
         }
 
-        /// @brief Restores the pointer color that was active before Markov drawing started.
+        /// @brief Restores the pointer color active before Markov drawing started.
         private static void RestorePointerColorIfNeeded()
         {
             if (PointerManager.m_Instance == null || !s_HasSavedPointerColor)
@@ -170,7 +292,7 @@ namespace TiltBrush
         }
 
         /// @brief Enables or disables drawing on the pointer.
-        /// @param isActive Whether drawing should be active.
+        /// @param isActive True when drawing should be active.
         private void SetDrawingActive(bool isActive)
         {
             if (PointerManager.m_Instance == null)
@@ -179,12 +301,13 @@ namespace TiltBrush
             }
 
             PointerManager.m_Instance.EnableLine(isActive);
-            PointerManager.m_Instance.PointerPressure = isActive ? m_brushTriggerRatio : 0f;
+            PointerManager.m_Instance.PointerPressure =
+                isActive ? m_brushTriggerRatio : 0.0f;
         }
 
         /// @brief Updates the active curve state.
-        /// Handles the transition from base curve to style curve and disables drawing after the style curve.
-        /// @param isPaintingActive Whether the user is currently painting on the drawing panel.
+        /// Handles the transition from base curve to style curve and disables drawing afterwards.
+        /// @param isPaintingActive True when the user is painting on the drawing panel.
         private void UpdateCurveState(bool isPaintingActive)
         {
             if (PointerManager.m_Instance == null)
@@ -208,8 +331,7 @@ namespace TiltBrush
         }
 
         /// @brief Updates the base curve stroke state.
-        /// Keeps straight edge mode enabled while the base curve is being drawn.
-        /// @param isPaintingActive Whether the user is currently painting on the drawing panel.
+        /// @param isPaintingActive True when the user is painting on the drawing panel.
         private void UpdateBaseCurveState(bool isPaintingActive)
         {
             if (isPaintingActive)
@@ -236,8 +358,7 @@ namespace TiltBrush
         }
 
         /// @brief Updates the style curve stroke state.
-        /// Disables further drawing after the style curve trigger is released.
-        /// @param isPaintingActive Whether the user is currently painting on the drawing panel.
+        /// @param isPaintingActive True when the user is painting on the drawing panel.
         private void UpdateStyleCurveState(bool isPaintingActive)
         {
             PointerManager.m_Instance.StraightEdgeModeEnabled = false;
@@ -254,14 +375,14 @@ namespace TiltBrush
                 s_HasStyleCurveStrokeStarted = false;
 
                 PointerManager.m_Instance.EnableLine(false);
-                PointerManager.m_Instance.PointerPressure = 0f;
+                PointerManager.m_Instance.PointerPressure = 0.0f;
                 PointerManager.m_Instance.EatLineEnabledInput();
 
                 RestorePointerColorIfNeeded();
             }
         }
 
-        /// @brief Saves a drawn point and assigns it to the base curve or style curve.
+        /// @brief Saves a drawn point and assigns it to the active curve.
         /// @param point The world-space point drawn on the Markov drawing panel.
         private void SavePaintPoint(Vector3 point)
         {
@@ -280,26 +401,35 @@ namespace TiltBrush
         }
 
         /// @brief Overrides normal painting behavior while the Markov drawing panel is open.
-        /// Redirects the brush pointer onto the panel colliders, handles button interaction,
+        /// Redirects the brush pointer onto panel colliders, handles button interaction,
         /// and stores points while painting is active.
         private void ApplyMarkovPanelPaintingOverride()
         {
-            if (!IsDrawingPanelOpen)
-            {
-                return;
-            }
+            MarkovPenDrawingPanel drawingPanel = MarkovPenDrawingPanel.Instance;
+            PointerManager pointerManager = PointerManager.m_Instance;
+            InputManager inputManager = InputManager.m_Instance;
 
-            Transform attach = InputManager.m_Instance.GetBrushControllerAttachPoint();
-
-            if (attach == null)
+            if (drawingPanel == null ||
+                pointerManager == null ||
+                inputManager == null)
             {
                 SetDrawingActive(false);
                 UpdateCurveState(false);
                 return;
             }
 
-            Ray ray = new Ray(attach.position, attach.forward);
+            Transform attachTransform =
+                inputManager.GetBrushControllerAttachPoint();
 
+            if (attachTransform == null)
+            {
+                SetDrawingActive(false);
+                UpdateCurveState(false);
+                return;
+            }
+
+            Ray ray = new Ray(attachTransform.position, attachTransform.forward);
+            UpdateDirectionIndicator(ray);
 
             if (s_IsWaitingForFirstTriggerRelease)
             {
@@ -308,37 +438,51 @@ namespace TiltBrush
 
                 if (!m_brushTrigger)
                 {
-                    s_HasTriggerBeenReleasedWhileWaiting = true;
-                }
-
-                if (s_HasTriggerBeenReleasedWhileWaiting && !m_brushTrigger)
-                {
                     s_IsWaitingForFirstTriggerRelease = false;
-                    s_HasTriggerBeenReleasedWhileWaiting = false;
                     s_WasButtonPressed = false;
                     ResetPointer();
                 }
 
                 return;
             }
-            Collider btn = MarkovPenDrawingPanel.Instance.TryGetButtonPoint(ray, out Vector3 buttonWorldPoint);
-            if (btn != null)
+
+            Collider buttonCollider =
+                drawingPanel.TryGetButtonPoint(ray, out Vector3 buttonWorldPoint);
+
+            drawingPanel.SetHoveredButton(buttonCollider);
+
+            if (buttonCollider != null)
             {
-                PointerManager.m_Instance.SetPointerTransform(
+                pointerManager.SetPointerTransform(
                     InputManager.ControllerName.Brush,
                     buttonWorldPoint,
-                    MarkovPenDrawingPanel.Instance.transform.rotation);
+                    drawingPanel.transform.rotation);
 
                 SetDrawingActive(false);
                 UpdateCurveState(false);
 
+                bool isCloseButtonPressed =
+                    buttonCollider == drawingPanel.CloseButtonCollider;
+
+                bool isSaveButtonPressed =
+                    buttonCollider == drawingPanel.SaveButtonCollider;
+
+                bool isButtonPressAllowed =
+                    isCloseButtonPressed ||
+                    (isSaveButtonPressed && s_IsStyleCurveDone);
+
                 if (m_brushTrigger &&
                     !s_WasButtonPressed &&
-                    (s_IsStyleCurveDone || btn.Equals(MarkovPenDrawingPanel.Instance.CloseeButtonCollider)))
+                    isButtonPressAllowed)
                 {
-                    Debug.LogError(btn.name);
                     s_WasButtonPressed = true;
-                    MarkovPenDrawingPanel.Instance.OnButtonPressed(btn);
+
+                    if (isSaveButtonPressed)
+                    {
+                        BackupPaintPointLists();
+                    }
+
+                    drawingPanel.OnButtonPressed(buttonCollider);
                 }
 
                 if (!m_brushTrigger)
@@ -354,7 +498,7 @@ namespace TiltBrush
                 s_WasButtonPressed = false;
             }
 
-            if (!MarkovPenDrawingPanel.Instance.TryGetDrawingPoint(
+            if (!drawingPanel.TryGetDrawingPoint(
                 ray,
                 out _,
                 out Vector3 drawingWorldPoint))
@@ -364,16 +508,28 @@ namespace TiltBrush
                 return;
             }
 
-            PointerManager.m_Instance.SetPointerTransform(
+            pointerManager.SetPointerTransform(
                 InputManager.ControllerName.Brush,
                 drawingWorldPoint,
-                MarkovPenDrawingPanel.Instance.transform.rotation);
+                drawingPanel.transform.rotation);
+
+            App application = App.Instance;
+            MultiplayerManager multiplayerManager = MultiplayerManager.m_Instance;
+
+            bool isPaintingAllowed =
+                application != null &&
+                application.IsInStateThatAllowsPainting();
+
+            bool isViewOnly =
+                multiplayerManager != null &&
+                multiplayerManager.IsViewOnly;
 
             bool isPaintingActive =
                 m_brushTrigger &&
                 !s_IsStyleCurveDone &&
-                App.Instance.IsInStateThatAllowsPainting() &&
-                !MultiplayerManager.m_Instance.IsViewOnly;
+                isPaintingAllowed &&
+                !isViewOnly;
+
             UpdateCurveState(isPaintingActive);
             SetDrawingActive(isPaintingActive);
 
@@ -383,6 +539,4 @@ namespace TiltBrush
             }
         }
     }
-
-
 }
