@@ -27,8 +27,16 @@ namespace TiltBrush
         const string EXPORT_TEXTURE_DIR = "Support/ExportTextures";
         const string EXPORT_TEXTURE_EXTENSION = ".png";
 
+        // BrushDescriptor.OnEnable
+        // Added null-check for m_BrushPrefab to stop UnassignedReferenceException crashing BrushLister.
         public void OnEnable()
         {
+            if (m_BrushPrefab == null)
+            {
+                Debug.LogWarning($"[BrushDescriptor] {name} has null m_BrushPrefab - skipping");
+                return;
+            }
+
             m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
             if (m_BrushScript == null)
             {

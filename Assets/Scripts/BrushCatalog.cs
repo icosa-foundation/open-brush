@@ -129,6 +129,9 @@ namespace TiltBrush
 
         /// Begins reloading any brush assets that come from loose files.
         /// The "BrushCatalogChanged" event will be fired when this is complete.
+
+        // FIX: Added missing m_IsLoading = false;
+        // This was causing permanent black screen on startup (app stayed stuck in LoadingBrushesAndLighting state).
         public void BeginReload()
         {
             m_IsLoading = true;
@@ -197,6 +200,7 @@ namespace TiltBrush
                     m_GuiBrushList.Add(brush);
                 }
             }
+            m_IsLoading = false;
             BrushCatalogChanged?.Invoke();
         }
 
