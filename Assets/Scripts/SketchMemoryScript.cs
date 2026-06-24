@@ -415,22 +415,23 @@ namespace TiltBrush
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
             ClearRedo();
-            while (m_OperationStack.Any())
+            while (m_OperationStack.Any())  // Are there any commands on the undo stack?
             {
                 BaseCommand top = m_OperationStack.Pop();
-                if (!top.Merge(command))
+                if (!top.Merge(command))  // Have we hit a command we can't merge?
                 {
                     m_OperationStack.Push(top);
                     break;
                 }
-                discardCommand = false;
+                discardCommand = false;  // We're still merging
                 command = top;
             }
-            if (discardCommand)
+            if (discardCommand) // Something was merged
             {
                 command.Dispose();
                 return;
             }
+            // Nothing was merged so execute the command
             delta.Redo();
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
