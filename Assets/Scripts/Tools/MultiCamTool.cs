@@ -1866,6 +1866,7 @@ namespace TiltBrush
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);
                 RenderTexture tmpDepth = null;
+                RenderTexture tmpNormals = null;
 
                 try
                 {
@@ -1880,12 +1881,12 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false);
+                    rMgr.RenderToTexture(tmp);
                     if (renderDepth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
                             snapshotWidth, snapshotHeight);
-                        rMgr.RenderToTexture(tmpDepth, asDepth: true);
+                        rMgr.RenderDepthToTexture(tmpDepth);
                     }
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
@@ -1903,9 +1904,10 @@ namespace TiltBrush
                         if (renderDepth)
                         {
                             var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
+
                             using (var fs = new FileStream(fullDepthPath, FileMode.Create))
                             {
-                                ScreenshotManager.Save(fs, tmpDepth, bSaveAsPng: true);
+                                ScreenshotManager.SaveDepth(fs, tmpDepth);
                             }
                         }
                     }
