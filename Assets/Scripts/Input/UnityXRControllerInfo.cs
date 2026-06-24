@@ -133,7 +133,7 @@ namespace TiltBrush
 
         private bool IsStylusActive()
         {
-            return stylusState.isActive && isBrush;
+            return stylusState.isActive;
         }
 
         public override Vector2 GetPadValueDelta()
