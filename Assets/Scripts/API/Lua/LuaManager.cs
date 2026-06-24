@@ -888,9 +888,13 @@ namespace TiltBrush
         public void RegisterApiClasses(Script script)
         {
             RegisterApiClass(script, "App", typeof(AppApiWrapper));
+            RegisterApiClass(script, "Bounds", typeof(BoundsApiWrapper));
             RegisterApiClass(script, "Brush", typeof(BrushApiWrapper));
             RegisterApiClass(script, "CameraPath", typeof(CameraPathApiWrapper));
+            RegisterApiClass(script, "CameraPathKnot", typeof(CameraPathKnotApiWrapper));
+            RegisterApiClass(script, "CameraPathKnotList", typeof(CameraPathKnotListApiWrapper));
             RegisterApiClass(script, "CameraPathList", typeof(CameraPathListApiWrapper));
+            RegisterApiClass(script, "CameraPathSample", typeof(CameraPathSampleApiWrapper));
             RegisterApiClass(script, "Color", typeof(ColorApiWrapper));
             RegisterApiClass(script, "Environment", typeof(EnvironmentApiWrapper));
             RegisterApiClass(script, "EnvironmentList", typeof(EnvironmentListApiWrapper));

@@ -110,6 +110,24 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
+        [LuaDocsDescription("All knots on this camera path")]
+        public CameraPathKnotListApiWrapper knots => new(_CameraPathWidget.Path.AllKnots, _CameraPathWidget);
+
+        [LuaDocsDescription("The position knots on this camera path")]
+        public CameraPathKnotListApiWrapper positionKnots => new(_CameraPathWidget.Path.PositionKnots, _CameraPathWidget);
+
+        [LuaDocsDescription("The rotation knots on this camera path")]
+        public CameraPathKnotListApiWrapper rotationKnots => new(_CameraPathWidget.Path.RotationKnots, _CameraPathWidget);
+
+        [LuaDocsDescription("The speed knots on this camera path")]
+        public CameraPathKnotListApiWrapper speedKnots => new(_CameraPathWidget.Path.SpeedKnots, _CameraPathWidget);
+
+        [LuaDocsDescription("The field-of-view knots on this camera path")]
+        public CameraPathKnotListApiWrapper fovKnots => new(_CameraPathWidget.Path.FovKnots, _CameraPathWidget);
+
+        [LuaDocsDescription("The sampled axis-aligned bounds that contain this camera path")]
+        public BoundsApiWrapper bounds => GetBounds();
+
         [LuaDocsDescription("Renders the currently active path")]
         [LuaDocsExample("CameraPath:RenderActivePath()")]
         public static void RenderActivePath() => ApiMethods.RenderCameraPath();
@@ -168,6 +186,22 @@ namespace TiltBrush
             return new CameraPathApiWrapper(widget);
         }
 
+        [LuaDocsDescription("Creates a camera path from a Path and adds rotation knots from each point's rotation")]
+        [LuaDocsParameter("path", "The Path to convert")]
+        [LuaDocsParameter("looped", "Whether the resulting CameraPath should loop")]
+        [LuaDocsExample("myCameraPath = CameraPath:FromPathWithRotations(myPath, false)")]
+        [LuaDocsReturnValue("A new CameraPath")]
+        public static CameraPathApiWrapper FromPathWithRotations(PathApiWrapper path, bool looped)
+        {
+            var wrapper = FromPath(path, looped);
+            var pathTransforms = path.AsSingleTrList();
+            for (var i = 0; i < pathTransforms.Count; i++)
+            {
+                wrapper.InsertRotationAtTime(i, pathTransforms[i].rotation);
+            }
+            return wrapper;
+        }
+
         [LuaDocsDescription("Converts the camera path to a path by sampling it at regular time intervals")]
         [LuaDocsParameter("step", "The time step is use for each sample")]
         [LuaDocsExample("myPath = myCameraPath:AsPath(0.5)")]
@@ -178,6 +212,12 @@ namespace TiltBrush
                 _CameraPathWidget.Path.AsTrList(step)
             );
         }
+
+        [LuaDocsDescription("Calculates sampled bounds that contain this camera path")]
+        [LuaDocsExample("bounds = myCameraPath:GetBounds(0.1)")]
+        [LuaDocsParameter("step", "The time step to use for each sample")]
+        [LuaDocsReturnValue("The calculated bounds")]
+        public BoundsApiWrapper GetBounds(float step = 0.1f) => AsPath(step).bounds;
 
         [LuaDocsDescription("Duplicates the camera path")]
         [LuaDocsExample("mynewPath = myOldPath:Duplicate()")]
@@ -382,13 +422,17 @@ namespace TiltBrush
         [LuaDocsReturnValue("The sampled transform of the camera at the specified time")]
         public TrTransform Sample(float time, bool loop = true, bool pingpong = false)
         {
+            return SampleFull(time, loop, pingpong).transform;
+        }
+
+        private PathT GetLoopedPathT(float time, bool loop, bool pingpong)
+        {
             var cameraPath = _CameraPathWidget.Path;
-            if (cameraPath == null) return TrTransform.identity;
+            if (cameraPath == null) return new PathT(0);
             var t = new PathT(time);
-            var maxT = new PathT(time);
+            var maxT = new PathT(float.MaxValue);
             maxT.Clamp(cameraPath.NumPositionKnots);
-            var origin = cameraPath.GetPosition(new PathT(0));
-            if (t > maxT && loop)
+            if (maxT.T > 0 && t > maxT && loop)
             {
                 if (pingpong)
                 {
@@ -407,11 +451,59 @@ namespace TiltBrush
                     t = new PathT(t.T % maxT.T);
                 }
             }
+            else
+            {
+                t.Clamp(cameraPath.NumPositionKnots);
+            }
+            return t;
+        }
+
+        [LuaDocsDescription("Samples the camera path and returns transform, speed, FOV, and path ratio")]
+        [LuaDocsExample("sample = myCameraPath:SampleFull(2.5, true, false)")]
+        [LuaDocsParameter("time", "The time at which to sample the camera path")]
+        [LuaDocsParameter("loop", "Determines whether the camera path should loop")]
+        [LuaDocsParameter("pingpong", "Determines whether the camera path should pingpong (reverse direction every loop")]
+        [LuaDocsReturnValue("The sampled camera path data")]
+        public CameraPathSampleApiWrapper SampleFull(float time, bool loop = true, bool pingpong = false)
+        {
+            var cameraPath = _CameraPathWidget.Path;
+            if (cameraPath == null || cameraPath.NumPositionKnots < 2)
+            {
+                return new CameraPathSampleApiWrapper(time, TrTransform.identity, 0, 0, 0);
+            }
+            var t = GetLoopedPathT(time, loop, pingpong);
+            var origin = cameraPath.GetPosition(new PathT(0));
             var tr = _CameraPathWidget.Canvas.Pose.inverse * TrTransform.TR(
                 cameraPath.GetPosition(t) - origin,
                 cameraPath.GetRotation(t)
             );
-            return tr;
+            var maxT = new PathT(float.MaxValue);
+            maxT.Clamp(cameraPath.NumPositionKnots);
+            var pathRatio = maxT.T <= 0 ? 0 : t.T / maxT.T;
+            return new CameraPathSampleApiWrapper(time, tr, cameraPath.GetSpeed(t), cameraPath.GetFov(t), pathRatio);
+        }
+
+        [LuaDocsDescription("Draws this camera path as brush strokes using current brush settings")]
+        [LuaDocsExample("strokes = myCameraPath:Draw(0.1)")]
+        [LuaDocsParameter("step", "The time step to use for each sample")]
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper Draw(float step)
+        {
+            return AsPath(step).Draw();
+        }
+
+        [LuaDocsDescription("Draws this camera path as brush strokes with explicit brush settings")]
+        [LuaDocsExample(@"strokes = myCameraPath:DrawWithBrush(0.1, ""Ink"", 0.05, Color.red, 0.1)")]
+        [LuaDocsParameter("step", "The time step to use for each sample")]
+        [LuaDocsParameter("brushType", "The brush name or guid to use")]
+        [LuaDocsParameter("brushSize", "The brush size to use")]
+        [LuaDocsParameter("color", "The brush color to use")]
+        [LuaDocsParameter("smoothing", "The amount of smoothing to apply")]
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper DrawWithBrush(
+            float step, string brushType, float brushSize, ColorApiWrapper color, float smoothing = 0)
+        {
+            return AsPath(step).DrawWithBrush(brushType, brushSize, color, smoothing, layer);
         }
 
         [LuaDocsDescription("Simplifies the camera path")]
