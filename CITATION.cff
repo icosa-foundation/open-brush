@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use Open Brush, please cite it using the metadata from this file."
+title: "Open Brush"
+type: software
+authors:
+  - name: "The Open Brush contributors"
+abstract: "Open Brush is the open source, community-led evolution of Tilt Brush."
+license: "Apache-2.0"
+repository-code: "https://github.com/icosa-foundation/open-brush"
+url: "https://openbrush.app"
