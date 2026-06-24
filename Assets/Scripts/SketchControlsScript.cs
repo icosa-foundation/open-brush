@@ -200,7 +200,10 @@ namespace TiltBrush
             OpenTexturePicker = 9001,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            LoadQuillConfirmUnsaved = 13000,
+            LoadQuillFile = 13001,
+            OpenQuillPanelSearchPopup = 13002,
         }
 
         public enum ControlsType
@@ -568,6 +571,7 @@ namespace TiltBrush
         private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
+        public bool IsViewOnly => m_ViewOnly;
 
         private InputState m_CurrentInputState;
         private InputStateConfig[] m_InputStateConfigs;
@@ -999,6 +1003,12 @@ namespace TiltBrush
 
             m_PanelManager.HidePanelsForStartup();
             RequestPanelsVisibility(false);
+
+            if (App.UserConfig.Flags.ForceViewOnly)
+            {
+                m_ViewOnly = true;
+                ViewOnly(true);
+            }
         }
 
         void Update()
@@ -1269,6 +1279,7 @@ namespace TiltBrush
         bool CanUsePinCushion()
         {
             return (m_ControlsType == ControlsType.SixDofControllers) &&
+                !m_ViewOnly &&
                 m_PanelManager.AdvancedModeActive() &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 !InputManager.Brush.GetControllerGrip() &&
@@ -1558,7 +1569,8 @@ namespace TiltBrush
             var mouse = Mouse.current;
 
             // Toggle default tool.
-            if (!m_PanelManager.AdvancedModeActive() &&
+            if (!m_ViewOnly &&
+                !m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
                 m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
@@ -3772,8 +3784,6 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
-            // Always false in viewonly mode
-            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
@@ -4037,6 +4047,41 @@ namespace TiltBrush
                     SelectionManager.m_Instance.ClearActiveSelection();
                     Export.ExportScene();
                 }, 0.25f, false, true);
+        }
+
+        IEnumerator LoadQuillCoroutine(string path, int chapterIndex = -1)
+        {
+            var blackEnv = EnvironmentCatalog.m_Instance.AllEnvironments
+                .FirstOrDefault(x => x.name.Equals("Black", StringComparison.OrdinalIgnoreCase));
+            if (blackEnv != null)
+            {
+                SceneSettings.m_Instance.SetDesiredPreset(blackEnv, keepSceneTransform: true,
+                    forceTransition: false, hasCustomLights: false, skipFade: true);
+            }
+
+            using (var coroutine = OverlayManager.m_Instance.RunInCompositor(
+                OverlayType.LoadSketch, () =>
+                {
+                    Quill.Load(path, chapterIndex: chapterIndex);
+                }, 0.25f, false, false))
+            {
+                while (coroutine.MoveNext())
+                {
+                    yield return coroutine.Current;
+                }
+            }
+
+            if (Quill.LastLoadedBackgroundColor.HasValue)
+            {
+                var bgColor = Quill.LastLoadedBackgroundColor.Value;
+                SceneSettings.m_Instance.SkyColorA = bgColor;
+                SceneSettings.m_Instance.SkyColorB = bgColor;
+            }
+
+            if (Quill.LastLoaded360SkyboxName != null)
+            {
+                SceneSettings.m_Instance.LoadCustomSkybox(Quill.LastLoaded360SkyboxName);
+            }
         }
 
         private void SaveModel()
@@ -4994,6 +5039,35 @@ namespace TiltBrush
                         }
                     }
                     break;
+                case GlobalCommands.LoadQuillConfirmUnsaved:
+                    {
+                        if (SketchMemoryScript.m_Instance.IsMemoryDirty())
+                        {
+                            var quillPanel = m_PanelManager.GetActivePanelByType(
+                                BasePanel.PanelType.QuillLibrary) as QuillLibraryPanel;
+                            if (quillPanel != null)
+                            {
+                                quillPanel.ShowConfirmLoadPopUp();
+                            }
+                        }
+                        else
+                        {
+                            IssueGlobalCommand(GlobalCommands.LoadQuillFile, 0, 0);
+                        }
+                    }
+                    break;
+                case GlobalCommands.LoadQuillFile:
+                    {
+                        var options = Quill.PendingLoadOptions;
+                        Quill.PendingLoadOptions = null;
+                        if (options != null && !string.IsNullOrEmpty(options.Path))
+                        {
+                            NewSketch(fade: false);
+                            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
+                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                        }
+                    }
+                    break;
                 case GlobalCommands.LoadWaitOnDownload:
                     {
                         var download = false;
@@ -5108,6 +5182,12 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.OpenQuillPanelSearchPopup:
+                    {
+                        QuillFileCatalog.Instance.SearchText = KeyboardPopUpWindow.m_LastInput;
+                        DismissPopupOnCurrentGazeObject(false);
+                        break;
+                    }
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
@@ -5137,13 +5217,45 @@ namespace TiltBrush
         }
         public void ViewOnly(bool active)
         {
-            RequestPanelsVisibility(!active);
+            if (active)
+            {
+                EnsureViewOnlyNavigationTool();
+                m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
+                RequestPanelsVisibility(true);
+            }
+            else
+            {
+                DisableViewOnlyNavigationTool();
+                m_PanelManager.RestoreEditingPanelAvailabilityMode();
+                RequestPanelsVisibility(true);
+            }
             PointerManager.m_Instance.RequestPointerRendering(!active);
             // TODO - decide if this is a permanent change
             // With this line, you can't set a tool such as fly or teleport
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+        }
+
+        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
+        {
+            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
+        }
+
+        public void EnsureViewOnlyNavigationTool()
+        {
+            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            }
+        }
+
+        public void DisableViewOnlyNavigationTool()
+        {
+            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableDefaultTool();
+            }
         }
 
         private void LoadNamed(string path, bool quickload, bool additive)

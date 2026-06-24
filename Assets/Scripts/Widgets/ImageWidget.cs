@@ -14,7 +14,7 @@
 
 using UnityEngine;
 using System.IO;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 
 namespace TiltBrush
 {

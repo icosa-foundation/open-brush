@@ -22,7 +22,10 @@
 uniform float4x4 xf_CS;
 // Inverse canvas transform.
 uniform float4x4 xf_I_CS;
-uniform uint _BatchID;  // NOTOOLKIT
+// Type is float (not uint) to match MaterialPropertyBlock.SetFloat from C#. Vulkan/SPIR-V
+// has undefined behavior for SetFloat -> uniform uint bindings; floats round-trip cleanly.
+// Cast to uint at the use site.
+uniform float _BatchID;  // NOTOOLKIT
 #include "Ods.cginc"  // NOTOOLKIT
 
 // Unity only guarantees signed 2.8 for fixed4.

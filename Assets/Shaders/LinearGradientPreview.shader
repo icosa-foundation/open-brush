@@ -26,13 +26,16 @@ Shader "Custom/LinearGradientPreview" {
 
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Pass
         {
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend SrcAlpha OneMinusSrcAlpha
       Cull Front
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
@@ -48,7 +51,9 @@ Shader "Custom/LinearGradientPreview" {
                 float2 uv : TEXCOORD0;
                 float3 modelpos : TEXCOORD1;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             v2f vert(vertexIn input)
@@ -57,6 +62,7 @@ Shader "Custom/LinearGradientPreview" {
 
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_OUTPUT(v2f, output);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 output.pos = UnityObjectToClipPos(input.pos);
@@ -71,6 +77,7 @@ Shader "Custom/LinearGradientPreview" {
 
             fixed4 frag(v2f input) : COLOR
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float t;
                 t = input.uv.y;
                 if (abs(t - 0.5) < _EquatorWidth) return _Color;
@@ -81,12 +88,14 @@ Shader "Custom/LinearGradientPreview" {
 
         //Make a white outline!
         Pass{
+            Tags { "LightMode"="SRPDefaultUnlit" }
 
             Cull Front
 
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "UnityCG.cginc"
 
             float _OutlineWidth;
@@ -95,10 +104,15 @@ Shader "Custom/LinearGradientPreview" {
             struct appdata_t {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+
+              UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f {
                 float4 pos : SV_POSITION;
+
+              UNITY_VERTEX_INPUT_INSTANCE_ID
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             v2f vert(appdata_t v) {
@@ -108,18 +122,21 @@ Shader "Custom/LinearGradientPreview" {
             }
 
             float4 frag(v2f i) : COLOR{
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 return fixed4(_Color);
             }
                 ENDCG
         }
   //Make a 2nd black outline!
   Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
 
       Cull Front
 
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #include "UnityCG.cginc"
 
       float _SecondOutlineWidth;
@@ -127,10 +144,15 @@ Shader "Custom/LinearGradientPreview" {
       struct appdata_t {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
     float4 pos : SV_POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert(appdata_t v) {
@@ -140,6 +162,7 @@ Shader "Custom/LinearGradientPreview" {
       }
 
       float4 frag(v2f i) : COLOR{
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     return fixed4(float3(0,0,0),1);
       }
     ENDCG
@@ -147,3 +170,4 @@ Shader "Custom/LinearGradientPreview" {
 
     }
 }
+

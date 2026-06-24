@@ -8,6 +8,7 @@ using System.IO;
 using System.Reflection;
 using Debug = UnityEngine.Debug;
 using TiltBrush;
+using UnityEngine.Rendering;
 
 namespace ODS {
 
@@ -51,6 +52,7 @@ public class HybridCamera : MonoBehaviour {
 
   public string outputFolder = null;
   public string basename = null;
+  public bool includePostProcessing = true;
 
   private int frameCount = 0;
   private bool isRendering = false;
@@ -181,6 +183,9 @@ public class HybridCamera : MonoBehaviour {
     renderCamera.cullingMask = parentCamera.cullingMask;
     renderCamera.name = "Hybrid ODS Camera";
     renderCamera.fieldOfView = 90.0f;
+    bool usingScriptableRenderPipeline = GraphicsSettings.currentRenderPipeline != null;
+    UrpPostProcessingController.CameraPostProcessingState postProcessingState =
+      default(UrpPostProcessingController.CameraPostProcessingState);
 
     if ( opaqueBackground ) {
       // TBD - Specify full alpha for exported image
@@ -211,10 +216,23 @@ public class HybridCamera : MonoBehaviour {
     isRendering = true;
     //This suspends the execution of this function while running the odsRenderer.Render() function 
     //as a coroutine and will then resume execution when it is done.
-    yield return StartCoroutine( 
-      odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
-                         MaxRenders)
-    );
+    try {
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        postProcessingState =
+          UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+            renderCamera, includePostProcessing);
+      }
+
+      yield return StartCoroutine(
+        odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
+                           MaxRenders)
+      );
+    }
+    finally {
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+      }
+    }
     isRendering = false;
 
 #if ENABLE_TIMING
@@ -235,19 +253,21 @@ public class HybridCamera : MonoBehaviour {
     RenderTexture.active = oldActiveTexture;
 
     bool useBloomedImage = false;
-    MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
-    foreach (MonoBehaviour b in behaviours) {
-      MethodInfo m = b.GetType().GetMethod("OnRenderImage");
-      if (m != null && m.IsPublic && b.enabled) {
-        //Apply the bloom and composite.
-        if (vr180) {
-          SbsBloomAndComposite(stitched, finalImage, b, m);
+    if (includePostProcessing && !usingScriptableRenderPipeline) {
+      MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
+      foreach (MonoBehaviour b in behaviours) {
+        MethodInfo m = b.GetType().GetMethod("OnRenderImage");
+        if (m != null && m.IsPublic && b.enabled) {
+          //Apply the bloom and composite.
+          if (vr180) {
+            SbsBloomAndComposite(stitched, finalImage, b, m);
+          }
+          else {
+            StackedBloomAndComposite(stitched, finalImage, b, m);
+          }
+          useBloomedImage = true;
+          break;
         }
-        else {
-          StackedBloomAndComposite(stitched, finalImage, b, m);
-        }
-        useBloomedImage = true;
-        break;
       }
     }
 

@@ -19,14 +19,14 @@ Shader "Custom/PanelButton_Atlas" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
     Pass {
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
       #include "Assets/Shaders/Include/Brush.cginc"
       #include "Assets/Shaders/Include/Hdr.cginc"
@@ -48,6 +48,8 @@ Shader "Custom/PanelButton_Atlas" {
         float4 vertex : POSITION;
         float4 texcoord : TEXCOORD0;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
@@ -57,6 +59,7 @@ Shader "Custom/PanelButton_Atlas" {
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.vertex = UnityObjectToClipPos(v.vertex);
@@ -66,6 +69,7 @@ Shader "Custom/PanelButton_Atlas" {
 
       fixed4 frag (v2f i) : COLOR
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         fixed4 c = tex2Dbias(_MainTex, i.texcoord);
         c.rgb *= .75;
         if (c.a < _Cutoff) discard;
@@ -78,4 +82,5 @@ Shader "Custom/PanelButton_Atlas" {
   }
   FallBack "Transparent/Cutout/VertexLit"
 }
+
 
