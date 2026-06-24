@@ -76,6 +76,7 @@ static class BuildTiltBrush
         public BuildOptions UnityOptions;
         public string Description;
         public bool disableAccountLogins;
+        public bool AndroidBuildAppBundle;
     }
 
     [Serializable()]
@@ -819,8 +820,19 @@ static class BuildTiltBrush
                 }
                 else if (args[i] == "-androidExportType")
                 {
-                    // Not supported in Open Brush (added to game-ci in v3)
-                    i++;
+                    string androidExportType = args[++i];
+                    if (androidExportType == "androidAppBundle")
+                    {
+                        tiltOptions.AndroidBuildAppBundle = true;
+                    }
+                    else if (androidExportType == "androidPackage")
+                    {
+                        tiltOptions.AndroidBuildAppBundle = false;
+                    }
+                    else
+                    {
+                        Die(3, $"Unsupported Android export type {androidExportType}");
+                    }
                 }
                 else if (args[i] == "-androidSymbolType")
                 {
@@ -846,6 +858,7 @@ static class BuildTiltBrush
 
         if (target == BuildTarget.Android)
         {
+            EditorUserBuildSettings.buildAppBundle = tiltOptions.AndroidBuildAppBundle;
             EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Debugging;
         }
 
@@ -1029,6 +1042,8 @@ static class BuildTiltBrush
 #elif ZAPBOX_SUPPORTED
             // Zapbox has a separate listing
             new_identifier = "foundation.icosa.openbrushzapbox";
+#elif OPEN_BRUSH_VIEWER
+            new_identifier = "foundation.icosa.openbrushviewer";
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
@@ -1678,7 +1693,8 @@ static class BuildTiltBrush
                 var buildDesc = $"Building player: {target}";
                 if (target == BuildTarget.Android)
                 {
-                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}";
+                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}, " +
+                        $"{(EditorUserBuildSettings.buildAppBundle ? "AAB" : "APK")}";
                 }
                 m_buildStatus = buildDesc;
 
