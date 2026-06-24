@@ -1,8 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.Collections;
 
 public class BrushBaker : MonoBehaviour
 {
@@ -29,140 +27,163 @@ public class BrushBaker : MonoBehaviour
         m_Instance = this;
     }
 
+    private bool TryGetComputeShaderMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        if (computeShaders != null)
+        {
+            for (int i = 0; i < computeShaders.Count; i++)
+            {
+                if (computeShaders[i].brushGuid == brushGuid)
+                {
+                    mapping = computeShaders[i];
+                    return true;
+                }
+            }
+        }
+
+        mapping = default;
+        return false;
+    }
+
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
-        ComputeShaderMapping mapping;
-        ComputeShader computeShader;
-        try
+        if (mesh == null) return null;
+
+        if (!TryGetComputeShaderMapping(brushGuid, out var mapping))
         {
-            mapping = computeShaders.First(x => x.brushGuid == brushGuid);
-            computeShader = mapping.computeShader;
-        }
-        catch (InvalidOperationException e)
-        {
-            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}: {e.Message}");
             return mesh;
         }
-        if (computeShader == null) return mesh;
 
-        // Get the transformation matrix from the GameObject's transform
-        Matrix4x4 localToWorldtransformMatrix = transform.localToWorldMatrix;
-        Matrix4x4 worldToLocaltransformMatrix = transform.worldToLocalMatrix;
+        var computeShader = mapping.computeShader;
+        if (computeShader == null)
+        {
+            Debug.LogWarning($"Mapping for brushGuid {brushGuid} has no compute shader assigned");
+            return mesh;
+        }
 
-        // Set the matrix as a shader parameter
-        computeShader.SetMatrix("TransformObjectToWorld", localToWorldtransformMatrix);
-        computeShader.SetMatrix("TransformWorldToObject", worldToLocaltransformMatrix);
+        int vertexCount = mesh.vertexCount;
+        if (vertexCount == 0) return mesh;
 
-        NativeArray<Vector3> vertices = new NativeArray<Vector3>(mesh.vertices, Allocator.TempJob);
-        ComputeBuffer vertexBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
-        vertexBuffer.SetData(vertices);
+        var verticesArray = mesh.vertices;
+        if (verticesArray == null || verticesArray.Length == 0) return mesh;
 
-        NativeArray<Vector3> normals = new NativeArray<Vector3>(mesh.normals, Allocator.TempJob);
-        ComputeBuffer normalBuffer = new ComputeBuffer(normals.Length, sizeof(float) * 3);
-        normalBuffer.SetData(normals);
+        var normalsArray = mesh.normals;
+        if (normalsArray == null || normalsArray.Length == 0) return mesh;
 
-        // get color buffer as well
-        List<Color> colors = new List<Color>();
+        var colors = new List<Color>();
         mesh.GetColors(colors);
-        ComputeBuffer colorBuffer = new ComputeBuffer(colors.Count, sizeof(float) * 4);
-        colorBuffer.SetData(colors);
+        if (colors.Count == 0) return mesh;
 
-        List<Vector3> uvs = new List<Vector3>();
+        var uvs = new List<Vector3>();
         mesh.GetUVs(0, uvs);
-        ComputeBuffer uvBuffer = new ComputeBuffer(uvs.Count, sizeof(float) * 3);
-        uvBuffer.SetData(uvs);
+        if (uvs.Count == 0) return mesh;
 
-        computeShader.SetBuffer(0, "vertexBuffer", vertexBuffer);
-        computeShader.SetBuffer(0, "normalBuffer", normalBuffer);
-        computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
-        computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
-        computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
+        computeShader.SetMatrix("TransformObjectToWorld", transform.localToWorldMatrix);
+        computeShader.SetMatrix("TransformWorldToObject", transform.worldToLocalMatrix);
 
+        ComputeBuffer vertexBuffer = null;
+        ComputeBuffer normalBuffer = null;
+        ComputeBuffer colorBuffer = null;
+        ComputeBuffer uvBuffer = null;
         ComputeBuffer uv1Buffer = null;
-        bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
-        if (needsUv1Buffer)
-        {
-            List<Vector4> uv1s = new List<Vector4>();
-            mesh.GetUVs(1, uv1s);
-            if (uv1s.Count != mesh.vertexCount)
-            {
-                uv1s = Enumerable.Repeat(Vector4.zero, mesh.vertexCount).ToList();
-            }
-            uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 4);
-            uv1Buffer.SetData(uv1s);
-            computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
-        }
-
         ComputeBuffer uv2Buffer = null;
-        bool needsUv2Buffer = mapping.ModifyUv2 || mesh.uv3.Length > 0;
-        if (needsUv2Buffer)
+
+        try
         {
-            List<Vector2> uv2s = new List<Vector2>();
-            mesh.GetUVs(2, uv2s);
-            if (uv2s.Count != mesh.vertexCount)
+            vertexBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
+            vertexBuffer.SetData(verticesArray);
+
+            normalBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
+            normalBuffer.SetData(normalsArray);
+
+            colorBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 4);
+            colorBuffer.SetData(colors);
+
+            uvBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
+            uvBuffer.SetData(uvs);
+
+            computeShader.SetBuffer(0, "vertexBuffer", vertexBuffer);
+            computeShader.SetBuffer(0, "normalBuffer", normalBuffer);
+            computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
+            computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
+            computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
+            computeShader.SetInt("_VertexCount", vertexCount);
+
+            bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
+            if (needsUv1Buffer)
             {
-                uv2s = Enumerable.Repeat(Vector2.zero, mesh.vertexCount).ToList();
+                var uv1s = new List<Vector4>();
+                mesh.GetUVs(1, uv1s);
+                if (uv1s.Count != vertexCount)
+                    uv1s = new List<Vector4>(new Vector4[vertexCount]);
+                uv1Buffer = new ComputeBuffer(vertexCount, sizeof(float) * 4);
+                uv1Buffer.SetData(uv1s);
+                computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
             }
-            uv2Buffer = new ComputeBuffer(uv2s.Count, sizeof(float) * 2);
-            uv2Buffer.SetData(uv2s);
-            computeShader.SetBuffer(0, "uv2Buffer", uv2Buffer);
+
+            bool needsUv2Buffer = mapping.ModifyUv2 || mesh.uv3.Length > 0;
+            if (needsUv2Buffer)
+            {
+                var uv2s = new List<Vector2>();
+                mesh.GetUVs(2, uv2s);
+                if (uv2s.Count != vertexCount)
+                    uv2s = new List<Vector2>(new Vector2[vertexCount]);
+                uv2Buffer = new ComputeBuffer(vertexCount, sizeof(float) * 2);
+                uv2Buffer.SetData(uv2s);
+                computeShader.SetBuffer(0, "uv2Buffer", uv2Buffer);
+            }
+
+            int threadGroups = Mathf.CeilToInt(vertexCount / 8f);
+            computeShader.Dispatch(0, threadGroups, 1, 1);
+
+            var newVerts = new Vector3[vertexCount];
+            vertexBuffer.GetData(newVerts);
+            mesh.vertices = newVerts;
+
+            if (mapping.ModifyColor)
+            {
+                var newColors = new Color[vertexCount];
+                colorBuffer.GetData(newColors);
+                mesh.colors = newColors;
+            }
+
+            if (mapping.ModifyNormal)
+            {
+                var newNormals = new Vector3[vertexCount];
+                normalBuffer.GetData(newNormals);
+                mesh.normals = newNormals;
+            }
+
+            if (mapping.ModifyUv0)
+            {
+                var newUvs = new Vector3[vertexCount];
+                uvBuffer.GetData(newUvs);
+                mesh.SetUVs(0, newUvs);
+            }
+
+            if (mapping.ModifyUv1 && uv1Buffer != null)
+            {
+                var newUv1s = new Vector4[vertexCount];
+                uv1Buffer.GetData(newUv1s);
+                mesh.SetUVs(1, newUv1s);
+            }
+
+            if (mapping.ModifyUv2 && uv2Buffer != null)
+            {
+                var newUv2s = new Vector2[vertexCount];
+                uv2Buffer.GetData(newUv2s);
+                mesh.SetUVs(2, newUv2s);
+            }
         }
-
-        int threadGroups = Mathf.CeilToInt(mesh.vertices.Length / 8f);
-        computeShader.Dispatch(0, threadGroups, 1, 1);
-
-        var newVerts = new Vector3[mesh.vertexCount];
-        vertexBuffer.GetData(newVerts);
-        mesh.vertices = newVerts;
-
-        if (mapping.ModifyColor)
+        finally
         {
-            var newColors = new Color[mesh.vertexCount];
-            colorBuffer.GetData(newColors);
-            mesh.colors = newColors;
+            uv2Buffer?.Release();
+            uv1Buffer?.Release();
+            uvBuffer?.Release();
+            colorBuffer?.Release();
+            normalBuffer?.Release();
+            vertexBuffer?.Release();
         }
-
-        if (mapping.ModifyNormal)
-        {
-            var newNormals = new Vector3[mesh.vertexCount];
-            normalBuffer.GetData(newNormals);
-            mesh.normals = newNormals;
-        }
-
-        if (mapping.ModifyUv0)
-        {
-            var newUvs = new Vector3[mesh.vertexCount];
-            uvBuffer.GetData(newUvs);
-            mesh.SetUVs(0, newUvs);
-        }
-
-        if (mapping.ModifyUv1 && uv1Buffer != null)
-        {
-            var newUv1s = new Vector4[mesh.vertexCount];
-            uv1Buffer.GetData(newUv1s);
-            mesh.SetUVs(1, newUv1s);
-        }
-
-        if (mapping.ModifyUv2 && uv2Buffer != null)
-        {
-            var newUv2s = new Vector2[mesh.vertexCount];
-            uv2Buffer.GetData(newUv2s);
-            mesh.SetUVs(2, newUv2s);
-        }
-
-        vertexBuffer.Release();
-        normalBuffer.Release();
-        uvBuffer.Release();
-        if (uv1Buffer != null)
-        {
-            uv1Buffer.Release();
-        }
-        if (uv2Buffer != null)
-        {
-            uv2Buffer.Release();
-        }
-        vertices.Dispose();
-        normals.Dispose();
 
         return mesh;
     }

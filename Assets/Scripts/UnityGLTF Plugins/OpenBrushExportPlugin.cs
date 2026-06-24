@@ -213,11 +213,20 @@ namespace TiltBrush
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
         {
-            var batch = transform.GetComponent<Batch>();
-            if (batch != null)
+            // Skip empty batches
+            if (transform.GetComponent<Batch>() != null)
             {
-                var mesh = transform.GetComponent<MeshFilter>().sharedMesh;
-                if (mesh.vertexCount == 0)
+                var mf = transform.GetComponent<MeshFilter>();
+                if (mf == null) return false;
+                var mesh = mf.sharedMesh;
+                if (mesh == null) return false;
+                if (mesh.vertexCount == 0) return false;
+            }
+
+            // Don't export the preview stroke
+            if (transform.GetComponent<BaseBrushScript>() != null)
+            {
+                if (transform.gameObject.name.StartsWith("Preview "))
                 {
                     return false;
                 }
