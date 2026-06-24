@@ -81,7 +81,6 @@ namespace TiltBrush
         {
             //get all tools from our children
             m_Tools = GetComponentsInChildren<BaseTool>(true);
-
             m_ActiveToolIndex = 0;
             m_ToolSelectionAggregateValue = 0.0f;
 
