@@ -31,7 +31,7 @@ namespace TiltBrush
             {
                 foreach (var subset in batch.m_Groups)
                 {
-                    batch.DisableSubset(subset);
+                    subset.m_Stroke.Hide(true);
                 }
             }
 
@@ -49,7 +49,7 @@ namespace TiltBrush
             {
                 foreach (var subset in batch.m_Groups)
                 {
-                    batch.EnableSubset(subset);
+                    subset.m_Stroke.Hide(false);
                 }
             }
 

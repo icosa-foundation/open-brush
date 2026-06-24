@@ -50,24 +50,7 @@ namespace TiltBrush
             {
                 for (int i = 0; i < m_Strokes.Length; ++i)
                 {
-                    Stroke stroke = m_Strokes[i];
-                    switch (m_Strokes[i].m_Type)
-                    {
-                        case Stroke.Type.BrushStroke:
-                            BaseBrushScript rBrushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(true);
-                            }
-                            break;
-                        case Stroke.Type.BatchedBrushStroke:
-                            stroke.m_BatchSubset.m_ParentBatch.DisableSubset(stroke.m_BatchSubset);
-                            break;
-                        case Stroke.Type.NotCreated:
-                            Debug.LogError("Unexpected: redo delete NotCreated stroke");
-                            break;
-                    }
-                    TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
+                    m_Strokes[i].Hide(true);
                 }
             }
             if (m_Widgets != null)
@@ -89,24 +72,7 @@ namespace TiltBrush
             {
                 for (int i = 0; i < m_Strokes.Length; ++i)
                 {
-                    Stroke stroke = m_Strokes[i];
-                    switch (m_Strokes[i].m_Type)
-                    {
-                        case Stroke.Type.BrushStroke:
-                            BaseBrushScript rBrushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(false);
-                            }
-                            break;
-                        case Stroke.Type.BatchedBrushStroke:
-                            stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
-                            break;
-                        case Stroke.Type.NotCreated:
-                            Debug.LogError("Unexpected: redo delete NotCreated stroke");
-                            break;
-                    }
-                    TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+                    m_Strokes[i].Hide(false);
                 }
             }
             if (m_Widgets != null)

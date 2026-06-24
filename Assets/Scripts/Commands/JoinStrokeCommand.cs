@@ -89,14 +89,14 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            ModifyStroke(m_StrokeA, m_NewCP);
-            m_StrokeB.Uncreate();
+            ModifyStroke(m_StrokeA, m_NewCP); // Uncreate/Recreate automatically manages snap hash
+            m_StrokeB.Hide(true); // Hide() automatically manages snap hash removal
         }
 
         protected override void OnUndo()
         {
-            ModifyStroke(m_StrokeA, m_InitialCP);
-            m_StrokeB.Recreate();
+            ModifyStroke(m_StrokeA, m_InitialCP); // Uncreate/Recreate automatically manages snap hash
+            m_StrokeB.Hide(false); // Hide(false) automatically manages snap hash re-addition
         }
 
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
