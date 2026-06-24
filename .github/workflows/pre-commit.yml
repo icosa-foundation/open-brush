@@ -12,7 +12,7 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v5.3.0
         with:
           dotnet-version: '8.0.x'
@@ -28,7 +28,7 @@ jobs:
         run: uv tool install prek
         shell: bash
       - name: Cache pre-commit environments
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/prek
           key: prek|${{ hashFiles('.pre-commit-config.yaml') }}
