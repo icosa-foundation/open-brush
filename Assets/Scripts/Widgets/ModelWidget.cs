@@ -448,21 +448,128 @@ namespace TiltBrush
                 subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - ".mesh".Length);
                 excludeChildren = true;
             }
-            if (node.name == subpathToTraverse)
+            string[] subtreePathSegments = GetSubtreePathSegments(subpathToTraverse);
+            if (subtreePathSegments.Length == 0)
             {
-                // We're already at the right node
-                // No need to do anything
-                Debug.LogWarning($"Didn't expect to get here...");
+                return (node, excludeChildren);
             }
-            else
+
+            if (TransformNameMatchesSegment(node.name, subtreePathSegments[0]))
             {
-                if (subpathToTraverse.StartsWith($"{node.name}/"))
-                {
-                    subpathToTraverse = subpathToTraverse.Substring(node.name.Length + 1);
-                }
-                node = string.IsNullOrEmpty(subpathToTraverse) ? node : node.Find(subpathToTraverse);
+                subtreePathSegments = subtreePathSegments.Skip(1).ToArray();
             }
+
+            node = FindSubtreeDescendant(node, subtreePathSegments);
             return (node, excludeChildren);
+        }
+
+        private static string[] GetSubtreePathSegments(string subtreePath)
+        {
+            return subtreePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        private static Transform FindSubtreeDescendant(Transform root, string[] pathSegments)
+        {
+            Transform node = root;
+            foreach (string segment in pathSegments)
+            {
+                node = FindSubtreeChild(node, segment);
+                if (node == null)
+                {
+                    return null;
+                }
+            }
+            return node;
+        }
+
+        private static Transform FindSubtreeChild(Transform parent, string segment)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == segment)
+                {
+                    return child;
+                }
+            }
+
+            if (!TryParseUniqueNodeSegment(segment, out string segmentName, out int segmentId))
+            {
+                return null;
+            }
+
+            int unsuffixedSiblingIndex = 0;
+            foreach (Transform child in parent)
+            {
+                // Imported glTF nodes may be saved as "Name[ob:n]". Treat that suffix as a
+                // sibling selector so duplicate node names can still resolve to a specific child.
+                if (TryParseUniqueNodeSegment(child.name, out string childName, out int childId))
+                {
+                    if (childName == segmentName && childId == segmentId)
+                    {
+                        return child;
+                    }
+                    continue;
+                }
+
+                if (child.name == segmentName)
+                {
+                    if (unsuffixedSiblingIndex == segmentId)
+                    {
+                        return child;
+                    }
+                    unsuffixedSiblingIndex++;
+                }
+            }
+            return null;
+        }
+
+        private static bool TransformNameMatchesSegment(string transformName, string segment)
+        {
+            if (transformName == segment)
+            {
+                return true;
+            }
+
+            if (!TryParseUniqueNodeSegment(segment, out string segmentName, out int segmentId))
+            {
+                return false;
+            }
+
+            if (TryParseUniqueNodeSegment(transformName, out string transformSegmentName, out int transformSegmentId))
+            {
+                return transformSegmentName == segmentName && transformSegmentId == segmentId;
+            }
+
+            return transformName == segmentName;
+        }
+
+        private static bool TryParseUniqueNodeSegment(string segment, out string name, out int uniqueId)
+        {
+            const string uniqueIdPrefix = "[ob:";
+            name = null;
+            uniqueId = -1;
+
+            if (!segment.EndsWith("]"))
+            {
+                return false;
+            }
+
+            int uniqueIdStart = segment.LastIndexOf(uniqueIdPrefix, StringComparison.Ordinal);
+            if (uniqueIdStart < 0)
+            {
+                return false;
+            }
+
+            string id = segment.Substring(
+                uniqueIdStart + uniqueIdPrefix.Length,
+                segment.Length - uniqueIdStart - uniqueIdPrefix.Length - 1);
+            if (!int.TryParse(id, out uniqueId))
+            {
+                return false;
+            }
+
+            name = segment.Substring(0, uniqueIdStart);
+            return true;
         }
 
         // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
