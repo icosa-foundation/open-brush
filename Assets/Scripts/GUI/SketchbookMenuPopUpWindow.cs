@@ -20,8 +20,17 @@ namespace TiltBrush
 
     class SketchbookMenuPopUpWindow : MenuPopUpWindow
     {
+        public Transform m_DropPortalButton;
+        private int m_CommandParam;
+        private SketchSetType m_SketchSetType;
+
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
+            m_CommandParam = iCommandParam;
+            m_SketchSetType = (SketchSetType)iCommandParam2;
+            bool isLinkableSketch = m_SketchSetType is SketchSetType.Curated or SketchSetType.Liked;
+            m_DropPortalButton.gameObject.SetActive(isLinkableSketch);
+
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
             {
@@ -44,15 +53,43 @@ namespace TiltBrush
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
         {
-            SketchSetType sketchSetType = (SketchSetType)btn.m_CommandParam2;
-            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User) as FileSketchSet;
-            var sceneFileInfo = sketchSet.GetSketchSceneFileInfo(btn.m_CommandParam);
+            var sceneFileInfo = getSceneFileInfo(btn.m_CommandParam, m_SketchSetType);
             var currentName = Path.GetFileName(sceneFileInfo.FullPath);
             if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
             {
                 currentName = currentName.Substring(0, currentName.Length - SaveLoadScript.TILT_SUFFIX.Length);
             }
             KeyboardPopUpWindow.m_InitialText = currentName;
+        }
+
+        private SceneFileInfo getSceneFileInfo(int commandParam, SketchSetType sketchSetType)
+        {
+            var sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
+            return sketchSet.GetSketchSceneFileInfo(commandParam);
+        }
+
+        public void HandleDropPortalButton()
+        {
+            var sceneFileInfo = getSceneFileInfo(m_CommandParam, m_SketchSetType);
+            if (sceneFileInfo == null)
+            {
+                Debug.LogWarning("HandleDropPortalButton called without a valid sketch.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(sceneFileInfo.AssetId))
+            {
+                Debug.LogWarning($"Cannot create portal for sketch '{sceneFileInfo.HumanName}' because it has no Icosa asset id.");
+                return;
+            }
+
+            var brushAttach = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            var spawnXf = TrTransform.TR(brushAttach.position, brushAttach.rotation);
+            WidgetManager.m_Instance.CreatePortalWidget(spawnXf, sceneFileInfo.AssetId);
+
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+            RequestClose(true);
         }
     }
 

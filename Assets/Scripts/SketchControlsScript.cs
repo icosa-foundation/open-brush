@@ -198,6 +198,8 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             OpenColorPicker = 9000,
             OpenTexturePicker = 9001,
+            SpawnGaussianCaptureWidget = 9600,
+            ExportGaussianSplatPoses = 9601,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000
@@ -2127,6 +2129,11 @@ namespace TiltBrush
             TrTransform xfBrush = TrTransform.FromTransform(InputManager.Brush.Transform);
             TrTransform xfWand = TrTransform.FromTransform(InputManager.Wand.Transform);
             Vector2 vSizeRange = m_CurrentGrabWidget.GetWidgetSizeRange();
+            bool adjustGaussianCaptureParams =
+                InputManager.Brush.GetVrInput(VrInput.Button01) ||
+                InputManager.Wand.GetVrInput(VrInput.Button01);
+            GaussianCaptureWidgetBase gaussianCaptureWidget =
+                m_CurrentGrabWidget as GaussianCaptureWidgetBase;
 
             GrabWidget.Axis axis = m_CurrentGrabWidget.GetScaleAxis(
                 xfWand.translation, xfBrush.translation,
@@ -2164,7 +2171,15 @@ namespace TiltBrush
                 // The above functions return undefined values in newWidgetXf.scale; but that's
                 // okay because RecordAndSetPosRot ignores xf.scale.
                 // TODO: do this more cleanly
-                m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
+                {
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentForAxis(axis);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                }
             }
             else
             {
@@ -2209,7 +2224,20 @@ namespace TiltBrush
                 }
 
                 // Must do separately becvause RecordAndSetPosRot ignores newWidgetXf.scale
-                m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
+                {
+                    float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
+                    float deltaScale = widgetSizeBeforeScale > 0.0f
+                        ? newWidgetXf.scale / widgetSizeBeforeScale
+                        : 1.0f;
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentFromHands(
+                        xfBrush.translation, xfWand.translation);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                }
 
                 float currentSize = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
                 if (currentSize == vSizeRange.x || currentSize == vSizeRange.y)
@@ -5108,6 +5136,14 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.SpawnGaussianCaptureWidget:
+                    var brushAttach = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                    var spawnXf = TrTransform.TR(brushAttach.position, brushAttach.rotation);
+                    m_WidgetManager.CreateGaussianCaptureWidget(spawnXf, (StencilType)iParam1);
+                    break;
+                case GlobalCommands.ExportGaussianSplatPoses:
+                    CameraCaptureRuntime.m_Instance.StartAllCapture();
+                    break;
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
@@ -5425,6 +5461,7 @@ namespace TiltBrush
                 LightsControlScript.m_Instance.LightsChanged ||
                 m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
+                m_WidgetManager.ActivePortalWidgets.Any() ||
                 m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.VideoWidgets.Any(w => w.gameObject.activeSelf) ||

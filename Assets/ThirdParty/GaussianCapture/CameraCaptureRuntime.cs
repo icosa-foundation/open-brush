@@ -1,0 +1,1477 @@
+
+using UnityEngine;
+using System;
+using System.IO;
+using System.Globalization;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Diagnostics;
+using TiltBrush;
+using Debug = UnityEngine.Debug;
+
+[DisallowMultipleComponent]
+public class CameraCaptureRuntime : MonoBehaviour
+{
+    private const float kCaptureOverlayFadeDuration = 0.25f;
+
+    public static CameraCaptureRuntime m_Instance;
+
+    [Header("Common")]
+    public Camera cameraToUse;
+    public int width = 1920;
+    public int height = 1080;
+    [Tooltip("Samples per image for point cloud (~sqrt grid)")]
+    public int raysPerView = 500;
+    [Tooltip("Root output folder. If empty, defaults to Application.persistentDataPath + /Output")]
+    public string outputFolder = "";
+
+    [Header("Image Quality")]
+    [Tooltip("MSAA samples for color capture. Use 1 to disable.")]
+    public int captureMsaaSamples = 4;
+
+    [Header("Runtime Sequence (optional)")]
+    public bool runtimeSequence = false;
+    [Tooltip("Frames per second for runtime sequence")]
+    public int fbs = 25;
+    [Tooltip("Duration in seconds for runtime sequence")]
+    public float duration = 1f;
+
+    [Header("PostShot (optional)")]
+    public bool trainPostShot = false;
+    [Tooltip("Full path to postshot-cli executable (Standalone only)")]
+    public string postShotCliPath = @"C:\Program Files\Jawset Postshot\bin\postshot-cli.exe";
+    [Range(1, 50)] public int trainSteps = 5;
+    public OutputFormat outputFormat = OutputFormat.PSHT;
+    public TrainingProfile profile = TrainingProfile.Splat3;
+
+    [Header("Dome Capture")]
+    public Transform target;
+    public Shader eyeDepthShader;
+    public float radius = 5f;
+    public float heightOffset = 1.5f;
+
+    [Header("Volume Capture")]
+    public Vector3 volumeCenter = Vector3.zero;
+    public Vector3 volumeSize = new Vector3(5, 5, 5);
+
+    [Header("Background")]
+    [Tooltip("Render skybox and environment as background (default). Disable to get transparent background for COLMAP masking.")]
+    public bool transparentBackground = false;
+
+    [Header("Transparents/Particles depth")]
+    public bool includeTransparentsAndParticles = true;
+    [Range(0f, 1f)] public float alphaThreshold = 0.05f;
+    [Tooltip("Replacement shader qui �crit la profondeur en R, avec alpha-clip.")]
+    public Shader depthReplacementShader;
+
+    [Header("Depth Debug Output")]
+    [Tooltip("Write the depth image used for point-cloud generation next to each captured image.")]
+    public bool saveDepthDebugImages = false;
+    [Tooltip("Also save a viewable normalized PNG preview next to the depth EXR.")]
+    public bool saveDepthDebugPreviewPng = true;
+    [Tooltip("Also save an opaque-only depth reference and a comparison preview when transparent-inclusive depth is enabled.")]
+    public bool saveOpaqueDepthReference = false;
+
+    public Action<float, string> OnProgress;
+
+    private bool isRunning = false;
+    private bool cancel = false;
+    private Material _eyeDepthMat;
+    private Transform m_VolumeTransform;
+    private float m_OverlayProgress;
+
+    private float m_PreCaptureTimeScale = 1f;
+    private bool m_ScenePausedForCapture;
+
+    public enum OutputFormat { PSHT, PLY }
+    public enum TrainingProfile { Splat3, MCMC, ADC }
+
+    private struct DomeCaptureTarget
+    {
+        public Transform Transform;
+        public Vector3 Radii;
+        public int NumRings;
+        public int ViewsPerRing;
+        public StencilType ShapeType;
+        public string FilePrefix;
+    }
+
+    private struct VolumeCaptureTarget
+    {
+        public Transform Transform;
+        public int SubdivX;
+        public int SubdivY;
+        public int SubdivZ;
+        public string FilePrefix;
+    }
+
+    public void Awake()
+    {
+        m_Instance = this;
+    }
+
+    // When transparentBackground is off, use RGB24 so sky pixels (alpha=0 in the RT) don't
+    // bleed through into the PNG as transparent — the alpha channel is simply not written.
+    private TextureFormat CaptureTextureFormat =>
+        transparentBackground ? TextureFormat.RGBA32 : TextureFormat.RGB24;
+
+    private void SetupCaptureCamera()
+    {
+        if (transparentBackground)
+        {
+            // Transparent clear: pixels with no geometry stay alpha=0.
+            // Useful as a mask for COLMAP/NeRF training pipelines.
+            cameraToUse.clearFlags = CameraClearFlags.SolidColor;
+            cameraToUse.backgroundColor = new Color(0, 0, 0, 0);
+        }
+        else
+        {
+            // Render skybox and environment as background, matching what the player sees.
+            cameraToUse.clearFlags = CameraClearFlags.Skybox;
+            cameraToUse.backgroundColor = RenderSettings.fogColor;
+        }
+    }
+
+    // Returns world-space camera poses for a dome capture, without performing any capture.
+    // Used by both the capture coroutine and widget visualization.
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        float r,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
+    {
+        return GetDomeCameraPoses(
+            center, Quaternion.identity, Vector3.one * r, captureNumRings, captureViewsPerRing, captureShapeType);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
+    {
+        return GetDomeCameraPoses(
+            center, Quaternion.identity, radii, captureNumRings, captureViewsPerRing, captureShapeType);
+    }
+
+    public List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Transform domeTransform,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType = StencilType.Sphere)
+    {
+        return GetDomeCameraPoses(
+            domeTransform.position,
+            domeTransform.rotation,
+            radii,
+            captureNumRings,
+            captureViewsPerRing,
+            captureShapeType);
+    }
+
+    private List<(Vector3 position, Quaternion rotation)> GetDomeCameraPoses(
+        Vector3 center,
+        Quaternion orientation,
+        Vector3 radii,
+        int captureNumRings,
+        int captureViewsPerRing,
+        StencilType captureShapeType)
+    {
+        var poses = new List<(Vector3, Quaternion)>();
+        int ringCount = Mathf.Max(1, captureNumRings);
+        int viewsPerRingCount = Mathf.Max(1, captureViewsPerRing);
+        bool isHemisphere = captureShapeType == StencilType.InteriorDome;
+        Vector3 safeRadii = new Vector3(
+            Mathf.Max(0.0001f, radii.x),
+            Mathf.Max(0.0001f, radii.y),
+            Mathf.Max(0.0001f, radii.z));
+        for (int ring = 0; ring < ringCount; ring++)
+        {
+            float ringT = ringCount == 1 ? 0.5f : (float)ring / (ringCount - 1);
+            float elevation = isHemisphere
+                ? Mathf.Lerp(0f, Mathf.PI / 2f, ringT)
+                : Mathf.Lerp(-Mathf.PI / 4f, Mathf.PI / 4f, ringT);
+            for (int i = 0; i < viewsPerRingCount; i++)
+            {
+                float azimuth = i * Mathf.PI * 2f / viewsPerRingCount;
+                Vector3 localOffset = new Vector3(
+                    safeRadii.x * Mathf.Cos(elevation) * Mathf.Cos(azimuth),
+                    safeRadii.y * Mathf.Sin(elevation) + heightOffset,
+                    safeRadii.z * Mathf.Cos(elevation) * Mathf.Sin(azimuth));
+                Vector3 pos = center + orientation * localOffset;
+                Vector3 up = orientation * Vector3.up;
+                poses.Add((pos, Quaternion.LookRotation(center - pos, up)));
+            }
+        }
+        return poses;
+    }
+
+    // Returns world-space cell centers for a volume capture grid, without performing any capture.
+    // Used by both the capture coroutine and widget visualization.
+    public List<Vector3> GetVolumeCameraGridCenters(
+        Transform volumeTransform,
+        int captureSubdivX,
+        int captureSubdivY,
+        int captureSubdivZ)
+    {
+        var centers = new List<Vector3>();
+        int countX = Mathf.Max(1, captureSubdivX);
+        int countY = Mathf.Max(1, captureSubdivY);
+        int countZ = Mathf.Max(1, captureSubdivZ);
+        float stepX = 1f / countX;
+        float stepY = 1f / countY;
+        float stepZ = 1f / countZ;
+        for (int ix = 0; ix < countX; ix++)
+            for (int iy = 0; iy < countY; iy++)
+                for (int iz = 0; iz < countZ; iz++)
+                {
+                    var localCell = new Vector3(
+                        -0.5f + (ix + 0.5f) * stepX,
+                        -0.5f + (iy + 0.5f) * stepY,
+                        -0.5f + (iz + 0.5f) * stepZ);
+                    centers.Add(volumeTransform.TransformPoint(localCell));
+                }
+        return centers;
+    }
+
+    // Returns world-space camera poses (position + rotation) for all volume capture views.
+    // Combines grid cell centers with all spherical capture directions.
+    public List<(Vector3 position, Quaternion rotation)> GetVolumeCameraPoses(
+        Transform volumeTransform,
+        int captureSubdivX,
+        int captureSubdivY,
+        int captureSubdivZ)
+    {
+        var poses = new List<(Vector3, Quaternion)>();
+        var centers = GetVolumeCameraGridCenters(
+            volumeTransform, captureSubdivX, captureSubdivY, captureSubdivZ);
+        var directions = GenerateCustomSphericalDirections();
+        foreach (var center in centers)
+            foreach (var dir in directions)
+                poses.Add((center, Quaternion.LookRotation(dir, Vector3.up)));
+        return poses;
+    }
+
+    [ContextMenu("Start Dome Capture")]
+    public void StartDomeCapture()
+    {
+        if (!ValidateCommon()) return;
+        if (isRunning)
+        {
+            Debug.LogWarning("[GaussianCapture] Capture already in progress.");
+            return;
+        }
+        var domeTargets = GetActiveDomeCaptureTargets();
+        if (domeTargets.Count == 0)
+        {
+            Debug.LogError("[GaussianCapture] No GaussianCapture sphere, ellipsoid, or hemisphere widget found in scene. Place one to define the dome capture volume.");
+            return;
+        }
+        this.target = domeTargets[0].Transform;
+        this.radius = domeTargets[0].Radii.Max();
+        StartCaptureInCompositor(runtimeSequence
+            ? RuntimeSequenceCoroutine(domeTargets, null)
+            : CaptureTargetsAndExportColmap(domeTargets, null, outAdd: ""));
+    }
+
+    [ContextMenu("Start Volume Capture")]
+    public void StartVolumeCapture()
+    {
+        if (!ValidateCommon()) return;
+        if (isRunning)
+        {
+            Debug.LogWarning("[GaussianCapture] Capture already in progress.");
+            return;
+        }
+        var volumeTargets = GetActiveVolumeCaptureTargets();
+        if (volumeTargets.Count == 0)
+        {
+            Debug.LogError("[GaussianCapture] No GaussianCaptureBoxWidget found in scene. Place one to define the volume capture area.");
+            return;
+        }
+        m_VolumeTransform = volumeTargets[0].Transform;
+        this.volumeCenter = volumeTargets[0].Transform.position;
+        this.volumeSize = volumeTargets[0].Transform.lossyScale;
+
+        StartCaptureInCompositor(runtimeSequence
+            ? RuntimeSequenceCoroutine(null, volumeTargets)
+            : CaptureTargetsAndExportColmap(null, volumeTargets, outAdd: ""));
+    }
+
+    [ContextMenu("Start All Capture")]
+    public void StartAllCapture()
+    {
+        if (!ValidateCommon()) return;
+        if (isRunning)
+        {
+            Debug.LogWarning("[GaussianCapture] Capture already in progress.");
+            return;
+        }
+
+        var domeTargets = GetActiveDomeCaptureTargets();
+        var volumeTargets = GetActiveVolumeCaptureTargets();
+        if (domeTargets.Count == 0 && volumeTargets.Count == 0)
+        {
+            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere, ellipsoid, hemisphere, or box capture widgets to define capture areas.");
+            return;
+        }
+
+        if (domeTargets.Count > 0)
+        {
+            this.target = domeTargets[0].Transform;
+            this.radius = domeTargets[0].Radii.Max();
+        }
+        if (volumeTargets.Count > 0)
+        {
+            m_VolumeTransform = volumeTargets[0].Transform;
+            this.volumeCenter = volumeTargets[0].Transform.position;
+            this.volumeSize = volumeTargets[0].Transform.lossyScale;
+        }
+
+        StartCaptureInCompositor(runtimeSequence
+            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets)
+            : CaptureTargetsAndExportColmap(domeTargets, volumeTargets, outAdd: ""));
+    }
+
+    [ContextMenu("Cancel")]
+    public void Cancel()
+    {
+        if (isRunning)
+        {
+            cancel = true;
+            Debug.LogWarning("[Capture] Cancel requested.");
+        }
+    }
+
+    private bool ValidateCommon()
+    {
+        if (cameraToUse == null)
+        {
+            Debug.LogError("Assign a Camera to use.");
+            return false;
+        }
+        if (string.IsNullOrEmpty(outputFolder))
+        {
+            outputFolder = Path.Combine(Application.persistentDataPath, "Output");
+        }
+        if (width <= 0 || height <= 0)
+        {
+            Debug.LogError("Invalid Width/Height.");
+            return false;
+        }
+        if (eyeDepthShader == null && !(includeTransparentsAndParticles && depthReplacementShader != null))
+        {
+            Debug.LogWarning("Eye-Depth Shader is not set. Depth-based point cloud export will fail for opaque path.");
+        }
+        return true;
+    }
+
+    private IEnumerator RuntimeSequenceCoroutine(
+        List<DomeCaptureTarget> domeTargets,
+        List<VolumeCaptureTarget> volumeTargets)
+    {
+        int totalFrames = Mathf.Max(1, Mathf.RoundToInt(duration * Mathf.Max(1, fbs)));
+        isRunning = true;
+        float frameDt = 1f / Mathf.Max(1, fbs);
+
+        for (int i = 0; i < totalFrames; i++)
+        {
+            if (cancel) break;
+            ReportProgress((float)i / totalFrames, $"Runtime sequence {i + 1}/{totalFrames}");
+            string outAdd = "/" + i + "/";
+            yield return StartCoroutine(CaptureTargetsAndExportColmap(domeTargets, volumeTargets, outAdd));
+            isRunning = true;
+            yield return new WaitForSecondsRealtime(frameDt);
+        }
+
+        if (trainPostShot && !cancel)
+        {
+            TryRunPostshotBatch();
+        }
+        isRunning = false;
+        cancel = false;
+        ReportProgress(1f, "Runtime sequence finished");
+    }
+
+    private void StartCaptureInCompositor(IEnumerator captureRoutine)
+    {
+        isRunning = true;
+        StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+            OverlayType.Export,
+            CaptureInCompositor(captureRoutine),
+            kCaptureOverlayFadeDuration));
+    }
+
+    private IEnumerator<Null> CaptureInCompositor(IEnumerator captureRoutine)
+    {
+        bool captureCompleted = false;
+        Action<float, string> previousOnProgress = OnProgress;
+        OnProgress = (pct, msg) =>
+        {
+            m_OverlayProgress = pct;
+            OverlayManager.m_Instance.Progress.Report(pct);
+            previousOnProgress?.Invoke(pct, msg);
+        };
+
+        try
+        {
+            m_OverlayProgress = 0f;
+            OverlayManager.m_Instance.Progress.Report(0.0);
+            StartCoroutine(RunTrackedCoroutine(captureRoutine, () => captureCompleted = true));
+
+            while (!captureCompleted)
+            {
+                OverlayManager.m_Instance.Progress.Report(m_OverlayProgress);
+                yield return null;
+            }
+        }
+        finally
+        {
+            OnProgress = previousOnProgress;
+        }
+    }
+
+    private IEnumerator RunTrackedCoroutine(IEnumerator captureRoutine, Action onComplete)
+    {
+        try
+        {
+            yield return StartCoroutine(captureRoutine);
+        }
+        finally
+        {
+            onComplete?.Invoke();
+        }
+    }
+
+    public IEnumerator CaptureViewsAndExportColmap(string outAdd)
+    {
+        var domeTargets = GetActiveDomeCaptureTargets();
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(domeTargets, null, outAdd));
+    }
+
+    public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
+    {
+        var volumeTargets = GetActiveVolumeCaptureTargets();
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(null, volumeTargets, outAdd));
+    }
+
+    private IEnumerator CaptureTargetsAndExportColmap(
+        List<DomeCaptureTarget> domeTargets,
+        List<VolumeCaptureTarget> volumeTargets,
+        string outAdd)
+    {
+        isRunning = true;
+        string folderPath = PathCombineSafe(outputFolder, outAdd);
+        Directory.CreateDirectory(folderPath);
+
+        try
+        {
+            PauseSceneForCapture();
+            string camerasTxt = Path.Combine(folderPath, "cameras.txt");
+            float fov = cameraToUse.fieldOfView;
+            float fy = 0.5f * height / Mathf.Tan(0.5f * fov * Mathf.Deg2Rad);
+            float fx = fy * ((float)width / height);
+            float cx = width / 2f;
+            float cy = height / 2f;
+            using (StreamWriter camWriter = new StreamWriter(camerasTxt))
+            {
+                camWriter.WriteLine("# Camera list with one line of data per camera:");
+                camWriter.WriteLine("# CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]");
+                camWriter.WriteLine($"1 PINHOLE {width} {height} {fx.ToString(CultureInfo.InvariantCulture)} {fy.ToString(CultureInfo.InvariantCulture)} {cx} {cy}");
+            }
+
+            string imagesTxt = Path.Combine(folderPath, "images.txt");
+            using (StreamWriter imgWriter = new StreamWriter(imagesTxt))
+            {
+                imgWriter.WriteLine("# Image list with two lines per image:");
+                imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
+                imgWriter.WriteLine("# POINTS2D[] as X, Y, POINT3D_ID");
+
+                RenderTexture rt = CreateCaptureRenderTexture(multisampled: true);
+                RenderTexture resolvedRt = CreateCaptureRenderTexture(multisampled: false);
+                Texture2D tex = new Texture2D(width, height, CaptureTextureFormat, false);
+
+                int imageId = 1;
+                List<Vector3> directions = GenerateCustomSphericalDirections();
+                if (domeTargets == null) { domeTargets = new List<DomeCaptureTarget>(); }
+                if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
+                int totalImages =
+                    domeTargets.Sum(x => GetDomeCameraPoses(
+                        x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
+                    volumeTargets.Sum(x => GetVolumeCameraGridCenters(
+                        x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
+                int currentImage = 0;
+                const int batchSize = 40;
+                int batchCounter = 0;
+
+                if (totalImages <= 0)
+                {
+                    Debug.LogError("[GaussianCapture] No capture views were generated from the active GaussianCapture widgets.");
+                    CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex);
+                    isRunning = false;
+                    yield break;
+                }
+
+                using (StreamWriter writer3D = new StreamWriter(Path.Combine(folderPath, "points3D.txt")))
+                {
+                    writer3D.WriteLine("# 3D point list with one line of data per point:");
+                    writer3D.WriteLine("# POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)");
+                    int pointId = 1;
+
+                    BakeSkinnedMeshColliders();
+
+                    foreach (var domeTarget in domeTargets)
+                    {
+                        var poses = GetDomeCameraPoses(
+                            domeTarget.Transform,
+                            domeTarget.Radii,
+                            domeTarget.NumRings,
+                            domeTarget.ViewsPerRing,
+                            domeTarget.ShapeType);
+                        foreach (var (position, rotation) in poses)
+                        {
+                            if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
+
+                            float progress = (float)currentImage / Mathf.Max(1, totalImages);
+                            ReportProgress(progress, $"Gaussian Capture {currentImage + 1}/{totalImages}");
+
+                            cameraToUse.transform.SetPositionAndRotation(position, rotation);
+
+                            Matrix4x4 colmapMatrix = GetColmapWorldToCameraMatrix(cameraToUse);
+                            Matrix4x4 R = colmapMatrix;
+                            R.SetColumn(3, new Vector4(0, 0, 0, 1));
+                            Quaternion q = QuaternionFromMatrix(R);
+                            Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
+
+                            string imageName = $"{domeTarget.FilePrefix}_view_{imageId:D4}.png";
+                            string imagePath = Path.Combine(folderPath, imageName);
+                            SetupCaptureCamera();
+                            RenderColorCaptureToTexture(tex, rt, resolvedRt);
+
+                            CapturePointCloudFromCamera(
+                                cameraToUse,
+                                tex,
+                                raysPerView,
+                                writer3D,
+                                imageId,
+                                ref pointId,
+                                debugOutputBasePath: Path.Combine(folderPath, Path.GetFileNameWithoutExtension(imageName)));
+
+                            File.WriteAllBytes(imagePath, tex.EncodeToPNG());
+
+                            imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
+                            imgWriter.WriteLine();
+
+                            imageId++;
+                            batchCounter++;
+                            currentImage++;
+
+                            if (batchCounter >= batchSize)
+                            {
+                                BatchMemoryStep(ref rt, ref resolvedRt, ref tex);
+                                batchCounter = 0;
+                                yield return null;
+                            }
+                        }
+                    }
+
+                    foreach (var volumeTarget in volumeTargets)
+                    {
+                        var cellCenters = GetVolumeCameraGridCenters(
+                            volumeTarget.Transform,
+                            volumeTarget.SubdivX,
+                            volumeTarget.SubdivY,
+                            volumeTarget.SubdivZ);
+                        int imagesSkipped = 0;
+                        foreach (var cellCenter in cellCenters)
+                        {
+                            foreach (Vector3 dir in directions)
+                            {
+                                if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
+
+                                float progress = (float)currentImage / Mathf.Max(1, totalImages);
+                                ReportProgress(progress, $"Gaussian Capture {currentImage + 1}/{totalImages} Skipped:{imagesSkipped}");
+
+                                cameraToUse.transform.SetPositionAndRotation(cellCenter, Quaternion.LookRotation(dir, Vector3.up));
+
+                                Plane[] planes = GeometryUtility.CalculateFrustumPlanes(cameraToUse);
+                                bool objectVisible = false;
+                                foreach (Renderer renderer in GameObject.FindObjectsOfType<Renderer>())
+                                {
+                                    if (GeometryUtility.TestPlanesAABB(planes, renderer.bounds))
+                                    {
+                                        objectVisible = true;
+                                        break;
+                                    }
+                                }
+                                if (!objectVisible)
+                                {
+                                    imagesSkipped++;
+                                    currentImage++;
+                                    continue;
+                                }
+
+                                Matrix4x4 colmapMatrix = GetColmapWorldToCameraMatrix(cameraToUse);
+                                Matrix4x4 R = colmapMatrix;
+                                R.SetColumn(3, new Vector4(0, 0, 0, 1));
+                                Quaternion q = QuaternionFromMatrix(R);
+                                Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
+
+                                string imageName = $"{volumeTarget.FilePrefix}_view_{imageId:D4}.png";
+                                string imagePath = Path.Combine(folderPath, imageName);
+
+                                SetupCaptureCamera();
+                                RenderColorCaptureToTexture(tex, rt, resolvedRt);
+
+                                CapturePointCloudFromCamera(
+                                    cameraToUse,
+                                    tex,
+                                    raysPerView,
+                                    writer3D,
+                                    imageId,
+                                    ref pointId,
+                                    debugOutputBasePath: Path.Combine(folderPath, Path.GetFileNameWithoutExtension(imageName)));
+
+                                byte[] pngData = tex.EncodeToPNG();
+                                File.WriteAllBytes(imagePath, pngData);
+
+                                imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
+                                imgWriter.WriteLine();
+
+                                imageId++;
+                                currentImage++;
+                                batchCounter++;
+
+                                if (batchCounter >= batchSize)
+                                {
+                                    BatchMemoryStep(ref rt, ref resolvedRt, ref tex);
+                                    batchCounter = 0;
+                                    yield return null;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                cameraToUse.targetTexture = null;
+                RenderTexture.active = null;
+                SafeDestroy(rt);
+                SafeDestroy(resolvedRt);
+                SafeDestroy(tex);
+            }
+        }
+        finally
+        {
+            ResumeSceneAfterCapture();
+        }
+
+        Debug.Log("Gaussian capture + COLMAP files finished!");
+        isRunning = false;
+
+        if (!runtimeSequence && trainPostShot && !cancel)
+            TryRunPostshotBatch();
+
+        yield return new WaitForEndOfFrame();
+    }
+
+    private List<DomeCaptureTarget> GetActiveDomeCaptureTargets()
+    {
+        var targets = new List<DomeCaptureTarget>();
+
+        void AddTarget(Transform transform, Vector3 radii, int numRings, int viewsPerRing,
+            StencilType shapeType, string widgetName)
+        {
+            string shapeName = shapeType switch
+            {
+                StencilType.InteriorDome => "hemisphere",
+                StencilType.Ellipsoid => "ellipsoid",
+                _ => "sphere",
+            };
+
+            targets.Add(new DomeCaptureTarget
+            {
+                Transform = transform,
+                Radii = radii,
+                NumRings = numRings,
+                ViewsPerRing = viewsPerRing,
+                ShapeType = shapeType,
+                FilePrefix = BuildCaptureFilePrefix(
+                    shapeName,
+                    targets.Count,
+                    widgetName)
+            });
+        }
+
+        foreach (var widgetData in TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureWidgets)
+        {
+            var widget = widgetData.WidgetScript;
+            if (widget != null && widget.gameObject.activeSelf)
+            {
+                if (widget is GaussianCaptureBoxWidget)
+                {
+                    continue;
+                }
+
+                if (widget is GaussianCaptureEllipsoidWidget ellipsoid)
+                {
+                    AddTarget(
+                        ellipsoid.transform,
+                        ellipsoid.transform.lossyScale * 0.5f,
+                        ellipsoid.NumRings,
+                        ellipsoid.ViewsPerRing,
+                        ellipsoid.CaptureShapeType,
+                        ellipsoid.name);
+                }
+                else if (widget is GaussianCaptureSphereWidget dome)
+                {
+                    AddTarget(
+                        dome.transform,
+                        Vector3.one * (dome.transform.lossyScale.x * 0.5f),
+                        dome.NumRings,
+                        dome.ViewsPerRing,
+                        dome.CaptureShapeType,
+                        dome.name);
+                }
+            }
+        }
+
+        return targets;
+    }
+
+    private List<VolumeCaptureTarget> GetActiveVolumeCaptureTargets()
+    {
+        return TiltBrush.WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
+            .Select(x => x.WidgetScript)
+            .OfType<GaussianCaptureBoxWidget>()
+            .Where(x => x != null && x.gameObject.activeSelf)
+            .Select((widget, index) => new VolumeCaptureTarget
+            {
+                Transform = widget.transform,
+                SubdivX = widget.SubdivX,
+                SubdivY = widget.SubdivY,
+                SubdivZ = widget.SubdivZ,
+                FilePrefix = BuildCaptureFilePrefix("box", index, widget.name)
+            })
+            .ToList();
+    }
+
+    private string BuildCaptureFilePrefix(string kind, int index, string widgetName)
+    {
+        string sanitizedName = new string(widgetName
+            .Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch)
+            .ToArray());
+        return $"{kind}_{index:D2}_{sanitizedName}";
+    }
+
+    private void BakeSkinnedMeshColliders()
+    {
+        foreach (SkinnedMeshRenderer r in GameObject.FindObjectsOfType<SkinnedMeshRenderer>())
+        {
+            var col = r.GetComponent<MeshCollider>();
+            if (col == null) col = r.gameObject.AddComponent<MeshCollider>();
+            Mesh baked = new Mesh();
+            r.BakeMesh(baked);
+            col.sharedMesh = null;
+            col.sharedMesh = baked;
+        }
+    }
+
+    private void BatchMemoryStep(ref RenderTexture rt, ref RenderTexture resolvedRt, ref Texture2D tex)
+    {
+        cameraToUse.targetTexture = null;
+        RenderTexture.active = null;
+        GL.Clear(true, true, Color.clear);
+        SafeDestroy(rt);
+        SafeDestroy(resolvedRt);
+        SafeDestroy(tex);
+        Resources.UnloadUnusedAssets();
+        GC.Collect();
+        rt = CreateCaptureRenderTexture(multisampled: true);
+        resolvedRt = CreateCaptureRenderTexture(multisampled: false);
+        tex = new Texture2D(width, height, CaptureTextureFormat, false);
+    }
+
+    private void CleanupRT(ref Camera cam, ref RenderTexture rt, ref RenderTexture resolvedRt, ref Texture2D tex)
+    {
+        cam.targetTexture = null;
+        RenderTexture.active = null;
+        SafeDestroy(rt);
+        SafeDestroy(resolvedRt);
+        SafeDestroy(tex);
+        ReportProgress(0f, "Capture canceled.");
+        cancel = false;
+    }
+
+    private void SafeDestroy(UnityEngine.Object obj)
+    {
+        if (obj == null) return;
+        if (Application.isPlaying) Destroy(obj);
+        else DestroyImmediate(obj);
+    }
+
+    private string PathCombineSafe(string root, string add)
+    {
+        if (string.IsNullOrEmpty(add)) return root;
+        add = add.Replace("\\", "/");
+        if (add.StartsWith("/")) add = add.Substring(1);
+        return Path.Combine(root, add);
+    }
+
+    private void ReportProgress(float pct, string msg)
+    {
+        OnProgress?.Invoke(Mathf.Clamp01(pct), msg);
+    }
+
+    private int GetCaptureMsaaSamples()
+    {
+        int samples = Mathf.Max(1, captureMsaaSamples);
+        if (samples >= 8) { return 8; }
+        if (samples >= 4) { return 4; }
+        if (samples >= 2) { return 2; }
+        return 1;
+    }
+
+    private RenderTexture CreateCaptureRenderTexture(bool multisampled)
+    {
+        var rt = new RenderTexture(width, height, 32, RenderTextureFormat.Default, RenderTextureReadWrite.sRGB);
+        rt.antiAliasing = multisampled ? GetCaptureMsaaSamples() : 1;
+        rt.Create();
+        return rt;
+    }
+
+    private void EnsureFxaMaterial(FXAA fxaa)
+    {
+        if (fxaa == null || fxaa.mat != null) { return; }
+        fxaa.mat = new Material(Shader.Find("FX/FXAA"));
+    }
+
+    private void RenderColorCaptureToTexture(Texture2D tex, RenderTexture sceneRt, RenderTexture resolvedRt)
+    {
+        var originalTarget = cameraToUse.targetTexture;
+        bool originalAllowMsaa = cameraToUse.allowMSAA;
+        FXAA fxaa = cameraToUse.GetComponent<FXAA>();
+        bool fxaaWasEnabled = fxaa != null && fxaa.enabled;
+
+        try
+        {
+            if (fxaa != null)
+            {
+                fxaa.enabled = false;
+            }
+
+            cameraToUse.allowMSAA = sceneRt != null && sceneRt.antiAliasing > 1;
+            cameraToUse.targetTexture = sceneRt;
+            cameraToUse.Render();
+
+            if (fxaaWasEnabled)
+            {
+                EnsureFxaMaterial(fxaa);
+                if (fxaa.mat != null)
+                {
+                    Graphics.Blit(sceneRt, resolvedRt, fxaa.mat);
+                }
+                else
+                {
+                    Graphics.Blit(sceneRt, resolvedRt);
+                }
+            }
+            else
+            {
+                Graphics.Blit(sceneRt, resolvedRt);
+            }
+
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture.active = resolvedRt;
+            tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = previousActive;
+        }
+        finally
+        {
+            if (fxaa != null)
+            {
+                fxaa.enabled = fxaaWasEnabled;
+            }
+            cameraToUse.targetTexture = originalTarget;
+            cameraToUse.allowMSAA = originalAllowMsaa;
+        }
+    }
+
+    private static Matrix4x4 GetUnityToColmapCameraMatrix()
+    {
+        return Matrix4x4.Scale(new Vector3(1, -1, -1));
+    }
+
+    private static Matrix4x4 GetUnityToColmapWorldMatrix()
+    {
+        return Matrix4x4.Scale(new Vector3(1, -1, 1));
+    }
+
+    private static Matrix4x4 GetColmapWorldToCameraMatrix(Camera cam)
+    {
+        return GetUnityToColmapCameraMatrix() * cam.worldToCameraMatrix * GetUnityToColmapWorldMatrix();
+    }
+
+    private static Vector3 ConvertUnityWorldPointToColmap(Vector3 unityWorldPoint)
+    {
+        return GetUnityToColmapWorldMatrix().MultiplyPoint3x4(unityWorldPoint);
+    }
+
+    private static Quaternion QuaternionFromMatrix(Matrix4x4 m)
+    {
+        return Quaternion.LookRotation(m.GetColumn(2), m.GetColumn(1));
+    }
+
+    private List<Vector3> GenerateCustomSphericalDirections()
+    {
+        List<Vector3> directions = new List<Vector3>();
+        for (int i = 0; i < 8; i++)
+        {
+            float azimuth = i * 45f;
+            Quaternion rot = Quaternion.Euler(0f, azimuth, 0f);
+            directions.Add(rot * Vector3.forward);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            float azimuth = i * 90f;
+            Quaternion rot = Quaternion.Euler(45f, azimuth, 0f);
+            directions.Add(rot * Vector3.forward);
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            float azimuth = i * 90f;
+            Quaternion rot = Quaternion.Euler(-45f, azimuth, 0f);
+            directions.Add(rot * Vector3.forward);
+        }
+        directions.Add(Vector3.up);
+        directions.Add(Vector3.down);
+        return directions;
+    }
+
+    private void PauseSceneForCapture()
+    {
+        if (m_ScenePausedForCapture) { return; }
+        m_PreCaptureTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+        m_ScenePausedForCapture = true;
+    }
+
+    private void ResumeSceneAfterCapture()
+    {
+        if (!m_ScenePausedForCapture) { return; }
+        Time.timeScale = m_PreCaptureTimeScale;
+        m_ScenePausedForCapture = false;
+    }
+
+    private Texture2D RenderDepthIncludingTransparents(Camera srcCam, int w, int h)
+    {
+        if (depthReplacementShader == null)
+        {
+            Debug.LogError("[Capture] depthReplacementShader manquant.");
+            return null;
+        }
+
+        var go = new GameObject("TempDepthCam");
+        go.hideFlags = HideFlags.HideAndDontSave;
+        var depthCam = go.AddComponent<Camera>();
+        depthCam.CopyFrom(srcCam);
+        depthCam.allowHDR = false;
+        depthCam.allowMSAA = false;
+        depthCam.clearFlags = CameraClearFlags.SolidColor;
+        depthCam.backgroundColor = new Color(srcCam.farClipPlane, 0, 0, 1);
+        depthCam.cullingMask = srcCam.cullingMask;
+
+        var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        depthCam.targetTexture = rt;
+
+        Shader.SetGlobalFloat("_CaptureFar", srcCam.farClipPlane);
+        Shader.SetGlobalFloat("_AlphaThreshold", alphaThreshold);
+
+        depthCam.RenderWithShader(depthReplacementShader, null);
+
+        var prev = RenderTexture.active;
+        RenderTexture.active = rt;
+        var depthTex = new Texture2D(w, h, TextureFormat.RGBAHalf, false, true);
+        depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+        depthTex.Apply(false, false);
+        RenderTexture.active = prev;
+
+        RenderTexture.ReleaseTemporary(rt);
+        Destroy(go);
+
+        return depthTex;
+    }
+
+    private Texture2D RenderOpaqueDepthTexture(Camera cam, int w, int h, float clampMinMeters, float clampMaxMeters, bool useFloat32)
+    {
+        if (_eyeDepthMat == null)
+        {
+            var sh = eyeDepthShader;
+            if (sh == null)
+            {
+                return null;
+            }
+            _eyeDepthMat = new Material(sh) { hideFlags = HideFlags.DontSave };
+        }
+
+        var rtFormat = useFloat32 ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf;
+        var rtDepth = RenderTexture.GetTemporary(w, h, 0, rtFormat, RenderTextureReadWrite.Linear);
+        rtDepth.filterMode = FilterMode.Point;
+
+        try
+        {
+            _eyeDepthMat.SetFloat("_MinMeters", (clampMaxMeters > clampMinMeters) ? clampMinMeters : 0f);
+            _eyeDepthMat.SetFloat("_MaxMeters", (clampMaxMeters > clampMinMeters) ? clampMaxMeters : 0f);
+
+            Graphics.Blit(Texture2D.blackTexture, rtDepth, _eyeDepthMat);
+
+            var prev = RenderTexture.active;
+            RenderTexture.active = rtDepth;
+            var texFormat = useFloat32 ? TextureFormat.RGBAFloat : TextureFormat.RGBAHalf;
+            var depthTex = new Texture2D(w, h, texFormat, false, true);
+            depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
+            depthTex.Apply(false, false);
+            RenderTexture.active = prev;
+            return depthTex;
+        }
+        finally
+        {
+            RenderTexture.ReleaseTemporary(rtDepth);
+        }
+    }
+
+    private void AppendVisibleParticlesToPointCloud(StreamWriter writer, Camera cam, int imageId, ref int pointId, float minAlpha = 0.05f)
+    {
+        var systems = GameObject.FindObjectsOfType<ParticleSystem>();
+        var planes = GeometryUtility.CalculateFrustumPlanes(cam);
+
+        foreach (var ps in systems)
+        {
+            if (!ps.IsAlive()) continue;
+
+            var main = ps.main;
+            int max = main.maxParticles > 0 ? main.maxParticles : 10000;
+            var buffer = new ParticleSystem.Particle[max];
+            int count = ps.GetParticles(buffer);
+
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 wp = ps.transform.TransformPoint(buffer[i].position);
+
+                if (!GeometryUtility.TestPlanesAABB(planes, new Bounds(wp, Vector3.one * 0.05f)))
+                    continue;
+
+                Color32 c = buffer[i].GetCurrentColor(ps);
+                if (c.a / 255f < minAlpha) continue;
+
+                Vector3 colmapPoint = ConvertUnityWorldPointToColmap(wp);
+
+                writer.WriteLine(
+                    $"{pointId} " +
+                    $"{colmapPoint.x.ToString(CultureInfo.InvariantCulture)} " +
+                    $"{colmapPoint.y.ToString(CultureInfo.InvariantCulture)} " +
+                    $"{colmapPoint.z.ToString(CultureInfo.InvariantCulture)} " +
+                    $"{c.r} {c.g} {c.b} 1.0"
+                );
+                pointId++;
+            }
+        }
+    }
+
+    private void SaveDepthDebugFiles(Texture2D depthTex, Camera cam, string debugOutputBasePath, float skipThreshold)
+    {
+        if (!saveDepthDebugImages || depthTex == null || string.IsNullOrEmpty(debugOutputBasePath))
+        {
+            return;
+        }
+
+        string exrPath = $"{debugOutputBasePath}_depth.exr";
+        byte[] exrBytes = ImageConversion.EncodeToEXR(depthTex, Texture2D.EXRFlags.OutputAsFloat);
+        File.WriteAllBytes(exrPath, exrBytes);
+
+        if (!saveDepthDebugPreviewPng)
+        {
+            return;
+        }
+
+        int w = depthTex.width;
+        int h = depthTex.height;
+        var previewTex = new Texture2D(w, h, TextureFormat.RGBA32, false, true);
+        Color[] depthPixels = depthTex.GetPixels();
+        Color[] previewPixels = new Color[depthPixels.Length];
+
+        float minDepth = float.PositiveInfinity;
+        float maxDepth = 0f;
+        for (int i = 0; i < depthPixels.Length; i++)
+        {
+            float d = depthPixels[i].r;
+            bool isValid = d > 0f && !float.IsNaN(d) && !float.IsInfinity(d);
+            if (skipThreshold > 0f && d >= skipThreshold)
+            {
+                isValid = false;
+            }
+            if (!isValid)
+            {
+                continue;
+            }
+            minDepth = Mathf.Min(minDepth, d);
+            maxDepth = Mathf.Max(maxDepth, d);
+        }
+
+        if (!float.IsFinite(minDepth) || !float.IsFinite(maxDepth) || maxDepth <= minDepth)
+        {
+            minDepth = cam != null ? cam.nearClipPlane : 0f;
+            maxDepth = cam != null ? cam.farClipPlane : 1f;
+        }
+
+        float range = Mathf.Max(1e-6f, maxDepth - minDepth);
+        for (int i = 0; i < depthPixels.Length; i++)
+        {
+            float d = depthPixels[i].r;
+            bool isValid = d > 0f && !float.IsNaN(d) && !float.IsInfinity(d);
+            if (skipThreshold > 0f && d >= skipThreshold)
+            {
+                isValid = false;
+            }
+
+            if (!isValid)
+            {
+                previewPixels[i] = new Color(1f, 0f, 1f, 1f);
+                continue;
+            }
+
+            float t = Mathf.Clamp01((d - minDepth) / range);
+            float v = 1f - t;
+            previewPixels[i] = new Color(v, v, v, 1f);
+        }
+
+        previewTex.SetPixels(previewPixels);
+        previewTex.Apply(false, false);
+        File.WriteAllBytes($"{debugOutputBasePath}_depth.png", previewTex.EncodeToPNG());
+        SafeDestroy(previewTex);
+    }
+
+    private void SaveDepthComparisonPreview(Texture2D inclusiveDepthTex, Texture2D opaqueDepthTex, string debugOutputBasePath, float skipThreshold)
+    {
+        if (!saveOpaqueDepthReference || inclusiveDepthTex == null || opaqueDepthTex == null || string.IsNullOrEmpty(debugOutputBasePath))
+        {
+            return;
+        }
+
+        File.WriteAllBytes(
+            $"{debugOutputBasePath}_depth_opaque.exr",
+            ImageConversion.EncodeToEXR(opaqueDepthTex, Texture2D.EXRFlags.OutputAsFloat));
+
+        if (!saveDepthDebugPreviewPng)
+        {
+            return;
+        }
+
+        int w = inclusiveDepthTex.width;
+        int h = inclusiveDepthTex.height;
+        Color[] inclusivePixels = inclusiveDepthTex.GetPixels();
+        Color[] opaquePixels = opaqueDepthTex.GetPixels();
+        Color[] previewPixels = new Color[inclusivePixels.Length];
+
+        for (int i = 0; i < inclusivePixels.Length; i++)
+        {
+            float inclusiveDepth = inclusivePixels[i].r;
+            float opaqueDepth = opaquePixels[i].r;
+
+            bool inclusiveValid = inclusiveDepth > 0f && !float.IsNaN(inclusiveDepth) && !float.IsInfinity(inclusiveDepth);
+            bool opaqueValid = opaqueDepth > 0f && !float.IsNaN(opaqueDepth) && !float.IsInfinity(opaqueDepth);
+            if (skipThreshold > 0f)
+            {
+                if (inclusiveDepth >= skipThreshold) inclusiveValid = false;
+                if (opaqueDepth >= skipThreshold) opaqueValid = false;
+            }
+
+            if (!inclusiveValid && !opaqueValid)
+            {
+                previewPixels[i] = Color.black;
+                continue;
+            }
+            if (inclusiveValid && !opaqueValid)
+            {
+                previewPixels[i] = Color.green;
+                continue;
+            }
+            if (!inclusiveValid && opaqueValid)
+            {
+                previewPixels[i] = Color.magenta;
+                continue;
+            }
+
+            float delta = inclusiveDepth - opaqueDepth;
+            if (Mathf.Abs(delta) <= 0.01f)
+            {
+                previewPixels[i] = new Color(0.5f, 0.5f, 0.5f, 1f);
+            }
+            else if (delta < 0f)
+            {
+                float t = Mathf.Clamp01(Mathf.Abs(delta) / Mathf.Max(1f, opaqueDepth));
+                previewPixels[i] = Color.Lerp(new Color(0.2f, 0.2f, 0.2f, 1f), Color.cyan, t);
+            }
+            else
+            {
+                float t = Mathf.Clamp01(delta / Mathf.Max(1f, opaqueDepth));
+                previewPixels[i] = Color.Lerp(new Color(0.2f, 0.2f, 0.2f, 1f), Color.red, t);
+            }
+        }
+
+        var previewTex = new Texture2D(w, h, TextureFormat.RGBA32, false, true);
+        previewTex.SetPixels(previewPixels);
+        previewTex.Apply(false, false);
+        File.WriteAllBytes($"{debugOutputBasePath}_depth_compare.png", previewTex.EncodeToPNG());
+        SafeDestroy(previewTex);
+    }
+
+    void CapturePointCloudFromCamera(
+        Camera cam,
+        Texture2D colorTex,
+        int rayCount,
+        StreamWriter writer,
+        int imageId,
+        ref int pointId,
+        string debugOutputBasePath = null,
+        bool invertX = false,
+        bool useScreenToWorldPoint = true,
+        bool skipMaxDepthPlane = true,
+        float maxDepthEpsilon = 0.01f,
+        float clampMinMeters = 0f,
+        float clampMaxMeters = 0f,
+        bool useFloat32 = false
+    )
+    {
+        if (cam == null || colorTex == null || writer == null) return;
+
+        cam.depthTextureMode = DepthTextureMode.Depth;
+
+        if (_eyeDepthMat == null)
+        {
+            var sh = eyeDepthShader;
+            if (sh == null && !(includeTransparentsAndParticles && depthReplacementShader != null))
+            {
+                Debug.LogError("[PointCloudExporter] Missing eyeDepth Shader and no replacement depth set. Aborting point sampling.");
+                return;
+            }
+            if (sh != null)
+                _eyeDepthMat = new Material(sh) { hideFlags = HideFlags.DontSave };
+        }
+
+        int w = colorTex.width;
+        int h = colorTex.height;
+
+        Texture2D depthTex = null;
+        RenderTexture rtDepth = null;
+
+        int oldMask = cam.cullingMask;
+        int noCloudLayer = LayerMask.NameToLayer("NoCloud");
+        if (noCloudLayer >= 0) cam.cullingMask = oldMask & ~(1 << noCloudLayer);
+
+        try
+        {
+            if (includeTransparentsAndParticles && depthReplacementShader != null)
+            {
+                depthTex = RenderDepthIncludingTransparents(cam, w, h);
+                if (depthTex == null) return;
+            }
+            else
+            {
+                var rtFormat = useFloat32 ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGBHalf;
+                rtDepth = RenderTexture.GetTemporary(w, h, 0, rtFormat, RenderTextureReadWrite.Linear);
+                rtDepth.filterMode = FilterMode.Point;
+
+                _eyeDepthMat.SetFloat("_MinMeters", (clampMaxMeters > clampMinMeters) ? clampMinMeters : 0f);
+                _eyeDepthMat.SetFloat("_MaxMeters", (clampMaxMeters > clampMinMeters) ? clampMaxMeters : 0f);
+
+                Graphics.Blit(Texture2D.blackTexture, rtDepth, _eyeDepthMat);
+
+                var prev = RenderTexture.active;
+                RenderTexture.active = rtDepth;
+                var texFormat = useFloat32 ? TextureFormat.RGBAFloat : TextureFormat.RGBAHalf;
+                depthTex = new Texture2D(w, h, texFormat, false, true);
+                depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
+                depthTex.Apply(false, false);
+                RenderTexture.active = prev;
+            }
+
+            int sqrtRayCount = Mathf.CeilToInt(Mathf.Sqrt(Mathf.Max(1, rayCount)));
+            float stepX = w / (float)sqrtRayCount;
+            float stepY = h / (float)sqrtRayCount;
+
+            float skipThreshold = -1f;
+            if (skipMaxDepthPlane)
+            {
+                Color[] dpx = depthTex.GetPixels();
+                float measuredMaxDepth = 0f;
+                for (int i = 0; i < dpx.Length; i++)
+                {
+                    float v = dpx[i].r;
+                    if (v <= 0f || float.IsNaN(v) || float.IsInfinity(v)) continue;
+                    if (v > measuredMaxDepth) measuredMaxDepth = v;
+                }
+                float refMax = (clampMaxMeters > clampMinMeters && clampMaxMeters > 0f)
+                    ? clampMaxMeters
+                    : cam.farClipPlane;
+                if (measuredMaxDepth > 0f) measuredMaxDepth = Mathf.Min(measuredMaxDepth, refMax);
+                else measuredMaxDepth = refMax;
+                skipThreshold = Mathf.Max(0f, measuredMaxDepth - Mathf.Max(1e-6f, maxDepthEpsilon));
+            }
+
+            SaveDepthDebugFiles(depthTex, cam, debugOutputBasePath, skipThreshold);
+            Texture2D opaqueDepthDebugTex = null;
+            if (saveOpaqueDepthReference && includeTransparentsAndParticles && eyeDepthShader != null)
+            {
+                opaqueDepthDebugTex = RenderOpaqueDepthTexture(cam, w, h, clampMinMeters, clampMaxMeters, useFloat32);
+            }
+
+            SaveDepthComparisonPreview(depthTex, opaqueDepthDebugTex, debugOutputBasePath, skipThreshold);
+
+            for (int i = 0; i < sqrtRayCount; i++)
+            {
+                for (int j = 0; j < sqrtRayCount; j++)
+                {
+                    float px = i * stepX + stepX * 0.5f;
+                    float py = j * stepY + stepY * 0.5f;
+
+                    float d = depthTex.GetPixel(
+                        Mathf.Clamp((int)px, 0, w - 1),
+                        Mathf.Clamp((int)py, 0, h - 1)).r;
+
+                    if (d <= 0f || float.IsNaN(d) || float.IsInfinity(d)) continue;
+                    if (skipMaxDepthPlane && d >= skipThreshold) continue;
+
+                    Vector3 worldPos;
+                    if (useScreenToWorldPoint)
+                    {
+                        worldPos = cam.ScreenToWorldPoint(new Vector3(px + 0.5f, py + 0.5f, d));
+                    }
+                    else
+                    {
+                        var ray = cam.ScreenPointToRay(new Vector3(px + 0.5f, py + 0.5f, 0f));
+                        float cos = Vector3.Dot(ray.direction, cam.transform.forward);
+                        float t = d / Mathf.Max(1e-6f, cos);
+                        worldPos = ray.origin + ray.direction * t;
+                    }
+
+                    if (invertX) worldPos.x = -worldPos.x;
+                    worldPos = ConvertUnityWorldPointToColmap(worldPos);
+
+                    Color color = colorTex.GetPixel(
+                        Mathf.Clamp((int)px, 0, w - 1),
+                        Mathf.Clamp((int)py, 0, h - 1));
+                    int r = Mathf.Clamp((int)(color.r * 255f), 0, 255);
+                    int g = Mathf.Clamp((int)(color.g * 255f), 0, 255);
+                    int b = Mathf.Clamp((int)(color.b * 255f), 0, 255);
+
+                    writer.WriteLine(
+                        $"{pointId} " +
+                        $"{worldPos.x.ToString(CultureInfo.InvariantCulture)} " +
+                        $"{worldPos.y.ToString(CultureInfo.InvariantCulture)} " +
+                        $"{worldPos.z.ToString(CultureInfo.InvariantCulture)} " +
+                        $"{r} {g} {b} 1.0"
+                    );
+                    pointId++;
+                }
+            }
+
+            if (includeTransparentsAndParticles)
+            {
+                AppendVisibleParticlesToPointCloud(writer, cam, imageId, ref pointId);
+            }
+
+            SafeDestroy(opaqueDepthDebugTex);
+            SafeDestroy(depthTex);
+        }
+        finally
+        {
+            cam.cullingMask = oldMask;
+            if (rtDepth != null) RenderTexture.ReleaseTemporary(rtDepth);
+        }
+    }
+
+    private void TryRunPostshotBatch()
+    {
+#if UNITY_EDITOR
+        
+#endif
+#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+        if (string.IsNullOrEmpty(outputFolder) || !Directory.Exists(outputFolder))
+        {
+            Debug.LogError("Output folder does not exist for PostShot training.");
+            return;
+        }
+
+        var subDirs = Directory.GetDirectories(outputFolder);
+        List<string> foldersToProcess = subDirs.Length > 0 ? new List<string>(subDirs) : new List<string> { outputFolder };
+
+        List<string> commands = new List<string>();
+        foreach (string folder in foldersToProcess)
+        {
+            string folderName = new DirectoryInfo(folder).Name;
+
+            string profileCLI = profile switch
+            {
+                TrainingProfile.Splat3 => "Splat3",
+                TrainingProfile.MCMC => "Splat MCMC",
+                TrainingProfile.ADC => "Splat ADC",
+                _ => "Splat3"
+            };
+
+            string ext = (outputFormat == OutputFormat.PLY) ? "ply" : "psht";
+            string outFile = Path.Combine(outputFolder, $"{folderName}.{ext}");
+
+#if UNITY_STANDALONE_WIN
+            string cmd = $"\"{postShotCliPath}\" train -i \"{folder}\" -s {trainSteps} --profile \"{profileCLI}\"";
+            if (outputFormat == OutputFormat.PLY) cmd += $" --export-splat-ply \"{outFile}\"";
+            else cmd += $" --output \"{outFile}\"";
+            commands.Add(cmd);
+#else
+            string cmd = $"\"{postShotCliPath}\" train -i \"{folder}\" -s {trainSteps} --profile \"{profileCLI}\"";
+            if (outputFormat == OutputFormat.PLY) cmd += $" --export-splat-ply \"{outFile}\"";
+            else cmd += $" --output \"{outFile}\"";
+            commands.Add(cmd);
+#endif
+        }
+
+#if UNITY_STANDALONE_WIN
+        string tempBat = Path.Combine(Path.GetTempPath(), "postshot_batch.cmd");
+        File.WriteAllLines(tempBat, commands);
+        var psi = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/K \"{tempBat}\"",
+            UseShellExecute = true
+        };
+        Process.Start(psi);
+#else
+        string tempSh = Path.Combine(Path.GetTempPath(), "postshot_batch.sh");
+        File.WriteAllLines(tempSh, new[] { "#!/usr/bin/env bash" }.Concat(commands));
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "/bin/chmod",
+                Arguments = $"+x \"{tempSh}\"",
+                UseShellExecute = false
+            });
+        }
+        catch { /* ignore */ }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/usr/bin/env",
+            Arguments = $"bash \"{tempSh}\"",
+            UseShellExecute = true
+        });
+#endif
+#else
+        Debug.LogWarning("PostShot training not supported on this platform at runtime.");
+#endif
+    }
+}

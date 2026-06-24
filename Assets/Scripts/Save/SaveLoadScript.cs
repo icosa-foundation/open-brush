@@ -835,6 +835,14 @@ namespace TiltBrush
                             WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
                         }
                     }
+                    if (jsonData.Portals != null)
+                    {
+                        WidgetManager.m_Instance.SetPortalDataFromTilt(jsonData.Portals);
+                    }
+                    if (jsonData.GaussianCaptures != null)
+                    {
+                        WidgetManager.m_Instance.SetGaussianCaptureDataFromTilt(jsonData.GaussianCaptures);
+                    }
                     if (jsonData.Mirror != null)
                     {
                         PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);

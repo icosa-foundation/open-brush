@@ -29,6 +29,8 @@ namespace TiltBrush
     {
 
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
+        private const string kSharedIcosaCacheFolder = "Icosa Sketches";
+        private static readonly object s_SharedCachePruneLock = new object();
 
         // Downloading is handled by IcosaSketchSet which will set the local paths
 
@@ -105,6 +107,8 @@ namespace TiltBrush
         private float m_CooldownTimer;
         private List<int> m_RequestedIcons = new List<int>();
         private Coroutine m_TextureLoaderCoroutine;
+        private readonly Dictionary<string, Coroutine> m_PreloadingTiltsByAssetId =
+            new Dictionary<string, Coroutine>();
 
         public SketchSetType Type { get { return m_Type; } }
         public SketchCatalog.SketchQueryParameters m_QueryParams;
@@ -251,6 +255,158 @@ namespace TiltBrush
             icon = sketch.Icon;
             authors = sketch.Authors;
             return icon != null;
+        }
+
+        public bool TryGetIconForAssetId(string assetId, out Texture2D icon)
+        {
+            icon = null;
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (TryGetLoadedIcon(sketch, out icon))
+            {
+                return true;
+            }
+
+            return TryMaterializeCachedIcon(sketch, out icon);
+        }
+
+        public bool TryGetSketchIndexForAssetId(string assetId, out int index)
+        {
+            return TryGetSketchForAssetId(assetId, out _, out index);
+        }
+
+        public bool TryPreloadSketchForAssetId(string assetId)
+        {
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (!EnsureCacheDirAvailable())
+            {
+                return false;
+            }
+
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            RestoreLocalCacheState(sceneFileInfo);
+
+            if (sceneFileInfo.TiltDownloaded)
+            {
+                return true;
+            }
+
+            if (m_PreloadingTiltsByAssetId.ContainsKey(assetId))
+            {
+                return true;
+            }
+
+            m_PreloadingTiltsByAssetId[assetId] =
+                m_Parent.StartCoroutine(PreloadSketchForAssetCoroutine(assetId, sketch));
+            return true;
+        }
+
+        public bool IsPreloadingSketchForAssetId(string assetId)
+        {
+            return !string.IsNullOrWhiteSpace(assetId) &&
+                m_PreloadingTiltsByAssetId.ContainsKey(assetId);
+        }
+
+        private bool TryGetSketchForAssetId(string assetId, out IcosaSketch sketch, out int index)
+        {
+            sketch = null;
+            index = -1;
+            if (string.IsNullOrWhiteSpace(assetId))
+            {
+                return false;
+            }
+
+            if (!m_AssetIds.TryGetValue(assetId, out sketch))
+            {
+                return false;
+            }
+
+            index = m_Sketches.IndexOf(sketch);
+            return index >= 0;
+        }
+
+        private static bool TryGetLoadedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = sketch.Icon;
+            return icon != null;
+        }
+
+        private static bool TryMaterializeCachedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = null;
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            if (!sceneFileInfo.IconDownloaded || string.IsNullOrWhiteSpace(sceneFileInfo.IconPath) ||
+                !File.Exists(sceneFileInfo.IconPath))
+            {
+                return false;
+            }
+
+            byte[] data = File.ReadAllBytes(sceneFileInfo.IconPath);
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(data);
+            sketch.Icon = texture;
+            icon = texture;
+            return true;
+        }
+
+        private void RestoreLocalCacheState(IcosaSceneFileInfo info)
+        {
+            info.TiltPath = Path.Combine(m_CacheDir, string.Format("{0}.tilt", info.AssetId));
+            info.IconPath = Path.Combine(m_CacheDir, string.Format("{0}.png", info.AssetId));
+            info.TiltDownloaded = File.Exists(info.TiltPath);
+            info.IconDownloaded = File.Exists(info.IconPath);
+        }
+
+        private bool EnsureCacheDirAvailable()
+        {
+            if (!string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return true;
+            }
+
+            m_CacheDir = CacheDir(Type);
+            if (string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return false;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(m_CacheDir);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!(ex is SystemException) || ex is ArgumentNullException)
+                {
+                    Debug.LogException(ex);
+                }
+                return false;
+            }
+        }
+
+        private IEnumerator PreloadSketchForAssetCoroutine(string assetId, IcosaSketch sketch)
+        {
+            try
+            {
+                yield return DownloadTiltsCoroutine(new List<IcosaSketch> { sketch });
+
+                if (sketch.IcosaSceneFileInfo.TiltDownloaded)
+                {
+                    OnChanged();
+                }
+            }
+            finally
+            {
+                m_PreloadingTiltsByAssetId.Remove(assetId);
+            }
         }
 
         public SceneFileInfo GetSketchSceneFileInfo(int i)
@@ -479,15 +635,13 @@ namespace TiltBrush
                     IcosaSketch sketch;
                     if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
                     {
-                        // We already have this sketch
+                        RestoreLocalCacheState(sketch.IcosaSceneFileInfo);
                     }
                     else
                     {
                         sketch = new IcosaSketch(info);
                         sketch.m_DownloadIndex = loadSketchCount++;
-                        // Set local paths
-                        info.TiltPath = Path.Combine(m_CacheDir, String.Format("{0}.tilt", info.AssetId));
-                        info.IconPath = Path.Combine(m_CacheDir, String.Format("{0}.png", info.AssetId));
+                        RestoreLocalCacheState(info);
                         changed = true;
                     }
                     if (assetIds.ContainsKey(info.AssetId))
@@ -728,10 +882,9 @@ namespace TiltBrush
             yield return null;
         }
 
-        // If we've exceeded our max cache size, prune the cache by deleting the
-        // oldest entries first. Only delete files that aren't referenced in
-        // m_Sketches (actually m_AssetIds). Do this on a background thread so
-        // prevent hitches.
+        // If we've exceeded our max cache size, prune the shared Icosa cache by deleting the
+        // least recently accessed entries first. This cache is shared across all Icosa-backed
+        // sketch sets, so pruning cannot rely on one set's current asset ids.
         private IEnumerator PruneOldSketchesCoroutine()
         {
             yield return null;
@@ -742,55 +895,60 @@ namespace TiltBrush
 
             var task = new Future<(int, long)>(() =>
             {
-                var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
-                var pruneCandidates = new List<FileInfo>();
-
-                var totalSize = (long)0;
-                foreach (var file in cacheFiles)
+                lock (s_SharedCachePruneLock)
                 {
-                    totalSize += file.Length;
+                    var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
+                    var pruneCandidates = new List<FileInfo>();
 
-                    // Two types of files in the cache: icons and tilts.
-                    // Store reference to tilts only as we're interested in
-                    // when the tilts (rather than the icons) were last
-                    // loaded.
-                    if (file.Extension == ".tilt" &&
-                        !m_AssetIds.ContainsKey(Path.GetFileNameWithoutExtension(file.Name)))
+                    var totalSize = (long)0;
+                    foreach (var file in cacheFiles)
                     {
-                        // It's not possible for this tilt file to be loaded
-                        // until the sketch set is refreshed, so we can
-                        // safely prune it.
-                        pruneCandidates.Add(file);
+                        totalSize += file.Length;
+
+                        // Use the tilt timestamp as the cache recency signal and delete its
+                        // paired icon at the same time.
+                        if (string.Equals(file.Extension, ".tilt", StringComparison.OrdinalIgnoreCase))
+                        {
+                            pruneCandidates.Add(file);
+                        }
                     }
+
+                    if (totalSize <= maxSize)
+                    {
+                        // No need to prune - sketch size within bounds.
+                        return (0, totalSize);
+                    }
+
+                    // Prune the cache.
+                    var prunedCount = 0;
+                    pruneCandidates.Sort(CompareLastAccessTimeAscending);
+                    for (int i = 0;
+                         i < pruneCandidates.Count && totalSize > maxSize;
+                         i++)
+                    {
+                        var candidateTilt = pruneCandidates[i];
+                        if (!candidateTilt.Exists)
+                        {
+                            continue;
+                        }
+
+                        var candidateImg = new FileInfo(
+                            Path.ChangeExtension(candidateTilt.FullName, ".png"));
+
+                        totalSize -= candidateTilt.Length;
+                        if (candidateImg.Exists)
+                        {
+                            totalSize -= candidateImg.Length;
+                            candidateImg.Delete();
+                        }
+
+                        candidateTilt.Delete();
+
+                        prunedCount++;
+                    }
+
+                    return (prunedCount, totalSize);
                 }
-
-                if (totalSize <= maxSize)
-                {
-                    // No need to prune - sketch size within bounds.
-                    return (0, totalSize);
-                }
-
-                // Prune the cache.
-                var prunedCount = 0;
-                pruneCandidates.Sort(CompareLastAccessTimeAscending);
-                for (int i = 0;
-                     i < pruneCandidates.Count && totalSize > maxSize;
-                     i++)
-                {
-                    // Remove tilt and accompanying img.
-                    var candidateTilt = pruneCandidates[i];
-                    var candidateImg = new FileInfo(
-                        Path.ChangeExtension(candidateTilt.FullName, ".png"));
-
-                    totalSize -= candidateImg.Length + candidateTilt.Length;
-
-                    candidateImg.Delete();
-                    candidateTilt.Delete();
-
-                    prunedCount++;
-                }
-
-                return (prunedCount, totalSize);
             });
 
             // Poll for task complete.
@@ -832,14 +990,7 @@ namespace TiltBrush
                 foreach (int i in m_RequestedIcons)
                 {
                     IcosaSketch sketch = m_Sketches[i];
-                    string path = sketch.IcosaSceneFileInfo.IconPath;
-                    if (sketch.IcosaSceneFileInfo.IconDownloaded)
-                    {
-                        byte[] data = File.ReadAllBytes(path);
-                        Texture2D t = new Texture2D(2, 2);
-                        t.LoadImage(data);
-                        sketch.Icon = t;
-                    }
+                    TryMaterializeCachedIcon(sketch, out _);
                     yield return null;
                 }
                 m_RequestedIcons.RemoveAll(i => m_Sketches[i].Icon != null);
@@ -850,13 +1001,10 @@ namespace TiltBrush
         {
             switch (type)
             {
-                case SketchSetType.Liked:
-                    {
-                        string id = App.IcosaUserId;
-                        return Path.Combine(Application.persistentDataPath, String.Format("users/{0}/liked", id));
-                    }
                 case SketchSetType.Curated:
-                    return Path.Combine(Application.persistentDataPath, "Curated Sketches");
+                case SketchSetType.Liked:
+                case SketchSetType.User:
+                    return Path.Combine(Application.persistentDataPath, kSharedIcosaCacheFolder);
                 default:
                     return null;
             }

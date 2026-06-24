@@ -19,6 +19,8 @@ namespace TiltBrush
 
     public class LoadSketchButton : BaseButton
     {
+        private const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
+
         [System.Serializable]
         public struct MenuButton
         {
@@ -151,7 +153,16 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available)
+            SceneFileInfo sceneFileInfo = m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex);
+            if (sceneFileInfo == null)
+            {
+                Debug.LogWarning(
+                    $"{kLoadCompareLogPrefix} Sketchbook button has null SceneFileInfo. " +
+                    $"set={m_SketchSet?.Type} index={m_SketchIndex} button={name}");
+                return;
+            }
+
+            if (!sceneFileInfo.Available)
             {
                 // The sketch is not ready to load. Does this sketch set support 
                 // downloading from the cloud?
@@ -207,7 +218,7 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.Type == SketchSetType.User);
+            m_MenuButton.gameObject.SetActive(m_SketchSet.Type != SketchSetType.Drive || m_SketchSet.Type != SketchSetType.SavedStrokes);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);

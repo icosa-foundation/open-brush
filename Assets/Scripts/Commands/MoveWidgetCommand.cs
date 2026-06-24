@@ -20,7 +20,7 @@ namespace TiltBrush
     {
         enum Type
         {
-            Guide,
+            Shape,
             Media,
             Symmetry,
             Selection,
@@ -57,9 +57,9 @@ namespace TiltBrush
             m_Widget = widget;
             m_Final = final;
             m_StartTransform = widget.LocalTransform;
-            if (widget is StencilWidget)
+            if (widget is ShapeWidget)
             {
-                m_Type = Type.Guide;
+                m_Type = Type.Shape;
             }
             else if (widget is MediaWidget)
             {

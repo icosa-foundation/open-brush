@@ -102,8 +102,7 @@ Shader "Custom/360PanoramaWarp"
                     uv = uv * fixed2(1.0, 0.5) + fixed2(0, unity_StereoEyeIndex * 0.5);
                 }
 
-                uv.x *= _MainTex_ST.x + _MainTex_ST.z;
-                uv.y *= _MainTex_ST.y + _MainTex_ST.w;
+                uv = uv * _MainTex_ST.xy + _MainTex_ST.zw;
                 return tex2D(_MainTex, uv, ddx(0), ddy(0));
             }
 
