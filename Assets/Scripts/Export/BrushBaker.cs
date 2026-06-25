@@ -52,17 +52,13 @@ public class BrushBaker : MonoBehaviour
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
         ComputeShaderMapping mapping;
-        ComputeShader computeShader;
-        try
+        if (!TryGetMapping(brushGuid, out mapping))
         {
-            mapping = computeShaders.First(x => string.Equals(x.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase));
-            computeShader = mapping.computeShader;
-        }
-        catch (InvalidOperationException e)
-        {
-            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}: {e.Message}");
+            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}");
             return mesh;
         }
+
+        ComputeShader computeShader = mapping.computeShader;
         if (computeShader == null) return mesh;
 
         // Get the transformation matrix from the GameObject's transform
