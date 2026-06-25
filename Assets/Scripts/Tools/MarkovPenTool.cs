@@ -2,7 +2,9 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class MarkovPenTool : BaseTool
+    public class MarkovPenTool : FreePaintTool
     {
+
+
     }
 }

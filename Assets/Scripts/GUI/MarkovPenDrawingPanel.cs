@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
@@ -8,6 +9,7 @@ namespace TiltBrush
     /// button raycasts, and panel button actions.
     public class MarkovPenDrawingPanel : BasePanel
     {
+
         private const float k_RaycastMaxDistance = 100.0f;
         private const float k_MinHorizontalDirectionSqrMagnitude = 0.001f;
 
@@ -124,6 +126,7 @@ namespace TiltBrush
 
             MarkovPenSketchMemoryScript.EndMarkovStrokeCapture();
             MarkovPenDrawingFreepaint.OnPanelClosed();
+
         }
 
         /// @brief Positions the panel in front of the user's head at the configured distance.

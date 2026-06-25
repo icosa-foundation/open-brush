@@ -9,6 +9,7 @@ namespace TiltBrush
     /// pointer state while the drawing panel is active.
     public class MarkovPenDrawingFreepaint : FreePaintTool
     {
+
         private const float k_MinDirectionIndicatorLength = 0.001f;
         private const string k_GuideLineObjectName = "GuideLine";
 
@@ -213,6 +214,7 @@ namespace TiltBrush
 
             SetGuideLinesActive(true);
             ResetPointer();
+
         }
 
         /// @brief Enables or disables all scene guide lines.

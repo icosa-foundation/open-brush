@@ -2593,12 +2593,11 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 99999
-  m_AlwaysSpawn: 0
   m_LongPressDuration: 0.3
   m_NormalPressTool: 11002
   m_LongPressTool: 11003
   m_LongPressPanelType: 99999
+  m_AlwaysSpawnPanel: 0
   references:
     version: 2
     RefIds: []

@@ -2,10 +2,10 @@
 
 namespace TiltBrush
 {
-    /// @brief Provides a Markov pen button with separate normal press and long press behavior.
-    /// A normal press replays stored Markov control points, while a long press activates the
-    /// configured long press tool and opens the assigned panel action through the base button logic.
-    public class LongPressMarkovPenButton : PanelButton
+    /// @brief Handles a button with separate normal-press and long-press behaviour.
+    /// A normal press activates the configured Markov tool without opening a panel.
+    /// A long press activates the configured long-press tool and toggles the assigned panel.
+    public class LongPressMarkovPenButton : BaseButton
     {
         [SerializeField] private float m_LongPressDuration = 0.3f;
 
@@ -15,26 +15,56 @@ namespace TiltBrush
         [Header("Long Press")]
         [SerializeField] private BaseTool.ToolType m_LongPressTool;
 
+        [Header("Long Press Panel")]
+        [SerializeField] private BasePanel.PanelType m_LongPressPanelType;
+        [SerializeField] private bool m_AlwaysSpawnPanel = false;
+
         private float m_PressTimer;
         private bool m_HasLongPressTriggered;
-        private MarkovPenPointFollower m_PointFollower;
+        private bool m_WasLongPressPanelOpen;
 
-        /// @brief Initialize the long press Markov pen button.
-        /// Creates the point follower component and disables hold focus so this button can
-        /// handle the long press state manually.
+        /// @brief Initializes button state and subscribes to tool-change notifications.
         protected override void Awake()
         {
             base.Awake();
 
-            m_PointFollower = gameObject.AddComponent<MarkovPenPointFollower>();
+            App.Switchboard.ToolChanged += UpdateVisuals;
+
             m_HoldFocus = false;
+            m_WasLongPressPanelOpen = IsLongPressPanelOpen();
         }
 
-        /// @brief Handle the initial button press interaction.
-        /// Moves the button into its pressed visual state and resets long press tracking.
-        /// @param raycastHitInfo Raycast hit information from the button interaction.
+        /// @brief Removes event subscriptions before the button is destroyed.
+        protected override void OnDestroy()
+        {
+            App.Switchboard.ToolChanged -= UpdateVisuals;
+
+            base.OnDestroy();
+        }
+
+        /// @brief Updates the button selection when the long-press panel opens or closes.
+        private void Update()
+        {
+            bool isLongPressPanelOpen = IsLongPressPanelOpen();
+
+            if (m_WasLongPressPanelOpen == isLongPressPanelOpen)
+            {
+                return;
+            }
+
+            m_WasLongPressPanelOpen = isLongPressPanelOpen;
+            RefreshSelectionVisuals();
+        }
+
+        /// @brief Starts a button press and resets long-press tracking.
+        /// @param raycastHitInfo The raycast hit information for the interaction.
         public override void ButtonPressed(RaycastHit raycastHitInfo)
         {
+            if (!IsAvailable())
+            {
+                return;
+            }
+
             AdjustButtonPositionAndScale(
                 m_ZAdjustClick,
                 m_HoverScale,
@@ -45,13 +75,12 @@ namespace TiltBrush
             m_HasLongPressTriggered = false;
         }
 
-        /// @brief Handle the button hold interaction.
-        /// Increases the press timer while the button remains held and executes the long press
-        /// behavior once the configured duration is reached.
-        /// @param raycastHitInfo Raycast hit information from the button interaction.
+        /// @brief Tracks a held button press and triggers the long-press action when required.
+        /// @param raycastHitInfo The raycast hit information for the interaction.
         public override void ButtonHeld(RaycastHit raycastHitInfo)
         {
-            if (m_CurrentButtonState != ButtonState.Held || m_HasLongPressTriggered)
+            if (m_CurrentButtonState != ButtonState.Held ||
+                m_HasLongPressTriggered)
             {
                 return;
             }
@@ -65,18 +94,16 @@ namespace TiltBrush
 
             m_HasLongPressTriggered = true;
 
-            if (IsAvailable())
+            if (TryActivateTool(m_LongPressTool))
             {
-                ActivateLongPressTool();
-                OnButtonPressed();
+                TryToggleLongPressPanel();
                 PlayPressedAudio();
             }
 
             SetButtonUntouched();
         }
 
-        /// @brief Handle the button release interaction.
-        /// Executes the normal press behavior if no long press was triggered.
+        /// @brief Activates or deactivates the normal-press tool when no long press was triggered.
         public override void ButtonReleased()
         {
             if (m_HasLongPressTriggered)
@@ -86,16 +113,45 @@ namespace TiltBrush
                 return;
             }
 
-            StartPointFollower();
-            //ActivateNormalPressTool();
-            PlayPressedAudio();
+            if (TryToggleNormalPressTool())
+            {
+                RefreshSelectionVisuals();
+                PlayPressedAudio();
+            }
+
             SetButtonUntouched();
         }
 
-        /// @brief Handle the button focus interaction.
-        /// Moves the button into its hover visual state, plays hover audio, and resets long press tracking.
+        /// @brief Tries to toggle the configured normal-press tool.
+        /// @return True if the tool state was changed successfully.
+        private bool TryToggleNormalPressTool()
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError(
+                    "LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
+                return false;
+            }
+
+            if (IsNormalPressToolActive())
+            {
+                SketchSurfacePanel.m_Instance.DisableSpecificTool(m_NormalPressTool);
+                return true;
+            }
+
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_NormalPressTool);
+            return true;
+        }
+
+
+        /// @brief Updates the button appearance when the controller starts hovering over it.
         public override void GainFocus()
         {
+            if (!IsAvailable())
+            {
+                return;
+            }
+
             AdjustButtonPositionAndScale(
                 m_ZAdjustHover,
                 m_HoverScale,
@@ -113,42 +169,112 @@ namespace TiltBrush
             m_HasLongPressTriggered = false;
         }
 
-        /// @brief Activate the tool assigned to the normal press action.
-        private void ActivateNormalPressTool()
+        /// @brief Updates the base button visuals and refreshes the selected state.
+        public override void UpdateVisuals()
         {
-            if (SketchSurfacePanel.m_Instance == null)
+            base.UpdateVisuals();
+            RefreshSelectionVisuals();
+        }
+
+        /// @brief Updates the activated visual state based on the active tool and panel state.
+        private void RefreshSelectionVisuals()
+        {
+            bool isNormalPressToolActive = IsNormalPressToolActive();
+            bool isLongPressPanelOpen = IsLongPressPanelOpen();
+            bool isButtonSelected =
+                isNormalPressToolActive || isLongPressPanelOpen;
+
+            if (m_ToggleActive == isButtonSelected)
             {
-                Debug.LogError("LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
                 return;
             }
 
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_NormalPressTool);
+            m_ToggleActive = isButtonSelected;
+            SetButtonActivated(isButtonSelected);
         }
 
-        /// @brief Activate the tool assigned to the long press action.
-        private void ActivateLongPressTool()
+        /// @brief Checks whether the normal-press tool is currently active.
+        /// @return True if the configured normal-press tool is active.
+        private bool IsNormalPressToolActive()
         {
             if (SketchSurfacePanel.m_Instance == null)
             {
-                Debug.LogError("LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
-                return;
+                return false;
             }
 
-            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_LongPressTool);
+            return SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
+                m_NormalPressTool;
         }
 
-        /// @brief Start following the saved Markov control points with the pointer follower.
-        private void StartPointFollower()
+        /// @brief Checks whether the configured long-press panel is currently open.
+        /// @return True if the configured long-press panel is open.
+        private bool IsLongPressPanelOpen()
         {
-            if (m_PointFollower == null)
-            {
-                m_PointFollower = gameObject.AddComponent<MarkovPenPointFollower>();
-            }
-
-            m_PointFollower.StartFollowing(MarkovPenDrawingFreepaint.ControlPoints);
+            return PanelManager.m_Instance != null &&
+                PanelManager.m_Instance.IsPanelOpen(m_LongPressPanelType);
         }
 
-        /// @brief Play the button pressed audio feedback if it is enabled.
+        /// @brief Tries to activate the specified tool.
+        /// @param toolType The tool type to activate.
+        /// @return True if the tool was activated successfully.
+        private bool TryActivateTool(BaseTool.ToolType toolType)
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError(
+                    "LongPressMarkovPenButton: SketchSurfacePanel instance is null.");
+                return false;
+            }
+
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(toolType);
+            return true;
+        }
+
+        /// @brief Tries to open or close the configured long-press panel.
+        /// @return True if the panel action was completed successfully.
+        private bool TryToggleLongPressPanel()
+        {
+            if (PanelManager.m_Instance == null ||
+                SketchControlsScript.m_Instance == null)
+            {
+                Debug.LogError(
+                    "LongPressMarkovPenButton: PanelManager or " +
+                    "SketchControlsScript instance is null.");
+                return false;
+            }
+
+            if (m_AlwaysSpawnPanel)
+            {
+                PanelManager.m_Instance.DismissNonCorePanel(m_LongPressPanelType);
+
+                SketchControlsScript.m_Instance.OpenPanelOfType(
+                    m_LongPressPanelType,
+                    TrTransform.FromTransform(transform));
+
+                m_WasLongPressPanelOpen = true;
+                RefreshSelectionVisuals();
+                return true;
+            }
+
+            if (IsLongPressPanelOpen())
+            {
+                PanelManager.m_Instance.DismissNonCorePanel(m_LongPressPanelType);
+                m_WasLongPressPanelOpen = false;
+            }
+            else
+            {
+                SketchControlsScript.m_Instance.OpenPanelOfType(
+                    m_LongPressPanelType,
+                    TrTransform.FromTransform(transform));
+
+                m_WasLongPressPanelOpen = true;
+            }
+
+            RefreshSelectionVisuals();
+            return true;
+        }
+
+        /// @brief Plays the configured pressed audio feedback.
         private void PlayPressedAudio()
         {
             if (!m_ButtonHasPressedAudio)
@@ -159,7 +285,7 @@ namespace TiltBrush
             AudioManager.m_Instance.ItemSelect(transform.position);
         }
 
-        /// @brief Reset the button state and visual scale to the untouched state.
+        /// @brief Resets the button to its untouched visual state.
         private void SetButtonUntouched()
         {
             m_CurrentButtonState = ButtonState.Untouched;
