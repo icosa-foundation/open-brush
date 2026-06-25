@@ -362,10 +362,6 @@ namespace TiltBrush
                     }
                     return "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in unclear shader path";
                 }
-                if (BrushBaker.DropsUnusedWideUvForGltf(row.Guid))
-                {
-                    return "HANDLED: No BrushBaker entry; export drops unused wide UV components";
-                }
                 return "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found";
             }
             if (string.IsNullOrEmpty(row.BakerComputeShader))
@@ -968,8 +964,6 @@ namespace TiltBrush
                 case "NEEDS REVIEW: BrushBaker mapping exists but source scan did not find wide UV input use":
                 case "NEEDS REVIEW: BrushBaker writes UVs but source scan did not find wide UV input use":
                     return 3;
-                case "HANDLED: No BrushBaker entry; export drops unused wide UV components":
-                    return 4;
                 case "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found":
                     return 5;
                 case "PROBABLY OK: Missing BrushBaker entry and wide UV use is audio-reactive vertex-only":
@@ -1013,8 +1007,6 @@ namespace TiltBrush
                     return "a BrushBaker mapping exists, but the source scan did not find the compute shader reading the declared wide UV data. This may be a scan limitation or a stale/unnecessary mapping.";
                 case "NEEDS REVIEW: BrushBaker writes UVs but source scan did not find wide UV input use":
                     return "BrushBaker writes UV buffers, but the source scan did not find it reading the declared wide UV data. Check whether the write is unrelated, indirect, or stale.";
-                case "HANDLED: No BrushBaker entry; export drops unused wide UV components":
-                    return "static source review found no original Unity material reads of uv.z/uv.w, and BrushBaker now trims these brushes' exported UV channels to two components without running a compute shader.";
                 case "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found":
                     return "no BrushBaker fix is implied by this source scan. The brush declares wide UV data, but the original Unity material scan did not find wide UV reads.";
                 case "PROBABLY OK: Missing BrushBaker entry and wide UV use is audio-reactive vertex-only":
