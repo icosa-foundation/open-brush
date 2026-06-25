@@ -6,6 +6,8 @@ using Unity.Collections;
 
 public class BrushBaker : MonoBehaviour
 {
+    private static readonly bool kDropUnusedWideUvComponentsForGltf = false;
+
     public List<ComputeShaderMapping> computeShaders;
     public float squeezeAmount = 1.0f; // Set this to your desired squeeze amount
     public static BrushBaker m_Instance;
@@ -167,6 +169,11 @@ public class BrushBaker : MonoBehaviour
             mesh.SetUVs(2, newUv2s);
         }
 
+        if (kDropUnusedWideUvComponentsForGltf)
+        {
+            DropWideUvComponents(mesh);
+        }
+
         vertexBuffer.Release();
         normalBuffer.Release();
         colorBuffer.Release();
@@ -183,5 +190,25 @@ public class BrushBaker : MonoBehaviour
         normals.Dispose();
 
         return mesh;
+    }
+
+    private static void DropWideUvComponents(Mesh mesh)
+    {
+        // Disabled by default. UnityGLTF already exports uv0/uv1 through Vector2[] accessors,
+        // so this full mesh rewrite is only worth enabling for a proven uv2+ wide-texcoord export issue.
+        for (int channel = 0; channel < 8; channel++)
+        {
+            var source = new List<Vector4>();
+            mesh.GetUVs(channel, source);
+            if (source.Count == 0) continue;
+
+            var truncated = new List<Vector2>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                Vector4 uv = source[i];
+                truncated.Add(new Vector2(uv.x, uv.y));
+            }
+            mesh.SetUVs(channel, truncated);
+        }
     }
 }
