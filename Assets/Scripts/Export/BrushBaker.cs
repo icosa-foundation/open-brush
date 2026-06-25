@@ -169,6 +169,7 @@ public class BrushBaker : MonoBehaviour
 
         vertexBuffer.Release();
         normalBuffer.Release();
+        colorBuffer.Release();
         uvBuffer.Release();
         if (uv1Buffer != null)
         {
