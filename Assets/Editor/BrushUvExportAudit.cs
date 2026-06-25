@@ -68,10 +68,19 @@ namespace TiltBrush
             public string BakerComputeShaderPath;
             public string BakerModifiedAttributes;
             public string MaterialWideUvReads;
+            public string MaterialWideUvReadKinds;
+            public string ManualReviewNotes;
             public string BakerWideUvReads;
             public string BakerUvBufferWrites;
+            public string BakerVertexBufferWrites;
             public string AutomatedSourceReview;
             public string Finding;
+        }
+
+        private class WideUvRead
+        {
+            public string Description;
+            public string Kind;
         }
 
         private struct WideUvInfo
@@ -137,8 +146,10 @@ namespace TiltBrush
                     ? AssetDatabase.GetAssetPath(mapping.computeShader)
                     : "";
                 string materialWideUvReads = FindWideUvReadsInMaterialShader(shaderPath, wideChannels);
+                string materialWideUvReadKinds = ClassifyWideUvReadsInMaterialShader(shaderPath, wideChannels);
                 string bakerWideUvReads = FindWideUvReadsInComputeShader(computeShaderPath, wideChannels);
                 string bakerUvBufferWrites = FindUvBufferWritesInComputeShader(computeShaderPath);
+                string bakerVertexBufferWrites = FindVertexBufferWritesInComputeShader(computeShaderPath);
 
                 Row row = new Row
                 {
@@ -165,9 +176,12 @@ namespace TiltBrush
                     BakerComputeShaderPath = computeShaderPath,
                     BakerModifiedAttributes = hasMapping ? FormatModifiedAttributes(mapping) : "",
                     MaterialWideUvReads = materialWideUvReads,
+                    MaterialWideUvReadKinds = materialWideUvReadKinds,
                     BakerWideUvReads = bakerWideUvReads,
                     BakerUvBufferWrites = bakerUvBufferWrites,
+                    BakerVertexBufferWrites = bakerVertexBufferWrites,
                 };
+                ApplyManualReview(row);
                 row.AutomatedSourceReview = ClassifySourceReview(row);
                 row.Finding = layoutError != null
                     ? $"ERROR_LAYOUT: {layoutError}"
@@ -262,6 +276,56 @@ namespace TiltBrush
             return string.Join(";", modified);
         }
 
+        private static void ApplyManualReview(Row row)
+        {
+            if (row.DurableName == "Slice")
+            {
+                row.ManualReviewNotes =
+                    "Ignored for now by request. Automated scan correctly sees uv0.z in fragment/color code.";
+                return;
+            }
+
+            if (row.DurableName == "Comet" || row.DurableName == "Hypercolor")
+            {
+                row.ManualReviewNotes =
+                    "Manual source review: uv0.z is only used for AUDIO_REACTIVE vertex deformation. Export can treat this as intentionally dynamic runtime deformation unless WebGL export is expected to preserve audio-reactive motion.";
+                return;
+            }
+
+            if (row.DurableName == "Toon")
+            {
+                row.ManualReviewNotes =
+                    "Manual source review: uv0.z is radius used outside AUDIO_REACTIVE for outline/inflation. This remains the meaningful missing-baker vertex-path case.";
+                return;
+            }
+
+            if (IsManualVertexOnlyWideUvBrush(row.DurableName))
+            {
+                row.MaterialWideUvReadKinds = "vertex";
+                row.ManualReviewNotes =
+                    "Manual source review: live wide-UV reads are vertex-stage only; scanner uncertainty comes from helper/derived variables or commented code.";
+            }
+        }
+
+        private static bool IsManualVertexOnlyWideUvBrush(string durableName)
+        {
+            switch (durableName)
+            {
+                case "Bubbles":
+                case "Dots":
+                case "Embers":
+                case "Rising Bubbles":
+                case "Snow":
+                case "Stars":
+                case "Smoke":
+                case "WaveformParticles":
+                case "DanceFloor":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static string ClassifyFinding(Row row)
         {
             if (!row.HasWideUv)
@@ -272,23 +336,53 @@ namespace TiltBrush
             bool materialReadsWideUv = !string.IsNullOrEmpty(row.MaterialWideUvReads);
             bool bakerReadsWideUv = !string.IsNullOrEmpty(row.BakerWideUvReads);
             bool bakerWritesUv = !string.IsNullOrEmpty(row.BakerUvBufferWrites);
+            bool bakerWritesVertex = !string.IsNullOrEmpty(row.BakerVertexBufferWrites);
+            string materialKind = PrimaryMaterialWideUvReadKind(row);
+
+            if (row.DurableName == "Slice")
+            {
+                return "DEFERRED: Slice ignored for now despite fragment/color wide UV use";
+            }
 
             if (!row.HasBakerMapping)
             {
-                return materialReadsWideUv
-                    ? "LIKELY PROBLEM: Missing BrushBaker entry and original material uses wide UVs"
-                    : "PROBABLY OK: Missing BrushBaker entry but original material wide UV use not found";
+                if (materialReadsWideUv)
+                {
+                    if (IsAudioReactiveOnlyWideUvBrush(row.DurableName))
+                    {
+                        return "PROBABLY OK: Missing BrushBaker entry and wide UV use is audio-reactive vertex-only";
+                    }
+                    if (materialKind == "fragment/color")
+                    {
+                        return "LIKELY PROBLEM: Missing BrushBaker entry and material uses wide UV in fragment/color path";
+                    }
+                    if (materialKind == "vertex")
+                    {
+                        return "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in vertex shader path";
+                    }
+                    return "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in unclear shader path";
+                }
+                if (BrushBaker.DropsUnusedWideUvForGltf(row.Guid))
+                {
+                    return "HANDLED: No BrushBaker entry; export drops unused wide UV components";
+                }
+                return "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found";
             }
             if (string.IsNullOrEmpty(row.BakerComputeShader))
             {
                 return "LIKELY PROBLEM: BrushBaker entry has no compute shader";
             }
 
+            if (!materialReadsWideUv && !bakerReadsWideUv && bakerWritesVertex)
+            {
+                return "PROBABLY OK: BrushBaker writes vertices and no wide UV input use found";
+            }
+
             if (bakerWritesUv)
             {
                 if (materialReadsWideUv)
                 {
-                    return "REVIEW EXPORT MATERIAL: BrushBaker writes UVs and original material uses wide UVs";
+                    return $"REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in {materialKind} path";
                 }
                 return bakerReadsWideUv
                     ? "PROBABLY OK: BrushBaker writes UVs and consumes wide UVs"
@@ -297,11 +391,23 @@ namespace TiltBrush
 
             if (materialReadsWideUv)
             {
-                return "REVIEW EXPORT MATERIAL: BrushBaker does not write UVs and original material uses wide UVs";
+                return $"REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in {materialKind} path";
             }
             return bakerReadsWideUv
                 ? "PROBABLY OK: BrushBaker consumes wide UVs and original material wide UV use not found"
                 : "NEEDS REVIEW: BrushBaker mapping exists but source scan did not find wide UV input use";
+        }
+
+        private static bool IsAudioReactiveOnlyWideUvBrush(string durableName)
+        {
+            switch (durableName)
+            {
+                case "Comet":
+                case "Hypercolor":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static string GetBrushScriptNames(BrushDescriptor brush)
@@ -328,7 +434,8 @@ namespace TiltBrush
                 "BrushScripts", "MaterialName", "ShaderName", "ShaderPath", "AllowExport", "Superseded",
                 "Uv0", "Uv1", "Uv2", "WideUvChannels", "HasWideUv", "HasBakerMapping",
                 "BakerName", "BakerComputeShader", "BakerComputeShaderPath", "BakerModifiedAttributes",
-                "MaterialWideUvReads", "BakerWideUvReads", "BakerUvBufferWrites",
+                "MaterialWideUvReads", "MaterialWideUvReadKinds", "ManualReviewNotes",
+                "BakerWideUvReads", "BakerUvBufferWrites", "BakerVertexBufferWrites",
                 "AutomatedSourceReview", "Finding"
             });
             foreach (Row row in rows)
@@ -358,8 +465,11 @@ namespace TiltBrush
                     row.BakerComputeShaderPath,
                     row.BakerModifiedAttributes,
                     row.MaterialWideUvReads,
+                    row.MaterialWideUvReadKinds,
+                    row.ManualReviewNotes,
                     row.BakerWideUvReads,
                     row.BakerUvBufferWrites,
+                    row.BakerVertexBufferWrites,
                     row.AutomatedSourceReview,
                     row.Finding
                 });
@@ -400,8 +510,8 @@ namespace TiltBrush
             sb.AppendLine();
             sb.AppendLine("## How to read this");
             sb.AppendLine();
-            sb.AppendLine("The `source review` text in each row is from static source-code scans only. It looks for material shader reads of uv.z/uv.w, BrushBaker compute shader reads of those same components, and compute shader writes to UV buffers. It does not generate a stroke mesh or run a UnityGLTF export, so treat it as a triage aid rather than proof of exported vertex data.");
-            sb.AppendLine("Each row appears in exactly one category. Category prefixes indicate action level: `LIKELY PROBLEM` should be fixed or explicitly justified; `NEEDS REVIEW` means the source scan could not prove the export path is safe; `REVIEW EXPORT MATERIAL` means the original runtime material uses wide UVs, which is expected, but the exported material/path must not depend on those original wide components; `PROBABLY OK` means no fix is implied by this source scan.");
+            sb.AppendLine("The `source review` text in each row is from static source-code scans only. It looks for original Unity material reads of uv.z/uv.w, whether those reads occur in vertex or fragment/color shader paths, BrushBaker compute shader reads of those same components, and compute shader writes to UV buffers. It does not inspect WebGL/export shaders, generate a stroke mesh, or run a UnityGLTF export, so treat it as a triage aid rather than proof of exported vertex data.");
+            sb.AppendLine("Each row appears in exactly one category. Category prefixes indicate action level: `LIKELY PROBLEM` means the trusted source scan found an export-risk pattern; `NEEDS REVIEW` means trusted source scan evidence is incomplete; `REVIEW EXPORT PATH` means the original material uses wide UVs and the later WebGL shader/export validation stage needs to prove that export does not; `DEFERRED` means manually acknowledged but intentionally ignored for now; `PROBABLY OK` means no BrushBaker fix is implied by this source scan.");
             sb.AppendLine();
             foreach (string finding in actionableRows.Select(row => row.Finding).Distinct())
             {
@@ -412,16 +522,26 @@ namespace TiltBrush
             sb.AppendLine($"Rows with UV channels wider than two components: {rows.Count(row => row.HasWideUv)}");
             sb.AppendLine($"Rows needing gap/review work: {actionableRows.Length}");
             sb.AppendLine();
+            AppendManualReviewNotes(sb);
 
             foreach (IGrouping<string, Row> group in actionableRows.GroupBy(row => row.Finding))
             {
                 sb.AppendLine($"## {group.Key}");
                 foreach (Row row in group)
                 {
-                    sb.AppendLine($"- {row.DurableName} `{row.Guid}` {row.Manifest}/{row.Role}: {row.WideUvChannels}; baker `{row.BakerName}` writes `{row.BakerModifiedAttributes}`; source review: {row.AutomatedSourceReview}");
+                    string bakerWrites = FormatBakerWritesForReport(row);
+                    sb.AppendLine($"- {row.DurableName} `{row.Guid}` {row.Manifest}/{row.Role}: {row.WideUvChannels}; baker `{row.BakerName}` {bakerWrites}; source review: {row.AutomatedSourceReview}");
                     if (!string.IsNullOrEmpty(row.MaterialWideUvReads))
                     {
-                        sb.AppendLine($"  - Material shader wide UV reads: `{row.MaterialWideUvReads}`");
+                        sb.AppendLine($"  - Original Unity material wide UV reads: `{row.MaterialWideUvReads}`");
+                    }
+                    if (!string.IsNullOrEmpty(row.MaterialWideUvReadKinds))
+                    {
+                        sb.AppendLine($"  - Original Unity material read paths: `{row.MaterialWideUvReadKinds}`");
+                    }
+                    if (!string.IsNullOrEmpty(row.ManualReviewNotes))
+                    {
+                        sb.AppendLine($"  - Manual review: {row.ManualReviewNotes}");
                     }
                     if (!string.IsNullOrEmpty(row.BakerWideUvReads))
                     {
@@ -431,10 +551,46 @@ namespace TiltBrush
                     {
                         sb.AppendLine($"  - Baker compute UV buffer writes: `{row.BakerUvBufferWrites}`");
                     }
+                    if (!string.IsNullOrEmpty(row.BakerVertexBufferWrites))
+                    {
+                        sb.AppendLine($"  - Baker compute vertex buffer writes: `{row.BakerVertexBufferWrites}`");
+                    }
                 }
                 sb.AppendLine();
             }
             return sb.ToString();
+        }
+
+        private static string FormatBakerWritesForReport(Row row)
+        {
+            var writes = new List<string>();
+            if (!string.IsNullOrEmpty(row.BakerModifiedAttributes))
+            {
+                writes.Add($"declares `{row.BakerModifiedAttributes}`");
+            }
+            if (!string.IsNullOrEmpty(row.BakerVertexBufferWrites))
+            {
+                writes.Add($"writes vertex `{row.BakerVertexBufferWrites}`");
+            }
+            if (!string.IsNullOrEmpty(row.BakerUvBufferWrites))
+            {
+                writes.Add($"writes UV `{row.BakerUvBufferWrites}`");
+            }
+            return writes.Count == 0 ? "has no detected writes" : string.Join(", ", writes);
+        }
+
+        private static void AppendManualReviewNotes(StringBuilder sb)
+        {
+            sb.AppendLine("## Manual Review Notes");
+            sb.AppendLine();
+            sb.AppendLine("`Slice` is currently ignored by request, even though the automated scan places it in the fragment/color bucket.");
+            sb.AppendLine();
+            sb.AppendLine("The `unclear` automated path labels below were manually checked in source. In these cases, the uncertainty comes from the simple scanner seeing helper or derived variables, and in some cases commented code. The live wide-UV use appears to be vertex-stage only:");
+            sb.AppendLine();
+            sb.AppendLine("- Bubbles, Dots, Embers, Rising Bubbles, Snow, Stars, Smoke: `texcoord.z` is particle rotation and `texcoord.w` is birth time inside `vert`; `center.z` is a derived particle center/position value used for vertex placement or animation. The fragment functions use the baked `i.texcoord`/color and do not read the original wide UV components.");
+            sb.AppendLine("- WaveformParticles: `texcoord1.xyz` is per-vertex offset and `texcoord1.w` is lifetime inside `vert`; the fragment function does not use the original wide UV components.");
+            sb.AppendLine("- DanceFloor: `texcoord1.w` is lifetime inside `vert`; the fragment function does not use the original wide UV components. The scanner is also vulnerable to commented shader code in this file.");
+            sb.AppendLine();
         }
 
         private static string ClassifySourceReview(Row row)
@@ -445,32 +601,59 @@ namespace TiltBrush
             }
             if (!string.IsNullOrEmpty(row.MaterialWideUvReads))
             {
-                return "Needs review: material shader source reads uv.z or uv.w.";
+                return $"Original Unity material reads uv.z or uv.w in {PrimaryMaterialWideUvReadKind(row)} path. Runtime use can be expected, but WebGL/export shader validation still needs to prove whether export is safe.";
             }
             if (!row.HasBakerMapping)
             {
-                return "No material uv.z/uv.w reads found, but there is no BrushBaker entry.";
+                return "No original Unity material wide UV read found, and there is no BrushBaker entry.";
             }
             if (!string.IsNullOrEmpty(row.BakerWideUvReads))
             {
-                return "Probably baked away: BrushBaker reads uv.z or uv.w and the material shader scan did not.";
+                return "BrushBaker reads uv.z or uv.w and the original material shader scan did not.";
+            }
+            if (!string.IsNullOrEmpty(row.BakerVertexBufferWrites))
+            {
+                return "BrushBaker writes vertex positions, and the source scan did not find wide UV reads.";
             }
             return "Needs review: source scan did not find where the wide UV data is consumed.";
         }
 
         private static string FindWideUvReadsInMaterialShader(string shaderPath, IReadOnlyCollection<WideUvInfo> wideChannels)
         {
+            return string.Join(";",
+                FindWideUvReadsInShader(shaderPath, wideChannels)
+                    .Select(read => read.Description)
+                    .Distinct()
+                    .OrderBy(read => read)
+                    .ToArray());
+        }
+
+        private static string ClassifyWideUvReadsInMaterialShader(
+            string shaderPath, IReadOnlyCollection<WideUvInfo> wideChannels)
+        {
+            return string.Join(";",
+                FindWideUvReadsInShader(shaderPath, wideChannels)
+                    .Select(read => read.Kind)
+                    .Distinct()
+                    .OrderBy(read => MaterialWideUvReadKindSortKey(read))
+                    .ThenBy(read => read)
+                    .ToArray());
+        }
+
+        private static IEnumerable<WideUvRead> FindWideUvReadsInShader(
+            string shaderPath, IReadOnlyCollection<WideUvInfo> wideChannels)
+        {
             if (string.IsNullOrEmpty(shaderPath) || wideChannels.Count == 0)
             {
-                return "";
+                return Enumerable.Empty<WideUvRead>();
             }
             string source = ReadSourceWithIncludes(shaderPath);
             if (string.IsNullOrEmpty(source))
             {
-                return "";
+                return Enumerable.Empty<WideUvRead>();
             }
 
-            var reads = new SortedSet<string>();
+            var reads = new List<WideUvRead>();
             foreach (WideUvInfo wideChannel in wideChannels)
             {
                 foreach (string variable in FindTexcoordVariables(source, wideChannel.Channel))
@@ -485,7 +668,7 @@ namespace TiltBrush
                     AddWideComponentReads(source, "uv", wideChannel, reads);
                 }
             }
-            return string.Join(";", reads.ToArray());
+            return reads;
         }
 
         private static string FindWideUvReadsInComputeShader(string computeShaderPath, IReadOnlyCollection<WideUvInfo> wideChannels)
@@ -536,6 +719,20 @@ namespace TiltBrush
             return string.Join(";", writes);
         }
 
+        private static string FindVertexBufferWritesInComputeShader(string computeShaderPath)
+        {
+            if (string.IsNullOrEmpty(computeShaderPath))
+            {
+                return "";
+            }
+            string source = ReadSourceWithIncludes(computeShaderPath);
+            if (string.IsNullOrEmpty(source))
+            {
+                return "";
+            }
+            return Regex.IsMatch(source, @"\bvertexBuffer\s*\[[^\]]+\]\s*=") ? "vertex" : "";
+        }
+
         private static IEnumerable<string> FindTexcoordVariables(string source, int channel)
         {
             string pattern = $@"\b(?:float|half|fixed)(?:2|3|4)\s+(\w+)\s*:\s*TEXCOORD{channel}\b";
@@ -557,14 +754,143 @@ namespace TiltBrush
         private static void AddWideComponentReads(
             string source, string variable, WideUvInfo wideChannel, SortedSet<string> reads)
         {
-            if (wideChannel.Size >= 3 && Regex.IsMatch(source, $@"\b{Regex.Escape(variable)}\s*\.\s*(?:z|xz|yz|xyz|xyzw|zw)\b"))
+            if (wideChannel.Size >= 3
+                && Regex.IsMatch(source, $@"\b{Regex.Escape(variable)}\s*\.\s*(?:z|xz|yz|xyz|xyzw|zw)\b"))
             {
                 reads.Add($"uv{wideChannel.Channel}.z via {variable}");
             }
-            if (wideChannel.Size >= 4 && Regex.IsMatch(source, $@"\b{Regex.Escape(variable)}\s*\.\s*(?:w|xw|yw|zw|xyw|xyzw)\b"))
+            if (wideChannel.Size >= 4
+                && Regex.IsMatch(source, $@"\b{Regex.Escape(variable)}\s*\.\s*(?:w|xw|yw|zw|xyw|xyzw)\b"))
             {
                 reads.Add($"uv{wideChannel.Channel}.w via {variable}");
             }
+        }
+
+        private static void AddWideComponentReads(
+            string source, string variable, WideUvInfo wideChannel, ICollection<WideUvRead> reads)
+        {
+            if (wideChannel.Size >= 3)
+            {
+                AddWideComponentReads(source, variable, wideChannel, "z", @"(?:z|xz|yz|xyz|xyzw|zw)", reads);
+            }
+            if (wideChannel.Size >= 4)
+            {
+                AddWideComponentReads(source, variable, wideChannel, "w", @"(?:w|xw|yw|zw|xyw|xyzw)", reads);
+            }
+        }
+
+        private static void AddWideComponentReads(
+            string source, string variable, WideUvInfo wideChannel, string component,
+            string swizzlePattern, ICollection<WideUvRead> reads)
+        {
+            foreach (Match match in Regex.Matches(
+                         source, $@"\b{Regex.Escape(variable)}\s*\.\s*{swizzlePattern}\b"))
+            {
+                reads.Add(new WideUvRead
+                {
+                    Description = $"uv{wideChannel.Channel}.{component} via {variable}",
+                    Kind = ClassifyShaderReadPath(source, match.Index)
+                });
+            }
+        }
+
+        private static string PrimaryMaterialWideUvReadKind(Row row)
+        {
+            if (string.IsNullOrEmpty(row.MaterialWideUvReadKinds))
+            {
+                return "unclear";
+            }
+            return row.MaterialWideUvReadKinds
+                .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .OrderBy(MaterialWideUvReadKindSortKey)
+                .FirstOrDefault() ?? "unclear";
+        }
+
+        private static int MaterialWideUvReadKindSortKey(string kind)
+        {
+            switch (kind)
+            {
+                case "fragment/color":
+                    return 0;
+                case "unclear":
+                    return 1;
+                case "vertex":
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
+        private static string ClassifyShaderReadPath(string source, int readIndex)
+        {
+            FunctionInfo function = FindContainingFunction(source, readIndex);
+            if (function.Name == null)
+            {
+                return "unclear";
+            }
+
+            string name = function.Name.ToLowerInvariant();
+            string signature = function.Signature.ToLowerInvariant();
+            if (name.Contains("surf") || name.Contains("frag") || signature.Contains(": color"))
+            {
+                return "fragment/color";
+            }
+            if (name.Contains("vert"))
+            {
+                return "vertex";
+            }
+            return "unclear";
+        }
+
+        private struct FunctionInfo
+        {
+            public string Name;
+            public string Signature;
+        }
+
+        private static FunctionInfo FindContainingFunction(string source, int readIndex)
+        {
+            string signaturePattern =
+                @"\b(?:void|float|float2|float3|float4|half|half2|half3|half4|fixed|fixed2|fixed3|fixed4|v2f|\w+)\s+(\w+)\s*\([^;{}]*\)\s*(?::\s*\w+)?\s*\{";
+            foreach (Match match in Regex.Matches(source, signaturePattern))
+            {
+                int bodyStart = match.Index + match.Length - 1;
+                if (bodyStart > readIndex)
+                {
+                    continue;
+                }
+                int bodyEnd = FindMatchingBrace(source, bodyStart);
+                if (bodyEnd >= readIndex)
+                {
+                    return new FunctionInfo
+                    {
+                        Name = match.Groups[1].Value,
+                        Signature = match.Value
+                    };
+                }
+            }
+            return default;
+        }
+
+        private static int FindMatchingBrace(string source, int openBraceIndex)
+        {
+            int depth = 0;
+            for (int i = openBraceIndex; i < source.Length; i++)
+            {
+                if (source[i] == '{')
+                {
+                    depth++;
+                }
+                else if (source[i] == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
         }
 
         private static string ComputeUvBufferName(int channel)
@@ -626,20 +952,35 @@ namespace TiltBrush
         {
             switch (finding)
             {
-                case "LIKELY PROBLEM: Missing BrushBaker entry and original material uses wide UVs":
+                case "LIKELY PROBLEM: Missing BrushBaker entry and material uses wide UV in fragment/color path":
                 case "LIKELY PROBLEM: BrushBaker entry has no compute shader":
                     return 0;
-                case "REVIEW EXPORT MATERIAL: BrushBaker does not write UVs and original material uses wide UVs":
-                case "REVIEW EXPORT MATERIAL: BrushBaker writes UVs and original material uses wide UVs":
+                case "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in unclear shader path":
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in fragment/color path":
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in fragment/color path":
                     return 1;
+                case "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in vertex shader path":
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in vertex path":
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in vertex path":
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in unclear path":
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in unclear path":
+                    return 2;
                 case "NEEDS REVIEW: BrushBaker mapping exists but source scan did not find wide UV input use":
                 case "NEEDS REVIEW: BrushBaker writes UVs but source scan did not find wide UV input use":
-                    return 2;
-                case "PROBABLY OK: Missing BrushBaker entry but original material wide UV use not found":
                     return 3;
+                case "HANDLED: No BrushBaker entry; export drops unused wide UV components":
+                    return 4;
+                case "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found":
+                    return 5;
+                case "PROBABLY OK: Missing BrushBaker entry and wide UV use is audio-reactive vertex-only":
+                    return 6;
+                case "PROBABLY OK: BrushBaker writes vertices and no wide UV input use found":
+                    return 7;
                 case "PROBABLY OK: BrushBaker consumes wide UVs and original material wide UV use not found":
                 case "PROBABLY OK: BrushBaker writes UVs and consumes wide UVs":
-                    return 4;
+                    return 8;
+                case "DEFERRED: Slice ignored for now despite fragment/color wide UV use":
+                    return 9;
                 default:
                     return 10;
             }
@@ -649,24 +990,43 @@ namespace TiltBrush
         {
             switch (finding)
             {
-                case "LIKELY PROBLEM: Missing BrushBaker entry and original material uses wide UVs":
-                    return "the brush declares uv.z/uv.w data, has no BrushBaker mapping, and the original material shader source reads those wide components. Unless export uses a different material/path, this likely needs a baker entry or an explicit exclusion.";
+                case "LIKELY PROBLEM: Missing BrushBaker entry and material uses wide UV in fragment/color path":
+                    return "the brush has no BrushBaker mapping, and the original Unity material reads uv.z/uv.w in a fragment, surface, or color path. Until the real WebGL/export shader proves otherwise, assume exported rendering needs data UnityGLTF cannot carry as wide UV components.";
                 case "LIKELY PROBLEM: BrushBaker entry has no compute shader":
                     return "the BrushBaker prefab has a mapping entry, but no compute shader is assigned.";
-                case "REVIEW EXPORT MATERIAL: BrushBaker does not write UVs and original material uses wide UVs":
-                    return "the original runtime material reads uv.z/uv.w, which is expected before baking. Because BrushBaker does not write UV buffers, verify the export material/path no longer needs those original wide UV components.";
-                case "REVIEW EXPORT MATERIAL: BrushBaker writes UVs and original material uses wide UVs":
-                    return "the original runtime material reads uv.z/uv.w, which is expected before baking. BrushBaker writes UV buffers for export, so verify the exported material uses the baked/remapped data rather than the original wide components.";
+                case "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in vertex shader path":
+                    return "the brush has no BrushBaker mapping, and the original Unity material reads uv.z/uv.w in a vertex shader path. This may be safe only if the value is fully baked into exported vertex positions or otherwise absent from the real export shader.";
+                case "NEEDS REVIEW: Missing BrushBaker entry and material uses wide UV in unclear shader path":
+                    return "the brush has no BrushBaker mapping, and the source scan found uv.z/uv.w use but could not classify whether it is vertex or fragment/color.";
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in fragment/color path":
+                    return "the original Unity material reads uv.z/uv.w in a fragment/color path, and BrushBaker does not write UV buffers for this mapping. The later WebGL/export shader validation should prove those components are not needed after export.";
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in vertex path":
+                    return "the original Unity material reads uv.z/uv.w in a vertex path, and BrushBaker does not write UV buffers for this mapping. This may be safe only if the result is baked into exported geometry.";
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in fragment/color path":
+                    return "BrushBaker writes UV buffers, while the original Unity material reads uv.z/uv.w in a fragment/color path. The later WebGL/export shader validation should confirm the exported material uses the baked/remapped data.";
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in vertex path":
+                    return "BrushBaker writes UV buffers, while the original Unity material reads uv.z/uv.w in a vertex path. This can be fine, but exported UV component count still needs validation.";
+                case "REVIEW EXPORT PATH: BrushBaker does not write UVs and material uses wide UV in unclear path":
+                case "REVIEW EXPORT PATH: BrushBaker writes UVs and material uses wide UV in unclear path":
+                    return "the original Unity material reads uv.z/uv.w, but the source scan could not classify the shader path.";
                 case "NEEDS REVIEW: BrushBaker mapping exists but source scan did not find wide UV input use":
                     return "a BrushBaker mapping exists, but the source scan did not find the compute shader reading the declared wide UV data. This may be a scan limitation or a stale/unnecessary mapping.";
                 case "NEEDS REVIEW: BrushBaker writes UVs but source scan did not find wide UV input use":
                     return "BrushBaker writes UV buffers, but the source scan did not find it reading the declared wide UV data. Check whether the write is unrelated, indirect, or stale.";
-                case "PROBABLY OK: Missing BrushBaker entry but original material wide UV use not found":
-                    return "no fix is implied by this source scan. The brush declares uv.z/uv.w data and has no BrushBaker mapping, but the original material shader scan did not find uv.z/uv.w reads. Review only if this brush exports with another material or uses wide UVs indirectly.";
+                case "HANDLED: No BrushBaker entry; export drops unused wide UV components":
+                    return "static source review found no original Unity material reads of uv.z/uv.w, and BrushBaker now trims these brushes' exported UV channels to two components without running a compute shader.";
+                case "PROBABLY OK: Missing BrushBaker entry; original material wide UV use not found":
+                    return "no BrushBaker fix is implied by this source scan. The brush declares wide UV data, but the original Unity material scan did not find wide UV reads.";
+                case "PROBABLY OK: Missing BrushBaker entry and wide UV use is audio-reactive vertex-only":
+                    return "manual source review found uv.z/uv.w use only inside AUDIO_REACTIVE vertex deformation. This does not imply a BrushBaker remap fix unless exported/WebGL rendering is expected to preserve audio-reactive runtime motion.";
+                case "PROBABLY OK: BrushBaker writes vertices and no wide UV input use found":
+                    return "BrushBaker writes vertex positions, but the source scan did not find original material or compute shader use of uv.z/uv.w. This looks like a vertex-bake mapping rather than a wide-UV remap gap.";
                 case "PROBABLY OK: BrushBaker consumes wide UVs and original material wide UV use not found":
                     return "BrushBaker reads uv.z/uv.w and the original material shader scan did not find wide UV reads. This looks like wide data is baked away for export.";
                 case "PROBABLY OK: BrushBaker writes UVs and consumes wide UVs":
                     return "BrushBaker reads uv.z/uv.w and writes UV buffers. This looks intentional from source scan; exported UV component count still requires export validation.";
+                case "DEFERRED: Slice ignored for now despite fragment/color wide UV use":
+                    return "Slice has a fragment/color-path wide UV read and no BrushBaker mapping, but it is intentionally ignored for now by request.";
                 default:
                     return "review the rows in this group.";
             }
