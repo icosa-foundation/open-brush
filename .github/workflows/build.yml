@@ -1252,7 +1252,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
           releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
-          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
+          track: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: completed
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
@@ -1299,7 +1299,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrushviewer
           releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
-          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
+          track: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: completed
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
