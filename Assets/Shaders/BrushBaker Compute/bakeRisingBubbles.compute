@@ -13,6 +13,12 @@ uint _VertexCount;
 float _SqueezeAmount;
 
 static const float kRecipSquareRootOfTwo = 0.70710678;
+static const float kRisingBubblesExportTime = 0.0;
+static const float kScrollRate = 0.1;
+static const float kScrollJitterIntensity = 0.2;
+static const float kScrollJitterFrequency = 5.0;
+static const float3 kScrollDistance = float3(0.5, 5.0, 0.0);
+static const float kDecimetersToWorldUnits = 1.0;
 
 
 [numthreads(8, 1, 1)]
@@ -21,6 +27,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     float3 vertex = vertexBuffer[id.x];
     float3 normal = normalBuffer[id.x];
+    float4 color = colorBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
     float4 uv1 = uv1Buffer[id.x];
 
@@ -56,30 +63,16 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
         preBillboard = float3(length, -length, 0);
     }
 
-    // the movement is based on Unity Built-in shader variables
-    // _Time.y (t) and _Time.x (t/20)
-    // we will take the t = 0 in this compute shader
-    float timedoty = 0;
-    float timedotx = timedoty / 20;
-
-    
-    // // leaving this parameters here for generating animated mesh in the future
-    
-    // //  ----------- Nicholas: this part haven't tested yet ----------------
-    // float seed = color.a;
-    // float t01 = fmod(timedoty * 0.1 + seed * 10, 1);
-    // float t2 = timedoty / 3;
-    // float scrollJitterFrequency = 5;
-    // float scrollJitterIntensity = 0.2;
-    // float3 scrollDistance = new float3(0.5, 5, 0);
-    // float4 dispVec = new float4(scrollDistance, 0,0) * t01;
-    // dispVec.x += sin(t01 * scrollJitterFrequency + seed * 10 + t2 + originWS.z) * scrollJitterIntensity;
-    // dispVec.y += (fmod(seed * 100, 1) - 0.5) * scrollDistance.y * t01;
-    // dispVec.z += cos(t01 * scrollJitterFrequency + seed * 7 + t2 + originWS.x) * scrollJitterIntensity;
-
-    // vertex += dispVec;
-
-    // // ---------------------------------------------------------------------
+    // Bake a fixed-time snapshot of Rising Bubbles' animated center displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float seed = color.a;
+    float t01 = fmod(kRisingBubblesExportTime * kScrollRate + seed * 10.0, 1.0);
+    float t2 = kRisingBubblesExportTime / 3.0;
+    float3 disp = kScrollDistance * t01;
+    disp.x += sin(t01 * kScrollJitterFrequency + seed * 10.0 + t2 + originWS.z) * kScrollJitterIntensity;
+    disp.y += (fmod(seed * 100.0, 1.0) - 0.5) * kScrollDistance.y * t01;
+    disp.z += cos(t01 * kScrollJitterFrequency + seed * 7.0 + t2 + originWS.x) * kScrollJitterIntensity;
+    originWS.xyz += disp * kDecimetersToWorldUnits;
 
     vertex = originWS.xyz + preBillboard;
     vertexBuffer[id.x] = vertex;

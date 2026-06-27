@@ -13,6 +13,13 @@ uint _VertexCount;
 float _SqueezeAmount;
 
 static const float kRecipSquareRootOfTwo = 0.70710678;
+static const float kSnowExportTime = 0.0;
+static const float kScrollRate = 0.2;
+static const float3 kScrollDistance = float3(0.0, -3.0, 0.0);
+static const float kScrollJitterIntensity = 0.1;
+static const float kScrollJitterFrequency = 12.0;
+static const float kSpreadProgress = 1.0;
+static const float kDecimetersToWorldUnits = 1.0;
 
 
 [numthreads(8, 1, 1)]
@@ -57,22 +64,13 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
         preBillboard = float3(length, -length, 0);
     }
 
-    // the movement is based on Unity Built-in shader variables
-    // _Time.y (t)
-    // we will take the t = 0 in this compute shader
-    float timedoty = 0;
-
-
-    // // leaving this parameters here for generating animated mesh in the future
-    
-    // float scrollAmount = timedoty;
-    // float t = fmod(scrollAmount * 0.2 + color.a, 1.0);
-    // float4 dispVec = (t - 0.5f) * float4(0, -3, 0, 0);
-    // dispVec.x += sin(t * 12 + timedoty) * 0.1;
-    // dispVec.z += cos(t * 12 * 0.5 + timedoty) * 0.1;
-    // dispVec *= 0.1;
-    // vertex += dispVec.xyz;
-
+    // Bake a fixed-time snapshot of Snow's animated center displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float t = fmod(kSnowExportTime * kScrollRate + color.a, 1.0);
+    float3 disp = (t - 0.5) * kScrollDistance;
+    disp.x += sin(t * kScrollJitterFrequency + kSnowExportTime) * kScrollJitterIntensity;
+    disp.z += cos(t * kScrollJitterFrequency * 0.5 + kSnowExportTime) * kScrollJitterIntensity;
+    originWS.xyz += kSpreadProgress * disp * kDecimetersToWorldUnits;
 
     vertex = originWS.xyz + preBillboard;
     vertexBuffer[id.x] = vertex;
