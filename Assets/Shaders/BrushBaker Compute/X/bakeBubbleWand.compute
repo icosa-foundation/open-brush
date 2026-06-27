@@ -15,8 +15,8 @@ uint _VertexCount;
 float _SqueezeAmount;
 
 static const float kBubbleWandExportTime = 0.0;
-static const float kScrollRate = 1.0;
-static const float kScrollJitterIntensity = 1.0;
+static const float kScrollRate = -0.54;
+static const float kScrollJitterIntensity = 3.0;
 static const float kScrollJitterFrequency = 1.0;
 static const float kDecimetersToWorldUnits = 1.0;
 
