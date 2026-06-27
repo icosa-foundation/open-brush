@@ -10,10 +10,20 @@ StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 RWStructuredBuffer<float4> uv1Buffer;
 
+uint _VertexCount;
+
 float _SqueezeAmount;
+
+static const float kBubbleWandExportTime = 0.0;
+static const float kScrollRate = -0.54;
+static const float kScrollJitterIntensity = 3.0;
+static const float kScrollJitterFrequency = 1.0;
+static const float kDecimetersToWorldUnits = 1.0;
 
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _VertexCount) return;
+
     float3 vertex = vertexBuffer[id.x];
     float3 normal = normalBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
@@ -26,41 +36,21 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     float3 wave_displacement = radius * normal.xyz * wave;
     vertex += wave_displacement;
 
-    // the movement is based on Unity Built-in shader variables
-    // _Time.y (t)
-    // we will take the t = 0 in this compute shader
-    // float timedoty = 0;
-    // float timedotx = timedoty / 20;;
+    // Bake a fixed-time snapshot of BubbleWand's vertex noise displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float t = kBubbleWandExportTime * kScrollRate;
+    float3 pos = vertex;
+    pos.x += sin(t + kBubbleWandExportTime + pos.z * kScrollJitterFrequency) * kScrollJitterIntensity;
+    pos.z += cos(t + kBubbleWandExportTime + pos.x * kScrollJitterFrequency) * kScrollJitterIntensity;
+    pos.y += cos(t * 1.2 + kBubbleWandExportTime + pos.x * kScrollJitterFrequency) * kScrollJitterIntensity;
 
-
-    // // // leaving this parameters here for generating animated mesh in the future
-    // float scrollRate = -0.54f;
-    // float scrollJitterIntensity = 3.0f;
-    // float scrollJitterFrequency = 1.0f;
-    // float timeOffset = 0;
-    // float t = timedoty * scrollRate + timeOffset;
-    // float3 pos = vertex.xyz;
-    // pos.x += sin(t + timedoty + pos.z * scrollJitterFrequency) * scrollJitterIntensity;
-    // pos.z += cos(t + timedoty + pos.x * scrollJitterFrequency) * scrollJitterIntensity;
-    // pos.y += cos(t * 1.2 + timedoty + pos.x * scrollJitterFrequency) * scrollJitterIntensity;
-
-    // float time = timedotx;
-    // float d = 30;
-    // float freq = .1;
-
-    // float3 disp = float3(1,0,0) * curlX(pos.xyz * freq + time, d);
-    // disp += float3(0,1,0) * curlY(pos.xyz * freq +time, d);
-    // disp += float3(0,0,1) * curlZ(pos.xyz * freq + time, d);
-    // pos.xyz = scrollJitterIntensity * disp;
-
-    // // Noise displacement
-    // // TO DO: Need to make this scale invariant
-    // float4 displacement = float4(pos, 0);
-    // vertex += displacement.xyz;
-
-    // // Perturb normal
-    // normal = normalize(normal + displacement.xyz * 2.5, wave_displacement * 2.5);
-
+    float d = 30;
+    float freq = 0.1;
+    float3 displacement = float3(1,0,0) * curlX(pos * freq + kBubbleWandExportTime, d);
+    displacement += float3(0,1,0) * curlY(pos * freq + kBubbleWandExportTime, d);
+    displacement += float3(0,0,1) * curlZ(pos * freq + kBubbleWandExportTime, d);
+    displacement *= kScrollJitterIntensity * kDecimetersToWorldUnits;
+    vertex += displacement;
 
     vertexBuffer[id.x] = vertex;
     uv1.x = uv0.z;
