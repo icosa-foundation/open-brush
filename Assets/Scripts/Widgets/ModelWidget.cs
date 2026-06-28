@@ -356,7 +356,7 @@ namespace TiltBrush
                 SyncHierarchyToSubtree();
                 m_SyncHierarchyPending = false;
             }
-            if (m_ObjModelScript.NumMeshes == 0)
+            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel)
             {
                 OutputWindowScript.Error("No usable geometry in model");
             }

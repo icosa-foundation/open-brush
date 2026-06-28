@@ -595,6 +595,15 @@
       "dependencies": {},
       "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
     },
+    "wu.yize.gsplat": {
+      "version": "https://github.com/icosa-mirror/gsplat-unity.git#open-brush-unity6-runtime-editor-guards",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.mathematics": "1.3.2"
+      },
+      "hash": "a2a5eb74f355028c6a722cfa09b3233e742524c0"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
