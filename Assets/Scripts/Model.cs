@@ -694,6 +694,7 @@ namespace TiltBrush
                 gsplatRenderer.GsplatAsset = asset;
                 gsplatRenderer.SHDegree = asset.SHBands;
                 gsplatRenderer.AsyncUpload = true;
+                gsplatRenderer.RenderBeforeUploadComplete = false;
                 gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
 
                 var collider = rendererObject.AddComponent<BoxCollider>();
