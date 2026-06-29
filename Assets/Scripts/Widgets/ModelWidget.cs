@@ -987,7 +987,7 @@ namespace TiltBrush
 
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null;
+            return m_ModelInstance != null && (m_Model == null || !m_Model.IsGsplatModel);
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)
