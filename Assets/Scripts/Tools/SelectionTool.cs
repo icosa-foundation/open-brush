@@ -162,6 +162,35 @@ namespace TiltBrush
             return WidgetManager.m_Instance.StencilLayerMask;
         }
 
+        override protected bool HandleNonGpuWidgetIntersections(Vector3 vDetectionCenter_GS, float size_GS)
+        {
+            foreach (ModelWidget widget in WidgetManager.m_Instance.ModelWidgets)
+            {
+                if (widget == null || !widget.gameObject.activeSelf || widget.HasGPUIntersectionObject())
+                {
+                    continue;
+                }
+
+                if (widget.Canvas != m_CurrentCanvas)
+                {
+                    continue;
+                }
+
+                Collider collider = widget.GrabCollider;
+                if (collider == null || collider.bounds.SqrDistance(vDetectionCenter_GS) > size_GS * size_GS)
+                {
+                    continue;
+                }
+
+                if (HandleIntersectionWithWidget(widget))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             // Can't select a pinned widget.

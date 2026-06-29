@@ -34,6 +34,7 @@ namespace TiltBrush
         private Dictionary<InputManager.ControllerName, float> m_LastIntersectionResult;
         private int m_IntersectionFrame;
         private Vector2 m_SizeRange;
+        private bool m_AllowColliderOnlyActivation;
 
         protected override bool SnapButtonConflictsWithDuplicate => true;
 
@@ -99,11 +100,12 @@ namespace TiltBrush
             }
         }
 
-        public void SetSelectionBounds(Bounds bounds)
+        public void SetSelectionBounds(Bounds bounds, bool allowColliderOnlyActivation = false)
         {
             Debug.Assert(bounds.extents.magnitude > 0);
 
             m_SelectionBounds_CS = bounds;
+            m_AllowColliderOnlyActivation = allowColliderOnlyActivation;
             UpdateBoxCollider();
             gameObject.SetActive(true);
         }
@@ -111,6 +113,7 @@ namespace TiltBrush
         public void SelectionCleared()
         {
             m_SelectionBounds_CS = null;
+            m_AllowColliderOnlyActivation = false;
             gameObject.SetActive(false);
             m_xfOriginal_SS = TrTransform.identity;
             App.Scene.AsScene[transform] = TrTransform.identity;
@@ -167,6 +170,11 @@ namespace TiltBrush
             if (!PointInCollider(vControllerPos_GS))
             {
                 return -1;
+            }
+
+            if (m_AllowColliderOnlyActivation)
+            {
+                return base.GetActivationScore(vControllerPos_GS, name);
             }
 
             // If the data we've got is old, delete it all.

@@ -683,7 +683,11 @@ namespace TiltBrush
                         selectionBounds.Encapsulate(GetBoundsOfSelectedWidgets_SelectionCanvasSpace());
                     }
 
-                    m_SelectionWidget.SetSelectionBounds(selectionBounds);
+                    bool selectionHasGpuIntersectionContent = m_SelectedStrokes.Count > 0 ||
+                        m_SelectedWidgets.Any(widget => widget.HasGPUIntersectionObject());
+                    m_SelectionWidget.SetSelectionBounds(
+                        selectionBounds,
+                        allowColliderOnlyActivation: !selectionHasGpuIntersectionContent);
 
                     bool selectionPinned = false;
                     m_SelectionWidget.ResetSizeRange();
