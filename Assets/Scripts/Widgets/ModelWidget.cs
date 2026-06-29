@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
+using Gsplat;
 
 namespace TiltBrush
 {
@@ -54,6 +55,7 @@ namespace TiltBrush
 
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private GsplatRenderer m_GsplatRenderer;
         private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
@@ -280,6 +282,7 @@ namespace TiltBrush
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
+            m_GsplatRenderer = null;
 
             // Early out if we don't have a model to clone.
             // This can happen if model loading is deferred.
@@ -291,6 +294,7 @@ namespace TiltBrush
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.parent = this.transform;
             m_ModelInstance.gameObject.SetActive(true);
+            m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
@@ -609,6 +613,16 @@ namespace TiltBrush
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
+            if (TryIntersectGsplat(vControllerPos, m_CollisionRadius, out float gsplatScore))
+            {
+                return gsplatScore;
+            }
+
+            if (m_Model != null && m_Model.IsGsplatModel)
+            {
+                return -1.0f;
+            }
+
             Vector3 vInvTransformedPos = m_BoxCollider.transform.InverseTransformPoint(vControllerPos);
             Vector3 vSize = m_BoxCollider.size * 0.5f;
             float xDiff = vSize.x - Mathf.Abs(vInvTransformedPos.x);
@@ -621,6 +635,30 @@ namespace TiltBrush
                 return (xDiff / vSize.x + yDiff / vSize.y + zDiff / vSize.z) / 3 / (minSize + 1);
             }
             return -1.0f;
+        }
+
+        public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
+        {
+            score = -1.0f;
+            if (m_Model == null || !m_Model.IsGsplatModel)
+            {
+                return false;
+            }
+
+            Collider collider = GrabCollider;
+            if (collider == null || collider.bounds.SqrDistance(center_GS) > radius_GS * radius_GS)
+            {
+                return false;
+            }
+
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+
+            return m_GsplatRenderer != null &&
+                m_GsplatRenderer.TryIntersectSphere(center_GS, radius_GS, out score);
         }
 
         private static Vector3 GetBoundsRatios(Bounds bounds)

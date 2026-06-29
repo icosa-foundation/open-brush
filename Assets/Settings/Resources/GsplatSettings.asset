@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: GsplatSettings
   m_EditorClassIdentifier: 
   ComputeShader: {fileID: 7200000, guid: 0aa082656a496ff4f82ecc9d720802b8, type: 3}
+  IntersectionShader: {fileID: 7200000, guid: 7c42c1f524804e47a50f194942e0ab31, type: 3}
   GlobalMaterial: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5, type: 2}
   EnableGlobalSort: 1
   SplatInstanceSize: 128

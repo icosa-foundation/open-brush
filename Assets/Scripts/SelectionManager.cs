@@ -683,11 +683,7 @@ namespace TiltBrush
                         selectionBounds.Encapsulate(GetBoundsOfSelectedWidgets_SelectionCanvasSpace());
                     }
 
-                    bool selectionHasGpuIntersectionContent = m_SelectedStrokes.Count > 0 ||
-                        m_SelectedWidgets.Any(widget => widget.HasGPUIntersectionObject());
-                    m_SelectionWidget.SetSelectionBounds(
-                        selectionBounds,
-                        allowColliderOnlyActivation: !selectionHasGpuIntersectionContent);
+                    m_SelectionWidget.SetSelectionBounds(selectionBounds);
 
                     bool selectionPinned = false;
                     m_SelectionWidget.ResetSizeRange();
@@ -1054,6 +1050,25 @@ namespace TiltBrush
         public void UpdateSelectionWidget()
         {
             m_bSelectionWidgetNeedsUpdate = true;
+        }
+
+        public bool TryIntersectNonGpuSelectionWidgets(Vector3 center_GS, float radius_GS,
+            out float score)
+        {
+            score = -1.0f;
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                if (widget is not ModelWidget modelWidget ||
+                    modelWidget.HasGPUIntersectionObject() ||
+                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                {
+                    continue;
+                }
+
+                score = Mathf.Max(score, widgetScore);
+            }
+
+            return score >= 0.0f;
         }
 
         public bool IsStrokeSelected(Stroke stroke)
