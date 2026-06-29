@@ -17,6 +17,7 @@ MonoBehaviour:
   EnableGlobalSort: 0
   SplatInstanceSize: 128
   UploadBatchSize: 100000
+  DepthPrepassAlphaCutoff: 0.01
   MaxRenderOrder: 1
   DisplayBoundingBoxes: 0
   CameraTranslationRefreshTreshold: 0.2

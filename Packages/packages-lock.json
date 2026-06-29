@@ -602,7 +602,7 @@
       "dependencies": {
         "com.unity.mathematics": "1.3.2"
       },
-      "hash": "a2a5eb74f355028c6a722cfa09b3233e742524c0"
+      "hash": "2fe5bc5e699c04613f32f439dd4c93e4d2dff121"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
