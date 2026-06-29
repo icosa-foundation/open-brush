@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ComputeShader: {fileID: 7200000, guid: 0aa082656a496ff4f82ecc9d720802b8, type: 3}
   GlobalMaterial: {fileID: 11400000, guid: c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5, type: 2}
-  EnableGlobalSort: 0
+  EnableGlobalSort: 1
   SplatInstanceSize: 128
   UploadBatchSize: 100000
   DepthPrepassAlphaCutoff: 0.01
@@ -26,6 +26,4 @@ MonoBehaviour:
   Materials:
   - {fileID: 11400000, guid: 52d6acd34c7b8c8458e1547991be8d7b, type: 2}
   - {fileID: 11400000, guid: 4c970957deb11c343ac0f56e028a96b6, type: 2}
-  m_version: 1.3.0
-  m_prevComputeShader: {fileID: 0}
-  m_prevSplatInstanceSize: 0
+  m_version: 1.4.0
