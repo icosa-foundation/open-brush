@@ -213,7 +213,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Android Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -778,7 +778,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v6
         with:
-          name: Android Quest
+          name: Android OpenXR
           path: build_android_quest
 
       - name: Download Build Artifacts (Linux)
@@ -1200,7 +1200,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android Quest
+          name: Android OpenXR
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
@@ -1250,7 +1250,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android Quest
+          name: Android OpenXR
           path: build_android_quest
 
       - name: Publish Oculus Builds
@@ -1301,10 +1301,10 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Android Quest)
+      - name: Download Build Artifacts (Oculus Quest 1)
         uses: actions/download-artifact@v8
         with:
-          name: Android Quest
+          name: Oculus Quest (1)
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
