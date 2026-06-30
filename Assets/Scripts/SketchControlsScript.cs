@@ -2457,6 +2457,14 @@ namespace TiltBrush
             info.m_BaseWidgetXf_LS = info.m_BaseControllerXf.inverse * newWidgetXf;
         }
 
+        public void RefreshGrabWidgetControllerInfoIfHolding(GrabWidget widget)
+        {
+            if (m_GrabWidgetState == GrabWidgetState.OneHand && m_CurrentGrabWidget == widget)
+            {
+                InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
+            }
+        }
+
         // returns the transform of the true widget (not the snapped one for those that can be)
         private TrTransform GetWorkingTransform(GrabWidget w)
         {
