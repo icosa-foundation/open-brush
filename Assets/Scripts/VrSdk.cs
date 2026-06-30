@@ -215,6 +215,7 @@ namespace TiltBrush
 #endif
             if (packagePresent)
             {
+#if OCULUS_SUPPORTED
                 try
                 {
                     Oculus.Platform.Core.Initialize(oculusAppId);
@@ -223,6 +224,7 @@ namespace TiltBrush
                 {
                     Debug.LogWarning($"Failed to initialize Oculus Platform SDK. Oculus features will be unavailable. Exception: {e}");
                 }
+#endif // OCULUS_SUPPORTED
             }
         }
 
