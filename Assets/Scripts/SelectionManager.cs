@@ -650,7 +650,7 @@ namespace TiltBrush
         {
             if (m_bSelectionWidgetNeedsUpdate)
             {
-                m_SelectionWidget.SelectionTransform = SelectionTransform;
+                m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
                 if (HasSelection)
                 {
                     Bounds selectionBounds;
@@ -697,6 +697,7 @@ namespace TiltBrush
                     AudioManager.m_Instance.SelectionHighlightLoop(false);
                 }
                 m_bSelectionWidgetNeedsUpdate = false;
+                SketchControlsScript.m_Instance.RefreshGrabWidgetControllerInfoIfHolding(m_SelectionWidget);
             }
         }
 
@@ -1103,8 +1104,19 @@ namespace TiltBrush
             // SelectionManager.SelectionTransform applies the delta relative
             // to the ActiveCanvas. Conjugate by the canvas's scene-space pose
             // to convert between the two frames.
+            SelectionTransform = SceneToSelectionTransform(xf_SS);
+        }
+
+        public TrTransform SelectionTransformToScene(TrTransform xf)
+        {
             TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
-            SelectionTransform = canvasPose_SS.inverse * xf_SS * canvasPose_SS;
+            return canvasPose_SS * xf * canvasPose_SS.inverse;
+        }
+
+        public TrTransform SceneToSelectionTransform(TrTransform xf_SS)
+        {
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            return canvasPose_SS.inverse * xf_SS * canvasPose_SS;
         }
 
         Bounds GetBoundsOfSelectedWidgets_SelectionCanvasSpace()
