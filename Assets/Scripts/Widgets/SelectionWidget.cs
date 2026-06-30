@@ -250,6 +250,12 @@ namespace TiltBrush
         {
             LogSelectionWidgetPoseComparison("OnScenePoseChanged.before", prev, current);
             UpdateBoxCollider(preserveWidgetTransform: m_UserInteracting);
+            if (!m_UserInteracting)
+            {
+                MatchOriginalTransformToSelectionTransform(
+                    SelectionManager.m_Instance.SelectionTransformToScene(
+                        SelectionManager.m_Instance.SelectionTransform));
+            }
             LogSelectionWidgetPoseComparison("OnScenePoseChanged.after", prev, current);
         }
 
@@ -316,6 +322,24 @@ namespace TiltBrush
                 canvasPose_SS,
                 inflatedExtents_CS,
                 boundsCenter_SS);
+        }
+
+        private void MatchOriginalTransformToSelectionTransform(TrTransform selectionTransform_SS)
+        {
+            if (!m_SelectionBounds_CS.HasValue)
+            {
+                return;
+            }
+
+            TrTransform widgetPose_SS = App.Scene.AsScene[transform];
+            m_xfOriginal_SS = selectionTransform_SS.inverse * widgetPose_SS;
+
+            LogSelectionWidgetTransform(
+                "MatchOriginalTransformToSelectionTransform",
+                selectionTransform_SS,
+                App.Scene.AsScene[m_SelectionCanvas.transform],
+                m_SelectionBounds_CS.Value.extents,
+                widgetPose_SS.translation);
         }
 
         private void LogSelectionWidgetTransform(
