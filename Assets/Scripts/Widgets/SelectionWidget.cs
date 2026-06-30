@@ -34,6 +34,7 @@ namespace TiltBrush
         private Dictionary<InputManager.ControllerName, float> m_LastIntersectionResult;
         private int m_IntersectionFrame;
         private Vector2 m_SizeRange;
+        private const string k_SelectionWidgetTransformLogPrefix = "[SELWIDGET_XF_20260630_1239]";
 
         protected override bool SnapButtonConflictsWithDuplicate => true;
 
@@ -241,10 +242,12 @@ namespace TiltBrush
 
         private void OnScenePoseChanged(TrTransform prev, TrTransform current)
         {
-            UpdateBoxCollider();
+            LogSelectionWidgetPoseComparison("OnScenePoseChanged.before", prev, current);
+            UpdateBoxCollider(preserveWidgetTransform: m_UserInteracting);
+            LogSelectionWidgetPoseComparison("OnScenePoseChanged.after", prev, current);
         }
 
-        private void UpdateBoxCollider()
+        private void UpdateBoxCollider(bool preserveWidgetTransform = true)
         {
             if (!m_SelectionBounds_CS.HasValue)
             {
@@ -254,7 +257,9 @@ namespace TiltBrush
             // Temporarily remember the user-made transformations on the selection
             // in scene-space. For example, when the user freshly selects strokes but has not moved
             // them, this will be Identity.
-            TrTransform UserTransformations_SS = SelectionTransform;
+            TrTransform UserTransformations_SS = preserveWidgetTransform
+                ? SelectionTransform
+                : TrTransform.identity;
 
             // Inflate bounding box so that we can still respect the collision
             // radius for parts of strokes that are at the outer edges of the
@@ -298,6 +303,77 @@ namespace TiltBrush
             // Since TrTransform doesn't account for non-uniform scale, correct the
             // scale for the non-uniform bounds.
             transform.localScale = inflatedExtents_CS * UserTransformations_SS.scale;
+
+            LogSelectionWidgetTransform(
+                "UpdateBoxCollider",
+                UserTransformations_SS,
+                canvasPose_SS,
+                inflatedExtents_CS,
+                boundsCenter_SS);
+        }
+
+        private void LogSelectionWidgetTransform(
+            string source,
+            TrTransform userTransformations_SS,
+            TrTransform canvasPose_SS,
+            Vector3 inflatedExtents_CS,
+            Vector3 boundsCenter_SS)
+        {
+            TrTransform scenePose = App.Scene.Pose;
+            TrTransform selectionCanvasPose_GS = m_SelectionCanvas.Pose;
+            TrTransform selectionCanvasPose_SS = App.Scene.AsScene[m_SelectionCanvas.transform];
+            TrTransform widgetPose_SS = App.Scene.AsScene[transform];
+            TrTransform widgetPose_GS = Coords.AsGlobal[transform];
+            Vector3 boundsCenter_GS = selectionCanvasPose_GS * m_SelectionBounds_CS.Value.center;
+            Vector3 widgetCenter_GS = widgetPose_GS.translation;
+            Vector3 widgetCenter_SS = widgetPose_SS.translation;
+
+            Debug.Log($"{k_SelectionWidgetTransformLogPrefix} {source}" +
+                $"\n  scenePose_GS: t={FormatVector(scenePose.translation)} r={FormatVector(scenePose.rotation.eulerAngles)} s={scenePose.scale:F6}" +
+                $"\n  selectionCanvasPose_GS: t={FormatVector(selectionCanvasPose_GS.translation)} r={FormatVector(selectionCanvasPose_GS.rotation.eulerAngles)} s={selectionCanvasPose_GS.scale:F6}" +
+                $"\n  selectionCanvasPose_SS(arg): t={FormatVector(canvasPose_SS.translation)} r={FormatVector(canvasPose_SS.rotation.eulerAngles)} s={canvasPose_SS.scale:F6}" +
+                $"\n  selectionCanvasPose_SS(now): t={FormatVector(selectionCanvasPose_SS.translation)} r={FormatVector(selectionCanvasPose_SS.rotation.eulerAngles)} s={selectionCanvasPose_SS.scale:F6}" +
+                $"\n  selectionBounds_CS: center={FormatVector(m_SelectionBounds_CS.Value.center)} extents={FormatVector(m_SelectionBounds_CS.Value.extents)} inflated={FormatVector(inflatedExtents_CS)}" +
+                $"\n  boundsCenter_SS={FormatVector(boundsCenter_SS)} widgetCenter_SS={FormatVector(widgetCenter_SS)} deltaSS={FormatVector(widgetCenter_SS - boundsCenter_SS)}" +
+                $"\n  boundsCenter_GS={FormatVector(boundsCenter_GS)} widgetCenter_GS={FormatVector(widgetCenter_GS)} deltaGS={FormatVector(widgetCenter_GS - boundsCenter_GS)}" +
+                $"\n  m_xfOriginal_SS: t={FormatVector(m_xfOriginal_SS.translation)} r={FormatVector(m_xfOriginal_SS.rotation.eulerAngles)} s={m_xfOriginal_SS.scale:F6}" +
+                $"\n  userTransformations_SS: t={FormatVector(userTransformations_SS.translation)} r={FormatVector(userTransformations_SS.rotation.eulerAngles)} s={userTransformations_SS.scale:F6}" +
+                $"\n  transform: localPos={FormatVector(transform.localPosition)} localRot={FormatVector(transform.localRotation.eulerAngles)} localScale={FormatVector(transform.localScale)}");
+        }
+
+        private void LogSelectionWidgetPoseComparison(
+            string source,
+            TrTransform previousScenePose,
+            TrTransform currentScenePose)
+        {
+            if (!m_SelectionBounds_CS.HasValue)
+            {
+                return;
+            }
+
+            TrTransform selectionCanvasPose_GS = m_SelectionCanvas.Pose;
+            TrTransform selectionCanvasPose_SS = App.Scene.AsScene[m_SelectionCanvas.transform];
+            TrTransform widgetPose_GS = Coords.AsGlobal[transform];
+            TrTransform widgetPose_SS = App.Scene.AsScene[transform];
+            Vector3 boundsCenter_GS = selectionCanvasPose_GS * m_SelectionBounds_CS.Value.center;
+            Vector3 boundsCenter_SS =
+                (selectionCanvasPose_SS * TrTransform.T(m_SelectionBounds_CS.Value.center)).translation;
+
+            Debug.Log($"{k_SelectionWidgetTransformLogPrefix} {source}" +
+                $"\n  previousScenePose_GS: t={FormatVector(previousScenePose.translation)} r={FormatVector(previousScenePose.rotation.eulerAngles)} s={previousScenePose.scale:F6}" +
+                $"\n  currentScenePose_GS: t={FormatVector(currentScenePose.translation)} r={FormatVector(currentScenePose.rotation.eulerAngles)} s={currentScenePose.scale:F6}" +
+                $"\n  selectionCanvasPose_GS: t={FormatVector(selectionCanvasPose_GS.translation)} r={FormatVector(selectionCanvasPose_GS.rotation.eulerAngles)} s={selectionCanvasPose_GS.scale:F6}" +
+                $"\n  selectionCanvasPose_SS: t={FormatVector(selectionCanvasPose_SS.translation)} r={FormatVector(selectionCanvasPose_SS.rotation.eulerAngles)} s={selectionCanvasPose_SS.scale:F6}" +
+                $"\n  boundsCenter_GS={FormatVector(boundsCenter_GS)} widgetCenter_GS={FormatVector(widgetPose_GS.translation)} deltaGS={FormatVector(widgetPose_GS.translation - boundsCenter_GS)}" +
+                $"\n  boundsCenter_SS={FormatVector(boundsCenter_SS)} widgetCenter_SS={FormatVector(widgetPose_SS.translation)} deltaSS={FormatVector(widgetPose_SS.translation - boundsCenter_SS)}" +
+                $"\n  m_xfOriginal_SS: t={FormatVector(m_xfOriginal_SS.translation)} r={FormatVector(m_xfOriginal_SS.rotation.eulerAngles)} s={m_xfOriginal_SS.scale:F6}" +
+                $"\n  widgetPose_SS: t={FormatVector(widgetPose_SS.translation)} r={FormatVector(widgetPose_SS.rotation.eulerAngles)} s={widgetPose_SS.scale:F6}" +
+                $"\n  transform: localPos={FormatVector(transform.localPosition)} localRot={FormatVector(transform.localRotation.eulerAngles)} localScale={FormatVector(transform.localScale)}");
+        }
+
+        private static string FormatVector(Vector3 value)
+        {
+            return $"({value.x:F6}, {value.y:F6}, {value.z:F6})";
         }
 
         public void PreventSelectionFromMoving(bool preventMoving)
