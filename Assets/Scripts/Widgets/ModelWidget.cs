@@ -56,6 +56,9 @@ namespace TiltBrush
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private GsplatRenderer m_GsplatRenderer;
+        private int m_GsplatHighlightFrame = -1;
+        private float m_GsplatBaseBrightness;
+        private bool m_HasGsplatBaseBrightness;
         private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
@@ -283,6 +286,8 @@ namespace TiltBrush
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
             m_GsplatRenderer = null;
+            m_GsplatHighlightFrame = -1;
+            m_HasGsplatBaseBrightness = false;
 
             // Early out if we don't have a model to clone.
             // This can happen if model loading is deferred.
@@ -295,6 +300,7 @@ namespace TiltBrush
             m_ModelInstance.parent = this.transform;
             m_ModelInstance.gameObject.SetActive(true);
             m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
+            CaptureGsplatBaseBrightness();
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
@@ -703,6 +709,11 @@ namespace TiltBrush
             {
                 SetWidgetSizeAboutCenterOfMass(m_HideSize_CS * GetShowRatio());
             }
+
+            if (m_GsplatRenderer != null && m_GsplatHighlightFrame != Time.frameCount)
+            {
+                RestoreGsplatBrightness();
+            }
         }
 
         protected override void UpdateIntroAnim()
@@ -746,9 +757,13 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
-            if (m_ObjModelScript != null)
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
+                return;
+            }
+            if (UpdateGsplatSelectionHighlight())
+            {
                 return;
             }
             base.RegisterHighlight();
@@ -756,12 +771,52 @@ namespace TiltBrush
 
         protected override void UnregisterHighlight()
         {
-            if (m_ObjModelScript != null)
+            RestoreGsplatBrightness();
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
             base.UnregisterHighlight();
+        }
+
+        private bool UpdateGsplatSelectionHighlight()
+        {
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+            if (m_GsplatRenderer == null)
+            {
+                return false;
+            }
+
+            CaptureGsplatBaseBrightness();
+            m_GsplatHighlightFrame = Time.frameCount;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.realtimeSinceStartup * 4.0f);
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness * Mathf.Lerp(1.5f, 2.0f, pulse);
+            return true;
+        }
+
+        private void CaptureGsplatBaseBrightness()
+        {
+            if (m_GsplatRenderer == null || m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatBaseBrightness = m_GsplatRenderer.Brightness;
+            m_HasGsplatBaseBrightness = true;
+        }
+
+        private void RestoreGsplatBrightness()
+        {
+            if (m_GsplatRenderer == null || !m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness;
+            m_GsplatHighlightFrame = -1;
         }
 
         public TrTransform GetSaveTransform()
