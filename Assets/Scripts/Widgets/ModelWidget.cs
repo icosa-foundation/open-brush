@@ -337,12 +337,19 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
 
-            Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
-            m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
-            m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
-            m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
-            m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
-            m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            if (m_Model.IsGsplatModel)
+            {
+                m_ContainerBloat = Vector3.zero;
+            }
+            else
+            {
+                Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
+                m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
+                m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
+                m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
+                m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
+                m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            }
 
             m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
             m_BoxCollider.transform.localPosition = m_Model.m_MeshBounds.center;
