@@ -45,6 +45,7 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            public bool ForceViewOnly;
 
             private bool? m_DisableXrMode;
             public bool DisableXrMode
@@ -54,7 +55,7 @@ namespace TiltBrush
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
                     return true;
 #else
-                    return m_DisableXrMode ?? false;
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
 #endif
                 }
                 set { m_DisableXrMode = value; }

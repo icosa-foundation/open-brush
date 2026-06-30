@@ -19,7 +19,7 @@ Properties {
 }
 
 Category {
-  Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" }
   Blend One One // SrcAlpha One
   BlendOp Add, Min
   AlphaTest Greater .01
@@ -28,6 +28,7 @@ Category {
 
   SubShader {
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
       #pragma vertex vert

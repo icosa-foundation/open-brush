@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b95e00e48ede4f8c896318a0e47ea88a, type: 3}
+  m_Name: CompositionLayersRuntimeSettings
+  m_EditorClassIdentifier: 
+  m_EmulationInStandalone: 0
+  m_EnableSplashScreen: 0
+  m_SplashImage: {fileID: 0}
+  m_BackgroundColor: {r: 0.1372549, g: 0.1215686, b: 0.1254902, a: 1}
+  m_SplashDuration: 3
+  m_FadeInDuration: 2
+  m_FadeOutDuration: 1
+  m_FollowSpeed: 2
+  m_FollowDistance: 2
+  m_LockToHorizon: 1
+  m_LayerType: 0
+  m_QuadLayerData:
+    m_BlendType: 0
+    m_Size: {x: 1, y: 1}
+    m_ApplyTransformScale: 1
+  m_CylinderLayerData:
+    m_BlendType: 0
+    m_CentralAngle: 1.5707964
+    m_Radius: 0.6366198
+    m_AspectRatio: 1
+    m_ApplyTransformScale: 1

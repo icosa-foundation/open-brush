@@ -38,6 +38,13 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             m_HintText.enabled = false;
+#if UNITY_ANDROID || UNITY_IOS
+            TextMeshPro hintText = m_HintText.GetComponent<TextMeshPro>();
+            if (hintText != null)
+            {
+                hintText.text = "Play audio in Open Brush";
+            }
+#endif
             m_AudioFound = false;
         }
 

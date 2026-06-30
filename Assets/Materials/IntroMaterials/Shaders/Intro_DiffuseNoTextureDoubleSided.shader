@@ -15,65 +15,65 @@
 Shader "Brush/Intro/DiffuseNoTextureDoubleSided" {
 Properties {
   _Color ("Main Color", Color) = (1,1,1,1)
+  _IntroDissolve ("Intro Dissolve", Range(0,1)) = 0
+  _Dissolve ("Dissolve", Range(0,1)) = 1
+  _ClipStart ("Clip Start", Float) = 0
+  _ClipEnd ("Clip End", Float) = -1
 }
 
 SubShader {
-  Cull Off
-  Tags{ "DisableBatching" = "True" }
+  Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" "DisableBatching"="True" }
 
-  CGPROGRAM
-  #pragma surface surf Lambert vertex:vert addshadow
-  #pragma target 3.0
-  // Faster compiles
-  #pragma skip_variants INSTANCING_ON
-  #include "Assets/Shaders/Include/Brush.cginc"
+  Pass {
+    Tags { "LightMode"="UniversalForward" }
+    Cull Off
 
-  fixed4 _Color;
+    HLSLPROGRAM
+    #pragma vertex Vert
+    #pragma fragment Frag
 
-  struct appdata_t {
-    float4 vertex : POSITION;
-    fixed4 color : COLOR;
-    float3 normal : NORMAL;
-    float4 tangent : TANGENT;
-    float2 texcoord0 : TEXCOORD0;
-    float4 texcoord1 : TEXCOORD1;
-    float4 texcoord2 : TEXCOORD2;
-    UNITY_VERTEX_INPUT_INSTANCE_ID
-  };
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-  half _IntroDissolve;
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half _IntroDissolve;
+    half _Dissolve;
+    half _ClipStart;
+    half _ClipEnd;
+    CBUFFER_END
 
-  struct Input {
-    float2 uv_MainTex;
-    float4 color : COLOR;
-    fixed vface : VFACE;
-  };
+    struct Attributes {
+      float4 positionOS : POSITION;
+      half3 normalOS : NORMAL;
+      half4 color : COLOR;
+      float2 texcoord0 : TEXCOORD0;
+      float3 texcoord1 : TEXCOORD1;
+    };
 
-  void vert (inout appdata_t v, out Input o) {
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      half4 color : COLOR;
+    };
 
-    //
-    // XXX - THIS TAPERING CODE SHOULD BE REMOVED ONCE THE TAPERING IS DONE IN THE GEOMETRY GENERATION
-    // THE SHADER WILL REMAIN AS A SIMPLE "DiffuseNoTextureDoubleSided" SHADER.
-    //
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
 
-    UNITY_INITIALIZE_OUTPUT(Input, o);
-    float envelope = sin(v.texcoord0.x * 3.14159);
+      float4 positionOS = IN.positionOS;
+      float envelope = sin(IN.texcoord0.x * 3.14159) * (1.0 - _IntroDissolve);
+      float widthMultiplier = 1.0 - envelope;
+      positionOS.xyz += -IN.texcoord1 * widthMultiplier;
 
-    // Custom curve for the intro dissolve effect
-    envelope *= lerp(0,1, 1-_IntroDissolve);
+      OUT.positionHCS = TransformObjectToHClip(positionOS.xyz);
+      OUT.color = IN.color * _Color;
+      return OUT;
+    }
 
-    float widthMultiplier = 1 - envelope;
-    v.vertex.xyz += -v.texcoord1 * widthMultiplier;
-    v.color = TbVertToNative(v.color);
+    half4 Frag(Varyings IN) : SV_Target {
+      return half4(IN.color.rgb, 1.0h);
+    }
+    ENDHLSL
   }
-
-  void surf (Input IN, inout SurfaceOutput o) {
-    fixed4 c = _Color;
-    o.Normal = float3(0,0,IN.vface);
-    o.Albedo = c.rgb * IN.color.rgb;
-  }
-  ENDCG
 }
 
-Fallback "Transparent/Cutout/VertexLit"
+Fallback Off
 }

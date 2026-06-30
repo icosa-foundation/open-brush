@@ -23,7 +23,9 @@ Properties {
 //
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Pass {
+    Tags { "LightMode"="SRPDefaultUnlit" }
     ZTest Always
     ZWrite Off
     ColorMask 0
@@ -38,6 +40,7 @@ Category {
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
 
       #include "UnityCG.cginc"
@@ -54,6 +57,8 @@ Category {
       struct v2f {
         float4 vertex : POSITION;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
@@ -62,12 +67,14 @@ Category {
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         o.vertex = UnityObjectToClipPos(v.vertex);
         return o;
       }
 
       void frag (v2f i, out fixed4 col : SV_Target) {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         col = float4(1,1,1,1);
       }
       ENDCG
@@ -75,3 +82,4 @@ Category {
     }
   }
 }
+

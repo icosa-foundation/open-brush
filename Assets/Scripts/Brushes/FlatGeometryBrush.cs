@@ -39,7 +39,6 @@ namespace TiltBrush
 
         protected List<float> m_sizes;
 
-        const float kSolidMinLengthMeters_PS = 0.002f;
         const float kMinMoveLengthMeters_PS = 5e-4f;
         const float kBreakAngleScalar = 2.0f;
         const float kSolidAspectRatio = 0.2f;
@@ -47,6 +46,29 @@ namespace TiltBrush
 
         [SerializeField] protected UVStyle m_uvStyle = UVStyle.Distance;
         [SerializeField] protected bool m_bOffsetInTexcoord1;
+        [SerializeField] protected bool m_DisableWidthSmoothing;
+        [SerializeField] protected bool m_ForceAllKnots;
+
+        protected override bool ForceAllKnots
+        {
+            get { return m_ForceAllKnots; }
+        }
+
+        protected virtual void ComputeSurfaceFrame(
+            Vector3 preferredRight,
+            Vector3 nTangent,
+            Quaternion brushOrientation,
+            out Vector3 nRight,
+            out Vector3 nSurface)
+        {
+            ComputeSurfaceFrameNew(
+                preferredRight, nTangent, brushOrientation, out nRight, out nSurface);
+        }
+
+        protected virtual float GetVertexAlpha(Knot knot)
+        {
+            return PressuredOpacity(knot.smoothedPressure);
+        }
 
         public FlatGeometryBrush()
             : base(bCanBatch: true,
@@ -86,7 +108,7 @@ namespace TiltBrush
 
         override public float GetSpawnInterval(float pressure01)
         {
-            return kSolidMinLengthMeters_PS * POINTER_TO_LOCAL * App.METERS_TO_UNITS +
+            return m_Desc.m_SolidMinLengthMeters_PS * POINTER_TO_LOCAL * App.METERS_TO_UNITS +
                 (PressuredSize(pressure01) * kSolidAspectRatio);
         }
 
@@ -183,6 +205,7 @@ namespace TiltBrush
                 Knot cur = m_knots[iKnot];
 
                 bool shouldBreak = false;
+                bool forceAllKnots = ForceAllKnots;
 
                 Vector3 vMove = cur.point.m_Pos - prev.point.m_Pos;
                 cur.length = vMove.magnitude;
@@ -190,21 +213,51 @@ namespace TiltBrush
                 // Rather than use unstable math, just bail and don't change the geometry.
                 if (cur.length < minMove)
                 {
-                    shouldBreak = true;
+                    if (!forceAllKnots)
+                    {
+                        shouldBreak = true;
+                    }
                 }
 
                 // invariant: nSurface = nMove x nRight
                 // If single-sided, always point the frontside towards the brush. Causes twisting.
-                Vector3 nTangent = vMove / cur.length;
+                Vector3 nTangent;
+                if (cur.length < minMove && forceAllKnots)
+                {
+                    // Fall back to previous motion or orientation to avoid a zero-length tangent.
+                    Vector3 fallback = Vector3.zero;
+                    if (iKnot >= 2)
+                    {
+                        Vector3 prevMove = prev.point.m_Pos - m_knots[iKnot - 2].point.m_Pos;
+                        if (prevMove.sqrMagnitude > 1e-8f)
+                        {
+                            fallback = prevMove.normalized;
+                        }
+                    }
+                    if (fallback == Vector3.zero)
+                    {
+                        fallback = prev.point.m_Orient * Vector3.forward;
+                    }
+                    nTangent = fallback;
+                }
+                else
+                {
+                    nTangent = vMove / cur.length;
+                }
                 if (!m_bM11Compatibility && iKnot < m_knots.Count - 1)
                 {
                     // Calculate a smoother tangent.
                     // TODO: Look into whether we should do something more accurate with the tangent
                     // like a cubic spline.
                     Knot next = m_knots[iKnot + 1];
-                    nTangent = (next.point.m_Pos - prev.point.m_Pos).normalized;
+                    Vector3 smoothTangent = next.point.m_Pos - prev.point.m_Pos;
+                    if (smoothTangent.sqrMagnitude > 1e-8f)
+                    {
+                        nTangent = smoothTangent.normalized;
+                    }
 
-                    if (Vector3.Dot(vMove, next.point.m_Pos - cur.point.m_Pos) < 0)
+                    if (!forceAllKnots &&
+                        Vector3.Dot(vMove, next.point.m_Pos - cur.point.m_Pos) < 0)
                     {
                         shouldBreak = true;
                     }
@@ -212,12 +265,12 @@ namespace TiltBrush
                 Vector3 vPreferredRight = m_Desc.m_BackIsInvisible
                     ? Vector3.Cross(cur.point.m_Orient * Vector3.forward, nTangent)
                     : prev.nRight;
-                ComputeSurfaceFrameNew(
+                ComputeSurfaceFrame(
                     vPreferredRight, nTangent, cur.point.m_Orient,
                     out cur.nRight, out cur.nSurface);
 
                 // More break checking; replicates previous logic
-                if (m_bM11Compatibility && prev.HasGeometry)
+                if (m_bM11Compatibility && prev.HasGeometry && !forceAllKnots)
                 {
                     float fWidthHeightRatio = cur.length / PressuredSize(cur.smoothedPressure);
                     float fBreakAngle = Mathf.Atan(fWidthHeightRatio) * Mathf.Rad2Deg * kBreakAngleScalar;
@@ -286,10 +339,10 @@ namespace TiltBrush
                     {
                         // Can't use prev.nRight, prev.nSurface; they're invalid if no geometry
                         float size = PressuredSize(prev.smoothedPressure);
-                        float alpha = PressuredOpacity(prev.smoothedPressure);
+                        float alpha = GetVertexAlpha(prev);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, m_Color, alpha);
-                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, m_Color, alpha);
+                        SetVert(cur.iVert, BR, prev.point.m_Pos + halfRight, cur.nSurface, prev.color, alpha);
+                        SetVert(cur.iVert, BL, prev.point.m_Pos - halfRight, cur.nSurface, prev.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, BR, halfRight);
@@ -298,13 +351,13 @@ namespace TiltBrush
                         sizePrev = m_sizes[iKnot - 1] = size;
                     }
 
-                    if (m_bM11Compatibility)
+                    if (m_bM11Compatibility || m_DisableWidthSmoothing)
                     {
                         float size = PressuredSize(cur.smoothedPressure);
-                        float alpha = PressuredOpacity(cur.smoothedPressure);
+                        float alpha = GetVertexAlpha(cur);
                         Vector3 halfRight = cur.nRight * (size / 2);
-                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, m_Color, alpha);
-                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, m_Color, alpha);
+                        SetVert(cur.iVert, FR, cur.point.m_Pos + halfRight, cur.nSurface, cur.color, alpha);
+                        SetVert(cur.iVert, FL, cur.point.m_Pos - halfRight, cur.nSurface, cur.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRight);
@@ -352,7 +405,7 @@ namespace TiltBrush
                 prev = cur;
             }
 
-            if (!m_bM11Compatibility)
+            if (!m_bM11Compatibility && !m_DisableWidthSmoothing)
             {
                 // Run through the knots again to set the vertices based on the original knots and the
                 // resulting size array.
@@ -376,7 +429,7 @@ namespace TiltBrush
 
                     if (cur.HasGeometry)
                     {
-                        float alpha = PressuredOpacity(cur.smoothedPressure);
+                        float alpha = GetVertexAlpha(cur);
                         Vector3 surface = cur.nSurface;
                         Vector3 knotPoint = 0.3f * knotPointPrev + 0.4f * knotPointCur + 0.3f * knotPointNext;
                         Vector3 halfRight = 0.3f * halfRightPrev + 0.4f * halfRightCur + 0.3f * halfRightNext;
@@ -386,8 +439,8 @@ namespace TiltBrush
                         {
                             halfRight = halfRightCur;
                         }
-                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, m_Color, alpha);
-                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, m_Color, alpha);
+                        SetVert(cur.iVert, FL, knotPoint - halfRight, surface, cur.color, alpha);
+                        SetVert(cur.iVert, FR, knotPoint + halfRight, surface, cur.color, alpha);
                         if (m_bOffsetInTexcoord1)
                         {
                             SetUv1(cur.iVert, FR, halfRightCur);

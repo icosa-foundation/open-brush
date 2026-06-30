@@ -38,6 +38,11 @@ namespace TiltBrush
             Refresh();
         }
 
+        void OnDestroy()
+        {
+            CameraConfig.WatermarkChanged -= Refresh;
+        }
+
         void Refresh()
         {
             m_WatermarkStyle = WatermarkStyle.None;
