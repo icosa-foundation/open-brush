@@ -509,13 +509,13 @@
       "hash": "43697771ed65efee02d5b1743141b8179444c147"
     },
     "dev.mikesky.openxrextensions": {
-      "version": "https://github.com/mikeskydev/unity-openxr-extensions.git#81f69ea3d25cefaa060ad00acf67fa5ff7c40682",
+      "version": "https://github.com/icosa-mirror/unity-openxr-extensions.git#dda381da8a658b4a2e45c74df437bda72577f605",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.openxr": "1.13.0"
       },
-      "hash": "81f69ea3d25cefaa060ad00acf67fa5ff7c40682"
+      "hash": "dda381da8a658b4a2e45c74df437bda72577f605"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
