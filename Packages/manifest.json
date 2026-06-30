@@ -1,10 +1,11 @@
 {
   "dependencies": {
-    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
+    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.meta.xr.sdk.platform": "69.0.0",
+    "com.netpyoung.webp": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
     "com.sandrofigo.voxreader": "5.0.6",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
@@ -26,7 +27,7 @@
     "com.unity.test-framework": "1.6.0",
     "com.unity.timeline": "1.8.12",
     "com.unity.ugui": "2.0.0",
-	"com.unity.vectorgraphics": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush-unity6",
+    "com.unity.vectorgraphics": "https://github.com/icosa-mirror/com.unity.vectorgraphics.git#open-brush-unity6",
     "com.unity.xr.androidxr-openxr": "1.1.0",
     "com.unity.xr.compositionlayers": "2.4.0",
     "com.unity.xr.core-utils": "2.6.0",

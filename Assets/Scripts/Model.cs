@@ -677,6 +677,12 @@ namespace TiltBrush
                     spzAsset.LoadFromSpz(path, SourceCoordinates.RUB);
                     asset = spzAsset;
                 }
+                else if (ext == ".sog")
+                {
+                    var sogAsset = ScriptableObject.CreateInstance<GsplatAssetSog>();
+                    sogAsset.LoadFromSog(path, SourceCoordinates.RDB);
+                    asset = sogAsset;
+                }
                 else
                 {
                     var plyAsset = ScriptableObject.CreateInstance<GsplatAssetSpark>();
@@ -1038,7 +1044,7 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
-                else if (ext == ".spz")
+                else if (ext == ".spz" || ext == ".sog")
                 {
                     go = LoadGsplat(warnings);
                     CalcBoundsNonGltf(go);
