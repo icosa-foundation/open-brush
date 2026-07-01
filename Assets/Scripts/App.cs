@@ -418,6 +418,9 @@ namespace TiltBrush
         public bool RamLoggingActive = false;
         private InitNoHeadsetMode m_NoHeadsetInitScript;
 
+        // TODO Implement this
+        public static bool DeviceCanOpenSystemBrowser => false;
+
         public void ToggleAudioReactiveModeRequest()
         {
             m_RequestingAudioReactiveMode ^= true;
