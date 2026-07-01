@@ -24,7 +24,8 @@ namespace TiltBrush
         private Environment m_PrevEnvironment;
         public Environment m_NextEnvironment;
 
-        public override bool IsAvailable => !MultiplayerManager.m_Instance.IsViewOnly;
+        public override bool IsAvailable =>
+            !MultiplayerManager.m_Instance.IsViewOnly && !WouldLeavePassthroughMultiplayerRoom();
 
         public SwitchEnvironmentCommand(Environment nextEnv, BaseCommand parent = null) : base(parent)
         {
@@ -100,6 +101,18 @@ namespace TiltBrush
             if (command == null) { return false; }
             m_NextEnvironment = command.m_NextEnvironment;
             return true;
+        }
+
+        private bool WouldLeavePassthroughMultiplayerRoom()
+        {
+            if (MultiplayerManager.m_Instance == null || !MultiplayerManager.m_Instance.HasRemotePlayersInRoom())
+            {
+                return false;
+            }
+
+            Environment currentEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+            return currentEnvironment != null && currentEnvironment.isPassthrough &&
+                m_NextEnvironment != null && !m_NextEnvironment.isPassthrough;
         }
     }
 } // namespace TiltBrush
