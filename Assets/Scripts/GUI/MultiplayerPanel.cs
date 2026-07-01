@@ -81,7 +81,7 @@ namespace TiltBrush
             }
         }
 
-        private Tuple<int, int> MaxPlayersRange = new Tuple<int, int>(2, 8);
+        private Tuple<int, int> MaxPlayersRange = new Tuple<int, int>(2, 12);
         public int MaxPlayers
         {
             get { return data.maxPlayers; }
