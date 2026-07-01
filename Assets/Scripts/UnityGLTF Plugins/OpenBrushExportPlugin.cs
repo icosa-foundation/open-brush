@@ -25,6 +25,30 @@ namespace TiltBrush
 
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
+        // Source of truth for Open Brush UnityGLTF exporter behavior.
+        // Importers should parse the major version from asset.generator and route shader behavior from this contract,
+        // not from the Open Brush app version in TB_ExportedFromVersion.
+        //
+        // Version 2.0.0:
+        // - Pre-May-2026 Open Brush UnityGLTF exporter contract.
+        // - First Open Brush UnityGLTF exporter contract version.
+        // - Meshes use glTF-compliant vec2 TEXCOORD_n channels instead of legacy wide Unity UV channels.
+        // - BrushBaker has already applied non-animated/static vertex deformation for brushes with baker entries,
+        //   including tube/ribbon effects such as Mylar squeeze, LightWire light-segment radius expansion,
+        //   KeijiroTube pulse snapshot, HyperGrid quantization, Disco, Electricity, Rain, and similar static baker passes.
+        // - Particle-style brushes have exported billboard quad geometry, but their time-varying center displacement
+        //   remains a runtime shader responsibility for importers that want animated visual parity.
+        //
+        // Version 3.0.0:
+        // - May-2026-and-later Open Brush UnityGLTF exporter contract.
+        // - Cutoff for this contract change is May 2026. Exports from the May 2026 exporter behavior onward
+        //   should identify as exporter major version 3, even if the Open Brush app version is unchanged.
+        // - Adds fixed-time BrushBaker snapshots of animated particle/vertex displacement for exported meshes.
+        // - Newly baked animation-derived displacement includes Bubbles, Embers, Rising Bubbles, Smoke, Snow,
+        //   BubbleWand, and related particle-style baker updates.
+        // - Importers must not apply those baked particle center/noise/rise/curl displacements a second time for v3+
+        //   GLTF files, but live painting, .tilt loading, and legacy GLTF import still need the runtime shader path.
+        private const int kOpenBrushUnityGltfExporterVersion = 3;
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
@@ -492,7 +516,7 @@ namespace TiltBrush
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
             }
 
-            gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
+            gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {kOpenBrushUnityGltfExporterVersion}.0.0";
 
             JToken ColorToJString(Color c, bool includeAlpha = false) =>
                 string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
