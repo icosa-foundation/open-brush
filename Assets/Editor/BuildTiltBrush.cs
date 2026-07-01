@@ -76,7 +76,11 @@ static class BuildTiltBrush
         public BuildOptions UnityOptions;
         public string Description;
         public bool disableAccountLogins;
+        public bool AndroidBuildAppBundle;
+        public bool GooglePlay;
     }
+
+    public static bool IsGooglePlayBuildActive { get; private set; }
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -674,6 +678,7 @@ static class BuildTiltBrush
     //   -btb-experimental   Set the build to be an experimental build.
     //   -btb-autoprofile    Set the build to be an auto-profile build.
     //   -btb-key{store,alias}{name,pass} Info needed for Android signing
+    //   -btb-google-play  Build with Google Play scoped-storage behavior.
     //   -btb-increment-bundle-version  Increment PlayerSettings "bundleVersionCode"; use this
     //                       when uploading a build. [This is no longer used]
     //
@@ -817,10 +822,25 @@ static class BuildTiltBrush
                 {
                     tiltOptions.disableAccountLogins = true;
                 }
+                else if (args[i] == "-btb-google-play")
+                {
+                    tiltOptions.GooglePlay = true;
+                }
                 else if (args[i] == "-androidExportType")
                 {
-                    // Not supported in Open Brush (added to game-ci in v3)
-                    i++;
+                    string androidExportType = args[++i];
+                    if (androidExportType == "androidAppBundle")
+                    {
+                        tiltOptions.AndroidBuildAppBundle = true;
+                    }
+                    else if (androidExportType == "androidPackage")
+                    {
+                        tiltOptions.AndroidBuildAppBundle = false;
+                    }
+                    else
+                    {
+                        Die(3, $"Unsupported Android export type {androidExportType}");
+                    }
                 }
                 else if (args[i] == "-androidSymbolType")
                 {
@@ -846,6 +866,7 @@ static class BuildTiltBrush
 
         if (target == BuildTarget.Android)
         {
+            EditorUserBuildSettings.buildAppBundle = tiltOptions.AndroidBuildAppBundle;
             EditorUserBuildSettings.androidCreateSymbols = AndroidCreateSymbols.Debugging;
         }
 
@@ -893,6 +914,38 @@ static class BuildTiltBrush
         public void Dispose()
         {
             PlayerSettings.SetScriptingDefineSymbolsForGroup(m_group, m_prevSymbols);
+        }
+    }
+
+    class TempSetGooglePlayAndroidSettings : IDisposable
+    {
+        private readonly bool m_IsActive;
+        private readonly bool m_PreviousForceSDCardPermission;
+        private readonly bool m_PreviousGooglePlayBuildActive;
+
+        public TempSetGooglePlayAndroidSettings(TiltBuildOptions tiltOptions)
+        {
+            m_IsActive = tiltOptions.Target == BuildTarget.Android && tiltOptions.GooglePlay;
+            m_PreviousGooglePlayBuildActive = IsGooglePlayBuildActive;
+            m_PreviousForceSDCardPermission = PlayerSettings.Android.forceSDCardPermission;
+            IsGooglePlayBuildActive = m_IsActive;
+
+            if (!m_IsActive)
+            {
+                return;
+            }
+
+            PlayerSettings.Android.forceSDCardPermission = false;
+        }
+
+        public void Dispose()
+        {
+            if (m_IsActive)
+            {
+                PlayerSettings.Android.forceSDCardPermission = m_PreviousForceSDCardPermission;
+            }
+
+            IsGooglePlayBuildActive = m_PreviousGooglePlayBuildActive;
         }
     }
 
@@ -1029,6 +1082,8 @@ static class BuildTiltBrush
 #elif ZAPBOX_SUPPORTED
             // Zapbox has a separate listing
             new_identifier = "foundation.icosa.openbrushzapbox";
+#elif OPEN_BRUSH_VIEWER
+            new_identifier = "foundation.icosa.openbrushviewer";
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
@@ -1513,7 +1568,9 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
-            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
+            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
+            target == BuildTarget.Android && tiltOptions.GooglePlay ? "OPEN_BRUSH_GOOGLE_PLAY" : null))
+        using (var unused16 = new TempSetGooglePlayAndroidSettings(tiltOptions))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
@@ -1678,7 +1735,8 @@ static class BuildTiltBrush
                 var buildDesc = $"Building player: {target}";
                 if (target == BuildTarget.Android)
                 {
-                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}";
+                    buildDesc += $", {PlayerSettings.Android.targetArchitectures}, " +
+                        $"{(EditorUserBuildSettings.buildAppBundle ? "AAB" : "APK")}";
                 }
                 m_buildStatus = buildDesc;
 

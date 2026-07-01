@@ -568,6 +568,7 @@ namespace TiltBrush
         private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
+        public bool IsViewOnly => m_ViewOnly;
 
         private InputState m_CurrentInputState;
         private InputStateConfig[] m_InputStateConfigs;
@@ -999,6 +1000,12 @@ namespace TiltBrush
 
             m_PanelManager.HidePanelsForStartup();
             RequestPanelsVisibility(false);
+
+            if (App.UserConfig.Flags.ForceViewOnly)
+            {
+                m_ViewOnly = true;
+                ViewOnly(true);
+            }
         }
 
         void Update()
@@ -1269,6 +1276,7 @@ namespace TiltBrush
         bool CanUsePinCushion()
         {
             return (m_ControlsType == ControlsType.SixDofControllers) &&
+                !m_ViewOnly &&
                 m_PanelManager.AdvancedModeActive() &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 !InputManager.Brush.GetControllerGrip() &&
@@ -1558,7 +1566,8 @@ namespace TiltBrush
             var mouse = Mouse.current;
 
             // Toggle default tool.
-            if (!m_PanelManager.AdvancedModeActive() &&
+            if (!m_ViewOnly &&
+                !m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
                 m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
@@ -3772,8 +3781,6 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
-            // Always false in viewonly mode
-            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
@@ -4049,6 +4056,15 @@ namespace TiltBrush
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(directoryName, out _) &&
+                !AndroidStorageManager.RequireSharedFolderFor("saving models", SaveModel))
+            {
+                return;
+            }
+#endif
+
             string usdname = Path.Combine(directoryName, basename + ".usd");
             // TODO: export selection only, though this is still only experimental. The blocking
             // issue to implement this is that the export collector needs to expose this as an option.
@@ -4057,6 +4073,26 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
+                    directoryName,
+                    "model",
+                    (success, publishError) =>
+                    {
+                        if (!success)
+                        {
+                            OutputWindowScript.Error("Failed to save model", publishError);
+                            return;
+                        }
+
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush, "Model created!");
+                    });
+                return;
+            }
+#endif
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif
@@ -5137,13 +5173,46 @@ namespace TiltBrush
         }
         public void ViewOnly(bool active)
         {
-            RequestPanelsVisibility(!active);
+            m_ViewOnly = active;
+            if (active)
+            {
+                EnsureViewOnlyNavigationTool();
+                m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
+                RequestPanelsVisibility(true);
+            }
+            else
+            {
+                DisableViewOnlyNavigationTool();
+                m_PanelManager.RestoreEditingPanelAvailabilityMode();
+                RequestPanelsVisibility(true);
+            }
             PointerManager.m_Instance.RequestPointerRendering(!active);
             // TODO - decide if this is a permanent change
             // With this line, you can't set a tool such as fly or teleport
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+        }
+
+        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
+        {
+            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
+        }
+
+        public void EnsureViewOnlyNavigationTool()
+        {
+            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            }
+        }
+
+        public void DisableViewOnlyNavigationTool()
+        {
+            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableDefaultTool();
+            }
         }
 
         private void LoadNamed(string path, bool quickload, bool additive)

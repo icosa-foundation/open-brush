@@ -144,13 +144,13 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 1.0.0
+  bundleVersion: 1.0.1
   preloadedAssets:
   - {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d, type: 2}
   - {fileID: 0}
-  - {fileID: 11400000, guid: 71fe6cc6ea2fd8841ab44d5442834cc6, type: 2}
   - {fileID: 11400000, guid: feef587f0ac641c4ab7d9e44e7eea888, type: 2}
-  - {fileID: 6471616562215093929, guid: f1ebaba0fe484c1469e1bc54ab8d82e1, type: 2}
+  - {fileID: 0}
+  - {fileID: 11400000, guid: 19081a626c84bff4385d3962a9daff0f, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -186,7 +186,7 @@ PlayerSettings:
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
   AndroidMinSdkVersion: 29
-  AndroidTargetSdkVersion: 32
+  AndroidTargetSdkVersion: 35
   AndroidPreferredInstallLocation: 0
   aotOptions: 
   stripEngineCode: 1
@@ -276,7 +276,7 @@ PlayerSettings:
   useCustomBaseGradleTemplate: 0
   useCustomGradlePropertiesTemplate: 0
   useCustomGradleSettingsTemplate: 0
-  useCustomProguardFile: 0
+  useCustomProguardFile: 1
   AndroidTargetArchitectures: 2
   AndroidTargetDevices: 0
   AndroidSplashScreenScale: 0
@@ -297,7 +297,7 @@ PlayerSettings:
     banner: {fileID: 0}
   androidGamepadSupportLevel: 0
   chromeosInputEmulation: 1
-  AndroidMinifyRelease: 0
+  AndroidMinifyRelease: 1
   AndroidMinifyDebug: 0
   AndroidValidateAppBundleSize: 1
   AndroidAppBundleSizeToValidate: 150
@@ -899,10 +899,23 @@ PlayerSettings:
   webGLMemoryGeometricGrowthCap: 96
   webGLPowerPreference: 2
   scriptingDefineSymbols:
-    Android: TILT_BRUSH
-    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;
-    Windows Store Apps: TILT_BRUSH;USD_SUPPORTED
-    iPhone: TILT_BRUSH
+    Android: TILT_BRUSH;PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;CROSS_PLATFORM_INPUT;MOBILE_INPUT;PHOTON_VOICE_DEFINED
+    EmbeddedLinux: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    GameCoreScarlett: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    GameCoreXboxOne: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    LinuxHeadlessSimulation: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    Nintendo Switch: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    PS4: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    PS5: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    QNX: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    Stadia: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;CROSS_PLATFORM_INPUT;PHOTON_VOICE_DEFINED;FUSION_WEAVER;FUSION2
+    VisionOS: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    WebGL: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    Windows Store Apps: TILT_BRUSH;USD_SUPPORTED;PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;MOBILE_INPUT;PHOTON_VOICE_DEFINED
+    XboxOne: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
+    iPhone: TILT_BRUSH;PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;CROSS_PLATFORM_INPUT;MOBILE_INPUT;PHOTON_VOICE_DEFINED
+    tvOS: PHOTON_UNITY_NETWORKING;PUN_2_0_OR_NEWER;PUN_2_OR_NEWER;PUN_2_19_OR_NEWER;PHOTON_VOICE_DEFINED
   additionalCompilerArguments: {}
   platformArchitecture:
     iPhone: 1
@@ -914,7 +927,8 @@ PlayerSettings:
     Windows Store Apps: 2
     iPhone: 1
   il2cppCompilerConfiguration: {}
-  il2cppCodeGeneration: {}
+  il2cppCodeGeneration:
+    Android: 1
   managedStrippingLevel:
     Android: 4
     EmbeddedLinux: 1

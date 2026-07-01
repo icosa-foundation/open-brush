@@ -1042,6 +1042,7 @@ namespace TiltBrush
             }
             var path = Path.Combine(App.ReferenceImagePath(), filename);
             File.WriteAllBytes(path, bytes);
+            _PublishApiMediaLibraryPathToSharedStorage(path);
             return path;
         }
 
