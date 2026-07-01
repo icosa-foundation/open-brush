@@ -57,6 +57,13 @@ namespace TiltBrush
         VOX
     }
 
+    [Serializable]
+    public enum TiltDownloadStrategy
+    {
+        AvoidArchive,
+        UsePreferred
+    }
+
     public class VrAssetService : MonoBehaviour
     {
         // Constants
@@ -327,6 +334,7 @@ namespace TiltBrush
         private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
+        public TiltDownloadStrategy m_TiltDownloadStrategy = TiltDownloadStrategy.AvoidArchive;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -1101,6 +1109,12 @@ namespace TiltBrush
             return $"{uriPath}{separator}{additionalParams}";
         }
 
+        private static void AppendQueryParam(ref string uri, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) { return; }
+            uri += $"{key}={UnityWebRequest.EscapeURL(value)}&";
+        }
+
         public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
         {
             string filteredUriPath = null;
@@ -1124,12 +1138,12 @@ namespace TiltBrush
                     break;
             }
             string uri = $"{IcosaApiRoot}{filteredUriPath}&";
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
             return new AssetLister(uri, errorMessage);
         }
 
@@ -1160,7 +1174,13 @@ namespace TiltBrush
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
             while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new IcosaSceneFileInfo(json.Root));
+            var info = new IcosaSceneFileInfo(json.Root);
+            if (!info.Valid)
+            {
+                Debug.LogWarning($"ICOSATILT_LOAD Fetched sketch {assetId} has no valid tilt download");
+                yield break;
+            }
+            infos.Insert(index, info);
         }
 
         public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
@@ -1177,16 +1197,16 @@ namespace TiltBrush
             {
                 uri += $"format={format}&";
             }
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "triangleCountMax", queryParams.TriangleCountMax.ToString());
             // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
             // at least one such model is pathologically large, so exclude them server-side.
             uri += "triangleCountMin=1&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
@@ -1194,7 +1214,6 @@ namespace TiltBrush
         // Download a tilt file to a temporary file and load it
         public IEnumerator LoadTiltFile(string id)
         {
-            string path = Path.GetTempFileName();
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
@@ -1205,8 +1224,10 @@ namespace TiltBrush
                     {
                         cr.MoveNext();
                     }
-                    catch (VrAssetServiceException)
+                    catch (VrAssetServiceException e)
                     {
+                        ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                        Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
                         yield break;
                     }
                     yield return cr.Current;
@@ -1214,19 +1235,34 @@ namespace TiltBrush
             }
             JObject json = JObject.Parse(request.Result);
             var info = new IcosaSceneFileInfo(json);
-            using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
+            if (!info.Valid)
             {
-                yield return www.SendWebRequest();
-                while (!www.downloadHandler.isDone) { yield return null; }
-                FileStream stream = File.Create(path);
-                byte[] data = www.downloadHandler.data;
-                stream.Write(data, 0, data.Length);
-                stream.Close();
+                ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
+                yield break;
+            }
+
+            string path = FileUtils.GenerateNonexistentFilename(
+                Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
+            const int kDownloadBufferSize = 1024 * 1024;
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            IcosaTiltDownloadResult result = null;
+            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, path, downloadBuffer,
+                isCanceled: null,
+                onRequestChanged: null,
+                onComplete: r => result = r);
+
+            if (result == null || !result.Succeeded)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    result?.UserMessage ?? "Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
+                yield break;
             }
 
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
-            File.Delete(path);
         }
 
         public bool IsValidDeviceCodeSecret(string secret)

@@ -147,11 +147,20 @@ namespace TiltBrush
         {
             public TrTransform Transform;
             public ScriptCoordSpace Space;
+            public Color32? Color;
 
             public ScriptTrTransform(TrTransform transform, ScriptCoordSpace space)
             {
                 Transform = transform;
                 Space = space;
+                Color = null;
+            }
+
+            public ScriptTrTransform(TrTransform transform, ScriptCoordSpace space, Color32 color)
+            {
+                Transform = transform;
+                Space = space;
+                Color = color;
             }
         }
 
@@ -444,13 +453,13 @@ namespace TiltBrush
 
         public void LogGenericLuaError(Script script, string fnName, Exception e)
         {
-            if (e is ScriptRuntimeException)
+            if (e is ScriptRuntimeException runtimeException)
             {
-                LogLuaInterpreterError(script, fnName, e as ScriptRuntimeException);
+                LogLuaInterpreterError(script, fnName, runtimeException);
             }
-            else if (e is InvalidCastException)
+            else if (e is InvalidCastException castException)
             {
-                LogLuaCastError(script, fnName, e as InvalidCastException);
+                LogLuaCastError(script, fnName, castException);
             }
         }
 
@@ -669,13 +678,15 @@ namespace TiltBrush
         private bool CallActivePointerScript(string fnName, out ScriptTrTransform result)
         {
             var script = GetActiveScript(LuaApiCategory.PointerScript);
-            DynValue returnedTr = _CallScript(script, fnName);
+            DynValue luaReturnValue = _CallScript(script, fnName);
             var space = _GetSpaceForActiveScript(LuaApiCategory.PointerScript);
             try
             {
-                if (!returnedTr.Equals(DynValue.Nil))
+                Table tbl = luaReturnValue.Table;
+                if (!luaReturnValue.IsNil())
                 {
-                    result = new ScriptTrTransform(returnedTr.ToObject<TrTransform>(), space);
+                    result = new ScriptTrTransform(
+                        luaReturnValue.ToObject<TrTransform>(), space);
                     return true;
                 }
             }
@@ -943,6 +954,7 @@ namespace TiltBrush
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+            RegisterApiEnum(script, "ColorOverrideMode", typeof(ColorOverrideMode));
 
         }
 
@@ -1249,10 +1261,8 @@ namespace TiltBrush
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
 
-                    Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
                     tr_CS.translation = firstTr_CS.translation;
-                    tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
+                    tr_CS.rotation = secondTr_CS.rotation;
                     tr_CS.scale = quantizedVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;
@@ -1272,7 +1282,7 @@ namespace TiltBrush
                 var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
                 if (xfSymmetriesGS.Count == 0)
                 {
-                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, null, brushScale);
                 }
                 else
                 {
@@ -1310,7 +1320,7 @@ namespace TiltBrush
                             newTransforms.Add(newTrList);
                         }
                     }
-                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, brushScale);
+                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, null, brushScale);
                 }
             }
 

@@ -23,31 +23,32 @@ Shader "Unlit/GpuText"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
         LOD 100
 
         Pass
         {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
-            struct appdata
-            {
+            struct appdata {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct v2f
-            {
+            struct v2f {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             sampler2D _MainTex;
@@ -64,6 +65,7 @@ Shader "Unlit/GpuText"
 
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
@@ -84,6 +86,7 @@ Shader "Unlit/GpuText"
 
             fixed4 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float4 char = floor(tex2D(_MainTex, i.uv) * 255);
 
                 if (char.g > 0) {
@@ -102,7 +105,8 @@ Shader "Unlit/GpuText"
 
                 return col;
             }
-            ENDCG
+            ENDHLSL
         }
     }
 }
+

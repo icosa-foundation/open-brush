@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UObject = UnityEngine.Object;
 
 #if UNITY_ANDROID || UNITY_IOS
@@ -83,17 +84,10 @@ namespace TiltBrush
 
         private Material m_blitWithScale;
 
-        List<Feature> m_features = new List<Feature>();
         LightShadows[] m_shadows = new LightShadows[0];
 
         private Dictionary<RenderTextureFormat, RenderTextureFormat> m_GetCreatedFormatMemo =
             new Dictionary<RenderTextureFormat, RenderTextureFormat>();
-
-        struct Feature
-        {
-            public MonoBehaviour behaviour;
-            public bool defaultState;
-        }
 
         public float SuperSampling
         {
@@ -117,28 +111,6 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Quality Control Helpers
         // -------------------------------------------------------------------------------------------- //
-
-        void AddFeature<T>()
-        {
-            MonoBehaviour feature = GetComponent<T>() as MonoBehaviour;
-            if (feature == null)
-            {
-                return;
-            }
-            m_features.Add(new Feature { behaviour = feature, defaultState = feature.enabled });
-        }
-
-        // Toggle the state of all known features.
-        // When enable is false, disable all features, when true, set to default state.
-        void ToggleFeatures(bool enable)
-        {
-            for (int i = 0; i < m_features.Count; i++)
-            {
-                m_features[i].behaviour.enabled = enable
-                    ? m_features[i].defaultState
-                    : false;
-            }
-        }
 
         RenderTextureFormat GetTargetFormat()
         {
@@ -173,10 +145,6 @@ namespace TiltBrush
                 if (m_configuredFor != QualitySettings.GetQualityLevel())
                 {
                     m_isRecorder = GetComponent<VideoRecorder>() != null;
-                    m_features.Clear();
-
-                    AddFeature<FXAA>();
-                    AddFeature<SENaturalBloomAndDirtyLens>();
 
                     m_configuredFor = QualitySettings.GetQualityLevel();
                 }
@@ -238,6 +206,17 @@ namespace TiltBrush
 
             m_isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
+
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Shader.DisableKeyword("HDR_EMULATED");
+                if (m_hdrTarget != null)
+                {
+                    UObject.Destroy(m_hdrTarget);
+                    m_hdrTarget = null;
+                }
+                return;
+            }
 
 #if UNITY_ANDROID || UNITY_IOS
     // TODO:Mikesky - setting MSAA seems to crash quest when in Vulkan
@@ -331,15 +310,10 @@ namespace TiltBrush
             if (m_isRecording && !m_isRecorder)
             {
                 msaa = 1;
-                ToggleFeatures(false);
                 for (int i = 0; i < App.Scene.GetNumLights(); i++)
                 {
                     App.Scene.GetLight(i).shadows = LightShadows.None;
                 }
-            }
-            else
-            {
-                ToggleFeatures(true);
             }
 
             // Setup the render texture framebuffer.
@@ -382,7 +356,7 @@ namespace TiltBrush
             //
             // There are cases where we omit the decode pass for performance reasons;
             // eg, mobile quality setting, or when recording video.
-            if (fmt == RenderTextureFormat.ARGB32 && HasHdrDecodePass())
+            if (ShouldEncodeHdrToLdr(fmt))
             {
                 Shader.EnableKeyword("HDR_EMULATED"); // RGBAE: turn on alpha-exp encoding
             }
@@ -433,15 +407,16 @@ namespace TiltBrush
             srcCam.clearFlags = m_cameraClearFlags;
         }
 
-        bool ExistsAndIsEnabled<T>() where T : MonoBehaviour
+        bool ShouldEncodeHdrToLdr(RenderTextureFormat fmt)
         {
-            T c = GetComponent<T>();
-            return (c != null && c.enabled);
-        }
+            if (fmt != RenderTextureFormat.ARGB32)
+            {
+                return false;
+            }
 
-        bool HasHdrDecodePass()
-        {
-            return (ExistsAndIsEnabled<SENaturalBloomAndDirtyLens>());
+            // URP post-processing consumes HDR camera targets directly. The legacy alpha-exponent
+            // path only made sense when a Built-in image effect decoded it later in the chain.
+            return GraphicsSettings.currentRenderPipeline == null;
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -451,6 +426,12 @@ namespace TiltBrush
 #if !(UNITY_ANDROID || UNITY_IOS)
         public void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
+
             // We could skip the offscreen render when anti-aliasing is disabled.
             if (m_hdrTarget == null)
             {

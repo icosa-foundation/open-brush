@@ -136,8 +136,9 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
+
 #if OCULUS_SUPPORTED
-            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
+            OVRPlatform.Users.GetLoggedInUser()?.OnComplete((msg) => {
                 if (!msg.IsError)
                 {
                     myOculusUserId = msg.GetUser().ID;

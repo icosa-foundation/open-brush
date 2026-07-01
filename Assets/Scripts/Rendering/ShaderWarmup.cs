@@ -52,7 +52,10 @@ namespace TiltBrush
         // Enumerates the materials we need and creates a quad with each one.
         private IEnumerator WarmupShaders()
         {
-            List<Material> materials = BrushCatalog.m_Instance.AllBrushes.Select(x => x.Material).ToList();
+            List<Material> materials = BrushCatalog.m_Instance.AllBrushes
+                .Select(x => x.Material)
+                .Where(m => m != null && m)
+                .ToList();
             // Add SELECTION_ON to the materials
             List<Material> selectionMaterials = new List<Material>();
             foreach (var material in materials)

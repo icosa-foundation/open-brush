@@ -22,51 +22,72 @@ Shader "Custom/FlipbookWithAlpha" {
     _Multiplier("Flipbook Speed", Float) = 2
     }
         SubShader{
-        Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+        Tags {"RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
         LOD 100
 
-        CGPROGRAM
-        #pragma target 3.0
-        #pragma surface surf Lambert nofog
+        Pass {
+          Name "ForwardUnlit"
+          Tags { "LightMode"="UniversalForward" }
+          HLSLPROGRAM
+          #pragma target 3.0
+          #pragma vertex Vert
+          #pragma fragment Frag
+          #pragma multi_compile_instancing
+          #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        float _CellAmount;
-        float _TexWidth;
-        float _Cutoff;
-    float _Multiplier;
+          TEXTURE2D(_MainTex);
+          SAMPLER(sampler_MainTex);
 
-    struct Input {
-        float2 uv_MainTex;
-        float4 color : Color;
-    };
+          CBUFFER_START(UnityPerMaterial)
+          half4 _Color;
+          float _TexWidth;
+          float _CellAmount;
+          float _Cutoff;
+          float _Multiplier;
+          CBUFFER_END
 
-        sampler2D _MainTex;
-        fixed4 _Color;
+          struct Attributes {
+            float4 positionOS : POSITION;
+            float2 uv : TEXCOORD0;
+            float4 color : COLOR;
 
-    void surf(Input IN, inout SurfaceOutput o) {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+          };
 
-        fixed2 scrollUV = IN.uv_MainTex;
+          struct Varyings {
+            float4 positionHCS : SV_POSITION;
+            float2 uv : TEXCOORD0;
 
-        // Calculate UV scroll amount based on texture size and number of frames.
-        // Default _TexWidth should be 1, augment for weirder uses.
-        float cellPixelWidth = _TexWidth / _CellAmount;
-        float cellUVpercentage = cellPixelWidth / _TexWidth;
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
+          };
 
-        // Animate flipbook motion.
-    // Multiplier added for tuning
-        float anim = fmod(_Time.y * _Multiplier, _CellAmount);
-        anim = ceil(anim);
-        scrollUV.x += anim;
-        scrollUV.x *= cellUVpercentage;
+          Varyings Vert(Attributes IN) {
+            Varyings OUT;
+            UNITY_SETUP_INSTANCE_ID(IN);
+            UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+            OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+            OUT.uv = IN.uv;
+            return OUT;
+          }
 
-        // Discard transparent pixels.
-        if (tex2D(_MainTex, scrollUV).a < _Cutoff)
-            discard;
+          half4 Frag(Varyings IN) : SV_Target {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+            float2 scrollUV = IN.uv;
+            float cellPixelWidth = _TexWidth / max(_CellAmount, 1e-5);
+            float cellUVpercentage = cellPixelWidth / max(_TexWidth, 1e-5);
+            float anim = fmod(_Time.y * _Multiplier, _CellAmount);
+            anim = ceil(anim);
+            scrollUV.x += anim;
+            scrollUV.x *= cellUVpercentage;
 
-        half4 c = tex2D(_MainTex, scrollUV);
-        o.Emission = c.rgb * _Color.rgb;
+            half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, scrollUV);
+            clip(c.a - _Cutoff);
+            return half4(c.rgb * _Color.rgb, 1.0h);
+          }
+          ENDHLSL
+        }
     }
-
-    ENDCG
-    }
-        FallBack "Diffuse"
+        FallBack Off
 }
