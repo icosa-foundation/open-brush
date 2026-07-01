@@ -29,11 +29,16 @@ namespace TiltBrush
             List<Color> colors = null,
             float brushScale = 1f,
             float smoothing = 0,
-            uint group = GroupManager.kIdSketchGroupTagNone)
+            uint group = GroupManager.kIdSketchGroupTagNone,
+            BrushDescriptor brush = null,
+            float? brushSize = null,
+            CanvasScript canvas = null,
+            SketchGroupTag? groupTag = null)
         {
             var paths = pathEnumerable.ToList();
             var strokes = new List<Stroke>();
-            var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
+            brush ??= PointerManager.m_Instance.MainPointer.CurrentBrush;
+            canvas ??= App.Scene.ActiveCanvas;
             uint time = 0;
             int pathIndex = 0;
             for (var i = 0; i < paths.Count; i++)
@@ -97,17 +102,17 @@ namespace TiltBrush
                 var stroke = new Stroke
                 {
                     m_Type = Stroke.Type.NotCreated,
-                    m_IntendedCanvas = App.Scene.ActiveCanvas,
+                    m_IntendedCanvas = canvas,
                     m_BrushGuid = brush.m_Guid,
                     m_BrushScale = brushScale,
-                    m_BrushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
+                    m_BrushSize = brushSize ?? PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
                     m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
-                stroke.Group = new SketchGroupTag(group);
-                stroke.Recreate(tr, App.Scene.ActiveCanvas);
+                stroke.Group = groupTag ?? new SketchGroupTag(group);
+                stroke.Recreate(tr, canvas);
                 if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 var undoParent = ApiManager.Instance.ActiveUndo;

@@ -58,7 +58,24 @@ namespace TiltBrush
 
         [LuaDocsDescription("Draws this PathList using current settings")]
         [LuaDocsExample("myPaths:Draw()")]
-        public void Draw() => LuaApiMethods.DrawPaths(this);
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper Draw() => LuaApiMethods.DrawPaths(this);
+
+        [LuaDocsDescription("Draws this PathList as brush strokes with explicit draw settings")]
+        [LuaDocsExample(@"myStrokes = myPaths:DrawWithBrush(""Ink"", 0.05, Color.red, 0.1)")]
+        [LuaDocsParameter("brushType", "The brush name or guid to use")]
+        [LuaDocsParameter("brushSize", "The brush size to use")]
+        [LuaDocsParameter("color", "The brush color to use")]
+        [LuaDocsParameter("smoothing", "The amount of smoothing to apply")]
+        [LuaDocsParameter("layer", "The layer to draw on. Defaults to the active layer")]
+        [LuaDocsParameter("group", "The group to assign the new strokes to")]
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper DrawWithBrush(
+            string brushType, float brushSize, ColorApiWrapper color, float smoothing = 0,
+            LayerApiWrapper layer = null, GroupApiWrapper group = null)
+        {
+            return LuaApiMethods.DrawPath(this, brushType, brushSize, color, smoothing, layer, group);
+        }
 
         [LuaDocsDescription("Creates a new PathList from a text")]
         [LuaDocsExample(@"PathList.FromText('example')")]
@@ -74,6 +91,11 @@ namespace TiltBrush
 
         [LuaDocsDescription("Gets the number of points in all paths in the PathList")]
         public int pointCount => _PathList?.Sum(l => l.Count) ?? 0;
+
+        [LuaDocsDescription("The axis-aligned bounds that contain all paths in this PathList")]
+        public BoundsApiWrapper bounds => new(BoundsApiWrapper.Calculate(
+            _PathList.SelectMany(path => path).Select(t => t.translation)
+        ));
 
         public override string ToString()
         {
@@ -202,6 +224,54 @@ namespace TiltBrush
                 {
                     var tr = path[j];
                     tr.translation = (tr.translation - center) * size;
+                    path[j] = tr;
+                }
+            }
+        }
+
+        [LuaDocsDescription("Scales and shifts all paths so that they fit inside the target bounds")]
+        [LuaDocsExample("myPaths:FitInside(bounds, true)")]
+        [LuaDocsParameter("targetBounds", "The bounds to fit inside")]
+        [LuaDocsParameter("keepAspect", "If true, scale uniformly so the paths keep their proportions")]
+        public void FitInside(BoundsApiWrapper targetBounds, bool keepAspect = true)
+        {
+            if (_PathList == null || _PathList.Count == 0) return;
+            var source = bounds._Bounds;
+            var target = targetBounds._Bounds;
+            var scale = PathApiWrapper.CalculateFitScale(source.size, target.size, keepAspect);
+            for (var i = 0; i < _PathList.Count; i++)
+            {
+                var path = _PathList[i];
+                for (var j = 0; j < path.Count; j++)
+                {
+                    var tr = path[j];
+                    tr.translation = Vector3.Scale(tr.translation - source.center, scale) + target.center;
+                    path[j] = tr;
+                }
+            }
+        }
+
+        [LuaDocsDescription("Scales and shifts all paths so that they fit inside a sphere")]
+        [LuaDocsExample("myPaths:FitInsideSphere(center, radius)")]
+        [LuaDocsParameter("center", "The sphere center")]
+        [LuaDocsParameter("radius", "The sphere radius")]
+        public void FitInsideSphere(Vector3 center, float radius)
+        {
+            if (_PathList == null || _PathList.Count == 0) return;
+            var source = bounds._Bounds;
+            var sourceRadius = _PathList.SelectMany(path => path)
+                .Select(t => (t.translation - source.center).magnitude)
+                .DefaultIfEmpty(0)
+                .Max();
+            if (sourceRadius <= 0) return;
+            var scale = radius / sourceRadius;
+            for (var i = 0; i < _PathList.Count; i++)
+            {
+                var path = _PathList[i];
+                for (var j = 0; j < path.Count; j++)
+                {
+                    var tr = path[j];
+                    tr.translation = (tr.translation - source.center) * scale + center;
                     path[j] = tr;
                 }
             }
