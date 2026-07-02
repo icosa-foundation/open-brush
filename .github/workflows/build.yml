@@ -119,19 +119,12 @@ jobs:
             # code already used" rejections when uploading successive test builds to
             # Google Play.
             #
-            # DOWNSIDE: timestamp codes (~1.78B today after suffix) are permanently
-            # higher than production codes (~20M), so any build uploaded to Play with
-            # a timestamp code must never be promoted to production — upload test
-            # builds to an internal/closed track only. Also, Unix timestamps exceed
-            # Android's hard limit of 2,100,000,000 around 2036.
-            #
-            # We divide by 10 because the build matrix appends a single-digit
-            # versionSuffix as a string (e.g. "0"), effectively multiplying by 10.
-            # Without the division, the final code would be 11 digits and exceed
-            # Android's 2,100,000,000 limit. Dividing first keeps it within range
-            # while retaining 10-second granularity — sufficient since CI builds
-            # take much longer than 10 seconds.
-            ANDROID_VERSION_CODE=$(( $(date +%s) / 10 ))
+            # DOWNSIDE: timestamp codes (~1.75B today) are permanently higher than
+            # production codes (~20M), so any build uploaded to Play with a timestamp
+            # code must never be promoted to production — upload test builds to an
+            # internal/closed track only. Also, Unix timestamps exceed Android's hard
+            # limit of 2,100,000,000 around 2036.
+            ANDROID_VERSION_CODE=$(date +%s)
           else
             ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
           fi
