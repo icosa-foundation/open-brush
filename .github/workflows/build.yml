@@ -567,7 +567,7 @@ jobs:
             allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
             unityVersion: ${{ env.UNITY_VERSION }}
             targetPlatform: ${{ matrix.targetPlatform }}
-            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
+            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
             versioning: Custom
             androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
             version: ${{ needs.configuration.outputs.version }}
