@@ -1053,6 +1053,25 @@ namespace TiltBrush
             m_bSelectionWidgetNeedsUpdate = true;
         }
 
+        public bool TryIntersectNonGpuSelectionWidgets(Vector3 center_GS, float radius_GS,
+            out float score)
+        {
+            score = -1.0f;
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                if (widget is not ModelWidget modelWidget ||
+                    modelWidget.HasGPUIntersectionObject() ||
+                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                {
+                    continue;
+                }
+
+                score = Mathf.Max(score, widgetScore);
+            }
+
+            return score >= 0.0f;
+        }
+
         public bool IsStrokeSelected(Stroke stroke)
         {
             return m_SelectedStrokes.Contains(stroke);

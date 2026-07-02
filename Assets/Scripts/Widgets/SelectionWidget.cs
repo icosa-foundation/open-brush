@@ -169,6 +169,12 @@ namespace TiltBrush
                 return -1;
             }
 
+            if (SelectionManager.m_Instance.TryIntersectNonGpuSelectionWidgets(
+                    vControllerPos_GS, m_CollisionRadius, out float customIntersectionScore))
+            {
+                return customIntersectionScore;
+            }
+
             // If the data we've got is old, delete it all.
             if ((Time.frameCount - m_IntersectionFrame) > 3)
             {

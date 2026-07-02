@@ -43,7 +43,8 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -5112751337474582183}
   - {fileID: 3323140472985962428}
-  m_RendererFeatureMap: 5999ec40bfdb0bb9bc470d47a72a1e2e
+  - {fileID: 6111700951782917469}
+  m_RendererFeatureMap: 5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd154
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -92,3 +93,16 @@ MonoBehaviour:
   m_MobileCompositeMode: 0
   m_UseAdaptiveMobileCompositeMode: 1
   m_AdaptiveMobileLowFps: 72
+--- !u!114 &6111700951782917469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efbf998eb66045d5813ca6bd148cf83c, type: 3}
+  m_Name: Gsplat URP Feature
+  m_EditorClassIdentifier: Gsplat::Gsplat.GsplatURPFeature
+  m_Active: 1
