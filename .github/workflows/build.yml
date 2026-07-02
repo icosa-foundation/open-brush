@@ -111,30 +111,7 @@ jobs:
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
           MAJOR=$(echo $VERSION | cut -d '.' -f 1)
           MINOR=$(echo $VERSION | cut -d '.' -f 2)
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # PR builds use a Unix timestamp as the version code instead of the
-            # commit-count formula. The formula counts first-parent commits on main
-            # since the last tag, so it stays fixed for the entire lifetime of a PR
-            # (adding commits to the branch doesn't change it). That causes "version
-            # code already used" rejections when uploading successive test builds to
-            # Google Play.
-            #
-            # DOWNSIDE: timestamp codes (~1.78B today after suffix) are permanently
-            # higher than production codes (~20M), so any build uploaded to Play with
-            # a timestamp code must never be promoted to production — upload test
-            # builds to an internal/closed track only. Also, Unix timestamps exceed
-            # Android's hard limit of 2,100,000,000 around 2036.
-            #
-            # We divide by 10 because the build matrix appends a single-digit
-            # versionSuffix as a string (e.g. "0"), effectively multiplying by 10.
-            # Without the division, the final code would be 11 digits and exceed
-            # Android's 2,100,000,000 limit. Dividing first keeps it within range
-            # while retaining 10-second granularity — sufficient since CI builds
-            # take much longer than 10 seconds.
-            ANDROID_VERSION_CODE=$(( $(date +%s) / 10 ))
-          else
-            ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
-          fi
+          ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
@@ -590,7 +567,7 @@ jobs:
             allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
             unityVersion: ${{ env.UNITY_VERSION }}
             targetPlatform: ${{ matrix.targetPlatform }}
-            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
+            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
             versioning: Custom
             androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
             version: ${{ needs.configuration.outputs.version }}

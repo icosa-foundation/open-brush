@@ -119,7 +119,9 @@ MonoBehaviour:
   m_LoadingImageTexture: {fileID: 2800000, guid: 609917f61fdca0d469c1bc06bfeb713b,
     type: 3}
   m_ClickCursor: {fileID: 2800000, guid: f51c3e3167192de47a8f802ba3b18bd6, type: 3}
+  m_BlankSketchUi: {fileID: 2312823609503090641}
   m_PcControlsText: {fileID: 5786663856570495902}
+  m_HelpUi: {fileID: 92123868086682662}
 --- !u!1 &140238
 GameObject:
   m_ObjectHideFlags: 0
@@ -1523,7 +1525,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Your Sketches
+  m_text: Local Sketches
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -20,6 +20,8 @@
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <!-- Alias that launches into flat/monoscopic mode without VR -->
+        <!-- TODO Re-enable launch aliases. They will be useful but need a bit more thought and testing -->
+        <!--
         <activity-alias
             android:name=".MonoscopicModeActivity"
             android:targetActivity="com.unity3d.player.UnityPlayerActivity"
@@ -32,8 +34,9 @@
             </intent-filter>
             <meta-data android:name="EnableMonoscopicMode" android:value="true" />
         </activity-alias>
-
+        -->
         <!-- Alias that launches with XR/VR disabled -->
+        <!--
         <activity-alias
             android:name=".DisableXrModeActivity"
             android:targetActivity="com.unity3d.player.UnityPlayerActivity"
@@ -46,6 +49,7 @@
             </intent-filter>
             <meta-data android:name="DisableXrMode" android:value="true" />
         </activity-alias>
+        -->
 
         <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
         <meta-data android:name="pvr.app.type" android:value="vr" />
