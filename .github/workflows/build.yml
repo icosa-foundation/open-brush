@@ -49,7 +49,7 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -342,7 +342,7 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
@@ -402,7 +402,7 @@ jobs:
 
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
@@ -418,7 +418,7 @@ jobs:
 
       - name: Restore Library/
         id: cache_library
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -429,7 +429,7 @@ jobs:
       - name: Restore Library/PackageCache
         id: cache_packagecache
         if: false
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -562,6 +562,10 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
+      - name: Add bundled Windows tools
+        if: matrix.targetPlatform == 'StandaloneWindows64'
+        run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
+
       - name: Upload build/
         uses: actions/upload-artifact@v7
         with:
@@ -584,7 +588,7 @@ jobs:
           echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -611,7 +615,7 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -627,10 +631,10 @@ jobs:
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -706,10 +710,10 @@ jobs:
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -869,7 +873,7 @@ jobs:
           zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
@@ -926,7 +930,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: icosa-foundation/open-brush-docs
           path: open-brush-docs
@@ -964,7 +968,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -992,6 +996,11 @@ jobs:
         with:
           name: Linux
           path: build_linux
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Upload Build
         run: |
           cd build_macos
@@ -1002,6 +1011,7 @@ jobs:
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
           jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          jinjanate Support/steam/main_depot.android.vdf.j2 > build_android_openxr/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
@@ -1012,6 +1022,7 @@ jobs:
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
           OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BRUSH_ANDROID_DEPOT_ID: ${{ vars.STEAM_ANDROID_DEPOT_ID }}
           OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
       - name: Update steam login secret
@@ -1149,7 +1160,7 @@ jobs:
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1296,7 +1307,7 @@ jobs:
   publish_oculus_rift:
     name: Publish Oculus Rift Release
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1434,14 +1445,14 @@ jobs:
   publish_ios_zapbox:
     name: Publish Zapbox iOS
     needs: [configuration, build]
-    runs-on: macos-latest
+    runs-on: macos-26
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -1457,12 +1468,6 @@ jobs:
           rm -rf "$AGENT_TOOLSDIRECTORY"
           echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
           df -h
-
-      - name: Use xcode 26.2 / ios 26.2
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.2.app/Contents/Developer  # The default in macos-latest (i.e., 15) is currently 16.4.
-          xcrun simctl list > /dev/null  # Because of https://github.com/actions/runner-images/issues/12862
-          xcodebuild -downloadPlatform iOS # -buildVersion 26.2 ## Removed because it says 26.2 is not available to download, but if you run with no version specified you get.... 26.2
 
       - name: Download iOS Artifact
         uses: actions/download-artifact@v8
