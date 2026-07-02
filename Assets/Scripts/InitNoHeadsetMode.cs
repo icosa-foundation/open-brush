@@ -31,7 +31,9 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private Texture2D m_LoadingImageTexture;
         [SerializeField] public Texture2D m_ClickCursor;
+        [SerializeField] public GameObject m_BlankSketchUi;
         [SerializeField] public GameObject m_PcControlsText;
+        [SerializeField] public GameObject m_HelpUi;
 
         private readonly List<SketchGridEntry> m_Sketches = new List<SketchGridEntry>();
         private readonly List<NoHeadsetSketchGridItem> m_GridItems =
@@ -106,6 +108,10 @@ namespace TiltBrush
             SubscribeSketchSetChangeEvents();
             RefreshSketchGrid();
             StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
+            // Don't show "new blank sketch" button in View Only Mode
+            m_BlankSketchUi.SetActive(!SketchControlsScript.m_Instance.IsViewOnly);
+            // Don't show "using open brush without a headset" info in View Only Mode
+            m_HelpUi.SetActive(!SketchControlsScript.m_Instance.IsViewOnly);
         }
 
         private void SubscribeSketchSetChangeEvents()
@@ -1314,7 +1320,7 @@ namespace TiltBrush
 
         private void UpdateCategoryTabs(int userCount, int curatedCount, int likedCount)
         {
-            UpdateCategoryTab(SketchSetType.User, userCount);
+            UpdateCategoryTab(SketchSetType.User, userCount, userCount > 0);
             UpdateCategoryTab(SketchSetType.Curated, curatedCount);
             UpdateCategoryTab(SketchSetType.Liked, likedCount, App.IcosaIsLoggedIn);
             RefreshRuntimeGridFrame(force: true);
