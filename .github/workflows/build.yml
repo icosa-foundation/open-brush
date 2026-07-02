@@ -50,7 +50,7 @@ jobs:
       flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -344,13 +344,13 @@ jobs:
           df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
@@ -366,7 +366,7 @@ jobs:
 
       - name: Restore Library/
         id: cache_library
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -377,7 +377,7 @@ jobs:
       - name: Restore Library/PackageCache
         id: cache_packagecache
         if: false
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
@@ -540,7 +540,7 @@ jobs:
           echo "diff returned: $CHANGES"
 
       - name: Save Library/PackageCache cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -567,7 +567,7 @@ jobs:
           du -mcsh Library
 
       - name: Save Library/ cache
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
@@ -586,7 +586,7 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -665,7 +665,7 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
@@ -866,7 +866,7 @@ jobs:
             }
 
       - name: Get the current contents of the docs repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: icosa-foundation/open-brush-docs
           path: open-brush-docs
@@ -904,7 +904,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           sparse-checkout: |
@@ -1476,7 +1476,7 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           sparse-checkout: |
