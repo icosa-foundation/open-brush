@@ -3528,7 +3528,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: Switch off passthrough environment mode to use Multiplayer
+    m_Localized: Some users may be using headsets that do not support passthrough
     m_Metadata:
       m_Items: []
   - m_Id: 234808679492837376
