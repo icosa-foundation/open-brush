@@ -3328,7 +3328,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Key: MULTIPLAYER_PANEL_ALERT_PASSTHROUGH_ACTIVE
+    m_Key: MULTIPLAYER_PANEL_WARNING_PASSTHROUGH_SUPPORT
     m_Metadata:
       m_Items: []
   - m_Id: 157582826200739840

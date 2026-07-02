@@ -5463,7 +5463,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                     return MultiplayerManager.m_Instance.IsDisconnectable();
                 case GlobalCommands.MultiplayerJoinRoom:
-                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
+                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
 

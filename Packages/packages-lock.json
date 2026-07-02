@@ -416,7 +416,7 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
+      "version": "https://github.com/icosa-mirror/UnityGLTF.git#open-brush/plugin-settings-dedupe",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -428,7 +428,7 @@
         "com.unity.mathematics": "1.0.0",
         "com.unity.collections": "1.0.0"
       },
-      "hash": "ce6a5dce952d84cfd47c81755e7e1b0bc69fefe5"
+      "hash": "7962840f6911023e749f29adb857fbab71b70a11"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
