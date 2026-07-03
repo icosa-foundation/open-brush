@@ -191,6 +191,9 @@ namespace TiltBrush
                 yield break;
             }
 
+            yield return new WaitUntil(() =>
+                curatedSketchSet.IsReadyForAccess || curatedSketchSet.IsActivelyRefreshingSketches);
+
             m_CuratedDownloadsActive = true;
             m_CuratedDownloadNoProgressIndices.Clear();
             while (true)
