@@ -43,6 +43,7 @@ namespace TiltBrush
         private readonly Dictionary<SketchSetType, Button> m_CategoryTabs =
             new Dictionary<SketchSetType, Button>();
         private readonly HashSet<string> m_DownloadingSketchKeys = new HashSet<string>();
+        private readonly HashSet<int> m_CuratedDownloadNoProgressIndices = new HashSet<int>();
         private readonly List<Sprite> m_GeneratedSprites = new List<Sprite>();
         private readonly List<Sprite> m_ThumbnailSprites = new List<Sprite>();
         private readonly List<Texture2D> m_OwnedThumbnailTextures = new List<Texture2D>();
@@ -72,6 +73,7 @@ namespace TiltBrush
         private bool m_CuratedDownloadsActive;
         private bool m_RestoreSavedScrollOnNextRefresh;
         private bool m_LoadInProgress;
+        private List<int> m_LastCuratedDownloadIndices = new List<int>();
 
         private const int BatchSize = 2;
         private const int MaxSketches = 20;
@@ -190,20 +192,14 @@ namespace TiltBrush
             }
 
             m_CuratedDownloadsActive = true;
+            m_CuratedDownloadNoProgressIndices.Clear();
             while (true)
             {
+                int previousAvailable = CountAvailableSketches(curatedSketchSet);
                 yield return StartCoroutine(DownloadCuratedSketches(numSketches, maxSketches));
                 RefreshSketchGridAfterCuratedBatch();
 
-                int available = 0;
-                for (int i = 0; i < curatedSketchSet.NumSketches; i++)
-                {
-                    var info = curatedSketchSet.GetSketchSceneFileInfo(i);
-                    if (info != null && info.Available)
-                    {
-                        available++;
-                    }
-                }
+                int available = CountAvailableSketches(curatedSketchSet);
 
                 if (available >= maxSketches)
                 {
@@ -215,47 +211,104 @@ namespace TiltBrush
                     Debug.LogWarning($"{LogPrefix} curated downloads stopped at {available} available sketches");
                     break;
                 }
+
+                if (available <= previousAvailable)
+                {
+                    if (m_LastCuratedDownloadIndices.Count == 0)
+                    {
+                        Debug.LogWarning($"{LogPrefix} curated downloads stopped after no progress");
+                        break;
+                    }
+
+                    for (int i = 0; i < m_LastCuratedDownloadIndices.Count; i++)
+                    {
+                        m_CuratedDownloadNoProgressIndices.Add(m_LastCuratedDownloadIndices[i]);
+                    }
+                    Debug.LogWarning($"{LogPrefix} skipping curated downloads with no progress");
+                }
             }
             m_CuratedDownloadsActive = false;
+            m_CuratedDownloadNoProgressIndices.Clear();
             RefreshSketchGrid();
         }
 
         public IEnumerator DownloadCuratedSketches(int numSketches, int maxSketches)
         {
+            m_LastCuratedDownloadIndices.Clear();
             var curatedSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Curated) as IcosaSketchSet;
             if (curatedSketchSet == null)
             {
                 yield break;
             }
 
-            int alreadyDownloaded = 0;
-            for (int i = 0; i < curatedSketchSet.NumSketches; i++)
-            {
-                var info = curatedSketchSet.GetSketchSceneFileInfo(i);
-                if (info != null && info.Available)
-                {
-                    alreadyDownloaded++;
-                }
-            }
+            yield return new WaitUntil(() =>
+                curatedSketchSet.NumSketches > 0 || !curatedSketchSet.IsActivelyRefreshingSketches);
 
-            int toDownload = Mathf.Min(numSketches, maxSketches - alreadyDownloaded);
-            if (toDownload <= 0)
+            List<int> indicesToDownload = GetUnavailableCuratedSketchIndices(
+                curatedSketchSet, numSketches, maxSketches);
+            if (indicesToDownload.Count == 0)
             {
                 yield break;
             }
-
-            yield return new WaitUntil(() => curatedSketchSet.NumSketches >= alreadyDownloaded + toDownload);
-
-            List<int> indicesToDownload = new List<int>();
-            for (int i = alreadyDownloaded; i < alreadyDownloaded + toDownload; i++)
-            {
-                indicesToDownload.Add(i);
-            }
+            m_LastCuratedDownloadIndices = new List<int>(indicesToDownload);
 
             yield return StartCoroutine(curatedSketchSet.DownloadFilesCoroutine(indicesToDownload, () =>
             {
                 RefreshSketchGridAfterCuratedBatch();
             }));
+        }
+
+        private int CountAvailableSketches(IcosaSketchSet sketchSet)
+        {
+            int available = 0;
+            if (sketchSet == null)
+            {
+                return available;
+            }
+
+            for (int i = 0; i < sketchSet.NumSketches; i++)
+            {
+                var info = sketchSet.GetSketchSceneFileInfo(i);
+                if (info != null && info.Available)
+                {
+                    available++;
+                }
+            }
+            return available;
+        }
+
+        private List<int> GetUnavailableCuratedSketchIndices(IcosaSketchSet sketchSet,
+            int numSketches, int maxSketches)
+        {
+            List<int> indicesToDownload = new List<int>();
+            int available = 0;
+            for (int i = 0; i < sketchSet.NumSketches; i++)
+            {
+                var info = sketchSet.GetSketchSceneFileInfo(i);
+                if (info != null && info.Available)
+                {
+                    available++;
+                }
+            }
+
+            int remaining = maxSketches - available;
+            if (remaining <= 0)
+            {
+                return indicesToDownload;
+            }
+
+            int toDownload = Mathf.Min(numSketches, remaining);
+            for (int i = 0; i < sketchSet.NumSketches && indicesToDownload.Count < toDownload; i++)
+            {
+                var info = sketchSet.GetSketchSceneFileInfo(i);
+                if (info != null && !info.Available &&
+                    !m_CuratedDownloadNoProgressIndices.Contains(i))
+                {
+                    indicesToDownload.Add(i);
+                }
+            }
+
+            return indicesToDownload;
         }
 
         private void RefreshSketchGridAfterCuratedBatch()
