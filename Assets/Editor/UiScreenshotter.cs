@@ -134,12 +134,7 @@ namespace TiltBrush
                         TrTransform.T(origin));
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
-                    SaveCurrentView(
-                        cam,
-                        $"brush-{brush.DurableName}.png",
-                        1024,
-                        1024,
-                        enablePostProcessing: true);
+                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
                     DeleteStrokes(strokes);
                 }
             }
