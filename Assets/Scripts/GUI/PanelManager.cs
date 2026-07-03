@@ -394,17 +394,24 @@ namespace TiltBrush
             {
                 case PanelAvailabilityMode.Beginner:
                     return data.m_MapKey.m_Basic &&
-                        (IsPanelUnique(data.m_Panel.Type) || !data.m_Panel.AdvancedModePanel);
+                        IsPanelInEditingLevel(data, advancedPanels: false);
                 case PanelAvailabilityMode.Advanced:
                     return data.m_MapKey.m_Advanced &&
-                        (IsPanelUnique(data.m_Panel.Type) || data.m_Panel.AdvancedModePanel);
+                        IsPanelInEditingLevel(data, advancedPanels: true);
                 case PanelAvailabilityMode.ViewOnly:
                     return data.m_MapKey.m_ViewOnly;
                 case PanelAvailabilityMode.Multiplayer:
-                    return data.m_MapKey.m_Multiplayer;
+                    return data.m_MapKey.m_Multiplayer && IsPanelInEditingLevel(data,
+                        PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1);
                 default:
                     return false;
             }
+        }
+
+        private bool IsPanelInEditingLevel(PanelData data, bool advancedPanels)
+        {
+            return IsPanelUnique(data.m_Panel.Type) ||
+                data.m_Panel.AdvancedModePanel == advancedPanels;
         }
 
         public void SetPanelAvailabilityMode(PanelAvailabilityMode mode)
