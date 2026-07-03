@@ -60,6 +60,10 @@ namespace TiltBrush
         public Transform ShareButton { get { return m_ShareButton.transform; } }
         public Transform AdvancedButton { get { return m_AdvancedModeButton.transform; } }
         public HintObjectScript AdvancedModeHintObject { get { return m_AdvancedModeHintObject; } }
+        public bool SupportsAdvancedModePromo
+        {
+            get { return m_AdvancedModeButton != null && m_AdvancedModeHintObject != null; }
+        }
 
         void UpdateShareButtonText()
         {
