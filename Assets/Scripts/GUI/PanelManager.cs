@@ -2617,7 +2617,9 @@ namespace TiltBrush
 
         void _DismissPanelInternal(int index, bool bPlayAudio = true)
         {
-            m_AllPanels[index].m_RestoreFlag = m_AllPanels[index].m_Panel.gameObject.activeSelf;
+            m_AllPanels[index].m_RestoreFlag = m_AllPanels[index].m_Widget
+                ? m_AllPanels[index].m_Widget.Showing
+                : m_AllPanels[index].m_Panel.gameObject.activeSelf;
             m_AllPanels[index].m_Panel.ResetPanel();
 
             if (m_AllPanels[index].m_Widget)
