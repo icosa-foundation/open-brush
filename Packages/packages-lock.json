@@ -537,10 +537,14 @@
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
         "com.unity.shadergraph": "10.0.0",
-        "com.unity.mathematics": "1.0.0"
-      }
+        "com.unity.mathematics": "1.0.0",
+        "com.unity.collections": "1.0.0"
+      },
+      "hash": "7962840f6911023e749f29adb857fbab71b70a11"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
