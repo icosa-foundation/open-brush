@@ -473,6 +473,10 @@ namespace TiltBrush
                 }
                 if (infos.Count == 0)
                 {
+                    if (lister != null && lister.HasMore)
+                    {
+                        continue;
+                    }
                     break;
                 }
                 if (m_CacheDir == null)
