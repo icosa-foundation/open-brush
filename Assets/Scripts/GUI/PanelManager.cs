@@ -414,6 +414,12 @@ namespace TiltBrush
                 data.m_Panel.AdvancedModePanel == advancedPanels;
         }
 
+        private bool IsTemporaryPanelAvailabilityMode(PanelAvailabilityMode mode)
+        {
+            return mode == PanelAvailabilityMode.ViewOnly ||
+                mode == PanelAvailabilityMode.Multiplayer;
+        }
+
         public void SetPanelAvailabilityMode(PanelAvailabilityMode mode)
         {
             if (m_PanelAvailabilityMode == mode)
@@ -421,16 +427,22 @@ namespace TiltBrush
                 return;
             }
 
+            PanelAvailabilityMode previousMode = m_PanelAvailabilityMode;
             m_PanelAvailabilityMode = mode;
             if (m_AllPanels == null)
             {
                 return;
             }
+            bool restoreAvailablePanels = IsTemporaryPanelAvailabilityMode(previousMode);
             for (int i = 0; i < m_AllPanels.Count; ++i)
             {
                 if (!m_AllPanels[i].AvailableInCurrentMode)
                 {
                     _DismissPanelInternal(i, false);
+                }
+                else if (restoreAvailablePanels && m_AllPanels[i].m_RestoreFlag)
+                {
+                    _RestorePanelInternal(i);
                 }
             }
             RefreshPanelsForAnimations();
@@ -2665,6 +2677,7 @@ namespace TiltBrush
             else
             {
                 m_AllPanels[index].m_Panel.gameObject.SetActive(true);
+                m_AllPanels[index].m_RestoreFlag = false;
             }
         }
 
