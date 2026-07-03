@@ -489,6 +489,10 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
                 }
+                else if (args[i] == "--ForceViewOnly")
+                {
+                    ParseUserSetting("--Flags.ForceViewOnly", "true");
+                }
                 else if (args[i].Contains("."))
                 {
                     if (i == args.Length - 1)
