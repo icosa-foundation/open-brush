@@ -18,7 +18,7 @@ Shader "Brush/LitA2CVertexColor"
         ZWrite On
 
         CGPROGRAM
-        #pragma surface surf Standard fullforwardshadows alpha:coverage
+        #pragma surface surf Standard vertex:vert fullforwardshadows alpha:coverage
         #pragma target 3.0
         #include "UnityCG.cginc"
 
@@ -33,6 +33,24 @@ Shader "Brush/LitA2CVertexColor"
             fixed4 color : COLOR;
             float4 screenPos;
         };
+
+        struct appdata_full_instanced
+        {
+            float4 vertex : POSITION;
+            float4 tangent : TANGENT;
+            float3 normal : NORMAL;
+            float4 texcoord : TEXCOORD0;
+            float4 texcoord1 : TEXCOORD1;
+            float4 texcoord2 : TEXCOORD2;
+            float4 texcoord3 : TEXCOORD3;
+            fixed4 color : COLOR;
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+        };
+
+        void vert (inout appdata_full_instanced v, out Input o)
+        {
+            UNITY_INITIALIZE_OUTPUT(Input, o);
+        }
 
         float OrderedDither4x4(float2 pixelPos)
         {
