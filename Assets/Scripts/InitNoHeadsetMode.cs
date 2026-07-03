@@ -108,10 +108,18 @@ namespace TiltBrush
             SubscribeSketchSetChangeEvents();
             RefreshSketchGrid();
             StartCoroutine(DownloadAllCuratedSketchesInBatches(BatchSize, MaxSketches));
-            // Don't show "new blank sketch" button in View Only Mode
-            m_BlankSketchUi.SetActive(!SketchControlsScript.m_Instance.IsViewOnly);
-            // Don't show "using open brush without a headset" info in View Only Mode
-            m_HelpUi.SetActive(!SketchControlsScript.m_Instance.IsViewOnly);
+            RefreshViewOnlyUi();
+        }
+
+        public void RefreshViewOnlyUi()
+        {
+            bool viewOnly = App.UserConfig.Flags.ForceViewOnly ||
+                (SketchControlsScript.m_Instance != null && SketchControlsScript.m_Instance.IsViewOnly);
+
+            // Don't show "new blank sketch" button in View Only Mode.
+            m_BlankSketchUi?.SetActive(!viewOnly);
+            // Don't show "using open brush without a headset" info in View Only Mode.
+            m_HelpUi?.SetActive(!viewOnly);
         }
 
         private void SubscribeSketchSetChangeEvents()
@@ -971,6 +979,7 @@ namespace TiltBrush
                     m_PcControlsText.SetActive(!Application.isMobilePlatform);
                 }
             }
+            RefreshViewOnlyUi();
         }
 
         public void HandleHelpButton()
