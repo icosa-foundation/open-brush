@@ -728,6 +728,11 @@ namespace OpenBrush.Multiplayer
             return State == ConnectionState.IN_ROOM;
         }
 
+        public bool HasRemotePlayersInRoom()
+        {
+            return State == ConnectionState.IN_ROOM && m_RemotePlayers != null && m_RemotePlayers.List.Count > 0;
+        }
+
         public bool IsUserRoomOwner()
         {
             return isUserRoomOwner;
@@ -764,4 +769,3 @@ namespace OpenBrush.Multiplayer
         }
     }
 }
-

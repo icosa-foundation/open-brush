@@ -136,6 +136,32 @@ MonoBehaviour:
   m_Name: OpenBrushLightsImport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-6114057577546049503
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de1f726221454139bfcce49d994d9d05, type: 3}
+  m_Name: ExrImport
+  m_EditorClassIdentifier:
+  enabled: 1
+--- !u!114 &-5802376853679533471
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5d73111d7b6493da937accca1adfe6a, type: 3}
+  m_Name: WebpImport
+  m_EditorClassIdentifier:
+  enabled: 1
 --- !u!114 &-5728475199642485532
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -311,6 +337,8 @@ MonoBehaviour:
   - {fileID: -4070862177138860178}
   - {fileID: 637454249380963975}
   - {fileID: -7011229683044967540}
+  - {fileID: -6114057577546049503}
+  - {fileID: -5802376853679533471}
   - {fileID: 9007628859994941859}
   ExportPlugins:
   - {fileID: 242952683485160214}
