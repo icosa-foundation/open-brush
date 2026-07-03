@@ -864,8 +864,28 @@ namespace TiltBrush
                     }
                     yield return null;
                 }
-                m_RequestedIcons.RemoveAll(i => m_Sketches[i].Icon != null);
+                m_RequestedIcons.RemoveAll(RequestedIconIsLoadedOrUnavailable);
             }
+        }
+
+        private bool RequestedIconIsLoadedOrUnavailable(int i)
+        {
+            if (i < 0 || i >= m_Sketches.Count)
+            {
+                return true;
+            }
+
+            IcosaSketch sketch = m_Sketches[i];
+            IcosaSceneFileInfo info = sketch.IcosaSceneFileInfo;
+            if (sketch.Icon != null)
+            {
+                return true;
+            }
+
+            return info == null ||
+                !info.IconDownloaded ||
+                string.IsNullOrEmpty(info.IconPath) ||
+                !File.Exists(info.IconPath);
         }
 
         private static string CacheDir(SketchSetType type)
