@@ -10,52 +10,55 @@ Shader "Brush/UnlitA2CVertexColor"
     }
     SubShader
     {
-        Tags { "RenderType"="TransparentCutout" "Queue"="AlphaTest" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="TransparentCutout" "Queue"="AlphaTest" "IgnoreProjector"="True" }
         LOD 100
 
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             AlphaToMask On
             Blend Off
             ZWrite On
             Cull Off
 
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #include "UnityCG.cginc"
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            fixed4 _Color;
+            CBUFFER_START(UnityPerMaterial)
+            half4 _Color;
             float _DitherStrength;
             float _OrderedDither;
             float _AlphaBias;
             float _AlphaPower;
+            CBUFFER_END
 
-            struct appdata
+            struct Attributes
             {
-                float4 vertex : POSITION;
-                fixed4 color  : COLOR;
+                float4 positionOS : POSITION;
+                half4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct v2f
+            struct Varyings
             {
-                float4 pos : SV_POSITION;
-                fixed4 color : COLOR;
-                float4 screenPos : TEXCOORD0;
+                float4 positionHCS : SV_POSITION;
+                half4 color : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            v2f vert (appdata v)
+            Varyings Vert(Attributes input)
             {
-                v2f o;
-                UNITY_SETUP_INSTANCE_ID(v);
-                UNITY_INITIALIZE_OUTPUT(v2f, o);
-                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-                o.pos = UnityObjectToClipPos(v.vertex);
-                o.color = v.color * _Color;
-                o.screenPos = ComputeScreenPos(o.pos);
-                return o;
+                Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                output.positionHCS = TransformObjectToHClip(input.positionOS.xyz);
+                output.color = input.color * _Color;
+                return output;
             }
 
             float OrderedDither4x4(float2 pixelPos)
@@ -98,12 +101,15 @@ Shader "Brush/UnlitA2CVertexColor"
                 return frac(sin(h) * 43758.5453);
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            half4 Frag(Varyings input) : SV_Target
             {
-                fixed4 c = i.color;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                half4 c = input.color;
                 float alpha = saturate(pow(saturate(c.a + _AlphaBias), _AlphaPower));
 
-                float2 pixelPos = (i.screenPos.xy / i.screenPos.w) * _ScreenParams.xy;
+                float2 pixelPos = input.positionHCS.xy;
                 float seed = ObjectSeed();
                 pixelPos += seed * 4096.0;
                 float ditherOrdered = OrderedDither4x4(pixelPos);
@@ -111,9 +117,10 @@ Shader "Brush/UnlitA2CVertexColor"
                 float dither = lerp(ditherNoise, ditherOrdered, step(0.5, _OrderedDither));
 
                 alpha = saturate(alpha + (dither - 0.5) * _DitherStrength);
-                return fixed4(c.rgb, alpha);
+                return half4(c.rgb, alpha);
             }
-            ENDCG
+            ENDHLSL
         }
     }
+    FallBack Off
 }
