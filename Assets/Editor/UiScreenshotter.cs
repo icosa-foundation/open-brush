@@ -43,8 +43,22 @@ namespace TiltBrush
         [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots")]
         static void GenerateBrushScreenShots()
         {
+            GenerateBrushScreenShots(enablePostProcessing: false);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots With Post Effects")]
+        static void GenerateBrushScreenShotsWithPostEffects()
+        {
+            GenerateBrushScreenShots(enablePostProcessing: true);
+        }
+
+        private static void GenerateBrushScreenShots(bool enablePostProcessing)
+        {
             if (!IsPlaying()) return;
-            DelayedGenerateBrushScreenShots();
+
+            SetupBlackEnvironment();
+
+            DelayedGenerateBrushScreenShots(enablePostProcessing);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -98,7 +112,7 @@ namespace TiltBrush
             }
         }
 
-        async static void DelayedGenerateBrushScreenShots()
+        async static void DelayedGenerateBrushScreenShots(bool enablePostProcessing)
         {
             await Task.Delay(3000);
             var cam = InitScreenshotCamera();
@@ -113,8 +127,10 @@ namespace TiltBrush
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
             bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
             bool wasForceDeterministicBirthTimeForExport = App.Config.m_ForceDeterministicBirthTimeForExport;
+            bool wasPostEffects = CameraConfig.PostEffects;
             batchManager.OneStrokePerBatch = true;
             App.Config.m_ForceDeterministicBirthTimeForExport = true;
+            CameraConfig.PostEffects = enablePostProcessing;
 
             try
             {
@@ -127,13 +143,14 @@ namespace TiltBrush
                         TrTransform.T(origin));
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
-                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024, enablePostProcessing);
                     DeleteStrokes(strokes);
                 }
             }
             finally
             {
                 App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
+                CameraConfig.PostEffects = wasPostEffects;
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
         }
@@ -241,7 +258,67 @@ namespace TiltBrush
             }
         }
 
-        static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
+        private static readonly Type[] kBuiltInPostEffectComponents =
+        {
+            typeof(RenderWrapper),
+            typeof(MobileBloom),
+            typeof(SENaturalBloomAndDirtyLens),
+            typeof(TiltShift),
+            typeof(Kino.Vignette)
+        };
+
+        private static List<KeyValuePair<Behaviour, bool>> SetBuiltInPostEffectsEnabled(
+            Camera cameraToCapture, bool enabled)
+        {
+            var previousStates = new List<KeyValuePair<Behaviour, bool>>();
+            if (cameraToCapture == null)
+            {
+                return previousStates;
+            }
+
+            foreach (Type componentType in kBuiltInPostEffectComponents)
+            {
+                var component = cameraToCapture.GetComponent(componentType) as Behaviour;
+                if (component == null)
+                {
+                    continue;
+                }
+                previousStates.Add(new KeyValuePair<Behaviour, bool>(component, component.enabled));
+                component.enabled = enabled;
+            }
+            return previousStates;
+        }
+
+        private static void RestoreBuiltInPostEffects(
+            IEnumerable<KeyValuePair<Behaviour, bool>> previousStates)
+        {
+            foreach (var previousState in previousStates)
+            {
+                if (previousState.Key != null)
+                {
+                    previousState.Key.enabled = previousState.Value;
+                }
+            }
+        }
+
+        private static void SetKeyword(string keyword, bool enabled)
+        {
+            if (enabled)
+            {
+                Shader.EnableKeyword(keyword);
+            }
+            else
+            {
+                Shader.DisableKeyword(keyword);
+            }
+        }
+
+        static void SaveCurrentView(
+            Camera cameraToCapture,
+            string fileName,
+            int resWidth,
+            int resHeight,
+            bool? enablePostProcessing = null)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
@@ -258,8 +335,22 @@ namespace TiltBrush
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
             bool previousAllowMsaa = cameraToCapture.allowMSAA;
+            bool previousHdrSimple = Shader.IsKeywordEnabled("HDR_SIMPLE");
+            bool previousHdrEmulated = Shader.IsKeywordEnabled("HDR_EMULATED");
+            List<KeyValuePair<Behaviour, bool>> previousPostEffectStates = null;
             try
             {
+                if (enablePostProcessing.HasValue)
+                {
+                    previousPostEffectStates = SetBuiltInPostEffectsEnabled(
+                        cameraToCapture, enablePostProcessing.Value);
+                    if (!enablePostProcessing.Value)
+                    {
+                        Shader.DisableKeyword("HDR_SIMPLE");
+                        Shader.DisableKeyword("HDR_EMULATED");
+                    }
+                }
+
                 cameraToCapture.allowMSAA = true;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
@@ -279,6 +370,12 @@ namespace TiltBrush
             {
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
+                if (previousPostEffectStates != null)
+                {
+                    RestoreBuiltInPostEffects(previousPostEffectStates);
+                }
+                SetKeyword("HDR_SIMPLE", previousHdrSimple);
+                SetKeyword("HDR_EMULATED", previousHdrEmulated);
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {
