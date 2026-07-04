@@ -46,8 +46,22 @@ namespace TiltBrush
         [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots")]
         static void GenerateBrushScreenShots()
         {
+            GenerateBrushScreenShots(enablePostProcessing: false);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots With Post Effects")]
+        static void GenerateBrushScreenShotsWithPostEffects()
+        {
+            GenerateBrushScreenShots(enablePostProcessing: true);
+        }
+
+        private static void GenerateBrushScreenShots(bool enablePostProcessing)
+        {
             if (!IsPlaying()) return;
-            DelayedGenerateBrushScreenShots();
+
+            SetupBlackEnvironment();
+
+            DelayedGenerateBrushScreenShots(enablePostProcessing);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -101,7 +115,7 @@ namespace TiltBrush
             }
         }
 
-        async static void DelayedGenerateBrushScreenShots()
+        async static void DelayedGenerateBrushScreenShots(bool enablePostProcessing)
         {
             await Task.Delay(3000);
             var cam = InitScreenshotCamera();
@@ -116,8 +130,10 @@ namespace TiltBrush
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
             bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
             bool wasForceDeterministicBirthTimeForExport = App.Config.m_ForceDeterministicBirthTimeForExport;
+            bool wasPostEffects = CameraConfig.PostEffects;
             batchManager.OneStrokePerBatch = true;
             App.Config.m_ForceDeterministicBirthTimeForExport = true;
+            CameraConfig.PostEffects = enablePostProcessing;
 
             try
             {
@@ -134,13 +150,19 @@ namespace TiltBrush
                         TrTransform.T(origin));
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
-                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
+                    SaveCurrentView(
+                        cam,
+                        $"brush-{brush.DurableName}.png",
+                        1024,
+                        1024,
+                        enablePostProcessing);
                     DeleteStrokes(strokes);
                 }
             }
             finally
             {
                 App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
+                CameraConfig.PostEffects = wasPostEffects;
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
         }
@@ -284,11 +306,11 @@ namespace TiltBrush
             string fileName,
             int resWidth,
             int resHeight,
-            bool enablePostProcessing = false)
+            bool? enablePostProcessing = null)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
-            RenderTextureFormat sourceFormat = enablePostProcessing
+            RenderTextureFormat sourceFormat = enablePostProcessing == true
                 ? RenderTextureFormat.DefaultHDR
                 : RenderTextureFormat.ARGB32;
             RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, sourceFormat)
@@ -309,24 +331,32 @@ namespace TiltBrush
                 cameraToCapture.GetComponent<UniversalAdditionalCameraData>();
             bool hadCameraData = cameraData != null;
             bool previousRenderPostProcessing = false;
+            Transform previousVolumeTrigger = null;
+            LayerMask previousVolumeLayerMask = default;
             try
             {
-                if (enablePostProcessing)
+                if (enablePostProcessing == true && cameraData == null)
                 {
-                    if (cameraData == null)
-                    {
-                        cameraData = cameraToCapture.gameObject.AddComponent<UniversalAdditionalCameraData>();
-                        Debug.Log(
-                            $"{kUrpPostLogPrefix} Added UniversalAdditionalCameraData to brush screenshot camera.");
-                    }
+                    cameraData = cameraToCapture.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    Debug.Log(
+                        $"{kUrpPostLogPrefix} Added UniversalAdditionalCameraData to brush screenshot camera.");
+                }
+
+                if (cameraData != null && enablePostProcessing.HasValue)
+                {
                     previousRenderPostProcessing = cameraData.renderPostProcessing;
-                    cameraData.renderPostProcessing = true;
-                    cameraData.volumeTrigger = cameraToCapture.transform;
-                    cameraData.volumeLayerMask = ~0;
+                    previousVolumeTrigger = cameraData.volumeTrigger;
+                    previousVolumeLayerMask = cameraData.volumeLayerMask;
+                    cameraData.renderPostProcessing = enablePostProcessing.Value;
+                    if (enablePostProcessing.Value)
+                    {
+                        cameraData.volumeTrigger = cameraToCapture.transform;
+                        cameraData.volumeLayerMask = ~0;
+                    }
                 }
 
                 cameraToCapture.allowMSAA = true;
-                cameraToCapture.allowHDR = enablePostProcessing || previousAllowHdr;
+                cameraToCapture.allowHDR = enablePostProcessing == true || previousAllowHdr;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
                 cameraToCapture.Render();
@@ -346,9 +376,11 @@ namespace TiltBrush
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
                 cameraToCapture.allowHDR = previousAllowHdr;
-                if (enablePostProcessing && cameraData != null)
+                if (cameraData != null && enablePostProcessing.HasValue)
                 {
                     cameraData.renderPostProcessing = previousRenderPostProcessing;
+                    cameraData.volumeTrigger = previousVolumeTrigger;
+                    cameraData.volumeLayerMask = previousVolumeLayerMask;
                     if (!hadCameraData)
                     {
                         Destroy(cameraData);
