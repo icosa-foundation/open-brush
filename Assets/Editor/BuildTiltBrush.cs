@@ -77,6 +77,7 @@ static class BuildTiltBrush
         public string Description;
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
+        public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
 
     [Serializable()]
@@ -677,6 +678,7 @@ static class BuildTiltBrush
     //   -btb-key{store,alias}{name,pass} Info needed for Android signing
     //   -btb-increment-bundle-version  Increment PlayerSettings "bundleVersionCode"; use this
     //                       when uploading a build. [This is no longer used]
+    //   -btb-android-target-sdk VERSION  Temporarily override Android targetSdkVersion.
     //
     [PublicAPI]
     static void CommandLine()
@@ -718,7 +720,11 @@ static class BuildTiltBrush
 
             for (i = i + 1; i < args.Length; ++i)
             {
-                if (args[i] == "-btb-display")
+                if (string.IsNullOrWhiteSpace(args[i]))
+                {
+                    continue;
+                }
+                else if (args[i] == "-btb-display")
                 {
                     string mode = args[++i];
                     // TODO: Legacy; remove when our build shortcuts are updated
@@ -783,11 +789,11 @@ static class BuildTiltBrush
                 }
                 else if (args[i] == "-androidTargetSdkVersion")
                 {
-                    // Not supported in Open Brush (added to game-ci in https://github.com/game-ci/unity-builder/pull/298)
-                    // By default, this field has no value, but if set, we need to skip it
-                    if (!args[i + 1].StartsWith("-"))
+                    if (i + 1 < args.Length &&
+                        !string.IsNullOrWhiteSpace(args[i + 1]) &&
+                        !args[i + 1].StartsWith("-"))
                     {
-                        i++;
+                        tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                     }
                 }
                 else if (args[i] == "-androidVersionCode")
@@ -817,6 +823,10 @@ static class BuildTiltBrush
                 else if (args[i] == "-btb-disableAccountLogins")
                 {
                     tiltOptions.disableAccountLogins = true;
+                }
+                else if (args[i] == "-btb-android-target-sdk")
+                {
+                    tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                 }
                 else if (args[i] == "-androidExportType")
                 {
@@ -883,6 +893,20 @@ static class BuildTiltBrush
         }
     }
 
+    private static AndroidSdkVersions ParseAndroidTargetSdkVersion(string value)
+    {
+        if (int.TryParse(value, out int apiLevel))
+        {
+            return (AndroidSdkVersions)apiLevel;
+        }
+        if (Enum.TryParse(value, out AndroidSdkVersions sdkVersion))
+        {
+            return sdkVersion;
+        }
+        Die(3, $"Unsupported Android target SDK version {value}");
+        return default;
+    }
+
     class TempDefineSymbols : System.IDisposable
     {
         string m_prevSymbols;
@@ -915,6 +939,8 @@ static class BuildTiltBrush
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
         private Texture2D[] m_Icons;
+        private bool m_RestoreAndroidTargetSdkVersion;
+        private AndroidSdkVersions m_AndroidTargetSdkVersion;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
@@ -922,6 +948,14 @@ static class BuildTiltBrush
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
             m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
+
+            if (m_Target == BuildTarget.Android && tiltOptions.AndroidTargetSdkVersion.HasValue)
+            {
+                m_RestoreAndroidTargetSdkVersion = true;
+                m_AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion;
+                PlayerSettings.Android.targetSdkVersion = tiltOptions.AndroidTargetSdkVersion.Value;
+                Debug.Log($"Set Android target SDK to {tiltOptions.AndroidTargetSdkVersion.Value}.");
+            }
 
             switch (tiltOptions.XrSdk)
             {
@@ -953,6 +987,10 @@ static class BuildTiltBrush
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
             PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
             PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            if (m_RestoreAndroidTargetSdkVersion)
+            {
+                PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
+            }
             AssetDatabase.SaveAssets();
         }
     }
