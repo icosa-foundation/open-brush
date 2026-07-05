@@ -785,7 +785,9 @@ static class BuildTiltBrush
                 }
                 else if (args[i] == "-androidTargetSdkVersion")
                 {
-                    if (i + 1 < args.Length && !args[i + 1].StartsWith("-"))
+                    if (i + 1 < args.Length &&
+                        !string.IsNullOrWhiteSpace(args[i + 1]) &&
+                        !args[i + 1].StartsWith("-"))
                     {
                         tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                     }
