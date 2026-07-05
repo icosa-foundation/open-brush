@@ -720,7 +720,11 @@ static class BuildTiltBrush
 
             for (i = i + 1; i < args.Length; ++i)
             {
-                if (args[i] == "-btb-display")
+                if (string.IsNullOrWhiteSpace(args[i]))
+                {
+                    continue;
+                }
+                else if (args[i] == "-btb-display")
                 {
                     string mode = args[++i];
                     // TODO: Legacy; remove when our build shortcuts are updated
