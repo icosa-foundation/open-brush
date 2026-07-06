@@ -35,6 +35,8 @@ Category {
 
   SubShader {
     Pass {
+      Name "ChromaticWave"
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
