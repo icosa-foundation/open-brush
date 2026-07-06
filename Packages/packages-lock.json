@@ -375,6 +375,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.valvesoftware.openxr.utils": {
+      "version": "https://github.com/ValveSoftware/Unity.git?path=/com.valvesoftware.openxr.utils",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.openxr": "1.10.0",
+        "com.unity.inputsystem": "1.7.0"
+      },
+      "hash": "28c3b8d9a4ecd7a128906e11c398944d3c8524dc"
+    },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
       "depth": 0,
