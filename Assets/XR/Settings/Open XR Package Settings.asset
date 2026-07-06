@@ -1342,7 +1342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4075384ac7e6264886a63ca34890d36, type: 3}
   m_Name: SteamFrameControllerProfile Standalone
   m_EditorClassIdentifier: 
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Steam Frame Controller Profile
   version: 0.0.3
   featureIdInternal: com.unity.openxr.feature.input.frame_controller
