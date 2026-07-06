@@ -27,14 +27,15 @@ namespace TiltBrush
     {
         public enum Mode
         {
-            Accounts,
-            TakeOffHeadset,
-            GoogleHelp,
-            DriveHelp,
-            SketchfabHelp,
-            IcosaHelp,
-            ConfirmLogin,
-            Unavailable,
+            Accounts = 0,
+            TakeOffHeadset = 1,
+            GoogleHelp = 2,
+            DriveHelp = 3,
+            SketchfabHelp = 4,
+            IcosaHelp = 5,
+            ViveHelp = 8,
+            ConfirmLogin = 6,
+            Unavailable = 7,
         }
 
         [SerializeField] private GameObject m_GoogleSignedInElements;
@@ -47,12 +48,17 @@ namespace TiltBrush
         [SerializeField] private GameObject m_IcosaSignedOutElements;
         [SerializeField] private GameObject m_IcosaConfirmSignOutElements;
         [SerializeField] private GameObject m_IcosaLoginElements;
+        [SerializeField] private GameObject m_ViveSignedInElements;
+        [SerializeField] private GameObject m_ViveSignedOutElements;
+        [SerializeField] private GameObject m_ViveConfirmSignOutElements;
         [SerializeField] private Renderer m_GooglePhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
         [SerializeField] private Renderer m_IcosaPhoto;
+        [SerializeField] private Renderer m_VivePhoto;
         [SerializeField] private TextMeshPro m_GoogleNameText;
         [SerializeField] private TextMeshPro m_SketchfabNameText;
         [SerializeField] private TextMeshPro m_IcosaNameText;
+        [SerializeField] private TextMeshPro m_ViveNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
         [SerializeField] private GameObject m_Accounts;
@@ -61,6 +67,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_DriveInfoElements;
         [SerializeField] private GameObject m_SketchfabInfoElements;
         [SerializeField] private GameObject m_IcosaInfoElements;
+        [SerializeField] private GameObject m_ViveInfoElements;
         [SerializeField] private GameObject m_UnavailableElements;
         [SerializeField] private GameObject m_DriveSyncEnabledElements;
         [SerializeField] private GameObject m_DriveSyncDisabledElements;
@@ -80,6 +87,11 @@ namespace TiltBrush
 
         private Mode m_CurrentMode;
         private bool m_DriveSyncing = false;
+
+        private void OnEnable()
+        {
+            RefreshObjects();
+        }
 
         private void Start()
         {
@@ -168,6 +180,23 @@ namespace TiltBrush
             m_IcosaConfirmSignOutElements.SetActive(false);
             RefreshIcosaUserInfoUi();
 
+            // Vive.
+            // Safety check in case App.ViveIdentity hasn't initialized correctly
+            var viveIdentity = App.ViveIdentity;
+            OAuth2Identity.UserInfo viveInfo = viveIdentity != null ? viveIdentity.Profile : null;
+            bool viveInfoValid = viveInfo != null;
+
+            m_ViveSignedInElements.SetActive(viveInfoValid);
+            m_ViveSignedOutElements.SetActive(!viveInfoValid);
+            m_ViveConfirmSignOutElements.SetActive(false);
+
+            if (viveInfoValid)
+            {
+                m_ViveNameText.text = viveInfo.name;
+                // Use generic photo if icon is null (e.g. still downloading)
+                m_VivePhoto.material.mainTexture = viveInfo.icon != null ? viveInfo.icon : m_GenericPhoto;
+            }
+
             m_DriveFullElements.SetActive(driveFull && driveSyncEnabled);
             m_DriveSyncEnabledElements.SetActive(!driveFull && driveSyncEnabled);
             m_DriveSyncDisabledElements.SetActive(!driveSyncEnabled);
@@ -192,6 +221,8 @@ namespace TiltBrush
             m_SketchfabSignedInElements.SetActive(true);
             m_GoogleSignedInElements.SetActive(true);
             m_GoogleSignedOutElements.SetActive(true);
+            m_ViveSignedOutElements.SetActive(true);
+            m_ViveSignedInElements.SetActive(true);
             RefreshObjects();
         }
 
@@ -205,6 +236,8 @@ namespace TiltBrush
             m_SketchfabSignedInElements.SetActive(false);
             m_GoogleSignedInElements.SetActive(false);
             m_GoogleSignedOutElements.SetActive(false);
+            m_ViveSignedOutElements.SetActive(false);
+            m_ViveSignedInElements.SetActive(false);
         }
 
         public void HandleIcosaLoginSubmit(string code)
@@ -308,6 +341,7 @@ namespace TiltBrush
             m_DriveInfoElements.SetActive(m_CurrentMode == Mode.DriveHelp);
             m_SketchfabInfoElements.SetActive(m_CurrentMode == Mode.SketchfabHelp);
             m_IcosaInfoElements.SetActive(m_CurrentMode == Mode.IcosaHelp);
+            m_ViveInfoElements.SetActive(m_CurrentMode == Mode.ViveHelp);
             m_UnavailableElements.SetActive(m_CurrentMode == Mode.Unavailable);
             if (m_ConfirmLoginElements != null)
             {
@@ -317,11 +351,11 @@ namespace TiltBrush
 
         void OnProfileUpdated(OAuth2Identity _)
         {
-            // If we're currently telling the user to take of the headset to signin,
-            // and they've done so correctly, switch back to the accounts view.
-            if (m_CurrentMode == Mode.TakeOffHeadset)
+            // If we're currently telling the user to take off the headset (PC)
+            // OR if we are showing the Confirm Login screen (Quest/Mobile),
+            // and the login completes, switch back to the accounts view automatically.
+            if (m_CurrentMode == Mode.TakeOffHeadset || m_CurrentMode == Mode.ConfirmLogin)
             {
-                Debug.Log($"OnProfileUpdated set AccountMode");
                 UpdateMode(Mode.Accounts);
             }
             RefreshObjects();
@@ -341,7 +375,9 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.LoginToGenericCloud:
                     // m_CommandParam 1 is Google.  m_CommandParam 2 is Sketchfab.
-                    if (button.m_CommandParam == 1 || button.m_CommandParam == 2)
+                    // m_CommandParam 3 is Icosa. m_CommandPaam 4 is Vive.
+                    if (button.m_CommandParam == 1 || button.m_CommandParam == 2 ||
+                        button.m_CommandParam == 3 || button.m_CommandParam == 4)
                     {
                         if (App.Config.IsMobileHardware && m_SaveAndProceedButton != null)
                         {
@@ -350,8 +386,14 @@ namespace TiltBrush
                         }
                         else
                         {
-                            OAuth2Identity.UserInfo userInfo = (button.m_CommandParam == 1) ?
-                                App.GoogleIdentity.Profile : App.SketchfabIdentity.Profile;
+                            OAuth2Identity.UserInfo userInfo = button.m_CommandParam switch
+                            {
+                                1 => App.GoogleIdentity.Profile,
+                                2 => App.SketchfabIdentity.Profile,
+                                3 => App.IcosaIdentity.Profile,
+                                4 => App.ViveIdentity.Profile,
+                                _ => null
+                            };
                             if (userInfo == null)
                             {
                                 UpdateMode(Mode.TakeOffHeadset);
@@ -388,6 +430,9 @@ namespace TiltBrush
                         case 3:
                             UpdateMode(Mode.IcosaHelp);
                             break;
+                        case 4:
+                            UpdateMode(Mode.ViveHelp);
+                            break;
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.SignOutConfirm:
@@ -407,6 +452,11 @@ namespace TiltBrush
                             m_IcosaSignedInElements.SetActive(false);
                             m_IcosaSignedOutElements.SetActive(false);
                             m_IcosaConfirmSignOutElements.SetActive(true);
+                            break;
+                        case Cloud.Vive:
+                            m_ViveSignedInElements.SetActive(false);
+                            m_ViveSignedOutElements.SetActive(false);
+                            m_ViveConfirmSignOutElements.SetActive(true);
                             break;
                         case Cloud.None: break;
                     }

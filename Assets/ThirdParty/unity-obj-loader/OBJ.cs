@@ -7,6 +7,8 @@ using System.IO;
 using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine.Networking;
+using static TiltBrush.OverlayManager;
+using Null = TiltBrush.Null;
 
 public class OBJ : MonoBehaviour
 {
@@ -46,6 +48,10 @@ public class OBJ : MonoBehaviour
     private GeometryBuffer buffer;
     bool finished = false;
 
+    // Compiled regex patterns for performance
+    private static readonly Regex RegexWhitespaces = new Regex(@"\s+", RegexOptions.Compiled);
+    private static readonly Regex RegexNumber = new Regex(@"^[-+]?[0-9]*\.?[0-9]+$", RegexOptions.Compiled);
+
     #if UNITY_EDITOR
     void Start()
     {
@@ -59,7 +65,10 @@ public class OBJ : MonoBehaviour
     public void BeginLoad(string path)
     {
         buffer = new GeometryBuffer();
-        StartCoroutine(_Load(path));
+        StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+            OverlayType.LoadModel,
+            _Load(path),
+            0.25f));
     }
 
     public Task BeginLoadAsync(string path)
@@ -72,11 +81,15 @@ public class OBJ : MonoBehaviour
 
     private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
     {
-        yield return _Load(path);
+        // Don't raise the compositor overlay here: _Load already time-slices (it yields between
+        // chunks), and this path is used for background preload while the user is browsing the
+        // panel - popping a fullscreen loading overlay mid-browse is wrong. Explicit foreground
+        // spawns still get the overlay from the higher-level wrapper (Model.LoadFullyCoroutine).
+        yield return StartCoroutine(_Load(path));
         tcs.SetResult(true);
     }
 
-    private IEnumerator _Load(string path)
+    private IEnumerator<Null> _Load(string path)
     {
         if (finished) yield break;
         basepath = Path.GetDirectoryName(path);
@@ -88,14 +101,19 @@ public class OBJ : MonoBehaviour
         path = FixLocalPaths(path);
 
         var geomRequest = UnityWebRequest.Get(path);
-        yield return geomRequest.SendWebRequest();
+        var geomOp = geomRequest.SendWebRequest();
+        while (!geomOp.isDone)
+        {
+            yield return null;
+        }
         if (geomRequest.error != null)
         {
             Debug.LogError(geomRequest.error);
         }
         else
         {
-            SetGeometryData(geomRequest.downloadHandler.text);
+            string geomData = geomRequest.downloadHandler.text;
+            SetGeometryData(geomData);
         }
 
         if (hasMaterials)
@@ -103,7 +121,11 @@ public class OBJ : MonoBehaviour
             string mtlPath = basepath + mtllib;
             mtlPath = FixLocalPaths(mtlPath);
             var mtlRequest = UnityWebRequest.Get(mtlPath);
-            yield return mtlRequest.SendWebRequest();
+            var mtlOp = mtlRequest.SendWebRequest();
+            while (!mtlOp.isDone)
+            {
+                yield return null;
+            }
 
             if (mtlRequest.error != null)
             {
@@ -123,7 +145,7 @@ public class OBJ : MonoBehaviour
             {
                 if (m.diffuseTexPath != null)
                 {
-                    yield return StartCoroutine(GetTextureLoader(m.diffuseTexPath, tex =>
+                    var loader = GetTextureLoader(m.diffuseTexPath, tex =>
                     {
                         if (tex == null)
                         {
@@ -133,11 +155,15 @@ public class OBJ : MonoBehaviour
                         {
                             m.diffuseTex = tex;
                         }
-                    }));
+                    });
+                    while (loader.MoveNext())
+                    {
+                        yield return null;
+                    }
                 }
                 if (m.bumpTexPath != null)
                 {
-                    yield return StartCoroutine(GetTextureLoader(m.bumpTexPath, tex =>
+                    var loader = GetTextureLoader(m.bumpTexPath, tex =>
                     {
                         if (tex == null)
                         {
@@ -147,7 +173,11 @@ public class OBJ : MonoBehaviour
                         {
                             m.bumpTex = tex;
                         }
-                    }));
+                    });
+                    while (loader.MoveNext())
+                    {
+                        yield return null;
+                    }
                 }
             }
         }
@@ -169,7 +199,11 @@ public class OBJ : MonoBehaviour
         texpath = FixLocalPaths(Path.Combine(basepath, texpath));
         using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(texpath))
         {
-            yield return texRequest.SendWebRequest();
+            var texOp = texRequest.SendWebRequest();
+            while (!texOp.isDone)
+            {
+                yield return null;
+            }
             if (texRequest.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError(texRequest.error);
@@ -197,7 +231,7 @@ public class OBJ : MonoBehaviour
         {
             for (int j = 1; j < p.Length; j++)
             {
-                string[] c = p[j].Trim().Split("/".ToCharArray());
+                string[] c = p[j].Trim().Split('/');
                 FaceIndices fi = new FaceIndices();
                 // vertex
                 int vi = ci(c[0]);
@@ -227,7 +261,7 @@ public class OBJ : MonoBehaviour
             int uvCount = buffer.uvs.Count;
             for (int j = 1; j < p.Length; j++)
             {
-                string[] c = p[j].Trim().Split("/".ToCharArray());
+                string[] c = p[j].Trim().Split('/');
                 FaceIndices fi = new FaceIndices();
                 // vertex
                 int vi = ci(c[0]);
@@ -255,8 +289,7 @@ public class OBJ : MonoBehaviour
 
     private void SetGeometryData(string data)
     {
-        string[] lines = data.Split("\n".ToCharArray());
-        Regex regexWhitespaces = new Regex(@"\s+");
+        string[] lines = data.Split('\n');
         bool isFirstInGroup = true;
         bool isFaceIndexPlus = true;
         for (int i = 0; i < lines.Length; i++)
@@ -267,7 +300,7 @@ public class OBJ : MonoBehaviour
             { // comment line
                 continue;
             }
-            string[] p = regexWhitespaces.Split(l);
+            string[] p = RegexWhitespaces.Split(l);
             switch (p[0])
             {
                 case O:
@@ -297,28 +330,27 @@ public class OBJ : MonoBehaviour
                     if (isFirstInGroup)
                     {
                         isFirstInGroup = false;
-                        string[] c = p[1].Trim().Split("/".ToCharArray());
+                        string[] c = p[1].Trim().Split('/');
                         isFaceIndexPlus = (ci(c[0]) >= 0);
                     }
                     GetFaceIndicesByOneFaceLine(faces, p, isFaceIndexPlus);
-                    if (p.Length == 4)
+
+                    // Use fan triangulation for all polygons (triangles, quads, and n-gons)
+                    // For a polygon with n vertices, create (n-2) triangles
+                    int numVertices = faces.Length;
+                    if (numVertices < 3)
                     {
-                        buffer.PushFace(faces[0]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[2]);
-                    }
-                    else if (p.Length == 5)
-                    {
-                        buffer.PushFace(faces[0]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[3]);
-                        buffer.PushFace(faces[3]);
-                        buffer.PushFace(faces[1]);
-                        buffer.PushFace(faces[2]);
+                        Debug.LogWarning($"Face has less than 3 vertices ({numVertices}), skipping");
                     }
                     else
                     {
-                        Debug.LogWarning("face vertex count :" + (p.Length - 1) + " larger than 4:");
+                        // Fan triangulation: pivot around first vertex (faces[0])
+                        for (int j = 1; j < numVertices - 1; j++)
+                        {
+                            buffer.PushFace(faces[0]);
+                            buffer.PushFace(faces[j]);
+                            buffer.PushFace(faces[j + 1]);
+                        }
                     }
                     break;
                 case MTL:
@@ -335,28 +367,22 @@ public class OBJ : MonoBehaviour
 
     private float cf(string v)
     {
-        try
+        if (float.TryParse(v, out float result))
         {
-            return float.Parse(v);
+            return result;
         }
-        catch (Exception e)
-        {
-            print(e);
-            return 0;
-        }
+        Debug.LogWarning($"Failed to parse float value: {v}");
+        return 0;
     }
 
     private int ci(string v)
     {
-        try
+        if (int.TryParse(v, out int result))
         {
-            return int.Parse(v);
+            return result;
         }
-        catch (Exception e)
-        {
-            print(e);
-            return 0;
-        }
+        Debug.LogWarning($"Failed to parse int value: {v}");
+        return 0;
     }
 
     private bool hasMaterials
@@ -387,11 +413,10 @@ public class OBJ : MonoBehaviour
 
     private void SetMaterialData(string data)
     {
-        string[] lines = data.Split("\n".ToCharArray());
+        string[] lines = data.Split('\n');
 
         materialData = new List<MaterialData>();
         MaterialData current = new MaterialData();
-        Regex regexWhitespaces = new Regex(@"\s+");
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -405,7 +430,7 @@ public class OBJ : MonoBehaviour
                 continue;
             }
             if (l.IndexOf("#") != -1) l = l.Substring(0, l.IndexOf("#"));
-            string[] p = regexWhitespaces.Split(l);
+            string[] p = RegexWhitespaces.Split(l);
             if (p[0].Trim() == "") continue;
 
             switch (p[0])
@@ -542,8 +567,6 @@ public class OBJ : MonoBehaviour
 
     private void BumpParameter(MaterialData m, string[] p)
     {
-        Regex regexNumber = new Regex(@"^[-+]?[0-9]*\.?[0-9]+$");
-
         var bumpParams = new Dictionary<String, BumpParamDef>();
         bumpParams.Add("bm", new BumpParamDef("bm", "string", 1, 1));
         bumpParams.Add("clamp", new BumpParamDef("clamp", "string", 1, 1));
@@ -585,7 +608,7 @@ public class OBJ : MonoBehaviour
                 }
                 if (def.valueType == "number")
                 {
-                    Match match = regexNumber.Match(p[pos]);
+                    Match match = RegexNumber.Match(p[pos]);
                     if (!match.Success)
                     {
                         isOptionNotEnough = true;
@@ -603,7 +626,7 @@ public class OBJ : MonoBehaviour
             {
                 if (def.valueType == "number")
                 {
-                    Match match = regexNumber.Match(p[pos]);
+                    Match match = RegexNumber.Match(p[pos]);
                     if (!match.Success)
                     {
                         break;

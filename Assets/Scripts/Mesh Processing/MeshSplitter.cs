@@ -19,11 +19,30 @@ namespace TiltBrush
 
             // Step 1: Extract all mesh data on main thread
             var mesh = sourceMf.sharedMesh ?? sourceMf.mesh;
+            var renderer = sourceMf.GetComponent<MeshRenderer>();
+            var materials = renderer.sharedMaterials;
+
+            // Extract triangles from each submesh with material mapping
+            var trianglesList = new List<int>();
+            var materialIndices = new List<int>();
+
+            for (int submeshIndex = 0; submeshIndex < mesh.subMeshCount; submeshIndex++)
+            {
+                var submeshTriangles = mesh.GetTriangles(submeshIndex);
+                foreach (var tri in submeshTriangles)
+                {
+                    trianglesList.Add(tri);
+                    materialIndices.Add(submeshIndex);
+                }
+            }
+
             var meshData = new MeshSplitInput
             {
                 meshFilter = sourceMf,
                 vertices = mesh.vertices,
-                triangles = mesh.triangles,
+                triangles = trianglesList.ToArray(),
+                materialIndices = materialIndices.ToArray(),
+                materials = materials,
                 normals = mesh.normals,
                 tangents = mesh.tangents,
                 colors = mesh.colors,
@@ -36,15 +55,39 @@ namespace TiltBrush
             var splitResults = SplitMeshData(meshData, weldTolerance);
 
             var meshFilter = meshData.meshFilter;
-            var sharedMat = meshFilter.GetComponent<MeshRenderer>().sharedMaterial;
             int partNum = 0;
             foreach (var part in splitResults.parts)
             {
+                // Group triangles by material
+                var submeshTriangles = new Dictionary<int, List<int>>();
+                for (int i = 0; i < part.triangles.Length; i++)
+                {
+                    int matIndex = part.materialIndices[i];
+                    if (!submeshTriangles.TryGetValue(matIndex, out var tris))
+                    {
+                        tris = new List<int>();
+                        submeshTriangles[matIndex] = tris;
+                    }
+                    tris.Add(part.triangles[i]);
+                }
+
                 Mesh newMesh = new Mesh
                 {
-                    vertices = part.vertices,
-                    triangles = part.triangles
+                    vertices = part.vertices
                 };
+
+                // Set submeshes
+                newMesh.subMeshCount = submeshTriangles.Count;
+                var submeshMaterials = new List<Material>();
+                int submeshIndex = 0;
+                foreach (var kvp in submeshTriangles)
+                {
+                    int matIndex = kvp.Key;
+                    var tris = kvp.Value;
+                    newMesh.SetTriangles(tris.ToArray(), submeshIndex);
+                    submeshMaterials.Add(materials[matIndex]);
+                    submeshIndex++;
+                }
 
                 if (part.normals != null && part.normals.Length == part.vertices.Length)
                     newMesh.normals = part.normals;
@@ -67,7 +110,7 @@ namespace TiltBrush
                 GameObject go = new GameObject($"{meshFilter.name}[obsplit:{partNum++}]");
                 var split = go.AddComponent<MeshFilter>();
                 split.mesh = newMesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = sharedMat;
+                go.AddComponent<MeshRenderer>().sharedMaterials = submeshMaterials.ToArray();
                 go.transform.SetParent(meshFilter.transform, false);
                 splits.Add(split);
             }
@@ -84,6 +127,8 @@ namespace TiltBrush
             public MeshFilter meshFilter;
             public Vector3[] vertices;
             public int[] triangles;
+            public int[] materialIndices;
+            public Material[] materials;
             public Vector3[] normals;
             public Vector4[] tangents;
             public Color[] colors;
@@ -102,6 +147,7 @@ namespace TiltBrush
         {
             public Vector3[] vertices;
             public int[] triangles;
+            public int[] materialIndices;
             public Vector3[] normals;
             public Vector4[] tangents;
             public Color[] colors;
@@ -116,6 +162,7 @@ namespace TiltBrush
         {
             var vertices = input.vertices;
             var triangles = input.triangles;
+            var materialIndices = input.materialIndices;
             var normals = input.normals;
             var tangents = input.tangents;
             var colors = input.colors;
@@ -178,6 +225,7 @@ namespace TiltBrush
             }
 
             var componentTriangles = new Dictionary<int, List<int>>(uniqueCount);
+            var componentMaterialIndices = new Dictionary<int, List<int>>(uniqueCount);
             for (int i = 0; i < triCount; i += 3)
             {
                 int a = vertexMap[triangles[i]];
@@ -188,15 +236,26 @@ namespace TiltBrush
                     tris = new List<int>();
                     componentTriangles[componentId] = tris;
                 }
+                if (!componentMaterialIndices.TryGetValue(componentId, out var matIndices))
+                {
+                    matIndices = new List<int>();
+                    componentMaterialIndices[componentId] = matIndices;
+                }
                 tris.Add(triangles[i]);
                 tris.Add(triangles[i + 1]);
                 tris.Add(triangles[i + 2]);
+                // All three vertices of a triangle share the same material
+                int triMaterialIndex = materialIndices[i];
+                matIndices.Add(triMaterialIndex);
+                matIndices.Add(triMaterialIndex);
+                matIndices.Add(triMaterialIndex);
             }
 
             var parts = new List<MeshPart>(componentTriangles.Count);
             foreach (var comp in componentTriangles)
             {
                 var compTriangles = comp.Value;
+                var compMatIndices = componentMaterialIndices[comp.Key];
                 int compTriCount = compTriangles.Count;
                 var vertexRemap = new Dictionary<int, int>(compTriCount / 3);
 
@@ -209,6 +268,7 @@ namespace TiltBrush
                 var newUV3 = uv3 != null && uv3.Length == vertCount ? new List<Vector2>() : null;
                 var newUV4 = uv4 != null && uv4.Length == vertCount ? new List<Vector2>() : null;
                 var newTris = new List<int>();
+                var newMatIndices = new List<int>();
 
                 int newIndex = 0;
                 for (int i = 0; i < compTriCount; i++)
@@ -228,12 +288,14 @@ namespace TiltBrush
                         if (newUV4 != null) newUV4.Add(uv4[idx]);
                     }
                     newTris.Add(remapped);
+                    newMatIndices.Add(compMatIndices[i]);
                 }
 
                 parts.Add(new MeshPart
                 {
                     vertices = newVerts.ToArray(),
                     triangles = newTris.ToArray(),
+                    materialIndices = newMatIndices.ToArray(),
                     normals = newNormals?.ToArray(),
                     tangents = newTangents?.ToArray(),
                     colors = newColors?.ToArray(),

@@ -3041,6 +3041,26 @@ PrefabInstance:
       propertyPath: managedReferences[7458764983462002691].m_Localized.m_TableEntryReference.m_KeyId
       value: 401824908597354496
       objectReference: {fileID: 0}
+    - target: {fileID: 5197297284210443867, guid: 96b0222729d8c544db4f04f1831f0b20,
+        type: 3}
+      propertyPath: m_fontSize
+      value: 1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5197297284210443867, guid: 96b0222729d8c544db4f04f1831f0b20,
+        type: 3}
+      propertyPath: m_fontSizeBase
+      value: 1.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5933647712036027179, guid: 96b0222729d8c544db4f04f1831f0b20,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5933647712036027179, guid: 96b0222729d8c544db4f04f1831f0b20,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 6215663651319772828, guid: 96b0222729d8c544db4f04f1831f0b20,
         type: 3}
       propertyPath: m_RootOrder
@@ -3096,6 +3116,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6219402177328624338, guid: 96b0222729d8c544db4f04f1831f0b20,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6219402179845122922, guid: 96b0222729d8c544db4f04f1831f0b20,
         type: 3}
       propertyPath: m_Name
@@ -3107,7 +3132,8 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 6219402177328624338, guid: 96b0222729d8c544db4f04f1831f0b20, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 96b0222729d8c544db4f04f1831f0b20, type: 3}

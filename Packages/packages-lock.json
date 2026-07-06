@@ -6,6 +6,16 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.coplaydev.unity-mcp": {
+      "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.0.2",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "hash": "a2a5edf8d8e3f715881c0db4589c18feff7c379f"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
@@ -29,6 +39,13 @@
         "com.unity.ugui": "1.0.0"
       },
       "url": "https://npm.developer.oculus.com"
+    },
+    "com.sandrofigo.voxreader": {
+      "version": "5.0.6",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
@@ -88,6 +105,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.collections": {
+      "version": "1.2.4",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.6.6",
+        "com.unity.test-framework": "1.1.31"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.editorcoroutines": {
       "version": "1.0.0",
       "depth": 0,
@@ -112,7 +139,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.38",
+      "version": "3.0.40",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -297,7 +324,7 @@
       "hash": "a933fb8541371ff8ab171ab8e6af50a36f1f113e"
     },
     "com.unity.xr.core-utils": {
-      "version": "2.5.2",
+      "version": "2.3.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -337,12 +364,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.xr.openxr": {
-      "version": "1.14.3",
+      "version": "1.10.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.inputsystem": "1.6.3",
-        "com.unity.xr.core-utils": "2.3.0",
+        "com.unity.xr.core-utils": "2.1.1",
         "com.unity.xr.management": "4.4.0",
         "com.unity.xr.legacyinputhelpers": "2.1.2"
       },
@@ -356,14 +383,14 @@
       "hash": "6554bc1dce4f363437c6a9d42719f2756f24cf49"
     },
     "com.zappar.xr.zapbox": {
-      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#74fe120c1c9a0b31a186eb551ef25efe4a316c73",
+      "version": "https://github.com/zappar-xr/zapbox-xr-sdk.git#91b52bde3c0a67aa08909bdd2657f8a6672decf6",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.xr.management": "3.2.9",
         "com.unity.xr.legacyinputhelpers": "2.1.4"
       },
-      "hash": "74fe120c1c9a0b31a186eb551ef25efe4a316c73"
+      "hash": "91b52bde3c0a67aa08909bdd2657f8a6672decf6"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
@@ -373,16 +400,19 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "org.khronos.unitygltf": {
-      "version": "https://github.com/KhronosGroup/UnityGLTF.git#dev",
+      "version": "https://github.com/icosa-mirror/UnityGLTF.git#open-brush/plugin-settings-dedupe",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.particlesystem": "1.0.0",
         "com.unity.shadergraph": "10.0.0",
-        "com.unity.mathematics": "1.0.0"
+        "com.unity.mathematics": "1.0.0",
+        "com.unity.collections": "1.0.0"
       },
-      "hash": "b0185be3587079d2bb3479298ecacb14f1278b58"
+      "hash": "7962840f6911023e749f29adb857fbab71b70a11"
     },
     "org.nuget.google.apis": {
       "version": "1.64.0",
