@@ -540,6 +540,171 @@ namespace TiltBrush
                     ""action"": ""ThumbTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""22e98bcf-0c01-4ce9-9b36-987eb168d73e"",
+                    ""path"": ""<SteamFrameController>{RightHand}/trigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""1507dd91-e5b3-4e5d-a1f3-0330b19656a2"",
+                    ""path"": ""<SteamFrameController>{RightHand}/triggerPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""72ff860c-e6c6-4f39-bc39-3c7da4468380"",
+                    ""path"": ""<SteamFrameController>{RightHand}/triggerTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""03e2d912-6727-46aa-93e1-2731fcf39f88"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""25fe1f93-1020-4179-8be0-7496c8a195cc"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""40f816d7-a258-4ef3-aecc-3d54fadf2626"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstickTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ad18ac04-dd9d-44f4-8359-1667d3c5873e"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""198aab5c-69e5-4218-bf25-c0a4bcd08f29"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0b07d94a-3209-4393-afc9-5f6a2171da34"",
+                    ""path"": ""<SteamFrameController>{RightHand}/thumbstickTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ea6b0066-e3db-4367-8770-c6cd5fb66572"",
+                    ""path"": ""<SteamFrameController>{RightHand}/grip"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f25a90cc-7232-4bf9-9b22-3f8b4e934b1d"",
+                    ""path"": ""<SteamFrameController>{RightHand}/gripPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""31625bc9-30ff-461c-a7cb-7010067e2d39"",
+                    ""path"": ""<SteamFrameController>{RightHand}/faceButtonBottom"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b33583c2-46cb-44d5-9b97-3a10e0888434"",
+                    ""path"": ""<SteamFrameController>{RightHand}/faceButtonBottomTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PrimaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""12ea8de8-d0c4-4d4e-9b8d-4b2b43600eec"",
+                    ""path"": ""<SteamFrameController>{RightHand}/faceButtonInside"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f7c5479f-4ad3-443d-a85b-7fd23bfa57b4"",
+                    ""path"": ""<SteamFrameController>{RightHand}/faceButtonInsideTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""SecondaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1057,6 +1222,171 @@ namespace TiltBrush
                     ""action"": ""TriggerTouch"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""60bae09f-03a1-42f4-8e86-ce235aa2ebd9"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/trigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7e1d30ce-4dca-4de1-840d-736f3a0a27c4"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/triggerPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f4d8ad4d-44e2-435d-8700-d8dd713f6baf"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/triggerTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""TriggerTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7ef1499e-e03e-4890-b063-5915326bb5ff"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""aa40aeaa-c16e-4005-9dce-7d6859b9ae74"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""25ec542a-9854-45e6-ac73-19cda853c9d0"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstickTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""ThumbTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7008fd0f-7591-411b-b0d3-6b9ec9d540da"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstick"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e298830d-df5f-43f5-bc5f-ad74e2f382c7"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstickClicked"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""55a80ba1-2e9b-4276-81f3-3f3d19fec17f"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/thumbstickTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PadTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""acd9cb0f-7098-4aca-9a59-46a8244778df"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/grip"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""GripAxis"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""22197634-63f4-4af6-9253-3ddefa1ea831"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/gripPressed"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""GripButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e2f43e3b-ca06-4127-a736-95b25041ee4a"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/faceButtonBottom"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PrimaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8f0cc075-43a0-4ac5-872d-0b9a0b13263b"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/faceButtonBottomTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""PrimaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""db3c8a26-d4fd-4f9c-8a59-e7ab46b391f2"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/faceButtonInside"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""SecondaryButton"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d4fc8d5e-8180-4bd9-a902-0aa8a7b7773c"",
+                    ""path"": ""<SteamFrameController>{LeftHand}/faceButtonInsideTouched"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Steam Frame Controller"",
+                    ""action"": ""SecondaryTouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -1127,6 +1457,17 @@ namespace TiltBrush
                     ""isOR"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Steam Frame Controller"",
+            ""bindingGroup"": ""Steam Frame Controller"",
+            ""devices"": [
+                {
+                    ""devicePath"": ""<SteamFrameController>"",
+                    ""isOptional"": false,
+                    ""isOR"": false
+                }
+            ]
         }
     ]
 }");
@@ -1168,10 +1509,8 @@ namespace TiltBrush
 
         ~@UnityXRInputAction()
         {
-#if !UNITY_EDITOR
             Debug.Assert(!m_Brush.enabled, "This will cause a leak and performance issues, UnityXRInputAction.Brush.Disable() has not been called.");
             Debug.Assert(!m_Wand.enabled, "This will cause a leak and performance issues, UnityXRInputAction.Wand.Disable() has not been called.");
-#endif
         }
 
         public void Dispose()
@@ -1597,6 +1936,15 @@ namespace TiltBrush
             {
                 if (m_ZapboxControllerSchemeIndex == -1) m_ZapboxControllerSchemeIndex = asset.FindControlSchemeIndex("Zapbox Controller");
                 return asset.controlSchemes[m_ZapboxControllerSchemeIndex];
+            }
+        }
+        private int m_SteamFrameControllerSchemeIndex = -1;
+        public InputControlScheme SteamFrameControllerScheme
+        {
+            get
+            {
+                if (m_SteamFrameControllerSchemeIndex == -1) m_SteamFrameControllerSchemeIndex = asset.FindControlSchemeIndex("Steam Frame Controller");
+                return asset.controlSchemes[m_SteamFrameControllerSchemeIndex];
             }
         }
         public interface IBrushActions

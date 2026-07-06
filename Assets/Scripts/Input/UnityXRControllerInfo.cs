@@ -90,6 +90,9 @@ namespace TiltBrush
                 case ControllerStyle.Zapbox:
                     bindingGroup = actionSet.ZapboxControllerScheme.bindingGroup;
                     break;
+                case ControllerStyle.SteamFrame:
+                    bindingGroup = "Steam Frame Controller";
+                    break;
                 default:
                     break;
             }

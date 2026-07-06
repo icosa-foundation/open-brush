@@ -49,6 +49,7 @@ namespace TiltBrush
         Neo3,
         Phoenix,
         Zapbox,
+        SteamFrame,
     }
 
     //
@@ -77,6 +78,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
         [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
         [SerializeField] private GameObject m_UnityXRZapboxControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRSteamFrameControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -470,7 +472,8 @@ namespace TiltBrush
                 style == ControllerStyle.Cosmos ||
                 style == ControllerStyle.Neo3 ||
                 style == ControllerStyle.Phoenix ||
-                style == ControllerStyle.Zapbox;
+                style == ControllerStyle.Zapbox ||
+                style == ControllerStyle.SteamFrame;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -558,6 +561,9 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Zapbox:
                     controlsPrefab = m_UnityXRZapboxControlsPrefab;
+                    break;
+                case ControllerStyle.SteamFrame:
+                    controlsPrefab = m_UnityXRSteamFrameControlsPrefab;
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -721,6 +727,10 @@ namespace TiltBrush
             else if (device.name.StartsWith("Index Controller OpenXR"))
             {
                 SetControllerStyle(ControllerStyle.Knuckles);
+            }
+            else if (device.name.Contains("Steam Frame Controller"))
+            {
+                SetControllerStyle(ControllerStyle.SteamFrame);
             }
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
             {
