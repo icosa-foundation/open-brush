@@ -123,6 +123,19 @@ MonoBehaviour:
   m_Name: UnlitMaterialsExport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-6114057577546049503
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de1f726221454139bfcce49d994d9d05, type: 3}
+  m_Name: ExrImport
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-6092789625841630549
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -136,19 +149,6 @@ MonoBehaviour:
   m_Name: OpenBrushLightsImport
   m_EditorClassIdentifier: 
   enabled: 1
---- !u!114 &-6114057577546049503
-MonoBehaviour:
-  m_ObjectHideFlags: 3
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de1f726221454139bfcce49d994d9d05, type: 3}
-  m_Name: ExrImport
-  m_EditorClassIdentifier:
-  enabled: 1
 --- !u!114 &-5802376853679533471
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -160,7 +160,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5d73111d7b6493da937accca1adfe6a, type: 3}
   m_Name: WebpImport
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   enabled: 1
 --- !u!114 &-5728475199642485532
 MonoBehaviour:
@@ -266,6 +266,19 @@ MonoBehaviour:
   m_Name: TextMeshGameObjectExport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-1589286283987897571
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26f6af0e137738040920f0910876a03c, type: 3}
+  m_Name: OpenBrushAudioImport
+  m_EditorClassIdentifier: Assembly-CSharp::UnityGLTF.Plugins.OpenBrushAudioImport
+  enabled: 1
 --- !u!114 &-1473009081019275097
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -340,6 +353,7 @@ MonoBehaviour:
   - {fileID: -6114057577546049503}
   - {fileID: -5802376853679533471}
   - {fileID: 9007628859994941859}
+  - {fileID: -1589286283987897571}
   ExportPlugins:
   - {fileID: 242952683485160214}
   - {fileID: -5728475199642485532}

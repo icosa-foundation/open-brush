@@ -21,6 +21,14 @@ namespace TiltBrush
 {
     public class ShaderWarmup : MonoBehaviour
     {
+        private static readonly string[] kAlwaysWarmupKeywords =
+        {
+            "SELECTION_ON",
+            "SHADER_SCRIPTING_ON",
+        };
+
+        private const string kRuntimeLogPrefix = "OB_URP_SHADER_WARMUP_RUNTIME_20260706";
+
         [SerializeField] private int m_FramesBeforeWarmup;
         [SerializeField] private int m_FramesAfterWarmup;
         [SerializeField] private int m_ShadersPerFrame = 10;
@@ -50,25 +58,28 @@ namespace TiltBrush
         }
 
         // Enumerates the materials we need and creates a quad with each one.
+        // Build-time URP/ShaderGraph variant preservation is handled by the editor
+        // generator in UrpBrushShaderWarmup. This runtime step is still useful as a
+        // driver warmup during loading after the variants have survived stripping.
         private IEnumerator WarmupShaders()
         {
-            List<Material> materials = BrushCatalog.m_Instance.AllBrushes
-                .Select(x => x.Material)
-                .Where(m => m != null && m)
-                .ToList();
-            // Add SELECTION_ON to the materials
-            List<Material> selectionMaterials = new List<Material>();
-            foreach (var material in materials)
+            bool logDiagnostics = IsDiagnosticLoggingEnabled();
+            List<Material> materials = new List<Material>();
+            foreach (BrushDescriptor brush in BrushCatalog.m_Instance.AllBrushes)
             {
-                Material newMaterial = new Material(material);
-                newMaterial.EnableKeyword("SELECTION_ON");
-                selectionMaterials.Add(newMaterial);
+                AddBrushWarmupMaterials(materials, brush);
             }
-            materials.AddRange(selectionMaterials);
+
             Renderer[] renderers = Resources.FindObjectsOfTypeAll<Renderer>();
             materials.AddRange(renderers.SelectMany(x => x.sharedMaterials));
 
             var distinctShaders = materials.Distinct(new MaterialComparer()).ToArray();
+            if (logDiagnostics)
+            {
+                Debug.Log(
+                    $"{kRuntimeLogPrefix} starting runtime shader warmup. " +
+                    $"inputMaterials={materials.Count}, distinctStates={distinctShaders.Length}");
+            }
 
             int size = Mathf.CeilToInt(Mathf.Sqrt(distinctShaders.Length));
             Vector3 offset = new Vector3(-size / 2f, -size / 2f, 0);
@@ -86,11 +97,81 @@ namespace TiltBrush
                 gobj.transform.localPosition = new Vector3(index % size, index / size, 0) + offset;
                 index++;
                 Progress = 0.05f + (index / (float)distinctShaders.Length) * 0.9f;
+                if (logDiagnostics)
+                {
+                    string shaderName = material.shader == null ? "<missing shader>" : material.shader.name;
+                    string keywords = string.Join(",", material.shaderKeywords.OrderBy(keyword => keyword));
+                    Debug.Log(
+                        $"{kRuntimeLogPrefix} warmed index={index}/{distinctShaders.Length}, " +
+                        $"material='{material.name}', shader='{shaderName}', keywords='{keywords}'");
+                }
                 if (index % m_ShadersPerFrame == 0)
                 {
                     yield return null;
                 }
             }
+
+            if (logDiagnostics)
+            {
+                Debug.Log($"{kRuntimeLogPrefix} completed runtime shader warmup.");
+            }
+        }
+
+        private static void AddBrushWarmupMaterials(List<Material> materials, BrushDescriptor brush)
+        {
+            Material material = brush.Material;
+            if (material == null || !material)
+            {
+                return;
+            }
+
+            materials.Add(material);
+            foreach (string keyword in kAlwaysWarmupKeywords)
+            {
+                AddKeywordMaterial(materials, material, keyword);
+            }
+
+            if (brush.m_AudioReactive)
+            {
+                AddKeywordMaterial(materials, material, "AUDIO_REACTIVE");
+            }
+
+            if (material.HasProperty("_ISBAKEDEXPORT"))
+            {
+                AddKeywordMaterial(materials, material, "_ISBAKEDEXPORT");
+            }
+
+            if (material.HasProperty("_BAKED_VERTEX_SHADER_ON") ||
+                material.HasProperty("_BAKED_VERTEX_SHADER"))
+            {
+                AddKeywordMaterial(materials, material, "_BAKED_VERTEX_SHADER_ON");
+                AddKeywordMaterial(materials, material, "_BAKED_VERTEX_SHADER");
+            }
+        }
+
+        private static void AddKeywordMaterial(List<Material> materials, Material source, string keyword)
+        {
+            Material keywordMaterial = new Material(source);
+            keywordMaterial.EnableKeyword(keyword);
+            materials.Add(keywordMaterial);
+        }
+
+        private static bool IsDiagnosticLoggingEnabled()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string envValue = System.Environment.GetEnvironmentVariable("OPENBRUSH_LOG_SHADER_WARMUP");
+            if (envValue == "1" ||
+                string.Equals(envValue, "true", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return System.Environment.GetCommandLineArgs()
+                .Any(arg => string.Equals(
+                    arg, "--openbrush-log-shader-warmup", System.StringComparison.OrdinalIgnoreCase));
+#else
+            return false;
+#endif
         }
 
         // Comparator for materials compares them on shader, shader keywords and global illumination flags
