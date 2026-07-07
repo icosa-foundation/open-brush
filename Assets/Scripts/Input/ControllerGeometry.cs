@@ -111,14 +111,6 @@ namespace TiltBrush
         [SerializeField] private HintObjectScript m_SaveIconHint;
 
         [Header("Steam Frame Components")]
-        [SerializeField] private Transform m_SteamFrameTrigger;
-        [SerializeField] private Transform m_SteamFrameGrip;
-        [SerializeField] private Transform m_SteamFrameThumbstick;
-        [SerializeField] private Transform m_SteamFrameThumbstickPivot;
-        [SerializeField] private Transform m_SteamFrameDpad;
-        [SerializeField] private Transform m_SteamFrameDpadPivot;
-        [SerializeField] private Transform m_SteamFrameAButton;
-        [SerializeField] private Transform m_SteamFrameBButton;
         [SerializeField] private Transform m_SteamFrameXButton;
         [SerializeField] private Transform m_SteamFrameYButton;
         [SerializeField] private Transform m_SteamFrameMenuButton;
@@ -207,36 +199,8 @@ namespace TiltBrush
 
         public ControllerStyle Style { get => m_ControllerStyle; }
 
-        public Renderer[] SteamFrameRenderers
-        {
-            get
-            {
-                if (m_CachedSteamFrameRenderers == null)
-                {
-                    var renderRoot = FindSteamFrameRenderRoot();
-                    if (renderRoot == null)
-                    {
-                        Debug.LogWarning($"STEAM_FRAME_GEOM_MISSING_RENDER_MODEL {name}");
-                    }
-                    m_CachedSteamFrameRenderers = renderRoot != null
-                        ? renderRoot.GetComponentsInChildren<Renderer>(true)
-                        : new Renderer[0];
-                }
-                return m_CachedSteamFrameRenderers;
-            }
-        }
-
         public void SetControllerEmission(Color color)
         {
-            if (Style == ControllerStyle.SteamFrame)
-            {
-                foreach (var renderer in SteamFrameRenderers)
-                {
-                    SetRendererEmission(renderer, color);
-                }
-                return;
-            }
-
             SetRendererEmission(MainMesh, color);
             SetRendererEmission(TriggerMesh, color);
             if (OtherMeshes == null)
@@ -264,30 +228,12 @@ namespace TiltBrush
                 return;
             }
 
-            // Steam Frame still carries the legacy Quest transform visual renderer as backing data.
-            // Keep it inactive; Steam Frame highlight meshes are registered through
-            // RegisterTransformVisualMeshes().
-            if (Style == ControllerStyle.SteamFrame)
-            {
-                TransformVisualsRenderer.gameObject.SetActive(false);
-                return;
-            }
-
             TransformVisualsRenderer.gameObject.SetActive(active);
             TransformVisualsRenderer.material.SetFloat("_Intensity", intensity);
         }
 
         public void RegisterTransformVisualMeshes(SelectionEffect selectionEffect)
         {
-            if (Style == ControllerStyle.SteamFrame)
-            {
-                foreach (var renderer in SteamFrameRenderers)
-                {
-                    RegisterRendererMesh(selectionEffect, renderer);
-                }
-                return;
-            }
-
             RegisterRendererMesh(selectionEffect, TransformVisualsRenderer);
             switch (Style)
             {
@@ -306,8 +252,7 @@ namespace TiltBrush
 
         public void SetGripVisualState(BaseControllerBehavior.GripState state, Color tint)
         {
-            if (Style == ControllerStyle.SteamFrame ||
-                Style == ControllerStyle.InitializingUnityXR ||
+            if (Style == ControllerStyle.InitializingUnityXR ||
                 Style == ControllerStyle.None ||
                 Style == ControllerStyle.Unset ||
                 LeftGripMesh == null ||
@@ -491,7 +436,6 @@ namespace TiltBrush
         private float m_LogitechPenHandednessHysteresis = 10.0f;
         // True if we're the default orientation, false if we need to be rotated 180 degrees.
         private bool m_LogitechPenHandedness;
-        private Renderer[] m_CachedSteamFrameRenderers;
         private bool m_SteamFramePartsCached;
         private bool m_SteamFrameIsRight;
         private SteamFramePartState m_SteamFrameTriggerPart;
@@ -525,6 +469,18 @@ namespace TiltBrush
                 }
             }
             return null;
+        }
+
+        private static Transform GetAnimatedPart(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return null;
+            }
+
+            return renderer.transform.parent != null
+                ? renderer.transform.parent
+                : renderer.transform;
         }
 
         private Transform FindSteamFrameRenderRoot()
@@ -596,9 +552,6 @@ namespace TiltBrush
             ApplySteamFramePose(renderRoot, m_BaseAttachPoint, basePose);
             SetAttachPointDirection(m_PointerAttachPoint, 0.225f);
             SetAttachPointDirection(m_ToolAttachPoint, 0.325f);
-
-            Debug.Log(
-                $"STEAM_FRAME_GEOM_ATTACH_RETARGET geometry={name} side={(isRight ? "Right" : "Left")} renderRoot={renderRoot.name}");
         }
 
         private static void ApplySteamFramePose(
@@ -638,7 +591,6 @@ namespace TiltBrush
         {
             if (Style == ControllerStyle.SteamFrame)
             {
-                _ = SteamFrameRenderers;
                 CacheSteamFrameAnimatedParts();
                 DisableSteamFrameFullRenderModelIfComponentModelExists();
                 DisableSteamFrameLegacyRenderers();
@@ -756,17 +708,23 @@ namespace TiltBrush
             }
             m_SteamFrameIsRight = isRight;
 
-            m_SteamFrameTriggerPart = new SteamFramePartState(m_SteamFrameTrigger);
-            m_SteamFrameGripPart = new SteamFramePartState(m_SteamFrameGrip);
-            m_SteamFrameThumbstickPart = new SteamFramePartState(m_SteamFrameThumbstick);
-            m_SteamFrameThumbstickPivotPart =
-                new SteamFramePartState(m_SteamFrameThumbstickPivot);
-            m_SteamFrameDpadPart = new SteamFramePartState(m_SteamFrameDpad);
-            m_SteamFrameDpadPivotPart = new SteamFramePartState(m_SteamFrameDpadPivot);
+            Transform trigger = GetAnimatedPart(TriggerMesh);
+            Transform grip = GetAnimatedPart(LeftGripMesh);
+            Transform thumbstick = GetAnimatedPart(JoystickMesh);
+            Transform dpad = GetAnimatedPart(PadMesh);
+            Transform primaryButton = GetAnimatedPart(Button01Mesh);
+            Transform secondaryButton = GetAnimatedPart(Button02Mesh);
+
+            m_SteamFrameTriggerPart = new SteamFramePartState(trigger);
+            m_SteamFrameGripPart = new SteamFramePartState(grip);
+            m_SteamFrameThumbstickPart = new SteamFramePartState(thumbstick);
+            m_SteamFrameThumbstickPivotPart = new SteamFramePartState(Joystick);
+            m_SteamFrameDpadPart = new SteamFramePartState(dpad);
+            m_SteamFrameDpadPivotPart = new SteamFramePartState(PadAnchor);
             m_SteamFramePrimaryButtonPart =
-                new SteamFramePartState(isRight ? m_SteamFrameAButton : m_SteamFrameDpad);
+                new SteamFramePartState(isRight ? primaryButton : dpad);
             m_SteamFrameSecondaryButtonPart =
-                new SteamFramePartState(isRight ? m_SteamFrameBButton : m_SteamFrameViewButton);
+                new SteamFramePartState(isRight ? secondaryButton : m_SteamFrameViewButton);
             m_SteamFrameTertiaryButtonPart =
                 new SteamFramePartState(isRight ? m_SteamFrameXButton : m_SteamFrameSystemButton);
             m_SteamFrameQuaternaryButtonPart =
@@ -1289,19 +1247,19 @@ namespace TiltBrush
                 case ControllerStyle.Neo3:
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
-                    JoystickMesh.material.SetColor("_EmissionColor", tintColor);
-                    JoystickPad.material.SetColor("_EmissionColor", tintColor);
-                    Button01Mesh.material.SetColor("_EmissionColor", tintColor);
-                    Button02Mesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(JoystickMesh, tintColor);
+                    SetRendererEmission(JoystickPad, tintColor);
+                    SetRendererEmission(Button01Mesh, tintColor);
+                    SetRendererEmission(Button02Mesh, tintColor);
                     break;
                 case ControllerStyle.Vive:
                 case ControllerStyle.LogitechPen:
-                    PadMesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(PadMesh, tintColor);
                     break;
                 case ControllerStyle.Wmr:
-                    JoystickMesh.material.SetColor("_EmissionColor", tintColor);
-                    PinCushionMesh.material.SetColor("_EmissionColor", tintColor);
-                    PadMesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(JoystickMesh, tintColor);
+                    SetRendererEmission(PinCushionMesh, tintColor);
+                    SetRendererEmission(PadMesh, tintColor);
                     break;
             }
         }
@@ -1309,7 +1267,6 @@ namespace TiltBrush
         private void UpdateButtonColor()
         {
             if (EmptyGeometry) { return; }
-            if (Style == ControllerStyle.SteamFrame) { return; }
             if (!App.VrSdk.AnalogIsStick(ControllerName))
             {
                 return;
