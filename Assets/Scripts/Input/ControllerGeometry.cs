@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace TiltBrush
 {
@@ -189,6 +191,25 @@ namespace TiltBrush
 
         public ControllerStyle Style { get => m_ControllerStyle; }
 
+        public Renderer[] SteamFrameRenderers
+        {
+            get
+            {
+                if (m_SteamFrameRenderers == null)
+                {
+                    var renderRoot = FindSteamFrameRenderRoot();
+                    if (renderRoot == null)
+                    {
+                        Debug.LogWarning($"STEAM_FRAME_GEOM_MISSING_RENDER_MODEL {name}");
+                    }
+                    m_SteamFrameRenderers = renderRoot != null
+                        ? renderRoot.GetComponentsInChildren<Renderer>(true)
+                        : new Renderer[0];
+                }
+                return m_SteamFrameRenderers;
+            }
+        }
+
         // Style is meant to be read-only and immutable, but there is currently one situation
         // that requires it to be writable. TODO: remove when possible?
         public ControllerStyle TempWritableStyle
@@ -250,6 +271,34 @@ namespace TiltBrush
             }
         }
 
+        private struct SteamFramePose
+        {
+            public readonly Vector3 position;
+            public readonly Vector3 eulerAngles;
+
+            public SteamFramePose(Vector3 position, Vector3 eulerAngles)
+            {
+                this.position = position;
+                this.eulerAngles = eulerAngles;
+            }
+        }
+
+        private struct SteamFramePartState
+        {
+            public readonly Transform transform;
+            public readonly Vector3 initialLocalPosition;
+            public readonly Quaternion initialLocalRotation;
+
+            public SteamFramePartState(Transform transform)
+            {
+                this.transform = transform;
+                this.initialLocalPosition = transform != null ? transform.localPosition : Vector3.zero;
+                this.initialLocalRotation = transform != null ? transform.localRotation : Quaternion.identity;
+            }
+
+            public bool IsValid => transform != null;
+        }
+
         private PopupAnimState m_JoyAnimState;
         private PopupAnimState m_PadAnimState;
         private int m_LastPadButton;
@@ -257,6 +306,138 @@ namespace TiltBrush
         private float m_LogitechPenHandednessHysteresis = 10.0f;
         // True if we're the default orientation, false if we need to be rotated 180 degrees.
         private bool m_LogitechPenHandedness;
+        private Renderer[] m_SteamFrameRenderers;
+        private bool m_SteamFramePartsCached;
+        private bool m_SteamFrameIsRight;
+        private SteamFramePartState m_SteamFrameTriggerPart;
+        private SteamFramePartState m_SteamFrameGripPart;
+        private SteamFramePartState m_SteamFrameThumbstickPart;
+        private SteamFramePartState m_SteamFrameThumbstickPivotPart;
+        private SteamFramePartState m_SteamFrameDpadPart;
+        private SteamFramePartState m_SteamFramePrimaryButtonPart;
+        private SteamFramePartState m_SteamFrameSecondaryButtonPart;
+        private SteamFramePartState m_SteamFrameTertiaryButtonPart;
+        private SteamFramePartState m_SteamFrameQuaternaryButtonPart;
+        private SteamFramePartState m_SteamFrameMenuButtonPart;
+        private SteamFramePartState m_SteamFrameSystemButtonPart;
+        private SteamFramePartState m_SteamFrameBumperPart;
+
+        private static Transform FindDeepChild(Transform root, string childName)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                var match = FindDeepChild(child, childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
+        private Transform FindSteamFrameRenderRoot()
+        {
+            var originOffset = transform.Find("OriginOffset");
+            if (originOffset == null)
+            {
+                return null;
+            }
+
+            var componentRoot = FindDeepChild(originOffset, "SteamFrameComponentModel");
+            if (componentRoot != null)
+            {
+                return componentRoot;
+            }
+
+            return FindDeepChild(originOffset, "SteamFrameRenderModel");
+        }
+
+        private Transform FindSteamFrameFullRenderModelRoot()
+        {
+            var originOffset = transform.Find("OriginOffset");
+            return originOffset != null
+                ? FindDeepChild(originOffset, "SteamFrameRenderModel")
+                : null;
+        }
+
+        private void ApplySteamFrameAttachPointOverrides()
+        {
+            var renderRoot = FindSteamFrameRenderRoot();
+            if (renderRoot == null)
+            {
+                Debug.LogWarning($"STEAM_FRAME_GEOM_MISSING_ATTACH_ROOT {name}");
+                return;
+            }
+
+            bool isRight = name.Contains("Right");
+            bool isLeft = name.Contains("Left");
+            if (!isLeft && !isRight)
+            {
+                isRight = m_ControllerName == InputManager.ControllerName.Brush;
+            }
+
+            SteamFramePose aimPose = isRight
+                ? new SteamFramePose(
+                    new Vector3(-0.012694f, -0.02522f, 0.020687f),
+                    new Vector3(-40.0f, 0.0f, 0.0f))
+                : new SteamFramePose(
+                    new Vector3(0.012694f, -0.02522f, 0.020687f),
+                    new Vector3(-40.0f, 0.0f, 0.0f));
+            SteamFramePose gripPose = isRight
+                ? new SteamFramePose(
+                    new Vector3(0.003117f, -0.004277f, 0.099501f),
+                    new Vector3(2.8091f, 0.0f, 0.0f))
+                : new SteamFramePose(
+                    new Vector3(-0.003117f, -0.004277f, 0.099501f),
+                    new Vector3(2.8091f, 0.0f, 0.0f));
+            SteamFramePose basePose = isRight
+                ? new SteamFramePose(
+                    new Vector3(0.0024f, -0.0024f, 0.1531f),
+                    new Vector3(-0.4f, -180.0f, 0.0f))
+                : new SteamFramePose(
+                    new Vector3(-0.0024f, -0.0024f, 0.1531f),
+                    new Vector3(-0.4f, 180.0f, 0.0f));
+
+            ApplySteamFramePose(renderRoot, m_PointerAttachAnchor, aimPose);
+            ApplySteamFramePose(renderRoot, m_ToolAttachAnchor, aimPose);
+            ApplySteamFramePose(renderRoot, m_GripAttachPoint, gripPose);
+            ApplySteamFramePose(renderRoot, m_BaseAttachPoint, basePose);
+            SetAttachPointDirection(m_PointerAttachPoint, 0.225f);
+            SetAttachPointDirection(m_ToolAttachPoint, 0.325f);
+
+            Debug.Log(
+                $"STEAM_FRAME_GEOM_ATTACH_RETARGET geometry={name} side={(isRight ? "Right" : "Left")} renderRoot={renderRoot.name}");
+        }
+
+        private static void ApplySteamFramePose(
+            Transform renderRoot, Transform target, SteamFramePose pose)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.position = renderRoot.TransformPoint(pose.position);
+            target.rotation = renderRoot.rotation * Quaternion.Euler(pose.eulerAngles);
+        }
+
+        private static void SetAttachPointDirection(Transform target, float distance)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.localPosition = Vector3.forward * distance;
+            target.localRotation = Quaternion.identity;
+            target.localScale = Vector3.one;
+        }
 
         // Cached value of transform.parent.GetComponent<BaseControllerBehavior>()
         private BaseControllerBehavior m_Behavior;
@@ -269,6 +450,14 @@ namespace TiltBrush
 
         private void Awake()
         {
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                _ = SteamFrameRenderers;
+                CacheSteamFrameAnimatedParts();
+                DisableSteamFrameFullRenderModelIfComponentModelExists();
+                DisableSteamFrameLegacyRenderers();
+            }
+
             if (LeftGripMesh != null)
             {
                 m_BaseGrippedMaterial = LeftGripMesh.material;
@@ -349,6 +538,498 @@ namespace TiltBrush
                 90.0f - m_LogitechPenHandednessHysteresis :
                 90.0f + m_LogitechPenHandednessHysteresis;
             m_LogitechPenHandedness = angle > flipAngle;
+        }
+
+        private void DisableSteamFrameLegacyRenderers()
+        {
+            var originOffset = transform.Find("OriginOffset");
+            if (originOffset == null)
+            {
+                return;
+            }
+
+            DisableRenderersInChild(originOffset, "monterey_controller_L");
+            DisableRenderersInChild(originOffset, "monterey_controller_R");
+            DisableRenderersInChild(originOffset, "Pad Offset Rotation");
+            DisableRenderersInChild(originOffset, "SteamFramePart_status");
+        }
+
+        private void CacheSteamFrameAnimatedParts()
+        {
+            if (m_SteamFramePartsCached)
+            {
+                return;
+            }
+
+            m_SteamFramePartsCached = true;
+            var renderRoot = FindSteamFrameRenderRoot();
+            if (renderRoot == null)
+            {
+                return;
+            }
+
+            bool isRight = name.Contains("Right");
+            bool isLeft = name.Contains("Left");
+            if (!isLeft && !isRight)
+            {
+                isRight = m_ControllerName == InputManager.ControllerName.Brush;
+            }
+            m_SteamFrameIsRight = isRight;
+
+            m_SteamFrameTriggerPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_trigger"));
+            m_SteamFrameGripPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_grip_button"));
+            m_SteamFrameThumbstickPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_thumbstick"));
+            m_SteamFrameThumbstickPivotPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFrameThumbstickPivot"));
+            m_SteamFrameDpadPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_dpad"));
+            m_SteamFramePrimaryButtonPart = new SteamFramePartState(FindDeepChild(
+                renderRoot, isRight ? "SteamFramePart_a_button" : "SteamFramePart_dpad"));
+            m_SteamFrameSecondaryButtonPart = new SteamFramePartState(FindDeepChild(
+                renderRoot, isRight ? "SteamFramePart_b_button" : "SteamFramePart_view_button"));
+            m_SteamFrameTertiaryButtonPart = new SteamFramePartState(FindDeepChild(
+                renderRoot, isRight ? "SteamFramePart_x_button" : "SteamFramePart_system_button"));
+            m_SteamFrameQuaternaryButtonPart = new SteamFramePartState(FindDeepChild(
+                renderRoot, isRight ? "SteamFramePart_y_button" : "SteamFramePart_bumper"));
+            m_SteamFrameMenuButtonPart = new SteamFramePartState(FindDeepChild(
+                renderRoot, isRight ? "SteamFramePart_menu_button" : "SteamFramePart_view_button"));
+            m_SteamFrameSystemButtonPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_system_button"));
+            m_SteamFrameBumperPart =
+                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_bumper"));
+        }
+
+        private void UpdateSteamFramePartAnimation()
+        {
+            if (EmptyGeometry) { return; }
+
+            var info = ControllerInfo;
+            if (info == null)
+            {
+                return;
+            }
+
+            CacheSteamFrameAnimatedParts();
+
+            InputDevice steamFrameDevice = FindSteamFrameInputDevice();
+            InputDevice handDevice = FindHandInputDevice();
+            Vector2 thumbstick = ReadSteamFrameVector2(steamFrameDevice, "thumbstick");
+            if (thumbstick == Vector2.zero)
+            {
+                thumbstick = ReadFirstVector2Control(
+                    handDevice, "thumbstick", "joystick", "primary2DAxis");
+            }
+            if (thumbstick == Vector2.zero)
+            {
+                thumbstick = info.GetThumbStickValue();
+            }
+
+            float grip = Mathf.Max(
+                info.GetGripValue(),
+                ReadSteamFrameAxis(steamFrameDevice, "grip"),
+                ReadSteamFrameButton(steamFrameDevice, "gripPressed") ? 1.0f : 0.0f,
+                ReadFirstAxisControl(handDevice, "grip", "gripPressed", "gripForce"));
+
+            ApplySteamFrameTriggerAnimation(Mathf.Clamp01(
+                Mathf.Max(
+                    info.GetTriggerRatio(),
+                    ReadSteamFrameAxis(steamFrameDevice, "trigger"),
+                    ReadFirstAxisControl(handDevice, "trigger", "triggerPressed"))));
+            ApplySteamFrameGripAnimation(Mathf.Clamp01(grip));
+            ApplySteamFrameThumbstickAnimation(
+                Vector2.ClampMagnitude(thumbstick, 1.0f),
+                ReadSteamFrameButton(steamFrameDevice, "thumbstickClicked") ||
+                    ReadFirstButtonControl(
+                        handDevice, "thumbstickClicked", "thumbstickClick", "primary2DAxisClick"));
+
+            bool faceBottom = info.GetVrInput(VrInput.Button01) ||
+                ReadSteamFrameButton(steamFrameDevice, "faceButtonBottom") ||
+                ReadFirstButtonControl(handDevice, "primaryButton");
+            bool faceInside = ReadSteamFrameButton(steamFrameDevice, "faceButtonInside");
+            bool faceOutside = info.GetVrInput(VrInput.Button02) ||
+                ReadSteamFrameButton(steamFrameDevice, "faceButtonOutside") ||
+                ReadFirstButtonControl(handDevice, "secondaryButton");
+            bool faceTop = ReadSteamFrameButton(steamFrameDevice, "faceButtonTop");
+            bool menu = ReadSteamFrameButton(steamFrameDevice, "menu");
+            bool bumper = ReadSteamFrameButton(steamFrameDevice, "bumper");
+
+            if (m_SteamFrameIsRight)
+            {
+                ApplySteamFrameButtonPress(
+                    m_SteamFramePrimaryButtonPart,
+                    faceBottom,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameSecondaryButtonPart,
+                    faceOutside,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameTertiaryButtonPart,
+                    faceInside,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameQuaternaryButtonPart,
+                    faceTop,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+            }
+            else
+            {
+                Vector2 dpad = new Vector2(
+                    (faceInside ? 1.0f : 0.0f) - (faceOutside ? 1.0f : 0.0f),
+                    (faceTop ? 1.0f : 0.0f) - (faceBottom ? 1.0f : 0.0f));
+                ApplySteamFrameDpadAnimation(
+                    Vector2.ClampMagnitude(dpad, 1.0f),
+                    faceBottom || faceInside || faceOutside || faceTop);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameSystemButtonPart,
+                    false,
+                    GetSteamFrameLeftMenuButtonAxis(),
+                    0.00085f);
+            }
+
+            ApplySteamFrameButtonPress(
+                m_SteamFrameMenuButtonPart,
+                menu,
+                m_SteamFrameIsRight
+                    ? GetSteamFrameRightFaceButtonAxis()
+                    : GetSteamFrameLeftMenuButtonAxis(),
+                0.00085f);
+            ApplySteamFrameBumperAnimation(bumper);
+        }
+
+        private InputDevice FindSteamFrameInputDevice()
+        {
+            string wantedUsage = m_SteamFrameIsRight ? "RightHand" : "LeftHand";
+            foreach (InputDevice device in InputSystem.devices)
+            {
+                if (!IsSteamFrameInputDevice(device))
+                {
+                    continue;
+                }
+
+                foreach (var usage in device.usages)
+                {
+                    if (usage.ToString() == wantedUsage)
+                    {
+                        return device;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private InputDevice FindHandInputDevice()
+        {
+            string wantedUsage = m_SteamFrameIsRight ? "RightHand" : "LeftHand";
+            foreach (InputDevice device in InputSystem.devices)
+            {
+                foreach (var usage in device.usages)
+                {
+                    if (usage.ToString() == wantedUsage)
+                    {
+                        return device;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsSteamFrameInputDevice(InputDevice device)
+        {
+            string layout = device.layout.ToString();
+            string name = device.name ?? string.Empty;
+            string displayName = device.displayName ?? string.Empty;
+            return layout.Contains("SteamFrameController") ||
+                displayName.Contains("Steam Frame") ||
+                name.Contains("SteamFrame");
+        }
+
+        private static bool ReadSteamFrameButton(InputDevice device, string controlName)
+        {
+            ButtonControl control = device?.TryGetChildControl<ButtonControl>(controlName);
+            return control != null && control.isPressed;
+        }
+
+        private static float ReadSteamFrameAxis(InputDevice device, string controlName)
+        {
+            AxisControl control = device?.TryGetChildControl<AxisControl>(controlName);
+            return control != null ? control.ReadValue() : 0.0f;
+        }
+
+        private static Vector2 ReadSteamFrameVector2(InputDevice device, string controlName)
+        {
+            Vector2Control control = device?.TryGetChildControl<Vector2Control>(controlName);
+            return control != null ? control.ReadValue() : Vector2.zero;
+        }
+
+        private static bool ReadFirstButtonControl(InputDevice device, params string[] controlNames)
+        {
+            if (device == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < controlNames.Length; i++)
+            {
+                ButtonControl control =
+                    device.TryGetChildControl<ButtonControl>(controlNames[i]);
+                if (control != null && control.isPressed)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static float ReadFirstAxisControl(InputDevice device, params string[] controlNames)
+        {
+            if (device == null)
+            {
+                return 0.0f;
+            }
+
+            float value = 0.0f;
+            for (int i = 0; i < controlNames.Length; i++)
+            {
+                AxisControl axisControl =
+                    device.TryGetChildControl<AxisControl>(controlNames[i]);
+                if (axisControl != null)
+                {
+                    value = Mathf.Max(value, axisControl.ReadValue());
+                    continue;
+                }
+
+                ButtonControl buttonControl =
+                    device.TryGetChildControl<ButtonControl>(controlNames[i]);
+                if (buttonControl != null && buttonControl.isPressed)
+                {
+                    value = 1.0f;
+                }
+            }
+
+            return value;
+        }
+
+        private static Vector2 ReadFirstVector2Control(InputDevice device, params string[] controlNames)
+        {
+            if (device == null)
+            {
+                return Vector2.zero;
+            }
+
+            for (int i = 0; i < controlNames.Length; i++)
+            {
+                Vector2Control control =
+                    device.TryGetChildControl<Vector2Control>(controlNames[i]);
+                if (control == null)
+                {
+                    continue;
+                }
+
+                Vector2 value = control.ReadValue();
+                if (value != Vector2.zero)
+                {
+                    return value;
+                }
+            }
+
+            return Vector2.zero;
+        }
+
+        private void ApplySteamFrameTriggerAnimation(float trigger)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.008507383f, -0.025102803f, 0.043208465f)
+                : new Vector3(0.008507593f, -0.025103247f, 0.043208539f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(0.981060743f, 0.075684428f, -0.178302228f)
+                : new Vector3(0.986111045f, -0.126526967f, 0.107590787f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameTriggerPart, pivot, axis, Mathf.Lerp(0.0f, -12.5f, trigger));
+        }
+
+        private void ApplySteamFrameGripAnimation(float grip)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.015135353f, -0.002164294f, 0.056575201f)
+                : new Vector3(0.015135575f, -0.002164703f, 0.056575201f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(0.165419415f, -0.806284010f, 0.567928314f)
+                : new Vector3(0.165418714f, 0.806282401f, -0.567930639f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameGripPart, pivot, axis, Mathf.Lerp(0.0f, 9.5f, grip));
+        }
+
+        private void ApplySteamFrameThumbstickAnimation(Vector2 value, bool clicked)
+        {
+            Vector3 pivot;
+            Quaternion axisFrame;
+            if (m_SteamFrameThumbstickPivotPart.IsValid)
+            {
+                pivot = m_SteamFrameThumbstickPivotPart.initialLocalPosition;
+                axisFrame = m_SteamFrameThumbstickPivotPart.initialLocalRotation;
+            }
+            else
+            {
+                pivot = m_SteamFrameIsRight
+                    ? new Vector3(-0.021772077f, -0.004882282f, 0.056458842f)
+                    : new Vector3(0.021772299f, -0.004882690f, 0.056458838f);
+                Vector3 euler = m_SteamFrameIsRight
+                    ? new Vector3(-35.252246f, 10.270902f, 4.411401f)
+                    : new Vector3(-35.252409f, -10.270845f, -4.411360f);
+                axisFrame = SteamFrameRotateXYZ(euler);
+            }
+
+            Vector3 axisX = axisFrame * Vector3.right;
+            Vector3 axisY = axisFrame * Vector3.forward;
+            Quaternion rotation =
+                Quaternion.AngleAxis(-value.y * 20.0f, axisX.normalized) *
+                Quaternion.AngleAxis(value.x * 20.0f, axisY.normalized);
+
+            if (m_SteamFrameThumbstickPivotPart.IsValid)
+            {
+                m_SteamFrameThumbstickPivotPart.transform.localRotation =
+                    rotation * m_SteamFrameThumbstickPivotPart.initialLocalRotation;
+            }
+
+            ApplySteamFramePartRotationAroundPivot(m_SteamFrameThumbstickPart, pivot, rotation);
+            if (m_SteamFrameThumbstickPart.IsValid)
+            {
+                m_SteamFrameThumbstickPart.transform.localPosition +=
+                    clicked ? new Vector3(0.0f, -0.0005f, 0.0f) : Vector3.zero;
+            }
+        }
+
+        private void ApplySteamFrameDpadAnimation(Vector2 value, bool pressed)
+        {
+            if (!m_SteamFrameDpadPart.IsValid)
+            {
+                return;
+            }
+
+            Vector3 pivot = new Vector3(-0.003449810f, 0.000989080f, 0.040305495f);
+            Quaternion axisFrame = SteamFrameRotateXYZ(
+                new Vector3(-35.252409f, -10.270845f, -4.411360f));
+            Vector3 axisX = axisFrame * Vector3.right;
+            Vector3 axisY = axisFrame * Vector3.forward;
+            Quaternion rotation =
+                Quaternion.AngleAxis(-value.y * 7.0f, axisX.normalized) *
+                Quaternion.AngleAxis(-value.x * 7.0f, axisY.normalized);
+
+            ApplySteamFramePartRotationAroundPivot(m_SteamFrameDpadPart, pivot, rotation);
+            m_SteamFrameDpadPart.transform.localPosition +=
+                pressed ? new Vector3(0.0f, -0.000927f, 0.0f) : Vector3.zero;
+        }
+
+        private void ApplySteamFrameBumperAnimation(bool pressed)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.039387941f, -0.010576765f, 0.051696081f)
+                : new Vector3(0.039388161f, -0.010577183f, 0.051696073f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(-0.165419042f, 0.806284010f, -0.567928374f)
+                : new Vector3(-0.165418446f, -0.806282401f, 0.567930698f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameBumperPart, pivot, axis, pressed ? -2.6f : 0.0f);
+        }
+
+        private static Vector3 GetSteamFrameRightFaceButtonAxis()
+        {
+            return new Vector3(0.165419310f, -0.806284010f, 0.567928255f);
+        }
+
+        private static Vector3 GetSteamFrameLeftMenuButtonAxis()
+        {
+            return new Vector3(-0.165418640f, -0.806282520f, 0.567930639f);
+        }
+
+        private static Quaternion SteamFrameRotateXYZ(Vector3 euler)
+        {
+            return Quaternion.AngleAxis(euler.z, Vector3.forward) *
+                Quaternion.AngleAxis(euler.y, Vector3.up) *
+                Quaternion.AngleAxis(euler.x, Vector3.right);
+        }
+
+        private static void ApplySteamFramePartRotationAroundPivot(
+            SteamFramePartState part, Vector3 pivot, Vector3 axis, float degrees)
+        {
+            ApplySteamFramePartRotationAroundPivot(
+                part, pivot, Quaternion.AngleAxis(degrees, axis.normalized));
+        }
+
+        private static void ApplySteamFramePartRotationAroundPivot(
+            SteamFramePartState part, Vector3 pivot, Quaternion rotation)
+        {
+            if (!part.IsValid)
+            {
+                return;
+            }
+
+            part.transform.localPosition =
+                pivot + (rotation * (part.initialLocalPosition - pivot));
+            part.transform.localRotation = rotation * part.initialLocalRotation;
+        }
+
+        private static void ApplySteamFrameButtonPress(
+            SteamFramePartState part, bool isPressed, Vector3 axis, float distance)
+        {
+            if (!part.IsValid)
+            {
+                return;
+            }
+
+            part.transform.localPosition = part.initialLocalPosition +
+                (axis.normalized * (isPressed ? distance : 0.0f));
+            part.transform.localRotation = part.initialLocalRotation;
+        }
+
+        private void DisableSteamFrameFullRenderModelIfComponentModelExists()
+        {
+            var componentRoot = FindSteamFrameRenderRoot();
+            if (componentRoot == null || componentRoot.name != "SteamFrameComponentModel")
+            {
+                return;
+            }
+
+            var fullRenderRoot = FindSteamFrameFullRenderModelRoot();
+            if (fullRenderRoot == null)
+            {
+                return;
+            }
+
+            Renderer[] renderers = fullRenderRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = false;
+            }
+        }
+
+        private static void DisableRenderersInChild(Transform parent, string childName)
+        {
+            var child = FindDeepChild(parent, childName);
+            if (child == null)
+            {
+                return;
+            }
+
+            var renderers = child.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = false;
+            }
         }
 
         // Returns the active material when the pad is touched, else returns inactive.
@@ -436,6 +1117,7 @@ namespace TiltBrush
         private void UpdateButtonColor()
         {
             if (EmptyGeometry) { return; }
+            if (Style == ControllerStyle.SteamFrame) { return; }
             if (!App.VrSdk.AnalogIsStick(ControllerName))
             {
                 return;
@@ -488,6 +1170,11 @@ namespace TiltBrush
             {
                 m_ControllerName = m_Behavior.ControllerName;
             }
+
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                ApplySteamFrameAttachPointOverrides();
+            }
         }
 
         // Called after materials are assigned, allowing the controller geometry to apply state to the
@@ -517,6 +1204,9 @@ namespace TiltBrush
                 case ControllerStyle.Vive:
                 case ControllerStyle.LogitechPen:
                     UpdatePadAnimation(m_PadAnimState, PadMesh.material);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    UpdateSteamFramePartAnimation();
                     break;
             }
 

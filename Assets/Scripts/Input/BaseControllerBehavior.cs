@@ -181,9 +181,17 @@ namespace TiltBrush
                     case ControllerStyle.Phoenix:
                     case ControllerStyle.Neo3:
                     case ControllerStyle.Zapbox:
-                    case ControllerStyle.SteamFrame:
                         App.Instance.SelectionEffect.RegisterMesh(
                             ControllerGeometry.JoystickPad.GetComponent<MeshFilter>());
+                        break;
+                    case ControllerStyle.SteamFrame:
+                        foreach (var renderer in ControllerGeometry.SteamFrameRenderers)
+                        {
+                            if (renderer != null && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                            {
+                                App.Instance.SelectionEffect.RegisterMesh(meshFilter);
+                            }
+                        }
                         break;
                     case ControllerStyle.Vive:
                         App.Instance.SelectionEffect.RegisterMesh(
@@ -329,11 +337,30 @@ namespace TiltBrush
             m_GlowIntensity = fGlowIntensity;
 
             Color rTintedColor = GetTintColor();
-            ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", rTintedColor);
-            ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", rTintedColor);
-            for (int i = 0; i < ControllerGeometry.OtherMeshes.Length; ++i)
+            if (ControllerGeometry.Style == ControllerStyle.SteamFrame)
             {
-                ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", rTintedColor);
+                foreach (var renderer in ControllerGeometry.SteamFrameRenderers)
+                {
+                    if (renderer == null)
+                    {
+                        continue;
+                    }
+
+                    var material = renderer.material;
+                    if (material.HasProperty("_EmissionColor"))
+                    {
+                        material.SetColor("_EmissionColor", rTintedColor);
+                    }
+                }
+            }
+            else
+            {
+                ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", rTintedColor);
+                ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", rTintedColor);
+                for (int i = 0; i < ControllerGeometry.OtherMeshes.Length; ++i)
+                {
+                    ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", rTintedColor);
+                }
             }
             ControllerGeometry.TransformVisualsRenderer.material.SetColor("_Color", rTintColor);
 
@@ -363,6 +390,11 @@ namespace TiltBrush
                     style != ControllerStyle.None &&
                     style != ControllerStyle.Unset)
                 {
+                    if (style == ControllerStyle.SteamFrame)
+                    {
+                        m_CurrentGripState = state;
+                        return;
+                    }
 
                     bool manuallyAnimateGrips = (style == ControllerStyle.Vive ||
                         style == ControllerStyle.Wmr);

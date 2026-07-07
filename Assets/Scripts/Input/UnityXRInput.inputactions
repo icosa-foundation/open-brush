@@ -662,7 +662,7 @@
                 {
                     "name": "",
                     "id": "12ea8de8-d0c4-4d4e-9b8d-4b2b43600eec",
-                    "path": "<SteamFrameController>{RightHand}/faceButtonInside",
+                    "path": "<SteamFrameController>{RightHand}/faceButtonOutside",
                     "interactions": "",
                     "processors": "",
                     "groups": "Steam Frame Controller",
@@ -673,7 +673,7 @@
                 {
                     "name": "",
                     "id": "f7c5479f-4ad3-443d-a85b-7fd23bfa57b4",
-                    "path": "<SteamFrameController>{RightHand}/faceButtonInsideTouched",
+                    "path": "<SteamFrameController>{RightHand}/faceButtonOutsideTouched",
                     "interactions": "",
                     "processors": "",
                     "groups": "Steam Frame Controller",

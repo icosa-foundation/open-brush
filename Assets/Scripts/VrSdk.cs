@@ -89,6 +89,8 @@ namespace TiltBrush
         // This is the object "Camera (eye)"
         [SerializeField] private Camera m_VrCamera;
 
+        [SerializeField] private ControllerStyle m_ForceControllerStyleForTesting = ControllerStyle.Unset;
+
         // Runtime VR Spawned Controllers
         //  - This is the source of truth for controllers.
         //  - InputManager.m_ControllerInfos stores links to some of these components, but may be
@@ -99,6 +101,8 @@ namespace TiltBrush
         [NonSerialized] public OVRManager m_OvrManager;
 #endif
         private bool m_HasVrFocus = true;
+        private bool m_HasLoggedForcedUnityXRControllerStyle;
+        private bool m_HasLoggedSteamFrameControllerStyle;
 
         private Bounds? m_RoomBoundsAabbCached;
 
@@ -564,6 +568,10 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.SteamFrame:
                     controlsPrefab = m_UnityXRSteamFrameControlsPrefab;
+                    if (controlsPrefab == null)
+                    {
+                        Debug.LogError("STEAM_FRAME_GEOM_MISSING_CONTROLS_PREFAB VrSdk.m_UnityXRSteamFrameControlsPrefab is not assigned");
+                    }
                     break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
@@ -578,6 +586,10 @@ namespace TiltBrush
             if (controlsPrefab != null)
             {
                 Debug.Assert(m_VrControls == null);
+                if (style == ControllerStyle.SteamFrame)
+                {
+                    Debug.Log($"STEAM_FRAME_GEOM_INSTANTIATE_CONTROLS prefab={controlsPrefab.name}");
+                }
                 GameObject controlsObject = Instantiate(controlsPrefab);
                 m_VrControls = controlsObject.GetComponent<VrControllers>();
                 if (m_VrControls == null)
@@ -714,12 +726,24 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogWarning("Unrecognised device connected: {device.manufacturer}, {device.name}");
+                Debug.LogWarning($"Unrecognised device connected: {device.manufacturer}, {device.name}");
             }
         }
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
+            if (m_ForceControllerStyleForTesting != ControllerStyle.Unset)
+            {
+                if (!m_HasLoggedForcedUnityXRControllerStyle)
+                {
+                    Debug.Log(
+                        $"STEAM_FRAME_GEOM_FORCE_STYLE style={m_ForceControllerStyleForTesting} device={device.manufacturer}, {device.name}");
+                    m_HasLoggedForcedUnityXRControllerStyle = true;
+                }
+                SetControllerStyle(m_ForceControllerStyleForTesting);
+                return;
+            }
+
             if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
@@ -730,6 +754,12 @@ namespace TiltBrush
             }
             else if (device.name.Contains("Steam Frame Controller"))
             {
+                if (!m_HasLoggedSteamFrameControllerStyle)
+                {
+                    Debug.Log(
+                        $"STEAM_FRAME_GEOM_DETECTED_STYLE style={ControllerStyle.SteamFrame} device={device.manufacturer}, {device.name}");
+                    m_HasLoggedSteamFrameControllerStyle = true;
+                }
                 SetControllerStyle(ControllerStyle.SteamFrame);
             }
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
