@@ -90,6 +90,23 @@ namespace TiltBrush
         [Header("Wmr Button")]
         [SerializeField] private Renderer m_PinCushion;
 
+        [Header("Steam Frame")]
+        [SerializeField] private Renderer[] m_SteamFrameRenderers;
+        [SerializeField] private Transform m_SteamFrameTrigger;
+        [SerializeField] private Transform m_SteamFrameGrip;
+        [SerializeField] private Transform m_SteamFrameThumbstick;
+        [SerializeField] private Transform m_SteamFrameThumbstickPivot;
+        [SerializeField] private Transform m_SteamFrameDpad;
+        [SerializeField] private Transform m_SteamFrameDpadPivot;
+        [SerializeField] private Transform m_SteamFrameAButton;
+        [SerializeField] private Transform m_SteamFrameBButton;
+        [SerializeField] private Transform m_SteamFrameXButton;
+        [SerializeField] private Transform m_SteamFrameYButton;
+        [SerializeField] private Transform m_SteamFrameMenuButton;
+        [SerializeField] private Transform m_SteamFrameViewButton;
+        [SerializeField] private Transform m_SteamFrameSystemButton;
+        [SerializeField] private Transform m_SteamFrameBumper;
+
         [Header("Wand objects")]
         [SerializeField] private HintObjectScript m_MenuPanelHintObject;
         [SerializeField] private HintObjectScript m_QuickLoadHintObject;
@@ -195,18 +212,187 @@ namespace TiltBrush
         {
             get
             {
-                if (m_SteamFrameRenderers == null)
+                if (m_SteamFrameRenderers != null && m_SteamFrameRenderers.Length > 0)
+                {
+                    return m_SteamFrameRenderers;
+                }
+
+                if (m_CachedSteamFrameRenderers == null)
                 {
                     var renderRoot = FindSteamFrameRenderRoot();
                     if (renderRoot == null)
                     {
                         Debug.LogWarning($"STEAM_FRAME_GEOM_MISSING_RENDER_MODEL {name}");
                     }
-                    m_SteamFrameRenderers = renderRoot != null
+                    m_CachedSteamFrameRenderers = renderRoot != null
                         ? renderRoot.GetComponentsInChildren<Renderer>(true)
                         : new Renderer[0];
                 }
-                return m_SteamFrameRenderers;
+                return m_CachedSteamFrameRenderers;
+            }
+        }
+
+        public void SetControllerEmission(Color color)
+        {
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                foreach (var renderer in SteamFrameRenderers)
+                {
+                    SetRendererEmission(renderer, color);
+                }
+                return;
+            }
+
+            SetRendererEmission(MainMesh, color);
+            SetRendererEmission(TriggerMesh, color);
+            if (OtherMeshes == null)
+            {
+                return;
+            }
+            for (int i = 0; i < OtherMeshes.Length; ++i)
+            {
+                SetRendererEmission(OtherMeshes[i], color);
+            }
+        }
+
+        public void SetTransformVisualsTint(Color color)
+        {
+            if (TransformVisualsRenderer != null)
+            {
+                TransformVisualsRenderer.material.SetColor("_Color", color);
+            }
+        }
+
+        public void SetTransformVisualsActive(bool active, float intensity)
+        {
+            if (TransformVisualsRenderer == null)
+            {
+                return;
+            }
+
+            // Steam Frame still carries the legacy Quest transform visual renderer as backing data.
+            // Keep it inactive; Steam Frame highlight meshes are registered through
+            // RegisterTransformVisualMeshes().
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                TransformVisualsRenderer.gameObject.SetActive(false);
+                return;
+            }
+
+            TransformVisualsRenderer.gameObject.SetActive(active);
+            TransformVisualsRenderer.material.SetFloat("_Intensity", intensity);
+        }
+
+        public void RegisterTransformVisualMeshes(SelectionEffect selectionEffect)
+        {
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                foreach (var renderer in SteamFrameRenderers)
+                {
+                    RegisterRendererMesh(selectionEffect, renderer);
+                }
+                return;
+            }
+
+            RegisterRendererMesh(selectionEffect, TransformVisualsRenderer);
+            switch (Style)
+            {
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                case ControllerStyle.Phoenix:
+                case ControllerStyle.Neo3:
+                case ControllerStyle.Zapbox:
+                    RegisterRendererMesh(selectionEffect, JoystickPad);
+                    break;
+                case ControllerStyle.Vive:
+                    RegisterRendererMesh(selectionEffect, PadMesh);
+                    break;
+            }
+        }
+
+        public void SetGripVisualState(BaseControllerBehavior.GripState state, Color tint)
+        {
+            if (Style == ControllerStyle.SteamFrame ||
+                Style == ControllerStyle.InitializingUnityXR ||
+                Style == ControllerStyle.None ||
+                Style == ControllerStyle.Unset ||
+                LeftGripMesh == null ||
+                RightGripMesh == null)
+            {
+                return;
+            }
+
+            bool manuallyAnimateGrips = Style == ControllerStyle.Vive || Style == ControllerStyle.Wmr;
+            switch (state)
+            {
+                case BaseControllerBehavior.GripState.Standard:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = Vector3.zero;
+                        RightGripMesh.transform.localPosition = Vector3.zero;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, BaseGrippedMaterial, tint, false);
+                    SetGripRendererMaterial(RightGripMesh, BaseGrippedMaterial, tint, false);
+                    break;
+                case BaseControllerBehavior.GripState.ReadyToGrip:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = LeftGripPopOutVector;
+                        Vector3 rightPopOut = LeftGripPopOutVector;
+                        rightPopOut.x *= -1.0f;
+                        RightGripMesh.transform.localPosition = rightPopOut;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, GripReadyMaterial, tint, true);
+                    SetGripRendererMaterial(RightGripMesh, GripReadyMaterial, tint, true);
+                    break;
+                case BaseControllerBehavior.GripState.Gripped:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = LeftGripPopInVector;
+                        Vector3 rightPopIn = LeftGripPopInVector;
+                        rightPopIn.x *= -1.0f;
+                        RightGripMesh.transform.localPosition = rightPopIn;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, GrippedMaterial, tint, true);
+                    SetGripRendererMaterial(RightGripMesh, GrippedMaterial, tint, true);
+                    break;
+            }
+        }
+
+        private static void SetRendererEmission(Renderer renderer, Color color)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var material = renderer.material;
+            if (material.HasProperty("_EmissionColor"))
+            {
+                material.SetColor("_EmissionColor", color);
+            }
+        }
+
+        private static void RegisterRendererMesh(SelectionEffect selectionEffect, Renderer renderer)
+        {
+            if (renderer != null && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+            {
+                selectionEffect.RegisterMesh(meshFilter);
+            }
+        }
+
+        private static void SetGripRendererMaterial(
+            Renderer renderer, Material material, Color tint, bool applyTint)
+        {
+            if (renderer == null || material == null)
+            {
+                return;
+            }
+
+            renderer.material = material;
+            if (applyTint && renderer.material.HasProperty("_Color"))
+            {
+                renderer.material.SetColor("_Color", tint);
             }
         }
 
@@ -306,7 +492,7 @@ namespace TiltBrush
         private float m_LogitechPenHandednessHysteresis = 10.0f;
         // True if we're the default orientation, false if we need to be rotated 180 degrees.
         private bool m_LogitechPenHandedness;
-        private Renderer[] m_SteamFrameRenderers;
+        private Renderer[] m_CachedSteamFrameRenderers;
         private bool m_SteamFramePartsCached;
         private bool m_SteamFrameIsRight;
         private SteamFramePartState m_SteamFrameTriggerPart;
@@ -314,6 +500,7 @@ namespace TiltBrush
         private SteamFramePartState m_SteamFrameThumbstickPart;
         private SteamFramePartState m_SteamFrameThumbstickPivotPart;
         private SteamFramePartState m_SteamFrameDpadPart;
+        private SteamFramePartState m_SteamFrameDpadPivotPart;
         private SteamFramePartState m_SteamFramePrimaryButtonPart;
         private SteamFramePartState m_SteamFrameSecondaryButtonPart;
         private SteamFramePartState m_SteamFrameTertiaryButtonPart;
@@ -339,6 +526,14 @@ namespace TiltBrush
                 }
             }
             return null;
+        }
+
+        private static Transform ResolveSteamFramePart(
+            Transform assignedPart, Transform renderRoot, string fallbackName)
+        {
+            return assignedPart != null
+                ? assignedPart
+                : FindDeepChild(renderRoot, fallbackName);
         }
 
         private Transform FindSteamFrameRenderRoot()
@@ -576,30 +771,48 @@ namespace TiltBrush
             }
             m_SteamFrameIsRight = isRight;
 
-            m_SteamFrameTriggerPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_trigger"));
-            m_SteamFrameGripPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_grip_button"));
-            m_SteamFrameThumbstickPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_thumbstick"));
-            m_SteamFrameThumbstickPivotPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFrameThumbstickPivot"));
-            m_SteamFrameDpadPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_dpad"));
-            m_SteamFramePrimaryButtonPart = new SteamFramePartState(FindDeepChild(
-                renderRoot, isRight ? "SteamFramePart_a_button" : "SteamFramePart_dpad"));
-            m_SteamFrameSecondaryButtonPart = new SteamFramePartState(FindDeepChild(
-                renderRoot, isRight ? "SteamFramePart_b_button" : "SteamFramePart_view_button"));
-            m_SteamFrameTertiaryButtonPart = new SteamFramePartState(FindDeepChild(
-                renderRoot, isRight ? "SteamFramePart_x_button" : "SteamFramePart_system_button"));
-            m_SteamFrameQuaternaryButtonPart = new SteamFramePartState(FindDeepChild(
-                renderRoot, isRight ? "SteamFramePart_y_button" : "SteamFramePart_bumper"));
-            m_SteamFrameMenuButtonPart = new SteamFramePartState(FindDeepChild(
-                renderRoot, isRight ? "SteamFramePart_menu_button" : "SteamFramePart_view_button"));
-            m_SteamFrameSystemButtonPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_system_button"));
-            m_SteamFrameBumperPart =
-                new SteamFramePartState(FindDeepChild(renderRoot, "SteamFramePart_bumper"));
+            Transform trigger = ResolveSteamFramePart(
+                m_SteamFrameTrigger, renderRoot, "SteamFramePart_trigger");
+            Transform grip = ResolveSteamFramePart(
+                m_SteamFrameGrip, renderRoot, "SteamFramePart_grip_button");
+            Transform thumbstick = ResolveSteamFramePart(
+                m_SteamFrameThumbstick, renderRoot, "SteamFramePart_thumbstick");
+            Transform thumbstickPivot = ResolveSteamFramePart(
+                m_SteamFrameThumbstickPivot, renderRoot, "SteamFrameThumbstickPivot");
+            Transform dpad = ResolveSteamFramePart(
+                m_SteamFrameDpad, renderRoot, "SteamFramePart_dpad");
+            Transform dpadPivot = ResolveSteamFramePart(
+                m_SteamFrameDpadPivot, renderRoot, "SteamFrameDpadPivot");
+            Transform aButton = ResolveSteamFramePart(
+                m_SteamFrameAButton, renderRoot, "SteamFramePart_a_button");
+            Transform bButton = ResolveSteamFramePart(
+                m_SteamFrameBButton, renderRoot, "SteamFramePart_b_button");
+            Transform xButton = ResolveSteamFramePart(
+                m_SteamFrameXButton, renderRoot, "SteamFramePart_x_button");
+            Transform yButton = ResolveSteamFramePart(
+                m_SteamFrameYButton, renderRoot, "SteamFramePart_y_button");
+            Transform menuButton = ResolveSteamFramePart(
+                m_SteamFrameMenuButton, renderRoot, "SteamFramePart_menu_button");
+            Transform viewButton = ResolveSteamFramePart(
+                m_SteamFrameViewButton, renderRoot, "SteamFramePart_view_button");
+            Transform systemButton = ResolveSteamFramePart(
+                m_SteamFrameSystemButton, renderRoot, "SteamFramePart_system_button");
+            Transform bumper = ResolveSteamFramePart(
+                m_SteamFrameBumper, renderRoot, "SteamFramePart_bumper");
+
+            m_SteamFrameTriggerPart = new SteamFramePartState(trigger);
+            m_SteamFrameGripPart = new SteamFramePartState(grip);
+            m_SteamFrameThumbstickPart = new SteamFramePartState(thumbstick);
+            m_SteamFrameThumbstickPivotPart = new SteamFramePartState(thumbstickPivot);
+            m_SteamFrameDpadPart = new SteamFramePartState(dpad);
+            m_SteamFrameDpadPivotPart = new SteamFramePartState(dpadPivot);
+            m_SteamFramePrimaryButtonPart = new SteamFramePartState(isRight ? aButton : dpad);
+            m_SteamFrameSecondaryButtonPart = new SteamFramePartState(isRight ? bButton : viewButton);
+            m_SteamFrameTertiaryButtonPart = new SteamFramePartState(isRight ? xButton : systemButton);
+            m_SteamFrameQuaternaryButtonPart = new SteamFramePartState(isRight ? yButton : bumper);
+            m_SteamFrameMenuButtonPart = new SteamFramePartState(isRight ? menuButton : viewButton);
+            m_SteamFrameSystemButtonPart = new SteamFramePartState(systemButton);
+            m_SteamFrameBumperPart = new SteamFramePartState(bumper);
         }
 
         private void UpdateSteamFramePartAnimation()
@@ -919,14 +1132,31 @@ namespace TiltBrush
                 return;
             }
 
-            Vector3 pivot = new Vector3(-0.003449810f, 0.000989080f, 0.040305495f);
-            Quaternion axisFrame = SteamFrameRotateXYZ(
-                new Vector3(-35.252409f, -10.270845f, -4.411360f));
+            Vector3 pivot;
+            Quaternion axisFrame;
+            if (m_SteamFrameDpadPivotPart.IsValid)
+            {
+                pivot = m_SteamFrameDpadPivotPart.initialLocalPosition;
+                axisFrame = m_SteamFrameDpadPivotPart.initialLocalRotation;
+            }
+            else
+            {
+                pivot = new Vector3(-0.003449810f, 0.000989080f, 0.040305495f);
+                axisFrame = SteamFrameRotateXYZ(
+                    new Vector3(-35.252409f, -10.270845f, -4.411360f));
+            }
+
             Vector3 axisX = axisFrame * Vector3.right;
             Vector3 axisY = axisFrame * Vector3.forward;
             Quaternion rotation =
                 Quaternion.AngleAxis(-value.y * 7.0f, axisX.normalized) *
                 Quaternion.AngleAxis(-value.x * 7.0f, axisY.normalized);
+
+            if (m_SteamFrameDpadPivotPart.IsValid)
+            {
+                m_SteamFrameDpadPivotPart.transform.localRotation =
+                    rotation * m_SteamFrameDpadPivotPart.initialLocalRotation;
+            }
 
             ApplySteamFramePartRotationAroundPivot(m_SteamFrameDpadPart, pivot, rotation);
             m_SteamFrameDpadPart.transform.localPosition +=

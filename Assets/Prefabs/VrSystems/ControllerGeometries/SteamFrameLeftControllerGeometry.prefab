@@ -1045,6 +1045,21 @@ MonoBehaviour:
   m_Button01Mesh: {fileID: 23588270418944622}
   m_Button02Mesh: {fileID: 23962707783243148}
   m_PinCushion: {fileID: 0}
+  m_SteamFrameRenderers: []
+  m_SteamFrameTrigger: {fileID: 1858409822306366620}
+  m_SteamFrameGrip: {fileID: 8004747171831534266}
+  m_SteamFrameThumbstick: {fileID: 9101513706357210556}
+  m_SteamFrameThumbstickPivot: {fileID: 3319526065010460046}
+  m_SteamFrameDpad: {fileID: 8330998027628453801}
+  m_SteamFrameDpadPivot: {fileID: 3214870836967888376}
+  m_SteamFrameAButton: {fileID: 0}
+  m_SteamFrameBButton: {fileID: 0}
+  m_SteamFrameXButton: {fileID: 0}
+  m_SteamFrameYButton: {fileID: 0}
+  m_SteamFrameMenuButton: {fileID: 0}
+  m_SteamFrameViewButton: {fileID: 178209944668338649}
+  m_SteamFrameSystemButton: {fileID: 2312511688053539641}
+  m_SteamFrameBumper: {fileID: 3646514665053459781}
   m_MenuPanelHintObject: {fileID: 114209131302193418}
   m_QuickLoadHintObject: {fileID: 2515064228108526227}
   m_SwipeHint: {fileID: 8030387393632554277}
@@ -7463,6 +7478,37 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &413214937938648012
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3214870836967888376}
+  m_Layer: 0
+  m_Name: SteamFrameDpadPivot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3214870836967888376
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 413214937938648012}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.30665916, y: 0.10941763, z: 0.08325509, w: 0.9418368}
+  m_LocalPosition: {x: 0.0037, y: 0.001, z: 0.0413}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6620366825703844916}
+  m_LocalEulerAnglesHint: {x: -36.574, y: 11.132, z: 6.414}
 --- !u!1 &3377239923008734517
 GameObject:
   m_ObjectHideFlags: 0
@@ -7865,6 +7911,7 @@ Transform:
   - {fileID: 2312511688053539641}
   - {fileID: 3646514665053459781}
   - {fileID: 3319526065010460046}
+  - {fileID: 3214870836967888376}
   m_Father: {fileID: 4175376311900322}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6883900948755852055
