@@ -90,23 +90,6 @@ namespace TiltBrush
         [Header("Wmr Button")]
         [SerializeField] private Renderer m_PinCushion;
 
-        [Header("Steam Frame")]
-        [SerializeField] private Renderer[] m_SteamFrameRenderers;
-        [SerializeField] private Transform m_SteamFrameTrigger;
-        [SerializeField] private Transform m_SteamFrameGrip;
-        [SerializeField] private Transform m_SteamFrameThumbstick;
-        [SerializeField] private Transform m_SteamFrameThumbstickPivot;
-        [SerializeField] private Transform m_SteamFrameDpad;
-        [SerializeField] private Transform m_SteamFrameDpadPivot;
-        [SerializeField] private Transform m_SteamFrameAButton;
-        [SerializeField] private Transform m_SteamFrameBButton;
-        [SerializeField] private Transform m_SteamFrameXButton;
-        [SerializeField] private Transform m_SteamFrameYButton;
-        [SerializeField] private Transform m_SteamFrameMenuButton;
-        [SerializeField] private Transform m_SteamFrameViewButton;
-        [SerializeField] private Transform m_SteamFrameSystemButton;
-        [SerializeField] private Transform m_SteamFrameBumper;
-
         [Header("Wand objects")]
         [SerializeField] private HintObjectScript m_MenuPanelHintObject;
         [SerializeField] private HintObjectScript m_QuickLoadHintObject;
@@ -126,6 +109,22 @@ namespace TiltBrush
         [SerializeField] private GameObject m_DeselectionHintButton;
         [SerializeField] private HintObjectScript m_DuplicateHint;
         [SerializeField] private HintObjectScript m_SaveIconHint;
+
+        [Header("Steam Frame Components")]
+        [SerializeField] private Transform m_SteamFrameTrigger;
+        [SerializeField] private Transform m_SteamFrameGrip;
+        [SerializeField] private Transform m_SteamFrameThumbstick;
+        [SerializeField] private Transform m_SteamFrameThumbstickPivot;
+        [SerializeField] private Transform m_SteamFrameDpad;
+        [SerializeField] private Transform m_SteamFrameDpadPivot;
+        [SerializeField] private Transform m_SteamFrameAButton;
+        [SerializeField] private Transform m_SteamFrameBButton;
+        [SerializeField] private Transform m_SteamFrameXButton;
+        [SerializeField] private Transform m_SteamFrameYButton;
+        [SerializeField] private Transform m_SteamFrameMenuButton;
+        [SerializeField] private Transform m_SteamFrameViewButton;
+        [SerializeField] private Transform m_SteamFrameSystemButton;
+        [SerializeField] private Transform m_SteamFrameBumper;
 
         // -------------------------------------------------------------------------------------------- //
         // Public Properties
@@ -212,11 +211,6 @@ namespace TiltBrush
         {
             get
             {
-                if (m_SteamFrameRenderers != null && m_SteamFrameRenderers.Length > 0)
-                {
-                    return m_SteamFrameRenderers;
-                }
-
                 if (m_CachedSteamFrameRenderers == null)
                 {
                     var renderRoot = FindSteamFrameRenderRoot();
@@ -375,7 +369,12 @@ namespace TiltBrush
 
         private static void RegisterRendererMesh(SelectionEffect selectionEffect, Renderer renderer)
         {
-            if (renderer != null && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            if (renderer.TryGetComponent<MeshFilter>(out var meshFilter))
             {
                 selectionEffect.RegisterMesh(meshFilter);
             }
@@ -526,14 +525,6 @@ namespace TiltBrush
                 }
             }
             return null;
-        }
-
-        private static Transform ResolveSteamFramePart(
-            Transform assignedPart, Transform renderRoot, string fallbackName)
-        {
-            return assignedPart != null
-                ? assignedPart
-                : FindDeepChild(renderRoot, fallbackName);
         }
 
         private Transform FindSteamFrameRenderRoot()
@@ -757,12 +748,6 @@ namespace TiltBrush
             }
 
             m_SteamFramePartsCached = true;
-            var renderRoot = FindSteamFrameRenderRoot();
-            if (renderRoot == null)
-            {
-                return;
-            }
-
             bool isRight = name.Contains("Right");
             bool isLeft = name.Contains("Left");
             if (!isLeft && !isRight)
@@ -771,48 +756,25 @@ namespace TiltBrush
             }
             m_SteamFrameIsRight = isRight;
 
-            Transform trigger = ResolveSteamFramePart(
-                m_SteamFrameTrigger, renderRoot, "SteamFramePart_trigger");
-            Transform grip = ResolveSteamFramePart(
-                m_SteamFrameGrip, renderRoot, "SteamFramePart_grip_button");
-            Transform thumbstick = ResolveSteamFramePart(
-                m_SteamFrameThumbstick, renderRoot, "SteamFramePart_thumbstick");
-            Transform thumbstickPivot = ResolveSteamFramePart(
-                m_SteamFrameThumbstickPivot, renderRoot, "SteamFrameThumbstickPivot");
-            Transform dpad = ResolveSteamFramePart(
-                m_SteamFrameDpad, renderRoot, "SteamFramePart_dpad");
-            Transform dpadPivot = ResolveSteamFramePart(
-                m_SteamFrameDpadPivot, renderRoot, "SteamFrameDpadPivot");
-            Transform aButton = ResolveSteamFramePart(
-                m_SteamFrameAButton, renderRoot, "SteamFramePart_a_button");
-            Transform bButton = ResolveSteamFramePart(
-                m_SteamFrameBButton, renderRoot, "SteamFramePart_b_button");
-            Transform xButton = ResolveSteamFramePart(
-                m_SteamFrameXButton, renderRoot, "SteamFramePart_x_button");
-            Transform yButton = ResolveSteamFramePart(
-                m_SteamFrameYButton, renderRoot, "SteamFramePart_y_button");
-            Transform menuButton = ResolveSteamFramePart(
-                m_SteamFrameMenuButton, renderRoot, "SteamFramePart_menu_button");
-            Transform viewButton = ResolveSteamFramePart(
-                m_SteamFrameViewButton, renderRoot, "SteamFramePart_view_button");
-            Transform systemButton = ResolveSteamFramePart(
-                m_SteamFrameSystemButton, renderRoot, "SteamFramePart_system_button");
-            Transform bumper = ResolveSteamFramePart(
-                m_SteamFrameBumper, renderRoot, "SteamFramePart_bumper");
-
-            m_SteamFrameTriggerPart = new SteamFramePartState(trigger);
-            m_SteamFrameGripPart = new SteamFramePartState(grip);
-            m_SteamFrameThumbstickPart = new SteamFramePartState(thumbstick);
-            m_SteamFrameThumbstickPivotPart = new SteamFramePartState(thumbstickPivot);
-            m_SteamFrameDpadPart = new SteamFramePartState(dpad);
-            m_SteamFrameDpadPivotPart = new SteamFramePartState(dpadPivot);
-            m_SteamFramePrimaryButtonPart = new SteamFramePartState(isRight ? aButton : dpad);
-            m_SteamFrameSecondaryButtonPart = new SteamFramePartState(isRight ? bButton : viewButton);
-            m_SteamFrameTertiaryButtonPart = new SteamFramePartState(isRight ? xButton : systemButton);
-            m_SteamFrameQuaternaryButtonPart = new SteamFramePartState(isRight ? yButton : bumper);
-            m_SteamFrameMenuButtonPart = new SteamFramePartState(isRight ? menuButton : viewButton);
-            m_SteamFrameSystemButtonPart = new SteamFramePartState(systemButton);
-            m_SteamFrameBumperPart = new SteamFramePartState(bumper);
+            m_SteamFrameTriggerPart = new SteamFramePartState(m_SteamFrameTrigger);
+            m_SteamFrameGripPart = new SteamFramePartState(m_SteamFrameGrip);
+            m_SteamFrameThumbstickPart = new SteamFramePartState(m_SteamFrameThumbstick);
+            m_SteamFrameThumbstickPivotPart =
+                new SteamFramePartState(m_SteamFrameThumbstickPivot);
+            m_SteamFrameDpadPart = new SteamFramePartState(m_SteamFrameDpad);
+            m_SteamFrameDpadPivotPart = new SteamFramePartState(m_SteamFrameDpadPivot);
+            m_SteamFramePrimaryButtonPart =
+                new SteamFramePartState(isRight ? m_SteamFrameAButton : m_SteamFrameDpad);
+            m_SteamFrameSecondaryButtonPart =
+                new SteamFramePartState(isRight ? m_SteamFrameBButton : m_SteamFrameViewButton);
+            m_SteamFrameTertiaryButtonPart =
+                new SteamFramePartState(isRight ? m_SteamFrameXButton : m_SteamFrameSystemButton);
+            m_SteamFrameQuaternaryButtonPart =
+                new SteamFramePartState(isRight ? m_SteamFrameYButton : m_SteamFrameBumper);
+            m_SteamFrameMenuButtonPart =
+                new SteamFramePartState(isRight ? m_SteamFrameMenuButton : m_SteamFrameViewButton);
+            m_SteamFrameSystemButtonPart = new SteamFramePartState(m_SteamFrameSystemButton);
+            m_SteamFrameBumperPart = new SteamFramePartState(m_SteamFrameBumper);
         }
 
         private void UpdateSteamFramePartAnimation()

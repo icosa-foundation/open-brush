@@ -1134,21 +1134,6 @@ MonoBehaviour:
   m_Button01Mesh: {fileID: 23473323031762210}
   m_Button02Mesh: {fileID: 23309515705117424}
   m_PinCushion: {fileID: 0}
-  m_SteamFrameRenderers: []
-  m_SteamFrameTrigger: {fileID: 4475150174836679422}
-  m_SteamFrameGrip: {fileID: 7871843873390858}
-  m_SteamFrameThumbstick: {fileID: 6772870429268993743}
-  m_SteamFrameThumbstickPivot: {fileID: 8402775959674815328}
-  m_SteamFrameDpad: {fileID: 0}
-  m_SteamFrameDpadPivot: {fileID: 0}
-  m_SteamFrameAButton: {fileID: 4466176416605275611}
-  m_SteamFrameBButton: {fileID: 6853553635472797956}
-  m_SteamFrameXButton: {fileID: 1601319782779679426}
-  m_SteamFrameYButton: {fileID: 4493932736491955265}
-  m_SteamFrameMenuButton: {fileID: 1967201422002150317}
-  m_SteamFrameViewButton: {fileID: 0}
-  m_SteamFrameSystemButton: {fileID: 402064577992948073}
-  m_SteamFrameBumper: {fileID: 5933474238758457659}
   m_MenuPanelHintObject: {fileID: 114000011944290600}
   m_QuickLoadHintObject: {fileID: 6089258854593438152}
   m_SwipeHint: {fileID: 1514467557392283875}
@@ -1165,6 +1150,20 @@ MonoBehaviour:
   m_DeselectionHintButton: {fileID: 1131678587650542}
   m_DuplicateHint: {fileID: 4905351718730328795}
   m_SaveIconHint: {fileID: 3345614990619391862}
+  m_SteamFrameTrigger: {fileID: 4475150174836679422}
+  m_SteamFrameGrip: {fileID: 7871843873390858}
+  m_SteamFrameThumbstick: {fileID: 6772870429268993743}
+  m_SteamFrameThumbstickPivot: {fileID: 8402775959674815328}
+  m_SteamFrameDpad: {fileID: 0}
+  m_SteamFrameDpadPivot: {fileID: 0}
+  m_SteamFrameAButton: {fileID: 4466176416605275611}
+  m_SteamFrameBButton: {fileID: 6853553635472797956}
+  m_SteamFrameXButton: {fileID: 1601319782779679426}
+  m_SteamFrameYButton: {fileID: 4493932736491955265}
+  m_SteamFrameMenuButton: {fileID: 1967201422002150317}
+  m_SteamFrameViewButton: {fileID: 0}
+  m_SteamFrameSystemButton: {fileID: 402064577992948073}
+  m_SteamFrameBumper: {fileID: 5933474238758457659}
 --- !u!1 &1000013053052398
 GameObject:
   m_ObjectHideFlags: 0
