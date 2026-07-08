@@ -543,8 +543,14 @@ namespace TiltBrush
 
             // While we're fetching metadata, hold a flag so we can message state in the UI.
             IsActivelyRefreshingSketches = true;
-            yield return PopulateSketchesCoroutine();
-            IsActivelyRefreshingSketches = false;
+            try
+            {
+                yield return PopulateSketchesCoroutine();
+            }
+            finally
+            {
+                IsActivelyRefreshingSketches = false;
+            }
         }
 
         private void ResetLists()
@@ -623,6 +629,10 @@ namespace TiltBrush
                 }
                 if (infos.Count == 0)
                 {
+                    if (lister != null && lister.HasMore)
+                    {
+                        continue;
+                    }
                     break;
                 }
                 if (m_CacheDir == null)
@@ -632,6 +642,11 @@ namespace TiltBrush
                 for (int i = 0; i < infos.Count; i++)
                 {
                     IcosaSceneFileInfo info = infos[i];
+                    if (info == null || !info.Valid)
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Skipping invalid Icosa sketch metadata at index {i}");
+                        continue;
+                    }
                     IcosaSketch sketch;
                     if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
                     {
@@ -671,7 +686,6 @@ namespace TiltBrush
                     if (fromEmpty)
                     {
                         yield return DownloadIconsCoroutine(sketches);
-                        sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                         // Copying sketches to m_Sketches before sketches has completed populating is a bit
                         // dangerous, but as long as they're copied and then listeners are notified
                         // immediately afterward with OnChanged(), there data should be stable.
@@ -697,7 +711,6 @@ namespace TiltBrush
                 if (changed)
                 {
                     yield return DownloadIconsCoroutine(sketches);
-                    sketches.RemoveAll(x => !x.IcosaSceneFileInfo.IconDownloaded);
                 }
 
                 // PruneOldSketchesCoroutine relies on m_AssetIds being up to date, so set these before
@@ -727,12 +740,27 @@ namespace TiltBrush
             }
         }
 
-        // If we have not managed to download a tilt file or its icon, we should remove it from the
-        // sketches list so as not to confuse the user.
-        private void RemoveFailedDownloads(List<IcosaSketch> sketches)
+        private bool IsCachedTiltValid(IcosaSceneFileInfo sceneFileInfo)
         {
-            sketches.RemoveAll(x => !x.IcosaSceneFileInfo.TiltDownloaded ||
-                !x.IcosaSceneFileInfo.IconDownloaded);
+            if (sceneFileInfo.TryUseCachedTiltFile())
+            {
+                return true;
+            }
+
+            if (!File.Exists(sceneFileInfo.TiltPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                File.Delete(sceneFileInfo.TiltPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Could not delete invalid cached sketch: {ex}");
+            }
+            return false;
         }
 
         public IEnumerator DownloadFilesCoroutine(System.Action onComplete = null, Action onDownload = null)
@@ -782,7 +810,11 @@ namespace TiltBrush
                 // TODO(b/36270116): Check filesizes when Icosa can give it to us to detect incomplete downloads
                 if (!sceneFileInfo.IconDownloaded)
                 {
-                    if (File.Exists(sceneFileInfo.IconPath))
+                    if (string.IsNullOrEmpty(sceneFileInfo.IconUrl))
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Missing icon URL for {sceneFileInfo.HumanName}");
+                    }
+                    else if (File.Exists(sceneFileInfo.IconPath))
                     {
                         sceneFileInfo.IconDownloaded = true;
                     }
@@ -821,22 +853,19 @@ namespace TiltBrush
         private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches, Action onDownload = null)
         {
             bool notifyOnError = true;
-            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            void NotifyDownloadResult(IcosaSceneFileInfo sceneFileInfo, IcosaTiltDownloadResult result)
             {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                if (result == null || result.Succeeded || result.Status == IcosaTiltDownloadStatus.Canceled)
+                {
+                    return;
+                }
+                ControllerConsoleScript.m_Instance.AddNewLine(result.UserMessage, notifyOnError);
                 notifyOnError = false;
-                Debug.LogException(ex);
-                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
-            }
-
-            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
-            {
-                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
-                    "Out of disk space?";
-                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
-                notifyOnError = false;
-                Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+                if (result.Exception != null)
+                {
+                    Debug.LogException(result.Exception);
+                }
+                Debug.LogError($"ICOSATILT_LOAD {result.Status}: {result.Details ?? sceneFileInfo.TiltPath}");
             }
 
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
@@ -845,34 +874,21 @@ namespace TiltBrush
                 IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
                 if (!sceneFileInfo.TiltDownloaded)
                 {
-                    if (File.Exists(sceneFileInfo.TiltPath))
+                    if (IsCachedTiltValid(sceneFileInfo))
                     {
                         sceneFileInfo.TiltDownloaded = true;
                     }
                     else
                     {
-                        using (UnityWebRequest www = UnityWebRequest.Get(sceneFileInfo.TiltFileUrl))
+                        IcosaTiltDownloadResult result = null;
+                        yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                            sceneFileInfo, sceneFileInfo.TiltPath, downloadBuffer,
+                            isCanceled: null,
+                            onRequestChanged: null,
+                            onComplete: r => result = r);
+                        if (result != null && !result.Succeeded)
                         {
-                            DownloadHandlerFastFile downloadHandler;
-                            try
-                            {
-                                downloadHandler = new DownloadHandlerFastFile(sceneFileInfo.TiltPath, downloadBuffer);
-                            }
-                            catch (Exception ex)
-                            {
-                                NotifyCreateError(sceneFileInfo, "sketch", ex);
-                                continue;
-                            }
-                            www.downloadHandler = downloadHandler;
-                            yield return www.SendWebRequest();
-                            if (www.isNetworkError || www.responseCode >= 400 || !string.IsNullOrEmpty(www.error))
-                            {
-                                NotifyWriteError(sceneFileInfo, "sketch", www);
-                            }
-                            else
-                            {
-                                sceneFileInfo.TiltDownloaded = true;
-                            }
+                            NotifyDownloadResult(sceneFileInfo, result);
                         }
                     }
                     onDownload?.Invoke();
@@ -989,12 +1005,37 @@ namespace TiltBrush
             {
                 foreach (int i in m_RequestedIcons)
                 {
+                    if (i < 0 || i >= m_Sketches.Count)
+                    {
+                        continue;
+                    }
+
                     IcosaSketch sketch = m_Sketches[i];
                     TryMaterializeCachedIcon(sketch, out _);
                     yield return null;
                 }
-                m_RequestedIcons.RemoveAll(i => m_Sketches[i].Icon != null);
+                m_RequestedIcons.RemoveAll(RequestedIconIsLoadedOrUnavailable);
             }
+        }
+
+        private bool RequestedIconIsLoadedOrUnavailable(int i)
+        {
+            if (i < 0 || i >= m_Sketches.Count)
+            {
+                return true;
+            }
+
+            IcosaSketch sketch = m_Sketches[i];
+            IcosaSceneFileInfo info = sketch.IcosaSceneFileInfo;
+            if (sketch.Icon != null)
+            {
+                return true;
+            }
+
+            return info == null ||
+                !info.IconDownloaded ||
+                string.IsNullOrEmpty(info.IconPath) ||
+                !File.Exists(info.IconPath);
         }
 
         private static string CacheDir(SketchSetType type)
@@ -1052,31 +1093,99 @@ namespace TiltBrush
         private TiltFile m_DownloadedFile;
         private bool m_IconDownloaded;
 
-        public bool IsValid => m_TiltFileUrl != null;
+        public bool IsValid => !string.IsNullOrEmpty(m_AssetId) &&
+            !string.IsNullOrEmpty(m_HumanName) &&
+            !string.IsNullOrEmpty(m_TiltFileUrl);
 
         // Populate metadata from the JSON returned by Icosa for a single asset
         // See go/vr-assets-service-api
         public IcosaSceneFileInfo(JToken json)
         {
-            m_AssetId = json["assetId"].ToString();
-            m_HumanName = json["displayName"].ToString();
+            m_AssetId = json?["assetId"]?.ToString();
+            m_HumanName = json?["displayName"]?.ToString();
+            if (string.IsNullOrWhiteSpace(m_HumanName))
+            {
+                m_HumanName = string.IsNullOrWhiteSpace(m_AssetId) ? "Untitled" : m_AssetId;
+            }
 
-            var format = json["formats"].First(x => x["formatType"].ToString() == "TILT")["root"];
-            m_TiltFileUrl = format["url"].ToString();
-            m_IconUrl = json["thumbnail"]?["url"]?.ToString();
-            m_License = json["license"]?.ToString();
+            TiltDownloadStrategy strategy = VrAssetService.m_Instance != null
+                ? VrAssetService.m_Instance.m_TiltDownloadStrategy
+                : TiltDownloadStrategy.AvoidArchive;
+            JToken formats = json?["formats"];
+            JToken format = SelectTiltFormat(formats, strategy);
+            m_TiltFileUrl = format?["root"]?["url"]?.ToString();
+            m_IconUrl = json?["thumbnail"]?["url"]?.ToString();
+            m_License = json?["license"]?.ToString();
 
             // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
-            var validFormat = json["formats"].FirstOrDefault(x =>
-                x["formatType"].ToString() == "GLTF2" ||
-                x["formatType"].ToString() == "GLTF" ||
-                x["formatType"].ToString() == "OBJ"
+            var validFormat = formats?.FirstOrDefault(x =>
+                x["formatType"]?.ToString() == "GLTF2" ||
+                x["formatType"]?.ToString() == "GLTF" ||
+                x["formatType"]?.ToString() == "OBJ"
             );
             string triCount = validFormat?["formatComplexity"]?["triangleCount"]?.ToString();
-            m_GltfTriangleCount = Int32.Parse(triCount ?? "1");
+            if (!Int32.TryParse(triCount, out m_GltfTriangleCount) || m_GltfTriangleCount < 1)
+            {
+                m_GltfTriangleCount = 1;
+            }
 
             m_DownloadedFile = null;
             m_IconDownloaded = false;
+        }
+
+        private static JToken SelectTiltFormat(JToken formats, TiltDownloadStrategy strategy)
+        {
+            if (formats == null)
+            {
+                return null;
+            }
+
+            List<JToken> tiltFormats = formats
+                .Where(x => x["formatType"]?.ToString() == "TILT"
+                    && !string.IsNullOrEmpty(GetFormatUrl(x)))
+                .ToList();
+            if (tiltFormats.Count == 0)
+            {
+                return null;
+            }
+
+            if (strategy == TiltDownloadStrategy.AvoidArchive)
+            {
+                List<JToken> nonArchiveFormats = tiltFormats
+                    .Where(x => !IsArchiveUrl(GetFormatUrl(x)))
+                    .ToList();
+                if (nonArchiveFormats.Count > 0)
+                {
+                    return GetPreferredFormat(nonArchiveFormats) ?? nonArchiveFormats[0];
+                }
+            }
+
+            return GetPreferredFormat(tiltFormats) ?? tiltFormats[0];
+        }
+
+        private static JToken GetPreferredFormat(List<JToken> formats)
+        {
+            return formats.FirstOrDefault(x => x["isPreferredForDownload"]?.Value<bool>() == true);
+        }
+
+        private static string GetFormatUrl(JToken format)
+        {
+            return format?["root"]?["url"]?.ToString();
+        }
+
+        private static bool IsArchiveUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return false;
+            }
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
+            }
+            return url.IndexOf("archive.org", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         public override string ToString()
@@ -1097,10 +1206,7 @@ namespace TiltBrush
         // Allow setting since it is not in the asset json object itself
         public string Author { get; set; }
 
-        public bool Valid
-        {
-            get { return true; }
-        }
+        public bool Valid => IsValid;
 
         public bool Available
         {
@@ -1112,10 +1218,7 @@ namespace TiltBrush
             get { return m_localTiltFile; }
         }
 
-        public bool Exists
-        {
-            get { return true; }
-        }
+        public bool Exists => Valid;
 
         public bool ReadOnly
         {
@@ -1198,6 +1301,27 @@ namespace TiltBrush
                     m_DownloadedFile = null;
                 }
             }
+        }
+
+        public bool TryUseCachedTiltFile()
+        {
+            if (m_DownloadedFile != null)
+            {
+                return true;
+            }
+            if (string.IsNullOrEmpty(m_localTiltFile) || !File.Exists(m_localTiltFile))
+            {
+                return false;
+            }
+
+            TiltFile tiltFile = new TiltFile(m_localTiltFile);
+            if (!tiltFile.IsHeaderValid())
+            {
+                return false;
+            }
+
+            m_DownloadedFile = tiltFile;
+            return true;
         }
 
         // Not part of the interface

@@ -57,6 +57,13 @@ namespace TiltBrush
         VOX
     }
 
+    [Serializable]
+    public enum TiltDownloadStrategy
+    {
+        AvoidArchive,
+        UsePreferred
+    }
+
     public class VrAssetService : MonoBehaviour
     {
         // Constants
@@ -327,6 +334,7 @@ namespace TiltBrush
         private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
+        public TiltDownloadStrategy m_TiltDownloadStrategy = TiltDownloadStrategy.AvoidArchive;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -1101,6 +1109,12 @@ namespace TiltBrush
             return $"{uriPath}{separator}{additionalParams}";
         }
 
+        private static void AppendQueryParam(ref string uri, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) { return; }
+            uri += $"{key}={UnityWebRequest.EscapeURL(value)}&";
+        }
+
         public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
         {
             string filteredUriPath = null;
@@ -1124,12 +1138,12 @@ namespace TiltBrush
                     break;
             }
             string uri = $"{IcosaApiRoot}{filteredUriPath}&";
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
             return new AssetLister(uri, errorMessage);
         }
 
@@ -1166,7 +1180,15 @@ namespace TiltBrush
                 yield return null;
             }
 
-            onSuccess?.Invoke(new IcosaSceneFileInfo(json.Root));
+            var info = new IcosaSceneFileInfo(json.Root);
+            if (!info.Valid)
+            {
+                Debug.LogWarning($"ICOSATILT_LOAD Fetched sketch {assetId} has no valid tilt download");
+                onFailure?.Invoke();
+                yield break;
+            }
+
+            onSuccess?.Invoke(info);
         }
 
         public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
@@ -1183,16 +1205,16 @@ namespace TiltBrush
             {
                 uri += $"format={format}&";
             }
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "triangleCountMax", queryParams.TriangleCountMax.ToString());
             // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
             // at least one such model is pathologically large, so exclude them server-side.
             uri += "triangleCountMin=1&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
@@ -1203,7 +1225,6 @@ namespace TiltBrush
             BeginLoadSketchOverlap();
             onProgress?.Invoke(0.05f);
 
-            string path = Path.GetTempFileName();
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             double requestStartTime = Time.realtimeSinceStartupAsDouble;
@@ -1220,8 +1241,10 @@ namespace TiltBrush
                     {
                         cr.MoveNext();
                     }
-                    catch (VrAssetServiceException)
+                    catch (VrAssetServiceException e)
                     {
+                        ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                        Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
                         yield break;
                     }
                     yield return cr.Current;
@@ -1229,32 +1252,44 @@ namespace TiltBrush
             }
             JObject json = JObject.Parse(request.Result);
             var info = new IcosaSceneFileInfo(json);
-            using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
+            if (!info.Valid)
             {
-                var op = www.SendWebRequest();
-                while (!op.isDone)
+                ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
+                yield break;
+            }
+
+            string path = FileUtils.GenerateNonexistentFilename(
+                Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
+            const int kDownloadBufferSize = 1024 * 1024;
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            IcosaTiltDownloadResult result = null;
+            UnityWebRequest downloadRequest = null;
+            IEnumerator download = IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, path, downloadBuffer,
+                isCanceled: null,
+                onRequestChanged: r => downloadRequest = r,
+                onComplete: r => result = r);
+            while (download.MoveNext())
+            {
+                if (downloadRequest != null)
                 {
-                    onProgress?.Invoke(0.2f + 0.8f * www.downloadProgress);
-                    yield return null;
+                    onProgress?.Invoke(0.2f + 0.8f * downloadRequest.downloadProgress);
                 }
-                onProgress?.Invoke(1.0f);
-                FileStream stream = File.Create(path);
-                byte[] data = www.downloadHandler.data;
-                stream.Write(data, 0, data.Length);
-                stream.Close();
+                yield return download.Current;
             }
 
-            var fileInfo = new DiskSceneFileInfo(path);
-            SketchControlsScript.m_Instance.LoadSketch(fileInfo);
+            if (result == null || !result.Succeeded)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    result?.UserMessage ?? "Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
+                yield break;
+            }
 
-            try
-            {
-                File.Delete(path);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"Could not delete temporary Icosa tilt '{path}': {e}");
-            }
+            SketchControlsScript.m_Instance.IssueGlobalCommand(
+                SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+            onProgress?.Invoke(1.0f);
         }
 
         private static void BeginLoadSketchOverlap()

@@ -45,6 +45,19 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            private bool m_ForceViewOnly;
+            public bool ForceViewOnly
+            {
+                get
+                {
+#if OPEN_BRUSH_VIEWER
+                    return true;
+#else
+                    return m_ForceViewOnly;
+#endif
+                }
+                set { m_ForceViewOnly = value; }
+            }
 
             private bool? m_DisableXrMode;
             public bool DisableXrMode
@@ -54,7 +67,7 @@ namespace TiltBrush
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
                     return true;
 #else
-                    return m_DisableXrMode ?? false;
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
 #endif
                 }
                 set { m_DisableXrMode = value; }
@@ -474,6 +487,7 @@ namespace TiltBrush
             }
 
             int? m_OfflineResolution;
+            public bool OfflineResolutionValid { get { return m_OfflineResolution != null; } }
             public int OfflineResolution
             {
                 get { return m_OfflineResolution ?? kDefaultOfflineRes; }
