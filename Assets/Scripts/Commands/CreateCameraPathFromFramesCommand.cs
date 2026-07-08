@@ -92,15 +92,21 @@ namespace TiltBrush
 
         private void CreatePositionKnots()
         {
+            // Frames are recorded in canvas space; CreatePositionKnot places knots in
+            // world/room space, so convert through the canvas pose (as the Lua API does).
+            TrTransform canvasPose = m_Canvas.Pose;
             for (int i = 0; i < m_Frames.Count; i++)
             {
                 FlyPathRecorder.RecordedFrame frame = m_Frames[i];
-                CameraPathPositionKnot posKnot = m_Widget.Path.CreatePositionKnot(frame.position);
+                CameraPathPositionKnot posKnot =
+                    m_Widget.Path.CreatePositionKnot(canvasPose.MultiplyPoint(frame.position));
                 posKnot.transform.rotation =
-                    Quaternion.LookRotation(GetDirectionToNext(i), Vector3.up);
+                    Quaternion.LookRotation(canvasPose.rotation * GetDirectionToNext(i), Vector3.up);
 
                 if (i < m_Frames.Count - 1)
                 {
+                    // TangentMagnitude is stored in canvas-space units, so use the
+                    // untransformed frame positions here.
                     float distance = Vector3.Distance(frame.position, m_Frames[i + 1].position);
                     posKnot.TangentMagnitude = distance * 0.3f;
                 }
@@ -116,13 +122,14 @@ namespace TiltBrush
         private void CreateRotationKnots()
         {
             int rotationKnotInterval = Mathf.Max(1, m_Frames.Count / 10);
+            Quaternion canvasRotation = m_Canvas.Pose.rotation;
 
             for (int i = 0; i < m_Frames.Count; i += rotationKnotInterval)
             {
                 FlyPathRecorder.RecordedFrame frame = m_Frames[i];
                 PathT pathT = new PathT(i);
                 CameraPathRotationKnot rotKnot =
-                    m_Widget.Path.CreateRotationKnot(pathT, frame.rotation);
+                    m_Widget.Path.CreateRotationKnot(pathT, canvasRotation * frame.rotation);
                 m_Widget.Path.AddRotationKnot(rotKnot, pathT);
             }
         }
