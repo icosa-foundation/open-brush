@@ -1124,14 +1124,14 @@ MonoBehaviour:
   m_GrippedMaterial: {fileID: 2100000, guid: 37419b7c40048a64abaafb344b763b4b, type: 2}
   m_LeftGripPopInVector: {x: 1.7, y: 1.02, z: 0}
   m_LeftGripPopOutVector: {x: -1.78, y: -0.76, z: 0}
-  m_PadPopUpAmount: 0.04
-  m_PadScaleAmount: 80
+  m_PadPopUpAmount: 0.005
+  m_PadScaleAmount: 0.08
   m_PadSpeed: 10
   m_HapticPulseOn: 0.06
   m_HapticPulseOff: 0.04
   m_PadAnchor: {fileID: 4000010284829424}
   m_PadMesh: {fileID: 0}
-  m_Joystick: {fileID: 8402775959674815328}
+  m_Joystick: {fileID: 7130030000000000001}
   m_JoystickMesh: {fileID: 7130030000000000003}
   m_JoystickPad: {fileID: 7130030000000000003}
   m_Button01Mesh: {fileID: 3942094663880878421}
@@ -8511,8 +8511,8 @@ Transform:
   m_GameObject: {fileID: 7130030000000000000}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
-  m_LocalPosition: {x: 0, y: 0.02, z: 0}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalPosition: {x: 0, y: 0.015, z: 0}
+  m_LocalScale: {x: 0.001, y: 0.001, z: 0.001}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 8402775959674815328}

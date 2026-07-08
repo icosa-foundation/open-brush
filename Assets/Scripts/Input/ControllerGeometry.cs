@@ -440,8 +440,6 @@ namespace TiltBrush
         private const int kSteamFrameRightBumperOtherMesh = 8;
         private SteamFramePartState m_SteamFrameTriggerPart;
         private SteamFramePartState m_SteamFrameGripPart;
-        private SteamFramePartState m_SteamFrameThumbstickPart;
-        private SteamFramePartState m_SteamFrameThumbstickPivotPart;
         private SteamFramePartState m_SteamFrameDpadPart;
         private SteamFramePartState m_SteamFrameDpadPivotPart;
         private SteamFramePartState m_SteamFramePrimaryButtonPart;
@@ -626,7 +624,7 @@ namespace TiltBrush
 
         private Renderer DirectionalAffordanceMesh
         {
-            get { return PadMesh != null ? PadMesh : JoystickMesh; }
+            get { return JoystickPad != null ? JoystickPad : JoystickMesh != null ? JoystickMesh : PadMesh; }
         }
 
         private bool HasSeparatePrimarySecondaryAffordances
@@ -743,7 +741,6 @@ namespace TiltBrush
 
             Transform trigger = GetAnimatedPart(TriggerMesh);
             Transform grip = GetAnimatedPart(LeftGripMesh);
-            Transform thumbstick = GetAnimatedPart(JoystickMesh);
             Transform dpad = GetAnimatedPart(PadMesh);
             Transform primaryButton = GetAnimatedPart(Button01Mesh);
             Transform secondaryButton = GetAnimatedPart(Button02Mesh);
@@ -760,8 +757,6 @@ namespace TiltBrush
 
             m_SteamFrameTriggerPart = new SteamFramePartState(trigger);
             m_SteamFrameGripPart = new SteamFramePartState(grip);
-            m_SteamFrameThumbstickPart = new SteamFramePartState(thumbstick);
-            m_SteamFrameThumbstickPivotPart = new SteamFramePartState(Joystick);
             m_SteamFrameDpadPart = new SteamFramePartState(dpad);
             m_SteamFrameDpadPivotPart = new SteamFramePartState(PadAnchor);
             m_SteamFramePrimaryButtonPart =
@@ -791,12 +786,6 @@ namespace TiltBrush
             CacheSteamFrameAnimatedParts();
 
             InputDevice steamFrameDevice = FindSteamFrameInputDevice();
-            Vector2 thumbstick = info.GetThumbStickValue();
-            if (thumbstick == Vector2.zero)
-            {
-                thumbstick = ReadSteamFrameVector2(steamFrameDevice, "thumbstick");
-            }
-
             float grip = Mathf.Max(
                 info.GetGripValue(),
                 ReadSteamFrameAxis(steamFrameDevice, "grip"),
@@ -807,10 +796,6 @@ namespace TiltBrush
                     info.GetTriggerRatio(),
                     ReadSteamFrameAxis(steamFrameDevice, "trigger"))));
             ApplySteamFrameGripAnimation(Mathf.Clamp01(grip));
-            ApplySteamFrameThumbstickAnimation(
-                Vector2.ClampMagnitude(thumbstick, 1.0f),
-                info.GetVrInput(VrInput.Thumbstick) ||
-                    ReadSteamFrameButton(steamFrameDevice, "thumbstickClicked"));
 
             bool faceBottom = info.GetVrInput(VrInput.Button01) ||
                 ReadSteamFrameButton(steamFrameDevice, "faceButtonBottom");
@@ -913,12 +898,6 @@ namespace TiltBrush
             return control != null ? control.ReadValue() : 0.0f;
         }
 
-        private static Vector2 ReadSteamFrameVector2(InputDevice device, string controlName)
-        {
-            Vector2Control control = device?.TryGetChildControl<Vector2Control>(controlName);
-            return control != null ? control.ReadValue() : Vector2.zero;
-        }
-
         private void ApplySteamFrameTriggerAnimation(float trigger)
         {
             Vector3 pivot = m_SteamFrameIsRight
@@ -943,46 +922,6 @@ namespace TiltBrush
 
             ApplySteamFramePartRotationAroundPivot(
                 m_SteamFrameGripPart, pivot, axis, Mathf.Lerp(0.0f, 9.5f, grip));
-        }
-
-        private void ApplySteamFrameThumbstickAnimation(Vector2 value, bool clicked)
-        {
-            Vector3 pivot;
-            Quaternion axisFrame;
-            if (m_SteamFrameThumbstickPivotPart.IsValid)
-            {
-                pivot = m_SteamFrameThumbstickPivotPart.initialLocalPosition;
-                axisFrame = m_SteamFrameThumbstickPivotPart.initialLocalRotation;
-            }
-            else
-            {
-                pivot = m_SteamFrameIsRight
-                    ? new Vector3(-0.021772077f, -0.004882282f, 0.056458842f)
-                    : new Vector3(0.021772299f, -0.004882690f, 0.056458838f);
-                Vector3 euler = m_SteamFrameIsRight
-                    ? new Vector3(-35.252246f, 10.270902f, 4.411401f)
-                    : new Vector3(-35.252409f, -10.270845f, -4.411360f);
-                axisFrame = SteamFrameRotateXYZ(euler);
-            }
-
-            Vector3 axisX = axisFrame * Vector3.right;
-            Vector3 axisY = axisFrame * Vector3.forward;
-            Quaternion rotation =
-                Quaternion.AngleAxis(-value.y * 20.0f, axisX.normalized) *
-                Quaternion.AngleAxis(value.x * 20.0f, axisY.normalized);
-
-            if (m_SteamFrameThumbstickPivotPart.IsValid)
-            {
-                m_SteamFrameThumbstickPivotPart.transform.localRotation =
-                    rotation * m_SteamFrameThumbstickPivotPart.initialLocalRotation;
-            }
-
-            ApplySteamFramePartRotationAroundPivot(m_SteamFrameThumbstickPart, pivot, rotation);
-            if (m_SteamFrameThumbstickPart.IsValid)
-            {
-                m_SteamFrameThumbstickPart.transform.localPosition +=
-                    clicked ? new Vector3(0.0f, -0.0005f, 0.0f) : Vector3.zero;
-            }
         }
 
         private void ApplySteamFrameDpadAnimation(Vector2 value, bool pressed)
@@ -1259,6 +1198,7 @@ namespace TiltBrush
                     UpdatePadAnimation(m_PadAnimState, PadMesh.material);
                     break;
                 case ControllerStyle.SteamFrame:
+                    UpdatePadAnimation(m_JoyAnimState, JoystickPad != null ? JoystickPad.material : null);
                     UpdateSteamFramePartAnimation();
                     break;
             }
