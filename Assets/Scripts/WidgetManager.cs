@@ -152,7 +152,7 @@ namespace TiltBrush
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
-        private List<TypedWidgetData<PortalSphereWidget>> m_PortalWidgets;
+        private List<TypedWidgetData<PortalWidgetBase>> m_PortalWidgets;
         private List<TypedWidgetData<GaussianCaptureWidgetBase>> m_GaussianCaptureWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
@@ -313,7 +313,7 @@ namespace TiltBrush
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
-            m_PortalWidgets = new List<TypedWidgetData<PortalSphereWidget>>();
+            m_PortalWidgets = new List<TypedWidgetData<PortalWidgetBase>>();
             m_GaussianCaptureWidgets = new List<TypedWidgetData<GaussianCaptureWidgetBase>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
@@ -852,7 +852,18 @@ namespace TiltBrush
         {
             for (int i = 0; i < tiltPortals.Length; ++i)
             {
-                PortalSphereWidget.FromTiltPortal(tiltPortals[i]);
+                switch (tiltPortals[i].ShapeType)
+                {
+                    case StencilType.Sphere:
+                        PortalSphereWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    case StencilType.Cube:
+                        PortalBoxWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    default:
+                        Debug.LogWarning($"Unsupported portal shape '{tiltPortals[i].ShapeType}' while loading portal destination '{tiltPortals[i].Destination}'");
+                        break;
+                }
             }
         }
 
@@ -1319,9 +1330,9 @@ namespace TiltBrush
             {
                 m_LightWidgets.Add(new TypedWidgetData<LightWidget>(light));
             }
-            else if (generic is PortalSphereWidget portal)
+            else if (generic is PortalWidgetBase portal)
             {
-                m_PortalWidgets.Add(new TypedWidgetData<PortalSphereWidget>(portal));
+                m_PortalWidgets.Add(new TypedWidgetData<PortalWidgetBase>(portal));
             }
             else if (generic is GaussianCaptureWidgetBase gcWidget)
             {
@@ -1760,7 +1771,7 @@ namespace TiltBrush
             m_TextWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
             m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
-        public List<TypedWidgetData<PortalSphereWidget>> ActivePortalWidgets =>
+        public List<TypedWidgetData<PortalWidgetBase>> ActivePortalWidgets =>
             m_PortalWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<GaussianCaptureWidgetBase>> ActiveGaussianCaptureWidgets =>
             m_GaussianCaptureWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();

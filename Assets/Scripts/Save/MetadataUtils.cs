@@ -190,7 +190,7 @@ namespace TiltBrush
                 .OrderBy(x => ByTranslation(x.GetSaveTransform()))
                 .Select(portal => new TiltPortal
                 {
-                    ShapeType = StencilType.Sphere,
+                    ShapeType = portal.PortalShapeType,
                     Transform = portal.GetSaveTransform(),
                     Destination = portal.Destination,
                     Pinned = portal.Pinned,

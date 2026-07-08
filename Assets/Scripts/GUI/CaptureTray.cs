@@ -18,7 +18,7 @@ namespace TiltBrush
     {
         public void ToggleTray(ActionToggleButton btn)
         {
-            EnableTray(btn.enabled);
+            EnableTray(btn.ToggleState);
         }
     }
 

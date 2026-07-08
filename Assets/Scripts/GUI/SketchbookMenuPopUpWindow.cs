@@ -53,7 +53,7 @@ namespace TiltBrush
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
         {
-            var sceneFileInfo = getSceneFileInfo(btn.m_CommandParam, m_SketchSetType);
+            var sceneFileInfo = GetSceneFileInfo(btn.m_CommandParam, m_SketchSetType);
             var currentName = Path.GetFileName(sceneFileInfo.FullPath);
             if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
             {
@@ -62,7 +62,7 @@ namespace TiltBrush
             KeyboardPopUpWindow.m_InitialText = currentName;
         }
 
-        private SceneFileInfo getSceneFileInfo(int commandParam, SketchSetType sketchSetType)
+        private SceneFileInfo GetSceneFileInfo(int commandParam, SketchSetType sketchSetType)
         {
             var sketchSet = SketchCatalog.m_Instance.GetSet(sketchSetType);
             return sketchSet.GetSketchSceneFileInfo(commandParam);
@@ -70,7 +70,7 @@ namespace TiltBrush
 
         public void HandleDropPortalButton()
         {
-            var sceneFileInfo = getSceneFileInfo(m_CommandParam, m_SketchSetType);
+            var sceneFileInfo = GetSceneFileInfo(m_CommandParam, m_SketchSetType);
             if (sceneFileInfo == null)
             {
                 Debug.LogWarning("HandleDropPortalButton called without a valid sketch.");

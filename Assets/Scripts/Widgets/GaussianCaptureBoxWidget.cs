@@ -38,6 +38,7 @@ namespace TiltBrush
 
         private readonly List<GameObject> m_PreviewMarkers = new List<GameObject>();
         private static Mesh s_FrustumMesh;
+        private static Material s_FrustumMaterial;
         private static float s_CachedFov;
         private static float s_CachedAspect;
 
@@ -341,7 +342,11 @@ namespace TiltBrush
             var mf = go.AddComponent<MeshFilter>();
             mf.sharedMesh = s_FrustumMesh;
             var mr = go.AddComponent<MeshRenderer>();
-            mr.material = new Material(Shader.Find("Unlit/Color")) { color = color };
+            if (s_FrustumMaterial == null)
+            {
+                s_FrustumMaterial = new Material(Shader.Find("Unlit/Color")) { color = color };
+            }
+            mr.sharedMaterial = s_FrustumMaterial;
             go.transform.parent = null;
             return go;
         }

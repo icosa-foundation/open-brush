@@ -19,6 +19,7 @@ namespace TiltBrush
     public class PortalSphereWidget : PortalWidgetBase
     {
         protected override IWidgetShape Shape => SphereShape.Instance;
+        public override StencilType PortalShapeType => StencilType.Sphere;
 
         public override GrabWidget Clone()
         {

@@ -48,6 +48,8 @@ namespace TiltBrush
         private Coroutine m_WaitForPreloadThenLoadCoroutine;
         private string m_WaitForPreloadDestination;
 
+        public abstract StencilType PortalShapeType { get; }
+
         public string Destination
         {
             get => m_Destination;

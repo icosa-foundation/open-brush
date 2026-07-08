@@ -218,7 +218,7 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.Type != SketchSetType.Drive || m_SketchSet.Type != SketchSetType.SavedStrokes);
+            m_MenuButton.gameObject.SetActive(m_SketchSet.Type != SketchSetType.Drive && m_SketchSet.Type != SketchSetType.SavedStrokes);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);
