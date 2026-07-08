@@ -150,15 +150,12 @@ namespace TiltBrush
 
         public override Vector2 GetPadValue()
         {
-            return GetThumbStickValue();
+            return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
         public override Vector2 GetThumbStickValue()
         {
-            Vector2 thumbAxis = FindAction("ThumbAxis").ReadValue<Vector2>();
-            return thumbAxis != Vector2.zero
-                ? thumbAxis
-                : FindAction("PadAxis").ReadValue<Vector2>();
+            return FindAction("ThumbAxis").ReadValue<Vector2>();
         }
 
         public override void Update()
