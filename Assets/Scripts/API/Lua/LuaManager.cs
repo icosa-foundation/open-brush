@@ -1296,25 +1296,25 @@ namespace TiltBrush
             {
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
-                {
-                    Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
-                    tr_CS.translation = firstTr_CS.translation;
-                    tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
-                    tr_CS.scale = quantizedVector_CS.magnitude;
-                    previewTransforms = pathWrapper.AsMultiTrList()
-                        .Select(trList => trList.Select(tr => tr_CS * tr).ToList())
-                        .ToList();
-                    break;
-                }
+                    {
+                        Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
+                        tr_CS.translation = firstTr_CS.translation;
+                        tr_CS.rotation = drawnVector_CS == Vector3.zero ?
+                            Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
+                        tr_CS.scale = quantizedVector_CS.magnitude;
+                        previewTransforms = pathWrapper.AsMultiTrList()
+                            .Select(trList => trList.Select(tr => tr_CS * tr).ToList())
+                            .ToList();
+                        break;
+                    }
                 case ScriptCoordSpace.Canvas:
-                {
-                    tr_CS = TrTransform.identity;
-                    previewTransforms = pathWrapper.AsMultiTrList()
-                        .Select(trList => trList.Select(tr => tr).ToList())
-                        .ToList();
-                    break;
-                }
+                    {
+                        tr_CS = TrTransform.identity;
+                        previewTransforms = pathWrapper.AsMultiTrList()
+                            .Select(trList => trList.Select(tr => tr).ToList())
+                            .ToList();
+                        break;
+                    }
                 default:
                     previewTransforms = new List<List<TrTransform>>();
                     break;
