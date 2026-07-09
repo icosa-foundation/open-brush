@@ -1315,7 +1315,7 @@ namespace TiltBrush
             }
 
             TiltFile tiltFile = new TiltFile(m_localTiltFile);
-            if (!tiltFile.IsHeaderValid())
+            if (!tiltFile.IsLoadable())
             {
                 return false;
             }
