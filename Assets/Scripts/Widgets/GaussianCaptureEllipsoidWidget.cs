@@ -247,9 +247,10 @@ namespace TiltBrush
             UpdatePreviewMarkers();
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             ClearPreviewMarkers();
+            base.OnDestroy();
         }
 
         public override void RestoreGameObjectLayer(int layer)
