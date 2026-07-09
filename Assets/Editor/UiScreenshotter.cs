@@ -35,7 +35,7 @@ namespace TiltBrush
             Material,
             Wireframe
         }
-        
+
         private static readonly string[] kWireframeWhiteColorProperties =
         {
             "_Color",
@@ -240,7 +240,7 @@ namespace TiltBrush
                 : "";
             return $"brush-{brush.DurableName}{suffix}.png";
         }
-        
+
         private static List<MaterialColorOverride> SetBrushMaterialColors(
             IEnumerable<Stroke> strokes,
             Color color)
