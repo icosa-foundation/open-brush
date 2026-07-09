@@ -150,18 +150,27 @@ namespace TiltBrush
 
         private Vector3 GetDirectionToNext(int currentIndex)
         {
+            const float kMinDirectionLengthSq = 0.000001f;
+            Vector3 direction;
+
             if (currentIndex >= m_Frames.Count - 1)
             {
                 if (currentIndex > 0)
                 {
-                    return (m_Frames[currentIndex].position -
-                        m_Frames[currentIndex - 1].position).normalized;
+                    direction = m_Frames[currentIndex].position -
+                        m_Frames[currentIndex - 1].position;
+                    return direction.sqrMagnitude > kMinDirectionLengthSq
+                        ? direction.normalized
+                        : m_Frames[currentIndex].rotation * Vector3.forward;
                 }
-                return Vector3.forward;
+
+                return m_Frames[currentIndex].rotation * Vector3.forward;
             }
 
-            return (m_Frames[currentIndex + 1].position -
-                m_Frames[currentIndex].position).normalized;
+            direction = m_Frames[currentIndex + 1].position - m_Frames[currentIndex].position;
+            return direction.sqrMagnitude > kMinDirectionLengthSq
+                ? direction.normalized
+                : m_Frames[currentIndex].rotation * Vector3.forward;
         }
     }
 }
