@@ -190,7 +190,7 @@ namespace TiltBrush
                 m_SoundClip = other.m_SoundClip;
                 m_SoundClipAudioSource = other.m_SoundClipAudioSource;
                 m_SoundClipInitialized = other.m_SoundClipInitialized;
-                m_SoundClip.m_Controller = this;
+                m_SoundClip.m_Controllers.Add(this);
             }
 
             public void Dispose()
@@ -215,7 +215,7 @@ namespace TiltBrush
             return new SoundClip();
         }
 
-        private SoundClipController m_Controller;
+        private HashSet<SoundClipController> m_Controllers = new HashSet<SoundClipController>();
 
         /// Persistent path is relative to the Tilt Brush/Media Library/SoundClips directory, if it is a
         /// filename.
@@ -261,23 +261,27 @@ namespace TiltBrush
         public SoundClipController CreateController(SoundClipWidget widget)
         {
             SoundClipController soundClipController = new SoundClipController(this, widget);
-            m_Controller = soundClipController;
-            SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(InitializeControllers));
+            m_Controllers.Add(soundClipController);
+            SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(soundClipController));
             return soundClipController;
         }
 
-        private void InitializeControllers()
+        private void InitializeController(SoundClipController controller)
         {
-            m_Controller.OnInitialization();
+            if (m_Controllers.Contains(controller))
+            {
+                controller.OnInitialization();
+            }
         }
 
         private void OnControllerDisposed(SoundClipController soundClipController)
         {
-            if (m_Controller != null && m_Controller.m_SoundClipAudioSource != null)
+            m_Controllers.Remove(soundClipController);
+            if (soundClipController != null && soundClipController.m_SoundClipAudioSource != null)
             {
-                m_Controller.m_SoundClipAudioSource.Stop();
-                UnityEngine.Object.Destroy(m_Controller.m_SoundClipAudioSource.gameObject);
-                m_Controller.m_SoundClipAudioSource = null;
+                soundClipController.m_SoundClipAudioSource.Stop();
+                UnityEngine.Object.Destroy(soundClipController.m_SoundClipAudioSource.gameObject);
+                soundClipController.m_SoundClipAudioSource = null;
             }
         }
 
@@ -320,29 +324,34 @@ namespace TiltBrush
         }
 
 
-        private IEnumerator<Null> PrepareAudioPlayer(Action onCompletion)
+        private IEnumerator<Null> PrepareAudioPlayer(SoundClipController controller)
         {
             Error = null;
-            m_Controller.m_SoundClipAudioSource.playOnAwake = false;
+            if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
+            {
+                yield break;
+            }
+            controller.m_SoundClipAudioSource.playOnAwake = false;
             var audioClipTask = LoadClip(AbsolutePath);
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
             }
-            m_Controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
-            m_Controller.m_SoundClipAudioSource.loop = true;
+            if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
+            {
+                yield break;
+            }
+            controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
+            controller.m_SoundClipAudioSource.loop = true;
 
             Width = 128;
             Height = 128;
             Aspect = 1;
 
-            m_Controller.m_SoundClipAudioSource.mute = false;
-            m_Controller.m_SoundClipAudioSource.Play();
+            controller.m_SoundClipAudioSource.mute = false;
+            controller.m_SoundClipAudioSource.Play();
 
-            if (onCompletion != null)
-            {
-                onCompletion();
-            }
+            InitializeController(controller);
         }
 
         private void OnError(GvrAudioSource player, string error)
@@ -373,11 +382,12 @@ namespace TiltBrush
 
         public void Dispose()
         {
-            if (m_Controller?.m_SoundClipAudioSource != null)
+            if (m_Controllers.Count > 0)
             {
-                Debug.Assert(m_Controller != null,
-                    "There should be a controller if the SoundClipAudioSource is not null.");
-                m_Controller.Dispose();
+                foreach (var controller in new List<SoundClipController>(m_Controllers))
+                {
+                    controller.Dispose();
+                }
             }
             if (Thumbnail != null)
             {
@@ -394,7 +404,17 @@ namespace TiltBrush
         {
             int height = (int)Height;
             int width = aspect > 0 ? Mathf.RoundToInt(height * aspect) : (int)Width;
-            audio ??= m_Controller?.m_SoundClipAudioSource?.clip;
+            if (audio == null)
+            {
+                foreach (var controller in m_Controllers)
+                {
+                    audio = controller.m_SoundClipAudioSource?.clip;
+                    if (audio != null)
+                    {
+                        break;
+                    }
+                }
+            }
             if (audio == null) return null;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
             float[] samples = new float[audio.samples * audio.channels];
