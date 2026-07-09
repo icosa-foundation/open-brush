@@ -1081,6 +1081,37 @@ namespace TiltBrush
             }
         }
 
+        private void SetColor(Renderer obj,
+                              VrInput primaryInput,
+                              VrInput secondaryInput,
+                              string colorName,
+                              Color activeColor,
+                              Color inactiveColor)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            var info = ControllerInfo;
+            bool touched = info != null &&
+                (info.GetVrInputTouch(primaryInput) || info.GetVrInputTouch(secondaryInput));
+            obj.material.SetColor(colorName, touched ? activeColor : inactiveColor);
+        }
+
+        private void SetButtonAffordanceColor(string colorName, Color activeColor, Color inactiveColor)
+        {
+            if (PrimaryAffordanceMesh == SecondaryAffordanceMesh)
+            {
+                SetColor(PrimaryAffordanceMesh, VrInput.Button01, VrInput.Button02,
+                    colorName, activeColor, inactiveColor);
+                return;
+            }
+
+            SetColor(PrimaryAffordanceMesh, VrInput.Button01, colorName, activeColor, inactiveColor);
+            SetColor(SecondaryAffordanceMesh, VrInput.Button02, colorName, activeColor, inactiveColor);
+        }
+
         private void RefreshMaterialTint(Color tintColor)
         {
             switch (Style)
@@ -1103,6 +1134,11 @@ namespace TiltBrush
                     SetRendererEmission(JoystickMesh, tintColor);
                     SetRendererEmission(PinCushionMesh, tintColor);
                     SetRendererEmission(PadMesh, tintColor);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    SetRendererEmission(DirectionalAffordanceMesh, tintColor);
+                    SetRendererEmission(PrimaryAffordanceMesh, tintColor);
+                    SetRendererEmission(SecondaryAffordanceMesh, tintColor);
                     break;
             }
         }
@@ -1128,6 +1164,10 @@ namespace TiltBrush
                 currentColor, darkColor);
             SetColor(JoystickMesh, VrInput.Thumbstick, "_EmissionColor",
                 currentColor, darkColor);
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                SetButtonAffordanceColor("_EmissionColor", currentColor, darkColor);
+            }
 
             currentColor = m_LitButtonColor;
             darkColor = m_DarkButtonColor;
@@ -1140,6 +1180,10 @@ namespace TiltBrush
                 currentColor, darkColor);
             SetColor(JoystickMesh, VrInput.Thumbstick, "_Color",
                 currentColor, darkColor);
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                SetButtonAffordanceColor("_Color", currentColor, darkColor);
+            }
         }
 
         // -------------------------------------------------------------------------------------------- //
