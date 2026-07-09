@@ -360,7 +360,7 @@ namespace TiltBrush
         {
             info.TiltPath = Path.Combine(m_CacheDir, string.Format("{0}.tilt", info.AssetId));
             info.IconPath = Path.Combine(m_CacheDir, string.Format("{0}.png", info.AssetId));
-            info.TiltDownloaded = File.Exists(info.TiltPath);
+            info.TiltDownloaded = IsCachedTiltValid(info);
             info.IconDownloaded = File.Exists(info.IconPath);
         }
 
