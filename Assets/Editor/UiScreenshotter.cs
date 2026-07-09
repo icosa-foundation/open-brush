@@ -189,9 +189,13 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
+                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
+                        ? new List<Color> { Color.white }
+                        : null;
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
-                        TrTransform.T(origin));
+                        TrTransform.T(origin),
+                        colors);
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;
