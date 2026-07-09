@@ -20,11 +20,8 @@ namespace TiltBrush
 {
     public abstract class PortalWidgetBase : ShapeWidget
     {
-        protected const string kLogPrefix = "[PortalDbg_20260313]";
-        protected const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
-
         private string m_Destination;
-        private bool m_TriggerWithBrushInside = true;
+        private bool m_TriggerWithBrushInside;
         private bool m_AllowRepeatWhileInside;
         private Color m_LoadingColor = new Color(0.1f, 0.85f, 1.0f, 1.0f);
         private float m_LoadingFillDuration = 0.2f;
@@ -37,8 +34,6 @@ namespace TiltBrush
         private IcosaSketchSet[] m_ObservedSketchSets;
         private Coroutine m_ThumbnailFetchCoroutine;
         private string m_ThumbnailFetchAssetId;
-        private Texture m_LastLoggedThumbnail;
-        private bool m_HasLoggedThumbnailState;
         private Texture2D m_OwnedThumbnail;
         private Color m_DefaultColor = Color.white;
         private Color m_DefaultEmissionColor = Color.black;
@@ -47,6 +42,8 @@ namespace TiltBrush
         private float? m_LoadingProgress;
         private Coroutine m_WaitForPreloadThenLoadCoroutine;
         private string m_WaitForPreloadDestination;
+        private bool m_PointingEnabled = true;
+        private UIComponentManager m_UIComponentManager;
 
         public abstract StencilType PortalShapeType { get; }
 
@@ -90,6 +87,7 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
+            m_UIComponentManager = GetComponent<UIComponentManager>();
             RestoreStencilWidgetLayers();
             Renderer thumbnailRenderer = GetThumbnailRenderer();
             if (thumbnailRenderer != null)
@@ -139,7 +137,8 @@ namespace TiltBrush
         {
             base.OnUpdate();
             UpdateLoadingVisuals();
-            LogThumbnailStateIfChanged();
+            UpdatePointing();
+            m_UIComponentManager?.UpdateVisuals();
 
             if (!m_TriggerWithBrushInside)
             {
@@ -167,6 +166,39 @@ namespace TiltBrush
             m_CommandTriggeredWhileInside = ExecutePortalCommand();
         }
 
+        private void UpdatePointing()
+        {
+            if (!m_PointingEnabled || m_UIComponentManager == null || m_Collider == null)
+            {
+                return;
+            }
+
+            Transform pointer = InputManager.m_Instance.GetBrushControllerAttachPoint();
+            Ray selectionRay = new Ray(pointer.position, pointer.forward);
+            bool inputValid = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
+            bool hitPortal = m_Collider.Raycast(selectionRay, out _, 100.0f);
+            if (!hitPortal)
+            {
+                m_UIComponentManager.ResetInput();
+                return;
+            }
+
+            m_UIComponentManager.UpdateUIComponents(selectionRay, inputValid, m_Collider);
+        }
+
+        protected override void OnUserBeginInteracting()
+        {
+            base.OnUserBeginInteracting();
+            m_PointingEnabled = false;
+            m_UIComponentManager?.ManagerLostFocus();
+        }
+
+        protected override void OnUserEndInteracting()
+        {
+            base.OnUserEndInteracting();
+            m_PointingEnabled = true;
+        }
+
         private void RefreshDestinationThumbnail()
         {
             if (!Application.isPlaying)
@@ -180,7 +212,6 @@ namespace TiltBrush
                 return;
             }
 
-            Debug.LogWarning($"{kLogPrefix} Thumbnail not available yet for '{m_Destination}' on {name}");
             ApplyThumbnailTexture(m_DefaultThumbnail);
             SubscribeToSketchSets();
             EnsureThumbnailFetchStarted();
@@ -307,8 +338,6 @@ namespace TiltBrush
 
         private System.Collections.IEnumerator FetchThumbnailForAssetIdCoroutine(string assetId)
         {
-            Debug.Log($"{kLogPrefix} Starting background thumbnail fetch for '{assetId}' on {name}");
-
             IcosaSceneFileInfo sceneFileInfo = null;
             yield return VrAssetService.m_Instance.GetSketchInfo(
                 assetId,
@@ -317,7 +346,7 @@ namespace TiltBrush
 
             if (sceneFileInfo == null || string.IsNullOrWhiteSpace(sceneFileInfo.IconUrl))
             {
-                Debug.LogWarning($"{kLogPrefix} Failed to fetch thumbnail metadata for '{assetId}' on {name}");
+                Debug.LogWarning($"Failed to fetch thumbnail metadata for '{assetId}' on {name}");
                 m_ThumbnailFetchCoroutine = null;
                 m_ThumbnailFetchAssetId = null;
                 yield break;
@@ -328,7 +357,7 @@ namespace TiltBrush
                 yield return request.SendWebRequest();
                 if (request.isNetworkError || request.responseCode >= 400 || !string.IsNullOrEmpty(request.error))
                 {
-                    Debug.LogWarning($"{kLogPrefix} Failed to download thumbnail for '{assetId}' on {name}: {request.error}");
+                    Debug.LogWarning($"Failed to download thumbnail for '{assetId}' on {name}: {request.error}");
                     m_ThumbnailFetchCoroutine = null;
                     m_ThumbnailFetchAssetId = null;
                     yield break;
@@ -337,7 +366,6 @@ namespace TiltBrush
                 if (m_Destination == assetId)
                 {
                     ApplyThumbnailTexture(DownloadHandlerTexture.GetContent(request));
-                    Debug.Log($"{kLogPrefix} Applied background-fetched thumbnail for '{assetId}' on {name}");
                 }
             }
 
@@ -350,7 +378,7 @@ namespace TiltBrush
             Renderer thumbnailRenderer = GetThumbnailRenderer();
             if (thumbnailRenderer == null)
             {
-                Debug.LogWarning($"{kLogPrefix} Cannot apply thumbnail for '{m_Destination}' on {name}: thumbnail renderer is null");
+                Debug.LogWarning($"Cannot apply thumbnail for '{m_Destination}' on {name}: thumbnail renderer is null");
                 return;
             }
 
@@ -359,40 +387,13 @@ namespace TiltBrush
             Material primaryMaterial = rendererMaterials.FirstOrDefault();
             if (primaryMaterial == null)
             {
-                Debug.LogWarning($"{kLogPrefix} Cannot apply thumbnail for '{m_Destination}' on {name}: material is null on renderer {thumbnailRenderer.name}");
+                Debug.LogWarning($"Cannot apply thumbnail for '{m_Destination}' on {name}: material is null on renderer {thumbnailRenderer.name}");
                 return;
             }
-
-            Vector2 previousScale = primaryMaterial.HasProperty("_MainTex")
-                ? primaryMaterial.GetTextureScale("_MainTex")
-                : Vector2.zero;
-            Vector2 previousOffset = primaryMaterial.HasProperty("_MainTex")
-                ? primaryMaterial.GetTextureOffset("_MainTex")
-                : Vector2.zero;
 
             ApplyThumbnailToMaterials(rendererMaterials, textureToApply);
             thumbnailRenderer.materials = rendererMaterials;
             SyncTrackedMaterialCopies(thumbnailRenderer, textureToApply);
-
-            Material currentPrimaryMaterial = thumbnailRenderer.materials.FirstOrDefault();
-            if (currentPrimaryMaterial == null)
-            {
-                return;
-            }
-
-            Vector2 currentScale = currentPrimaryMaterial.HasProperty("_MainTex")
-                ? currentPrimaryMaterial.GetTextureScale("_MainTex")
-                : Vector2.zero;
-            Vector2 currentOffset = currentPrimaryMaterial.HasProperty("_MainTex")
-                ? currentPrimaryMaterial.GetTextureOffset("_MainTex")
-                : Vector2.zero;
-
-            Debug.Log(
-                $"{kLogPrefix} Applied thumbnail for '{m_Destination}' on {name}. " +
-                $"Current mainTexture='{DescribeTexture(currentPrimaryMaterial.mainTexture)}' " +
-                $"scale={currentScale} offset={currentOffset}");
-            m_LastLoggedThumbnail = currentPrimaryMaterial.mainTexture;
-            m_HasLoggedThumbnailState = true;
         }
 
         private void ApplyThumbnailToMaterials(Material[] materials, Texture texture)
@@ -598,49 +599,9 @@ namespace TiltBrush
             SyncTrackedLoadingVisualCopies(thumbnailRenderer, restoreDefaults ? 0.0f : fill);
         }
 
-        private void LogThumbnailStateIfChanged()
-        {
-            Renderer thumbnailRenderer = GetThumbnailRenderer();
-            if (thumbnailRenderer == null)
-            {
-                return;
-            }
-
-            Material material = thumbnailRenderer.material;
-            if (material == null)
-            {
-                return;
-            }
-
-            Texture currentTexture = material.mainTexture;
-            if (m_HasLoggedThumbnailState && currentTexture == m_LastLoggedThumbnail)
-            {
-                return;
-            }
-
-            Vector2 scale = material.HasProperty("_MainTex")
-                ? material.GetTextureScale("_MainTex")
-                : Vector2.zero;
-            Vector2 offset = material.HasProperty("_MainTex")
-                ? material.GetTextureOffset("_MainTex")
-                : Vector2.zero;
-
-            Debug.Log(
-                $"{kLogPrefix} Observed thumbnail state change on renderer '{thumbnailRenderer.name}' material '{material.name}' " +
-                $"for '{m_Destination}' on {name}. mainTexture='{DescribeTexture(currentTexture)}' scale={scale} offset={offset}");
-
-            m_LastLoggedThumbnail = currentTexture;
-            m_HasLoggedThumbnailState = true;
-        }
-
         private Renderer GetThumbnailRenderer()
         {
             return m_Mesh != null ? m_Mesh.GetComponent<Renderer>() : null;
-        }
-
-        private static string DescribeTexture(Texture texture)
-        {
-            return texture == null ? "null" : $"{texture.name} ({texture.width}x{texture.height})";
         }
 
         private void TryPreloadDestinationSketch()
@@ -716,7 +677,7 @@ namespace TiltBrush
                 if (candidateSceneFileInfo == null)
                 {
                     Debug.LogWarning(
-                        $"{kLogPrefix} Resolved destination '{m_Destination}' via {candidateSetType} set index {candidateIndex}, but SceneFileInfo was null on {name}");
+                        $"Resolved destination '{m_Destination}' via {candidateSetType} set index {candidateIndex}, but SceneFileInfo was null on {name}");
                     return false;
                 }
 
@@ -778,11 +739,28 @@ namespace TiltBrush
             return TryLoadDestinationSketch();
         }
 
+        public bool ActivateFromPointing()
+        {
+            return ExecutePortalCommand();
+        }
+
+        public override bool DistanceToCollider(Ray ray, out float fDistance)
+        {
+            fDistance = 0.0f;
+            if (m_Collider == null || !m_Collider.Raycast(ray, out RaycastHit hitInfo, 100.0f))
+            {
+                return false;
+            }
+
+            fDistance = hitInfo.distance;
+            return true;
+        }
+
         private bool TryLoadDestinationSketch()
         {
             if (string.IsNullOrWhiteSpace(m_Destination) || SketchCatalog.m_Instance == null)
             {
-                Debug.LogWarning($"{kLogPrefix} Cannot load destination. Destination empty or SketchCatalog unavailable on {name}");
+                Debug.LogWarning($"Cannot load destination. Destination empty or SketchCatalog unavailable on {name}");
                 return false;
             }
 
@@ -798,17 +776,11 @@ namespace TiltBrush
                     }
 
                     StartLoadingVisuals();
-                    Debug.Log(
-                        $"{kLoadCompareLogPrefix} Portal taking direct Icosa fetch branch. " +
-                        $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
                     StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination, UpdateLoadingProgress));
                     return true;
                 }
 
                 StartLoadingVisuals();
-                Debug.Log(
-                    $"{kLoadCompareLogPrefix} Portal issuing LoadConfirmUnsaved. " +
-                    $"destination='{m_Destination}' set={setType} index={sketchIndex} portal={name}");
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
                     sketchIndex,
@@ -816,10 +788,7 @@ namespace TiltBrush
                 return true;
             }
 
-            Debug.LogWarning(
-                $"{kLoadCompareLogPrefix} Portal destination not found in loaded sketch sets. " +
-                $"destination='{m_Destination}' portal={name}");
-            Debug.LogWarning($"{kLogPrefix} Destination '{m_Destination}' not found in Curated/Liked/User sketch sets. Using direct Icosa fetch on {name}");
+            Debug.LogWarning($"Portal destination '{m_Destination}' not found in Curated/Liked/User sketch sets. Using direct Icosa fetch on {name}");
             StartLoadingVisuals();
             StartCoroutine(VrAssetService.m_Instance.LoadTiltFile(m_Destination, UpdateLoadingProgress));
             return true;

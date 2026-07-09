@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4000011963436858}
   - component: {fileID: 114000010150538192}
   - component: {fileID: 120208921833142187}
+  - component: {fileID: 4588718866329492787}
   m_Layer: 10
   m_Name: PortalBox
   m_TagString: Untagged
@@ -63,7 +64,7 @@ MonoBehaviour:
   - {fileID: 23000012466095934}
   m_SpawnPlacementOffset: {x: 0, y: 0, z: 0}
   m_IntroAnimSpinAmount: 360
-  m_BoxCollider: {fileID: 0}
+  m_BoxCollider: {fileID: 1580901448089142126}
   m_Mesh: {fileID: 4000013021276218}
   m_HighlightMeshXfs: []
   m_ValidSnapRotationStickyAngle: 65
@@ -80,6 +81,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e1deace3c24f7546bd498574c9382c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4588718866329492787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000011148842312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1000011619151448
@@ -122,7 +135,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000011619151448}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &23000012466095934
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -174,9 +187,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4000010186673506}
-  - component: {fileID: 135000010856659568}
+  - component: {fileID: 1580901448089142126}
+  - component: {fileID: 6609302630336235976}
   m_Layer: 10
-  m_Name: StencilSphereCollider
+  m_Name: StencilBoxCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -198,8 +212,8 @@ Transform:
   - {fileID: 4000013021276218}
   m_Father: {fileID: 4000011963436858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &135000010856659568
-SphereCollider:
+--- !u!65 &1580901448089142126
+BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -217,5 +231,44 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.5
+  m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6609302630336235976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000014066761868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dfd92b590f947d3aab2660c5f59cb9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DescriptionType: 0
+  m_DescriptionYOffset: 0
+  m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  references:
+    version: 2
+    RefIds: []

@@ -47,7 +47,7 @@ namespace TiltBrush
         {
             if (tiltPortal.ShapeType != StencilType.Cube)
             {
-                Debug.LogWarning($"{kLogPrefix} Unsupported portal shape '{tiltPortal.ShapeType}' while loading portal destination '{tiltPortal.Destination}'");
+                Debug.LogError($"Unsupported portal shape '{tiltPortal.ShapeType}' while loading portal destination '{tiltPortal.Destination}'");
                 return;
             }
 

@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4000011963436858}
   - component: {fileID: 114000010150538192}
   - component: {fileID: 120208921833142187}
+  - component: {fileID: 2336296822214088370}
   m_Layer: 10
   m_Name: PortalSphere
   m_TagString: Untagged
@@ -70,9 +71,6 @@ MonoBehaviour:
   m_SnapGhostMaterial: {fileID: 2100000, guid: 43172d360a2f0f44798d94e9c440e24b, type: 2}
   m_MinSize_CS: 0.1
   m_MaxSize_CS: 200
-  m_TintColor: {r: 1, g: 1, b: 1, a: 1}
-  m_StencilGrabDistance: 1
-  m_PointerLiftSlope: 0.0002
 --- !u!114 &120208921833142187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -83,6 +81,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9e1deace3c24f7546bd498574c9382c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2336296822214088370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000011148842312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1000011619151448
@@ -178,6 +188,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4000010186673506}
   - component: {fileID: 135000010856659568}
+  - component: {fileID: 3864073756130882125}
   m_Layer: 10
   m_Name: StencilSphereCollider
   m_TagString: Untagged
@@ -222,3 +233,42 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &3864073756130882125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000014066761868}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dfd92b590f947d3aab2660c5f59cb9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_DescriptionType: 0
+  m_DescriptionYOffset: 0
+  m_DescriptionText: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  references:
+    version: 2
+    RefIds: []

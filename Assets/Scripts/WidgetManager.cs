@@ -1577,6 +1577,38 @@ namespace TiltBrush
             return fNearestWidget;
         }
 
+        public bool TryGetNearestPointableWidget(Ray ray, out GrabWidget widget, out RaycastHit hitInfo)
+        {
+            widget = null;
+            hitInfo = default;
+            float nearestDistance = float.MaxValue;
+
+            foreach (var elt in ActiveGrabWidgets)
+            {
+                GrabWidget candidate = elt.m_WidgetScript;
+                if (!(candidate is PortalWidgetBase))
+                {
+                    continue;
+                }
+
+                if (!candidate.DistanceToCollider(ray, out float distance) || distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = distance;
+                widget = candidate;
+                hitInfo = new RaycastHit
+                {
+                    distance = distance,
+                    point = ray.GetPoint(distance),
+                    normal = -ray.direction
+                };
+            }
+
+            return widget != null;
+        }
+
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
