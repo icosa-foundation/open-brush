@@ -1241,6 +1241,7 @@ jobs:
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          changesNotSentForReview: true
 
   publish_google_play_viewer:
     name: Publish Google Play Viewer Release
@@ -1288,6 +1289,7 @@ jobs:
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          changesNotSentForReview: true
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
