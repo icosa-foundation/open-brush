@@ -171,7 +171,7 @@ MonoBehaviour:
     brushGuid: EBA3F993-F9A1-4D35-B84E-BB08F48981A4
     computeShader: {fileID: 7200000, guid: 81ca801fea8092f41be21fb73d2f30d4, type: 3}
     ModifyColor: 0
-    ModifyNormal: 0
+    ModifyNormal: 1
     ModifyUv0: 0
     ModifyUv1: 1
   - name: DanceFloor

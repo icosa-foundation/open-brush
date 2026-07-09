@@ -5,7 +5,7 @@
 uniform float4x4 TransformObjectToWorld;
 
 RWStructuredBuffer<float3> vertexBuffer;
-StructuredBuffer<float3> normalBuffer;
+RWStructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 RWStructuredBuffer<float4> uv1Buffer;
@@ -51,8 +51,10 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     displacement += float3(0,0,1) * curlZ(pos * freq + kBubbleWandExportTime, d);
     displacement *= kScrollJitterIntensity * kDecimetersToWorldUnits;
     vertex += displacement;
+    normal = normalize(normal + displacement * 2.5 + wave_displacement * 2.5);
 
     vertexBuffer[id.x] = vertex;
+    normalBuffer[id.x] = normal;
     uv1.x = uv0.z;
     uv1Buffer[id.x] = uv1;
 }
