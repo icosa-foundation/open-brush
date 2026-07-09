@@ -233,13 +233,9 @@ namespace TiltBrush
                 yield break;
             }
 
-            foreach (BrushDescriptor brush in manifest.Brushes ?? Array.Empty<BrushDescriptor>())
+            foreach (BrushDescriptor brush in manifest.UniqueBrushes())
             {
-                yield return new ManifestBrush { Brush = brush, Manifest = manifestName, Role = "Brushes" };
-            }
-            foreach (BrushDescriptor brush in manifest.CompatibilityBrushes ?? Array.Empty<BrushDescriptor>())
-            {
-                yield return new ManifestBrush { Brush = brush, Manifest = manifestName, Role = "CompatibilityBrushes" };
+                yield return new ManifestBrush { Brush = brush, Manifest = manifestName, Role = "UniqueBrushes" };
             }
         }
 
