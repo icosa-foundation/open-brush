@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: 360 Panorama Sphere
+  m_Name: Portal Sphere
   m_Shader: {fileID: 4800000, guid: 2acb44a1aabdeb44ca27f9dd497c779a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
