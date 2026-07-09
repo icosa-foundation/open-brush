@@ -67,8 +67,8 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     float t = kBubblesExportTime * kScrollRate + 1.0;
     float3 jitter = float3(0, 0, 0);
     jitter.x = sin(t + kBubblesExportTime + originWS.z * kScrollJitterFrequency);
-    jitter.y = cos(t + kBubblesExportTime + originWS.x * kScrollJitterFrequency);
-    jitter.z = cos(t * 1.2 + kBubblesExportTime + originWS.x * kScrollJitterFrequency);
+    jitter.z = cos(t + kBubblesExportTime + originWS.x * kScrollJitterFrequency);
+    jitter.y = cos(t * 1.2 + kBubblesExportTime + originWS.x * kScrollJitterFrequency);
     jitter *= kScrollJitterIntensity;
 
     float3 v = (originWS.xyz + jitter) * 0.1 + (kBubblesExportTime / 20.0) * 5.0;
