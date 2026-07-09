@@ -11,8 +11,9 @@ StructuredBuffer<float3> uvBuffer;
 RWStructuredBuffer<float4> uv1Buffer;
 RWStructuredBuffer<float2> uv2Buffer;
 
+uint _VertexCount;
+
 float _SqueezeAmount;
-int _VertexCount;
 
 static const float kElectricityMod = 1.0;
 static const float kDisplacementIntensity = 0.1;
