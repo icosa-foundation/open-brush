@@ -235,13 +235,22 @@ namespace TiltBrush
 
             if (m_GpuConsumedResults < m_GpuOldResultList.Count)
             {
+                int processedCount = 0;
                 int hitCount = 0;
                 for (int i = m_GpuConsumedResults; i < m_GpuOldResultList.Count && !m_TimesUp; i++)
                 {
+                    processedCount++;
+
                     // Prefer to find widgets, although the results struct should never have both.
                     if (m_GpuOldResultList[i].widget)
                     {
-                        if (HandleIntersectionWithWidget(m_GpuOldResultList[i].widget))
+                        var widget = m_GpuOldResultList[i].widget;
+                        if (!WidgetMatchesCurrentCanvas(widget))
+                        {
+                            continue;
+                        }
+
+                        if (HandleIntersectionWithWidget(widget))
                         {
                             hitCount++;
                         }
@@ -277,7 +286,7 @@ namespace TiltBrush
                         m_TimesUp = m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks;
                     }
                 }
-                m_GpuConsumedResults += hitCount;
+                m_GpuConsumedResults += processedCount;
                 if (hitCount > 0)
                 {
                     return true;
@@ -285,6 +294,17 @@ namespace TiltBrush
             }
 
             return false;
+        }
+
+        private bool WidgetMatchesCurrentCanvas(GrabWidget widget)
+        {
+            var parent = widget.transform.parent;
+            if (parent == null)
+            {
+                return false;
+            }
+
+            return parent.GetComponent<CanvasScript>() == m_CurrentCanvas;
         }
 
         /// Detection Center should be in Global Space.
