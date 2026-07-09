@@ -86,6 +86,16 @@ namespace TiltBrush
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Advanced"), GUIContent.none);
                 NextRect(baseX, pos.y, 60, baseHeight, 60);
                 EditorGUI.LabelField(drawRect, new GUIContent("Advanced"));
+
+                NextRect(baseX, pos.y, 10, baseHeight, 12);
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ViewOnly"), GUIContent.none);
+                NextRect(baseX, pos.y, 60, baseHeight, 60);
+                EditorGUI.LabelField(drawRect, new GUIContent("ViewOnly", "View Only"));
+
+                NextRect(baseX, pos.y, 10, baseHeight, 12);
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Multiplayer"), GUIContent.none);
+                NextRect(baseX, pos.y, 45, baseHeight, 45);
+                EditorGUI.LabelField(drawRect, new GUIContent("Multi", "Multiplayer"));
             }
 
             // Set indent back to what it was
