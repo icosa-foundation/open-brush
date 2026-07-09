@@ -257,7 +257,7 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(executionResult.PreviewControlPoints);
                 }
-                else if (executionResult == null)
+                else
                 {
                     PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 }
