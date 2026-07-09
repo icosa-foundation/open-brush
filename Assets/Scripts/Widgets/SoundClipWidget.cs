@@ -182,7 +182,8 @@ namespace TiltBrush
 
             foreach (var gltfAudio in go.GetComponentsInChildren<GltfAudioSource>())
             {
-                var soundClip = new SoundClip(gltfAudio.AbsoluteFilePath);
+                var soundClipPath = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
+                var soundClip = new SoundClip(soundClipPath);
                 var widget = Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
                 widget.LoadingFromSketch = true;
                 widget.transform.parent = App.Instance.m_CanvasTransform;
@@ -205,6 +206,45 @@ namespace TiltBrush
             WidgetManager.m_Instance.UnregisterGrabWidget(modelWidget.gameObject);
             Destroy(modelWidget.gameObject);
             return soundClipWidgets;
+        }
+
+        private static string CopyGltfAudioToSoundLibrary(string sourcePath)
+        {
+            string soundClipLibraryPath = App.SoundClipLibraryPath();
+            string fullSourcePath = Path.GetFullPath(sourcePath);
+            string fullLibraryPath = Path.GetFullPath(soundClipLibraryPath);
+
+            if (fullSourcePath.StartsWith(fullLibraryPath + Path.DirectorySeparatorChar))
+            {
+                return fullSourcePath;
+            }
+
+            Directory.CreateDirectory(fullLibraryPath);
+            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, Path.GetFileName(fullSourcePath));
+            File.Copy(fullSourcePath, destinationPath);
+            SoundClipCatalog.Instance.ForceCatalogScan();
+            return destinationPath;
+        }
+
+        private static string GetUniqueSoundClipPath(string directory, string filename)
+        {
+            string destinationPath = Path.Combine(directory, filename);
+            if (!File.Exists(destinationPath))
+            {
+                return destinationPath;
+            }
+
+            string name = Path.GetFileNameWithoutExtension(filename);
+            string extension = Path.GetExtension(filename);
+            for (int i = 1; i < 1000; i++)
+            {
+                destinationPath = Path.Combine(directory, $"{name}_{i}{extension}");
+                if (!File.Exists(destinationPath))
+                {
+                    return destinationPath;
+                }
+            }
+            return Path.Combine(directory, $"{name}_{System.Guid.NewGuid()}{extension}");
         }
 
         public static void FromTiltSoundClip(TiltSoundClip tiltSoundClip)
