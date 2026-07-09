@@ -1323,10 +1323,16 @@ namespace TiltBrush
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
             List<PointerManager.ControlPoint> previewControlPoints = new();
-            var firstPath = previewTransforms.FirstOrDefault(path => path != null && path.Count > 0);
+            var rawPaths = pathWrapper.AsMultiTrList();
+            var firstPath = rawPaths?.FirstOrDefault(path => path != null && path.Count > 0);
             if (firstPath != null)
             {
-                previewControlPoints = ConvertTransformsToControlPoints(firstPath);
+                IEnumerable<TrTransform> previewPath = firstPath;
+                if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
+                {
+                    previewPath = firstPath.Select(tr => tr_CS * tr);
+                }
+                previewControlPoints = ConvertTransformsToControlPoints(previewPath);
             }
 
             SetLatestToolScriptControlPoints(previewControlPoints, ScriptCoordSpace.Canvas);
