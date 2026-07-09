@@ -683,7 +683,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             // API queries are distinct from commands in that they return immediate results and never change the scene
 
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
-            Debug.Log($"POLL_DEBUG HandleApiQuery: {commandString}");
+            // Debug.Log($"HandleApiQuery: {commandString}");
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
