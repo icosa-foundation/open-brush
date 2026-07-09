@@ -1176,7 +1176,9 @@ namespace TiltBrush
                 foreach (var widgetData in widgetList)
                 {
                     var widget = widgetData.WidgetScript;
-                    if (widget.gameObject.activeSelf && widget.AllowPinning)
+                    if (widget.gameObject.activeSelf &&
+                        widget.AllowPinning &&
+                        widget.Canvas == App.ActiveCanvas)
                     {
                         if (widget.Pinned)
                         {
