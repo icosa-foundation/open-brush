@@ -67,9 +67,9 @@ jobs:
         id: version
         env:
           # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
-          # Default prerelease uploads to drafts; set GOOGLE_PLAY_PRERELEASE_STATUS to "completed" when ready to submit automatically.
+          # Default prerelease uploads to completed internal-track releases so testers receive them.
           GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
-          GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'draft' }}
+          GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
           # General note: for pull requests, we query github.event.pull_request.head.sha rather than the default sha, which is a merge commit of the target branch into the head. For pushes or tag commits, there's no additional commits made by the CI, so we can use the default, current, reference
 
