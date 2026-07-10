@@ -75,11 +75,17 @@ public class BrushBaker : MonoBehaviour
 
         var colors = new List<Color>();
         mesh.GetColors(colors);
-        if (colors.Count != vertexCount) return mesh;
+        if (colors.Count != vertexCount)
+        {
+            colors = Enumerable.Repeat(Color.white, vertexCount).ToList();
+        }
 
         var uvs = new List<Vector3>();
         mesh.GetUVs(0, uvs);
-        if (uvs.Count != vertexCount) return mesh;
+        if (uvs.Count != vertexCount)
+        {
+            uvs = Enumerable.Repeat(Vector3.zero, vertexCount).ToList();
+        }
 
         ComputeBuffer vertexBuffer = null;
         ComputeBuffer normalBuffer = null;
