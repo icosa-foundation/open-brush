@@ -16,7 +16,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class OpenBrushStorageBridge {
@@ -139,14 +141,21 @@ public class OpenBrushStorageBridge {
     }
 
     public static int startCopyDirectoryToPath(
-            Context context, String relativePath, String destinationDirectoryPath) {
+            Context context, String relativePath, String destinationDirectoryPath,
+            String[] preservedPaths) {
         TransferJob job = createTransferJob();
         int jobId = registerTransferJob(job);
         new Thread(new Runnable() {
             @Override
             public void run() {
+                Set<String> preserved = new HashSet<>();
+                if (preservedPaths != null) {
+                    for (String path : preservedPaths) {
+                        preserved.add(new File(path).getAbsolutePath());
+                    }
+                }
                 job.success = copyDirectoryToPath(
-                        context, relativePath, destinationDirectoryPath, job);
+                        context, relativePath, destinationDirectoryPath, job, preserved);
                 if (!job.success && job.error.length() == 0) {
                     job.error = "Failed to copy " + relativePath + " to local cache";
                 }
@@ -155,7 +164,6 @@ public class OpenBrushStorageBridge {
         }, "OpenBrushSafRead").start();
         return jobId;
     }
-
     public static boolean isTransferJobDone(int jobId) {
         TransferJob job = getTransferJob(jobId);
         return job == null || job.done;
@@ -292,19 +300,18 @@ public class OpenBrushStorageBridge {
 
     public static boolean copyDirectoryToPath(
             Context context, String relativePath, String destinationDirectoryPath) {
-        return copyDirectoryToPath(context, relativePath, destinationDirectoryPath, null);
+        return copyDirectoryToPath(
+                context, relativePath, destinationDirectoryPath, null, new HashSet<>());
     }
 
     private static boolean copyDirectoryToPath(
-            Context context, String relativePath, String destinationDirectoryPath, TransferJob job) {
+            Context context, String relativePath, String destinationDirectoryPath,
+            TransferJob job, Set<String> preservedPaths) {
         Uri source = findDocumentUri(context, normalize(relativePath));
         Uri treeUri = getTreeUri(context);
         if (treeUri == null) {
             setJobError(job, "Open Brush folder is unavailable");
             return false;
-        }
-        if (source == null) {
-            return true;
         }
 
         File destination = new File(destinationDirectoryPath);
@@ -312,10 +319,13 @@ public class OpenBrushStorageBridge {
             setJobError(job, "Failed to create local cache directory");
             return false;
         }
+        if (source == null) {
+            return reconcileLocalDirectory(destination, new HashSet<>(), preservedPaths);
+        }
 
-        return copyDocumentTreeToPath(context, treeUri, source, destination, job);
+        return copyDocumentTreeToPath(
+                context, treeUri, source, destination, job, preservedPaths);
     }
-
     static void saveOpenBrushFolderUri(Context context, String uriString) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(OPEN_BRUSH_FOLDER_URI, uriString).apply();
@@ -483,11 +493,12 @@ public class OpenBrushStorageBridge {
 
     private static boolean copyDocumentTreeToPath(
             Context context, Uri treeUri, Uri sourceDocumentUri, File destinationDirectory,
-            TransferJob job) {
+            TransferJob job, Set<String> preservedPaths) {
         ContentResolver resolver = context.getContentResolver();
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
                 treeUri,
                 DocumentsContract.getDocumentId(sourceDocumentUri));
+        Set<String> sharedChildNames = new HashSet<>();
 
         try (Cursor cursor = resolver.query(
                 childrenUri,
@@ -503,16 +514,21 @@ public class OpenBrushStorageBridge {
                 Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, cursor.getString(0));
                 String childName = cursor.getString(1);
                 String mimeType = cursor.getString(2);
+                sharedChildNames.add(childName);
                 if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)) {
                     File childDirectory = new File(destinationDirectory, childName);
                     if (!childDirectory.exists() && !childDirectory.mkdirs()) {
                         return false;
                     }
-                    if (!copyDocumentTreeToPath(context, treeUri, childUri, childDirectory, job)) {
+                    if (!copyDocumentTreeToPath(
+                            context, treeUri, childUri, childDirectory, job, preservedPaths)) {
                         return false;
                     }
                 } else {
                     File childFile = new File(destinationDirectory, childName);
+                    if (shouldPreserve(childFile, preservedPaths)) {
+                        continue;
+                    }
                     File parent = childFile.getParentFile();
                     if (parent != null && !parent.exists() && !parent.mkdirs()) {
                         return false;
@@ -527,11 +543,51 @@ public class OpenBrushStorageBridge {
                 }
             }
         } catch (Exception e) {
+            setJobError(job, e.getMessage());
             return false;
+        }
+        return reconcileLocalDirectory(destinationDirectory, sharedChildNames, preservedPaths);
+    }
+
+    private static boolean reconcileLocalDirectory(
+            File directory, Set<String> sharedChildNames, Set<String> preservedPaths) {
+        File[] localChildren = directory.listFiles();
+        if (localChildren == null) {
+            return true;
+        }
+        for (File child : localChildren) {
+            if (!sharedChildNames.contains(child.getName()) && !shouldPreserve(child, preservedPaths)
+                    && !deleteRecursively(child)) {
+                return false;
+            }
         }
         return true;
     }
 
+    private static boolean shouldPreserve(File file, Set<String> preservedPaths) {
+        String path = file.getAbsolutePath();
+        String directoryPrefix = path + File.separator;
+        for (String preservedPath : preservedPaths) {
+            if (preservedPath.equals(path) || preservedPath.startsWith(directoryPrefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean deleteRecursively(File file) {
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    if (!deleteRecursively(child)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return file.delete();
+    }
     private static boolean copyDirectory(
             Context context, String relativeDestinationPath, File source, TransferJob job) {
         if (!ensureDirectory(context, relativeDestinationPath)) {

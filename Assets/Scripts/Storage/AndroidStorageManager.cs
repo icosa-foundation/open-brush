@@ -15,6 +15,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -34,6 +36,8 @@ namespace TiltBrush
         private static AndroidStorageManager m_Instance;
         private static readonly List<PendingTransferRetry> m_PendingTransferRetries =
             new List<PendingTransferRetry>();
+        private static readonly HashSet<string> m_PendingLocalPaths =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private class PendingTransferRetry
         {
@@ -166,6 +170,7 @@ namespace TiltBrush
         public static void StartTransfer(
             string label,
             Func<int> startJob,
+            string localPath,
             Action<bool, string> onComplete,
             Action retryAction)
         {
@@ -182,7 +187,7 @@ namespace TiltBrush
             }
 
             m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
-                label, "shared storage", startJob, onComplete, retryAction));
+                label, "shared storage", startJob, localPath, onComplete, retryAction));
         }
 
         public static void StartInboundTransfer(
@@ -203,13 +208,14 @@ namespace TiltBrush
             }
 
             m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
-                label, "local cache", startJob, onComplete, null));
+                label, "local cache", startJob, null, onComplete, null));
         }
 
         private IEnumerator TransferCoroutine(
             string label,
             string destination,
             Func<int> startJob,
+            string localPath,
             Action<bool, string> onComplete,
             Action retryAction)
         {
@@ -221,7 +227,7 @@ namespace TiltBrush
             catch (Exception e)
             {
                 string error = $"Failed to start {label}: {e.Message}";
-                RegisterFailedTransfer(label, retryAction, error);
+                RegisterFailedTransfer(label, localPath, retryAction, error);
                 onComplete?.Invoke(false, error);
                 yield break;
             }
@@ -246,6 +252,10 @@ namespace TiltBrush
 
             if (success)
             {
+                if (!string.IsNullOrEmpty(localPath))
+                {
+                    m_PendingLocalPaths.Remove(Path.GetFullPath(localPath));
+                }
                 ControllerConsoleScript.m_Instance?.AddNewLine($"Finished copying {label}.");
             }
             else
@@ -255,7 +265,7 @@ namespace TiltBrush
                     : errorMessage;
                 if (retryAction != null)
                 {
-                    RegisterFailedTransfer(label, retryAction, error);
+                    RegisterFailedTransfer(label, localPath, retryAction, error);
                 }
                 else
                 {
@@ -279,10 +289,15 @@ namespace TiltBrush
             return $"Copying {label} to {destination}: {percent:0}%";
         }
 
-        private static void RegisterFailedTransfer(string label, Action retryAction, string error)
+        private static void RegisterFailedTransfer(
+            string label, string localPath, Action retryAction, string error)
         {
             if (retryAction != null)
             {
+                if (!string.IsNullOrEmpty(localPath))
+                {
+                    m_PendingLocalPaths.Add(Path.GetFullPath(localPath));
+                }
                 m_PendingTransferRetries.Add(new PendingTransferRetry
                 {
                     Label = label,
@@ -299,6 +314,17 @@ namespace TiltBrush
                 InputManager.ControllerName.Brush,
                 message + " Choose the Open Brush folder again to retry pending copies.",
                 fPopScalar: 0.5f);
+        }
+
+        public static string[] GetPendingLocalPaths(string localDirectory)
+        {
+            string fullDirectory = Path.GetFullPath(localDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar);
+            string directoryPrefix = fullDirectory + Path.DirectorySeparatorChar;
+            return m_PendingLocalPaths
+                .Where(path => path.Equals(fullDirectory, StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(directoryPrefix, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
         }
 
         private static void RetryPendingTransfers()

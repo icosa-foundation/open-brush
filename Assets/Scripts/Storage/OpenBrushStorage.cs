@@ -407,6 +407,7 @@ namespace TiltBrush
                     label,
                     () => AndroidSafStorage.StartWriteFileFromPath(
                         relativePath, localPath, GuessMimeType(localPath)),
+                    localPath,
                     (success, error) => onComplete?.Invoke(success, success ? null : FormatCopyError(error, relativePath)),
                     () => PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete));
                 return;
@@ -417,6 +418,7 @@ namespace TiltBrush
                 AndroidStorageManager.StartTransfer(
                     label,
                     () => AndroidSafStorage.StartCopyDirectoryFromPath(relativePath, localPath),
+                    localPath,
                     (success, error) => onComplete?.Invoke(success, success ? null : FormatCopyError(error, relativePath)),
                     () => PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete));
                 return;
@@ -446,7 +448,10 @@ namespace TiltBrush
 
             AndroidStorageManager.StartInboundTransfer(
                 relativeDirectory,
-                () => AndroidSafStorage.StartCopyDirectoryToPath(relativeDirectory, localDirectory),
+                () => AndroidSafStorage.StartCopyDirectoryToPath(
+                    relativeDirectory,
+                    localDirectory,
+                    AndroidStorageManager.GetPendingLocalPaths(localDirectory)),
                 (success, error) =>
                 {
                     if (success && notifySketches)
