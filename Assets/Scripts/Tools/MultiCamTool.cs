@@ -1847,7 +1847,10 @@ namespace TiltBrush
             //
 
             // If we're running out of disk space, stop recording.
-            if (!FileUtils.HasFreeSpace(recorder.FilePath))
+            StillFrameSequenceExporter stillFrameExporter =
+                VideoRecorderUtils.ActiveStillFrameExporter;
+            string capturePath = recorder != null ? recorder.FilePath : stillFrameExporter?.FilePath;
+            if (!string.IsNullOrEmpty(capturePath) && !FileUtils.HasFreeSpace(capturePath))
             {
                 StopVideoCapture(false);
             }

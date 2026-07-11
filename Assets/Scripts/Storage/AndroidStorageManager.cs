@@ -23,6 +23,10 @@ namespace TiltBrush
     {
         private const string kStartupPromptDismissedKey = "GooglePlayStorage.StartupPromptDismissed";
 
+        // The Android SAF picker is modal: while it has focus, users cannot initiate another
+        // storage operation through the Open Brush UI. Keep at most one continuation (normally the
+        // action that opened the picker). API or background callers are deliberately not queued once
+        // that slot is occupied.
         private static Action m_PendingAction;
         private static bool m_RequestInProgress;
         private static bool m_RequestIsStartupPrompt;
