@@ -197,7 +197,8 @@ namespace TiltBrush
             var pathTransforms = path.AsSingleTrList();
             for (var i = 0; i < pathTransforms.Count; i++)
             {
-                wrapper.InsertRotationAtTime(i, pathTransforms[i].rotation);
+                wrapper.InsertRotationAtTime(i,
+                    wrapper._CameraPathWidget.Canvas.Pose.rotation * pathTransforms[i].rotation);
             }
             return wrapper;
         }
