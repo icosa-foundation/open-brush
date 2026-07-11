@@ -1197,7 +1197,7 @@ jobs:
 
   google_play_review_state:
     name: Determine Google Play review state
-    needs: configuration
+    needs: [configuration, build]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
