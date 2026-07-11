@@ -180,6 +180,11 @@ namespace TiltBrush
             return m_CaptureObjects[(int)style].m_Manager;
         }
 
+        public HybridCamera OdsCameraFromStyle(MultiCamStyle style)
+        {
+            return m_CaptureObjects[(int)style].m_Camera.GetComponentInChildren<HybridCamera>(true);
+        }
+
         public void EnableCaptureObject(MultiCamStyle style, bool enable)
         {
             m_CaptureObjects[(int)style].m_Object.SetActive(enable);

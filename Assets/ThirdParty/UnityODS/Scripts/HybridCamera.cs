@@ -140,7 +140,7 @@ public class HybridCamera : MonoBehaviour {
     }
   }
 
-  public IEnumerator Render(Transform node) {
+  public IEnumerator Render(Transform node, bool saveImage = true) {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
       // Round image width to a multiple of four to keep symmetry with the image height.
@@ -163,8 +163,8 @@ public class HybridCamera : MonoBehaviour {
       lastvr180        = vr180;
     }
 
-    if ( outputFolder != null  && !Directory.Exists( outputFolder ) ) {
-      Directory.CreateDirectory( outputFolder );
+    if ( saveImage && outputFolder != null && !Directory.Exists(outputFolder) ) {
+      Directory.CreateDirectory(outputFolder);
     }
 
     GameObject renderCameraObject = new GameObject();
@@ -268,28 +268,30 @@ public class HybridCamera : MonoBehaviour {
 
     Graphics.Blit(finalImage, (RenderTexture)null);
 
-    byte[] image = returnImage.EncodeToPNG();
+    if (saveImage) {
+      byte[] image = returnImage.EncodeToPNG();
 
-    string file = String.Format(basename + "_{0:d6}.png", frameCount);
-    string path = Path.Combine(outputFolder, file);
+      string file = String.Format(basename + "_{0:d6}.png", frameCount);
+      string path = Path.Combine(outputFolder, file);
 
 #if MULTI_THREADED
-  Thread imageWriter = new Thread(() => {
-    File.WriteAllBytes(path, image);
+      Thread imageWriter = new Thread(() => {
+        File.WriteAllBytes(path, image);
 #if LOG_IMAGE_WRITES
-    Debug.Log( "Wrote image " + path );
+        Debug.Log( "Wrote image " + path );
 #endif
-  });
-  imageWriter.IsBackground = true;
-  imageWriter.Start();
+      });
+      imageWriter.IsBackground = true;
+      imageWriter.Start();
 #else
-    File.WriteAllBytes( path, image );
+      File.WriteAllBytes( path, image );
 #if LOG_IMAGE_WRITES
-  Debug.Log( "Wrote image " + path );
+      Debug.Log( "Wrote image " + path );
 #endif
 #endif
 
-    frameCount++;
+      frameCount++;
+    }
   }  // Render method
 
   //This render function can be called from the Editor to make testing easier.

@@ -20,6 +20,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEngine;
 using TMPro;
+using ODS;
 
 namespace TiltBrush
 {
@@ -1871,6 +1872,18 @@ namespace TiltBrush
                     App.UserConfig.Flags.SnapshotHeight :
                     m_ScreenshotHeight;
 
+                HybridCamera odsCamera = null;
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    odsCamera = SketchControlsScript.m_Instance.MultiCamCaptureRig.OdsCameraFromStyle(style);
+                    if (odsCamera == null)
+                    {
+                        Debug.LogError("[Snapshot360Capture] Missing HybridCamera on the Snapshot360 capture object.");
+                        yield break;
+                    }
+                    snapshotHeight = snapshotWidth;
+                }
+
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);
                 RenderTexture tmpDepth = null;
@@ -1888,7 +1901,16 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false);
+                    if (odsCamera != null)
+                    {
+                        odsCamera.imageWidth = snapshotWidth;
+                        yield return odsCamera.Render(odsCamera.transform, saveImage: false);
+                        Graphics.Blit(odsCamera.FinalImage, tmp);
+                    }
+                    else
+                    {
+                        rMgr.RenderToTexture(tmp, asDepth: false);
+                    }
                     if (style == MultiCamStyle.Depth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
