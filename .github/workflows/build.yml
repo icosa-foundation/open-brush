@@ -45,6 +45,7 @@ jobs:
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
       googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
+      googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
       flavors: ${{ steps.flavors.outputs.flavors }}
@@ -64,6 +65,11 @@ jobs:
           fi
       - name: Calculate version and stamp
         id: version
+        env:
+          # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
+          # Default prerelease uploads to completed internal-track releases so testers receive them.
+          GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
           # General note: for pull requests, we query github.event.pull_request.head.sha rather than the default sha, which is a merge commit of the target branch into the head. For pushes or tag commits, there's no additional commits made by the CI, so we can use the default, current, reference
 
@@ -97,6 +103,7 @@ jobs:
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
             echo "googleplaytrack=production" >> $GITHUB_OUTPUT
+            echo "googleplaystatus=completed" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
@@ -104,7 +111,8 @@ jobs:
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=beta" >> $GITHUB_OUTPUT
+            echo "googleplaytrack=$GOOGLE_PLAY_PRERELEASE_TRACK" >> $GITHUB_OUTPUT
+            echo "googleplaystatus=$GOOGLE_PLAY_PRERELEASE_STATUS" >> $GITHUB_OUTPUT
           fi
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -269,7 +277,7 @@ jobs:
             targetPlatform: Android
             vrsdk: Oculus
             cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
+            extraoptions: -btb-il2cpp -btb-android-target-sdk 34
             versionSuffix: 1
             extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
@@ -1229,9 +1237,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
           releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
-          track: ${{ needs.configuration.outputs.googleplaytrack }}
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
-          status: completed
+          status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
 
   publish_google_play_viewer:
@@ -1276,9 +1284,9 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrushviewer
           releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
-          track: ${{ needs.configuration.outputs.googleplaytrack }}
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
-          status: completed
+          status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
 
   publish_oculus_quest:

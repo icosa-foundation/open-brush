@@ -394,17 +394,30 @@ namespace TiltBrush
             {
                 case PanelAvailabilityMode.Beginner:
                     return data.m_MapKey.m_Basic &&
-                        (IsPanelUnique(data.m_Panel.Type) || !data.m_Panel.AdvancedModePanel);
+                        IsPanelInEditingLevel(data, advancedPanels: false);
                 case PanelAvailabilityMode.Advanced:
                     return data.m_MapKey.m_Advanced &&
-                        (IsPanelUnique(data.m_Panel.Type) || data.m_Panel.AdvancedModePanel);
+                        IsPanelInEditingLevel(data, advancedPanels: true);
                 case PanelAvailabilityMode.ViewOnly:
                     return data.m_MapKey.m_ViewOnly;
                 case PanelAvailabilityMode.Multiplayer:
-                    return data.m_MapKey.m_Multiplayer;
+                    return data.m_MapKey.m_Multiplayer && IsPanelInEditingLevel(data,
+                        PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1);
                 default:
                     return false;
             }
+        }
+
+        private bool IsPanelInEditingLevel(PanelData data, bool advancedPanels)
+        {
+            return IsPanelUnique(data.m_Panel.Type) ||
+                data.m_Panel.AdvancedModePanel == advancedPanels;
+        }
+
+        private bool IsTemporaryPanelAvailabilityMode(PanelAvailabilityMode mode)
+        {
+            return mode == PanelAvailabilityMode.ViewOnly ||
+                mode == PanelAvailabilityMode.Multiplayer;
         }
 
         public void SetPanelAvailabilityMode(PanelAvailabilityMode mode)
@@ -414,16 +427,22 @@ namespace TiltBrush
                 return;
             }
 
+            PanelAvailabilityMode previousMode = m_PanelAvailabilityMode;
             m_PanelAvailabilityMode = mode;
             if (m_AllPanels == null)
             {
                 return;
             }
+            bool restoreAvailablePanels = IsTemporaryPanelAvailabilityMode(previousMode);
             for (int i = 0; i < m_AllPanels.Count; ++i)
             {
                 if (!m_AllPanels[i].AvailableInCurrentMode)
                 {
                     _DismissPanelInternal(i, false);
+                }
+                else if (restoreAvailablePanels && m_AllPanels[i].m_RestoreFlag)
+                {
+                    _RestorePanelInternal(i);
                 }
             }
             RefreshPanelsForAnimations();
@@ -2598,7 +2617,9 @@ namespace TiltBrush
 
         void _DismissPanelInternal(int index, bool bPlayAudio = true)
         {
-            m_AllPanels[index].m_RestoreFlag = m_AllPanels[index].m_Panel.gameObject.activeSelf;
+            m_AllPanels[index].m_RestoreFlag = m_AllPanels[index].m_Widget
+                ? m_AllPanels[index].m_Widget.Showing
+                : m_AllPanels[index].m_Panel.gameObject.activeSelf;
             m_AllPanels[index].m_Panel.ResetPanel();
 
             if (m_AllPanels[index].m_Widget)
@@ -2658,6 +2679,7 @@ namespace TiltBrush
             else
             {
                 m_AllPanels[index].m_Panel.gameObject.SetActive(true);
+                m_AllPanels[index].m_RestoreFlag = false;
             }
         }
 

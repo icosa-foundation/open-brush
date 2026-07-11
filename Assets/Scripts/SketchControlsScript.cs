@@ -5192,6 +5192,31 @@ namespace TiltBrush
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+            if (InitNoHeadsetMode.m_Instance != null)
+            {
+                InitNoHeadsetMode.m_Instance.RefreshViewOnlyUi();
+            }
+        }
+
+        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
+        {
+            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
+        }
+
+        public void EnsureViewOnlyNavigationTool()
+        {
+            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            }
+        }
+
+        public void DisableViewOnlyNavigationTool()
+        {
+            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableDefaultTool();
+            }
         }
 
         public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
