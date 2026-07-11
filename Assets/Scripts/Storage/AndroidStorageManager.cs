@@ -136,12 +136,14 @@ namespace TiltBrush
             m_RequestIsStartupPrompt = false;
             PlayerPrefs.DeleteKey(kStartupPromptDismissedKey);
 
-            OpenBrushStorage.SyncSharedUserContentToLocalCache();
-            RetryPendingTransfers();
+            OpenBrushStorage.SyncSharedUserContentToLocalCache(() =>
+            {
+                RetryPendingTransfers();
 
-            Action pendingAction = m_PendingAction;
-            m_PendingAction = null;
-            pendingAction?.Invoke();
+                Action pendingAction = m_PendingAction;
+                m_PendingAction = null;
+                pendingAction?.Invoke();
+            });
         }
 
         public void OnOpenBrushFolderCanceled(string unused)
@@ -179,12 +181,34 @@ namespace TiltBrush
                 return;
             }
 
-            m_Instance.StartCoroutine(
-                m_Instance.TransferCoroutine(label, startJob, onComplete, retryAction));
+            m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
+                label, "shared storage", startJob, onComplete, retryAction));
+        }
+
+        public static void StartInboundTransfer(
+            string label,
+            Func<int> startJob,
+            Action<bool, string> onComplete)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+
+            if (m_Instance == null)
+            {
+                onComplete?.Invoke(false, "Android storage manager is not ready.");
+                return;
+            }
+
+            m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
+                label, "local cache", startJob, onComplete, null));
         }
 
         private IEnumerator TransferCoroutine(
             string label,
+            string destination,
             Func<int> startJob,
             Action<bool, string> onComplete,
             Action retryAction)
@@ -202,7 +226,7 @@ namespace TiltBrush
                 yield break;
             }
 
-            ControllerConsoleScript.m_Instance?.AddNewLine($"Copying {label} to shared storage.");
+            ControllerConsoleScript.m_Instance?.AddNewLine($"Copying {label} to {destination}.");
             float nextProgressMessage = Time.realtimeSinceStartup + 2f;
 
             while (!AndroidSafStorage.IsTransferJobDone(jobId))
@@ -210,7 +234,7 @@ namespace TiltBrush
                 if (Time.realtimeSinceStartup >= nextProgressMessage)
                 {
                     ControllerConsoleScript.m_Instance?.AddNewLine(
-                        FormatTransferProgress(label, jobId));
+                        FormatTransferProgress(label, destination, jobId));
                     nextProgressMessage = Time.realtimeSinceStartup + 3f;
                 }
                 yield return null;
@@ -227,25 +251,32 @@ namespace TiltBrush
             else
             {
                 string error = string.IsNullOrEmpty(errorMessage)
-                    ? $"Failed to copy {label} to shared storage."
+                    ? $"Failed to copy {label} to {destination}."
                     : errorMessage;
-                RegisterFailedTransfer(label, retryAction, error);
+                if (retryAction != null)
+                {
+                    RegisterFailedTransfer(label, retryAction, error);
+                }
+                else
+                {
+                    Debug.LogWarning($"SAF_CACHE_SYNC {error}");
+                }
             }
 
             onComplete?.Invoke(success, errorMessage);
         }
 
-        private static string FormatTransferProgress(string label, int jobId)
+        private static string FormatTransferProgress(string label, string destination, int jobId)
         {
             long done = AndroidSafStorage.GetTransferJobBytesDone(jobId);
             long total = AndroidSafStorage.GetTransferJobBytesTotal(jobId);
             if (total <= 0)
             {
-                return $"Copying {label} to shared storage.";
+                return $"Copying {label} to {destination}.";
             }
 
             float percent = Mathf.Clamp01((float)done / total) * 100f;
-            return $"Copying {label}: {percent:0}%";
+            return $"Copying {label} to {destination}: {percent:0}%";
         }
 
         private static void RegisterFailedTransfer(string label, Action retryAction, string error)

@@ -126,6 +126,17 @@ namespace TiltBrush
 #endif
         }
 
+        public static int StartCopyDirectoryToPath(
+            string relativePath, string destinationDirectoryPath)
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            return bridge.CallStatic<int>(
+                "startCopyDirectoryToPath", GetActivity(), relativePath, destinationDirectoryPath);
+#else
+            return 0;
+#endif
+        }
         public static bool IsTransferJobDone(int jobId)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY

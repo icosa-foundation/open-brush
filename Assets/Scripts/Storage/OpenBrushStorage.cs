@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -53,16 +54,30 @@ namespace TiltBrush
             get { return "Open Brush/Exports"; }
         }
 
-        public static void SyncSharedUserContentToLocalCache()
+        public static void SyncSharedUserContentToLocalCache(Action onComplete = null)
         {
             if (!IsGooglePlayStorageMode || !AndroidSafStorage.HasOpenBrushFolder())
             {
+                onComplete?.Invoke();
                 return;
             }
 
-            SyncSharedTiltDirectory("Sketches", App.UserSketchPath());
-            SyncSharedTiltDirectory("Saved Strokes", App.SavedStrokesPath());
-            SyncSharedDirectory("Media Library", App.MediaLibraryPath());
+            int remainingTransfers = 3;
+            Action transferComplete = () =>
+            {
+                remainingTransfers--;
+                if (remainingTransfers == 0)
+                {
+                    onComplete?.Invoke();
+                }
+            };
+
+            SyncSharedDirectoryAsync(
+                "Sketches", App.UserSketchPath(), notifySketches: true, transferComplete);
+            SyncSharedDirectoryAsync(
+                "Saved Strokes", App.SavedStrokesPath(), notifySketches: true, transferComplete);
+            SyncSharedDirectoryAsync(
+                "Media Library", App.MediaLibraryPath(), notifySketches: false, transferComplete);
         }
 
         public static bool TryGetSharedSketchRelativePath(string localPath, out string relativePath)
@@ -417,38 +432,41 @@ namespace TiltBrush
                 : error;
         }
 
-        private static void SyncSharedTiltDirectory(string relativeDirectory, string localDirectory)
+        private static void SyncSharedDirectoryAsync(
+            string relativeDirectory,
+            string localDirectory,
+            bool notifySketches,
+            Action onComplete)
         {
             Directory.CreateDirectory(localDirectory);
+            HashSet<string> existingSketches = notifySketches
+                ? new HashSet<string>(Directory.GetFiles(
+                    localDirectory, $"*{SaveLoadScript.TILT_SUFFIX}", SearchOption.TopDirectoryOnly))
+                : null;
 
-            foreach (string fileName in AndroidSafStorage.ListFiles(relativeDirectory))
-            {
-                if (string.IsNullOrEmpty(fileName) ||
-                    !fileName.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            AndroidStorageManager.StartInboundTransfer(
+                relativeDirectory,
+                () => AndroidSafStorage.StartCopyDirectoryToPath(relativeDirectory, localDirectory),
+                (success, error) =>
                 {
-                    continue;
-                }
-
-                string relativePath = Path.Combine(relativeDirectory, fileName);
-                string localPath = Path.Combine(localDirectory, fileName);
-                bool existed = File.Exists(localPath) || Directory.Exists(localPath);
-                if (!AndroidSafStorage.CopyFileToPath(relativePath, localPath))
-                {
-                    Debug.LogWarning($"Failed to sync shared sketch '{relativePath}' to local cache.");
-                    continue;
-                }
-
-                NotifySyncedLocalSketch(relativeDirectory, localPath, existed);
-            }
-        }
-
-        private static void SyncSharedDirectory(string relativeDirectory, string localDirectory)
-        {
-            Directory.CreateDirectory(localDirectory);
-            if (!AndroidSafStorage.CopyDirectoryToPath(relativeDirectory, localDirectory))
-            {
-                Debug.LogWarning($"Failed to sync shared folder '{relativeDirectory}' to local cache.");
-            }
+                    if (success && notifySketches)
+                    {
+                        foreach (string localPath in Directory.GetFiles(
+                            localDirectory,
+                            $"*{SaveLoadScript.TILT_SUFFIX}",
+                            SearchOption.TopDirectoryOnly))
+                        {
+                            NotifySyncedLocalSketch(
+                                relativeDirectory, localPath, existingSketches.Contains(localPath));
+                        }
+                    }
+                    else if (!success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_CACHE_SYNC Failed to sync '{relativeDirectory}': {error}");
+                    }
+                    onComplete?.Invoke();
+                });
         }
 
         private static void NotifySyncedLocalSketch(

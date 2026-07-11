@@ -138,6 +138,24 @@ public class OpenBrushStorageBridge {
         return jobId;
     }
 
+    public static int startCopyDirectoryToPath(
+            Context context, String relativePath, String destinationDirectoryPath) {
+        TransferJob job = createTransferJob();
+        int jobId = registerTransferJob(job);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                job.success = copyDirectoryToPath(
+                        context, relativePath, destinationDirectoryPath, job);
+                if (!job.success && job.error.length() == 0) {
+                    job.error = "Failed to copy " + relativePath + " to local cache";
+                }
+                job.done = true;
+            }
+        }, "OpenBrushSafRead").start();
+        return jobId;
+    }
+
     public static boolean isTransferJobDone(int jobId) {
         TransferJob job = getTransferJob(jobId);
         return job == null || job.done;
@@ -274,9 +292,15 @@ public class OpenBrushStorageBridge {
 
     public static boolean copyDirectoryToPath(
             Context context, String relativePath, String destinationDirectoryPath) {
+        return copyDirectoryToPath(context, relativePath, destinationDirectoryPath, null);
+    }
+
+    private static boolean copyDirectoryToPath(
+            Context context, String relativePath, String destinationDirectoryPath, TransferJob job) {
         Uri source = findDocumentUri(context, normalize(relativePath));
         Uri treeUri = getTreeUri(context);
         if (treeUri == null) {
+            setJobError(job, "Open Brush folder is unavailable");
             return false;
         }
         if (source == null) {
@@ -285,10 +309,11 @@ public class OpenBrushStorageBridge {
 
         File destination = new File(destinationDirectoryPath);
         if (!destination.exists() && !destination.mkdirs()) {
+            setJobError(job, "Failed to create local cache directory");
             return false;
         }
 
-        return copyDocumentTreeToPath(context, treeUri, source, destination);
+        return copyDocumentTreeToPath(context, treeUri, source, destination, job);
     }
 
     static void saveOpenBrushFolderUri(Context context, String uriString) {
@@ -457,7 +482,8 @@ public class OpenBrushStorageBridge {
     }
 
     private static boolean copyDocumentTreeToPath(
-            Context context, Uri treeUri, Uri sourceDocumentUri, File destinationDirectory) {
+            Context context, Uri treeUri, Uri sourceDocumentUri, File destinationDirectory,
+            TransferJob job) {
         ContentResolver resolver = context.getContentResolver();
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
                 treeUri,
@@ -482,7 +508,7 @@ public class OpenBrushStorageBridge {
                     if (!childDirectory.exists() && !childDirectory.mkdirs()) {
                         return false;
                     }
-                    if (!copyDocumentTreeToPath(context, treeUri, childUri, childDirectory)) {
+                    if (!copyDocumentTreeToPath(context, treeUri, childUri, childDirectory, job)) {
                         return false;
                     }
                 } else {
@@ -496,7 +522,7 @@ public class OpenBrushStorageBridge {
                         if (input == null) {
                             return false;
                         }
-                        copyStream(input, output, null);
+                        copyStream(input, output, job);
                     }
                 }
             }
