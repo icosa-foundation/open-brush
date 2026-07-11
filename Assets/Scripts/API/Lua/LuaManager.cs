@@ -649,6 +649,27 @@ namespace TiltBrush
 #endif
         }
 
+        private void RegisterApiClassOnTable(Script script, string tableName, Type t)
+        {
+            UserData.RegisterType(t);
+            var api = UserData.CreateStatic(t).UserData;
+            var tableValue = script.Globals.Get(tableName);
+            if (tableValue.Type != DataType.Table)
+            {
+                tableValue = DynValue.NewTable(new Table(script));
+                script.Globals.Set(tableName, tableValue);
+            }
+
+            var metaTable = tableValue.Table.MetaTable ?? new Table(script);
+            metaTable.Set("__index", DynValue.NewCallback((context, args) =>
+                api.Descriptor.Index(script, api.Object, args[1], false)));
+            tableValue.Table.MetaTable = metaTable;
+
+#if UNITY_EDITOR
+            LuaDocsRegistration.RegisterForDocs(t);
+#endif
+        }
+
         public string GetActiveScriptName(LuaApiCategory category)
         {
             return GetScriptNames(category)[ActiveScripts[category]];
@@ -980,7 +1001,9 @@ namespace TiltBrush
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
             RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
-            RegisterApiClass(script, "Tool", typeof(ToolApiWrapper));
+            // Tool is also populated with per-frame Tool Script state by SetApiProperty.
+            // Keep it as a table and fall back to the static helper API for missing keys.
+            RegisterApiClassOnTable(script, "Tool", typeof(ToolApiWrapper));
 
             // TODO Proxy this.
             UserData.RegisterType<Texture2D>();
