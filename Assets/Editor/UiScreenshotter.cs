@@ -30,6 +30,38 @@ namespace TiltBrush
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
 
+        private enum BrushScreenshotRenderMode
+        {
+            Material,
+            Wireframe
+        }
+
+        private static readonly string[] kWireframeWhiteColorProperties =
+        {
+            "_Color",
+            "_MainColor",
+            "_BaseColor",
+            "_TintColor",
+            "_SpecColor",
+            "__SpecColor",
+            "_Specular_Color",
+            "_EmissionColor"
+        };
+
+        private struct MaterialColorOverride
+        {
+            public Material Material;
+            public string PropertyName;
+            public Color Color;
+
+            public MaterialColorOverride(Material material, string propertyName, Color color)
+            {
+                Material = material;
+                PropertyName = propertyName;
+                Color = color;
+            }
+        }
+
         private static bool IsPlaying()
         {
             if (!Application.isPlaying)
@@ -43,8 +75,35 @@ namespace TiltBrush
         [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots")]
         static void GenerateBrushScreenShots()
         {
+            GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Material);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Brush Screenshots With Post Effects")]
+        static void GenerateBrushScreenShotsWithPostEffects()
+        {
+            GenerateBrushScreenShots(enablePostProcessing: true, BrushScreenshotRenderMode.Material);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Brush Wireframe Screenshots")]
+        static void GenerateBrushWireframeScreenShots()
+        {
+            GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Wireframe);
+        }
+
+        private static void GenerateBrushScreenShots(
+            bool enablePostProcessing,
+            BrushScreenshotRenderMode renderMode)
+        {
             if (!IsPlaying()) return;
-            DelayedGenerateBrushScreenShots();
+
+            if (renderMode == BrushScreenshotRenderMode.Wireframe)
+            {
+                enablePostProcessing = false;
+            }
+
+            SetupBlackEnvironment();
+
+            DelayedGenerateBrushScreenShots(enablePostProcessing, renderMode);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -98,7 +157,9 @@ namespace TiltBrush
             }
         }
 
-        async static void DelayedGenerateBrushScreenShots()
+        async static void DelayedGenerateBrushScreenShots(
+            bool enablePostProcessing,
+            BrushScreenshotRenderMode renderMode)
         {
             await Task.Delay(3000);
             var cam = InitScreenshotCamera();
@@ -113,8 +174,14 @@ namespace TiltBrush
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
             bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
             bool wasForceDeterministicBirthTimeForExport = App.Config.m_ForceDeterministicBirthTimeForExport;
+            bool setCameraConfigPostEffects = renderMode != BrushScreenshotRenderMode.Wireframe;
+            bool wasPostEffects = CameraConfig.PostEffects;
             batchManager.OneStrokePerBatch = true;
             App.Config.m_ForceDeterministicBirthTimeForExport = true;
+            if (setCameraConfigPostEffects)
+            {
+                CameraConfig.PostEffects = enablePostProcessing;
+            }
 
             try
             {
@@ -122,19 +189,111 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
+                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
+                        ? new List<Color> { Color.white }
+                        : null;
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
-                        TrTransform.T(origin));
+                        TrTransform.T(origin),
+                        colors);
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
-                    SaveCurrentView(cam, $"brush-{brush.DurableName}.png", 1024, 1024);
-                    DeleteStrokes(strokes);
+                    List<MaterialColorOverride> colorOverrides = null;
+                    try
+                    {
+                        if (renderMode == BrushScreenshotRenderMode.Wireframe)
+                        {
+                            colorOverrides = SetBrushMaterialColors(strokes, Color.white);
+                        }
+                        SaveCurrentView(
+                            cam,
+                            GetBrushScreenshotFileName(brush, renderMode),
+                            1024,
+                            1024,
+                            enablePostProcessing,
+                            renderMode == BrushScreenshotRenderMode.Wireframe);
+                    }
+                    finally
+                    {
+                        RestoreBrushMaterialColors(colorOverrides);
+                        DeleteStrokes(strokes);
+                    }
                 }
             }
             finally
             {
                 App.Config.m_ForceDeterministicBirthTimeForExport = wasForceDeterministicBirthTimeForExport;
+                if (setCameraConfigPostEffects)
+                {
+                    CameraConfig.PostEffects = wasPostEffects;
+                }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
+            }
+        }
+
+        private static string GetBrushScreenshotFileName(
+            BrushDescriptor brush,
+            BrushScreenshotRenderMode renderMode)
+        {
+            string suffix = renderMode == BrushScreenshotRenderMode.Wireframe
+                ? "-wireframe"
+                : "";
+            return $"brush-{brush.DurableName}{suffix}.png";
+        }
+
+        private static List<MaterialColorOverride> SetBrushMaterialColors(
+            IEnumerable<Stroke> strokes,
+            Color color)
+        {
+            var overrides = new List<MaterialColorOverride>();
+            var seenMaterials = new HashSet<int>();
+            foreach (var stroke in strokes)
+            {
+                if (stroke == null ||
+                    stroke.m_BatchSubset == null ||
+                    stroke.m_BatchSubset.m_ParentBatch == null)
+                {
+                    continue;
+                }
+
+                Material material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
+                if (material == null || !seenMaterials.Add(material.GetInstanceID()))
+                {
+                    continue;
+                }
+
+                foreach (string propertyName in kWireframeWhiteColorProperties)
+                {
+                    if (!material.HasColor(propertyName))
+                    {
+                        continue;
+                    }
+                    overrides.Add(new MaterialColorOverride(
+                        material,
+                        propertyName,
+                        material.GetColor(propertyName)));
+                    material.SetColor(propertyName, color);
+                }
+            }
+            return overrides;
+        }
+
+        private static void RestoreBrushMaterialColors(IEnumerable<MaterialColorOverride> overrides)
+        {
+            if (overrides == null)
+            {
+                return;
+            }
+
+            foreach (var colorOverride in overrides)
+            {
+                if (colorOverride.Material != null &&
+                    colorOverride.Material.HasColor(colorOverride.PropertyName))
+                {
+                    colorOverride.Material.SetColor(
+                        colorOverride.PropertyName,
+                        colorOverride.Color);
+                }
             }
         }
 
@@ -241,7 +400,68 @@ namespace TiltBrush
             }
         }
 
-        static void SaveCurrentView(Camera cameraToCapture, string fileName, int resWidth, int resHeight)
+        private static readonly Type[] kBuiltInPostEffectComponents =
+        {
+            typeof(RenderWrapper),
+            typeof(MobileBloom),
+            typeof(SENaturalBloomAndDirtyLens),
+            typeof(TiltShift),
+            typeof(Kino.Vignette)
+        };
+
+        private static List<KeyValuePair<Behaviour, bool>> SetBuiltInPostEffectsEnabled(
+            Camera cameraToCapture, bool enabled)
+        {
+            var previousStates = new List<KeyValuePair<Behaviour, bool>>();
+            if (cameraToCapture == null)
+            {
+                return previousStates;
+            }
+
+            foreach (Type componentType in kBuiltInPostEffectComponents)
+            {
+                var component = cameraToCapture.GetComponent(componentType) as Behaviour;
+                if (component == null)
+                {
+                    continue;
+                }
+                previousStates.Add(new KeyValuePair<Behaviour, bool>(component, component.enabled));
+                component.enabled = enabled;
+            }
+            return previousStates;
+        }
+
+        private static void RestoreBuiltInPostEffects(
+            IEnumerable<KeyValuePair<Behaviour, bool>> previousStates)
+        {
+            foreach (var previousState in previousStates)
+            {
+                if (previousState.Key != null)
+                {
+                    previousState.Key.enabled = previousState.Value;
+                }
+            }
+        }
+
+        private static void SetKeyword(string keyword, bool enabled)
+        {
+            if (enabled)
+            {
+                Shader.EnableKeyword(keyword);
+            }
+            else
+            {
+                Shader.DisableKeyword(keyword);
+            }
+        }
+
+        static void SaveCurrentView(
+            Camera cameraToCapture,
+            string fileName,
+            int resWidth,
+            int resHeight,
+            bool? enablePostProcessing = null,
+            bool renderWireframe = false)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
@@ -258,12 +478,26 @@ namespace TiltBrush
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
             bool previousAllowMsaa = cameraToCapture.allowMSAA;
+            bool previousHdrSimple = Shader.IsKeywordEnabled("HDR_SIMPLE");
+            bool previousHdrEmulated = Shader.IsKeywordEnabled("HDR_EMULATED");
+            List<KeyValuePair<Behaviour, bool>> previousPostEffectStates = null;
             try
             {
+                if (enablePostProcessing.HasValue)
+                {
+                    previousPostEffectStates = SetBuiltInPostEffectsEnabled(
+                        cameraToCapture, enablePostProcessing.Value);
+                    if (!enablePostProcessing.Value)
+                    {
+                        Shader.DisableKeyword("HDR_SIMPLE");
+                        Shader.DisableKeyword("HDR_EMULATED");
+                    }
+                }
+
                 cameraToCapture.allowMSAA = true;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
-                cameraToCapture.Render();
+                RenderScreenshotCamera(cameraToCapture, renderWidth, renderHeight, renderWireframe);
                 Graphics.Blit(rt, downsampledRt);
                 RenderTexture.active = downsampledRt;
                 screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
@@ -279,6 +513,12 @@ namespace TiltBrush
             {
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
+                if (previousPostEffectStates != null)
+                {
+                    RestoreBuiltInPostEffects(previousPostEffectStates);
+                }
+                SetKeyword("HDR_SIMPLE", previousHdrSimple);
+                SetKeyword("HDR_EMULATED", previousHdrEmulated);
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {
@@ -286,6 +526,30 @@ namespace TiltBrush
                 }
                 Destroy(rt);
                 Destroy(downsampledRt);
+            }
+        }
+
+        private static void RenderScreenshotCamera(
+            Camera cameraToCapture,
+            int renderWidth,
+            int renderHeight,
+            bool renderWireframe)
+        {
+            if (!renderWireframe)
+            {
+                cameraToCapture.Render();
+                return;
+            }
+
+            bool previousWireframe = GL.wireframe;
+            try
+            {
+                GL.wireframe = true;
+                cameraToCapture.Render();
+            }
+            finally
+            {
+                GL.wireframe = previousWireframe;
             }
         }
     }

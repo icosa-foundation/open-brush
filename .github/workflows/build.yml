@@ -67,7 +67,7 @@ jobs:
         id: version
         env:
           # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
-          # If Google Play blocks automatic completion, set GOOGLE_PLAY_PRERELEASE_STATUS to "draft".
+          # Default prerelease uploads to completed internal-track releases so testers receive them.
           GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
           GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
