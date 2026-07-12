@@ -44,6 +44,7 @@ namespace TiltBrush
         {
             ModifyStroke(m_InitialStroke, m_SnippedCP1); // Uncreate/Recreate automatically manages snap hash
             ModifyStroke(m_NewStroke, m_SnippedCP2); // Uncreate/Recreate automatically manages snap hash
+            m_NewStroke.Hide(false);
         }
 
         protected override void OnUndo()
