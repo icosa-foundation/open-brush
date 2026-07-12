@@ -77,7 +77,7 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public void HandleLabelEdited(EditableLabel label)
     {
-        var newTr = TrTransform.identity;
+        var newTr = ParentPanel.CurrentSelectionTr;
 
         if (float.TryParse(label.LastTextInput, out float value))
         {
@@ -94,13 +94,19 @@ public class InspectorTransformTab : InspectorBaseTab
                     newTr.translation.z = value;
                     break;
                 case "RX":
-                    newTr.rotation.eulerAngles = new Vector3(value, 0, 0);
+                    var rotationX = newTr.rotation.eulerAngles;
+                    rotationX.x = value;
+                    newTr.rotation = Quaternion.Euler(rotationX);
                     break;
                 case "RY":
-                    newTr.rotation.eulerAngles = new Vector3(0, value, 0);
+                    var rotationY = newTr.rotation.eulerAngles;
+                    rotationY.y = value;
+                    newTr.rotation = Quaternion.Euler(rotationY);
                     break;
                 case "RZ":
-                    newTr.rotation.eulerAngles = new Vector3(0, 0, value);
+                    var rotationZ = newTr.rotation.eulerAngles;
+                    rotationZ.z = value;
+                    newTr.rotation = Quaternion.Euler(rotationZ);
                     break;
                 case "SX":
                     newTr.scale = value;
