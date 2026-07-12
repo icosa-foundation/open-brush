@@ -732,6 +732,8 @@ namespace TiltBrush
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
         private Dictionary<IcosaSetType, CollectionSet> m_CollectionSetByType;
+        private AssetSet m_CollectionAssetSet;
+        private string m_SelectedCollectionId;
         private bool m_NotifyListeners;
 
         // LRU bookkeeping for the in-memory model cache. Entries exist only while a model is loaded
@@ -851,6 +853,7 @@ namespace TiltBrush
 
             m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>();
             m_CollectionSetByType = new Dictionary<IcosaSetType, CollectionSet>();
+            m_CollectionAssetSet = new AssetSet();
             // InitCatalogQueries();
 
             App.Instance.AppExit += () =>
@@ -1227,6 +1230,35 @@ namespace TiltBrush
                 {
                     set.m_CooldownTimer -= Time.deltaTime;
                 }
+            }
+
+            if (m_CollectionAssetSet.m_FetchMetadataCoroutine != null)
+            {
+                try
+                {
+                    if (!m_CollectionAssetSet.m_FetchMetadataCoroutine.MoveNext())
+                    {
+                        m_CollectionAssetSet.m_FetchMetadataCoroutine = null;
+                    }
+                }
+                catch (VrAssetServiceException e)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                    Debug.LogException(e);
+                    m_CollectionAssetSet.m_FetchMetadataCoroutine = null;
+                }
+            }
+            else if (m_CollectionAssetSet.m_RefreshRequested &&
+                m_CollectionAssetSet.m_CooldownTimer <= 0)
+            {
+                m_CollectionAssetSet.m_FetchMetadataCoroutine = RefreshCollectionAssets();
+                m_CollectionAssetSet.m_RefreshRequested = false;
+                m_CollectionAssetSet.m_CooldownTimer =
+                    VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+            }
+            if (m_CollectionAssetSet.m_CooldownTimer >= 0)
+            {
+                m_CollectionAssetSet.m_CooldownTimer -= Time.deltaTime;
             }
 
             // Also pump collection coroutines
@@ -1827,6 +1859,50 @@ namespace TiltBrush
             }
         }
 
+        private IEnumerator<Null> RefreshCollectionAssets()
+        {
+            List<AssetDetails> models = new List<AssetDetails>();
+            m_CollectionAssetSet.m_Models = models;
+            AssetLister lister = VrAssetService.m_Instance.ListCollectionAssets(
+                m_SelectedCollectionId, m_CollectionAssetSet.QueryParams);
+            bool firstPass = true;
+            while (lister.HasMore || firstPass)
+            {
+                firstPass = false;
+                using (var cr = lister.NextPage(models, m_ThumbnailSuffix, false))
+                {
+                    int prevCount = models.Count;
+                    while (true)
+                    {
+                        try
+                        {
+                            if (!cr.MoveNext())
+                            {
+                                break;
+                            }
+                        }
+                        catch (VrAssetServiceException e)
+                        {
+                            ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                            Debug.LogException(e);
+                            yield break;
+                        }
+                        if (models.Count - prevCount > 5)
+                        {
+                            CatalogChanged?.Invoke();
+                            prevCount = models.Count;
+                        }
+                        yield return cr.Current;
+                    }
+                }
+                if (models.Count == 0)
+                {
+                    break;
+                }
+            }
+            CatalogChanged?.Invoke();
+        }
+
         void RefreshFetchCoroutines()
         {
             if (App.IcosaIsLoggedIn)
@@ -1887,6 +1963,47 @@ namespace TiltBrush
         {
             EnsureCatalogsExist();
             return m_AssetSetByType[type].m_Models.Count();
+        }
+
+        public void SelectCollection(string collectionId, IcosaSetType queryType)
+        {
+            EnsureCatalogsExist();
+            if (m_SelectedCollectionId == collectionId)
+            {
+                return;
+            }
+            if (m_CollectionAssetSet.m_FetchMetadataCoroutine != null)
+            {
+                StopCoroutine(m_CollectionAssetSet.m_FetchMetadataCoroutine);
+            }
+            m_SelectedCollectionId = collectionId;
+            m_CollectionAssetSet = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = m_AssetSetByType[queryType].QueryParams
+            };
+        }
+
+        public void ClearSelectedCollection()
+        {
+            EnsureCatalogsExist();
+            if (m_CollectionAssetSet.m_FetchMetadataCoroutine != null)
+            {
+                StopCoroutine(m_CollectionAssetSet.m_FetchMetadataCoroutine);
+            }
+            m_SelectedCollectionId = null;
+            m_CollectionAssetSet = new AssetSet();
+        }
+
+        public int NumCollectionAssets()
+        {
+            EnsureCatalogsExist();
+            return m_CollectionAssetSet.m_Models.Count;
+        }
+
+        public AssetDetails GetCollectionAsset(int index)
+        {
+            return m_CollectionAssetSet.m_Models[index];
         }
 
         public AssetDetails GetIcosaAsset(IcosaSetType type, int index)

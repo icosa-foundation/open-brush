@@ -144,7 +144,11 @@ namespace TiltBrush
 
         public void RefreshCurrentSet(bool forced)
         {
-            if (forced)
+            if (m_CurrentCollectionId != null)
+            {
+                App.IcosaAssetCatalog.SelectCollection(m_CurrentCollectionId, m_CurrentSet);
+            }
+            else if (forced)
             {
                 App.IcosaAssetCatalog.RequestForcedRefresh(m_CurrentSet);
             }
@@ -199,6 +203,10 @@ namespace TiltBrush
             if (InCollectionsMode)
             {
                 numItems = App.IcosaAssetCatalog.NumCollections(m_CurrentSet);
+            }
+            else if (m_CurrentCollectionId != null)
+            {
+                numItems = App.IcosaAssetCatalog.NumCollectionAssets();
             }
             else
             {
@@ -256,8 +264,9 @@ namespace TiltBrush
                     else
                     {
                         // Display asset
-                        IcosaAssetCatalog.AssetDetails asset =
-                            App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
+                        IcosaAssetCatalog.AssetDetails asset = m_CurrentCollectionId != null
+                            ? App.IcosaAssetCatalog.GetCollectionAsset(iMapIndex)
+                            : App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
                         visibleAssetIds.Add(asset.AssetId);
 
                         if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
@@ -518,7 +527,7 @@ namespace TiltBrush
             m_BrowseMode = m_BrowseMode == IcosaBrowseMode.Standard
                 ? IcosaBrowseMode.Collections
                 : IcosaBrowseMode.Standard;
-            m_CurrentCollectionId = null; // Clear collection filter when toggling
+            ClearCollectionSelection();
             ResetPageIndex();
             RefreshCurrentSet(false);
         }
@@ -529,7 +538,7 @@ namespace TiltBrush
             if (m_BrowseMode != IcosaBrowseMode.Collections)
             {
                 m_BrowseMode = IcosaBrowseMode.Collections;
-                m_CurrentCollectionId = null;
+                ClearCollectionSelection();
                 ResetPageIndex();
                 RefreshCurrentSet(false);
             }
@@ -541,7 +550,7 @@ namespace TiltBrush
             if (m_BrowseMode != IcosaBrowseMode.Standard)
             {
                 m_BrowseMode = IcosaBrowseMode.Standard;
-                m_CurrentCollectionId = null;
+                ClearCollectionSelection();
                 ResetPageIndex();
                 RefreshCurrentSet(false);
             }
@@ -552,8 +561,9 @@ namespace TiltBrush
         {
             m_CurrentCollectionId = collectionId;
             m_BrowseMode = IcosaBrowseMode.Standard;
+            App.IcosaAssetCatalog.SelectCollection(collectionId, m_CurrentSet);
             ResetPageIndex();
-            RefreshCurrentSet(false);
+            RefreshPage();
         }
 
         // Clear collection filter and return to normal browse mode
@@ -561,10 +571,16 @@ namespace TiltBrush
         {
             if (m_CurrentCollectionId != null)
             {
-                m_CurrentCollectionId = null;
+                ClearCollectionSelection();
                 ResetPageIndex();
                 RefreshCurrentSet(false);
             }
+        }
+
+        private void ClearCollectionSelection()
+        {
+            m_CurrentCollectionId = null;
+            App.IcosaAssetCatalog.ClearSelectedCollection();
         }
     }
 } // namespace TiltBrush

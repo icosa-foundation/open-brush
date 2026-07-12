@@ -117,7 +117,7 @@ namespace TiltBrush
             m_LoadingOverlay.SetActive(false);
 
             // Set the button index and clear any loaded model
-            m_IndexInPagedList = index;
+            m_ModelIndex = index;
             SetDescriptionText(collection.Name);
             SetButtonTexture(collection.Thumbnail);
             DestroyModelPreview();
@@ -143,7 +143,7 @@ namespace TiltBrush
             if (m_IsCollection)
             {
                 // When a collection is clicked, drill into it
-                IcosaPanel panel = m_Manager as IcosaPanel;
+                IcosaPanel panel = m_Manager.GetComponent<IcosaPanel>();
                 if (panel != null && m_IcosaCollection != null)
                 {
                     panel.ViewCollection(m_IcosaCollection.CollectionId);
