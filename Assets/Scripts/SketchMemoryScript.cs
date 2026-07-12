@@ -641,6 +641,10 @@ namespace TiltBrush
                 new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
 
             MemoryListAdd(rNewStroke);
+            if ((rNewStroke.m_Flags & StrokeFlags.CreatedWithStraightEdge) != 0)
+            {
+                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(rNewStroke);
+            }
 
             TiltMeterScript.m_Instance.AdjustMeter(rNewStroke, up: true);
         }
