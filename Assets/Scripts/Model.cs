@@ -1014,6 +1014,8 @@ namespace TiltBrush
                 else if (ext == ".obj" && (editable || nofbx))
                 {
                     go = LoadObj(warnings, editable);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
 #if FBX_SUPPORTED
                 // Allow users to force the old OBJ loader.
