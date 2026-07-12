@@ -1011,7 +1011,7 @@ namespace TiltBrush
                     Task t = LoadGltf(warnings);
                     await t;
                 }
-                else if (editable && ext == ".obj" || nofbx)
+                else if (ext == ".obj" && (editable || nofbx))
                 {
                     go = LoadObj(warnings, editable);
                 }
