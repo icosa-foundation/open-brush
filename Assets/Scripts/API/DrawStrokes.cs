@@ -23,7 +23,7 @@ namespace TiltBrush
 {
     public static class DrawStrokes
     {
-        public static void DrawNestedTrList(
+        public static List<Stroke> DrawNestedTrList(
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             List<Color> colors = null,
@@ -33,6 +33,7 @@ namespace TiltBrush
             uint group = GroupManager.kIdSketchGroupTagNone)
         {
             var paths = pathEnumerable.ToList();
+            var strokes = new List<Stroke>();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
             int pathIndex = 0;
@@ -120,8 +121,10 @@ namespace TiltBrush
                     // No active undo. So actually perform the command
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
+                strokes.Add(stroke);
                 pathIndex++;
             }
+            return strokes;
         }
 
         public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)

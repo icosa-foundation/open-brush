@@ -785,6 +785,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         IEnumerator GetRequest(string uri)
         {
+#if  UNITY_EDITOR
+            Debug.Log($"GetRequest: {uri}");
+#endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
                 yield return webRequest.SendWebRequest();

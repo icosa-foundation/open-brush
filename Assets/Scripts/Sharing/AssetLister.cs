@@ -73,9 +73,17 @@ namespace TiltBrush
                 foreach (var asset in assets)
                 {
                     var info = new IcosaSceneFileInfo(asset);
-                    info.Author = asset["authorName"].ToString();
+                    if (!info.Valid)
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Skipping invalid Icosa sketch asset {asset?["assetId"]}");
+                        continue;
+                    }
+                    info.Author = asset["authorName"]?.ToString();
                     files.Add(info);
-                    App.IcosaAssetCatalog.SetJsonForAsset(asset["assetId"].ToString(), (JObject)asset);
+                    if (asset is JObject assetObject)
+                    {
+                        App.IcosaAssetCatalog.SetJsonForAsset(info.AssetId, assetObject);
+                    }
                 }
             }
             m_PageToken = json["nextPageToken"]?.ToString();

@@ -27,6 +27,8 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
+        private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
@@ -41,6 +43,8 @@ namespace TiltBrush
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
             m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -198,12 +202,11 @@ namespace TiltBrush
                         Debug.LogError($"No mesh found for brush {brush.name}");
                         continue;
                     }
-#if UNITY_EDITOR
-                    batch.m_EditorDebugMesh = mf.sharedMesh;
-#endif
+                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
                         mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
                     }
@@ -302,9 +305,17 @@ namespace TiltBrush
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
                     var mf = batch.gameObject.GetComponent<MeshFilter>();
-                    mf.sharedMesh = batch.m_EditorDebugMesh;
-                    batch.m_EditorDebugMesh = null;
+                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
+                    {
+                        mf.sharedMesh = originalMesh;
+                    }
                 }
+
+                foreach (var mesh in m_TemporaryBatchMeshes)
+                {
+                    SafeDestroy(mesh);
+                }
+                m_TemporaryBatchMeshes.Clear();
             }
         }
 
@@ -657,6 +668,8 @@ namespace TiltBrush
             gltfRoot.Extras = extras;
 
             Object.Destroy(m_ThumbnailCamera);
+            m_OriginalBatchMeshes?.Clear();
+            m_TemporaryBatchMeshes?.Clear();
         }
 
         private static void SafeDestroy(Object o)

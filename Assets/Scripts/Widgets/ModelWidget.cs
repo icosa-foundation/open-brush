@@ -433,14 +433,19 @@ namespace TiltBrush
             string subpathToTraverse;
             if (!string.IsNullOrEmpty(previousSubtree))
             {
-                // example case:
-                //      previousSubtree = CarBody/Floor
-                //      m_Subtree = CarBody/Floor/Wheel1
-                //      subpathToTraverse should be Floor/Wheel1
-
-                string lastLevel = previousSubtree.Split("/")[^1]; // Floor
-                int startIndex = previousSubtree.Length - (lastLevel.Length + "/".Length);
-                subpathToTraverse = subtree.Substring(startIndex);
+                // Example case:
+                //      previousSubtree = "/CarBody/Floor"
+                //      subtree = "/CarBody/Floor/Wheel1"
+                //      subpathToTraverse should be "Wheel1"
+                //
+                // Saved subtree paths may also include the imported root node, e.g.
+                // "/ImportedObjRoot[ob:0]/group688506095[ob:45]". Normalize leading
+                // slashes here so prefix matching works with both saved and runtime paths.
+                string normalizedPrevious = previousSubtree.Trim('/');
+                string normalizedSubtree = subtree.Trim('/');
+                subpathToTraverse = normalizedSubtree.StartsWith($"{normalizedPrevious}/")
+                    ? normalizedSubtree.Substring(normalizedPrevious.Length + 1)
+                    : normalizedSubtree;
             }
             else
             {
@@ -462,8 +467,11 @@ namespace TiltBrush
             }
             else
             {
-                // - node will be null if not found
-                node = node.Find(subpathToTraverse);
+                if (subpathToTraverse.StartsWith($"{node.name}/"))
+                {
+                    subpathToTraverse = subpathToTraverse.Substring(node.name.Length + 1);
+                }
+                node = string.IsNullOrEmpty(subpathToTraverse) ? node : node.Find(subpathToTraverse);
             }
             return (node, excludeChildren);
         }
@@ -834,7 +842,7 @@ namespace TiltBrush
             }
             else if (modelDatas.AssetId != null)
             {
-                CreateModelsFromAssetId(
+                ok = await CreateModelsFromAssetId(
                     modelDatas.AssetId,
                     modelDatas.Subtrees,
                     modelDatas.RawTransforms,
@@ -845,7 +853,6 @@ namespace TiltBrush
                     modelDatas.NotSplittableMeshPaths,
                     modelDatas.FrameIds
                 );
-                ok = true;
             }
             else
             {
@@ -957,7 +964,7 @@ namespace TiltBrush
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
-        static void CreateModelsFromAssetId(
+        static async Task<bool> CreateModelsFromAssetId(
             string assetId, string[] subtrees,
             TrTransform[] rawXfs,
             bool[] pinStates,
@@ -975,25 +982,42 @@ namespace TiltBrush
                 // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
             }
-            if (!model.m_Valid)
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
+            // Set this before loading so mesh splits are available when the prefab is built.
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+
+            if (!model.m_Valid && model.GetLocation().AbsolutePath != null)
+            {
+                Task t = model.LoadModelAsync();
+                await t;
+            }
+            else if (!model.m_Valid)
             {
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
 
-            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
-            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
-            model.InitMeshSplits();
+            if (model.m_Valid)
+            {
+                model.InitMeshSplits();
+            }
+
+            if (rawXfs == null)
+            {
+                return false;
+            }
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
             {
-                bool pin = (i < pinStates.Length) ? pinStates[i] : true;
+                bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
                 int frameId = (frameIds != null && i < frameIds.Length) ? frameIds[i] : 0;
-                CreateModel(model, subtrees?[i], rawXfs[i], pin, isNonRawTransform: false,
+                string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
+                CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
                     groupId, layerId, frameId, assetId);
             }
+            return true;
         }
 
         override public bool HasGPUIntersectionObject()
