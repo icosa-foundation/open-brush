@@ -503,10 +503,12 @@ namespace TiltBrush
                 get
                 {
                     var parts = new List<string>();
-                    string orderingLabel = OrderBy.ToLowerInvariant();
-                    orderingLabel = orderingLabel.Replace("_", " ");
-                    orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
-                    if (!string.IsNullOrEmpty(OrderBy)) parts.Add($"{orderingLabel} first");
+                    if (!string.IsNullOrEmpty(OrderBy))
+                    {
+                        string orderingLabel = OrderBy.ToLowerInvariant().Replace("_", " ");
+                        orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
+                        parts.Add($"{orderingLabel} first");
+                    }
                     if (!string.IsNullOrEmpty(SearchText)) parts.Add($"Title contains \"{SearchText.ToLowerInvariant()}\"");
                     if (!string.IsNullOrEmpty(License)) parts.Add($"{License.ToLowerInvariant()}");
                     if (!string.IsNullOrEmpty(Category)) parts.Add($"Category is {Category.ToLowerInvariant()}");
