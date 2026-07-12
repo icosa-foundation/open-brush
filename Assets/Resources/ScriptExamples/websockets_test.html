@@ -53,16 +53,6 @@
         sendCommands([command]);
     }
 
-    var socket = new WebSocket("ws://127.0.0.1:40075/api/v1");
-    socket.onopen = function(e) {log("[open]");};
-    socket.onmessage = function(event) {log(`[message] Data received from server: ${event.data}`);};
-    socket.onerror = function(error) {log(`[error]`);};
-
-    socket.onclose = function(event) {
-        if (event.wasClean) {log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);}
-        else {log('[close] Connection died');}
-    };
-
     function sendCommands(commands) {
         log(commands.join('\n'));
         socket.send(commands.join('&'));
