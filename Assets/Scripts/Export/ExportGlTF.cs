@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -178,11 +179,11 @@ namespace TiltBrush
 
         static string CommaFormattedFloatRGB(Color c)
         {
-            return string.Format("{0}, {1}, {2}", c.r, c.g, c.b);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.r, c.g, c.b);
         }
         static string CommaFormattedVector3(Vector3 v)
         {
-            return string.Format("{0}, {1}, {2}", v.x, v.y, v.z);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", v.x, v.y, v.z);
         }
 
         // Populates glTF metadata and scene extras fields.
@@ -206,14 +207,14 @@ namespace TiltBrush
 
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
-            exporter.G.extras["TB_Environment"] = payload.env.description;
+            exporter.G.extras["TB_Environment"] = payload.env.description; // This is localized so should be just for display
             exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
             exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
             exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
             exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
-            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString(CultureInfo.InvariantCulture);
 
             exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
             exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
@@ -225,7 +226,7 @@ namespace TiltBrush
 
             exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(exportFromUnity * pose.translation);
             exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(UnityRotToGltfEuler(pose.rotation));
-            exporter.G.extras["TB_PoseScale"] = pose.scale;
+            exporter.G.extras["TB_PoseScale"] = pose.scale.ToString(CultureInfo.InvariantCulture);
 
             exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
