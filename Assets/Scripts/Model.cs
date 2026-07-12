@@ -1052,6 +1052,8 @@ namespace TiltBrush
                 else if (ext == ".off")
                 {
                     go = LoadOff(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (ext == ".svg")
                 {
