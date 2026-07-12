@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Polyhydra.Core;
 using UnityEngine;
 using TiltBrush.MeshEditing;
@@ -105,7 +106,7 @@ namespace TiltBrush
         }
 
         // TODO reduce code duplication with CreateModelFromSaveData
-        public static void CreateEditableModelFromSaveData(TiltEditableModels modelDatas)
+        public static async Task CreateEditableModelFromSaveData(TiltEditableModels modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -113,11 +114,10 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-                var task = CreateModelsFromRelativePath(
+                ok = await CreateModelsFromRelativePath(
                     modelDatas.FilePath, null,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
                     modelDatas.GroupIds, modelDatas.LayerIds, null, null);
-                ok = task.IsCompletedSuccessfully;
             }
             else if (modelDatas.AssetId != null)
             {

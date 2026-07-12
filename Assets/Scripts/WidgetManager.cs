@@ -1624,7 +1624,15 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingEditableTiltModels.Length; i++)
                 {
-                    EditableModelWidget.CreateEditableModelFromSaveData(m_loadingEditableTiltModels[i]);
+                    Task createTask = EditableModelWidget.CreateEditableModelFromSaveData(
+                        m_loadingEditableTiltModels[i]);
+                    using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
+                    {
+                        while (createCoroutine.MoveNext())
+                        {
+                            yield return null;
+                        }
+                    }
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingEditableTiltModels.Length, true);
                 }
