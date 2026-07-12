@@ -363,6 +363,13 @@ namespace TiltBrush
         // TODO: Possibly could optimize this in C++ for 11.5% of time in selection.
         private void LeftTransformControlPoints(TrTransform leftTransform, bool absoluteScale = false)
         {
+            bool updateSnapHash =
+                (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0;
+            if (updateSnapHash)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
+
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
                 var point = m_ControlPoints[i];
@@ -377,10 +384,9 @@ namespace TiltBrush
                 ? Mathf.Abs(leftTransform.scale)
                 : leftTransform.scale;
 
-            // Update snap hash if this is a straight edge stroke
-            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            if (updateSnapHash)
             {
-                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(this);
+                RefreshSnapHash();
             }
 
             InvalidateCopy();
@@ -388,6 +394,13 @@ namespace TiltBrush
 
         private void LeftTransformControlPoints(Matrix4x4 leftTransform)
         {
+            bool updateSnapHash =
+                (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0;
+            if (updateSnapHash)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
+
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
                 var point = m_ControlPoints[i];
@@ -398,10 +411,9 @@ namespace TiltBrush
 
             m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
 
-            // Update snap hash if this is a straight edge stroke
-            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0)
+            if (updateSnapHash)
             {
-                StraightEdgeGuideScript.m_Instance?.UpdateStrokeInHash(this);
+                RefreshSnapHash();
             }
 
             InvalidateCopy();
