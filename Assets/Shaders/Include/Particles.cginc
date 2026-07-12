@@ -153,7 +153,7 @@ float _ParticleUnpackTime(inout float time) {
   float sizeAdjust;
   if (time < 0) {
     time = -time;
-    float life01 = clamp((_Time.y - time) / _GeniusParticlePreviewLifetime, 0, 1);
+    float life01 = clamp((GetTime().y - time) / _GeniusParticlePreviewLifetime, 0, 1);
     sizeAdjust = 1 - (life01 * life01);
   } else {
     sizeAdjust = 1;
@@ -183,7 +183,7 @@ float GetParticleHalfSize(float3 corner, float3 center, float birthTime) {
 //
 float SpreadProgress(float birthTime, float spreadRate) {
 // NOTOOLKIT {
-  float age = max(0, abs(_Time.y) - abs(birthTime));
+  float age = max(0, abs(GetTime().y) - abs(birthTime));
   return 1 - exp(-spreadRate * age);
 // } NOTOOLKIT
 // TOOLKIT:   return 1;

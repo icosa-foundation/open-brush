@@ -65,6 +65,7 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        float2 st : TEXCOORD1;
         uint id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
@@ -92,6 +93,14 @@ Category {
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = v.color;
+
+        // start transforming the uv
+        o.st = o.texcoord;
+
+        // fix aspect ratio and scale it up so we can make a grid
+        o.st.x *= 5;
+        o.st *= BRUSHES_DIGITAL_ROWS;
+
         o.id = (float2)v.id;
         return o;
       }
@@ -109,7 +118,7 @@ Category {
         float stroke_width = .1;
         float antialias_feather_px = 4;
 
-        float2 st = i.texcoord;
+        float2 st = i.st;
 
         // used for antialiasing
         float2 st_per_px = fwidth(st);
@@ -120,7 +129,7 @@ Category {
 
         // get the tile coordinates
         // map tile_st.y to [-1, 1]
-        float tile_st = frac(st);
+        float2 tile_st = frac(st);
         tile_st -= .5;
         tile_st *= 2;
 
@@ -183,10 +192,10 @@ Category {
 
             float2 aa_feather = st_per_px * antialias_feather_px;
             float current_lum =
-                smoothstep(min_bound.x - aa_feather.x, min_bound.x, st.x) *
-                smoothstep(max_bound.x + aa_feather.x, max_bound.x, st.x) *
-                smoothstep(min_bound.y - aa_feather.y, min_bound.y, st.y) *
-                smoothstep(max_bound.y + aa_feather.y, max_bound.y, st.y);
+                smoothstep(min_bound.x - aa_feather.x, min_bound.x, tile_st.x) *
+                smoothstep(max_bound.x + aa_feather.x, max_bound.x, tile_st.x) *
+                smoothstep(min_bound.y - aa_feather.y, min_bound.y, tile_st.y) *
+                smoothstep(max_bound.y + aa_feather.y, max_bound.y, tile_st.y);
             lum = max(lum, current_lum);
           }
         }
