@@ -85,6 +85,7 @@ namespace TiltBrush
 
         private void OnSelectionPoseChanged(TrTransform prev, TrTransform current)
         {
+            m_CurrentSelectionTr = current;
             foreach (var tab in AllTabs)
             {
                 tab.OnSelectionPoseChanged();
