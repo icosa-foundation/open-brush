@@ -840,6 +840,16 @@ namespace TiltBrush
                                 var tr = model.RawTransforms[i];
                                 var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
                                 var widget = EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
+                                bool pin = model.PinStates == null || i >= model.PinStates.Length ||
+                                    model.PinStates[i];
+                                if (pin)
+                                {
+                                    widget.PinFromSave();
+                                }
+                                uint groupId = model.GroupIds != null && i < model.GroupIds.Length
+                                    ? model.GroupIds[i]
+                                    : 0;
+                                widget.Group = App.GroupManager.GetGroupFromId(groupId);
                                 if (model.LayerIds != null && i < model.LayerIds.Length)
                                 {
                                     var canvas = App.Scene.GetOrCreateLayer(model.LayerIds[i]);
