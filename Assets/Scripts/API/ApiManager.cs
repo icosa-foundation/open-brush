@@ -775,7 +775,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
 
             string cmd = $"{command.Key}={command.Value}";
-            foreach (var httpListenerUrl in m_OutgoingHttpListeners)
+            foreach (var httpListenerUrl in m_OutgoingHttpListeners ?? Enumerable.Empty<Uri>())
             {
                 string uri = $"{httpListenerUrl}?{cmd}";
                 IEnumerator request;
@@ -794,9 +794,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 StartCoroutine(request);
             }
 
-            foreach (var websocketUrl in m_OutgoingHttpListeners)
+            foreach (var conn in m_OutgoingWebsocketListeners?.Values ?? Enumerable.Empty<WebSocket>())
             {
-                var conn = m_OutgoingWebsocketListeners[websocketUrl];
                 if (conn.State == WebSocketState.Open)
                 {
                     conn.SendText(cmd);
