@@ -542,7 +542,7 @@ namespace TiltBrush
             }
         }
 
-        public void Hide(bool hide)
+        public void Hide(bool hide, bool adjustMeter = true)
         {
             // Update hidden state
             m_IsHidden = hide;
@@ -579,7 +579,10 @@ namespace TiltBrush
             // Synchronize snap hash state based on visibility
             RefreshSnapHash();
 
-            TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
+            if (adjustMeter)
+            {
+                TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
+            }
         }
 
         private void _CheckValidLayerState()
