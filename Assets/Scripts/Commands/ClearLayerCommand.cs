@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -6,18 +6,27 @@ namespace TiltBrush
     public class ClearLayerCommand : BaseCommand
     {
         private CanvasScript m_Layer;
-        private List<BatchPool> batchPool;
+        private BatchSubset[] m_ActiveSubsets;
         private GrabWidget[] m_Widgets;
 
         public ClearLayerCommand(int layerIndex, BaseCommand parent = null) : base(parent)
         {
             m_Layer = App.Scene.GetCanvasByLayerIndex(layerIndex);
-            m_Widgets = m_Layer.GetComponentsInChildren<GrabWidget>();
+            Init();
         }
 
         public ClearLayerCommand(CanvasScript canvas)
         {
             m_Layer = canvas;
+            Init();
+        }
+
+        private void Init()
+        {
+            m_ActiveSubsets = m_Layer.BatchManager.AllBatches()
+                .SelectMany(batch => batch.m_Groups)
+                .Where(subset => subset.m_Active)
+                .ToArray();
             m_Widgets = m_Layer.GetComponentsInChildren<GrabWidget>();
         }
 
@@ -25,13 +34,12 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            var batchManager = m_Layer.BatchManager;
             AudioManager.m_Instance.PlayRedoSound(m_Layer.transform.position);
-            foreach (var batch in batchManager.AllBatches())
+            foreach (var subset in m_ActiveSubsets)
             {
-                foreach (var subset in batch.m_Groups)
+                if (subset.m_ParentBatch != null)
                 {
-                    subset.m_Stroke.Hide(true);
+                    subset.m_ParentBatch.DisableSubset(subset);
                 }
             }
 
@@ -43,13 +51,12 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
-            var batchManager = m_Layer.BatchManager;
             AudioManager.m_Instance.PlayUndoSound(m_Layer.transform.position);
-            foreach (var batch in batchManager.AllBatches())
+            foreach (var subset in m_ActiveSubsets)
             {
-                foreach (var subset in batch.m_Groups)
+                if (subset.m_ParentBatch != null)
                 {
-                    subset.m_Stroke.Hide(false);
+                    subset.m_ParentBatch.EnableSubset(subset);
                 }
             }
 
