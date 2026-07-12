@@ -50,6 +50,7 @@ public class InspectorTransformTab : InspectorBaseTab
         {
             return;
         }
+        SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
         TrTransform tr = ParentPanel.CurrentSelectionTr;
         var translation = tr.MultiplyPoint(SelectionBounds.center);
         var rotation = tr.rotation.eulerAngles;
@@ -61,7 +62,6 @@ public class InspectorTransformTab : InspectorBaseTab
         m_LabelForRotationY.SetValue(FormatValue(rotation.y));
         m_LabelForRotationZ.SetValue(FormatValue(rotation.z));
         m_LabelForScale.SetValue(FormatValue(scale));
-        SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
     }
 
     public override void OnSelectionChanged()
