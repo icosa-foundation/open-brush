@@ -86,6 +86,9 @@ namespace TiltBrush
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
         public bool InCollectionsMode { get { return m_BrowseMode == IcosaBrowseMode.Collections; } }
         public bool InStandardMode { get { return m_BrowseMode == IcosaBrowseMode.Standard; } }
+        private IcosaSetType CurrentCollectionSet => m_CurrentSet == IcosaSetType.AllModels
+            ? IcosaSetType.Featured
+            : m_CurrentSet;
 
         override public void OnWidgetShowAnimComplete()
         {
@@ -202,7 +205,7 @@ namespace TiltBrush
             int numItems;
             if (InCollectionsMode)
             {
-                numItems = App.IcosaAssetCatalog.NumCollections(m_CurrentSet);
+                numItems = App.IcosaAssetCatalog.NumCollections(CurrentCollectionSet);
             }
             else if (m_CurrentCollectionId != null)
             {
@@ -258,7 +261,7 @@ namespace TiltBrush
                     {
                         // Display collection
                         IcosaAssetCatalog.CollectionDetails collection =
-                            App.IcosaAssetCatalog.GetIcosaCollection(m_CurrentSet, iMapIndex);
+                            App.IcosaAssetCatalog.GetIcosaCollection(CurrentCollectionSet, iMapIndex);
                         icon.SetPresetCollection(collection, iMapIndex);
                     }
                     else
