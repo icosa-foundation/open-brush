@@ -15,6 +15,7 @@
 using UnityEngine;
 using UnityEngine.Localization;
 using TMPro;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -23,7 +24,8 @@ namespace TiltBrush
     {
         User,
         Liked,
-        Featured
+        Featured,
+        AllModels
     }
 
     public enum IcosaBrowseMode
@@ -41,6 +43,8 @@ namespace TiltBrush
         public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextFeatured;
         public string PanelTextFeatured { get { return m_PanelTextFeatured.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextAllModels;
+        public string PanelTextAllModels { get { return m_PanelTextAllModels.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
         public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextUserCollections; // User Collections
@@ -57,6 +61,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NotSupportedMessage;
         [SerializeField] private GameObject m_NoPolyConnectionMessage;
+        [SerializeField] private HoverIcon m_FilterInfoIcon;
 
         private IcosaSetType m_CurrentSet;
         public IcosaSetType CurrentSet => m_CurrentSet;
@@ -71,7 +76,12 @@ namespace TiltBrush
         IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
         IcosaBrowseMode m_LastBrowseModeForLoad = IcosaBrowseMode.Standard;
 
+        // Flag to defer RefreshPage to once per frame
+        private bool m_RefreshRequested = false;
+        private Dictionary<IcosaSetType, float> m_CooldownByType = new Dictionary<IcosaSetType, float>();
+
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }
+        public bool ShowingAllModels { get { return m_CurrentSet == IcosaSetType.AllModels; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
         public bool InCollectionsMode { get { return m_BrowseMode == IcosaBrowseMode.Collections; } }
@@ -148,8 +158,19 @@ namespace TiltBrush
 
         void OnIcosaAssetCatalogChanged()
         {
-            RefreshPage();
+            // Rate-limit RefreshPage calls to prevent cascade from rapid CatalogChanged events
+            if (!m_CooldownByType.ContainsKey(m_CurrentSet))
+            {
+                m_CooldownByType[m_CurrentSet] = 0f;
+            }
+
+            if (m_CooldownByType[m_CurrentSet] <= 0f)
+            {
+                RefreshPage();
+                m_CooldownByType[m_CurrentSet] = MIN_REFRESH_INTERVAL;
+            }
         }
+        private const float MIN_REFRESH_INTERVAL = 0.5f; // 500ms between refreshes per set
 
         protected override void RefreshPage()
         {
@@ -185,7 +206,12 @@ namespace TiltBrush
             }
             m_NumPages = ((numItems - 1) / Icons.Count) + 1;
 
-            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet || m_LastBrowseModeForLoad != m_BrowseMode)
+            // [ICOSALOAD] time the whole main-thread RefreshPage body and its sub-phases.
+            var __rpSw = System.Diagnostics.Stopwatch.StartNew();
+            long __unloadMs = 0;
+
+            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet ||
+                m_LastBrowseModeForLoad != m_BrowseMode)
             {
                 // Unload the previous page's models.
 
@@ -195,15 +221,19 @@ namespace TiltBrush
                 m_LastSetTypeForLoad = m_CurrentSet;
                 m_LastBrowseModeForLoad = m_BrowseMode;
 
-                // Destroy previews so only the thumbnail is visible.
+                var __unloadSw = System.Diagnostics.Stopwatch.StartNew();
+                // Destroy the on-button preview instances so only the thumbnail is visible. This does
+                // NOT unload the underlying Model geometry - those stay cached in IcosaAssetCatalog
+                // (subject to its memory budget) so returning to this page/tab doesn't re-import them.
                 for (int i = 0; i < Icons.Count; i++)
                 {
                     ((ModelButton)Icons[i]).DestroyModelPreview();
                 }
-
-                App.IcosaAssetCatalog.UnloadUnusedModels();
+                __unloadMs = __unloadSw.ElapsedMilliseconds;
             }
 
+            var __iconLoopSw = System.Diagnostics.Stopwatch.StartNew();
+            var visibleAssetIds = new List<string>();
             for (int i = 0; i < Icons.Count; i++)
             {
                 IcosaModelButton icon = (IcosaModelButton)Icons[i];
@@ -228,6 +258,7 @@ namespace TiltBrush
                         // Display asset
                         IcosaAssetCatalog.AssetDetails asset =
                             App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
+                        visibleAssetIds.Add(asset.AssetId);
 
                         if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
                         {
@@ -237,7 +268,22 @@ namespace TiltBrush
 
                         // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
                         // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
-                        if (App.UserConfig.Flags.IcosaModelPreload)
+                        // The flag allows previews for cached models, plus remote models whose selected
+                        // download format is not backed by the Internet Archive.
+                        // Gating preload also gates the preview, since the preview is built from the
+                        // loaded model.
+                        int maxPreviewTris = App.UserConfig.Flags.IcosaMaxPreviewTriangleCount;
+                        bool tooManyTris = maxPreviewTris > 0 && asset.TriangleCount > maxPreviewTris;
+                        bool measuredOversized = App.IcosaAssetCatalog.IsModelOversized(asset.AssetId);
+                        bool tooComplexToPreview = tooManyTris || measuredOversized;
+                        if (tooComplexToPreview)
+                        {
+                            Debug.Log($"[ICOSALOAD] skip preview/preload {asset.AssetId} " +
+                                $"tris={asset.TriangleCount} (limit={maxPreviewTris}) oversized={measuredOversized}");
+                        }
+                        bool canPreload = App.IcosaAssetCatalog.HasCachedModel(asset.AssetId)
+                            || App.IcosaAssetCatalog.CanAutoDownloadForPreview(asset.AssetId);
+                        if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview && canPreload)
                         {
                             icon.RequestModelPreload(PageIndex);
                         }
@@ -248,12 +294,18 @@ namespace TiltBrush
                     go.SetActive(false);
                 }
             }
+            // Pin the page we're showing so the memory budget can't evict (and thus thrash-reload) it.
+            App.IcosaAssetCatalog.SetVisibleModels(visibleAssetIds);
+
+            long __iconLoopMs = __iconLoopSw.ElapsedMilliseconds;
 
             // Use featured model count as a proxy for "icosa is working"
             bool internetError = App.IcosaAssetCatalog.NumCloudModels(IcosaSetType.Featured) == 0;
             m_InternetError.SetActive(internetError);
 
+            var __panelTextSw = System.Diagnostics.Stopwatch.StartNew();
             RefreshPanelText();
+            long __panelTextMs = __panelTextSw.ElapsedMilliseconds;
             switch (m_CurrentSet)
             {
                 case IcosaSetType.User:
@@ -310,8 +362,29 @@ namespace TiltBrush
                     break;
             }
 
+            __rpSw.Stop();
+            if (__rpSw.ElapsedMilliseconds >= 5)
+            {
+                Debug.Log($"[ICOSALOAD] RefreshPage set={m_CurrentSet} total={__rpSw.ElapsedMilliseconds}ms " +
+                    $"(unload={__unloadMs}ms iconLoop={__iconLoopMs}ms panelText={__panelTextMs}ms)");
+            }
+
+
+            m_FilterInfoIcon.SetDescriptionText($"Filtering {CurrentSetFriendlyName} by:");
+            m_FilterInfoIcon.SetExtraDescriptionText(CurrentQuery.FriendlyString);
+
             base.RefreshPage();
         }
+
+        public string CurrentSetFriendlyName => m_CurrentSet switch
+        {
+            IcosaSetType.User => "Your Models",
+            IcosaSetType.Liked => "Liked Models",
+            IcosaSetType.Featured => "Featured Models",
+            IcosaSetType.AllModels => "All Models",
+            _ => "Models"
+        };
+
 
         void RefreshPanelText()
         {
@@ -336,6 +409,11 @@ namespace TiltBrush
                         m_PanelTextSubtitle.gameObject.SetActive(true);
                         m_PanelTextUserSubtitle.gameObject.SetActive(false);
                         break;
+                    case IcosaSetType.AllModels:
+                        m_PanelText.text = PanelTextFeaturedCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
                 }
             }
             else
@@ -350,7 +428,12 @@ namespace TiltBrush
                         break;
                     case IcosaSetType.Featured:
                         m_PanelText.text = PanelTextFeatured;
-                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.AllModels:
+                        m_PanelText.text = PanelTextAllModels;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
                         m_PanelTextUserSubtitle.gameObject.SetActive(false);
                         break;
                     case IcosaSetType.Liked:
@@ -365,6 +448,16 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
+
+            // Decrement all cooldowns
+            var keys = new List<IcosaSetType>(m_CooldownByType.Keys);
+            foreach (var key in keys)
+            {
+                if (m_CooldownByType[key] > 0f)
+                {
+                    m_CooldownByType[key] -= UnityEngine.Time.deltaTime;
+                }
+            }
 
             // Update share button's text.
             bool loggedIn = App.IcosaIsLoggedIn;

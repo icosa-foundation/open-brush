@@ -193,7 +193,9 @@ namespace TiltBrush
             // Supports non-uniform scaling
             for (var i = 0; i < _Path.Count; i++)
             {
-                _Path[i].translation.Scale(scale);
+                var t = _Path[i];
+                t.translation = Vector3.Scale(t.translation, scale);
+                _Path[i] = t;
             }
         }
 
@@ -296,6 +298,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         public static (Vector3 center, float scale) _CalculateCenterAndScale(List<TrTransform> path)
         {
+            if (path == null || path.Count == 0) return (Vector3.zero, 1);
             // Find the min and max values for each axis
             float minX = path.Min(v => v.translation.x);
             float minY = path.Min(v => v.translation.y);
