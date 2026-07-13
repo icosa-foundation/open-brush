@@ -38,7 +38,12 @@ namespace TiltBrush
 
         protected override void OnDisplay()
         {
-            AdminPanel adminPanel = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
+            if (!TryGetPromoAdminPanel(out AdminPanel adminPanel))
+            {
+                m_Request = RequestingState.ToHide;
+                return;
+            }
+
             adminPanel.ActivatePromoBorder(true);
             InputManager.m_Instance.TriggerHapticsPulse(InputManager.ControllerName.Wand,
                 4, 0.15f, 0.1f);
@@ -55,25 +60,33 @@ namespace TiltBrush
         protected override void OnHide()
         {
             PromoManager.m_Instance.ButtonHighlight.SetActive(false);
-            PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(false);
+            if (TryGetPromoAdminPanel(out AdminPanel adminPanel))
+            {
+                adminPanel.ActivatePromoBorder(false);
+            }
         }
 
         public override void OnActive()
         {
+            if (!TryGetPromoAdminPanel(out AdminPanel adminPanel))
+            {
+                m_Request = RequestingState.ToHide;
+                return;
+            }
+
             // If we made it to advanced mode, we should be gone.
             if (PanelManager.m_Instance.AdvancedModeActive())
             {
                 m_Request = RequestingState.ToHide;
-                m_CustomHintObject.Activate(false);
+                m_CustomHintObject?.Activate(false);
                 return;
             }
 
             // If we're looking at the admin panel, tick down our dismiss timer.
-            BasePanel adminPanel = PanelManager.m_Instance.GetAdminPanel();
             if (SketchControlsScript.m_Instance.IsUserLookingAtPanel(adminPanel))
             {
                 m_ReadDismissTimer -= Time.deltaTime;
-                m_CustomHintObject.Activate(true);
+                m_CustomHintObject?.Activate(true);
             }
             else
             {
@@ -88,12 +101,17 @@ namespace TiltBrush
                     // time to process the promo, we're going to assume they read it and don't care.
                     m_Request = RequestingState.ToHide;
                 }
-                m_CustomHintObject.Activate(false);
+                m_CustomHintObject?.Activate(false);
             }
         }
 
         public override void OnIdle()
         {
+            if (!TryGetPromoAdminPanel(out AdminPanel _))
+            {
+                return;
+            }
+
             if (!PanelManager.m_Instance.SketchbookActive() && !App.Instance.IsLoading() &&
                 m_TimeBeforeDisplay > 0)
             {
@@ -104,6 +122,12 @@ namespace TiltBrush
                     m_Request = RequestingState.ToDisplay;
                 }
             }
+        }
+
+        private bool TryGetPromoAdminPanel(out AdminPanel adminPanel)
+        {
+            adminPanel = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
+            return adminPanel != null && adminPanel.SupportsAdvancedModePromo;
         }
     }
 } // namespace TiltBrush

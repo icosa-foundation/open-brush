@@ -15,6 +15,8 @@
             </intent-filter>
         </activity>
         <!-- Alias that launches into flat/monoscopic mode without VR -->
+        <!-- TODO Re-enable launch aliases. They will be useful but need a bit more thought and testing -->
+        <!--
         <activity-alias
             android:name=".MonoscopicModeActivity"
             android:targetActivity="com.unity3d.player.UnityPlayerActivity"
@@ -27,8 +29,9 @@
             </intent-filter>
             <meta-data android:name="EnableMonoscopicMode" android:value="true" />
         </activity-alias>
-
+        -->
         <!-- Alias that launches with XR/VR disabled -->
+        <!--
         <activity-alias
             android:name=".DisableXrModeActivity"
             android:targetActivity="com.unity3d.player.UnityPlayerActivity"
@@ -41,14 +44,15 @@
             </intent-filter>
             <meta-data android:name="DisableXrMode" android:value="true" />
         </activity-alias>
+        -->
 
-        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="false" />
-        <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2" />
+        <meta-data android:name="unityplayer.SkipPermissionsDialog" android:value="true" />
+        <meta-data android:name="pvr.app.type" android:value="vr" />
     </application>
 
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-
     <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" tools:node="remove"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
 
 </manifest>

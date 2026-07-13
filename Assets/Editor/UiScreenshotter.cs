@@ -1,4 +1,4 @@
-﻿// Copyright 2023 The Tilt Brush Authors
+// Copyright 2023 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -196,9 +196,13 @@ namespace TiltBrush
                     }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
+                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
+                        ? new List<Color> { Color.white }
+                        : null;
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
-                        TrTransform.T(origin));
+                        TrTransform.T(origin),
+                        colors);
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;

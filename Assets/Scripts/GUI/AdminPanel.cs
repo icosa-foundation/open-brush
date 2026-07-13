@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,10 @@ namespace TiltBrush
         public Transform ShareButton { get { return m_ShareButton.transform; } }
         public Transform AdvancedButton { get { return m_AdvancedModeButton.transform; } }
         public HintObjectScript AdvancedModeHintObject { get { return m_AdvancedModeHintObject; } }
+        public bool SupportsAdvancedModePromo
+        {
+            get { return m_AdvancedModeButton != null && m_AdvancedModeHintObject != null; }
+        }
 
         void UpdateShareButtonText()
         {
@@ -179,6 +183,7 @@ namespace TiltBrush
             // Early out assumes everything after this point doesn't apply in ViewOnly mode
             if (m_PanelType == PanelType.AdminPanelViewOnly)
             {
+                RefreshViewOnlyNavigationToolButtons();
                 return;
             }
 
