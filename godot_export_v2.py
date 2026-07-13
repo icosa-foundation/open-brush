@@ -17,6 +17,7 @@ Uses synthesized brush data including:
 
 Outputs: godot_brush_materials/<brush-name>/<material>.tres
 """
+import argparse
 import json
 import shutil
 from pathlib import Path
@@ -24,7 +25,7 @@ from collections import defaultdict
 
 # Paths
 CANONICAL_DATA = Path("canonical_brushes.json")
-ICOSA_SHADERS_ROOT = Path(r"C:\Users\andyb\Documents\icosa-sketch-assets\brushes")
+ICOSA_SHADERS_ROOT = Path("..") / "icosa-sketch-assets" / "brushes"
 ASSETS_ROOT = Path("Assets")
 OUTPUT_ROOT = Path("godot_brush_materials")
 
@@ -90,15 +91,16 @@ def copy_texture(texture_filename, material_dir):
     # Try icosa-sketch-assets first (these are the export-ready textures)
     # The texture filename contains the brush GUID in it
     # Try to find it in the icosa assets
-    for brush_folder in ICOSA_SHADERS_ROOT.iterdir():
-        if brush_folder.is_dir():
-            texture_path = brush_folder / texture_filename
-            if texture_path.exists():
-                dest_path = material_dir / texture_filename
-                if not dest_path.exists():
-                    shutil.copy2(texture_path, dest_path)
-                    print(f"  Copied texture: {texture_filename}")
-                return texture_filename
+    if ICOSA_SHADERS_ROOT.is_dir():
+        for brush_folder in ICOSA_SHADERS_ROOT.iterdir():
+            if brush_folder.is_dir():
+                texture_path = brush_folder / texture_filename
+                if texture_path.exists():
+                    dest_path = material_dir / texture_filename
+                    if not dest_path.exists():
+                        shutil.copy2(texture_path, dest_path)
+                        print(f"  Copied texture: {texture_filename}")
+                    return texture_filename
 
     # Fallback: search in Unity assets
     search_results = list(ASSETS_ROOT.rglob(texture_filename))
@@ -310,7 +312,25 @@ def generate_material_tres(brush, material_data, output_dir, guid_map):
 
     return output_file
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Generate Godot materials from canonical Open Brush data.")
+    parser.add_argument("--canonical-data", type=Path, default=CANONICAL_DATA)
+    parser.add_argument("--icosa-shaders-root", type=Path, default=ICOSA_SHADERS_ROOT)
+    parser.add_argument("--assets-root", type=Path, default=ASSETS_ROOT)
+    parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
+    return parser.parse_args()
+
+
 def main():
+    global CANONICAL_DATA, ICOSA_SHADERS_ROOT, ASSETS_ROOT, OUTPUT_ROOT
+
+    args = parse_args()
+    CANONICAL_DATA = args.canonical_data
+    ICOSA_SHADERS_ROOT = args.icosa_shaders_root
+    ASSETS_ROOT = args.assets_root
+    OUTPUT_ROOT = args.output_root
+
     print("Loading canonical brush data...")
     canonical = load_canonical_data()
     brushes = canonical["brushes"]

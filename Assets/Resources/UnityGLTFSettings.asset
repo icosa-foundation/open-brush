@@ -140,6 +140,19 @@ MonoBehaviour:
   m_Name: AnimationPointerImport
   m_EditorClassIdentifier: 
   enabled: 1
+--- !u!114 &-1858462456800100957
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd7f01ab8dde8484f8bc70e16938bb08, type: 3}
+  m_Name: OpenBrushMaterialImportPlugin
+  m_EditorClassIdentifier: 
+  enabled: 1
 --- !u!114 &-2128346893230937284
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -267,6 +280,7 @@ MonoBehaviour:
   - {fileID: 6916234453510156686}
   - {fileID: 637454249380963975}
   - {fileID: -7011229683044967540}
+  - {fileID: -1858462456800100957}
   - {fileID: -6114057577546049503}
   - {fileID: -5802376853679533471}
   - {fileID: 7279896035083169860}

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -24,118 +23,45 @@ namespace TiltBrush
         }
     }
 
-    // Data structures for canonical brush data
-    [Serializable]
-    public class CanonicalBrushData
-    {
-        public string guid;
-        public string[] legacyGuids;
-        public string name;
-        public int blendMode;
-        public bool enableCull;
-        public DefaultParams defaultParams;
-        public TextureData textures;
-        public List<UnityMaterialData> unityMaterials;
-    }
-
-    [Serializable]
-    public class DefaultParams
-    {
-        public Dictionary<string, float> floats;
-        public Dictionary<string, float[]> colors;
-    }
-
-    [Serializable]
-    public class TextureData
-    {
-        public Dictionary<string, string> names;
-    }
-
-    [Serializable]
-    public class UnityMaterialData
-    {
-        public string name;
-        public string shaderName;
-        public Dictionary<string, float> floatOverrides;
-        public Dictionary<string, ColorData> colorOverrides;
-        public Dictionary<string, string> textureGuids;
-    }
-
-    [Serializable]
-    public class ColorData
-    {
-        public float r, g, b, a;
-    }
-
-    [Serializable]
-    public class CanonicalBrushDatabase
-    {
-        public Dictionary<string, CanonicalBrushData> brushes;
-    }
-
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
-        private CanonicalBrushDatabase _canonicalBrushData;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
 
+        // Per-export state for additive brush emissive color modulation
+        private GLTFRoot _gltfRoot;
+        // Template additive material → emission gain
+        private Dictionary<GLTFMaterial, float> _additiveBrushGains;
+        // (template material, stroke Color32) → index of per-colour clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
+        // colorKey → cached atlas texture (colorKey = comma-separated sorted RRGGBB hex)
+        private Dictionary<string, Texture2D> _atlasTextureCache;
+        // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
+        private Dictionary<(GLTFMaterial, string), int> _atlasMaterialCache;
+
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            _gltfRoot = gltfRoot;
+            _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
+            _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
+            _atlasTextureCache = new Dictionary<string, Texture2D>();
+            _atlasMaterialCache = new Dictionary<(GLTFMaterial, string), int>();
+            _meshesToBatches = new Dictionary<int, Batch>();
+
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
-            _meshesToBatches = new Dictionary<int, Batch>();
-            LoadCanonicalBrushData();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
-        }
-
-        private void LoadCanonicalBrushData()
-        {
-            try
-            {
-                string canonicalDataPath = Path.Combine(Application.dataPath, "..", "canonical_brushes.json");
-                if (File.Exists(canonicalDataPath))
-                {
-                    string jsonData = File.ReadAllText(canonicalDataPath);
-                    var jsonObject = JObject.Parse(jsonData);
-                    var brushesObj = jsonObject["brushes"] as JObject;
-
-                    if (brushesObj != null)
-                    {
-                        _canonicalBrushData = new CanonicalBrushDatabase
-                        {
-                            brushes = new Dictionary<string, CanonicalBrushData>()
-                        };
-
-                        foreach (var prop in brushesObj.Properties())
-                        {
-                            var brushData = prop.Value.ToObject<CanonicalBrushData>();
-                            _canonicalBrushData.brushes[prop.Name] = brushData;
-                        }
-
-                        Debug.Log($"Loaded canonical brush data: {_canonicalBrushData.brushes.Count} brushes");
-                    }
-                }
-                else
-                {
-                    Debug.LogWarning($"Canonical brush data not found at {canonicalDataPath}");
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Failed to load canonical brush data: {e.Message}");
-                Debug.LogError($"Stack trace: {e.StackTrace}");
-            }
         }
 
         private void GenerateCameraPathsCameras()
@@ -297,6 +223,10 @@ namespace TiltBrush
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
+                        // Swap the per-batch material instance back to the canonical brush material
+                        // so UnityGLTF sees the same Material object reference across all batches
+                        // of the same brush and can deduplicate correctly.
+                        batch.gameObject.GetComponent<Renderer>().sharedMaterial = brush.Material;
                     }
                 }
             }
@@ -332,17 +262,13 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
-            if (!App.UserConfig.Export.KeepStrokes &&
-                App.UserConfig.Export.ExportStrokeMetadata)
+            if (!App.UserConfig.Export.KeepStrokes)
             {
-                // We'll need a way to find the batch for each mesh later
+                // Register all batches so AfterPrimitiveExport can look up stroke data
                 var batch = transform.GetComponent<Batch>();
                 var mf = transform.GetComponent<MeshFilter>();
                 if (batch != null && mf != null)
-                {
-                    var mesh = mf.sharedMesh;
-                    _meshesToBatches[mesh.GetHashCode()] = batch;
-                }
+                    _meshesToBatches[mf.sharedMesh.GetHashCode()] = batch;
             }
         }
 
@@ -388,6 +314,8 @@ namespace TiltBrush
                     {
                         mf.sharedMesh = originalMesh;
                     }
+                    // Restore the per-batch material instance that runtime code depends on.
+                    batch.gameObject.GetComponent<Renderer>().sharedMaterial = batch.InstantiatedMaterial;
                 }
 
                 foreach (var mesh in m_TemporaryBatchMeshes)
@@ -456,46 +384,265 @@ namespace TiltBrush
         public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
         {
             if (!Application.isPlaying) return;
-            if (App.UserConfig.Export.ExportStrokeMetadata)
+
+            if (App.UserConfig.Export.ExportStrokeMetadata && App.UserConfig.Export.KeepStrokes)
             {
-                if (App.UserConfig.Export.KeepStrokes)
+                Batch batch;
+                if (_meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch))
                 {
-                    Batch batch;
-                    var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
-                    if (result)
+                    var batchInfo = new List<Dictionary<string, string>>();
+                    foreach (var subset in batch.m_Groups)
                     {
-                        var batchInfo = new List<Dictionary<string, string>>();
-                        foreach (var subset in batch.m_Groups)
-                        {
-                            var subsetInfo = new Dictionary<string, string>();
-                            subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
-                            subsetInfo["VertLength"] = subset.m_VertLength.ToString();
-                            subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
-                            subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
-                            subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
-                            subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
-                            subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
-                            batchInfo.Add(subsetInfo);
-                        }
-                        var primitiveExtras = new Dictionary<string, List<Dictionary<string, string>>>
-                        {
-                            ["ICOSA_batchInfo"] = batchInfo
-                        };
-                        primitive.Extras = JToken.FromObject(primitiveExtras);
+                        var subsetInfo = new Dictionary<string, string>();
+                        subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
+                        subsetInfo["VertLength"] = subset.m_VertLength.ToString();
+                        subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
+                        subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
+                        subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
+                        subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
+                        subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
+                        batchInfo.Add(subsetInfo);
                     }
+                    primitive.Extras = JToken.FromObject(new Dictionary<string, object>
+                        { ["ICOSA_batchInfo"] = batchInfo });
+                }
+            }
+
+            if (primitive.Material == null || _gltfRoot == null) return;
+            var mat = _gltfRoot.Materials[primitive.Material.Id];
+            if (!_additiveBrushGains.TryGetValue(mat, out float gain)) return;
+
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                // Each primitive is one stroke with uniform vertex colour — use it directly.
+                var colors = mesh.colors32;
+                var strokeColor = colors.Length > 0 ? colors[0] : new Color32(255, 255, 255, 255);
+                int cloneIdx = GetOrCreateColoredAdditiveMaterial(mat, strokeColor, gain, exporter);
+                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
+            }
+            else
+            {
+                // Batch may contain strokes of different colours. Build a 1×N colour atlas and
+                // inject it as TEXCOORD_7 so the emissive texture is sampled per-vertex.
+                if (!_meshesToBatches.TryGetValue(mesh.GetHashCode(), out Batch batchForAtlas)) return;
+                int cloneIdx = GetOrCreateAtlasMaterial(mat, batchForAtlas, mesh, primitive, gain, exporter);
+                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
+            }
+        }
+
+        // KeepStrokes=true: one clone per (material, strokeColor)
+        private int GetOrCreateColoredAdditiveMaterial(GLTFMaterial source, Color32 strokeColor, float gain, GLTFSceneExporter exporter)
+        {
+            var key = (source, strokeColor);
+            if (_colorModulatedMaterials.TryGetValue(key, out int existing)) return existing;
+
+            var clone = CloneGltfMaterial(source);
+            float r = strokeColor.r / 255f;
+            float g = strokeColor.g / 255f;
+            float b = strokeColor.b / 255f;
+            clone.EmissiveFactor = new GLTF.Math.Color(r, g, b, 1f);
+            if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+
+            _gltfRoot.Materials.Add(clone);
+            int idx = _gltfRoot.Materials.Count - 1;
+            _colorModulatedMaterials[key] = idx;
+            return idx;
+        }
+
+        private static string ColorKey(List<Color32> colors)
+        {
+            return string.Join(",", colors.Select(c => $"{c.r:X2}{c.g:X2}{c.b:X2}"));
+        }
+
+        // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
+        private int GetOrCreateAtlasMaterial(GLTFMaterial source, Batch batch, Mesh mesh, MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
+        {
+            // Build colour atlas and per-vertex UV data
+            var subsets = batch.m_Groups;
+            var uniqueColors = subsets.Select(s => (Color32)s.m_Stroke.m_Color).Distinct().ToList();
+            int N = uniqueColors.Count;
+            string colorKey = ColorKey(uniqueColors);
+
+            // Reuse cached material clone if this (source, colorSet) was seen before —
+            // but we still need to inject the per-primitive TEXCOORD accessor below.
+            bool materialCached = _atlasMaterialCache.TryGetValue((source, colorKey), out int cachedIdx);
+
+            // Get or create the atlas texture
+            if (!_atlasTextureCache.TryGetValue(colorKey, out Texture2D atlas))
+            {
+                atlas = new Texture2D(N, 1, TextureFormat.RGBA32, mipChain: false, linear: false);
+                atlas.filterMode = FilterMode.Point;
+                atlas.wrapMode = TextureWrapMode.Clamp;
+                for (int i = 0; i < N; i++) atlas.SetPixel(i, 0, uniqueColors[i]);
+                atlas.Apply();
+                _atlasTextureCache[colorKey] = atlas;
+            }
+
+            // Per-vertex UV: U = texel centre for this stroke's colour, V = 0.5
+            int vertCount = mesh.vertexCount;
+            var uv = new Vector2[vertCount];
+            foreach (var subset in subsets)
+            {
+                int colorIdx = uniqueColors.IndexOf((Color32)subset.m_Stroke.m_Color);
+                float u = (colorIdx + 0.5f) / N;
+                // GLTF UV origin is bottom-left; flip V (0.5 stays 0.5 for a 1-row atlas)
+                int end = Mathf.Min(subset.m_StartVertIndex + subset.m_VertLength, vertCount);
+                for (int v = subset.m_StartVertIndex; v < end; v++)
+                    uv[v] = new Vector2(u, 0.5f);
+            }
+
+            // Build GLTF accessor for the UV data
+            float minX = float.MaxValue, minY = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue;
+            var bytes = new byte[vertCount * 8];
+            for (int i = 0; i < vertCount; i++)
+            {
+                if (uv[i].x < minX) minX = uv[i].x;
+                if (uv[i].y < minY) minY = uv[i].y;
+                if (uv[i].x > maxX) maxX = uv[i].x;
+                if (uv[i].y > maxY) maxY = uv[i].y;
+                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].x), 0, bytes, i * 8,     4);
+                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].y), 0, bytes, i * 8 + 4, 4);
+            }
+            var accessorId = exporter.ExportAccessor(bytes, (uint)vertCount,
+                GLTFAccessorAttributeType.VEC2, GLTFComponentType.Float,
+                new List<double> { minX, minY }, new List<double> { maxX, maxY });
+
+            // Find the next sequential TEXCOORD index after whatever the mesh already has
+            int texCoordIndex = 0;
+            while (primitive.Attributes.ContainsKey($"TEXCOORD_{texCoordIndex}"))
+                texCoordIndex++;
+
+            primitive.Attributes[$"TEXCOORD_{texCoordIndex}"] = accessorId;
+
+            // Export atlas texture and build emissiveTexture pointing at that channel
+            var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.Emissive);
+            atlasTexInfo.TexCoord = texCoordIndex;
+
+            int materialIdx;
+            if (materialCached)
+            {
+                materialIdx = cachedIdx;
+            }
+            else
+            {
+                var clone = CloneGltfMaterial(source);
+                clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
+                clone.EmissiveTexture = atlasTexInfo;
+                if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
+                _gltfRoot.Materials.Add(clone);
+                materialIdx = _gltfRoot.Materials.Count - 1;
+                _atlasMaterialCache[(source, colorKey)] = materialIdx;
+            }
+
+            return materialIdx;
+        }
+
+        private static GLTFMaterial CloneGltfMaterial(GLTFMaterial src) => new GLTFMaterial
+        {
+            Name = src.Name,
+            PbrMetallicRoughness = src.PbrMetallicRoughness,
+            NormalTexture = src.NormalTexture,
+            OcclusionTexture = src.OcclusionTexture,
+            EmissiveTexture = src.EmissiveTexture,
+            AlphaMode = src.AlphaMode,
+            AlphaCutoff = src.AlphaCutoff,
+            DoubleSided = src.DoubleSided,
+            Extras = src.Extras,
+            Extensions = src.Extensions != null
+                ? new Dictionary<string, IExtension>(src.Extensions)
+                : new Dictionary<string, IExtension>()
+        };
+
+        private static void ApplyEmissiveStrength(GLTFMaterial mat, float strength, GLTFSceneExporter exporter)
+        {
+            exporter.DeclareExtensionUsage(KHR_materials_emissive_strength_Factory.EXTENSION_NAME, false);
+            if (mat.Extensions == null)
+                mat.Extensions = new Dictionary<string, IExtension>();
+            mat.Extensions[KHR_materials_emissive_strength_Factory.EXTENSION_NAME] =
+                new KHR_materials_emissive_strength { emissiveStrength = strength };
+        }
+
+        void AddExtension(GLTFMaterial materialNode, IExtension ext, string name = null)
+        {
+            if (materialNode.Extensions == null)
+                materialNode.Extensions = new Dictionary<string, IExtension>();
+            materialNode.Extensions[name ?? EXT_blend_operations.EXTENSION_NAME] = ext;
+        }
+
+        private PbrMetallicRoughness BuildBrushPbr(GLTFSceneExporter exporter, Material material)
+        {
+            var pbr = new PbrMetallicRoughness
+            {
+                MetallicFactor = material.HasProperty("_Metallic")
+                    ? Mathf.Clamp01(material.GetFloat("_Metallic"))
+                    : 0f
+            };
+
+            if (material.HasProperty("_Color"))
+            {
+                var c = material.GetColor("_Color");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+            else if (material.HasProperty("_TintColor"))
+            {
+                var c = material.GetColor("_TintColor");
+                pbr.BaseColorFactor = new GLTF.Math.Color(c.r, c.g, c.b, c.a);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                var tex = material.GetTexture("_MainTex");
+                if (tex != null)
+                    pbr.BaseColorTexture = exporter.ExportTextureInfo(tex, GLTFSceneExporter.TextureMapType.BaseColor);
+            }
+
+            // Unity glossiness/shininess is smoothness [0,1]; glTF stores roughness.
+            float smoothness = material.HasProperty("_Glossiness")
+                ? material.GetFloat("_Glossiness")
+                : material.HasProperty("_Shininess")
+                    ? material.GetFloat("_Shininess")
+                    : 0f;
+            pbr.RoughnessFactor = 1f - Mathf.Clamp01(smoothness);
+
+            return pbr;
+        }
+
+        private void ApplyFallbackTextures(
+            GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode)
+        {
+            if (material.HasProperty("_OcclusionMap"))
+            {
+                var occlusionTexture = material.GetTexture("_OcclusionMap");
+                if (occlusionTexture != null)
+                {
+                    var textureInfo = exporter.ExportTextureInfo(
+                        occlusionTexture, GLTFSceneExporter.TextureMapType.Occlusion);
+                    materialNode.OcclusionTexture = new OcclusionTextureInfo
+                    {
+                        Index = textureInfo.Index,
+                        TexCoord = textureInfo.TexCoord,
+                        Strength = material.HasProperty("_OcclusionStrength")
+                            ? material.GetFloat("_OcclusionStrength")
+                            : 1f
+                    };
+                }
+            }
+
+            if (material.HasProperty("_EmissionMap"))
+            {
+                var emissionTexture = material.GetTexture("_EmissionMap");
+                if (emissionTexture != null)
+                {
+                    materialNode.EmissiveTexture = exporter.ExportTextureInfo(
+                        emissionTexture, GLTFSceneExporter.TextureMapType.Emissive);
                 }
             }
         }
 
-        void AddExtension(GLTFMaterial materialNode, IExtension blend)
-        {
-            if (materialNode.Extensions == null)
-                materialNode.Extensions = new Dictionary<string, IExtension>();
-            materialNode.Extensions.Add(EXT_blend_operations.EXTENSION_NAME, blend);
-        }
-
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
+            // Only process Open Brush or Open Blocks materials
             string shaderName = material.shader.name;
 
             if (shaderName.StartsWith("Brush/"))
@@ -504,269 +651,138 @@ namespace TiltBrush
                     .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
                     .ToList();
 
-                if (brushes.Count == 0)
+                switch (brushes.Count)
                 {
-                    Debug.LogError($"No matching brush found for material {material.name}");
-                    return;
-                }
-                if (brushes.Count > 1)
-                {
-                    Debug.LogWarning($"Multiple brushes with the same material name: {material.name}");
+                    case 0:
+                        Debug.LogError($"No matching brush found for material {material.name}");
+                        return;
+                    case > 1:
+                        Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                        break;
                 }
 
                 var brush = brushes[0];
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
-                string brushGuid = brush.m_Guid.ToString();
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
+                var extras = materialNode.Extras as JObject ?? new JObject();
+                extras["TB_BrushGuid"] = manifest.m_Guid.ToString("D");
+                extras["TB_BrushName"] = manifest.DurableName;
+                extras["TB_BlendMode"] = manifest.m_BlendMode.ToString();
+                materialNode.Extras = extras;
+                materialNode.PbrMetallicRoughness = BuildBrushPbr(exporter, material);
 
-                // Apply blend mode from manifest
+                if (material.HasProperty("_BumpMap"))
+                {
+                    var bumpTex = material.GetTexture("_BumpMap");
+                    if (bumpTex != null)
+                        materialNode.NormalTexture = exporter.ExportNormalTextureInfo(
+                            bumpTex, GLTFSceneExporter.TextureMapType.Normal, material);
+                }
+                ApplyFallbackTextures(exporter, material, materialNode);
+
                 switch (manifest.m_BlendMode)
                 {
                     case ExportableMaterialBlendMode.AdditiveBlend:
+                        exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
                         AddExtension(materialNode, EXT_blend_operations.Add);
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
                     case ExportableMaterialBlendMode.AlphaMask:
                         materialNode.AlphaMode = AlphaMode.MASK;
+                        if (material.HasProperty("_Cutoff"))
+                            materialNode.AlphaCutoff = material.GetFloat("_Cutoff");
                         break;
                     case ExportableMaterialBlendMode.AlphaBlend:
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
                 }
 
-                // Use canonical brush data for enhanced PBR parameters
-                // Try current GUID first, then search for it in legacy GUIDs
-                CanonicalBrushData canonicalBrush = null;
-                if (_canonicalBrushData?.brushes != null)
+                if (manifest.m_BlendMode == ExportableMaterialBlendMode.AdditiveBlend)
                 {
-                    // Try direct lookup by current GUID
-                    if (_canonicalBrushData.brushes.ContainsKey(brushGuid))
-                    {
-                        canonicalBrush = _canonicalBrushData.brushes[brushGuid];
-                    }
-                    else
-                    {
-                        // Search for this GUID in legacyGuids arrays
-                        foreach (var kvp in _canonicalBrushData.brushes)
-                        {
-                            var brush_data = kvp.Value;
-                            if (brush_data.legacyGuids != null && brush_data.legacyGuids.Contains(brushGuid))
-                            {
-                                canonicalBrush = brush_data;
-                                break;
-                            }
-                        }
-                    }
-                }
+                    // Emissive colour comes from vertex colour, sampled per-primitive in
+                    // AfterPrimitiveExport. Store gain here; emissive texture is set on clones.
+                    float gain = manifest.m_EmissiveFactor;
+                    if (gain <= 0f && material.HasProperty("_EmissionGain"))
+                        gain = material.GetFloat("_EmissionGain");
+                    if (gain <= 0f) gain = 1f;
+                    _additiveBrushGains[materialNode] = gain;
 
-                if (canonicalBrush != null)
-                {
-                    ApplyCanonicalBrushData(material, materialNode, canonicalBrush, exporter, gltfRoot);
+                    // Set emissive texture on template now — KeepStrokes=true clones inherit it.
+                    // KeepStrokes=false clones replace it with the per-batch colour atlas.
+                    if (material.HasProperty("_MainTex"))
+                    {
+                        var emTex = material.GetTexture("_MainTex");
+                        if (emTex != null)
+                            materialNode.EmissiveTexture = exporter.ExportTextureInfo(
+                                emTex, GLTFSceneExporter.TextureMapType.Emissive);
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning($"Canonical brush data not found for {manifest.DurableName} ({brushGuid})");
+                    float emissiveFactor = manifest.m_EmissiveFactor;
+                    if (emissiveFactor <= 0f && material.HasProperty("_EmissionGain"))
+                        emissiveFactor = material.GetFloat("_EmissionGain");
+                    if (emissiveFactor > 0f)
+                    {
+                        float clamped = Mathf.Min(emissiveFactor, 1f);
+                        materialNode.EmissiveFactor = new GLTF.Math.Color(clamped, clamped, clamped, 1f);
+                        if (emissiveFactor > 1f)
+                            ApplyEmissiveStrength(materialNode, emissiveFactor, exporter);
+                    }
+                }
+
+                if (shaderName == "Brush/Special/Unlit")
+                {
+                    exporter.DeclareExtensionUsage(KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME, false);
+                    AddExtension(materialNode, new KHR_MaterialsUnlitExtension(),
+                        KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME);
                 }
             }
             else if (shaderName.StartsWith("Blocks/"))
             {
-                ApplyBlocksMaterialData(material, materialNode, shaderName);
+                float r = material.color.r;
+                float g = material.color.g;
+                float b = material.color.b;
+                float a = material.color.a;
+                var pbr = new PbrMetallicRoughness
+                {
+                    BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
+                    MetallicFactor = 0.0f,
+                    RoughnessFactor = material.HasProperty("_Shininess")
+                        ? 1f - material.GetFloat("_Shininess")
+                        : 1f
+                };
+
+                if (material.HasProperty("_MainTex"))
+                {
+                    var tex = material.GetTexture("_MainTex");
+                    if (tex != null)
+                        pbr.BaseColorTexture = exporter.ExportTextureInfo(
+                            tex, GLTFSceneExporter.TextureMapType.BaseColor);
+                }
+
+                if (shaderName == "Blocks/BlocksGlass")
+                {
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    materialNode.DoubleSided = true;
+                }
+                else if (shaderName == "Blocks/BlocksGem")
+                {
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                }
+                materialNode.PbrMetallicRoughness = pbr;
             }
         }
 
-        private void ApplyCanonicalBrushData(Material material, GLTFMaterial materialNode, CanonicalBrushData brushData, GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        public override void AfterTextureExport(
+            GLTFSceneExporter exporter, GLTFSceneExporter.UniqueTexture texture, int index,
+            GLTFTexture textureNode)
         {
-            // Find the matching Unity material variant from canonical data
-            string cleanMaterialName = material.name.Replace("(Instance)", "").TrimEnd();
-            UnityMaterialData matData = brushData.unityMaterials?.FirstOrDefault(m => m.name == cleanMaterialName);
-
-            // Merge default params with material overrides
-            var floatParams = new Dictionary<string, float>(brushData.defaultParams?.floats ?? new Dictionary<string, float>());
-            var colorParams = new Dictionary<string, float[]>(brushData.defaultParams?.colors ?? new Dictionary<string, float[]>());
-
-            if (matData != null)
-            {
-                // Apply float overrides
-                if (matData.floatOverrides != null)
-                {
-                    foreach (var kvp in matData.floatOverrides)
-                    {
-                        floatParams[kvp.Key.TrimStart('_')] = kvp.Value;
-                    }
-                }
-
-                // Apply color overrides
-                if (matData.colorOverrides != null)
-                {
-                    foreach (var kvp in matData.colorOverrides)
-                    {
-                        colorParams[kvp.Key.TrimStart('_')] = new float[] { kvp.Value.r, kvp.Value.g, kvp.Value.b, kvp.Value.a };
-                    }
-                }
-            }
-
-            // Initialize PBR if not already set
-            if (materialNode.PbrMetallicRoughness == null)
-            {
-                materialNode.PbrMetallicRoughness = new PbrMetallicRoughness();
-            }
-
-            // Apply Metallic
-            if (floatParams.ContainsKey("Metallic"))
-            {
-                materialNode.PbrMetallicRoughness.MetallicFactor = floatParams["Metallic"];
-            }
-
-            // Apply Roughness (derived from Glossiness or Shininess)
-            if (floatParams.ContainsKey("Glossiness"))
-            {
-                materialNode.PbrMetallicRoughness.RoughnessFactor = 1.0 - floatParams["Glossiness"];
-            }
-            else if (floatParams.ContainsKey("Shininess"))
-            {
-                // Convert Shininess to Roughness using standard formula
-                materialNode.PbrMetallicRoughness.RoughnessFactor = Mathf.Sqrt(2f / (floatParams["Shininess"] * 100f + 2f));
-            }
-
-            // Apply Base Color
-            if (colorParams.ContainsKey("Color"))
-            {
-                var c = colorParams["Color"];
-                materialNode.PbrMetallicRoughness.BaseColorFactor = new GLTF.Math.Color(c[0], c[1], c[2], c[3]);
-            }
-
-            // Apply Alpha Cutoff for masked materials
-            if (floatParams.ContainsKey("Cutoff") && materialNode.AlphaMode == AlphaMode.MASK)
-            {
-                materialNode.AlphaCutoff = floatParams["Cutoff"];
-            }
-
-            // Apply Emission
-            if (colorParams.ContainsKey("EmissionColor"))
-            {
-                var ec = colorParams["EmissionColor"];
-                float emissionGain = floatParams.ContainsKey("EmissionGain") ? floatParams["EmissionGain"] : 1.0f;
-                materialNode.EmissiveFactor = new GLTF.Math.Color(ec[0] * emissionGain, ec[1] * emissionGain, ec[2] * emissionGain, 1);
-            }
-
-            // Handle textures from Unity material
-            // UnityGLTF may not export textures for brush materials, so we do it manually
-
-            // Normal Map (_BumpMap → NormalTexture)
-            if (material.HasProperty("_BumpMap"))
-            {
-                var bumpTex = material.GetTexture("_BumpMap");
-                if (bumpTex != null && materialNode.NormalTexture == null)
-                {
-                    // Export with NormalChannel conversion (Unity AG format → glTF RGB format)
-                    var normalSettings = new GLTFSceneExporter.TextureExportSettings
-                    {
-                        isValid = true,
-                        conversion = GLTFSceneExporter.TextureExportSettings.Conversion.NormalChannel
-                    };
-                    var textureInfo = exporter.ExportTextureInfo(bumpTex, "_BumpMap", normalSettings);
-                    if (textureInfo != null)
-                    {
-                        materialNode.NormalTexture = new NormalTextureInfo
-                        {
-                            Index = textureInfo.Index
-                        };
-
-                        // Apply normal scale if available
-                        if (floatParams.ContainsKey("BumpScale"))
-                        {
-                            materialNode.NormalTexture.Scale = floatParams["BumpScale"];
-                        }
-                    }
-                }
-            }
-
-            // Occlusion Map (_OcclusionMap → OcclusionTexture)
-            if (material.HasProperty("_OcclusionMap"))
-            {
-                var occlusionTex = material.GetTexture("_OcclusionMap");
-                if (occlusionTex != null && materialNode.OcclusionTexture == null)
-                {
-                    var textureInfo = exporter.ExportTextureInfo(occlusionTex, "_OcclusionMap");
-                    if (textureInfo != null)
-                    {
-                        materialNode.OcclusionTexture = new OcclusionTextureInfo
-                        {
-                            Index = textureInfo.Index
-                        };
-
-                        // Apply occlusion strength if available
-                        if (floatParams.ContainsKey("OcclusionStrength"))
-                        {
-                            materialNode.OcclusionTexture.Strength = floatParams["OcclusionStrength"];
-                        }
-                    }
-                }
-            }
-
-            // Emission Map (_EmissionMap → EmissiveTexture)
-            if (material.HasProperty("_EmissionMap"))
-            {
-                var emissionTex = material.GetTexture("_EmissionMap");
-                if (emissionTex != null && materialNode.EmissiveTexture == null)
-                {
-                    var textureInfo = exporter.ExportTextureInfo(emissionTex, "_EmissionMap");
-                    if (textureInfo != null)
-                    {
-                        materialNode.EmissiveTexture = textureInfo;
-                    }
-                }
-            }
-
-            // Simulate additive blending using emissive color
-            if (brushData.blendMode == 2)
-            {
-                materialNode.EmissiveFactor = GLTF.Math.Color.White;
-            }
-
-            // Log texture status for debugging
-            string normalStatus = materialNode.NormalTexture != null ? "YES" : "NO";
-            string occlusionStatus = materialNode.OcclusionTexture != null ? "YES" : "NO";
-            string emissionStatus = materialNode.EmissiveTexture != null ? "YES" : "NO";
-            Debug.Log($"Applied canonical data to {brushData.name}: Metallic={materialNode.PbrMetallicRoughness.MetallicFactor}, Roughness={materialNode.PbrMetallicRoughness.RoughnessFactor}, Normal={normalStatus}, Occlusion={occlusionStatus}, Emission={emissionStatus}");
-        }
-
-        private void ApplyBlocksMaterialData(Material material, GLTFMaterial materialNode, string shaderName)
-        {
-            float r = material.color.r;
-            float g = material.color.g;
-            float b = material.color.b;
-            float a = material.color.a;
-
-            var pbr = new PbrMetallicRoughness
-            {
-                BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
-                MetallicFactor = 0.0f,
-                RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
-            };
-
-            if (shaderName == "Blocks/BlocksGlass")
-            {
-                materialNode.AlphaMode = AlphaMode.BLEND;
-                materialNode.DoubleSided = true;
-            }
-            else if (shaderName == "Blocks/BlocksGem")
-            {
-                materialNode.AlphaMode = AlphaMode.BLEND;
-            }
-
-            materialNode.PbrMetallicRoughness = pbr;
-        }
-
-        public override void AfterTextureExport(GLTFSceneExporter exporter, GLTFSceneExporter.UniqueTexture texture, int index, GLTFTexture tex)
-        {
-            // Use the Unity texture's original name if available
-            // This gives better filenames like "OilPaint-...-MainTex.png" instead of "image74.png"
             if (texture.Texture != null && !string.IsNullOrEmpty(texture.Texture.name))
             {
-                tex.Name = texture.Texture.name;
+                textureNode.Name = texture.Texture.name;
             }
         }
 
