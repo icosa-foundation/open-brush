@@ -203,13 +203,20 @@ namespace TiltBrush
                 nsmgr.AddNamespace("GAudio", "http://ns.google.com/photos/1.0/audio/");
 
                 // Parse GPano properties
-                ParseIntProperty(doc, nsmgr, "//GPano:CroppedAreaLeftPixels", ref CroppedAreaLeftPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:CroppedAreaTopPixels", ref CroppedAreaTopPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:CroppedAreaImageWidthPixels", ref CroppedAreaImageWidthPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:CroppedAreaImageHeightPixels", ref CroppedAreaImageHeightPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:FullPanoWidthPixels", ref FullPanoWidthPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:FullPanoHeightPixels", ref FullPanoHeightPixels);
-                ParseIntProperty(doc, nsmgr, "//GPano:InitialViewHeadingDegrees", ref InitialViewHeadingDegrees);
+                CroppedAreaLeftPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:CroppedAreaLeftPixels", CroppedAreaLeftPixels);
+                CroppedAreaTopPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:CroppedAreaTopPixels", CroppedAreaTopPixels);
+                CroppedAreaImageWidthPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:CroppedAreaImageWidthPixels", CroppedAreaImageWidthPixels);
+                CroppedAreaImageHeightPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:CroppedAreaImageHeightPixels", CroppedAreaImageHeightPixels);
+                FullPanoWidthPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:FullPanoWidthPixels", FullPanoWidthPixels);
+                FullPanoHeightPixels = ParseIntProperty(
+                    doc, nsmgr, "//GPano:FullPanoHeightPixels", FullPanoHeightPixels);
+                InitialViewHeadingDegrees = ParseIntProperty(
+                    doc, nsmgr, "//GPano:InitialViewHeadingDegrees", InitialViewHeadingDegrees);
 
                 // Parse GImage mime type
                 var imageNode = doc.SelectSingleNode("//GImage:Mime", nsmgr);
@@ -265,13 +272,17 @@ namespace TiltBrush
             }
         }
 
-        private void ParseIntProperty(XmlDocument doc, XmlNamespaceManager nsmgr, string xpath, ref int value)
+        private static int ParseIntProperty(
+            XmlDocument doc, XmlNamespaceManager nsmgr, string xpath, int currentValue)
         {
             var node = doc.SelectSingleNode(xpath, nsmgr);
-            if (node != null)
+            int parsedValue;
+            if (node != null && int.TryParse(node.InnerText, out parsedValue))
             {
-                int.TryParse(node.InnerText, out value);
+                return parsedValue;
             }
+
+            return currentValue;
         }
 
         private byte[] DecodeBase64WithoutPadding(string base64)
