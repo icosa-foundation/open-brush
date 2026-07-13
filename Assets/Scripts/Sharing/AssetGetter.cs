@@ -135,81 +135,48 @@ namespace TiltBrush
                 if (json.Count == 0)
                 {
                     Debug.LogErrorFormat("Failed to deserialize response for {0}", m_URI);
+                    IsCanceled = true;
                     yield break;
                 }
 
-                // Find the asset by looking through the format list for the specified type.
-                List<string> desiredTypes = m_Asset.DesiredTypes.Select(x => x.ToString()).ToList();
-
-                JToken GetBestFormat(IEnumerable<JToken> formats, List<string> types)
+                if (!IcosaAssetCatalog.TryGetDownloadFormat(
+                    json, m_Asset.DesiredTypes, out JToken format,
+                    out VrAssetFormat selectedType, out string formatType))
                 {
-                    bool found = false;
-                    JToken bestFormat = null;
-                    foreach (var typeByPreference in types)
-                    {
-                        foreach (var x in formats)
-                        {
-                            var formatType = x["formatType"]?.ToString();
-                            if (formatType == typeByPreference)
-                            {
-                                bestFormat = x;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (found) break;
-                    }
-                    return bestFormat;
+                    format = null;
                 }
 
-                while (true)
+                if (format != null)
                 {
-                    JToken format = null;
-                    string formatType = null;
-                    var allFormats = json["formats"].ToList();
-                    VrAssetFormat selectedType = VrAssetFormat.Unknown;
-
-                    if (allFormats != null)
+                    string internalRootFilePath = format["root"]?["relativePath"].ToString();
+                    // If we successfully get a gltf2 format file, internally change the extension to
+                    // "gltf2" so that the cache knows that it is a gltf2 file.
+                    if (selectedType == VrAssetFormat.GLTF2)
                     {
-                        // This assumes that desiredTypes are ordered by preference (best to worst).
-                        // Try the preferred formats first, then all formats.
-                        // var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"].Value<bool>());
-                        // format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
-
-                        // Temporary hack
-                        bool hasBlocks = GetBestFormat(allFormats, new List<string> { "BLOCKS" })?.HasValues ?? false;
-                        format = GetBestFormat(allFormats, hasBlocks ? new List<string> { "OBJ", "OBJ_NGON" } : desiredTypes);
-                        formatType = format["formatType"]?.ToString();
-                        selectedType = Enum.Parse<VrAssetFormat>(formatType);
+                        internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
                     }
-                    if (format != null)
+
+                    // Get root element info.
+                    m_Asset.SetRootElement(
+                        internalRootFilePath,
+                        format["root"]?["url"].ToString());
+
+                    // Get all resource infos.  There may be zero.
+                    foreach (var r in format["resources"])
                     {
-                        string internalRootFilePath = format["root"]?["relativePath"].ToString();
-                        // If we successfully get a gltf2 format file, internally change the extension to
-                        // "gltf2" so that the cache knows that it is a gltf2 file.
-                        if (selectedType == VrAssetFormat.GLTF2)
-                        {
-                            internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
-                        }
+                        string path = r["relativePath"].ToString();
+                        m_Asset.AddResourceElement(path, r["url"].ToString());
 
-                        // Get root element info.
-                        m_Asset.SetRootElement(
-                            internalRootFilePath,
-                            format["root"]?["url"].ToString());
-
-                        // Get all resource infos.  There may be zero.
-                        foreach (var r in format["resources"])
-                        {
-                            string path = r["relativePath"].ToString();
-                            m_Asset.AddResourceElement(path, r["url"].ToString());
-
-                            // The root element should be the only gltf file.
-                            Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
-                                string.Format("Found extra gltf resource: {0}", path));
-                        }
-                        break;
+                        // The root element should be the only gltf file.
+                        Debug.Assert(!path.EndsWith(".gltf") && !path.EndsWith(".gltf2"),
+                            string.Format("Found extra gltf resource: {0}", path));
                     }
-                    Debug.LogWarning($"Can't download {m_Asset.Id} in {formatType} format.");
+                }
+                else
+                {
+                    string formatInfo = formatType != null ? $" in {formatType} format" : " - no suitable format found";
+                    Debug.LogWarning($"Can't download {m_Asset.Id}{formatInfo}.");
+                    IsCanceled = true;
                     yield break;
                 }
             }
@@ -251,6 +218,7 @@ namespace TiltBrush
                 catch (VrAssetServiceException e)
                 {
                     Debug.LogErrorFormat("Error downloading {0}\n{1}", m_Asset.Id, e);
+                    IsCanceled = true;
                     yield break;
                 }
                 yield return null;

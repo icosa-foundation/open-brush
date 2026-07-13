@@ -69,7 +69,7 @@ namespace TiltBrush
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
-
+        public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -134,6 +134,7 @@ namespace TiltBrush
         public static OAuth2Identity GoogleIdentity => m_Instance.m_GoogleIdentity;
         public static OAuth2Identity SketchfabIdentity => m_Instance.m_SketchfabIdentity;
         public static OAuth2Identity IcosaIdentity => m_Instance.m_IcosaIdentity;
+        public static OAuth2Identity ViveIdentity => m_Instance.m_ViveIdentity;
 
         public string IcosaToken
         {
@@ -171,6 +172,7 @@ namespace TiltBrush
                 case Cloud.Google: return GoogleIdentity;
                 case Cloud.Sketchfab: return SketchfabIdentity;
                 case Cloud.Icosa: throw new InvalidOperationException("Icosa does not use OAuth2");
+                case Cloud.Vive: return ViveIdentity;
                 default: throw new InvalidOperationException($"No OAuth2 identity for {cloud}");
             }
         }
@@ -254,6 +256,7 @@ namespace TiltBrush
         [SerializeField] private OAuth2Identity m_GoogleIdentity;
         [SerializeField] private OAuth2Identity m_SketchfabIdentity;
         [SerializeField] private OAuth2Identity m_IcosaIdentity;
+        [SerializeField] private OAuth2Identity m_ViveIdentity;
 
         // ------------------------------------------------------------
         // Private data
@@ -476,8 +479,6 @@ namespace TiltBrush
             {
                 Debug.LogErrorFormat("Couldn't set dir to {0}: {1}", appDir, e);
             }
-            string curDir = Directory.GetCurrentDirectory();
-            Debug.LogFormat("Dir {0} -> {1}", oldDir, curDir);
 #endif
         }
 
@@ -561,6 +562,7 @@ namespace TiltBrush
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -1274,6 +1276,11 @@ namespace TiltBrush
             {
                 OverlayManager.m_Instance.PauseRendering(false);
                 OverlayManager.m_Instance.FadeFromCompositor(0);
+                if (SketchControlsScript.m_Instance.IsViewOnly)
+                {
+                    OverlayManager.m_Instance.SetOverlayTransitionRatio(0);
+                }
+                m_QuickLoadInputWasValid = false;
             }
 
             m_DesiredAppState = AppState.Standard;
@@ -1324,6 +1331,11 @@ namespace TiltBrush
             }
 
             Scene.BroadcastCanvasUpdate();
+
+            if (SketchControlsScript.m_Instance.IsViewOnly)
+            {
+                SketchControlsScript.m_Instance.ViewOnly(true);
+            }
         }
 
         private IEnumerator<Timeslice> DelayedSketchLoadedCard(float delay)
@@ -1623,6 +1635,40 @@ namespace TiltBrush
                         m_QuickLoadInputWasValid = false;
                     }
                 }
+            }
+        }
+
+        // Finish the current sketch playback immediately, as if the user had held the Panic input.
+        // Unlike UpdateQuickLoadLogic this is not gated on controller input or AppAllowsCreation, so
+        // it can be driven by an on-screen button (e.g. the non-VR "Skip" button) on any platform.
+        public void RequestQuickLoad()
+        {
+            if (CurrentState != AppState.Loading)
+            {
+                return;
+            }
+
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (!m_QuickLoadInputWasValid)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
+                OverlayManager.m_Instance.PauseRendering(true);
+            }
+
+            m_QuickLoadInputWasValid = true;
+            if (m_CurrentAppState != AppState.QuickLoad)
+            {
+                OverlayManager.m_Instance.SetOverlayTransitionRatio(1.0f);
+                m_QuickloadStallFrames = 1;
+                m_DesiredAppState = AppState.QuickLoad;
+                m_SketchSurfacePanel.EnableRenderer(false);
             }
         }
 
@@ -2137,6 +2183,39 @@ namespace TiltBrush
             }
         }
 
+        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
+        {
+            string savedStrokesDirectory = SavedStrokesPath();
+
+            if (!Directory.Exists(savedStrokesDirectory))
+            {
+                if (!InitDirectoryAtPath(savedStrokesDirectory))
+                {
+                    return;
+                }
+            }
+
+            // Copy if the directory is empty
+            bool shouldCopy = Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
+
+            // But only once per clean install
+            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
+            {
+                shouldCopy = false;
+            }
+
+            if (shouldCopy)
+            {
+                foreach (var savedStroke in defaultSavedStrokes)
+                {
+                    string destFilename = Path.GetFileName(savedStroke);
+                    FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
+                }
+            }
+        }
+
+
+
         public static string FeaturedSketchesPath()
         {
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
@@ -2330,6 +2409,14 @@ namespace TiltBrush
         public static string ModelLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "Models");
+        }
+
+        public static string BlocksModelLibraryPath()
+        {
+            string userPath = UserPath();
+            var userParent = Directory.GetParent(userPath);
+            string blocksRoot = userParent != null ? userParent.FullName : userPath;
+            return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
         }
 
         public static string ReferenceImagePath()
@@ -2597,7 +2684,15 @@ namespace TiltBrush
 
             ODS.HybridCamera cam = driver.OdsCamera;
             cam.CollapseIpd = Config.m_OdsCollapseIpd;
-            cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
+            if (Config.m_OdsPreview)
+            {
+                // Keep --preview tied to the default ODS width so offline 8k renders do not create 2k previews.
+                cam.imageWidth /= 4;
+            }
+            else if (App.UserConfig.Video.OfflineResolutionValid)
+            {
+                cam.imageWidth = App.UserConfig.Video.OfflineResolution;
+            }
             if (Config.m_SdkMode == SdkMode.Ods)
             {
                 Debug.LogFormat("Configuring ODS:{0}" +
@@ -2621,6 +2716,34 @@ namespace TiltBrush
                 );
             }
             return driver;
+        }
+
+        public GameObject InstantiateThumbnailCamera()
+        {
+            if (SaveLoadScript.m_Instance == null)
+            {
+                Debug.LogError("SaveLoadScript.m_Instance is null. Cannot get camera state.");
+                return null;
+            }
+
+            // ReasonableThumbnail_SS returns the saved camera transform in Scene Space
+            // This is the camera position from the loaded sketch file
+            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
+            // Create a new GameObject with a Camera component
+            GameObject cameraObj = new GameObject("TB_ThumbnailSaveCamera");
+            Camera cam = cameraObj.AddComponent<Camera>();
+
+            // Set camera properties to match typical GLTF export
+            cam.fieldOfView = 60.0f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 1000.0f;
+
+            // Convert from Scene space to World space using App.Scene.AsScene
+            // This properly accounts for the scene's transform
+            App.Scene.AsScene[cameraObj.transform] = cameraTr_Scene;
+
+            return cameraObj;
         }
     } // class App
 }     // namespace TiltBrush

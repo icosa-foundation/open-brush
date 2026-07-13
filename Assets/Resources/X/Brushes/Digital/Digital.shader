@@ -116,7 +116,7 @@ Category {
         float stroke_width = .1;
         float antialias_feather_px = 4;
 
-        float2 st = i.texcoord;
+        float2 st = i.st;
 
         // used for antialiasing
         float2 st_per_px = fwidth(st);
@@ -128,7 +128,7 @@ Category {
 
         // get the tile coordinates
         // map tile_st.y to [-1, 1]
-        float tile_st = frac(st);
+        float2 tile_st = frac(st);
         tile_st -= .5;
         tile_st *= 2;
 
@@ -183,10 +183,10 @@ Category {
 
             float2 aa_feather = st_per_px * antialias_feather_px;
             float current_lum =
-                smoothstep(min_bound.x - aa_feather.x, min_bound.x, st.x) *
-                smoothstep(max_bound.x + aa_feather.x, max_bound.x, st.x) *
-                smoothstep(min_bound.y - aa_feather.y, min_bound.y, st.y) *
-                smoothstep(max_bound.y + aa_feather.y, max_bound.y, st.y);
+                smoothstep(min_bound.x - aa_feather.x, min_bound.x, tile_st.x) *
+                smoothstep(max_bound.x + aa_feather.x, max_bound.x, tile_st.x) *
+                smoothstep(min_bound.y - aa_feather.y, min_bound.y, tile_st.y) *
+                smoothstep(max_bound.y + aa_feather.y, max_bound.y, tile_st.y);
             lum = max(lum, current_lum);
           }
         }
