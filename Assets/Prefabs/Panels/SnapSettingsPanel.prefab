@@ -240,6 +240,9 @@ MonoBehaviour:
   m_Collider: {fileID: 6531256}
   m_Mesh: {fileID: 160772}
   m_Border: {fileID: 23000010265477920}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 6547610}
   m_ParticleBounds: {x: 1.2, y: 1.2, z: 0}
   m_PanelPopUpMap:
@@ -1913,12 +1916,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Toggle Z Position Snap
+  m_DescriptionText: Toggle Z Rotation Snap
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584179634179
+      m_KeyId: 439543840074457088
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2300,12 +2303,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Toggle Y Position Snap
+  m_DescriptionText: Toggle Y Rotation Snap
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584179634178
+      m_KeyId: 439543779617759232
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3714,12 +3717,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Toggle X Position Snap
+  m_DescriptionText: Toggle X Rotation Snap
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584179634177
+      m_KeyId: 439543626534051840
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

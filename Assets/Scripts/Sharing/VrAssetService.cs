@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Apis.Http;
 using Newtonsoft.Json.Linq;
 using Org.OpenAPITools.Api;
 using Org.OpenAPITools.Client;
@@ -39,6 +40,7 @@ namespace TiltBrush
         Google = 1,
         Sketchfab = 2,
         Icosa = 3,
+        Vive = 4
     }
 
     [Serializable]
@@ -51,7 +53,15 @@ namespace TiltBrush
         OBJ,
         OBJ_NGON,
         BLOCKS,
-        PLY
+        PLY,
+        VOX
+    }
+
+    [Serializable]
+    public enum TiltDownloadStrategy
+    {
+        AvoidArchive,
+        UsePreferred
     }
 
     public class VrAssetService : MonoBehaviour
@@ -324,6 +334,7 @@ namespace TiltBrush
         private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
         public bool m_UseLocalFeaturedSketches = false;
+        public TiltDownloadStrategy m_TiltDownloadStrategy = TiltDownloadStrategy.AvoidArchive;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -476,6 +487,11 @@ namespace TiltBrush
                             m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
                                 isDemoUpload);
                             break;
+                        case Cloud.Vive:
+                            m_UploadTask.Task = UploadCurrentSketchViverseAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+
                     }
                     var (url, _) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
@@ -483,7 +499,8 @@ namespace TiltBrush
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
                     PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(true);
                     // Don't auto-open the URL on mobile because it steals focus from the user.
-                    if (!isDemoUpload && !App.Config.IsMobileHardware && m_LastUploadCompleteUrl != null)
+                    if (!isDemoUpload && m_LastUploadCompleteUrl != null &&
+                        (backend == Cloud.Vive || !App.Config.IsMobileHardware))
                     {
                         // Can't pass a string param because this is also called from mobile GUI
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -641,6 +658,7 @@ namespace TiltBrush
                             Debug.LogWarning($"Ignoring {path} not under {rootDir}");
                             continue;
                         }
+                        archivedName = archivedName.Replace('\\', '/');
                         ZipArchiveEntry entry = archive.CreateEntry(archivedName);
                         using (Stream writer = entry.Open())
                         {
@@ -671,7 +689,8 @@ namespace TiltBrush
             bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
             bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
             bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
-            bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            bool publishLegacyGltf = false;
 
             DiskSceneFileInfo fileInfo = GetWritableFile();
 
@@ -689,6 +708,7 @@ namespace TiltBrush
             // Collect files into a .zip file, including the .tilt file and thumbnail
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             var filesToZip = new List<string>();
+            int? faceCount = null;
 
             if (publishLegacyGltf)
             {
@@ -700,12 +720,13 @@ namespace TiltBrush
                         gltfFile,
                         AxisConvention.kGltf2, binary: false, doExtras: true,
                         includeLocalMediaContent: true, gltfVersion: 2,
-                        selfContained: true));
+                        selfContained: false));
                 if (!exportResults.success)
                 {
                     throw new VrAssetServiceException("Internal error creating upload data.");
                 }
                 filesToZip.AddRange(exportResults.exportedFiles);
+                faceCount = exportResults.numTris;
             }
 
             // Construct options to set the background color to the current environment's clear color.
@@ -730,19 +751,34 @@ namespace TiltBrush
 
             // Always use new glb if we're not publishing legacy glTF.
             // Otherwise it's based on user config.
+            //
+            // Forcing this to false for now as the Legacy GLTF has issues with environment positioning
             if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
             {
                 string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
-                Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                // Always use the new GLB count since it includes all content (brush strokes + models + widgets)
+                // whereas legacy export only includes brush strokes
+                faceCount = glbTriangleCount;
                 filesToZip.Add(newGlbPath);
             }
 
             await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
 
+            // Collect remix IDs if this sketch is derived from another asset
+            var remixIds = new List<string>();
+            string sourceId = SaveLoadScript.m_Instance.TransferredSourceIdFrom(currentScene);
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                remixIds.Add(sourceId);
+            }
+
             var service = new IcosaService(App.Instance.IcosaToken);
             var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
             IcosaService.CreateResponse response = await service.CreateModel(
-                zipName, progress, token, options, tempUploadDir);
+                zipName, progress, token, options, tempUploadDir,
+                objFaceCount: faceCount,
+                remixIds: remixIds.Count > 0 ? remixIds : null);
             // TODO(b/146892613): return the UID and stick it into the .tilt file?
             // Or do we not care since we aren't recording provenance and remixing
             string uri = $"{response.publishUrl}";
@@ -761,7 +797,7 @@ namespace TiltBrush
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
@@ -804,6 +840,219 @@ namespace TiltBrush
             // API and find out when it's done and pop up the window then?
             string uri = $"{SketchfabService.kModelLandingPage}{response.uid}";
             return (uri, uploadLength);
+        }
+
+        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+                    CancellationToken token, string tempUploadDir, bool isDemoUpload)
+        {
+            bool publishLegacyGltf = false;
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+
+            // Generate title + description
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string title = $"{uploadName}_{timestamp}";
+            if (title.Length > 30) title = title.Substring(0, 30);
+            string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+
+            // Create export directory
+            string exportDir = Path.Combine(tempUploadDir, "sketch_export");
+            Directory.CreateDirectory(exportDir);
+
+            // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
+            // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
+#if UNITY_EDITOR
+            // Keep the resource asset up to date for editor workflows that still reference it.
+            GenerateViverseViewerBytes();
+            // In editor, copy directly from the source tree so publishing always uses the
+            // latest Support/ViverseViewer contents instead of a potentially stale imported asset.
+            CopyViverseViewerToDirectory(exportDir);
+#else
+            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
+            FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
+
+            if (!File.Exists(tempZip))
+                throw new VrAssetServiceException("ViverseViewer.bytes not found in Resources folder");
+
+            using (var zip = ZipFile.OpenRead(tempZip))
+            {
+                int extractedCount = 0;
+                foreach (var entry in zip.Entries)
+                {
+                    string entryPath = entry.FullName;
+                    // Strip leading "ViverseViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("ViverseViewer/"))
+                        entryPath = entryPath.Substring("ViverseViewer/".Length);
+                    if (string.IsNullOrEmpty(entryPath))
+                        continue;
+
+                    string fullPath = Path.Combine(exportDir, entryPath);
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                    {
+                        Directory.CreateDirectory(fullPath);
+                        continue;
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                    entry.ExtractToFile(fullPath, overwrite: true);
+
+                    extractedCount++;
+
+#if !UNITY_STANDALONE
+                    // Yield every 10 files to prevent freezing on mobile
+                    if (extractedCount % 10 == 0)
+                    {
+                        await Awaiters.NextFrame;
+                        token.ThrowIfCancellationRequested();
+                    }
+#endif
+                }
+            }
+
+            File.Delete(tempZip);
+#endif
+
+            // Now create/ensure assets folder exists in exportDir
+            string assetsDir = Path.Combine(exportDir, "assets");
+            if (!Directory.Exists(assetsDir))
+            {
+                Directory.CreateDirectory(assetsDir);
+            }
+
+            // Export GLB to assets/scene.glb
+            if (publishLegacyGltf) // The old way
+            {
+                string glbPath = Path.Combine(assetsDir, "scene.glb");
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        glbPath,
+                        AxisConvention.kGltf2,
+                        binary: true,
+                        doExtras: true,
+                        includeLocalMediaContent: true,
+                        gltfVersion: 2,
+                        selfContained: false));
+
+                if (!exportResults.success)
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+            else
+            {
+                // NewGLB format
+                await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => Export.ExportNewGlb(assetsDir, "scene", App.UserConfig.Export.ExportEnvironment));
+            }
+
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            var publishManager = FindObjectOfType<ViversePublishManager>();
+            if (publishManager == null)
+                throw new VrAssetServiceException("ViversePublishManager not found");
+
+            if (!publishManager.IsAuthenticated())
+                throw new VrAssetServiceException("Not authenticated with VIVERSE");
+
+            // CREATE WORLD FIRST to get new sceneSid
+            var createTcs = new TaskCompletionSource<string>();
+
+            StartCoroutine(publishManager.CreateWorldContent(title, description, (success, sid, error) =>
+            {
+                if (success)
+                    createTcs.SetResult(sid);
+                else
+                    createTcs.SetException(new VrAssetServiceException($"Failed to create world: {error}"));
+            }));
+
+            string sceneSid = await createTcs.Task;
+            token.ThrowIfCancellationRequested();
+
+            // NOW generate HTML with NEW sceneSid
+            SetUploadProgress(UploadStep.ZipElements, 0);
+
+            string htmlPath = Path.Combine(exportDir, "index.html");
+            string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
+            File.WriteAllText(htmlPath, html);
+
+            token.ThrowIfCancellationRequested();
+
+
+            var filesToZip = new List<string>();
+
+            // Add all files from exportDir except .meta
+            foreach (var file in Directory.GetFiles(exportDir, "*", SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".meta"))
+                    continue;
+                filesToZip.Add(file);
+            }
+
+            // Create ZIP at exportDir/content.zip
+            string zipPath = Path.Combine(tempUploadDir, "content.zip");
+
+            await CreateZipFileAsync(zipPath, exportDir, filesToZip.ToArray(), token);
+            long uploadLength = new FileInfo(zipPath).Length;
+
+            // Upload the content to the world we created
+            var uploadTcs = new TaskCompletionSource<bool>();
+
+            // progress
+            void OnProgress(float p) => SetUploadProgress(UploadStep.UploadElements, p);
+            publishManager.OnUploadProgress += OnProgress;
+
+            // completion
+            void OnComplete(bool success, string msg)
+            {
+                publishManager.OnUploadProgress -= OnProgress;
+                publishManager.OnPublishComplete -= OnComplete;
+
+                if (success) uploadTcs.SetResult(true);
+                else uploadTcs.SetException(new VrAssetServiceException(msg));
+            }
+            publishManager.OnPublishComplete += OnComplete;
+
+            var lastResponse = publishManager.GetLastResponse();
+            string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
+
+            // Upload to existing world
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
+
+            // wait for completion
+            await uploadTcs.Task;
+
+            // Result url
+            WorldContentResponse resp = publishManager.GetLastResponse();
+            string accessToken = await App.ViveIdentity.GetAccessToken();
+            string uri = "";
+            if (resp != null && !string.IsNullOrEmpty(resp.hub_sid))
+            {
+                uri = string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, resp.hub_sid);
+            }
+            return (uri, uploadLength);
+        }
+
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
         }
 
         /// Helper for UploadCurrentSketchXxxAsync
@@ -860,6 +1109,12 @@ namespace TiltBrush
             return $"{uriPath}{separator}{additionalParams}";
         }
 
+        private static void AppendQueryParam(ref string uri, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) { return; }
+            uri += $"{key}={UnityWebRequest.EscapeURL(value)}&";
+        }
+
         public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
         {
             string filteredUriPath = null;
@@ -883,12 +1138,12 @@ namespace TiltBrush
                     break;
             }
             string uri = $"{IcosaApiRoot}{filteredUriPath}&";
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
             return new AssetLister(uri, errorMessage);
         }
 
@@ -919,7 +1174,13 @@ namespace TiltBrush
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
             while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new IcosaSceneFileInfo(json.Root));
+            var info = new IcosaSceneFileInfo(json.Root);
+            if (!info.Valid)
+            {
+                Debug.LogWarning($"ICOSATILT_LOAD Fetched sketch {assetId} has no valid tilt download");
+                yield break;
+            }
+            infos.Insert(index, info);
         }
 
         public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
@@ -929,19 +1190,23 @@ namespace TiltBrush
                 IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
                 IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
                 IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                IcosaSetType.AllModels => $"{IcosaApiRoot}{kListAssetsUri}?",
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
             foreach (var format in queryParams.Formats)
             {
                 uri += $"format={format}&";
             }
-            uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Curated)) uri += $"curated={queryParams.Curated}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "triangleCountMax", queryParams.TriangleCountMax.ToString());
+            // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
+            // at least one such model is pathologically large, so exclude them server-side.
+            uri += "triangleCountMin=1&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
@@ -949,7 +1214,6 @@ namespace TiltBrush
         // Download a tilt file to a temporary file and load it
         public IEnumerator LoadTiltFile(string id)
         {
-            string path = Path.GetTempFileName();
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
@@ -960,8 +1224,10 @@ namespace TiltBrush
                     {
                         cr.MoveNext();
                     }
-                    catch (VrAssetServiceException)
+                    catch (VrAssetServiceException e)
                     {
+                        ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                        Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
                         yield break;
                     }
                     yield return cr.Current;
@@ -969,19 +1235,34 @@ namespace TiltBrush
             }
             JObject json = JObject.Parse(request.Result);
             var info = new IcosaSceneFileInfo(json);
-            using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
+            if (!info.Valid)
             {
-                yield return www.SendWebRequest();
-                while (!www.downloadHandler.isDone) { yield return null; }
-                FileStream stream = File.Create(path);
-                byte[] data = www.downloadHandler.data;
-                stream.Write(data, 0, data.Length);
-                stream.Close();
+                ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
+                yield break;
+            }
+
+            string path = FileUtils.GenerateNonexistentFilename(
+                Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
+            const int kDownloadBufferSize = 1024 * 1024;
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            IcosaTiltDownloadResult result = null;
+            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                info, path, downloadBuffer,
+                isCanceled: null,
+                onRequestChanged: null,
+                onComplete: r => result = r);
+
+            if (result == null || !result.Succeeded)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    result?.UserMessage ?? "Could not load sketch from Icosa.");
+                Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
+                yield break;
             }
 
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
-            File.Delete(path);
         }
 
         public bool IsValidDeviceCodeSecret(string secret)
@@ -1065,6 +1346,102 @@ namespace TiltBrush
             m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
             return m_CurrentDeviceCodeSecret;
         }
+
+#if UNITY_EDITOR
+        private static void CopyViverseViewerToDirectory(string exportDir)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            foreach (string sourcePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                string relativePath = Path.GetRelativePath(sourceDir, sourcePath);
+                string targetPath = Path.Combine(exportDir, relativePath);
+                string targetDir = Path.GetDirectoryName(targetPath);
+
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                File.Copy(sourcePath, targetPath, overwrite: true);
+            }
+        }
+
+        /// <summary>
+        /// Generates Assets/Resources/ViverseViewer.bytes from ViverseViewer/ source directory
+        /// Called automatically in editor before ViveVerse publishing
+        /// </summary>
+        private static void GenerateViverseViewerBytes()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+            string outputFile = Path.Combine(Application.dataPath, "Resources", "ViverseViewer.bytes");
+
+            // Validate source directory exists
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            // Ensure Resources directory exists
+            string resourcesDir = Path.GetDirectoryName(outputFile);
+            if (!Directory.Exists(resourcesDir))
+            {
+                Directory.CreateDirectory(resourcesDir);
+            }
+
+            // Create zip file
+            try
+            {
+                // Delete existing file if present
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                using (var zip = ZipFile.Open(outputFile, ZipArchiveMode.Create))
+                {
+                    AddDirectoryToZip(zip, sourceDir, "");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new VrAssetServiceException(
+                    $"Failed to generate ViverseViewer.bytes: {e.Message}"
+                );
+            }
+        }
+
+        private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string entryPrefix)
+        {
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string relativePath = Path.Combine(entryPrefix, Path.GetFileName(file));
+                // Normalize path separators to forward slashes for zip
+                relativePath = relativePath.Replace('\\', '/');
+                zip.CreateEntryFromFile(file, relativePath, System.IO.Compression.CompressionLevel.Optimal);
+            }
+
+            foreach (string dir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                string newPrefix = Path.Combine(entryPrefix, dirName);
+                AddDirectoryToZip(zip, dir, newPrefix);
+            }
+        }
+#endif
     }
 
 } // namespace TiltBrush

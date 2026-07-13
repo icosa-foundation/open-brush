@@ -145,25 +145,28 @@ namespace TiltBrush
             }
             string rootFilePath = Path.Combine(assetDir, GetPolySanitizedFilePath(m_RootElement.filePath));
             var unescapedRootFilePath = Uri.UnescapeDataString(rootFilePath);
-            if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(rootFilePath)) ||
+            // Create the directory from the same (unescaped) path the bytes are written to. Otherwise
+            // an escaped directory is created while the file is written to the unescaped path, which
+            // throws DirectoryNotFoundException and leaves an empty escaped folder behind.
+            if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(unescapedRootFilePath)) ||
                 !FileUtils.WriteBytesIgnoreExceptions(m_RootElement.assetBytes, unescapedRootFilePath))
             {
                 return false;
             }
-            written.Add(rootFilePath);
+            written.Add(unescapedRootFilePath);
 
             // Write all resources to disk
             for (int j = 0; j < m_ResourceElements.Count; ++j)
             {
                 string filePath = Path.Combine(assetDir, GetPolySanitizedFilePath(m_ResourceElements[j].filePath));
                 string unescapedFilePath = Uri.UnescapeDataString(filePath);
-                if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(filePath)) ||
+                if (!FileUtils.InitializeDirectory(Path.GetDirectoryName(unescapedFilePath)) ||
                     !FileUtils.WriteBytesIgnoreExceptions(m_ResourceElements[j].assetBytes, unescapedFilePath))
                 {
                     RemoveFiles(written);
                     return false;
                 }
-                written.Add(filePath);
+                written.Add(unescapedFilePath);
             }
             return true;
         }

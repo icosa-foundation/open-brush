@@ -142,8 +142,6 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
     G.CloseFiles();
     m_meshCache.Clear();
     ExportedFiles.UnionWith(G.ExportedFiles);
-    Debug.LogFormat("Wrote files:\n  {0}", String.Join("\n  ", ExportedFiles.ToArray()));
-    Debug.LogFormat("Saved {0} triangle(s) to {1}.", NumTris, m_outPath);
     return ExportedFiles.ToArray();
   }
 

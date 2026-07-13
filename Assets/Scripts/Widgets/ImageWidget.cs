@@ -345,7 +345,13 @@ namespace TiltBrush
 
         public bool HasSubShapes()
         {
-            throw new System.NotImplementedException();
+            if (m_ReferenceImage == null) return false;
+
+            // SVG image break-apart is not yet implemented, so return false
+            // TODO: When SVG image break-apart is implemented, check SvgSceneInfo for sub-shapes
+            // var sceneInfo = m_ReferenceImage.SvgSceneInfo;
+            // return sceneInfo.Scene?.Root != null && sceneInfo.HasSubShapes();
+            return false;
         }
     }
 } // namespace TiltBrush
