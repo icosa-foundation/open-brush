@@ -45,6 +45,7 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            DestroyAtlasTextures();
             _gltfRoot = gltfRoot;
             _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
             _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
@@ -862,6 +863,17 @@ namespace TiltBrush
             Object.Destroy(m_ThumbnailCamera);
             m_OriginalBatchMeshes?.Clear();
             m_TemporaryBatchMeshes?.Clear();
+            DestroyAtlasTextures();
+        }
+
+        private void DestroyAtlasTextures()
+        {
+            if (_atlasTextureCache == null) return;
+            foreach (var texture in _atlasTextureCache.Values)
+            {
+                SafeDestroy(texture);
+            }
+            _atlasTextureCache.Clear();
         }
 
         private static void SafeDestroy(Object o)
