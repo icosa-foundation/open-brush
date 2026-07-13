@@ -51,12 +51,12 @@ TEX_MAP = {
 
 # Common Unity shaders that can use StandardMaterial3D
 STANDARD_MATERIAL_SHADERS = {
-    "DiffuseOpaqueDoubleSided": {"cull_mode": 0},
+    "DiffuseOpaqueDoubleSided": {"cull_mode": 2},
     "DiffuseOpaqueSingleSided": {},
-    "DiffuseDoubleSided": {"cull_mode": 0},
+    "DiffuseDoubleSided": {"cull_mode": 2},
     "DiffuseSingleSided": {},
     "StandardSingleSided": {},
-    "StandardDoubleSided": {"cull_mode": 0},
+    "StandardDoubleSided": {"cull_mode": 2},
     "Unlit": {"flags_unshaded": True},
     "Additive": {"transparency": 1, "blend_mode": 1},
     "Multiplicative": {"transparency": 1, "blend_mode": 3}
@@ -154,7 +154,7 @@ def generate_material_tres(brush, material_data, output_dir, guid_map):
 
     # Apply cull mode from canonical data
     if not brush["enableCull"]:
-        resource_lines.append("cull_disabled = true")
+        resource_lines.append("cull_mode = 2")
 
     # Apply StandardMaterial3D shader-specific settings if applicable
     if use_standard_material and shader_name in STANDARD_MATERIAL_SHADERS:
