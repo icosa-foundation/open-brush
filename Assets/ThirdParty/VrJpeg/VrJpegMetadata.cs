@@ -388,10 +388,11 @@ namespace TiltBrush
 
                 if (markerType == JPEG_MARKER_APP1 && segmentLength > XMP_HEADER.Length)
                 {
-                    byte[] headerBytes = reader.ReadBytes(Math.Min(XMP_HEADER.Length + 200, segmentLength - 2));
-                    string header = Encoding.UTF8.GetString(headerBytes);
+                    byte[] segmentBytes = reader.ReadBytes(segmentLength - 2);
+                    string segment = Encoding.UTF8.GetString(segmentBytes);
 
-                    if (header.Contains(XMP_HEADER) && header.Contains("GPano:"))
+                    if (segment.StartsWith(XMP_HEADER, StringComparison.Ordinal) &&
+                        segment.Contains("GPano:"))
                     {
                         return true;
                     }
