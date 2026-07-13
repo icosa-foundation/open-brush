@@ -211,9 +211,12 @@ namespace TiltBrush
         //
         /// Pass:
         ///   temporaryDirectory - if passed, caller is responsible for cleaning it up
+        ///   objFaceCount - optional polygon count for the OBJ export
+        ///   remixIds - optional list of source asset IDs if this is a remix
         public async Task<CreateResponse> CreateModel(
             string zipPath, IProgress<double> progress, CancellationToken token,
-            Options options = null, string temporaryDirectory = null)
+            Options options = null, string temporaryDirectory = null,
+            int? objFaceCount = null, List<string> remixIds = null)
         {
 
             // No compression because it's a compressed .zip already
@@ -226,6 +229,24 @@ namespace TiltBrush
             if (options != null)
             {
                 moreParams.Add(("options", JsonConvert.SerializeObject(options)));
+            }
+
+            // Add polygon count metadata if provided
+            if (objFaceCount.HasValue)
+            {
+                moreParams.Add(("triangleCount", objFaceCount.Value.ToString()));
+            }
+
+            // Add remix IDs if provided (each as a separate form field)
+            if (remixIds != null && remixIds.Count > 0)
+            {
+                foreach (var remixId in remixIds)
+                {
+                    if (!string.IsNullOrEmpty(remixId))
+                    {
+                        moreParams.Add(("remixIds", remixId));
+                    }
+                }
             }
 
             uploader.ProgressObject = progress;
