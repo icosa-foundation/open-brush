@@ -115,17 +115,20 @@ namespace TiltBrush
                 if (markerType == JPEG_MARKER_APP1 && segmentLength > XMP_HEADER.Length)
                 {
                     // Read header to check if it's XMP
-                    byte[] headerBytes = reader.ReadBytes(XMP_HEADER.Length);
+                    int headerLength = Math.Min(
+                        XMP_EXTENDED_HEADER.Length, (int)(segmentEnd - segmentStart));
+                    byte[] headerBytes = reader.ReadBytes(headerLength);
                     string header = Encoding.UTF8.GetString(headerBytes);
 
-                    if (header == XMP_HEADER)
+                    if (header.StartsWith(XMP_HEADER, StringComparison.Ordinal))
                     {
                         // Standard XMP segment
+                        stream.Position = segmentStart + XMP_HEADER.Length;
                         long xmpDataLength = segmentEnd - stream.Position;
                         byte[] xmpData = reader.ReadBytes((int)xmpDataLength);
                         xmpSegments.Add(Encoding.UTF8.GetString(xmpData));
                     }
-                    else if (header == XMP_EXTENDED_HEADER)
+                    else if (header.StartsWith(XMP_EXTENDED_HEADER, StringComparison.Ordinal))
                     {
                         // Extended XMP segment
                         stream.Position = segmentStart;
