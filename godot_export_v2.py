@@ -34,8 +34,8 @@ OUTPUT_ROOT = Path("godot_brush_materials")
 BLEND_MODE_MAP = {
     0: {"blend_mode": 0},  # Mix (opaque)
     1: {"transparency": 1},  # Alpha blend
-    2: {"blend_mode": 2, "flags_transparent": True},  # Additive
-    3: {"blend_mode": 3, "flags_transparent": True}   # Multiply
+    2: {"transparency": 1, "blend_mode": 1},  # Additive
+    3: {"transparency": 1, "blend_mode": 3}   # Multiply
 }
 
 # Unity texture slot → Godot property mapping
@@ -58,8 +58,8 @@ STANDARD_MATERIAL_SHADERS = {
     "StandardSingleSided": {},
     "StandardDoubleSided": {"cull_mode": 0},
     "Unlit": {"flags_unshaded": True},
-    "Additive": {"blend_mode": 2, "flags_transparent": True},
-    "Multiplicative": {"blend_mode": 3, "flags_transparent": True}
+    "Additive": {"transparency": 1, "blend_mode": 1},
+    "Multiplicative": {"transparency": 1, "blend_mode": 3}
 }
 
 def load_canonical_data():
