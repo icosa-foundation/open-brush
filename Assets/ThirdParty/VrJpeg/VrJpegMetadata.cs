@@ -207,29 +207,29 @@ namespace TiltBrush
 
                 // Parse GPano properties
                 CroppedAreaLeftPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:CroppedAreaLeftPixels", CroppedAreaLeftPixels);
+                    doc, nsmgr, "GPano:CroppedAreaLeftPixels", CroppedAreaLeftPixels);
                 CroppedAreaTopPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:CroppedAreaTopPixels", CroppedAreaTopPixels);
+                    doc, nsmgr, "GPano:CroppedAreaTopPixels", CroppedAreaTopPixels);
                 CroppedAreaImageWidthPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:CroppedAreaImageWidthPixels", CroppedAreaImageWidthPixels);
+                    doc, nsmgr, "GPano:CroppedAreaImageWidthPixels", CroppedAreaImageWidthPixels);
                 CroppedAreaImageHeightPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:CroppedAreaImageHeightPixels", CroppedAreaImageHeightPixels);
+                    doc, nsmgr, "GPano:CroppedAreaImageHeightPixels", CroppedAreaImageHeightPixels);
                 FullPanoWidthPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:FullPanoWidthPixels", FullPanoWidthPixels);
+                    doc, nsmgr, "GPano:FullPanoWidthPixels", FullPanoWidthPixels);
                 FullPanoHeightPixels = ParseIntProperty(
-                    doc, nsmgr, "//GPano:FullPanoHeightPixels", FullPanoHeightPixels);
+                    doc, nsmgr, "GPano:FullPanoHeightPixels", FullPanoHeightPixels);
                 InitialViewHeadingDegrees = ParseIntProperty(
-                    doc, nsmgr, "//GPano:InitialViewHeadingDegrees", InitialViewHeadingDegrees);
+                    doc, nsmgr, "GPano:InitialViewHeadingDegrees", InitialViewHeadingDegrees);
 
                 // Parse GImage mime type
-                var imageNode = doc.SelectSingleNode("//GImage:Mime", nsmgr);
+                var imageNode = SelectPropertyNode(doc, nsmgr, "GImage:Mime");
                 if (imageNode != null)
                 {
                     ImageMime = imageNode.InnerText;
                 }
 
                 // Parse GAudio mime type
-                var audioNode = doc.SelectSingleNode("//GAudio:Mime", nsmgr);
+                var audioNode = SelectPropertyNode(doc, nsmgr, "GAudio:Mime");
                 if (audioNode != null)
                 {
                     AudioMime = audioNode.InnerText;
@@ -254,7 +254,7 @@ namespace TiltBrush
                 nsmgr.AddNamespace("GAudio", "http://ns.google.com/photos/1.0/audio/");
 
                 // Parse GImage:Data (right eye image)
-                var imageDataNode = doc.SelectSingleNode("//GImage:Data", nsmgr);
+                var imageDataNode = SelectPropertyNode(doc, nsmgr, "GImage:Data");
                 if (imageDataNode != null && !string.IsNullOrEmpty(ImageMime))
                 {
                     string base64 = imageDataNode.InnerText;
@@ -262,7 +262,7 @@ namespace TiltBrush
                 }
 
                 // Parse GAudio:Data
-                var audioDataNode = doc.SelectSingleNode("//GAudio:Data", nsmgr);
+                var audioDataNode = SelectPropertyNode(doc, nsmgr, "GAudio:Data");
                 if (audioDataNode != null && !string.IsNullOrEmpty(AudioMime))
                 {
                     string base64 = audioDataNode.InnerText;
@@ -276,9 +276,9 @@ namespace TiltBrush
         }
 
         private static int ParseIntProperty(
-            XmlDocument doc, XmlNamespaceManager nsmgr, string xpath, int currentValue)
+            XmlDocument doc, XmlNamespaceManager nsmgr, string propertyName, int currentValue)
         {
-            var node = doc.SelectSingleNode(xpath, nsmgr);
+            var node = SelectPropertyNode(doc, nsmgr, propertyName);
             int parsedValue;
             if (node != null && int.TryParse(node.InnerText, out parsedValue))
             {
@@ -286,6 +286,12 @@ namespace TiltBrush
             }
 
             return currentValue;
+        }
+
+        private static XmlNode SelectPropertyNode(
+            XmlDocument doc, XmlNamespaceManager nsmgr, string propertyName)
+        {
+            return doc.SelectSingleNode($"//{propertyName} | //@{propertyName}", nsmgr);
         }
 
         private byte[] DecodeBase64WithoutPadding(string base64)
