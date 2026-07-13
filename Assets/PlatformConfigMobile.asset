@@ -18,15 +18,15 @@ MonoBehaviour:
   ReferenceImagesMaxDimension: 8704
   ReferenceImagesResizeDimension: 2048
   SketchSetMaxCacheSize: 537000000
-  MemoryWarningVertCount: 1000000
-  UseFileSystemWatcher: 1
+  MemoryWarningVertCount: 2000000
+  UseFileSystemWatcher: 0
   EnableAutosave: 0
   PlatformQualitySettings: {fileID: 11400000, guid: f5586851c6e53bd4294e7c2c7a75d40d,
     type: 2}
   QuickLoadMaxDistancePerFrame: 8
   IntroSketchPrefab: {fileID: 1843608203, guid: ddfd362fa9a8d5840bf47df17d2eba8a,
     type: 3}
-  EnablePolyPreload: 0
+  EnableIcosaPreload: 0
   AvoidUploadHandlerFile: 0
   EnableExportFbx: 0
   EnableExportGlb: 1

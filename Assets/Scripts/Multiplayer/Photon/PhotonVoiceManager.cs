@@ -23,6 +23,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using TiltBrush;
 using UnityEngine;
+#if UNITY_ANDROID
+using UnityEngine.Android;
+#endif
 
 public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks, IMatchmakingCallbacks
 {
@@ -37,6 +40,11 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
     private Recorder m_Recorder;
     private bool ConnectedToMaster = false;
     private bool wasTransmitting = false;
+#if UNITY_ANDROID
+    private bool m_RequestingMicrophonePermission = false;
+    private bool m_StartSpeakingWhenMicrophonePermissionGranted = false;
+    private PermissionCallbacks m_MicrophonePermissionCallbacks;
+#endif
 
 
 
@@ -219,6 +227,19 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public bool StartSpeaking()
     {
+#if UNITY_ANDROID
+        if (!Permission.HasUserAuthorizedPermission(Permission.Microphone))
+        {
+            RequestMicrophonePermission();
+            return false;
+        }
+#endif
+
+        return EnableRecorderTransmission();
+    }
+
+    private bool EnableRecorderTransmission()
+    {
         m_Recorder = m_VoiceConnection.PrimaryRecorder;
         if (m_Recorder == null)
         {
@@ -231,8 +252,62 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         return true;
     }
 
+#if UNITY_ANDROID
+    private void RequestMicrophonePermission()
+    {
+        if (m_RequestingMicrophonePermission)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine("Waiting for microphone permission.");
+            return;
+        }
+
+        m_RequestingMicrophonePermission = true;
+        m_StartSpeakingWhenMicrophonePermissionGranted = true;
+        ControllerConsoleScript.m_Instance.AddNewLine("Microphone permission is required to use voice chat.");
+
+        m_MicrophonePermissionCallbacks = new PermissionCallbacks();
+        m_MicrophonePermissionCallbacks.PermissionGranted += OnMicrophonePermissionGranted;
+        m_MicrophonePermissionCallbacks.PermissionDenied += OnMicrophonePermissionDenied;
+        m_MicrophonePermissionCallbacks.PermissionDeniedAndDontAskAgain += OnMicrophonePermissionDenied;
+        Permission.RequestUserPermission(Permission.Microphone, m_MicrophonePermissionCallbacks);
+    }
+
+    private void ClearMicrophonePermissionRequest()
+    {
+        if (m_MicrophonePermissionCallbacks != null)
+        {
+            m_MicrophonePermissionCallbacks.PermissionGranted -= OnMicrophonePermissionGranted;
+            m_MicrophonePermissionCallbacks.PermissionDenied -= OnMicrophonePermissionDenied;
+            m_MicrophonePermissionCallbacks.PermissionDeniedAndDontAskAgain -= OnMicrophonePermissionDenied;
+            m_MicrophonePermissionCallbacks = null;
+        }
+        m_RequestingMicrophonePermission = false;
+    }
+
+    private void OnMicrophonePermissionGranted(string permissionName)
+    {
+        ClearMicrophonePermissionRequest();
+        if (m_StartSpeakingWhenMicrophonePermissionGranted)
+        {
+            ControllerConsoleScript.m_Instance.AddNewLine("Microphone permission granted. Starting voice chat.");
+            EnableRecorderTransmission();
+        }
+    }
+
+    private void OnMicrophonePermissionDenied(string permissionName)
+    {
+        ClearMicrophonePermissionRequest();
+        m_StartSpeakingWhenMicrophonePermissionGranted = false;
+        LastError = "[PhotonVoiceManager] Microphone permission was denied.";
+        ControllerConsoleScript.m_Instance.AddNewLine(LastError);
+    }
+#endif
+
     public bool StopSpeaking()
     {
+#if UNITY_ANDROID
+        m_StartSpeakingWhenMicrophonePermissionGranted = false;
+#endif
         if (m_Recorder != null)
         {
             m_Recorder.TransmitEnabled = false;

@@ -11,7 +11,7 @@ namespace TiltBrush
         public List<Environment> _Environments;
 
         [LuaDocsDescription("Returns the last environment")]
-        public EnvironmentApiWrapper last => new EnvironmentApiWrapper(_Environments[^1]);
+        public EnvironmentApiWrapper last => new(_Environments[^1]);
 
         [LuaDocsDescription("Returns the current environment")]
         public EnvironmentApiWrapper current
@@ -37,7 +37,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the environment at the given index")]
-        public EnvironmentApiWrapper this[int index] => new EnvironmentApiWrapper(_Environments[index]);
+        public EnvironmentApiWrapper this[int index] => new(Utils.WrappedIndexerGet(() => _Environments[index]));
 
         [LuaDocsDescription("The number of available environments")]
         public int count => _Environments?.Count ?? 0;
@@ -47,7 +47,7 @@ namespace TiltBrush
         [LuaDocsParameter("name", "The name of the environment to get")]
         [LuaDocsReturnValue("The environment, or nil if no environment has that name")]
 
-        public EnvironmentApiWrapper ByName(string name) => new EnvironmentApiWrapper(
+        public EnvironmentApiWrapper ByName(string name) => new(
             _Environments.FirstOrDefault(e => e.Description == name)
         );
     }

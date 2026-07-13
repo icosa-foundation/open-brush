@@ -75,13 +75,14 @@ namespace TiltBrush
             return point;
         }
 
-        private static TrTransform _CurrentTransform()
+        private static TrTransform _CurrentBrushTransform()
         {
             var tr = TrTransform.TR(
                 ApiManager.Instance.BrushPosition,
                 ApiManager.Instance.BrushRotation
             );
-            return tr;
+            var result = App.Scene.Pose * tr;
+            return result;
         }
 
         private static Vector3 _QuantizePosition(Vector3 pos, Vector3 grid)
@@ -155,11 +156,7 @@ namespace TiltBrush
 
         private static void _SetWidgetScale(GrabWidget widget, float scale)
         {
-            var tr = widget.LocalTransform;
-            tr.scale = scale;
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
-            );
+            widget.SetSignedWidgetSize(scale);
         }
 
         private static void _SetWidgetTransform(GrabWidget widget, Vector3 translation, Quaternion rotation, float scale = 1)

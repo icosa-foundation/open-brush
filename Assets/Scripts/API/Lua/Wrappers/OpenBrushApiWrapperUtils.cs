@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using MoonSharp.Interpreter;
 using UnityEngine;
 
 namespace TiltBrush
@@ -35,6 +37,40 @@ namespace TiltBrush
             int count = enumerable.Count();
             if (index < 0) index = count - Mathf.Abs(index);
             return index;
+        }
+
+        private static void ThrowIfOutOfRange(Exception e)
+        {
+            if (e is IndexOutOfRangeException or ArgumentOutOfRangeException)
+            {
+                throw new ScriptRuntimeException(e);
+            }
+            throw e;
+        }
+
+        public static T WrappedIndexerGet<T>(Func<T> accessor)
+        {
+            try
+            {
+                return accessor();
+            }
+            catch (Exception e)
+            {
+                ThrowIfOutOfRange(e);
+                return default;
+            }
+        }
+
+        public static void WrappedIndexerSet(Action setter)
+        {
+            try
+            {
+                setter();
+            }
+            catch (Exception e)
+            {
+                ThrowIfOutOfRange(e);
+            }
         }
 
         public static void _Transform(ItemType type, int index, TrTransform tr)

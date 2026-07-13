@@ -72,8 +72,8 @@ namespace TiltBrush
         [LuaDocsDescription("The color component at the specified index")]
         public float this[int index]
         {
-            get => _Color[index];
-            set => _Color[index] = value;
+            get => Utils.WrappedIndexerGet(() => _Color[index]);
+            set => Utils.WrappedIndexerSet(() => _Color[index] = value);
         }
 
         [LuaDocsDescription("The red component")]

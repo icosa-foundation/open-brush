@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,6 +59,12 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
+        [ApiEndpoint("save.selected", "Saves the current selected strokes in a new slot")]
+        public static void SaveSelected()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveSelected;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+        }
 
 #if UNITY_EDITOR
         // Editor only for now to help with testing/debugging
@@ -471,6 +477,54 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint(
+            "profiling.start",
+            "Starts profiling. Mode can be standard, light, or deep. Optional second value sets the profile label.",
+            "standard,baseline_label_smoke")]
+        public static string StartProfiling(string mode = "standard", string profileName = null)
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (profilingManager.IsProfiling)
+            {
+                return "Profiling is already running.";
+            }
+
+            ProfilingManager.Mode profilingMode = ParseProfilingMode(mode);
+            profilingManager.StartProfiling(profilingMode, profileName);
+            return string.IsNullOrEmpty(profileName)
+                ? $"Started {profilingMode} profiling."
+                : $"Started {profilingMode} profiling for '{profileName}'.";
+        }
+
+        [ApiEndpoint("profiling.stop", "Stops profiling and writes the summary output")]
+        public static string StopProfiling()
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (!profilingManager.IsProfiling)
+            {
+                return "Profiling is not running.";
+            }
+
+            profilingManager.StopProfiling();
+            return "Stopped profiling.";
+        }
+
+        private static ProfilingManager.Mode ParseProfilingMode(string mode)
+        {
+            if (string.IsNullOrEmpty(mode))
+            {
+                return ProfilingManager.Mode.Standard;
+            }
+
+            if (System.Enum.TryParse(mode, ignoreCase: true, out ProfilingManager.Mode parsedMode))
+            {
+                return parsedMode;
+            }
+
+            UnityEngine.Debug.LogWarning($"[OB_PERF] Unknown profiling mode '{mode}', using Standard.");
+            return ProfilingManager.Mode.Standard;
+        }
+
         // // TODO Do we need this?
         // [ApiEndpoint("autoprofile", "Runs autoprofile")]
         // public static void DoAutoProfile()
@@ -621,5 +675,4 @@ namespace TiltBrush
         }
     }
 }
-
 

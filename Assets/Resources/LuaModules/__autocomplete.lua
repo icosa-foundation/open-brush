@@ -28,8 +28,8 @@ function App:ShowScriptsFolder() end
 
 function App:ShowExportFolder() end
 
-
-function App:ShowSketchesFolder() end
+---@param index number The index of the sketch (0 being the most recent, then 1 and so on)
+function App:ShowSketchesFolder(index) end
 
 ---@param active boolean True means activate, false means deactivate
 function App:StraightEdge(active) end
@@ -1870,6 +1870,31 @@ function Symmetry:GetBrushGuids() end
 ---@param path Path The path to convert
 ---@return Path # 
 function Symmetry:PathToPolar(path) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+---@param mode SymmetryPointerPaintMode The override to apply to the pointer.
+function Symmetry:SetPointerPaintMode(pointerIndex, mode) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+---@return SymmetryPointerPaintMode # 
+function Symmetry:GetPointerPaintMode(pointerIndex) end
+
+
+---@return System.Collections.Generic.List`1[SymmetryPointerPaintMode] # 
+function Symmetry:GetPointerPaintModes() end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:StartPointer(pointerIndex) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:StopPointer(pointerIndex) end
+
+---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
+function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
+---@param path Path The path to duplicate
+---@return PathList # 
+function Symmetry:ApplyToPath(path) end
 
 
 

@@ -29,6 +29,19 @@ namespace TiltBrush
 
     public class SelectionEffect : MonoBehaviour
     {
+        // Static flag to disable selection effects during save icon capture
+        private static bool s_DisableSelectionEffects = false;
+        public static bool DisableSelectionEffects
+        {
+            get { return s_DisableSelectionEffects; }
+            set
+            {
+                s_DisableSelectionEffects = value;
+                // Set shader global so mobile shaders can also check this flag
+                Shader.SetGlobalFloat("_DisableSelectionEffect", value ? 1.0f : 0.0f);
+            }
+        }
+
 #if FEATURE_CUSTOM_MESH_RENDER
         private enum SelectionEffectPass
         {
@@ -242,7 +255,7 @@ namespace TiltBrush
             Material postEffect = ActivePostEffect();
             bool isRecording = (VideoRecorderUtils.ActiveVideoRecording != null) &&
                 VideoRecorderUtils.ActiveVideoRecording.IsCapturing;
-            if (isRecording || !m_CmrRenderHighlight || !postEffect)
+            if (isRecording || DisableSelectionEffects || !m_CmrRenderHighlight || !postEffect)
             {
                 Graphics.Blit(source, destination);
                 return;

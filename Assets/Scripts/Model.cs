@@ -89,6 +89,12 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
+                            if (System.IO.File.Exists(blocksPath))
+                            {
+                                return blocksPath.Replace("\\", "/");
+                            }
+
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
                         case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
@@ -106,7 +112,7 @@ namespace TiltBrush
                 }
             }
 
-            public string Extension => Path.GetExtension(AbsolutePath).ToLower();
+            public string Extension => Path.GetExtension(AbsolutePath)?.ToLowerInvariant() ?? "";
 
             public string AssetId
             {
@@ -212,12 +218,20 @@ namespace TiltBrush
         // How many widgets are using this model?
         public int m_UsageCount;
 
+        // Store the paths of meshes that have been through MeshSplitter
+        public List<string> m_SplitMeshPaths;
+        public List<string> m_NotSplittableMeshPaths;
+        private HashSet<string> m_AppliedMeshSplits;
+
         private Location m_Location;
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
 
         private ImportMaterialCollector m_ImportMaterialCollector;
+
+        // Store SVG scene info for SVG models (persists across instantiation)
+        public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -239,13 +253,35 @@ namespace TiltBrush
                 {
                     return AssetId;
                 }
-                return Path.GetFileNameWithoutExtension(m_Location.RelativePath);
+
+                string relativePath = m_Location.RelativePath;
+                string filename = Path.GetFileName(relativePath);
+
+                // For Blocks models (always named "model.obj"), use the parent directory name
+                if (filename != null && filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
+                {
+                    string parentDir = Path.GetDirectoryName(relativePath);
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        // Get the last directory name in the path
+                        return Path.GetFileName(parentDir);
+                    }
+                }
+
+                return Path.GetFileNameWithoutExtension(relativePath);
             }
         }
 
         public bool AllowExport
         {
             get { return m_AllowExport; }
+        }
+
+        private void Init()
+        {
+            m_SplitMeshPaths = new List<string>();
+            m_NotSplittableMeshPaths = new List<string>();
+            m_AppliedMeshSplits = new HashSet<string>();
         }
 
         /// Only allowed if AllowExport = true
@@ -259,12 +295,14 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            Init();
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
         public Model(string assetId, string path)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            Init();
         }
 
         public Location GetLocation() { return m_Location; }
@@ -578,6 +616,27 @@ namespace TiltBrush
 
         }
 
+        GameObject LoadVox(List<string> warningsOut)
+        {
+            try
+            {
+                // Default to optimized mode with face culling
+                var reader = new VoxImporter(m_Location.AbsolutePath, VoxImporter.MeshMode.Optimized);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
         {
             try
@@ -614,6 +673,11 @@ namespace TiltBrush
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
+                GenerateUniqueNames(gameObject.transform);
                 return parent;
             }
             catch (Exception ex)
@@ -795,12 +859,11 @@ namespace TiltBrush
         {
             Task t = StartCreatePrefab(null);
             await t;
-
         }
+
         public void LoadModel()
         {
             StartCreatePrefab(null);
-
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -832,6 +895,10 @@ namespace TiltBrush
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
+                // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time
+                // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
+                var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
+                int __icosaStartFrame = Time.frameCount;
                 if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
@@ -870,17 +937,28 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
+                else if (ext == ".vox")
+                {
+                    go = LoadVox(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
                 else if (ext == ".svg")
                 {
                     go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    SvgSceneInfo = sceneInfo;
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
-                    go.GetComponent<ObjModelScript>().SvgSceneInfo = sceneInfo;
                 }
                 else
                 {
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
+                __icosaSw.Stop();
+                int __icosaFrames = Time.frameCount - __icosaStartFrame + 1;
+                Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
+                    $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
+                    $"(valid={m_Valid} error={m_LoadError.HasValue})");
             }
 
         }
@@ -954,7 +1032,7 @@ namespace TiltBrush
 
             // Adopt the GameObject
             go.name = m_Location.ToString();
-            go.AddComponent<ObjModelScript>().Init();
+            go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
             go.SetActive(false);
             if (m_ModelParent != null)
             {
@@ -962,16 +1040,23 @@ namespace TiltBrush
             }
             m_ModelParent = go.transform;
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            ProfilerMarker generateUniqueNamesPerfMarker = new ProfilerMarker("Model.GenerateUniqueNames");
-            generateUniqueNamesPerfMarker.Begin();
-#endif
-
+            // For glTF format models, we will have already done this via the import plugin
+            // It's safe to run for all formats as it checks for existing suffixes
+            // For a small performance improvement on deep hierarchies
+            // we could skip this for glTF models
             GenerateUniqueNames(m_ModelParent);
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            generateUniqueNamesPerfMarker.End();
-#endif
+            // Clear the applied splits tracker since we have a new hierarchy
+            // This ensures splits are re-applied when models are reloaded
+            if (m_AppliedMeshSplits != null)
+            {
+                m_AppliedMeshSplits.Clear();
+            }
+
+            if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
+            {
+                InitMeshSplits();
+            }
 
             // !!! Add to material dictionary here?
             m_Valid = true;
@@ -986,23 +1071,30 @@ namespace TiltBrush
         // This method is called when the model has been loaded and the node tree is available
         // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
         // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        // 
+        // CRITICAL: This logic must match EnsureUniquePathsImportContext exactly.
+        // Both functions ensure unique node names using the same naming pattern and safety checks.
+        // If you modify this function, you MUST update EnsureUniquePathsImportContext accordingly.
         private static void GenerateUniqueNames(Transform rootNode)
         {
             void SetUniqueNameForNode(Transform node)
             {
-                // GetInstanceID returns a unique ID for every GameObject during a runtime session
-                node.name += " uid: " + node.gameObject.GetInstanceID();
-
+                int index = 0;
                 foreach (Transform child in node)
                 {
+                    string oldName = child.name;
+
+                    // Skip renaming if already has our suffix (safety check - matches EnsureUniquePathsImportContext)
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(oldName, @"\[ob:\d+\]$"))
+                    {
+                        string newName = oldName + $"[ob:{index}]";
+                        child.name = newName;
+                    }
+                    index++;
                     SetUniqueNameForNode(child);
                 }
             }
-
-            foreach (Transform child in rootNode)
-            {
-                SetUniqueNameForNode(child);
-            }
+            SetUniqueNameForNode(rootNode);
         }
 
         public void UnloadModel()
@@ -1026,6 +1118,7 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            m_AppliedMeshSplits?.Clear();
         }
 
         /// Resets this.Error and tries to load the model again.
@@ -1128,6 +1221,136 @@ namespace TiltBrush
                     Path.GetDirectoryName(localPath),
                     uniqueSeed: localPath
                 );
+            }
+        }
+
+
+        public void SetMeshSplitData(IEnumerable<string> splitMeshPaths, IEnumerable<string> notSplittableMeshPaths)
+        {
+            m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            m_NotSplittableMeshPaths = notSplittableMeshPaths?.ToList() ?? new List<string>();
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Clear();
+        }
+
+        public void RegisterMeshSplit(string splitPath)
+        {
+            splitPath ??= string.Empty;
+            if (m_SplitMeshPaths == null)
+            {
+                m_SplitMeshPaths = new List<string>();
+            }
+            if (!m_SplitMeshPaths.Contains(splitPath))
+            {
+                m_SplitMeshPaths.Add(splitPath);
+            }
+            if (m_NotSplittableMeshPaths == null)
+            {
+                m_NotSplittableMeshPaths = new List<string>();
+            }
+            m_NotSplittableMeshPaths.Remove(splitPath);
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Remove(splitPath);
+        }
+
+        public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
+        {
+            var splits = MeshSplitter.DoSplit(rootMf);
+            return splits;
+        }
+
+        public void InitMeshSplits()
+        {
+            if (m_ModelParent == null)
+            {
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
+                return;
+            }
+            if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
+            {
+                return;
+            }
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+
+            var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+            if (modelObjScript == null)
+            {
+                Debug.LogError($"[MeshSplit] Model {m_Location} has no ObjModelScript to process mesh splits");
+                return;
+            }
+
+            foreach (var split in m_SplitMeshPaths)
+            {
+                if (m_NotSplittableMeshPaths != null && m_NotSplittableMeshPaths.Contains(split))
+                {
+                    continue;
+                }
+                if (m_AppliedMeshSplits.Contains(split))
+                {
+                    continue;
+                }
+
+                Transform destRoot;
+                if (string.IsNullOrEmpty(split))
+                {
+                    if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
+                    {
+                        Debug.LogError($"[MeshSplit] Model {m_Location} has no meshes to split for root path");
+                        continue;
+                    }
+                    destRoot = modelObjScript.m_MeshChildren[0]?.transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        split
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                if (destRoot == null)
+                {
+                    Debug.LogError($"[MeshSplit] Model {m_Location} has no subtree for split '{split}'");
+                    // Log the hierarchy to help debug
+                    Debug.LogError($"[MeshSplit] Available hierarchy under {modelObjScript.transform.name}:");
+                    LogHierarchy(modelObjScript.transform, 0);
+                    continue;
+                }
+
+                var modelMf = destRoot.GetComponent<MeshFilter>();
+                if (modelMf == null)
+                {
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
+                    // Already split or nothing to split at this node.
+                    m_AppliedMeshSplits.Add(split);
+                    continue;
+                }
+
+                ApplySplits(modelMf);
+                // Remove the meshfilter from the original game object
+                GameObject.DestroyImmediate(modelMf);
+                modelObjScript.UpdateAllMeshChildren();
+                m_AppliedMeshSplits.Add(split);
+            }
+        }
+
+        private void LogHierarchy(Transform root, int depth)
+        {
+            string indent = new string(' ', depth * 2);
+            Debug.LogError($"[MeshSplit] {indent}- {root.name} (MeshFilter: {root.GetComponent<MeshFilter>() != null})");
+            foreach (Transform child in root)
+            {
+                LogHierarchy(child, depth + 1);
             }
         }
     }

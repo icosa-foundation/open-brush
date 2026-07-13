@@ -36,8 +36,8 @@ namespace TiltBrush
         [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
-            get => _Vector2[index];
-            set => _Vector2[index] = value;
+            get => Utils.WrappedIndexerGet(() => _Vector2[index]);
+            set => Utils.WrappedIndexerSet(() => _Vector2[index] = value);
         }
 
         [LuaDocsDescription("The x coordinate")]
@@ -169,17 +169,17 @@ namespace TiltBrush
         [LuaDocsDescription("Converts this 2D vector to a 3D vector on the YZ plane)")]
         [LuaDocsExample("myVector3 = myVector2:OnX()")]
         [LuaDocsReturnValue("A 3D Vector based on the input but with x as 0: (0, inX, inY)")]
-        public Vector3 OnX() => new Vector3(0, _Vector2.x, _Vector2.y);
+        public Vector3 OnX() => new(0, _Vector2.x, _Vector2.y);
 
         [LuaDocsDescription("Converts this 2D vector to a 3D vector on the XZ plane (i.e. with all y values set to 0)")]
         [LuaDocsExample("myVector3 = myVector2:OnY()")]
         [LuaDocsReturnValue("A 3D Vector based on the input but with y as 0: (inX, 0, inY)")]
-        public Vector3 OnY() => new Vector3(_Vector2.x, 0, _Vector2.y);
+        public Vector3 OnY() => new(_Vector2.x, 0, _Vector2.y);
 
         [LuaDocsDescription("Converts this 2D vector to a 3D vector on the XY plane (i.e. with all z values set to 0)")]
         [LuaDocsExample("myVector3 = myVector2:OnZ()")]
         [LuaDocsReturnValue("A 3D Vector based on the input but with z as 0: (inX, inX, 0)")]
-        public Vector3 OnZ() => new Vector3(_Vector2.x, _Vector2.y, 0);
+        public Vector3 OnZ() => new(_Vector2.x, _Vector2.y, 0);
 
         [LuaDocsDescription("A vector of -1 in the y axis")]
         public static Vector2 down => Vector2.down;

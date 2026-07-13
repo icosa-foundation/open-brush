@@ -370,7 +370,10 @@ namespace TiltBrush
                     transform.localPosition = value.translation;
                     transform.localRotation = value.rotation;
                 }
-                SetSignedWidgetSize(value.scale);
+                if (!ShouldPreserveCustomSize())
+                {
+                    SetSignedWidgetSize(value.scale);
+                }
             }
         }
 
@@ -1168,8 +1171,11 @@ namespace TiltBrush
             // Refresh snap input and enter/exit snapping state.
             if (m_AllowSnapping)
             {
-                SnapEnabled = SelectionManager.m_Instance.AngleOrPositionSnapEnabled() &&
-                    SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController) &&
+                bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
+                bool quickSnapPressed = IsQuickSnapPressed();
+                bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+                SnapEnabled = !snappingOverriddenOff &&
+                    (snapPanelSettingsActive || quickSnapPressed) &&
                     !m_Pinned;
 
                 if (!m_bWasSnapping && SnapEnabled)
@@ -1211,11 +1217,7 @@ namespace TiltBrush
                 }
             }
 
-            if (m_SnapGhost != null && SnapEnabled)
-            {
-                m_SnapGhost.position = inputXf.translation;
-                m_SnapGhost.rotation = inputXf.rotation;
-            }
+            UpdateSnapGhostTransform(inputXf, xf_GS);
 
             m_bWasSnapping = SnapEnabled;
 
@@ -1244,7 +1246,7 @@ namespace TiltBrush
 
         virtual public TrTransform GetGrabbedTrTransform()
         {
-            if (SnapEnabled && m_SnapGhost != null)
+            if (m_SnapGhost != null && m_SnapGhost.gameObject.activeSelf)
             {
                 return TrTransform.FromTransform(m_SnapGhost.transform);
             }
@@ -1280,30 +1282,104 @@ namespace TiltBrush
         // The scale of the returned TrTransform should be ignored.
         virtual protected TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
+            bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
+            bool quickSnapPressed = IsQuickSnapPressed();
+            bool angleSnapEnabled = SelectionManager.m_Instance.CurrentSnapAngleIndex != 0;
+            bool gridSnapEnabled = SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+
+            if (quickSnapPressed && snapPanelSettingsActive)
+            {
+                return xf_GS;
+            }
+            else if (quickSnapPressed)
+            {
+                return GetQuickSnapTransform(xf_GS);
+            }
+            else if (angleSnapEnabled || gridSnapEnabled)
+            {
+                return GetSnapPanelTransform(xf_GS);
+            }
+            else
+            {
+                return GetQuickSnapTransform(xf_GS);
+            }
+        }
+
+        protected virtual bool SnapButtonConflictsWithDuplicate => false;
+
+        private bool IsQuickSnapPressed()
+        {
+            return !SnapButtonConflictsWithDuplicate &&
+                InputManager.Controllers[(int)m_InteractingController].GetCommand(
+                    InputManager.SketchCommands.MenuContextClick) &&
+                SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
+        }
+
+        private bool IsSnapPanelSettingsActive()
+        {
+            return SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+        }
+
+        private void UpdateSnapGhostTransform(TrTransform inputXf, TrTransform snappedXf)
+        {
+            if (m_SnapGhost == null)
+            {
+                return;
+            }
+
+            bool showGhost = SnapEnabled && HasVisibleSnapDelta(inputXf, snappedXf);
+            m_SnapGhost.gameObject.SetActive(showGhost);
+            if (showGhost)
+            {
+                m_SnapGhost.position = inputXf.translation;
+                m_SnapGhost.rotation = inputXf.rotation;
+            }
+        }
+
+        private bool HasVisibleSnapDelta(TrTransform inputXf, TrTransform snappedXf)
+        {
+            const float positionEpsilonSqr = 0.000001f;
+            const float rotationEpsilon = 0.1f;
+            return
+                (inputXf.translation - snappedXf.translation).sqrMagnitude > positionEpsilonSqr ||
+                Quaternion.Angle(inputXf.rotation, snappedXf.rotation) > rotationEpsilon;
+        }
+
+        // The "new" snapping - based on the settings on the Snap Panel
+        private TrTransform GetSnapPanelTransform(TrTransform xf_GS)
+        {
             TrTransform outXf_GS = xf_GS;
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
-                // Calculate the nearest snap angle
-                var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
-                Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
-
-                // Decide whether to snap to the old or the new snap angle
-                float snapAngle = SelectionManager.m_Instance.SnappingAngle;
-                float stickiness = m_ValidSnapRotationStickyAngle / 90f;
-                float stickyAngle = snapAngle * stickiness;
-                if (nearestSnapRotation_CS != m_PrevSnapRotation)
+                Quaternion snappedRotation_GS = GetConfiguredSnapRotation_GS(xf_GS.rotation);
+                if (snappedRotation_GS != xf_GS.rotation)
                 {
-                    float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
-                    if (a > stickyAngle)
-                    {
-                        m_PrevSnapRotation = nearestSnapRotation_CS;
-                    }
+                    outXf_GS.rotation = snappedRotation_GS;
+                    Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+                    Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+                    Vector3 grabToCenter = xf_GS.translation - grabSpot;
+                    outXf_GS.translation = grabSpot + qDelta * grabToCenter;
                 }
+            }
 
-                // Apply the resulting change in rotation to the original transform
-                var rotationDelta = m_PrevSnapRotation * Quaternion.Inverse(rot_CS);
-                outXf_GS.rotation = rotationDelta * outXf_GS.rotation;
+            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+            }
+
+            return outXf_GS;
+        }
+
+        // The "old" snapping - the A button on the brush controller (or equivalent)
+
+        private TrTransform GetQuickSnapTransform(TrTransform xf_GS)
+        {
+            TrTransform outXf_GS = xf_GS;
+            Quaternion snappedRotation_GS = GetSnapRotation_GS(xf_GS.rotation);
+            if (snappedRotation_GS != xf_GS.rotation)
+            {
+                outXf_GS.rotation = snappedRotation_GS;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
@@ -1317,6 +1393,71 @@ namespace TiltBrush
             }
 
             return outXf_GS;
+        }
+
+        private Quaternion GetSnapRotation_GS(Quaternion rotation_GS)
+        {
+            return SelectionManager.m_Instance.CurrentSnapAngleIndex != 0
+                ? GetConfiguredSnapRotation_GS(rotation_GS)
+                : GetLegacySnapRotation_GS(rotation_GS);
+        }
+
+        private Quaternion GetConfiguredSnapRotation_GS(Quaternion rotation_GS)
+        {
+            var rot_CS = App.Scene.Pose.rotation.TrueInverse() * rotation_GS;
+            Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
+
+            float snapAngle = SelectionManager.m_Instance.SnappingAngle;
+            float stickiness = m_ValidSnapRotationStickyAngle / 90f;
+            float stickyAngle = snapAngle * stickiness;
+            if (nearestSnapRotation_CS != m_PrevSnapRotation)
+            {
+                float a = Quaternion.Angle(rotation_GS, App.Scene.Pose.rotation * m_PrevSnapRotation);
+                if (a > stickyAngle)
+                {
+                    m_PrevSnapRotation = nearestSnapRotation_CS;
+                }
+            }
+
+            // QuantizeAngle may only affect some axes, so preserve the live values for disabled axes.
+            Vector3 currentEuler_CS = rot_CS.eulerAngles;
+            Vector3 stickyEuler_CS = m_PrevSnapRotation.eulerAngles;
+            Vector3 finalEuler_CS = new Vector3(
+                SelectionManager.m_Instance.m_EnableSnapRotationX ? stickyEuler_CS.x : currentEuler_CS.x,
+                SelectionManager.m_Instance.m_EnableSnapRotationY ? stickyEuler_CS.y : currentEuler_CS.y,
+                SelectionManager.m_Instance.m_EnableSnapRotationZ ? stickyEuler_CS.z : currentEuler_CS.z
+            );
+            return App.Scene.Pose.rotation * Quaternion.Euler(finalEuler_CS);
+        }
+
+        private Quaternion GetLegacySnapRotation_GS(Quaternion rotation_GS)
+        {
+            int iNearestIndex = GetBestSnapRotationIndex(rotation_GS);
+
+            // Update our rotation if we found a valid, new index and the angle difference is
+            // beyond our sticky threshold.
+            if (iNearestIndex != -1 && iNearestIndex != m_PrevValidSnapRotationIndex)
+            {
+                bool bUpdateRotation = true;
+                if (m_PrevValidSnapRotationIndex != -1)
+                {
+                    float a = Quaternion.Angle(rotation_GS, App.Scene.Pose.rotation *
+                        m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex]);
+                    bUpdateRotation = a > m_ValidSnapRotationStickyAngle;
+                }
+
+                if (bUpdateRotation)
+                {
+                    m_PrevValidSnapRotationIndex = iNearestIndex;
+                }
+            }
+
+            if (m_PrevValidSnapRotationIndex == -1)
+            {
+                return rotation_GS;
+            }
+
+            return App.Scene.Pose.rotation * m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex];
         }
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
@@ -1401,12 +1542,7 @@ namespace TiltBrush
                         m_SnapGhost.gameObject.activeSelf : false;
 
                     // Hypothetically, if we were to snap, what should our orientation be?
-                    Quaternion qSnapOrient = transform.rotation;
-                    int iNearestIndex = GetBestSnapRotationIndex(qSnapOrient);
-                    if (iNearestIndex != -1)
-                    {
-                        qSnapOrient = App.Scene.Pose.rotation * m_ValidSnapRotations_SS[iNearestIndex];
-                    }
+                    Quaternion qSnapOrient = outXf_GS.rotation;
 
                     Vector3 vOffset = GetHomeSnapLocation(qSnapOrient);
 
@@ -1642,11 +1778,8 @@ namespace TiltBrush
 
             // If the widget is pinned, don't pretend like we can snap it to things.
             bool show = m_AllowSnapping && !Pinned;
-            // TODO:Mikesky 'SnapEnabled' is controlled by the new snap panel, rather than button input.
-            // This breaks using this button to quickly toggle on a grabbed object.
-            // Disabling icon for now to avoid confusion.
-            // InputManager.GetControllerGeometry(m_InteractingController)
-            //     .TogglePadSnapHint(SnapEnabled, show);
+            InputManager.GetControllerGeometry(m_InteractingController)
+                .TogglePadSnapHint(SnapEnabled, show);
         }
 
         // Returns distance from center of collider if point is inside, 0..1
@@ -1959,6 +2092,12 @@ namespace TiltBrush
 
         /// Size of the widget, which may be negative if SupportsNegativeSize is true.
         virtual public float GetSignedWidgetSize() { return 1.0f; }
+
+        /// Override in derived classes to prevent size changes when custom size should be preserved
+        protected virtual bool ShouldPreserveCustomSize()
+        {
+            return false;
+        }
 
         /// This sets the overall size of a widget. For non-uniformly scalable widgets, this will be the
         /// scale along the maximum aspect ratio. It is an error to try to set a negative scale if

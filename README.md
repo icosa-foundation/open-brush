@@ -90,6 +90,8 @@ Follow these steps when running the application for the first time:
     Essential Resources**.
 1.  Press **Play**.
 
+When no VR headset is detected, Open Brush can be navigated using the WASD keys or a connected gamepad.
+
 These steps have been tested with Release 1.0.54.
 
 ### Building the application from the Unity editor

@@ -193,6 +193,7 @@ namespace TiltBrush
             OpenScriptParametersPopup = 6005,
             SaveAs = 6006,
             OpenPluginDocs = 6007,
+            SaveSelected = 6500,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
             OpenColorPicker = 9000,
@@ -567,6 +568,7 @@ namespace TiltBrush
         private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
+        public bool IsViewOnly => m_ViewOnly;
 
         private InputState m_CurrentInputState;
         private InputStateConfig[] m_InputStateConfigs;
@@ -998,6 +1000,12 @@ namespace TiltBrush
 
             m_PanelManager.HidePanelsForStartup();
             RequestPanelsVisibility(false);
+
+            if (App.UserConfig.Flags.ForceViewOnly)
+            {
+                m_ViewOnly = true;
+                ViewOnly(true);
+            }
         }
 
         void Update()
@@ -1268,6 +1276,7 @@ namespace TiltBrush
         bool CanUsePinCushion()
         {
             return (m_ControlsType == ControlsType.SixDofControllers) &&
+                !m_ViewOnly &&
                 m_PanelManager.AdvancedModeActive() &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 !InputManager.Brush.GetControllerGrip() &&
@@ -1557,7 +1566,8 @@ namespace TiltBrush
             var mouse = Mouse.current;
 
             // Toggle default tool.
-            if (!m_PanelManager.AdvancedModeActive() &&
+            if (!m_ViewOnly &&
+                !m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
                 m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
@@ -3771,8 +3781,6 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
-            // Always false in viewonly mode
-            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
@@ -4134,49 +4142,131 @@ namespace TiltBrush
         }
 
 
-        public void GenerateBoundingBoxSaveIcon()
+        public void GenerateBoundingBoxSaveIcon(bool saveSelectedStrokes = false)
         {
             Vector3 vNewCamPos;
+            List<CanvasScript> canvases = new List<CanvasScript> { App.Scene.SelectionCanvas };
+            List<bool> canvasVisibility = new List<bool>();
+
+            var layerCanvases = App.Scene.LayerCanvases;
+            if (saveSelectedStrokes)
             {
-                Bounds rCanvasBounds = App.Scene.AllCanvases
+                // Hide the other canvases and store their visibility
+                foreach (var canvas in layerCanvases)
+                {
+                    canvasVisibility.Add(canvas.gameObject.activeSelf);
+                    canvas.gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                canvases.AddRange(layerCanvases);
+            }
+
+            Bounds rCanvasBounds;
+            if (saveSelectedStrokes)
+            {
+                // When saving selected strokes, we need to transform the bounds to world space
+                Bounds selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+                TrTransform selectionPose = App.Scene.SelectionCanvas.Pose;
+                Vector3 worldCenter = selectionPose.MultiplyPoint(selectionBounds.center);
+                Vector3 worldSize = selectionBounds.size * selectionPose.scale;
+                rCanvasBounds = new Bounds(worldCenter, worldSize);
+            }
+            else
+            {
+                rCanvasBounds = canvases
                     .Select(canvas => canvas.GetCanvasBoundingBox())
                     .Aggregate((b1, b2) =>
                     {
                         b1.Encapsulate(b2);
                         return b1;
                     });
+            }
 
-                //position the camera at the center of the canvas bounds
+            Quaternion vNewCamRot;
+
+            if (saveSelectedStrokes)
+            {
+                // For saved strokes, use direction from user's eye to selection, but position to frame properly
+                Vector3 eyePosition = ViewpointScript.Head.position;
+                Vector3 lookDirection = (rCanvasBounds.center - eyePosition).normalized;
+
+                // Calculate the distance needed to frame the bounding box properly using same formula as original
+                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+                float fMagicNumber = 1.375f;
+
+                // Use same distance formula as original code (multiply by tan, not divide)
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
+
+                // Add proportional padding so selection doesn't fill entire frame
+                float fPaddingMultiplier = 1.3f;
+                fBackupDistance *= fPaddingMultiplier;
+
+                // Position camera at backup distance from bounding box center, along the look direction
+                vNewCamPos = rCanvasBounds.center - lookDirection * fBackupDistance;
+                vNewCamRot = Quaternion.LookRotation(lookDirection);
+            }
+            else
+            {
+                // Position the camera at the center of the canvas bounds
                 vNewCamPos = rCanvasBounds.center;
 
-                //back the camera up, along -z until we can see the extent of the bounds
+                // Back the camera up, along -z until we can see the extent of the bounds
                 float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
                 float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
                 float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
 
-                //half fov for camera
+                // Half fov for camera
                 float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
 
-                //TODO: find the real reason this isn't working as it should
+                // TODO: find the real reason this isn't working as it should
                 float fMagicNumber = 1.375f;
 
-                //set new cam position and zero out orientation
-                float fBackupDistance = (fLargerExtent * 0.5f)
-                    * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
+                // Set new cam position and zero out orientation
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
                 vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                vNewCamRot = Quaternion.identity;
             }
 
-            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
+            // Save the current camera state before SaveSelected - will be restored after snapshot creation
+            if (saveSelectedStrokes)
+            {
+                SaveLoadScript.m_Instance.SavedThumbnailStateForRestore = m_SaveIconTool.LastSaveCameraRigState;
+            }
+
+            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, vNewCamRot);
+
+            if (saveSelectedStrokes)
+            {
+                int i = 0;
+                foreach (var canvas in layerCanvases)
+                {
+                    canvas.gameObject.SetActive(canvasVisibility[i++]);
+                }
+            }
         }
 
         private void MergeBrushStrokes(SceneFileInfo fileInfo)
         {
-            m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
-            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, true))
+            if (m_PanelManager.SketchbookActive())
             {
+                m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
+            }
+            PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
+            var newLayer = App.Scene.AddLayerNow();
+            int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> loadedStrokes))
+            {
+                // A new layer will have been created for the merged strokes.
+                // Rename it accordingly
+                App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
-                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
+                // Only render the newly loaded strokes, not all existing strokes in the scene
+                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(loadedStrokes, bDrawFromStart: true, false, false);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
                 // state. App script's ShouldTintControllers allow the controller to be tinted only
@@ -4187,7 +4277,7 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4199,7 +4289,7 @@ namespace TiltBrush
             }
             ResetGrabbedPose(everything: true);
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, additive))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
@@ -4285,6 +4375,17 @@ namespace TiltBrush
                             GenerateBoundingBoxSaveIcon();
                         }
                         StartCoroutine(SaveLoadScript.m_Instance.SaveAs(sParam));
+                        EatGazeObjectInput();
+                        break;
+                    }
+                case GlobalCommands.SaveSelected:
+                    {
+                        if (!FileUtils.CheckDiskSpaceWithError(App.SavedStrokesPath()))
+                        {
+                            return;
+                        }
+                        GenerateBoundingBoxSaveIcon(saveSelectedStrokes: true);
+                        StartCoroutine(SaveLoadScript.m_Instance.SaveSelected());
                         EatGazeObjectInput();
                         break;
                     }
@@ -4661,7 +4762,7 @@ namespace TiltBrush
                             App.Instance.IcosaToken = null;
                             App.IcosaUserName = "";
                             App.IcosaUserIcon = null;
-                            PanelManager.m_Instance.GetAdminPanel().CloseActivePopUp(true);
+                            PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
                         }
                         else
                         {
@@ -5033,22 +5134,60 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
                 case GlobalCommands.OpenIcosaPanelFilterPopup:
                 case GlobalCommands.OpenSketchbookPanelFilterPopup:
+                case GlobalCommands.OpenScriptParametersPopup:
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
-                    Debug.LogError($"Unrecognized command {rEnum}");
+                    Debug.LogWarning($"Unrecognized command {rEnum}");
                     break;
             }
         }
         public void ViewOnly(bool active)
         {
-            RequestPanelsVisibility(!active);
+            m_ViewOnly = active;
+            if (active)
+            {
+                EnsureViewOnlyNavigationTool();
+                m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
+                RequestPanelsVisibility(true);
+            }
+            else
+            {
+                DisableViewOnlyNavigationTool();
+                m_PanelManager.RestoreEditingPanelAvailabilityMode();
+                RequestPanelsVisibility(true);
+            }
             PointerManager.m_Instance.RequestPointerRendering(!active);
             // TODO - decide if this is a permanent change
             // With this line, you can't set a tool such as fly or teleport
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+            if (InitNoHeadsetMode.m_Instance != null)
+            {
+                InitNoHeadsetMode.m_Instance.RefreshViewOnlyUi();
+            }
+        }
+
+        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
+        {
+            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
+        }
+
+        public void EnsureViewOnlyNavigationTool()
+        {
+            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            }
+        }
+
+        public void DisableViewOnlyNavigationTool()
+        {
+            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableDefaultTool();
+            }
         }
 
         private void LoadNamed(string path, bool quickload, bool additive)
@@ -5063,7 +5202,14 @@ namespace TiltBrush
                 Debug.LogWarning(string.Format("Error reading metadata for {0}.\n{1}",
                     fileInfo.FullPath, SaveLoadScript.m_Instance.LastMetadataError));
             }
-            LoadSketch(fileInfo, quickload, additive);
+            if (additive)
+            {
+                MergeBrushStrokes(fileInfo);
+            }
+            else
+            {
+                LoadSketch(fileInfo, quickload);
+            }
             if (m_ControlsType != ControlsType.ViewingOnly)
             {
                 EatGazeObjectInput();
@@ -5248,7 +5394,9 @@ namespace TiltBrush
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
-                case GlobalCommands.SaveModel: return SelectionManager.m_Instance.HasSelection;
+                case GlobalCommands.SaveModel:
+                case GlobalCommands.SaveSelected:
+                    return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
                         PointerManager.SymmetryMode.None;
@@ -5278,7 +5426,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                     return MultiplayerManager.m_Instance.IsDisconnectable();
                 case GlobalCommands.MultiplayerJoinRoom:
-                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
+                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
 

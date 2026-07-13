@@ -25,6 +25,10 @@ namespace TiltBrush
 
     public class FileSketchSet : SketchSet
     {
+        private FileSystemEventHandler fileCreatedHandler;
+        private FileSystemEventHandler fileDeletedHandler;
+        private FileSystemEventHandler fileChangedHandler;
+
         static int ICON_LOAD_PER_FRAME = 3;
 
         /// Synchronously read thumbnail. Returns null on error.
@@ -194,6 +198,15 @@ namespace TiltBrush
             {
                 return rCompareSketch.m_FileInfo.CreationTime.CompareTo(m_FileInfo.CreationTime);
             }
+
+            public void ForceLoadThumbnail()
+            {
+                var data = ReadThumbnail(SceneFileInfo);
+                var icon = new Texture2D(128, 128, TextureFormat.RGB24, true);
+                icon.LoadImage(data);
+                icon.Apply();
+                m_Icon = icon;
+            }
         }
 
         protected SketchSetType m_Type;
@@ -234,28 +247,31 @@ namespace TiltBrush
             get { return m_Sketches.Count; }
         }
 
-        public FileSketchSet()
+        public FileSketchSet(SketchSetType sketchSetType)
         {
-            m_Type = SketchSetType.User;
+            m_Type = sketchSetType;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = false;
-            m_SketchesPath = App.UserSketchPath();
-        }
-
-        public FileSketchSet(string path)
-        {
-            m_Type = SketchSetType.Curated;
-            m_ReadyForAccess = false;
-            m_RequestedLoads = new Stack<int>();
-            m_Sketches = new List<FileSketch>();
-            m_ToAdd = Queue.Synchronized(new Queue());
-            m_ToDelete = Queue.Synchronized(new Queue());
-            m_ReadOnly = true;
-            m_SketchesPath = path;
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_ReadOnly = true;
+                    m_SketchesPath = App.FeaturedSketchesPath();
+                    break;
+                case SketchSetType.SavedStrokes:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.SavedStrokesPath();
+                    break;
+                case SketchSetType.User:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.UserSketchPath();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -362,7 +378,10 @@ namespace TiltBrush
 
         public virtual void Init()
         {
-            ProcessDirectory(m_SketchesPath);
+            if (!m_Sketches.Any())
+            {
+                ProcessDirectory(m_SketchesPath);
+            }
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
@@ -372,25 +391,39 @@ namespace TiltBrush
 
             if (Directory.Exists(m_SketchesPath) && !m_ReadOnly)
             {
+                if (m_FileWatcher != null)
+                {
+                    m_FileWatcher.FileCreated -= fileCreatedHandler;
+                    m_FileWatcher.FileDeleted -= fileDeletedHandler;
+                    m_FileWatcher.FileChanged -= fileChangedHandler;
+                }
+
                 m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
+
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
                 // Note: Renamed event not implemented on OS X, so we rely on Deleted + Created
                 // If we ever start doing something special (like warning the user) with deleted or added, we
                 // may need to add an explicit 'changed' queue, but delete then create works fine for now.
-                m_FileWatcher.FileCreated += (object sender, FileSystemEventArgs e) =>
+
+                fileCreatedHandler = (_, e) =>
                 {
                     m_ToAdd.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileDeleted += (object sender, FileSystemEventArgs e) =>
+                fileDeletedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileChanged += (object sender, FileSystemEventArgs e) =>
+                fileChangedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
+
+                m_FileWatcher.FileCreated += fileCreatedHandler;
+                m_FileWatcher.FileDeleted += fileDeletedHandler;
+                m_FileWatcher.FileChanged += fileChangedHandler;
+
                 m_FileWatcher.EnableRaisingEvents = true;
             }
         }
@@ -484,6 +517,12 @@ namespace TiltBrush
                     m_RequestedLoads.Push(iSketch);
                 }
             }
+        }
+
+        public Texture2D ForceLoadThumbnail(int index)
+        {
+            m_Sketches[index].ForceLoadThumbnail();
+            return m_Sketches[index].Icon;
         }
 
         private void ProcessDirectory(string path)

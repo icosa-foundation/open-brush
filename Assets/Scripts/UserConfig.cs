@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
@@ -44,6 +45,19 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            private bool m_ForceViewOnly;
+            public bool ForceViewOnly
+            {
+                get
+                {
+#if OPEN_BRUSH_VIEWER
+                    return true;
+#else
+                    return m_ForceViewOnly;
+#endif
+                }
+                set { m_ForceViewOnly = value; }
+            }
 
             private bool? m_DisableXrMode;
             public bool DisableXrMode
@@ -53,7 +67,7 @@ namespace TiltBrush
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
                     return true;
 #else
-                    return m_DisableXrMode ?? false;
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
 #endif
                 }
                 set { m_DisableXrMode = value; }
@@ -171,15 +185,24 @@ namespace TiltBrush
             }
 
             private bool? m_IcosaModelPreload;
-            public bool PolyModelPreloadValid => m_IcosaModelPreload.HasValue;
             public bool IcosaModelPreload
             {
                 get
                 {
                     // TODO Should we avoid preload if we are running offline rendering?
-                    return m_IcosaModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnableIcosaPreload;
                 }
                 set { m_IcosaModelPreload = value; }
+            }
+
+            // Models whose reported triangle count exceeds this are not auto-preloaded or previewed in
+            // the Icosa panel (they still load when explicitly selected). 0 or negative disables the
+            // limit. Triangle count is the only size signal the Icosa API exposes before download.
+            private int? m_IcosaMaxPreviewTriangleCount;
+            public int IcosaMaxPreviewTriangleCount
+            {
+                get { return m_IcosaMaxPreviewTriangleCount ?? 200000; }
+                set { m_IcosaMaxPreviewTriangleCount = value; }
             }
         }
 
@@ -427,6 +450,26 @@ namespace TiltBrush
                 }
             }
 
+            bool? m_UsePngForFrameSequence;
+            public bool UsePngForFrameSequence
+            {
+                get { return m_UsePngForFrameSequence ?? false; }
+                set
+                {
+                    m_UsePngForFrameSequence = value;
+                }
+            }
+
+            bool? m_ForceFrameSequenceRender;
+            public bool ForceFrameSequenceRender
+            {
+                get { return m_ForceFrameSequenceRender ?? false; }
+                set
+                {
+                    m_ForceFrameSequenceRender = value;
+                }
+            }
+
             int? m_Resolution;
             public int Resolution
             {
@@ -444,6 +487,7 @@ namespace TiltBrush
             }
 
             int? m_OfflineResolution;
+            public bool OfflineResolutionValid { get { return m_OfflineResolution != null; } }
             public int OfflineResolution
             {
                 get { return m_OfflineResolution ?? kDefaultOfflineRes; }

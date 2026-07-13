@@ -49,12 +49,12 @@ namespace TiltBrush
 
         [LuaDocsDescription(@"Creates a new empty PathList")]
         [LuaDocsExample(@"PathList:New()")]
-        public static PathListApiWrapper New() => new PathListApiWrapper();
+        public static PathListApiWrapper New() => new();
 
         [LuaDocsDescription(@"Creates a new PathList from a list of Paths")]
         [LuaDocsExample(@"PathList:New(pathList)")]
         [LuaDocsParameter(@"pathList", "A list of Paths .")]
-        public static PathListApiWrapper New(List<PathApiWrapper> pathList) => new PathListApiWrapper(pathList);
+        public static PathListApiWrapper New(List<PathApiWrapper> pathList) => new(pathList);
 
         [LuaDocsDescription("Draws this PathList using current settings")]
         [LuaDocsExample("myPaths:Draw()")]
@@ -139,7 +139,9 @@ namespace TiltBrush
                 // Supports non-uniform scaling
                 for (var j = 0; j < path.Count; j++)
                 {
-                    path[j].translation.Scale(scale);
+                    var t = path[j];
+                    t.translation = Vector3.Scale(t.translation, scale);
+                    path[j] = t;
                 }
             }
         }
@@ -157,6 +159,7 @@ namespace TiltBrush
                 {
                     var tr = path[j];
                     tr.translation *= scale;
+                    path[j] = tr;
                 }
             }
         }

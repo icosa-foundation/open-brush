@@ -24,7 +24,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the group at the given index")]
-        public GroupApiWrapper this[int index] => _Groups[index];
+        public GroupApiWrapper this[int index] => Utils.WrappedIndexerGet(() => _Groups[index]);
 
         [LuaDocsDescription("The number of layers")]
         public int count => _Groups?.Count ?? 0;

@@ -25,7 +25,7 @@ namespace TiltBrush
     public class LuaDocsGenerator : Editor
     {
         [MenuItem("Open Brush/API/Generate Lua Docs")]
-        static void GenerateDocs()
+        public static void GenerateDocs()
         {
             if (!Application.isPlaying)
             {
@@ -33,6 +33,7 @@ namespace TiltBrush
                 return;
             }
 
+            LuaManager.Instance.Init(immediate: true);
             Script script = new Script();
 
             // Initializing this list triggers the docs generation via RegisterApiClasses

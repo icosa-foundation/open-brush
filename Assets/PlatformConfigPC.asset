@@ -26,7 +26,7 @@ MonoBehaviour:
   QuickLoadMaxDistancePerFrame: 40
   IntroSketchPrefab: {fileID: 1843608203, guid: f9e36942d6b3ed84ba2b8b6e21505c95,
     type: 3}
-  EnablePolyPreload: 1
+  EnableIcosaPreload: 1
   AvoidUploadHandlerFile: 1
   EnableExportFbx: 1
   EnableExportGlb: 1

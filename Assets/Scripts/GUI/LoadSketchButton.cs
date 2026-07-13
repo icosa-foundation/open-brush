@@ -30,6 +30,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_Warning;
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
+        [SerializeField] private bool m_IsMergeStrokesButton;
 
         private bool m_ThumbnailLoaded = false;
         private bool m_SizeOk = true;
@@ -165,9 +166,12 @@ namespace TiltBrush
 
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
+            var cmd = m_IsMergeStrokesButton ?
+                SketchControlsScript.GlobalCommands.MergeBrushStrokes :
+                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, (int)m_SketchSet.Type);
+                cmd, m_SketchIndex, (int)m_SketchSet.Type
+            );
             ResetState();
         }
 

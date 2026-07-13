@@ -182,14 +182,14 @@ namespace TiltBrush
         [LuaDocsDescription("Get or set the position of this transform")]
         public Vector3ApiWrapper position
         {
-            get => new Vector3ApiWrapper(_TrTransform.translation);
+            get => new(_TrTransform.translation);
             set => _TrTransform.translation = value._Vector3;
         }
 
         [LuaDocsDescription("Get or set the rotation of this transform")]
         public RotationApiWrapper rotation
         {
-            get => new RotationApiWrapper(_TrTransform.rotation);
+            get => new(_TrTransform.rotation);
             set => _TrTransform.rotation = value._Quaternion;
         }
 

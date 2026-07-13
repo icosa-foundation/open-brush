@@ -55,8 +55,8 @@ namespace TiltBrush
         [LuaDocsDescription("The component at the specified index")]
         public float this[int index]
         {
-            get => _Matrix[index];
-            set => _Matrix[index] = value;
+            get => Utils.WrappedIndexerGet(() => _Matrix[index]);
+            set => Utils.WrappedIndexerSet(() => _Matrix[index] = value);
         }
 
         [LuaDocsDescription("The component at the specified row and column")]
@@ -244,6 +244,6 @@ namespace TiltBrush
 
         // Operators
 
-        public static MatrixApiWrapper operator *(MatrixApiWrapper a, MatrixApiWrapper b) => new MatrixApiWrapper(a._Matrix * b._Matrix);
+        public static MatrixApiWrapper operator *(MatrixApiWrapper a, MatrixApiWrapper b) => new(a._Matrix * b._Matrix);
     }
 }

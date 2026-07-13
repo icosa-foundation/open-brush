@@ -23,7 +23,7 @@ namespace TiltBrush
 {
     public static class DrawStrokes
     {
-        public static void DrawNestedTrList(
+        public static List<Stroke> DrawNestedTrList(
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             List<Color> colors = null,
@@ -32,6 +32,7 @@ namespace TiltBrush
             uint group = GroupManager.kIdSketchGroupTagNone)
         {
             var paths = pathEnumerable.ToList();
+            var strokes = new List<Stroke>();
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             uint time = 0;
             int pathIndex = 0;
@@ -66,15 +67,30 @@ namespace TiltBrush
                         });
                     }
 
+                    float tightness;
+                    if (vertexIndex == 0 || vertexIndex == path.Count - 1)
+                    {
+                        tightness = 0.0001f;
+                    }
+                    else
+                    {
+                        tightness = smoothing;
+                    }
+
                     addPoint(position);
-                    if (smoothing > 0)
+                    if (tightness > 0)
                     {
                         // smoothing controls much to pull extra vertices towards the middle
                         // 0.25 smooths corners a lot, 0.1 is tighter
-                        addPoint(position);
-                        addPoint(position + (nextPosition - position) * smoothing);
+                        addPoint(position + (nextPosition - position) * tightness);
                         addPoint(position + (nextPosition - position) * .5f);
-                        addPoint(position + (nextPosition - position) * (1 - smoothing));
+                        addPoint(position + (nextPosition - position) * (1 - tightness));
+                    }
+
+                    // Add the last point if needed
+                    if (vertexIndex == path.Count - 1)
+                    {
+                        addPoint(nextPosition);
                     }
                 }
 
@@ -103,8 +119,10 @@ namespace TiltBrush
                     // No active undo. So actually perform the command
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
+                strokes.Add(stroke);
                 pathIndex++;
             }
+            return strokes;
         }
 
         public static List<List<TrTransform>> SvgPathStringToApiPaths(string svgPathString)

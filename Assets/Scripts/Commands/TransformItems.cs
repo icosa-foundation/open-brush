@@ -8,6 +8,9 @@ namespace TiltBrush
         public static void Transform(IEnumerable<Stroke> strokes, IEnumerable<GrabWidget> widgets,
                                      Vector3 pivot, TrTransform xf)
         {
+
+            strokes ??= Enumerable.Empty<Stroke>();
+            widgets ??= Enumerable.Empty<GrabWidget>();
             var strokeLayers = new Dictionary<Stroke, CanvasScript>();
             var widgetLayers = new Dictionary<GrabWidget, CanvasScript>();
             var tempLayer = App.Scene.AddLayerNow();
