@@ -418,8 +418,39 @@ namespace TiltBrush
         public bool RamLoggingActive = false;
         private InitNoHeadsetMode m_NoHeadsetInitScript;
 
-        // TODO Implement this
-        public static bool DeviceCanOpenSystemBrowser => false;
+        private enum BrowserMode
+        {
+            SystemBrowser,
+            SteamOverlay,
+        }
+
+        private static BrowserMode CurrentBrowserMode
+        {
+            get
+            {
+                if (Config != null && Config.ForceSteamOverlayBrowser)
+                {
+                    return BrowserMode.SteamOverlay;
+                }
+#if UNITY_EDITOR
+                if (Config != null)
+                {
+                    switch (Config.m_BrowserModeOverrideInEditor)
+                    {
+                        case Config.BrowserModeOverride.SystemBrowser:
+                            return BrowserMode.SystemBrowser;
+                        case Config.BrowserModeOverride.SteamOverlay:
+                            return BrowserMode.SteamOverlay;
+                    }
+                }
+#endif
+                return Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam
+                    ? BrowserMode.SteamOverlay
+                    : BrowserMode.SystemBrowser;
+            }
+        }
+
+        public static bool DeviceCanOpenSystemBrowser => CurrentBrowserMode == BrowserMode.SystemBrowser;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -2385,6 +2416,15 @@ namespace TiltBrush
             {
                 var email = GoogleIdentity.Profile.email;
                 url = $"https://accounts.google.com/AccountChooser?Email={email}&continue={url}";
+            }
+
+            if (CurrentBrowserMode == BrowserMode.SteamOverlay)
+            {
+                if (!SteamManager.TryOpenOverlayUrl(url))
+                {
+                    Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
+                }
+                return;
             }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);

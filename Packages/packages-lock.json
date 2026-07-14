@@ -40,6 +40,13 @@
       },
       "url": "https://npm.developer.oculus.com"
     },
+    "com.rlabrecque.steamworks.net": {
+      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.163.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "98d6584e4509dd514768cc28c3f02026fbdd6cc7"
+    },
     "com.sandrofigo.voxreader": {
       "version": "5.0.6",
       "depth": 0,
