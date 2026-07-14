@@ -13,9 +13,9 @@
 // limitations under the License.
 
 using System;
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID
 using System.Runtime.InteropServices;
-#else
+#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
 using Steamworks;
 #endif
 using UnityEngine;
@@ -180,7 +180,7 @@ namespace TiltBrush
 
         private static class SteamClientApi
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
+#if UNITY_ANDROID
             private const string NativeLibrary = "steam_api";
             private const int SteamErrorMessageSize = 1024;
             private const int InitResultOk = 0;
@@ -309,7 +309,7 @@ namespace TiltBrush
                 IntPtr steamFriends,
                 [MarshalAs(UnmanagedType.LPUTF8Str)] string url,
                 int mode);
-#else
+#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
             public static bool IsSteamRunning() => SteamAPI.IsSteamRunning();
 
             public static bool Initialize(out string errorMessage)
@@ -330,6 +330,22 @@ namespace TiltBrush
             public static void RunCallbacks() => SteamAPI.RunCallbacks();
 
             public static void Shutdown() => SteamAPI.Shutdown();
+#else
+            public static bool IsSteamRunning() => false;
+
+            public static bool Initialize(out string errorMessage)
+            {
+                errorMessage = "Steamworks is not supported on this platform";
+                return false;
+            }
+
+            public static bool IsOverlayEnabled() => false;
+
+            public static void OpenOverlayUrl(string url) { }
+
+            public static void RunCallbacks() { }
+
+            public static void Shutdown() { }
 #endif
         }
     }
