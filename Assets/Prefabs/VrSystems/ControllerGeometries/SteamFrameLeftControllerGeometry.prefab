@@ -966,7 +966,7 @@ Transform:
   m_GameObject: {fileID: 1483499818039470}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1043,7 +1043,7 @@ MonoBehaviour:
   m_JoystickMesh: {fileID: 7120030000000000003}
   m_JoystickPad: {fileID: 7120030000000000003}
   m_Button01Mesh: {fileID: 2580506226878499058}
-  m_Button02Mesh: {fileID: 8571412026635844464}
+  m_Button02Mesh: {fileID: 6428977223192434762}
   m_PinCushion: {fileID: 0}
   m_MenuPanelHintObject: {fileID: 114209131302193418}
   m_QuickLoadHintObject: {fileID: 2515064228108526227}
@@ -6557,13 +6557,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1724362258857612}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -1, w: 0}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: -10, y: -10, z: -10}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
+  m_LocalPosition: {x: -0.075, y: 0.03, z: 0.343}
+  m_LocalScale: {x: 8, y: 8, z: 8}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4175376311900322}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -180}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &33328627524670278
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6571,7 +6571,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1724362258857612}
-  m_Mesh: {fileID: 4300000, guid: a725a200199f50f45989f92aa2e2c840, type: 3}
+  m_Mesh: {fileID: 7684625086359004581, guid: f50d7c9cc3ff7484c955a8d4bbe91f30, type: 3}
 --- !u!23 &23808833911102162
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8496,9 +8496,9 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 886386424872448459}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &8571412026635844464 stripped
+--- !u!23 &6428977223192434762 stripped
 MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 8844742095217609403, guid: 62bc14271390d9d4e9e9e61fb0147bdc,
+  m_CorrespondingSourceObject: {fileID: 6157902253496101249, guid: 62bc14271390d9d4e9e9e61fb0147bdc,
     type: 3}
   m_PrefabInstance: {fileID: 886386424872448459}
   m_PrefabAsset: {fileID: 0}

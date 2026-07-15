@@ -393,18 +393,6 @@ namespace TiltBrush
             }
         }
 
-        private struct SteamFramePose
-        {
-            public readonly Vector3 position;
-            public readonly Vector3 eulerAngles;
-
-            public SteamFramePose(Vector3 position, Vector3 eulerAngles)
-            {
-                this.position = position;
-                this.eulerAngles = eulerAngles;
-            }
-        }
-
         private struct SteamFramePartState
         {
             public readonly Transform transform;
@@ -489,93 +477,6 @@ namespace TiltBrush
             }
 
             return GetAnimatedPart(OtherMeshes[index]);
-        }
-
-        private Transform FindSteamFrameRenderRoot()
-        {
-            var originOffset = transform.Find("OriginOffset");
-            if (originOffset == null)
-            {
-                return null;
-            }
-
-            var componentRoot = FindDeepChild(originOffset, "SteamFrameComponentModel");
-            if (componentRoot != null)
-            {
-                return componentRoot;
-            }
-
-            return FindDeepChild(originOffset, "SteamFrameRenderModel");
-        }
-
-        private void ApplySteamFrameAttachPointOverrides()
-        {
-            var renderRoot = FindSteamFrameRenderRoot();
-            if (renderRoot == null)
-            {
-                Debug.LogWarning($"STEAM_FRAME_GEOM_MISSING_ATTACH_ROOT {name}");
-                return;
-            }
-
-            bool isRight = name.Contains("Right");
-            bool isLeft = name.Contains("Left");
-            if (!isLeft && !isRight)
-            {
-                isRight = m_ControllerName == InputManager.ControllerName.Brush;
-            }
-
-            SteamFramePose aimPose = isRight
-                ? new SteamFramePose(
-                    new Vector3(-0.012694f, -0.02522f, 0.020687f),
-                    new Vector3(-40.0f, 0.0f, 0.0f))
-                : new SteamFramePose(
-                    new Vector3(0.012694f, -0.02522f, 0.020687f),
-                    new Vector3(-40.0f, 0.0f, 0.0f));
-            SteamFramePose gripPose = isRight
-                ? new SteamFramePose(
-                    new Vector3(0.003117f, -0.004277f, 0.099501f),
-                    new Vector3(2.8091f, 0.0f, 0.0f))
-                : new SteamFramePose(
-                    new Vector3(-0.003117f, -0.004277f, 0.099501f),
-                    new Vector3(2.8091f, 0.0f, 0.0f));
-            SteamFramePose basePose = isRight
-                ? new SteamFramePose(
-                    new Vector3(0.0024f, -0.0024f, 0.1531f),
-                    new Vector3(-0.4f, -180.0f, 0.0f))
-                : new SteamFramePose(
-                    new Vector3(-0.0024f, -0.0024f, 0.1531f),
-                    new Vector3(-0.4f, 180.0f, 0.0f));
-
-            ApplySteamFramePose(renderRoot, m_PointerAttachAnchor, aimPose);
-            ApplySteamFramePose(renderRoot, m_ToolAttachAnchor, aimPose);
-            ApplySteamFramePose(renderRoot, m_GripAttachPoint, gripPose);
-            ApplySteamFramePose(renderRoot, m_BaseAttachPoint, basePose);
-            SetAttachPointDirection(m_PointerAttachPoint, 0.225f);
-            SetAttachPointDirection(m_ToolAttachPoint, 0.325f);
-        }
-
-        private static void ApplySteamFramePose(
-            Transform renderRoot, Transform target, SteamFramePose pose)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            target.position = renderRoot.TransformPoint(pose.position);
-            target.rotation = renderRoot.rotation * Quaternion.Euler(pose.eulerAngles);
-        }
-
-        private static void SetAttachPointDirection(Transform target, float distance)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            target.localPosition = Vector3.forward * distance;
-            target.localRotation = Quaternion.identity;
-            target.localScale = Vector3.one;
         }
 
         // Cached value of transform.parent.GetComponent<BaseControllerBehavior>()
@@ -1205,11 +1106,6 @@ namespace TiltBrush
             else
             {
                 m_ControllerName = m_Behavior.ControllerName;
-            }
-
-            if (Style == ControllerStyle.SteamFrame)
-            {
-                ApplySteamFrameAttachPointOverrides();
             }
         }
 
