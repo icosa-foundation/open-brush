@@ -16,9 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
 using System.Runtime.InteropServices;
-#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+#elif UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
 using Steamworks;
 #endif
 using UnityEngine;
@@ -315,7 +315,7 @@ namespace TiltBrush
 
         private static class SteamClientApi
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
             private const string NativeLibrary = "steam_api";
             private const int SteamErrorMessageSize = 1024;
             private const int InitResultOk = 0;
@@ -444,7 +444,7 @@ namespace TiltBrush
                 IntPtr steamFriends,
                 [MarshalAs(UnmanagedType.LPUTF8Str)] string url,
                 int mode);
-#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
+#elif UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
             public static bool IsSteamRunning() => SteamAPI.IsSteamRunning();
 
             public static bool Initialize(out string errorMessage)
