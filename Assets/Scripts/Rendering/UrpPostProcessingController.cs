@@ -32,8 +32,8 @@ namespace TiltBrush
         private const string kLogPrefix = "[OB_URP_POST]";
         private const string kRuntimeVolumeName = "OpenBrush URP Runtime Global Volume";
         private const float kDisabledBloomIntensity = 0f;
-        private const float kFastBloomIntensity = 0.14f;
-        private const float kFullBloomIntensity = 0.2f;
+        private const float kFastBloomIntensity = 0.1f;
+        private const float kFullBloomIntensity = 0.14f;
         private const float kMobileBloomIntensity = 0.1f;
         private const float kFastBloomScatter = 0.45f;
         private const float kFullBloomScatter = 0.55f;
