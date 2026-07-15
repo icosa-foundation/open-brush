@@ -88,6 +88,21 @@ PrefabInstance:
       propertyPath: m_Materials.Array.data[0]
       value: 
       objectReference: {fileID: 2100000, guid: 9207b485a72789a44b3bce9e43ca1f8b, type: 2}
+    - target: {fileID: -6425931518209806949, guid: f16e42b7f68e5bb4c989111ecd6d4653,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6425931518209806949, guid: f16e42b7f68e5bb4c989111ecd6d4653,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6425931518209806949, guid: f16e42b7f68e5bb4c989111ecd6d4653,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
     - target: {fileID: 618548502553073620, guid: f16e42b7f68e5bb4c989111ecd6d4653,
         type: 3}
       propertyPath: m_Materials.Array.data[0]
@@ -96,7 +111,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f16e42b7f68e5bb4c989111ecd6d4653,
         type: 3}
       propertyPath: m_Name
-      value: frame_controller_quadrant_disk
+      value: SteamFrame_controller_quadrant_disk
       objectReference: {fileID: 0}
     - target: {fileID: 6749083825158202454, guid: f16e42b7f68e5bb4c989111ecd6d4653,
         type: 3}
