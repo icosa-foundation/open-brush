@@ -4819,7 +4819,7 @@ GameObject:
   - component: {fileID: 33550352262830770}
   - component: {fileID: 114459733794502100}
   m_Layer: 0
-  m_Name: ControllerRightQuestActivationEffect
+  m_Name: ControllerRightSteamFrameActivationEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4835,7 +4835,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.06041443, y: 0.99106294, z: -0.11769527, w: 0.017092934}
   m_LocalPosition: {x: 0.06, y: 0.088, z: 0.133}
-  m_LocalScale: {x: 10.5, y: 10.500004, z: 10.5}
+  m_LocalScale: {x: 9.84, y: 9.84, z: 9.84}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4516443248891618}
@@ -4890,7 +4890,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1946532704157676}
-  m_Mesh: {fileID: 4300042, guid: f85ad479a7d3ac54d91b088b924de5ae, type: 3}
+  m_Mesh: {fileID: 7684625086359004581, guid: e199d2b97449b0345875bdaa3eb3954e, type: 3}
 --- !u!114 &114459733794502100
 MonoBehaviour:
   m_ObjectHideFlags: 0
