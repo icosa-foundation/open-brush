@@ -2409,7 +2409,7 @@ namespace TiltBrush
         // By executing the URL directly windows will open it without making the browser a child
         // process of Tilt Brush.  If this fails or throws an exception we fall back to Unity's
         // OpenURL().
-        public static void OpenURL(string url)
+        public static bool OpenURL(string url)
         {
             var isPolyUrl = (url.Contains("poly.google.com/") || url.Contains("vr.google.com"));
             if (isPolyUrl && GoogleIdentity.LoggedIn)
@@ -2423,8 +2423,9 @@ namespace TiltBrush
                 if (!SteamManager.TryOpenOverlayUrl(url))
                 {
                     Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
+                    return false;
                 }
-                return;
+                return true;
             }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);
@@ -2448,6 +2449,7 @@ namespace TiltBrush
                     break;
             }
 #endif
+            return true;
         }
 
         /// This copies the support files from inside the Streaming Assets folder to the support folder.

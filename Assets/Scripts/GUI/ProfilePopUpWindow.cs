@@ -414,11 +414,17 @@ namespace TiltBrush
                     if (App.DeviceCanOpenSystemBrowser)
                     {
                         string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
-                        App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}");
+                        if (!App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}"))
+                        {
+                            break;
+                        }
                     }
                     else
                     {
-                        App.OpenURL(deviceCodeUrl);
+                        if (!App.OpenURL(deviceCodeUrl))
+                        {
+                            break;
+                        }
                     }
                     ShowIcosaLogin();
                     break;
