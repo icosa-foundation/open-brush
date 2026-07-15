@@ -5249,7 +5249,7 @@ MonoBehaviour:
           m_TableReference:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
-            m_KeyId: 380760416547594240
+            m_KeyId: 520669196650635264
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
@@ -19310,7 +19310,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1934243545717122, guid: ef7eb6dda2db50c4bbf6c682e4a21736, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 114387715371604348, guid: ef7eb6dda2db50c4bbf6c682e4a21736,
         type: 3}
