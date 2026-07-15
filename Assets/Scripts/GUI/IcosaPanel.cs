@@ -115,8 +115,12 @@ namespace TiltBrush
 
         public override bool IsInButtonMode(ModeButton button)
         {
-            var polySetButton = button as IcosaSetButton;
-            return polySetButton && polySetButton.m_ButtonType == m_CurrentSet;
+            if (button is IcosaSetButton setButton)
+            {
+                return setButton.m_ButtonType == m_CurrentSet;
+            }
+
+            return button is IcosaBrowseModeButton && InCollectionsMode;
         }
 
         protected override void OnStart()
