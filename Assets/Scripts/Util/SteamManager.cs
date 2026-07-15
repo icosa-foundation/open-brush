@@ -13,6 +13,9 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 #if UNITY_ANDROID
 using System.Runtime.InteropServices;
 #elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
@@ -29,6 +32,11 @@ namespace TiltBrush
         private static SteamManager m_Instance;
         private static bool m_Initialized;
         private static bool? m_RunningUnderSteam;
+        private static readonly HashSet<IPAddress> m_LeptonHostGatewayAddresses =
+            new HashSet<IPAddress>();
+
+        public static bool RunningUnderLepton =>
+            Application.platform == RuntimePlatform.Android && RunningUnderSteam;
 
         public static bool RunningUnderSteam
         {
@@ -45,6 +53,7 @@ namespace TiltBrush
             m_Instance = null;
             m_Initialized = false;
             m_RunningUnderSteam = null;
+            m_LeptonHostGatewayAddresses.Clear();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -108,6 +117,91 @@ namespace TiltBrush
             DontDestroyOnLoad(gameObject);
             DetectSteam();
             InitializeSteamworks();
+            DetectLeptonHostGateways();
+        }
+
+        public static bool IsLeptonHostAddress(IPAddress address)
+        {
+            if (address == null || !RunningUnderLepton)
+            {
+                return false;
+            }
+
+            var normalizedAddress = address.IsIPv4MappedToIPv6
+                ? address.MapToIPv4()
+                : address;
+            return m_LeptonHostGatewayAddresses.Contains(normalizedAddress);
+        }
+
+        private static void DetectLeptonHostGateways()
+        {
+            m_LeptonHostGatewayAddresses.Clear();
+            if (!RunningUnderLepton)
+            {
+                return;
+            }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity =
+                    unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+                using var connectivityManager =
+                    activity.Call<AndroidJavaObject>("getSystemService", "connectivity");
+                using var activeNetwork =
+                    connectivityManager.Call<AndroidJavaObject>("getActiveNetwork");
+                if (activeNetwork == null)
+                {
+                    // LEPTON_HTTP_DIAGNOSTICS: Temporary until Lepton networking is confirmed.
+                    Debug.LogWarning("[LEPTON_HTTP] Android has no active network");
+                    return;
+                }
+
+                using var linkProperties = connectivityManager.Call<AndroidJavaObject>(
+                    "getLinkProperties", activeNetwork);
+                if (linkProperties == null)
+                {
+                    // LEPTON_HTTP_DIAGNOSTICS: Temporary until Lepton networking is confirmed.
+                    Debug.LogWarning("[LEPTON_HTTP] No link properties for the active network");
+                    return;
+                }
+
+                var interfaceName = linkProperties.Call<string>("getInterfaceName");
+                using var routes = linkProperties.Call<AndroidJavaObject>("getRoutes");
+                var routeCount = routes.Call<int>("size");
+                for (var i = 0; i < routeCount; ++i)
+                {
+                    using var route = routes.Call<AndroidJavaObject>("get", i);
+                    using var destination = route.Call<AndroidJavaObject>("getDestination");
+                    if (destination.Call<int>("getPrefixLength") != 0)
+                    {
+                        continue;
+                    }
+
+                    using var gateway = route.Call<AndroidJavaObject>("getGateway");
+                    var gatewayAddress = gateway?.Call<string>("getHostAddress");
+                    if (IPAddress.TryParse(gatewayAddress, out var parsedGateway))
+                    {
+                        m_LeptonHostGatewayAddresses.Add(parsedGateway.IsIPv4MappedToIPv6
+                            ? parsedGateway.MapToIPv4()
+                            : parsedGateway);
+                    }
+                }
+
+                var detectedGateways = m_LeptonHostGatewayAddresses.Count == 0
+                    ? "none"
+                    : string.Join(", ", m_LeptonHostGatewayAddresses.Select(x => x.ToString()));
+                // LEPTON_HTTP_DIAGNOSTICS: Remove this log and the System.Linq import once the
+                // Lepton host gateway behavior has been confirmed on hardware.
+                Debug.Log($"[LEPTON_HTTP] Active interface: {interfaceName}; default gateways: {detectedGateways}");
+            }
+            catch (Exception ex)
+            {
+                // LEPTON_HTTP_DIAGNOSTICS: Temporary until Lepton networking is confirmed.
+                Debug.LogWarning($"[LEPTON_HTTP] Failed to detect host gateways: {ex.Message}");
+            }
+#endif
         }
 
         private void Update()

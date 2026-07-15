@@ -31,6 +31,11 @@ namespace WebSocketServer {
         private Thread tcpListenerThread;
         private List<Thread> workerThreads;
         private TcpClient connectedTcpClient;
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove these counters, call sites, and
+        // LogLeptonConnectionDecision once the Lepton host gateway behavior is confirmed.
+        private int loggedAcceptedLeptonConnection;
+        private int loggedRejectedLeptonConnection;
+        // LEPTON_HTTP_DIAGNOSTICS_END
 
         public ConcurrentQueue<WebSocketEvent> events;
 
@@ -79,9 +84,14 @@ namespace WebSocketServer {
                     // Accept a new client, then open a stream for reading and writing.
                     connectedTcpClient = tcpListener.AcceptTcpClient();
                     var endPoint = connectedTcpClient.Client.RemoteEndPoint as IPEndPoint;
-                    if (Equals(endPoint?.Address, IPAddress.Loopback) ||
-                        App.UserConfig.Flags.EnableApiRemoteCalls)
+                    var isLeptonHostConnection =
+                        SteamManager.IsLeptonHostAddress(endPoint?.Address);
+                    if ((endPoint != null && IPAddress.IsLoopback(endPoint.Address)) ||
+                        App.UserConfig.Flags.EnableApiRemoteCalls ||
+                        isLeptonHostConnection)
                     {
+                        // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
+                        LogLeptonConnectionDecision(endPoint, true, isLeptonHostConnection);
                         // Create a new connection
                         WebSocketConnection connection = new WebSocketConnection(connectedTcpClient, this);
                         // Establish connection
@@ -92,6 +102,12 @@ namespace WebSocketServer {
                         // worker.Start(connection);
                         // // Add it to the thread list. TODO: delete thread when disconnecting.
                         // workerThreads.Add(worker);
+                    }
+                    else
+                    {
+                        // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
+                        LogLeptonConnectionDecision(endPoint, false, false);
+                        connectedTcpClient.Close();
                     }
                 }
             }
@@ -117,6 +133,32 @@ namespace WebSocketServer {
 
         public virtual void OnError(WebSocketConnection connection) {}
 
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove this method after on-device confirmation.
+        private void LogLeptonConnectionDecision(IPEndPoint endPoint, bool allowed,
+            bool isLeptonHostConnection)
+        {
+            if (!SteamManager.RunningUnderLepton)
+            {
+                return;
+            }
+
+            if (allowed && !isLeptonHostConnection)
+            {
+                return;
+            }
+
+            var wasAlreadyLogged = isLeptonHostConnection
+                ? Interlocked.Exchange(ref loggedAcceptedLeptonConnection, 1)
+                : Interlocked.Exchange(ref loggedRejectedLeptonConnection, 1);
+            if (wasAlreadyLogged != 0)
+            {
+                return;
+            }
+
+            Debug.Log($"[LEPTON_HTTP] WebSocket connection {(allowed ? "accepted" : "rejected")}; remote={endPoint}; matchedGateway={isLeptonHostConnection}");
+        }
+        // LEPTON_HTTP_DIAGNOSTICS_END
+
 
         // private void SendMessage() {
         //     if (connectedTcpClient == null) {
@@ -141,4 +183,3 @@ namespace WebSocketServer {
         // }
     }
 }
-
