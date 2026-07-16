@@ -114,8 +114,20 @@ namespace TiltBrush
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
                 exporter.GetRoot().Animations.Add(anim);
-                GameObject.Destroy(cam);
             }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -484,6 +496,10 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
             }
 
             if (App.UserConfig.Export.ExportCustomSkybox)
