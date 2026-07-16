@@ -48,11 +48,11 @@
       "url": "https://npm.developer.oculus.com"
     },
     "com.rlabrecque.steamworks.net": {
-      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.163.0",
+      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#cde64110bff012829b59cc16fe2c4fc3a0371e8d",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "98d6584e4509dd514768cc28c3f02026fbdd6cc7"
+      "hash": "cde64110bff012829b59cc16fe2c4fc3a0371e8d"
     },
     "com.sandrofigo.voxreader": {
       "version": "5.0.6",
