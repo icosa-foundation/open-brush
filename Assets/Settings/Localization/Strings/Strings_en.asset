@@ -742,10 +742,6 @@ MonoBehaviour:
     m_Localized: Public Collections
     m_Metadata:
       m_Items: []
-  - m_Id: 40000000000000003
-    m_Localized: No collections found
-    m_Metadata:
-      m_Items: []
   - m_Id: 7930550461112320
     m_Localized: Liked Models
     m_Metadata:
@@ -3809,6 +3805,18 @@ MonoBehaviour:
 
       uploading to Viverse
       Worlds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: Go to https://icosa.gallery/device to get a login code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520753674442072064
+    m_Localized: Collections
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: 'No collections found '
     m_Metadata:
       m_Items: []
   references:

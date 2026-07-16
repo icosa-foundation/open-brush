@@ -75,7 +75,7 @@ namespace TiltBrush
         private const string kUserLikesUri = "/users/me/likedassets";
         private const string kUserCollectionsUri = "/users/me/collections";
         private const string kPublicCollectionsUri = "/collections";
-        private const string kCollectionAssetsUriFormat = "/collections/{0}/assets"; // {0} = collection ID
+        private const string kCollectionUriFormat = "/collections/{0}"; // {0} = collection ID
 
         // Used when requesting a device code from the system browser
         private string m_CurrentDeviceCodeSecret;
@@ -1234,7 +1234,7 @@ namespace TiltBrush
         // List assets from a specific collection
         public AssetLister ListCollectionAssets(string collectionId, IcosaAssetCatalog.IcosaQueryParameters queryParams)
         {
-            string uri = $"{IcosaApiRoot}{string.Format(kCollectionAssetsUriFormat, collectionId)}?";
+            string uri = $"{IcosaApiRoot}{string.Format(kCollectionUriFormat, collectionId)}?";
             foreach (var format in queryParams.Formats)
             {
                 uri += $"format={format}&";

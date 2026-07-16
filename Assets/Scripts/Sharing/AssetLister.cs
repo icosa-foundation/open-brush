@@ -141,8 +141,7 @@ namespace TiltBrush
             m_PageToken = json["nextPageToken"]?.ToString();
         }
 
-        public IEnumerator<Null> NextPageCollections(List<IcosaAssetCatalog.CollectionDetails> collections,
-                                                      string thumbnailSuffix)
+        public IEnumerator<Null> NextPageCollections(List<IcosaAssetCatalog.CollectionDetails> collections)
         {
             string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
 
@@ -170,24 +169,28 @@ namespace TiltBrush
             if (json.Count == 0) { yield break; }
 
             JToken lastCollection = null;
-            var results = json["results"];
-            if (results != null)
+            var collectionResults = json["collections"] as JArray;
+            if (collectionResults == null)
             {
-                foreach (JObject collection in results)
-                {
-                    try
-                    {
-                        lastCollection = collection;
-                        collections.Add(new IcosaAssetCatalog.CollectionDetails(collection, thumbnailSuffix));
-                    }
-                    catch (NullReferenceException)
-                    {
-                        Debug.LogError($"Failed to load collection: {lastCollection?.ToString() ?? "\"NULL\""}");
-                    }
-                    yield return null;
-                }
+                Debug.LogError("[ICOSA_COLLECTIONS] Response did not contain a collections array.");
+                yield break;
             }
-            m_PageToken = json["next"]?.ToString(); // Collections use "next" instead of "nextPageToken"
+
+            foreach (JObject collection in collectionResults)
+            {
+                try
+                {
+                    lastCollection = collection;
+                    collections.Add(new IcosaAssetCatalog.CollectionDetails(collection));
+                }
+                catch (NullReferenceException)
+                {
+                    Debug.LogError($"[ICOSA_COLLECTIONS] Failed to load collection: " +
+                        $"{lastCollection?.ToString() ?? "\"NULL\""}");
+                }
+                yield return null;
+            }
+            m_PageToken = json["nextPageToken"]?.ToString();
         }
     }
 } // namespace TiltBrush

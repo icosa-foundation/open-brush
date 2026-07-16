@@ -69,7 +69,7 @@ namespace TiltBrush
             {
                 if (m_IsCollection)
                 {
-                    return m_IcosaCollection?.Name ?? "Collection";
+                    return m_IcosaCollection?.Name;
                 }
                 else
                 {
@@ -229,6 +229,11 @@ namespace TiltBrush
 
         override public string UnloadedExtraDescription()
         {
+            if (m_IsCollection)
+            {
+                return m_IcosaCollection?.Description;
+            }
+
             IcosaPanel polyp = m_Manager.GetComponent<IcosaPanel>();
             Debug.AssertFormat(polyp, "PolyModelButton should be a child of the PolyPanel");
             return (polyp && polyp.ShowingUser) ? null : m_IcosaAsset.AccountName;

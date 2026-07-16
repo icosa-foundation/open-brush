@@ -500,10 +500,7 @@ namespace TiltBrush
             public string CollectionId { get; }
             public string Name { get; }
             public string Description { get; }
-            public string AccountName { get; }
             public int AssetCount { get; }
-            public string Slug { get; }
-            public bool IsPublic { get; }
 
             public Texture2D Thumbnail
             {
@@ -519,24 +516,16 @@ namespace TiltBrush
                 }
             }
 
-            public CollectionDetails(JToken json, string thumbnailSuffix)
+            public CollectionDetails(JToken json)
             {
                 m_Owner = App.IcosaAssetCatalog;
-                Name = json["name"]?.ToString() ?? "Untitled Collection";
-                CollectionId = json["uid"]?.ToString();
+                Name = json["name"].ToString();
+                CollectionId = json["collectionId"].ToString();
                 Description = json["description"]?.ToString() ?? "";
-                AccountName = json["user"]?["displayName"]?.ToString() ?? json["user"]?["username"]?.ToString() ?? "Unknown";
-                AssetCount = json["assetCount"]?.Value<int>() ?? 0;
-                Slug = json["slug"]?.ToString() ?? "";
-                IsPublic = json["isPublic"]?.Value<bool>() ?? false;
+                AssetCount = json["assets"] is JArray assets ? assets.Count : 0;
 
                 m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
-                // Collections use the first image from thumbnails array
-                m_ThumbnailUrl = json?["thumbnails"]?["images"]?[0]?["url"]?.ToString();
-                if (!string.IsNullOrEmpty(thumbnailSuffix) && !string.IsNullOrEmpty(m_ThumbnailUrl))
-                {
-                    m_ThumbnailUrl = string.Format("{0}={1}", m_ThumbnailUrl, thumbnailSuffix);
-                }
+                m_ThumbnailUrl = json["assets"]?[0]?["thumbnail"]?["url"]?.ToString();
                 if (!kLazyLoadThumbnail && !string.IsNullOrEmpty(m_ThumbnailUrl))
                 {
                     _ = Thumbnail;
@@ -1811,7 +1800,7 @@ namespace TiltBrush
             {
                 firstPass = false;
 
-                using (var cr = lister.NextPageCollections(collections, m_ThumbnailSuffix))
+                using (var cr = lister.NextPageCollections(collections))
                 {
                     int prevCount = collections.Count;
                     while (true)
