@@ -96,10 +96,10 @@ namespace TiltBrush
                     var knot = rotKnots[j];
                     var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
                 }
-                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
 
                 var fovKnots = widget.WidgetScript.Path.FovKnots;
                 var fovTimes = new float[fovKnots.Count];
@@ -107,10 +107,9 @@ namespace TiltBrush
                 for (var j = 0; j < fovKnots.Count; j++)
                 {
                     var knot = fovKnots[j];
-                    var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
                 }
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
