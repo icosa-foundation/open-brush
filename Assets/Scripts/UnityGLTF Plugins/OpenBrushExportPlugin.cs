@@ -60,7 +60,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
-                cam.enabled = false;
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
             }
         }
 
