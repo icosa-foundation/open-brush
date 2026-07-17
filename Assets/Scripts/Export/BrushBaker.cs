@@ -60,6 +60,7 @@ public class BrushBaker : MonoBehaviour
         public string brushGuid;
         public TextureBakeMode Mode;
         public int BakePass;
+        public bool ForceUnlit;
         public string Reason;
     }
 

@@ -441,6 +441,7 @@ namespace TiltBrush
             string shaderName = material.shader.name;
             var textureBakeMode = BrushBaker.TextureBakeMode.None;
             var textureBakePass = 0;
+            bool forceUnlit = false;
 
             if (shaderName.StartsWith("Brush/"))
             {
@@ -470,6 +471,8 @@ namespace TiltBrush
                 {
                     textureBakeMode = textureBakePolicy.Mode;
                     textureBakePass = textureBakePolicy.BakePass;
+                    forceUnlit = textureBakePolicy.ForceUnlit ||
+                        textureBakeMode == BrushBaker.TextureBakeMode.UvUnlit;
                     string policyMessage = $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}, pass {textureBakePass}: {textureBakePolicy.Reason}";
                     if (textureBakeMode == BrushBaker.TextureBakeMode.Unsupported)
                     {
@@ -525,6 +528,10 @@ namespace TiltBrush
 
             if (IsStaticExport)
             {
+                if (forceUnlit && !IsUnlitMaterial(material))
+                {
+                    exporter.ExportUnlit(materialNode, material);
+                }
                 BakeCustomShaderToPbr(
                     exporter, material, materialNode, textureBakeMode, textureBakePass);
             }

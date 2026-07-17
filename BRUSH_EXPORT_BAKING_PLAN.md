@@ -66,8 +66,8 @@ The established common mesh baker already covers the significant non-audio defor
 
 Static-only mesh work currently adds:
 
-- FacetedTube: split vertices per triangle and bake world-orientation face colors into `COLOR_0`.
-- Toon: bake its world-normal body shading into `COLOR_0`; omit its camera-dependent outline pass.
+- FacetedTube: split vertices per triangle and bake world-orientation face colors into `COLOR_0`; export the material as unlit to avoid lighting those colors twice.
+- Toon: bake its world-normal body shading into `COLOR_0`, export it as unlit, and omit its camera-dependent outline pass.
 
 The apparent vertex deformation in Comet, Hypercolor, Soft Highlighter, and Velvet Ink is guarded by `AUDIO_REACTIVE`. Animation and audio are out of scope, so their static geometry is already the source mesh and an additional mesh bake would be a no-op.
 

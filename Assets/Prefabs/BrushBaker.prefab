@@ -239,7 +239,14 @@ MonoBehaviour:
     brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27
     Mode: 0
     BakePass: 0
+    ForceUnlit: 1
     Reason: Static mesh baking stores the face-orientation colors in vertex COLOR_0.
+  - name: Toon
+    brushGuid: 4391385a-df73-4396-9e33-31e4e4930b27
+    Mode: 0
+    BakePass: 0
+    ForceUnlit: 1
+    Reason: Static mesh baking stores the body shading in vertex COLOR_0.
   - name: Tube Toon Inverted
     brushGuid: 9871385a-df73-4396-9e33-31e4e4930b27
     Mode: 4
