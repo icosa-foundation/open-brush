@@ -54,7 +54,7 @@ The initial default is `None`. Texture baking is enabled only for brushes that h
 | Petal | No required mesh bake identified | `UvBaseColor` best effort | UV gradient is bakeable, but front/back differences cannot be represented by one double-sided glTF material. Bake the front-face result. |
 | Disco | Existing deformation bake | `Unsupported` | Emissive hot spot depends on derivatives of the real world-space surface. Preserve ordinary maps and PBR factors only. |
 | Diamond Hull | None identified | `Unsupported` | Appearance depends on view direction, world position, normals, Fresnel, and diffraction. Use a smooth/specular approximation. |
-| Faceted | None identified | `Unsupported` | Color depends on derivatives of the real face position and orientation. |
+| Faceted | Split vertices with baked face colors | `None` | Static export evaluates the world-space face orientation and stores its color in `COLOR_0`. |
 | Tube Toon Inverted | None identified | `Unsupported` | Outline requires a second normal-inflated geometry pass. |
 
 This table is a starting point, not a complete brush inventory. Every exportable brush must be reviewed and added before texture baking is enabled for it.

@@ -207,6 +207,10 @@ MonoBehaviour:
     ModifyUv0: 0
     ModifyUv1: 0
   staticComputeShaders: []
+  staticMeshPolicies:
+  - name: Faceted Tube face colors
+    brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27
+    Mode: 1
   textureBakePolicies:
   - name: Double Tapered Flat
     brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
@@ -230,9 +234,9 @@ MonoBehaviour:
     Reason: Diffraction depends on view direction, world position, and surface normals.
   - name: Faceted Tube
     brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27
-    Mode: 4
+    Mode: 0
     BakePass: 0
-    Reason: Color depends on derivatives of the real face position and orientation.
+    Reason: Static mesh baking stores the face-orientation colors in vertex COLOR_0.
   - name: Tube Toon Inverted
     brushGuid: 9871385a-df73-4396-9e33-31e4e4930b27
     Mode: 4

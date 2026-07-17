@@ -187,7 +187,10 @@ namespace TiltBrush
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
                         if (mesh.vertexCount > 0)
                         {
-                            mesh = ProcessBrushMesh(mesh, stroke.m_BrushGuid.ToString());
+                            var renderer = stroke.m_Object.GetComponent<Renderer>();
+                            mesh = ProcessBrushMesh(
+                                mesh, stroke.m_BrushGuid.ToString(), renderer?.sharedMaterial,
+                                stroke.m_Object.transform.localToWorldMatrix);
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
                         }
@@ -219,7 +222,9 @@ namespace TiltBrush
                     m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
-                        mesh = ProcessBrushMesh(mesh, brush.m_Guid.ToString());
+                        mesh = ProcessBrushMesh(
+                            mesh, brush.m_Guid.ToString(), brush.Material,
+                            mf.transform.localToWorldMatrix);
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
@@ -228,10 +233,12 @@ namespace TiltBrush
             }
         }
 
-        private Mesh ProcessBrushMesh(Mesh mesh, string brushGuid)
+        private Mesh ProcessBrushMesh(
+            Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix)
         {
             return IsStaticExport
-                ? BrushBaker.m_Instance.ProcessMeshForStaticExport(mesh, brushGuid)
+                ? BrushBaker.m_Instance.ProcessMeshForStaticExport(
+                    mesh, brushGuid, material, localToWorldMatrix)
                 : BrushBaker.m_Instance.ProcessMesh(mesh, brushGuid);
         }
 
