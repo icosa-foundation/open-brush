@@ -211,6 +211,9 @@ MonoBehaviour:
   - name: Faceted Tube face colors
     brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27
     Mode: 1
+  - name: Toon vertex shading
+    brushGuid: 4391385a-df73-4396-9e33-31e4e4930b27
+    Mode: 2
   textureBakePolicies:
   - name: Double Tapered Flat
     brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126

@@ -52,6 +52,7 @@ The initial default is `None`. Texture baking is enabled only for brushes that h
 | Electricity | Existing static curl bake | `UvUnlit` | The centre-line profile is driven by UV.y. Three independently displaced additive passes collapse to a single-strand best effort. |
 | Neon Pulse | No animation target | `UvUnlit` | Bake a fixed-phase grayscale pulse from UV.x. Ignore view-dependent attenuation; vertex color supplies hue. |
 | Petal | No required mesh bake identified | `UvBaseColor` best effort | UV gradient is bakeable, but front/back differences cannot be represented by one double-sided glTF material. Bake the front-face result. |
+| Toon | Bake world-normal body shading into vertex colors | `None` | Preserve the colored body; omit the view-dependent black outline shell. |
 | Disco | Existing deformation bake | `Unsupported` | Emissive hot spot depends on derivatives of the real world-space surface. Preserve ordinary maps and PBR factors only. |
 | Diamond Hull | None identified | `Unsupported` | Appearance depends on view direction, world position, normals, Fresnel, and diffraction. Use a smooth/specular approximation. |
 | Faceted | Split vertices with baked face colors | `None` | Static export evaluates the world-space face orientation and stores its color in `COLOR_0`. |

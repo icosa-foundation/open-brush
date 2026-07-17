@@ -33,6 +33,7 @@ public class BrushBaker : MonoBehaviour
     {
         None,
         FacetedFaceColors,
+        ToonVertexShading,
     }
 
     [Serializable]
@@ -186,9 +187,41 @@ public class BrushBaker : MonoBehaviour
         {
             case StaticMeshBakeMode.FacetedFaceColors:
                 return BakeFacetedFaceColors(mesh, material, localToWorldMatrix);
+            case StaticMeshBakeMode.ToonVertexShading:
+                return BakeToonVertexShading(mesh, localToWorldMatrix);
             default:
                 return mesh;
         }
+    }
+
+    private static Mesh BakeToonVertexShading(Mesh mesh, Matrix4x4 localToWorldMatrix)
+    {
+        Vector3[] normals = mesh.normals;
+        if (normals.Length != mesh.vertexCount)
+        {
+            Debug.LogWarning($"[OB_STATIC_MESH] Toon mesh {mesh.name} has no vertex normals");
+            return mesh;
+        }
+
+        Color[] colors = mesh.colors;
+        if (colors.Length != mesh.vertexCount)
+        {
+            colors = Enumerable.Repeat(Color.white, mesh.vertexCount).ToArray();
+        }
+
+        Matrix4x4 normalMatrix = localToWorldMatrix.inverse.transpose;
+        for (int i = 0; i < colors.Length; i++)
+        {
+            float light = normalMatrix.MultiplyVector(normals[i]).normalized.y * 0.2f;
+            Color color = colors[i];
+            color.r = Mathf.Clamp01(color.r + light);
+            color.g = Mathf.Clamp01(color.g + light);
+            color.b = Mathf.Clamp01(color.b + light);
+            colors[i] = color;
+        }
+        mesh.colors = colors;
+        Debug.Log($"[OB_STATIC_MESH] Baked Toon vertex shading into {colors.Length} vertices");
+        return mesh;
     }
 
     private static Mesh BakeFacetedFaceColors(
