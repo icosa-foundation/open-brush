@@ -424,22 +424,29 @@ namespace TiltBrush.FrameAnimation
                 }
             }
 
-            List<int> ActiveTrackIndex = ActiveTrackIndexes();
+            List<int> activeTrackIndexes = ActiveTrackIndexes();
 
             foreach (GameObject trackNodes in trackNodesWidget)
             {
                 trackNodes.SetActive(false);
             }
 
-            int loopLimitTrack = Math.Min(ActiveTrackIndex.Count, trackNodesWidget.Count);
-            for (int trackNum = 0; trackNum < loopLimitTrack; trackNum++)
+            int start = Math.Clamp(-m_TrackScrollOffset, 0, activeTrackIndexes.Count);
+            int end = Math.Min(start + trackNodesWidget.Count, activeTrackIndexes.Count);
+            for (int localIndex = 0; localIndex < end - start; localIndex++)
             {
-                if (Timeline[ActiveTrackIndex[trackNum]].Frames.Count > 0) // check if there is a frame here.
-                {
-                    trackNodesWidget[trackNum].SetActive(true);
+                int activeTrackIndex = start + localIndex;
+                if (activeTrackIndex < 0 || activeTrackIndex >= activeTrackIndexes.Count) continue;
 
-                    nodeCount = trackNodesWidget[trackNum].gameObject.transform.childCount; // always 8, unless we increase fps
-                    trackFrameCount = Timeline[ActiveTrackIndex[trackNum]].Frames.Count;
+                int scrolledTrack = activeTrackIndexes[activeTrackIndex];
+                if (scrolledTrack < 0 || scrolledTrack >= Timeline.Count) continue;
+
+                if (Timeline[scrolledTrack].Frames.Count > 0) // check if there is a frame here.
+                {
+                    trackNodesWidget[localIndex].SetActive(true);
+
+                    nodeCount = trackNodesWidget[localIndex].gameObject.transform.childCount; // always 8, unless we increase fps
+                    trackFrameCount = Timeline[scrolledTrack].Frames.Count;
                     nodeToMake = trackFrameCount - nodeCount; // 9 - 8
 
                     if (nodeToMake > 0)
@@ -447,7 +454,7 @@ namespace TiltBrush.FrameAnimation
                         double posModifier = nodeCount;
                         for (int make = 0; make < nodeToMake; make++)
                         {
-                            GameObject newFrame = Instantiate(frameButtonPrefab, trackNodesWidget[trackNum].transform, false);
+                            GameObject newFrame = Instantiate(frameButtonPrefab, trackNodesWidget[localIndex].transform, false);
                             // TODO : HARD CODED. MUST GET Vector and Scale info from FrameButton1
                             newFrame.transform.localPosition = new Vector3((float)posModifier * (float)0.1971429, 0, -0.029f); // 1.9... is the spacing between framebuttons 0 and 1
                             float scale = 0.16175f;
@@ -458,8 +465,8 @@ namespace TiltBrush.FrameAnimation
 
                     for (int hideNode = 0; hideNode < nodeCount; hideNode++)
                     {
-                        // trackNodesWidget[trackNum].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
-                        foreach (Transform buttonState in trackNodesWidget[trackNum].transform.GetChild(hideNode).GetChild(0)) // hide all button state
+                        // trackNodesWidget[localIndex].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
+                        foreach (Transform buttonState in trackNodesWidget[localIndex].transform.GetChild(hideNode).GetChild(0)) // hide all button state
                         {
                             buttonState.gameObject.SetActive(false); // trackNodesWidget[t].transform.GetChild(hideNode).GetChild(0).GetChild(X).gameObject.SetActive(false); 
                         }
@@ -468,10 +475,8 @@ namespace TiltBrush.FrameAnimation
                     int loopLimitFrames = Math.Min(nodeCount, trackFrameCount);
                     for (int frameNum = 0; frameNum < loopLimitFrames; frameNum++)
                     {
-                        // trackNodesWidget[trackNum].transform.GetChild(frameNum).gameObject.SetActive(true); // already handled in UpdateTimelineSlider below
-                        var frameButton = trackNodesWidget[trackNum].transform.GetChild(frameNum).GetChild(0); // f is tracknodes; 0 is the control, which is labled "1" in the prefab
-                        int scrollIndex = trackNum + Math.Abs(m_TrackScrollOffset);
-                        int scrolledTrack = ActiveTrackIndex[scrollIndex]; // TODO : May need to instantiate tracks and hide them as we go at UpdateTimelineSlider when toggling pages
+                        // trackNodesWidget[localIndex].transform.GetChild(frameNum).gameObject.SetActive(true); // already handled in UpdateTimelineSlider below
+                        var frameButton = trackNodesWidget[localIndex].transform.GetChild(frameNum).GetChild(0); // f is tracknodes; 0 is the control, which is labled "1" in the prefab
 
                         frameButton.gameObject.GetComponent<FrameButton>().SetButtonCoordinate(scrolledTrack, frameNum); // 0 is the "1" that contains the FrameButton component.
 

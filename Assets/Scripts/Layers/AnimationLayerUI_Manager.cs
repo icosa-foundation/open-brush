@@ -22,6 +22,8 @@ namespace TiltBrush.Layers
 {
     public class AnimationLayerUI_Manager : MonoBehaviour, ILayerManager
     {
+        private const int kVisibleLayerCount = 7;
+
         public delegate void OnActiveSceneChanged(GameObject widget);
         public static event OnActiveSceneChanged onActiveSceneChanged;
 
@@ -118,6 +120,9 @@ namespace TiltBrush.Layers
 
         private void UpdateScroll()
         {
+            int minimumScrollOffset = Math.Min(0, kVisibleLayerCount - m_Widgets.Count);
+            scrollOffset = Math.Clamp(scrollOffset, minimumScrollOffset, 0);
+
             for (int i = 0; i < m_Widgets.Count; i++)
             {
                 Vector3 localPos = mainWidget.transform.localPosition;
@@ -126,7 +131,7 @@ namespace TiltBrush.Layers
                 m_Widgets[i].transform.localPosition = localPos;
 
                 int thisWidgetOffset = i + scrollOffset;
-                if (thisWidgetOffset >= 7 || thisWidgetOffset < 0)
+                if (thisWidgetOffset >= kVisibleLayerCount || thisWidgetOffset < 0)
                 {
                     m_Widgets[i].SetActive(false);
                 }
@@ -137,7 +142,7 @@ namespace TiltBrush.Layers
             }
 
             scrollUpButton.SetActive(scrollOffset != 0);
-            scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > 7);
+            scrollDownButton.SetActive(scrollOffset + m_Widgets.Count > kVisibleLayerCount);
 
             if (hasAnimationComponent())
             {
@@ -148,7 +153,7 @@ namespace TiltBrush.Layers
         public void scrollDirection(bool upDirection)
         {
             if (scrollOffset == 0 && upDirection) return;
-            if (scrollOffset + m_Widgets.Count <= 7 && !upDirection) return;
+            if (scrollOffset + m_Widgets.Count <= kVisibleLayerCount && !upDirection) return;
             scrollOffset += (Convert.ToInt32(upDirection) * 2 - 1);
             UpdateScroll();
         }
