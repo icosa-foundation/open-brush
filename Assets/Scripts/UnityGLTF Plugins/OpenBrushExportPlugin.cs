@@ -775,6 +775,15 @@ namespace TiltBrush
                 };
                 bakedTexture.ReadPixels(new Rect(0, 0, textureSize, textureSize), 0, 0);
                 bakedTexture.Apply();
+
+                if (!HasVisibleBaseColorPixels(bakedTexture))
+                {
+                    Debug.LogWarning(
+                        $"[OB_GLTF_BAKE] Ignoring unusable base color bake for material {material.name}");
+                    SafeDestroy(bakedTexture);
+                    return null;
+                }
+
                 return bakedTexture;
             }
             catch (Exception e)
@@ -791,6 +800,19 @@ namespace TiltBrush
                     RenderTexture.ReleaseTemporary(renderTexture);
                 }
             }
+        }
+
+        private static bool HasVisibleBaseColorPixels(Texture2D texture)
+        {
+            var pixels = texture.GetRawTextureData<Color32>();
+            foreach (var pixel in pixels)
+            {
+                if (pixel.a > 1 && (pixel.r > 1 || pixel.g > 1 || pixel.b > 1))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static TextureInfo ExportBakedTexture(
