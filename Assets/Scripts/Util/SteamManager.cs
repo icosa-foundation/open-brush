@@ -290,16 +290,27 @@ namespace TiltBrush
 
         private static void InitializeSteamworks()
         {
-            if (m_Initialized || !RunningUnderSteam)
+            if (m_Initialized)
             {
                 return;
             }
+
+#if !UNITY_ANDROID || UNITY_EDITOR
+            if (!RunningUnderSteam)
+            {
+                return;
+            }
+#endif
 
             try
             {
                 m_Initialized = SteamClientApi.Initialize(out string errorMessage);
                 if (m_Initialized)
                 {
+                    // SteamAPI_IsSteamRunning currently reports false in Lepton even when the
+                    // process was launched by Steam with a valid SteamAppId. A successful
+                    // SteamAPI_InitFlat call is authoritative here.
+                    m_RunningUnderSteam = true;
                     Debug.Log("[STEAM_BROWSER] Steamworks initialized");
                 }
                 else
