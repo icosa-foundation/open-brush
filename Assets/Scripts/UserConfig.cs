@@ -342,14 +342,6 @@ namespace TiltBrush
                 set { m_ExportCustomSkybox = value; }
             }
 
-            // Used by UnityGLTF exporter
-            private bool? m_BakeCustomShadersToPbr;
-            public bool BakeCustomShadersToPbr
-            {
-                get { return m_BakeCustomShadersToPbr ?? true; }
-                set { m_BakeCustomShadersToPbr = value; }
-            }
-
             private Dictionary<string, bool> m_Formats;
             [JsonProperty]
             public Dictionary<string, bool> Formats

@@ -228,6 +228,13 @@ public class BrushBaker : MonoBehaviour
         return mesh;
     }
 
+    public Mesh ProcessMeshForStaticExport(Mesh mesh, string brushGuid)
+    {
+        // Static-only mesh transformations belong here. Start with the established newglb
+        // mesh bake so the two profiles differ only when a static approximation is added.
+        return ProcessMesh(mesh, brushGuid);
+    }
+
     private static void DropWideUvComponents(Mesh mesh)
     {
         // Disabled by default. UnityGLTF already exports uv0/uv1 through Vector2[] accessors,

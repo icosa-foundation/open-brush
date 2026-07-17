@@ -32,9 +32,14 @@ namespace TiltBrush
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
         private readonly List<Texture2D> m_BakedTextures = new List<Texture2D>();
+        private Export.GlbExportMode m_ExportMode;
+
+        private bool IsStaticExport => m_ExportMode == Export.GlbExportMode.Static;
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            m_ExportMode = Export.CurrentGlbExportMode;
+            Debug.Log($"[OB_GLB_PROFILE] Starting {m_ExportMode} GLB export");
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
@@ -182,7 +187,7 @@ namespace TiltBrush
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
                         if (mesh.vertexCount > 0)
                         {
-                            mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                            mesh = ProcessBrushMesh(mesh, stroke.m_BrushGuid.ToString());
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
                         }
@@ -214,13 +219,20 @@ namespace TiltBrush
                     m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
-                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        mesh = ProcessBrushMesh(mesh, brush.m_Guid.ToString());
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
                     }
                 }
             }
+        }
+
+        private Mesh ProcessBrushMesh(Mesh mesh, string brushGuid)
+        {
+            return IsStaticExport
+                ? BrushBaker.m_Instance.ProcessMeshForStaticExport(mesh, brushGuid)
+                : BrushBaker.m_Instance.ProcessMesh(mesh, brushGuid);
         }
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
@@ -445,7 +457,7 @@ namespace TiltBrush
                 var brush = brushes[0];
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
 
-                if (BrushBaker.m_Instance != null &&
+                if (IsStaticExport && BrushBaker.m_Instance != null &&
                     BrushBaker.m_Instance.TryGetTextureBakePolicy(
                         brush.m_Guid.ToString(), out var textureBakePolicy))
                 {
@@ -504,7 +516,7 @@ namespace TiltBrush
                 materialNode.PbrMetallicRoughness = pbr;
             }
 
-            if (App.UserConfig.Export.BakeCustomShadersToPbr)
+            if (IsStaticExport)
             {
                 BakeCustomShaderToPbr(
                     exporter, material, materialNode, textureBakeMode, textureBakePass);
@@ -533,7 +545,9 @@ namespace TiltBrush
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
             }
 
-            gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
+            gltfRoot.Asset.Generator = IsStaticExport
+                ? $"Open Brush Static UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})"
+                : $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
             JToken ColorToJString(Color c, bool includeAlpha = false) =>
                 string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
@@ -596,6 +610,7 @@ namespace TiltBrush
                 SafeDestroy(bakedTexture);
             }
             m_BakedTextures.Clear();
+            Debug.Log($"[OB_GLB_PROFILE] Completed {m_ExportMode} GLB export");
         }
 
         static readonly string[] kBaseColorProperties =
