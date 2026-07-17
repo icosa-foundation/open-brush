@@ -215,9 +215,14 @@ namespace TiltBrush.FrameAnimation
 
             Frame timelineFrame = Timeline[track].Frames[frame];
             CanvasScript canvas = timelineFrame.Canvas;
+            bool hasActiveStrokes = SketchMemoryScript.m_Instance.GetMemoryList.Any(stroke =>
+                stroke.Canvas == canvas && stroke.IsGeometryEnabled &&
+                (stroke.m_Type != Stroke.Type.BatchedBrushStroke ||
+                    stroke.m_BatchSubset.m_VertLength > 0));
+            bool hasActiveWidgets = canvas.GetComponentsInChildren<GrabWidget>(true)
+                .Any(widget => widget.gameObject.activeSelf);
             return timelineFrame.AnimatedPath != null ||
-                canvas.gameObject.transform.childCount > 0 ||
-                SketchMemoryScript.m_Instance.GetMemoryList.Any(stroke => stroke.Canvas == canvas);
+                hasActiveStrokes || hasActiveWidgets;
         }
 
         public bool GetFrameFilled(CanvasScript canvas)
