@@ -17,8 +17,9 @@ namespace TiltBrush.FrameAnimation
     public class DuplicateFrameCommand : BaseCommand
     {
         private (int, int) m_TimelineLocation;
-        private (int, int) m_DuplicatingIndex;
+        private AnimationUI_Manager.KeyFrameOperation m_Operation;
         AnimationUI_Manager m_Manager;
+        bool m_IsApplied;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
         int m_FrameOnStart;
@@ -34,16 +35,22 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_DuplicatingIndex = m_Manager.DuplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_Operation = m_Manager.DuplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_IsApplied = m_Operation.Succeeded;
+        }
+
+        protected override void OnDispose()
+        {
+            if (m_IsApplied)
+            {
+                m_Manager.DiscardKeyFrameOperationUndoState(m_Operation);
+            }
         }
 
         protected override void OnUndo()
         {
-            if (m_DuplicatingIndex.Item1 == -1 || m_DuplicatingIndex.Item2 == -1) return;
-            m_Manager.RemoveKeyFrame(m_DuplicatingIndex.Item1, m_DuplicatingIndex.Item2);
-            m_Manager.FillandCleanTimeline();
-            m_Manager.SelectTimelineFrame(m_DuplicatingIndex.Item1, m_DuplicatingIndex.Item2 - 1);
-            m_Manager.ResetTimeline();
+            m_Manager.UndoKeyFrameOperation(m_Operation, m_TimelineLocation);
+            m_IsApplied = false;
         }
     }
 } // namespace TiltBrush.FrameAnimation

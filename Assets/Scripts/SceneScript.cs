@@ -271,8 +271,25 @@ namespace TiltBrush
             return frame;
         }
 
-        public void DestroyCanvas(CanvasScript layer)
+        public void DestroyCanvas(CanvasScript layer, IEnumerable<Stroke> ownedStrokes = null)
         {
+            List<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList
+                .Where(stroke => stroke.Canvas == layer).ToList();
+            if (ownedStrokes != null)
+            {
+                strokes.AddRange(ownedStrokes.Where(stroke => !strokes.Contains(stroke)));
+            }
+            foreach (Stroke stroke in strokes)
+            {
+                if (stroke.m_Type != Stroke.Type.NotCreated)
+                {
+                    TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
+                }
+                stroke.Group = SketchGroupTag.None;
+                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                stroke.DestroyStroke();
+            }
+
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
@@ -283,9 +300,7 @@ namespace TiltBrush
         {
             if (layer == MainCanvas) return;
             m_LayerCanvases.Remove(layer);
-            foreach (Batch b in layer.BatchManager.AllBatches())
-                b.Destroy();
-            Destroy(layer.gameObject);
+            DestroyCanvas(layer);
         }
 
         public bool IsLayerDeleted(CanvasScript layer)

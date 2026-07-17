@@ -73,6 +73,18 @@ namespace TiltBrush.FrameAnimation
             public (int, int) Location;
         }
 
+        public struct KeyFrameOperation
+        {
+            public (int, int) Location;
+            public CanvasScript CreatedCanvas;
+            public List<Stroke> CreatedStrokes;
+            internal List<Track> PreviousTimeline;
+            internal List<CanvasScript> CreatedCanvases;
+            internal List<CanvasScript> DisplacedCanvases;
+
+            public bool Succeeded => CreatedCanvas != null;
+        }
+
         public struct Track
         {
             public List<Frame> Frames;
@@ -980,10 +992,10 @@ namespace TiltBrush.FrameAnimation
             return index;
         }
 
-        private CanvasScript ReplicateStrokesToNewCanvas(List<Stroke> oldStrokes)
+        private CanvasScript ReplicateStrokesToNewCanvas(List<Stroke> oldStrokes, out List<Stroke> newStrokes)
         {
             CanvasScript newCanvas = App.Scene.AddCanvas();
-            List<Stroke> newStrokes = oldStrokes
+            newStrokes = oldStrokes
                 .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
                     stroke, App.Scene.SelectionCanvas, null)).ToList();
 
@@ -1045,7 +1057,84 @@ namespace TiltBrush.FrameAnimation
             return newCanvas;
         }
 
-        public (int, int) SplitKeyFrame(int trackNum = -1, int frameNum = -1)
+        private List<Track> CloneTimeline()
+        {
+            return Timeline.Select(track =>
+            {
+                Track clone = track;
+                clone.Frames = new List<Frame>(track.Frames);
+                return clone;
+            }).ToList();
+        }
+
+        private static HashSet<CanvasScript> GetTimelineCanvases(List<Track> timeline)
+        {
+            return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas));
+        }
+
+        private KeyFrameOperation CompleteKeyFrameOperation(
+            (int, int) location, CanvasScript createdCanvas, List<Stroke> createdStrokes,
+            List<Track> previousTimeline)
+        {
+            HashSet<CanvasScript> previousCanvases = GetTimelineCanvases(previousTimeline);
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            List<CanvasScript> createdCanvases = currentCanvases
+                .Where(canvas => !previousCanvases.Contains(canvas)).ToList();
+            List<CanvasScript> displacedCanvases = previousCanvases
+                .Where(canvas => !currentCanvases.Contains(canvas)).ToList();
+
+            return new KeyFrameOperation
+            {
+                Location = location,
+                CreatedCanvas = createdCanvas,
+                CreatedStrokes = createdStrokes,
+                PreviousTimeline = previousTimeline,
+                CreatedCanvases = createdCanvases,
+                DisplacedCanvases = displacedCanvases,
+            };
+        }
+
+        public void UndoKeyFrameOperation(KeyFrameOperation operation, (int, int) selection)
+        {
+            if (!operation.Succeeded) return;
+
+            Timeline = operation.PreviousTimeline.Select(track =>
+            {
+                Track clone = track;
+                clone.Frames = new List<Frame>(track.Frames);
+                return clone;
+            }).ToList();
+            SelectTimelineFrame(selection.Item1, selection.Item2);
+
+            foreach (CanvasScript canvas in operation.CreatedCanvases)
+            {
+                if (canvas != null)
+                {
+                    IEnumerable<Stroke> createdStrokes = canvas == operation.CreatedCanvas
+                        ? operation.CreatedStrokes
+                        : null;
+                    App.Scene.DestroyCanvas(canvas, createdStrokes);
+                }
+            }
+            ResetTimeline();
+        }
+
+        public void DiscardKeyFrameOperationUndoState(KeyFrameOperation operation)
+        {
+            if (!operation.Succeeded) return;
+
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            foreach (CanvasScript canvas in operation.DisplacedCanvases)
+            {
+                if (canvas != null && !currentCanvases.Contains(canvas))
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
+        }
+
+        public KeyFrameOperation SplitKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
@@ -1056,9 +1145,13 @@ namespace TiltBrush.FrameAnimation
 
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             int splittingIndex = FrameOn;
-            if (splittingIndex <= index.Item2 || splittingIndex > index.Item2 + frameLength - 1) return (-1, -1);
+            if (splittingIndex <= index.Item2 || splittingIndex > index.Item2 + frameLength - 1)
+            {
+                return new KeyFrameOperation { Location = (-1, -1) };
+            }
 
-            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes);
+            List<Track> previousTimeline = CloneTimeline();
+            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
 
             for (int f = splittingIndex; f < index.Item2 + frameLength; f++)
             {
@@ -1068,10 +1161,11 @@ namespace TiltBrush.FrameAnimation
 
             SelectTimelineFrame(index.Item1, splittingIndex);
             ResetTimeline();
-            return (index.Item1, splittingIndex);
+            return CompleteKeyFrameOperation(
+                (index.Item1, splittingIndex), newCanvas, newStrokes, previousTimeline);
         }
 
-        public (int, int) DuplicateKeyFrame(int trackNum = -1, int frameNum = -1)
+        public KeyFrameOperation DuplicateKeyFrame(int trackNum = -1, int frameNum = -1)
         {
 
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
@@ -1081,7 +1175,8 @@ namespace TiltBrush.FrameAnimation
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
 
-            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes);
+            List<Track> previousTimeline = CloneTimeline();
+            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
 
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
@@ -1089,9 +1184,8 @@ namespace TiltBrush.FrameAnimation
             for (int f = 0; f < frameLength; f++)
             {
                 if (nextIndex.Item2 + f < Timeline[nextIndex.Item1].Frames.Count &&
-                    !GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
+                    !GetFrameFilled(nextIndex.Item1, nextIndex.Item2 + f))
                 {
-                    Destroy(Timeline[nextIndex.Item1].Frames[nextIndex.Item2 + f].Canvas);
                     Frame addingFrame = NewFrame(newCanvas);
 
                     Timeline[nextIndex.Item1].Frames[nextIndex.Item2 + f] = addingFrame;
@@ -1106,7 +1200,7 @@ namespace TiltBrush.FrameAnimation
             FillTimeline();
             SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
             ResetTimeline();
-            return nextIndex;
+            return CompleteKeyFrameOperation(nextIndex, newCanvas, newStrokes, previousTimeline);
         }
 
         public void TimelineSlideDown(bool down)
