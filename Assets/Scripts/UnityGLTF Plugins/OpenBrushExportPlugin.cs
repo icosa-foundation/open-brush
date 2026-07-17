@@ -33,8 +33,6 @@ namespace TiltBrush
         private bool m_WasUsingBatchedBrushes;
         private readonly List<Texture2D> m_BakedTextures = new List<Texture2D>();
 
-        public static bool IsNewGlbExportActive { get; set; }
-
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
@@ -487,7 +485,7 @@ namespace TiltBrush
                 materialNode.PbrMetallicRoughness = pbr;
             }
 
-            if (IsNewGlbExportActive)
+            if (App.UserConfig.Export.BakeCustomShadersToPbr)
             {
                 BakeCustomShaderToPbr(exporter, material, materialNode);
             }
