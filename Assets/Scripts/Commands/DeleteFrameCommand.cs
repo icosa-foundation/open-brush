@@ -22,7 +22,8 @@ namespace TiltBrush.FrameAnimation
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
         int m_FrameOnStart;
-        AnimationUI_Manager.DeletedFrame m_DeletedFrame;
+        AnimationUI_Manager.DeleteFrameOperation m_Operation;
+        bool m_IsApplied;
 
         public DeleteFrameCommand()
         {
@@ -34,24 +35,22 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_DeletedFrame = m_Manager.RemoveKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_Operation = m_Manager.RemoveKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_IsApplied = m_Operation.Succeeded;
+        }
+
+        protected override void OnDispose()
+        {
+            if (m_IsApplied)
+            {
+                m_Manager.DiscardDeleteFrameOperationUndoState(m_Operation);
+            }
         }
 
         protected override void OnUndo()
         {
-            for (int i = 0; i < m_DeletedFrame.Length; i++)
-            {
-                if (m_DeletedFrame.Location.Item2 + i >= m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Count)
-                {
-                    m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames.Add(m_DeletedFrame.Frame);
-                }
-                else
-                {
-                    m_Manager.Timeline[m_DeletedFrame.Location.Item1].Frames[m_DeletedFrame.Location.Item2 + i] = m_DeletedFrame.Frame;
-                }
-            }
-            m_Manager.ResetTimeline();
-            m_Manager.SelectTimelineFrame(m_DeletedFrame.Location.Item1, m_DeletedFrame.Location.Item2);
+            m_Manager.UndoDeleteFrameOperation(m_Operation);
+            m_IsApplied = false;
         }
     }
 } // namespace TiltBrush.FrameAnimation

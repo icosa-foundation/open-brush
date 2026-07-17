@@ -73,6 +73,17 @@ namespace TiltBrush.FrameAnimation
             public (int, int) Location;
         }
 
+        public struct DeleteFrameOperation
+        {
+            public (int, int) Location;
+            public CameraPathWidget RemovedPath;
+            internal List<Track> PreviousTimeline;
+            internal List<CanvasScript> CreatedCanvases;
+            internal List<CanvasScript> DisplacedCanvases;
+
+            public bool Succeeded => PreviousTimeline != null;
+        }
+
         public struct AddFrameOperation
         {
             public (int, int) Location;
@@ -730,29 +741,35 @@ namespace TiltBrush.FrameAnimation
             App.Scene.TriggerLayersUpdate();
         }
 
-        public DeletedFrame RemoveKeyFrame(int trackNum = -1, int frameNum = -1)
+        public DeleteFrameOperation RemoveKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
+            List<Track> previousTimeline = CloneTimeline();
+            Frame deletedFrame = Timeline[index.Item1].Frames[index.Item2];
+            List<CanvasScript> replacementCanvases = new List<CanvasScript>();
 
-            DeletedFrame deletedFrame;
-
-            deletedFrame.Frame = Timeline[index.Item1].Frames[index.Item2];
-            deletedFrame.Frame.Canvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
-            deletedFrame.Length = GetFrameLength(index.Item1, index.Item2);
-            deletedFrame.Location = (index.Item1, index.Item2);
-
-            App.Scene.HideCanvas(deletedFrame.Frame.Canvas);
+            App.Scene.HideCanvas(deletedFrame.Canvas);
             for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
-                Frame removingFrame = NewFrame(App.Scene.AddCanvas());
+                CanvasScript replacementCanvas = App.Scene.AddCanvas();
+                replacementCanvases.Add(replacementCanvas);
+                Frame removingFrame = NewFrame(replacementCanvas);
                 Timeline[index.Item1].Frames[l] = removingFrame;
             }
 
             FillandCleanTimeline();
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            foreach (CanvasScript replacementCanvas in replacementCanvases)
+            {
+                if (!currentCanvases.Contains(replacementCanvas))
+                {
+                    App.Scene.DestroyCanvas(replacementCanvas);
+                }
+            }
             SelectTimelineFrame(index.Item1, Math.Clamp(index.Item2, 0, GetTimelineLength() - 1));
             ResetTimeline();
-            return deletedFrame;
+            return CompleteDeleteFrameOperation(index, deletedFrame.AnimatedPath, previousTimeline);
         }
 
         public (int, int) GetFollowingFrameIndex(int trackNum, int frameNum)
@@ -1135,6 +1152,66 @@ namespace TiltBrush.FrameAnimation
         {
             return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames)
                 .Select(frame => frame.Canvas));
+        }
+
+        private DeleteFrameOperation CompleteDeleteFrameOperation(
+            (int, int) location, CameraPathWidget removedPath, List<Track> previousTimeline)
+        {
+            HashSet<CanvasScript> previousCanvases = GetTimelineCanvases(previousTimeline);
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            return new DeleteFrameOperation
+            {
+                Location = location,
+                RemovedPath = removedPath,
+                PreviousTimeline = previousTimeline,
+                CreatedCanvases = currentCanvases
+                    .Where(canvas => !previousCanvases.Contains(canvas)).ToList(),
+                DisplacedCanvases = previousCanvases
+                    .Where(canvas => !currentCanvases.Contains(canvas)).ToList(),
+            };
+        }
+
+        public void UndoDeleteFrameOperation(DeleteFrameOperation operation)
+        {
+            if (!operation.Succeeded) return;
+
+            Timeline = operation.PreviousTimeline.Select(track =>
+            {
+                Track clone = track;
+                clone.Frames = new List<Frame>(track.Frames);
+                return clone;
+            }).ToList();
+            SelectTimelineFrame(operation.Location.Item1, operation.Location.Item2);
+
+            foreach (CanvasScript canvas in operation.CreatedCanvases)
+            {
+                if (canvas != null)
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
+            ResetTimeline();
+        }
+
+        public void DiscardDeleteFrameOperationUndoState(DeleteFrameOperation operation)
+        {
+            if (!operation.Succeeded) return;
+
+            if (operation.RemovedPath != null &&
+                !Timeline.SelectMany(track => track.Frames)
+                    .Any(frame => frame.AnimatedPath == operation.RemovedPath))
+            {
+                WidgetManager.m_Instance.DeleteCameraPath(operation.RemovedPath);
+            }
+
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            foreach (CanvasScript canvas in operation.DisplacedCanvases)
+            {
+                if (canvas != null && !currentCanvases.Contains(canvas))
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
         }
 
         private FrameLengthOperation CompleteFrameLengthOperation(
