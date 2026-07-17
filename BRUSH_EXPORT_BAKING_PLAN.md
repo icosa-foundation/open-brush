@@ -2,13 +2,24 @@
 
 ## Goal
 
-Export custom Open Brush materials to glTF on a best-effort basis by combining the existing brush mesh baker with selective texture-map baking. Generated textures must only represent shader behavior that remains after vertex-stage deformation has been baked into the exported mesh.
+Add a separate `static-glb` export for consumers such as Blender that cannot reproduce Open Brush shaders. Combine extended static mesh baking with selective texture-map baking while leaving the existing `newglb` contract unchanged for Open Brush-aware consumers.
 
 Vertex color is part of the exported mesh and is expected to multiply the glTF base color. It must therefore be white while generating reusable texture maps, and it is not by itself a reason to bake a texture.
 
 ## Export model
 
-For each brush GUID:
+The two UnityGLTF outputs have distinct contracts:
+
+| Output | Contract |
+| --- | --- |
+| `newglb` | Open Brush-aware export. Retains the mesh baking already present on main and assumes consumers can provide compatible Open Brush vertex and fragment shaders. |
+| `static-glb` | Static, generic glTF export. Uses extended mesh baking and core/KHR material approximations without requiring Open Brush shaders. |
+
+Texture baking policies and future extensions to mesh baking apply only to `static-glb`. The two exports must operate on independently restored mesh state so static preprocessing cannot change `newglb` data.
+
+`static-glb` is enabled through the `Export.Formats["static-glb"]` setting in `OpenBrush.cfg` and is written to a sibling `static-glb` directory.
+
+For each brush GUID in `static-glb`:
 
 1. Bake supported vertex-stage deformation into the mesh.
 2. Preserve the vertex attributes needed by the exported material, including color, normals, and supported UV channels.
@@ -66,6 +77,9 @@ The bake must render to a linear intermediate texture and export using the desti
 
 ### Phase 1: Policy foundation and no-op prevention
 
+- Add an explicit export mode and a separate `static-glb` output.
+- Keep `newglb` on the existing Open Brush-aware path.
+- Scope texture policies and the controlled renderer to `static-glb`.
 - Add a brush-GUID export policy adjacent to the existing mesh-baker mappings.
 - Carry the selected brush policy from mesh processing to material export.
 - Remove the blanket rule that bakes every unhandled Brush/Blocks shader without a texture.
@@ -110,4 +124,3 @@ Keep fixes independently reviewable:
 3. Add the controlled UV bake renderer.
 4. Add each supported brush approximation separately where practical.
 5. Add verification or diagnostics separately from behavioral changes.
-
