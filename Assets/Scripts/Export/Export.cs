@@ -148,7 +148,11 @@ URL=" + kExportDocumentationUrl;
                     { "wrl", false },
                 };
             }
-            return formats.GetValueOrDefault(format);
+            if (formats.TryGetValue(format, out bool enabled))
+            {
+                return enabled;
+            }
+            return format == "static-glb";
         }
 
         public static void ExportScene()
