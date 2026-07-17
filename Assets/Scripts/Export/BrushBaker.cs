@@ -43,6 +43,7 @@ public class BrushBaker : MonoBehaviour
         public string brushGuid;
         public TextureBakeMode Mode;
         public int BakePass;
+        public string Reason;
     }
 
     void Start()

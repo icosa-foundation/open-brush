@@ -451,8 +451,15 @@ namespace TiltBrush
                 {
                     textureBakeMode = textureBakePolicy.Mode;
                     textureBakePass = textureBakePolicy.BakePass;
-                    Debug.Log(
-                        $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}, pass {textureBakePass}");
+                    string policyMessage = $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}, pass {textureBakePass}: {textureBakePolicy.Reason}";
+                    if (textureBakeMode == BrushBaker.TextureBakeMode.Unsupported)
+                    {
+                        Debug.LogWarning(policyMessage);
+                    }
+                    else
+                    {
+                        Debug.Log(policyMessage);
+                    }
                 }
 
                 materialNode.Name = $"ob-{manifest.DurableName}";

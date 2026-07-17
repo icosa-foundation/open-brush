@@ -211,8 +211,30 @@ MonoBehaviour:
     brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
     Mode: 0
     BakePass: 0
+    Reason: Mesh bake, base color factor, and vertex color contain the static result.
   - name: Double Tapered Marker
     brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
     Mode: 0
     BakePass: 0
+    Reason: Mesh bake and vertex color contain the static result.
+  - name: Disco
+    brushGuid: 4391aaaa-df73-4396-9e33-31e4e4930b27
+    Mode: 4
+    BakePass: 0
+    Reason: The emissive hot spot depends on derivatives of the real world-space surface.
+  - name: Diamond Hull
+    brushGuid: c8313697-2563-47fc-832e-290f4c04b901
+    Mode: 4
+    BakePass: 0
+    Reason: Diffraction depends on view direction, world position, and surface normals.
+  - name: Faceted Tube
+    brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27
+    Mode: 4
+    BakePass: 0
+    Reason: Color depends on derivatives of the real face position and orientation.
+  - name: Tube Toon Inverted
+    brushGuid: 9871385a-df73-4396-9e33-31e4e4930b27
+    Mode: 4
+    BakePass: 0
+    Reason: The outline requires a second normal-inflated geometry pass.
   squeezeAmount: 0.873
