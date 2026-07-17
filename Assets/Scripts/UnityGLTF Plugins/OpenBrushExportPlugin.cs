@@ -636,7 +636,8 @@ namespace TiltBrush
             bool pbrModified = materialNode.PbrMetallicRoughness == null;
 
             if (pbr.BaseColorTexture == null && TryExportTexture(
-                    exporter, material, kBaseColorTextureProperties, out var baseColorTextureInfo))
+                    exporter, material, kBaseColorTextureProperties,
+                    GLTFSceneExporter.TextureMapType.BaseColor, out var baseColorTextureInfo))
             {
                 pbr.BaseColorTexture = baseColorTextureInfo;
                 pbrModified = true;
@@ -711,7 +712,8 @@ namespace TiltBrush
             }
 
             if (materialNode.EmissiveTexture == null && TryExportTexture(
-                    exporter, material, kEmissionTextureProperties, out var emissiveTexture))
+                    exporter, material, kEmissionTextureProperties,
+                    GLTFSceneExporter.TextureMapType.Emissive, out var emissiveTexture))
             {
                 materialNode.EmissiveTexture = emissiveTexture;
             }
@@ -812,8 +814,9 @@ namespace TiltBrush
                 material.SetTexture(property, bakedTexture);
                 try
                 {
-                    var exported = exporter.ExportTextureInfoWithTextureTransform(
-                        material, bakedTexture, property);
+                    var exported = ExportTextureWithTransform(
+                        exporter, material, bakedTexture, property,
+                        GLTFSceneExporter.TextureMapType.BaseColor);
                     if (exported != null) return exported;
                 }
                 finally
@@ -825,8 +828,9 @@ namespace TiltBrush
             material.SetTexture("_MainTex", bakedTexture);
             try
             {
-                return exporter.ExportTextureInfoWithTextureTransform(
-                    material, bakedTexture, "_MainTex");
+                return ExportTextureWithTransform(
+                    exporter, material, bakedTexture, "_MainTex",
+                    GLTFSceneExporter.TextureMapType.BaseColor);
             }
             finally
             {
@@ -875,7 +879,7 @@ namespace TiltBrush
 
         private static bool TryExportTexture(
             GLTFSceneExporter exporter, Material material, string[] propertyNames,
-            out TextureInfo textureInfo)
+            string textureMapType, out TextureInfo textureInfo)
         {
             foreach (var name in propertyNames)
             {
@@ -884,7 +888,8 @@ namespace TiltBrush
                     continue;
                 }
 
-                textureInfo = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                textureInfo = ExportTextureWithTransform(
+                    exporter, material, texture, name, textureMapType);
                 if (textureInfo != null) return true;
             }
             textureInfo = null;
@@ -902,7 +907,9 @@ namespace TiltBrush
                     continue;
                 }
 
-                var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                var exported = ExportTextureWithTransform(
+                    exporter, material, texture, name,
+                    GLTFSceneExporter.TextureMapType.Normal);
                 if (exported == null) continue;
                 textureInfo = new NormalTextureInfo
                 {
@@ -929,7 +936,9 @@ namespace TiltBrush
                     continue;
                 }
 
-                var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                var exported = ExportTextureWithTransform(
+                    exporter, material, texture, name,
+                    GLTFSceneExporter.TextureMapType.Occlusion);
                 if (exported == null) continue;
                 textureInfo = new OcclusionTextureInfo
                 {
@@ -943,6 +952,15 @@ namespace TiltBrush
             }
             textureInfo = null;
             return false;
+        }
+
+        private static TextureInfo ExportTextureWithTransform(
+            GLTFSceneExporter exporter, Material material, Texture texture,
+            string propertyName, string textureMapType)
+        {
+            var exportSettings = exporter.GetExportSettingsForSlot(textureMapType);
+            return exporter.ExportTextureInfoWithTextureTransform(
+                material, texture, propertyName, exportSettings);
         }
 
         private static double GetNormalScale(Material material)
