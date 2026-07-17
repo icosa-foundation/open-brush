@@ -207,13 +207,23 @@ namespace TiltBrush.FrameAnimation
 
         public bool GetFrameFilled(int track, int frame)
         {
-            return Timeline[track].Frames[frame].Canvas.gameObject.transform.childCount > 0;
+            if (track < 0 || track >= Timeline.Count ||
+                frame < 0 || frame >= Timeline[track].Frames.Count)
+            {
+                return false;
+            }
+
+            Frame timelineFrame = Timeline[track].Frames[frame];
+            CanvasScript canvas = timelineFrame.Canvas;
+            return timelineFrame.AnimatedPath != null ||
+                canvas.gameObject.transform.childCount > 0 ||
+                SketchMemoryScript.m_Instance.GetMemoryList.Any(stroke => stroke.Canvas == canvas);
         }
 
         public bool GetFrameFilled(CanvasScript canvas)
         {
             (int, int) loc = GetCanvasLocation(canvas);
-            return Timeline[loc.Item1].Frames[loc.Item2].Canvas.gameObject.transform.childCount > 0;
+            return GetFrameFilled(loc.Item1, loc.Item2);
         }
 
         public void AddAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
