@@ -113,7 +113,7 @@ URL=" + kExportDocumentationUrl;
                 {
                     { "fbx", true },
                     { "glb", true },
-                    { "newglb", false },
+                    { "newglb", true },
                     { "json", false },
                     { "latk", false },
                     { "obj", true },
@@ -128,9 +128,12 @@ URL=" + kExportDocumentationUrl;
         public static void ExportScene()
         {
             var current = SaveLoadScript.m_Instance.SceneFile;
-            string safeHumanName = FileUtils.SanitizeFilename(current.HumanName);
-            string basename = FileUtils.SanitizeFilename(
-                (current.Valid && (safeHumanName != "")) ? safeHumanName : "Untitled");
+            string validHumanName = FileUtils.GetValidFilename(current.HumanName);
+            if (string.IsNullOrEmpty(validHumanName))
+            {
+                validHumanName = FileUtils.GetValidFilename("Untitled");
+            }
+            string basename = validHumanName;
 
             string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
             if (!FileUtils.InitializeDirectoryWithUserError(
@@ -313,7 +316,7 @@ URL=" + kExportDocumentationUrl;
             }
         }
 
-        public static void ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
+        public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
         {
             // 'New' GLTF style export. Exports to GLB format using UnityGLTF
             var settings = App.Config.m_UnityGLTFSettings;
@@ -328,6 +331,10 @@ URL=" + kExportDocumentationUrl;
                 layerMask |= LayerMask.GetMask("Environment");
             }
             context.ExportLayers = layerMask;
+
+            // Count triangles before export
+            int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
+
             var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
             OpenBrushExportPluginConfig.IsNewGlbExportActive = true;
             try
@@ -338,6 +345,42 @@ URL=" + kExportDocumentationUrl;
             {
                 OpenBrushExportPluginConfig.IsNewGlbExportActive = false;
             }
+
+            return triangleCount;
+        }
+
+        private static int CountTrianglesInLayers(List<Transform> layerRoots, LayerMask layerMask)
+        {
+            int totalTriangles = 0;
+
+            foreach (var root in layerRoots)
+            {
+                var meshFilters = root.GetComponentsInChildren<MeshFilter>(includeInactive: false);
+                foreach (var meshFilter in meshFilters)
+                {
+                    if (meshFilter.gameObject == null || meshFilter.sharedMesh == null) continue;
+
+                    if ((layerMask & (1 << meshFilter.gameObject.layer)) != 0)
+                    {
+                        totalTriangles += meshFilter.sharedMesh.triangles.Length / 3;
+                    }
+                }
+
+                var skinnedMeshRenderers =
+                    root.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: false);
+                foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+                {
+                    if (skinnedMeshRenderer.gameObject == null ||
+                        skinnedMeshRenderer.sharedMesh == null) continue;
+
+                    if ((layerMask & (1 << skinnedMeshRenderer.gameObject.layer)) != 0)
+                    {
+                        totalTriangles += skinnedMeshRenderer.sharedMesh.triangles.Length / 3;
+                    }
+                }
+            }
+
+            return totalTriangles;
         }
     }
 } // namespace TiltBrush

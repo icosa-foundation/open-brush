@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -25,7 +26,11 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
+        private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
+        private GameObject m_ThumbnailCamera;
+        private bool m_WasUsingBatchedBrushes;
         private readonly List<Texture2D> m_BakedTextures = new List<Texture2D>();
 
         public static bool IsNewGlbExportActive { get; set; }
@@ -38,7 +43,11 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
+            m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
+            m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
         }
 
         private void GenerateCameraPathsCameras()
@@ -54,6 +63,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
             }
         }
 
@@ -89,10 +99,10 @@ namespace TiltBrush
                     var knot = rotKnots[j];
                     var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
                 }
-                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
 
                 var fovKnots = widget.WidgetScript.Path.FovKnots;
                 var fovTimes = new float[fovKnots.Count];
@@ -100,16 +110,27 @@ namespace TiltBrush
                 for (var j = 0; j < fovKnots.Count; j++)
                 {
                     var knot = fovKnots[j];
-                    var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
                 }
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
                 exporter.GetRoot().Animations.Add(anim);
-                GameObject.Destroy(cam);
             }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -147,6 +168,7 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.KeepStrokes)
             {
+                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
                 App.Config.m_UseBatchedBrushes = false;
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
@@ -160,9 +182,12 @@ namespace TiltBrush
                         stroke.Uncreate();
                         stroke.Recreate(null, canvas);
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
-                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
-                        stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
-                        stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        if (mesh.vertexCount > 0)
+                        {
+                            mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                            stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
+                            stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        }
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
                         if (App.UserConfig.Export.KeepGroups)
                         {
@@ -175,10 +200,43 @@ namespace TiltBrush
                 }
                 canvas.BatchManager.FlushMeshUpdates();
             }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var brush = batch.Brush;
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    Mesh mesh = new Mesh();
+                    batch.Geometry.CopyToMesh(mesh);
+                    if (mesh == null)
+                    {
+                        Debug.LogError($"No mesh found for brush {brush.name}");
+                        continue;
+                    }
+                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
+                    if (mesh.vertexCount > 0)
+                    {
+                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        m_TemporaryBatchMeshes.Add(mesh);
+                        mf.sharedMesh = mesh;
+                        mf.mesh = mesh;
+                    }
+                }
+            }
         }
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
         {
+            var batch = transform.GetComponent<Batch>();
+            if (batch != null)
+            {
+                var mesh = transform.GetComponent<MeshFilter>().sharedMesh;
+                if (mesh.vertexCount == 0)
+                {
+                    return false;
+                }
+            }
+
             Type[] excludedTypes =
             {
                 typeof(SnapGrid3D),
@@ -214,9 +272,9 @@ namespace TiltBrush
         public void AfterLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            App.Config.m_UseBatchedBrushes = true;
             if (App.UserConfig.Export.KeepStrokes)
             {
+                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
                 foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
                 {
                     var stroke = brushScript.Stroke;
@@ -243,6 +301,23 @@ namespace TiltBrush
                         }
                     }
                 }
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
+                    {
+                        mf.sharedMesh = originalMesh;
+                    }
+                }
+
+                foreach (var mesh in m_TemporaryBatchMeshes)
+                {
+                    SafeDestroy(mesh);
+                }
+                m_TemporaryBatchMeshes.Clear();
             }
         }
 
@@ -422,7 +497,19 @@ namespace TiltBrush
         {
             if (!Application.isPlaying) return;
 
-            ExportCameraPaths(exporter);
+            try
+            {
+                ExportCameraPaths(exporter);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
+            }
+
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
@@ -430,14 +517,16 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
-            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
+            JToken ColorToJString(Color c, bool includeAlpha = false) =>
+                string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
+            JToken Vector3ToJString(Vector3 c) => string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.x, c.y, c.z);
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
             var settings = SceneSettings.m_Instance;
             Environment env = settings.GetDesiredPreset();
             var extras = new JObject();
+
 
             var pose = metadata.SceneTransformInRoomSpace;
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
@@ -449,27 +538,41 @@ namespace TiltBrush
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
-            extras["TB_FogDensity"] = settings.FogDensity;
-            Vector3 gltfPoseTranslation = pose.translation;
-            gltfPoseTranslation.x = -gltfPoseTranslation.x; // Flip X for GLTF
-            extras["TB_PoseTranslation"] = Vector3ToJString(gltfPoseTranslation);
+            extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
+            extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
+            for (int i = 0; i < App.Scene.GetNumLights(); i++)
+            {
+                var transform = App.Scene.GetLight(i).transform;
+                Light unityLight = transform.GetComponent<Light>();
+                Debug.Assert(unityLight != null);
+                Color lightColor = unityLight.color * unityLight.intensity;
+                lightColor.a = 1.0f;
+                extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
+                Vector3 rot = transform.localEulerAngles;
+                rot.y = 360 - rot.y; // Backwards compatibility
+                rot.z = 0; // Roll is irrelevant for directional lights
+                extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
+            }
+            extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
-            extras["TB_PoseScale"] = pose.scale;
+            extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
-            // TODO - this seemed like a sensible alternative, but doesn't seem to work
-            // TODO - We should also export a real GLTF camera object
-            // TrTransform cameraPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
-
-            Vector3 gltfCamTranslation = cameraPose.translation;
-            gltfCamTranslation.x = -gltfCamTranslation.x; // Flip X for GLTF
-            extras["TB_CameraTranslation"] = Vector3ToJString(gltfCamTranslation);
+            extras["TB_CameraTranslation"] = Vector3ToJString(cameraPose.translation);
             extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
+
+            // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
+            // And better suits Open Brush sketches
+            extras["TB_FlyMode"] = "true";
+
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
 
+            Object.Destroy(m_ThumbnailCamera);
+            m_OriginalBatchMeshes?.Clear();
+            m_TemporaryBatchMeshes?.Clear();
             foreach (var bakedTexture in m_BakedTextures)
             {
                 SafeDestroy(bakedTexture);
@@ -479,75 +582,52 @@ namespace TiltBrush
 
         static readonly string[] kBaseColorProperties =
         {
-            "_BaseColor",
-            "_BaseColorFactor",
-            "baseColorFactor",
-            "_Color",
-            "_TintColor"
+            "_BaseColor", "_BaseColorFactor", "baseColorFactor", "_Color", "_TintColor"
         };
 
         static readonly string[] kBaseColorTextureProperties =
         {
-            "_BaseMap",
-            "_BaseColorTexture",
-            "baseColorTexture",
-            "_MainTex",
-            "_ColorTexture"
+            "_BaseMap", "_BaseColorTexture", "baseColorTexture", "_MainTex", "_ColorTexture"
         };
 
         static readonly string[] kNormalTextureProperties =
         {
-            "_BumpMap",
-            "_NormalMap",
-            "_NormalTexture",
-            "normalTexture"
+            "_BumpMap", "_NormalMap", "_NormalTexture", "normalTexture"
         };
 
         static readonly string[] kOcclusionTextureProperties =
         {
-            "_OcclusionMap",
-            "_OcclusionTexture",
-            "occlusionTexture",
-            "_MaskMap"
+            "_OcclusionMap", "_OcclusionTexture", "occlusionTexture", "_MaskMap"
         };
 
         static readonly string[] kEmissionColorProperties =
         {
-            "_EmissionColor",
-            "emissiveFactor",
-            "_EmissiveFactor"
+            "_EmissionColor", "emissiveFactor", "_EmissiveFactor"
         };
 
         static readonly string[] kEmissionTextureProperties =
         {
-            "_EmissionMap",
-            "_EmissiveMap",
-            "_EmissiveTexture",
-            "_EmissiveColorMap",
+            "_EmissionMap", "_EmissiveMap", "_EmissiveTexture", "_EmissiveColorMap",
             "emissiveTexture"
         };
 
         static readonly string[] kMetallicFactorProperties =
         {
-            "_Metallic",
-            "metallicFactor",
-            "_MetallicFactor"
+            "_Metallic", "metallicFactor", "_MetallicFactor"
         };
 
         static readonly string[] kRoughnessFactorProperties =
         {
-            "_Roughness",
-            "roughnessFactor",
-            "_RoughnessFactor"
+            "_Roughness", "roughnessFactor", "_RoughnessFactor"
         };
 
         static readonly string[] kSmoothnessFactorProperties =
         {
-            "_Smoothness",
-            "_Glossiness"
+            "_Smoothness", "_Glossiness"
         };
 
-        private void BakeCustomShaderToPbr(GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode)
+        private void BakeCustomShaderToPbr(
+            GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode)
         {
             if (materialNode == null)
             {
@@ -557,7 +637,8 @@ namespace TiltBrush
             var pbr = materialNode.PbrMetallicRoughness ?? new PbrMetallicRoughness();
             bool pbrModified = materialNode.PbrMetallicRoughness == null;
 
-            if (pbr.BaseColorTexture == null && TryExportTexture(exporter, material, kBaseColorTextureProperties, out var baseColorTextureInfo))
+            if (pbr.BaseColorTexture == null && TryExportTexture(
+                    exporter, material, kBaseColorTextureProperties, out var baseColorTextureInfo))
             {
                 pbr.BaseColorTexture = baseColorTextureInfo;
                 pbrModified = true;
@@ -619,56 +700,52 @@ namespace TiltBrush
                 materialNode.PbrMetallicRoughness = pbr;
             }
 
-            if (materialNode.NormalTexture == null && TryExportNormalTexture(exporter, material, kNormalTextureProperties, out var normalTexture))
+            if (materialNode.NormalTexture == null && TryExportNormalTexture(
+                    exporter, material, kNormalTextureProperties, out var normalTexture))
             {
                 materialNode.NormalTexture = normalTexture;
             }
 
-            if (materialNode.OcclusionTexture == null && TryExportOcclusionTexture(exporter, material, kOcclusionTextureProperties, out var occlusionTexture))
+            if (materialNode.OcclusionTexture == null && TryExportOcclusionTexture(
+                    exporter, material, kOcclusionTextureProperties, out var occlusionTexture))
             {
                 materialNode.OcclusionTexture = occlusionTexture;
             }
 
-            if (materialNode.EmissiveTexture == null && TryExportTexture(exporter, material, kEmissionTextureProperties, out var emissiveTexture))
+            if (materialNode.EmissiveTexture == null && TryExportTexture(
+                    exporter, material, kEmissionTextureProperties, out var emissiveTexture))
             {
                 materialNode.EmissiveTexture = emissiveTexture;
             }
 
-            if (TryGetColor(material, out var emissiveColor, kEmissionColorProperties) && emissiveColor.maxColorComponent > 0f)
+            if (TryGetColor(material, out var emissiveColor, kEmissionColorProperties) &&
+                emissiveColor.maxColorComponent > 0f)
             {
                 materialNode.EmissiveFactor = ToGltfColor(emissiveColor);
             }
 
-            if (!materialNode.DoubleSided)
+            if (!materialNode.DoubleSided &&
+                ((material.HasProperty("_Cull") && material.GetInt("_Cull") ==
+                    (int)UnityEngine.Rendering.CullMode.Off) ||
+                 (material.HasProperty("_CullMode") && material.GetInt("_CullMode") ==
+                    (int)UnityEngine.Rendering.CullMode.Off)))
             {
-                if ((material.HasProperty("_Cull") && material.GetInt("_Cull") == (int)UnityEngine.Rendering.CullMode.Off) ||
-                    (material.HasProperty("_CullMode") && material.GetInt("_CullMode") == (int)UnityEngine.Rendering.CullMode.Off))
-                {
-                    materialNode.DoubleSided = true;
-                }
+                materialNode.DoubleSided = true;
             }
 
-            if (IsUnlitMaterial(material))
+            if (IsUnlitMaterial(material) && materialNode.PbrMetallicRoughness != null)
             {
-                // UnityGLTF's enabled UnlitMaterialsExport plugin owns KHR_materials_unlit serialization.
-                // Keep this Open Brush pass limited to baking/normalizing PBR values for newGLB.
-                if (materialNode.PbrMetallicRoughness != null)
-                {
-                    materialNode.PbrMetallicRoughness.MetallicFactor = 0;
-                    materialNode.PbrMetallicRoughness.RoughnessFactor = 1;
-                }
+                // The UnityGLTF unlit plugin owns KHR_materials_unlit serialization.
+                materialNode.PbrMetallicRoughness.MetallicFactor = 0;
+                materialNode.PbrMetallicRoughness.RoughnessFactor = 1;
             }
         }
 
         private static bool ShouldBakeBaseColorTexture(Material material)
         {
-            if (material == null || material.shader == null)
-            {
-                return false;
-            }
-
-            if (!material.shader.name.StartsWith("Brush/", StringComparison.OrdinalIgnoreCase) &&
-                !material.shader.name.StartsWith("Blocks/", StringComparison.OrdinalIgnoreCase))
+            if (material == null || material.shader == null ||
+                (!material.shader.name.StartsWith("Brush/", StringComparison.OrdinalIgnoreCase) &&
+                 !material.shader.name.StartsWith("Blocks/", StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }
@@ -680,7 +757,6 @@ namespace TiltBrush
                     return false;
                 }
             }
-
             return true;
         }
 
@@ -691,22 +767,25 @@ namespace TiltBrush
             var previous = RenderTexture.active;
             try
             {
-                renderTexture = RenderTexture.GetTemporary(textureSize, textureSize, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                renderTexture = RenderTexture.GetTemporary(
+                    textureSize, textureSize, 0, RenderTextureFormat.ARGB32,
+                    RenderTextureReadWrite.Linear);
                 RenderTexture.active = renderTexture;
                 GL.Clear(true, true, Color.clear);
                 Graphics.Blit(Texture2D.whiteTexture, renderTexture, material);
-                var bakedTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false, true)
+                var bakedTexture = new Texture2D(
+                    textureSize, textureSize, TextureFormat.RGBA32, false, true)
                 {
                     name = material.name + "_BakedBaseColor"
                 };
                 bakedTexture.ReadPixels(new Rect(0, 0, textureSize, textureSize), 0, 0);
                 bakedTexture.Apply();
-                RenderTexture.active = previous;
                 return bakedTexture;
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"Failed to bake base color for material {material?.name}: {e.Message}");
+                Debug.LogWarning(
+                    $"Failed to bake base color for material {material?.name}: {e.Message}");
                 return null;
             }
             finally
@@ -719,7 +798,8 @@ namespace TiltBrush
             }
         }
 
-        private static TextureInfo ExportBakedTexture(GLTFSceneExporter exporter, Material material, Texture2D bakedTexture)
+        private static TextureInfo ExportBakedTexture(
+            GLTFSceneExporter exporter, Material material, Texture2D bakedTexture)
         {
             if (exporter == null || material == null || bakedTexture == null)
             {
@@ -728,21 +808,15 @@ namespace TiltBrush
 
             foreach (var property in kBaseColorTextureProperties)
             {
-                if (!material.HasProperty(property))
-                {
-                    continue;
-                }
+                if (!material.HasProperty(property)) continue;
 
                 var previous = material.GetTexture(property);
                 material.SetTexture(property, bakedTexture);
                 try
                 {
-                    var exported = exporter.ExportTextureInfoWithTextureTransform(material, bakedTexture, property);
-                    if (exported != null)
-                    {
-                        material.SetTexture(property, previous);
-                        return exported;
-                    }
+                    var exported = exporter.ExportTextureInfoWithTextureTransform(
+                        material, bakedTexture, property);
+                    if (exported != null) return exported;
                 }
                 finally
                 {
@@ -753,7 +827,8 @@ namespace TiltBrush
             material.SetTexture("_MainTex", bakedTexture);
             try
             {
-                return exporter.ExportTextureInfoWithTextureTransform(material, bakedTexture, "_MainTex");
+                return exporter.ExportTextureInfoWithTextureTransform(
+                    material, bakedTexture, "_MainTex");
             }
             finally
             {
@@ -763,163 +838,125 @@ namespace TiltBrush
 
         private static bool IsUnlitMaterial(Material material)
         {
-            if (material == null || material.shader == null)
-            {
-                return false;
-            }
+            if (material == null || material.shader == null) return false;
 
             string shaderName = material.shader.name;
-            if (shaderName.IndexOf("Unlit", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                return true;
-            }
-
-            if (material.IsKeywordEnabled("_UNLIT"))
-            {
-                return true;
-            }
-
-            if (material.HasProperty("_UseLighting") && material.GetFloat("_UseLighting") < 0.5f)
-            {
-                return true;
-            }
-
-            if (material.HasProperty("_EnableLighting") && material.GetFloat("_EnableLighting") < 0.5f)
-            {
-                return true;
-            }
-
-            return false;
+            return shaderName.IndexOf("Unlit", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   material.IsKeywordEnabled("_UNLIT") ||
+                   (material.HasProperty("_UseLighting") &&
+                    material.GetFloat("_UseLighting") < 0.5f) ||
+                   (material.HasProperty("_EnableLighting") &&
+                    material.GetFloat("_EnableLighting") < 0.5f);
         }
 
-        private static bool TryGetFloat(Material material, out float value, params string[] propertyNames)
+        private static bool TryGetFloat(
+            Material material, out float value, params string[] propertyNames)
         {
             foreach (var name in propertyNames)
             {
-                if (material.HasProperty(name))
-                {
-                    value = material.GetFloat(name);
-                    return true;
-                }
+                if (!material.HasProperty(name)) continue;
+                value = material.GetFloat(name);
+                return true;
             }
-
             value = 0f;
             return false;
         }
 
-        private static bool TryGetColor(Material material, out Color color, params string[] propertyNames)
+        private static bool TryGetColor(
+            Material material, out Color color, params string[] propertyNames)
         {
             foreach (var name in propertyNames)
             {
-                if (material.HasProperty(name))
-                {
-                    color = material.GetColor(name);
-                    return true;
-                }
+                if (!material.HasProperty(name)) continue;
+                color = material.GetColor(name);
+                return true;
             }
-
             color = default;
             return false;
         }
 
-        private static bool TryExportTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out TextureInfo textureInfo)
+        private static bool TryExportTexture(
+            GLTFSceneExporter exporter, Material material, string[] propertyNames,
+            out TextureInfo textureInfo)
         {
             foreach (var name in propertyNames)
             {
-                if (material.HasProperty(name))
+                if (!material.HasProperty(name) || !(material.GetTexture(name) is Texture2D texture))
                 {
-                    var texture = material.GetTexture(name);
-                    if (texture is Texture2D)
-                    {
-                        textureInfo = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
-                        if (textureInfo != null)
-                        {
-                            return true;
-                        }
-                    }
+                    continue;
                 }
-            }
 
+                textureInfo = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                if (textureInfo != null) return true;
+            }
             textureInfo = null;
             return false;
         }
 
-        private static bool TryExportNormalTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out NormalTextureInfo textureInfo)
+        private static bool TryExportNormalTexture(
+            GLTFSceneExporter exporter, Material material, string[] propertyNames,
+            out NormalTextureInfo textureInfo)
         {
             foreach (var name in propertyNames)
             {
-                if (material.HasProperty(name))
+                if (!material.HasProperty(name) || !(material.GetTexture(name) is Texture2D texture))
                 {
-                    var texture = material.GetTexture(name);
-                    if (texture is Texture2D)
-                    {
-                        var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
-                        if (exported != null)
-                        {
-                            textureInfo = new NormalTextureInfo
-                            {
-                                Index = exported.Index,
-                                TexCoord = exported.TexCoord,
-                                Extensions = exported.Extensions,
-                                Extras = exported.Extras,
-                                Scale = GetNormalScale(material)
-                            };
-                            return true;
-                        }
-                    }
+                    continue;
                 }
-            }
 
+                var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                if (exported == null) continue;
+                textureInfo = new NormalTextureInfo
+                {
+                    Index = exported.Index,
+                    TexCoord = exported.TexCoord,
+                    Extensions = exported.Extensions,
+                    Extras = exported.Extras,
+                    Scale = GetNormalScale(material)
+                };
+                return true;
+            }
             textureInfo = null;
             return false;
         }
 
-        private static bool TryExportOcclusionTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out OcclusionTextureInfo textureInfo)
+        private static bool TryExportOcclusionTexture(
+            GLTFSceneExporter exporter, Material material, string[] propertyNames,
+            out OcclusionTextureInfo textureInfo)
         {
             foreach (var name in propertyNames)
             {
-                if (material.HasProperty(name))
+                if (!material.HasProperty(name) || !(material.GetTexture(name) is Texture2D texture))
                 {
-                    var texture = material.GetTexture(name);
-                    if (texture is Texture2D)
-                    {
-                        var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
-                        if (exported != null)
-                        {
-                            textureInfo = new OcclusionTextureInfo
-                            {
-                                Index = exported.Index,
-                                TexCoord = exported.TexCoord,
-                                Extensions = exported.Extensions,
-                                Extras = exported.Extras,
-                                Strength = GetOcclusionStrength(material)
-                            };
-                            return true;
-                        }
-                    }
+                    continue;
                 }
-            }
 
+                var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                if (exported == null) continue;
+                textureInfo = new OcclusionTextureInfo
+                {
+                    Index = exported.Index,
+                    TexCoord = exported.TexCoord,
+                    Extensions = exported.Extensions,
+                    Extras = exported.Extras,
+                    Strength = GetOcclusionStrength(material)
+                };
+                return true;
+            }
             textureInfo = null;
             return false;
         }
 
         private static double GetNormalScale(Material material)
         {
-            if (TryGetFloat(material, out var scale, "_NormalScale", "_BumpScale", "normalScale"))
-            {
-                return scale;
-            }
-            return 1.0f;
+            return TryGetFloat(material, out var scale, "_NormalScale", "_BumpScale", "normalScale")
+                ? scale : 1.0f;
         }
 
         private static double GetOcclusionStrength(Material material)
         {
-            if (TryGetFloat(material, out var strength, "occlusionStrength", "_OcclusionStrength"))
-            {
-                return Mathf.Clamp01(strength);
-            }
-            return 1.0f;
+            return TryGetFloat(material, out var strength, "occlusionStrength", "_OcclusionStrength")
+                ? Mathf.Clamp01(strength) : 1.0f;
         }
 
         private static GLTF.Math.Color ToGltfColor(Color color)
