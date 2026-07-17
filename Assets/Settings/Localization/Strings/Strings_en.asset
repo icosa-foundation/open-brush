@@ -3839,6 +3839,58 @@ MonoBehaviour:
     m_Localized: No .imm files found in your Media Library
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: Move Frame Left
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: Extend Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: Copy Selection to Current Layer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: Duplicate Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: Move Frame Right
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: Add Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: Remove Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: Split Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: Reduce Frame
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: Toggle Play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: Squash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: Clear Contents
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

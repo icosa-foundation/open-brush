@@ -830,9 +830,9 @@ MonoBehaviour:
   m_DescriptionText: Move Frame Left
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000000
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -986,9 +986,9 @@ MonoBehaviour:
   m_DescriptionText: Extend Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000016
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1245,9 +1245,9 @@ MonoBehaviour:
   m_DescriptionText: Copy Selection to Current Layer
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000032
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1571,9 +1571,9 @@ MonoBehaviour:
   m_DescriptionText: Duplicate Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000048
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2727,9 +2727,9 @@ MonoBehaviour:
   m_DescriptionText: Move Frame Right
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000064
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3650,9 +3650,9 @@ MonoBehaviour:
   m_DescriptionText: Add Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000080
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3805,9 +3805,9 @@ MonoBehaviour:
   m_DescriptionText: Remove Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000096
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3960,9 +3960,9 @@ MonoBehaviour:
   m_DescriptionText: Split Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000112
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4118,9 +4118,9 @@ MonoBehaviour:
   m_DescriptionText: Reduce Frame
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000128
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4436,9 +4436,9 @@ MonoBehaviour:
   m_DescriptionText: Toggle Play
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000144
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -5895,9 +5895,9 @@ MonoBehaviour:
   m_DescriptionText: Delete
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000160
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -6907,9 +6907,9 @@ MonoBehaviour:
   m_DescriptionText: Squash
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000176
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -7076,9 +7076,9 @@ MonoBehaviour:
   m_DescriptionText: Clear Contents
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 467500000000000192
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
