@@ -206,6 +206,7 @@ MonoBehaviour:
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 0
+  staticComputeShaders: []
   textureBakePolicies:
   - name: Double Tapered Flat
     brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126

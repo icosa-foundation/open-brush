@@ -9,6 +9,7 @@ public class BrushBaker : MonoBehaviour
     private static readonly bool kDropUnusedWideUvComponentsForGltf = false;
 
     public List<ComputeShaderMapping> computeShaders;
+    public List<ComputeShaderMapping> staticComputeShaders;
     public List<TextureBakePolicyMapping> textureBakePolicies;
     public float squeezeAmount = 1.0f; // Set this to your desired squeeze amount
     public static BrushBaker m_Instance;
@@ -53,9 +54,20 @@ public class BrushBaker : MonoBehaviour
 
     public bool TryGetMapping(string brushGuid, out ComputeShaderMapping mapping)
     {
+        return TryGetMapping(computeShaders, brushGuid, out mapping);
+    }
+
+    public bool TryGetStaticMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        return TryGetMapping(staticComputeShaders, brushGuid, out mapping);
+    }
+
+    private static bool TryGetMapping(
+        List<ComputeShaderMapping> mappings, string brushGuid, out ComputeShaderMapping mapping)
+    {
         mapping = default;
-        if (computeShaders == null) return false;
-        foreach (ComputeShaderMapping candidate in computeShaders)
+        if (mappings == null) return false;
+        foreach (ComputeShaderMapping candidate in mappings)
         {
             if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
             {
@@ -69,6 +81,11 @@ public class BrushBaker : MonoBehaviour
     public IEnumerable<ComputeShaderMapping> Mappings
     {
         get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
+    }
+
+    public IEnumerable<ComputeShaderMapping> StaticMappings
+    {
+        get { return staticComputeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
     }
 
     public bool TryGetTextureBakePolicy(
@@ -95,6 +112,35 @@ public class BrushBaker : MonoBehaviour
             Debug.LogWarning($"No mapping found for brushGuid {brushGuid}");
             return mesh;
         }
+
+        return ProcessMesh(mesh, mapping);
+    }
+
+    public Mesh ProcessMeshForStaticExport(Mesh mesh, string brushGuid)
+    {
+        bool foundMapping = false;
+        if (TryGetMapping(brushGuid, out var commonMapping))
+        {
+            mesh = ProcessMesh(mesh, commonMapping);
+            foundMapping = true;
+        }
+
+        if (TryGetStaticMapping(brushGuid, out var staticMapping))
+        {
+            Debug.Log($"[OB_STATIC_MESH] Applying {staticMapping.name} to brush {brushGuid}");
+            mesh = ProcessMesh(mesh, staticMapping);
+            foundMapping = true;
+        }
+
+        if (!foundMapping)
+        {
+            Debug.LogWarning($"[OB_STATIC_MESH] No mapping found for brush {brushGuid}");
+        }
+        return mesh;
+    }
+
+    private Mesh ProcessMesh(Mesh mesh, ComputeShaderMapping mapping)
+    {
 
         ComputeShader computeShader = mapping.computeShader;
         if (computeShader == null) return mesh;
@@ -226,13 +272,6 @@ public class BrushBaker : MonoBehaviour
         normals.Dispose();
 
         return mesh;
-    }
-
-    public Mesh ProcessMeshForStaticExport(Mesh mesh, string brushGuid)
-    {
-        // Static-only mesh transformations belong here. Start with the established newglb
-        // mesh bake so the two profiles differ only when a static approximation is added.
-        return ProcessMesh(mesh, brushGuid);
     }
 
     private static void DropWideUvComponents(Mesh mesh)
