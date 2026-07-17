@@ -566,12 +566,20 @@ namespace TiltBrush.FrameAnimation
                             newFrame.transform.localScale = new Vector3(scale, scale, scale);
                             posModifier = posModifier + 1;
                         }
+
+                        nodeCount = trackNodesWidget[localIndex].transform.childCount;
                     }
 
                     for (int hideNode = 0; hideNode < nodeCount; hideNode++)
                     {
+                        Transform frameButton = trackNodesWidget[localIndex].transform
+                            .GetChild(hideNode).GetChild(0);
+                        bool frameExists = hideNode < trackFrameCount;
+                        frameButton.gameObject.SetActive(frameExists);
+                        if (!frameExists) continue;
+
                         // trackNodesWidget[localIndex].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
-                        foreach (Transform buttonState in trackNodesWidget[localIndex].transform.GetChild(hideNode).GetChild(0)) // hide all button state
+                        foreach (Transform buttonState in frameButton) // hide all button state
                         {
                             buttonState.gameObject.SetActive(false); // trackNodesWidget[t].transform.GetChild(hideNode).GetChild(0).GetChild(X).gameObject.SetActive(false); 
                         }
@@ -729,6 +737,8 @@ namespace TiltBrush.FrameAnimation
 
         public void SelectTimelineFrame(int trackNum, int frameNum)
         {
+            if (!IsTimelineLocationValid(trackNum, frameNum)) return;
+
             App.Scene.ActiveCanvas = Timeline[trackNum].Frames[frameNum].Canvas;
             m_FrameOn = Math.Clamp((int)frameNum, 0, Timeline[trackNum].Frames.Count - 1);
             FocusFrame(frameNum);
