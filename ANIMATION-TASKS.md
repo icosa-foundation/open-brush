@@ -2,10 +2,10 @@
 
 ## High priority
 
-- [ ] Make extend/reduce operations restore exact timeline state on undo and avoid recording no-op reductions.
+- [x] Make extend/reduce operations restore exact timeline state on undo and avoid recording no-op reductions.
 - [ ] Make delete-frame operations clean up temporary canvases on undo and permanently removed content when undo history is discarded.
 - [ ] Preserve track visibility in `FillTimeline()` and `CleanTimeline()`, and destroy canvases removed by timeline cleanup.
-- [ ] Keep other tracks time-aligned when extending a held frame.
+- [x] Keep other tracks time-aligned when extending a held frame.
 
 ## Correctness and lifecycle
 

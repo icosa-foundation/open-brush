@@ -82,6 +82,16 @@ namespace TiltBrush.FrameAnimation
             public bool Succeeded => PreviousTimeline != null;
         }
 
+        public struct FrameLengthOperation
+        {
+            public (int, int) Location;
+            internal List<Track> PreviousTimeline;
+            internal List<CanvasScript> CreatedCanvases;
+            internal List<CanvasScript> DisplacedCanvases;
+
+            public bool Succeeded => PreviousTimeline != null;
+        }
+
         public struct KeyFrameOperation
         {
             public (int, int) Location;
@@ -977,34 +987,39 @@ namespace TiltBrush.FrameAnimation
             Timeline[index.Item1].Frames.Insert(index.Item2 + 1, addingFrame);
         }
 
-        public (int, int) ExtendKeyFrame(int trackNum = -1, int frameNum = -1)
+        public FrameLengthOperation ExtendKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             if (!GetFrameFilled(index.Item1, index.Item2))
             {
-                return (-1, -1);
+                return default;
             }
 
+            List<Track> previousTimeline = CloneTimeline();
             int frameLength = GetFrameLength(index.Item1, index.Item2);
+            int insertIndex = index.Item2 + frameLength;
 
-            if (index.Item2 + frameLength >= Timeline[index.Item1].Frames.Count ||
-                GetFrameFilled(index.Item1, index.Item2 + frameLength))
+            if (insertIndex >= Timeline[index.Item1].Frames.Count ||
+                GetFrameFilled(index.Item1, insertIndex))
             {
                 for (int l = 0; l < Timeline.Count; l++)
                 {
+                    Frame addingFrame;
                     if (l == index.Item1)
                     {
-                        Frame addingFrame = NewFrame(Timeline[l].Frames[index.Item2].Canvas);
+                        addingFrame = NewFrame(Timeline[l].Frames[index.Item2].Canvas);
                         addingFrame.Deleted = Timeline[l].Frames[index.Item2].Deleted;
                         addingFrame.AnimatedPath = Timeline[l].Frames[index.Item2].AnimatedPath;
-
-                        Timeline[l].Frames.Insert(index.Item2 + 1, addingFrame);
                     }
                     else
                     {
-                        Frame addingFrame = NewFrame(App.Scene.AddCanvas());
-                        Timeline[l].Frames.Insert(Timeline[l].Frames.Count, addingFrame);
+                        addingFrame = NewFrame(App.Scene.AddCanvas());
                     }
+                    while (Timeline[l].Frames.Count < insertIndex)
+                    {
+                        Timeline[l].Frames.Add(NewFrame(App.Scene.AddCanvas()));
+                    }
+                    Timeline[l].Frames.Insert(insertIndex, addingFrame);
                 }
             }
             else
@@ -1012,30 +1027,33 @@ namespace TiltBrush.FrameAnimation
                 Frame addingFrame = NewFrame(Timeline[index.Item1].Frames[index.Item2].Canvas);
                 addingFrame.Deleted = Timeline[index.Item1].Frames[index.Item2].Deleted;
                 addingFrame.AnimatedPath = Timeline[index.Item1].Frames[index.Item2].AnimatedPath;
-                Timeline[index.Item1].Frames[index.Item2 + frameLength] = addingFrame;
+                Timeline[index.Item1].Frames[insertIndex] = addingFrame;
             }
 
             m_FrameOn++;
             FocusFrame((int)m_FrameOn);
             ResetTimeline();
-            return index;
+            return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
-        public (int, int) ReduceKeyFrame(int trackNum = -1, int frameNum = -1)
+        public FrameLengthOperation ReduceKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             int frameLength = GetFrameLength(index.Item1, index.Item2);
-            if (frameLength > 1)
+            if (frameLength <= 1)
             {
-                Frame emptyFrame = NewFrame(App.Scene.AddCanvas());
-                Timeline[index.Item1].Frames[index.Item2 + frameLength - 1] = emptyFrame;
-
-                m_FrameOn--;
-                FocusFrame(FrameOn);
-                ResetTimeline();
+                return default;
             }
+
+            List<Track> previousTimeline = CloneTimeline();
+            Frame emptyFrame = NewFrame(App.Scene.AddCanvas());
+            Timeline[index.Item1].Frames[index.Item2 + frameLength - 1] = emptyFrame;
+
+            m_FrameOn--;
+            FocusFrame(FrameOn);
+            ResetTimeline();
             FillandCleanTimeline();
-            return index;
+            return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
         private CanvasScript ReplicateStrokesToNewCanvas(List<Stroke> oldStrokes, out List<Stroke> newStrokes)
@@ -1117,6 +1135,58 @@ namespace TiltBrush.FrameAnimation
         {
             return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames)
                 .Select(frame => frame.Canvas));
+        }
+
+        private FrameLengthOperation CompleteFrameLengthOperation(
+            (int, int) location, List<Track> previousTimeline)
+        {
+            HashSet<CanvasScript> previousCanvases = GetTimelineCanvases(previousTimeline);
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            return new FrameLengthOperation
+            {
+                Location = location,
+                PreviousTimeline = previousTimeline,
+                CreatedCanvases = currentCanvases
+                    .Where(canvas => !previousCanvases.Contains(canvas)).ToList(),
+                DisplacedCanvases = previousCanvases
+                    .Where(canvas => !currentCanvases.Contains(canvas)).ToList(),
+            };
+        }
+
+        public void UndoFrameLengthOperation(FrameLengthOperation operation, (int, int) selection)
+        {
+            if (!operation.Succeeded) return;
+
+            Timeline = operation.PreviousTimeline.Select(track =>
+            {
+                Track clone = track;
+                clone.Frames = new List<Frame>(track.Frames);
+                return clone;
+            }).ToList();
+            SelectTimelineFrame(selection.Item1, selection.Item2);
+
+            foreach (CanvasScript canvas in operation.CreatedCanvases)
+            {
+                if (canvas != null)
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
+            ResetTimeline();
+        }
+
+        public void DiscardFrameLengthOperationUndoState(FrameLengthOperation operation)
+        {
+            if (!operation.Succeeded) return;
+
+            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
+            foreach (CanvasScript canvas in operation.DisplacedCanvases)
+            {
+                if (canvas != null && !currentCanvases.Contains(canvas))
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
         }
 
         private KeyFrameOperation CompleteKeyFrameOperation(

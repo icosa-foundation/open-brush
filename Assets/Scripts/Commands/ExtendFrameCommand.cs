@@ -17,8 +17,9 @@ namespace TiltBrush.FrameAnimation
     public class ExtendFrameCommand : BaseCommand
     {
         private (int, int) m_TimelineLocation;
-        private (int, int) m_InsertingAt;
+        private AnimationUI_Manager.FrameLengthOperation m_Operation;
         AnimationUI_Manager m_Manager;
+        bool m_IsApplied;
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
         int m_FrameOnStart;
@@ -30,16 +31,28 @@ namespace TiltBrush.FrameAnimation
         }
 
         public override bool NeedsSave => true;
+        public override bool IsAvailable => m_TimelineLocation.Item1 >= 0 &&
+            m_TimelineLocation.Item2 >= 0 &&
+            m_Manager.GetFrameFilled(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
 
         protected override void OnRedo()
         {
-            m_InsertingAt = m_Manager.ExtendKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_Operation = m_Manager.ExtendKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_IsApplied = m_Operation.Succeeded;
+        }
+
+        protected override void OnDispose()
+        {
+            if (m_IsApplied)
+            {
+                m_Manager.DiscardFrameLengthOperationUndoState(m_Operation);
+            }
         }
 
         protected override void OnUndo()
         {
-            if (m_InsertingAt.Item1 == -1 || m_InsertingAt.Item2 == -1) return;
-            m_Manager.ReduceKeyFrame(m_InsertingAt.Item1, m_InsertingAt.Item2);
+            m_Manager.UndoFrameLengthOperation(m_Operation, m_TimelineLocation);
+            m_IsApplied = false;
         }
     }
 } // namespace TiltBrush.FrameAnimation
