@@ -237,6 +237,11 @@ MonoBehaviour:
     BakePass: 0
     ForceUnlit: 1
     Reason: Bake one static phase of the UV.x pulse; vertex COLOR_0 supplies the stroke color.
+  - name: Petal
+    brushGuid: e0abbc80-0f80-e854-4970-8924a0863dcc
+    Mode: 5
+    BakePass: 0
+    Reason: Bake only the 0.6 to 1.0 UV.x albedo multiplier; retain PBR lighting.
   - name: Disco
     brushGuid: 4391aaaa-df73-4396-9e33-31e4e4930b27
     Mode: 4

@@ -73,6 +73,7 @@ Static-only texture work currently adds:
 
 - Electricity: bake one pass of the UV.y centre-line intensity on the controlled quad. The existing mesh bake supplies one displaced strand; `COLOR_0` supplies its color.
 - Neon Pulse: bake the shader's current UV.x pulse phase on the controlled quad. Animation and view attenuation are intentionally omitted; `COLOR_0` supplies its color.
+- Petal: generate the shader's 0.6-to-1.0 UV.x albedo multiplier directly. This avoids baking Unity lighting and specular from the surface shader, while preserving normal PBR lighting in Blender. The front-face result is used on both sides.
 
 The apparent vertex deformation in Comet, Hypercolor, Soft Highlighter, and Velvet Ink is guarded by `AUDIO_REACTIVE`. Animation and audio are out of scope, so their static geometry is already the source mesh and an additional mesh bake would be a no-op.
 

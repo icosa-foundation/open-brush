@@ -694,10 +694,13 @@ namespace TiltBrush
                 pbrModified = true;
             }
 
-            if (pbr.BaseColorTexture == null &&
+            bool replaceBaseColorTexture =
+                textureBakeMode == BrushBaker.TextureBakeMode.PetalGradient;
+            if ((pbr.BaseColorTexture == null || replaceBaseColorTexture) &&
                 ShouldBakeBaseColorTexture(material, textureBakeMode))
             {
-                var bakedTexture = BakeMaterialBaseColor(material, textureBakePass);
+                var bakedTexture = BakeMaterialBaseColor(
+                    material, textureBakeMode, textureBakePass);
                 if (bakedTexture != null)
                 {
                     var bakedInfo = ExportBakedTexture(exporter, material, bakedTexture);
@@ -791,7 +794,8 @@ namespace TiltBrush
             Material material, BrushBaker.TextureBakeMode textureBakeMode)
         {
             if (textureBakeMode != BrushBaker.TextureBakeMode.UvBaseColor &&
-                textureBakeMode != BrushBaker.TextureBakeMode.UvUnlit)
+                textureBakeMode != BrushBaker.TextureBakeMode.UvUnlit &&
+                textureBakeMode != BrushBaker.TextureBakeMode.PetalGradient)
             {
                 return false;
             }
@@ -801,6 +805,11 @@ namespace TiltBrush
                  !material.shader.name.StartsWith("Blocks/", StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
+            }
+
+            if (textureBakeMode == BrushBaker.TextureBakeMode.PetalGradient)
+            {
+                return true;
             }
 
             foreach (var property in kBaseColorTextureProperties)
@@ -813,8 +822,14 @@ namespace TiltBrush
             return true;
         }
 
-        private static Texture2D BakeMaterialBaseColor(Material material, int bakePass)
+        private static Texture2D BakeMaterialBaseColor(
+            Material material, BrushBaker.TextureBakeMode textureBakeMode, int bakePass)
         {
+            if (textureBakeMode == BrushBaker.TextureBakeMode.PetalGradient)
+            {
+                return BakePetalGradient(material);
+            }
+
             const int textureSize = 512;
             RenderTexture renderTexture = null;
             Mesh bakeMesh = null;
@@ -875,6 +890,31 @@ namespace TiltBrush
                     RenderTexture.ReleaseTemporary(renderTexture);
                 }
             }
+        }
+
+        private static Texture2D BakePetalGradient(Material material)
+        {
+            const int textureWidth = 512;
+            const int textureHeight = 2;
+            var texture = new Texture2D(
+                textureWidth, textureHeight, TextureFormat.RGBA32, false, true)
+            {
+                name = $"{material.name}_BakedPetalGradient",
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var pixels = new Color[textureWidth * textureHeight];
+            for (int x = 0; x < textureWidth; ++x)
+            {
+                float u = x / (textureWidth - 1f);
+                float multiplier = Mathf.Lerp(0.6f, 1f, u);
+                var color = new Color(multiplier, multiplier, multiplier, 1f);
+                pixels[x] = color;
+                pixels[x + textureWidth] = color;
+            }
+            texture.SetPixels(pixels);
+            texture.Apply();
+            Debug.Log($"[OB_GLTF_BAKE] Baked Petal UV.x gradient for material {material.name}");
+            return texture;
         }
 
         private static Mesh CreateTextureBakeMesh()

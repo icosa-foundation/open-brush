@@ -51,6 +51,7 @@ public class BrushBaker : MonoBehaviour
         UvUnlit,
         UvEmission,
         Unsupported,
+        PetalGradient,
     }
 
     [Serializable]
