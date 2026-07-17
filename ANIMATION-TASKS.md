@@ -9,7 +9,7 @@
 
 ## Correctness and lifecycle
 
-- [ ] Make split and duplicate source strokes come from the requested timeline frame rather than `App.Scene.ActiveCanvas`.
+- [x] Make split and duplicate source strokes come from the requested timeline frame rather than `App.Scene.ActiveCanvas`.
 - [x] Replace transform-child-based frame occupancy with a logical content check and guard canvases not present in the timeline.
 - [ ] Stop `AddLayerRefresh()` from creating an unused canvas for the first frame.
 - [ ] Prevent failed or no-op animation operations from entering undo history and marking the sketch dirty.

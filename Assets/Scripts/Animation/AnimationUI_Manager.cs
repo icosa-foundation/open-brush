@@ -1347,7 +1347,7 @@ namespace TiltBrush.FrameAnimation
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
-            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
+            CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
 
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
@@ -1379,7 +1379,7 @@ namespace TiltBrush.FrameAnimation
 
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
-            CanvasScript oldCanvas = App.Scene.ActiveCanvas;
+            CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
 
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
