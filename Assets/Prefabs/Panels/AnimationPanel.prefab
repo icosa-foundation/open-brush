@@ -416,6 +416,9 @@ MonoBehaviour:
   m_Collider: {fileID: 6560446}
   m_Mesh: {fileID: 136472}
   m_Border: {fileID: 2326276}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 6574194}
   m_ParticleBounds: {x: 1.2, y: 1.2, z: 0}
   m_PanelPopUpMap:
@@ -1071,7 +1074,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d60b0e723779c7340beffa39d0cff061, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_DescriptionType: 0
+  m_DescriptionType: -1
   m_DescriptionYOffset: 0
   m_DescriptionText: 
   m_LocalizedDescription:
@@ -1422,7 +1425,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
@@ -1908,7 +1911,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
