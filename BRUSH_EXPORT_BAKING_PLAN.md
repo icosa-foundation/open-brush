@@ -69,6 +69,11 @@ Static-only mesh work currently adds:
 - FacetedTube: split vertices per triangle and bake world-orientation face colors into `COLOR_0`; export the material as unlit to avoid lighting those colors twice.
 - Toon: bake its world-normal body shading into `COLOR_0`, export it as unlit, and omit its camera-dependent outline pass.
 
+Static-only texture work currently adds:
+
+- Electricity: bake one pass of the UV.y centre-line intensity on the controlled quad. The existing mesh bake supplies one displaced strand; `COLOR_0` supplies its color.
+- Neon Pulse: bake the shader's current UV.x pulse phase on the controlled quad. Animation and view attenuation are intentionally omitted; `COLOR_0` supplies its color.
+
 The apparent vertex deformation in Comet, Hypercolor, Soft Highlighter, and Velvet Ink is guarded by `AUDIO_REACTIVE`. Animation and audio are out of scope, so their static geometry is already the source mesh and an additional mesh bake would be a no-op.
 
 Tube Toon Inverted and the Toon outline use additional inflated render passes. A single glTF primitive cannot reproduce those passes, screen-space outline thickness, or front-face culling. They remain best-effort omissions unless static export later gains explicit duplicate outline geometry and materials.

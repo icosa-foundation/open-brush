@@ -225,6 +225,18 @@ MonoBehaviour:
     Mode: 0
     BakePass: 0
     Reason: Mesh bake and vertex color contain the static result.
+  - name: Electricity
+    brushGuid: f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51
+    Mode: 2
+    BakePass: 0
+    ForceUnlit: 1
+    Reason: Bake the UV.y centre-line intensity; vertex COLOR_0 supplies the stroke color.
+  - name: Neon Pulse
+    brushGuid: b2ffef01-eaaa-4ab5-aa64-95a2c4f5dbc6
+    Mode: 2
+    BakePass: 0
+    ForceUnlit: 1
+    Reason: Bake one static phase of the UV.x pulse; vertex COLOR_0 supplies the stroke color.
   - name: Disco
     brushGuid: 4391aaaa-df73-4396-9e33-31e4e4930b27
     Mode: 4
