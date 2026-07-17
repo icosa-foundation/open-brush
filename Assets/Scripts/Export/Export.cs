@@ -25,6 +25,31 @@ namespace TiltBrush
 
     public static class Export
     {
+        public enum GlbExportMode
+        {
+            OpenBrush,
+            Static,
+        }
+
+        public static GlbExportMode CurrentGlbExportMode { get; private set; } =
+            GlbExportMode.OpenBrush;
+
+        private sealed class GlbExportModeScope : IDisposable
+        {
+            private readonly GlbExportMode m_PreviousMode;
+
+            public GlbExportModeScope(GlbExportMode mode)
+            {
+                m_PreviousMode = CurrentGlbExportMode;
+                CurrentGlbExportMode = mode;
+            }
+
+            public void Dispose()
+            {
+                CurrentGlbExportMode = m_PreviousMode;
+            }
+        }
+
         const string kExportDocumentationUrl = "https://docs.google.com/document/d/11ZsHozYn9FnWG7y3s3WAyKIACfbfwb4PbaS8cZ_xjvo#heading=h.im5f33smiavy";
 #if UNITY_ANDROID || UNITY_IOS
   const string kExportReadmeName = "README.txt";
@@ -114,6 +139,7 @@ URL=" + kExportDocumentationUrl;
                     { "fbx", true },
                     { "glb", true },
                     { "newglb", true },
+                    { "static-glb", true },
                     { "json", false },
                     { "latk", false },
                     { "obj", true },
@@ -182,6 +208,7 @@ URL=" + kExportDocumentationUrl;
             {
                 if (IsExportEnabled("glb")) { progress.SetWork("glb"); }
                 if (IsExportEnabled("newglb")) { progress.SetWork("newglb"); }
+                if (IsExportEnabled("static-glb")) { progress.SetWork("static-glb"); }
             }
 
             string filename;
@@ -304,6 +331,18 @@ URL=" + kExportDocumentationUrl;
                 progress.CompleteWork("newglb");
             }
 
+            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("static-glb"))
+            {
+                using (var unused = new AutoTimer("static glb export"))
+                {
+                    OverlayManager.m_Instance.UpdateProgress(0.8f);
+                    ExportStaticGlb(
+                        Path.Combine(parent, "static-glb"), basename,
+                        App.UserConfig.Export.ExportEnvironment);
+                }
+                progress.CompleteWork("static-glb");
+            }
+
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, basename +
                 $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
@@ -318,27 +357,46 @@ URL=" + kExportDocumentationUrl;
 
         public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
         {
-            // 'New' GLTF style export. Exports to GLB format using UnityGLTF
-            var settings = App.Config.m_UnityGLTFSettings;
-            var context = new ExportContext(settings);
+            return ExportUnityGlb(
+                destinationPath, fileBaseName, exportEnvironment, GlbExportMode.OpenBrush);
+        }
 
-            // Beware the two meanings of "layer" in the following code - Unity layers and Open Brush layers
-            var layerCanvases = App.Scene.LayerCanvases.Select(x => x.transform).ToList();
-            var layerMask = LayerMask.GetMask("MainCanvas");
-            if (exportEnvironment)
+        public static int ExportStaticGlb(
+            string destinationPath, string fileBaseName, bool exportEnvironment)
+        {
+            return ExportUnityGlb(
+                destinationPath, fileBaseName, exportEnvironment, GlbExportMode.Static);
+        }
+
+        private static int ExportUnityGlb(
+            string destinationPath, string fileBaseName, bool exportEnvironment,
+            GlbExportMode exportMode)
+        {
+            using (new GlbExportModeScope(exportMode))
             {
-                layerCanvases.Add(App.Instance.m_EnvironmentTransform);
-                layerMask |= LayerMask.GetMask("Environment");
+                // UnityGLTF export. The Open Brush plugin reads the scoped mode to select its
+                // Open Brush-aware or static processing contract.
+                var settings = App.Config.m_UnityGLTFSettings;
+                var context = new ExportContext(settings);
+
+                // Beware the two meanings of "layer" in the following code - Unity layers and Open Brush layers
+                var layerCanvases = App.Scene.LayerCanvases.Select(x => x.transform).ToList();
+                var layerMask = LayerMask.GetMask("MainCanvas");
+                if (exportEnvironment)
+                {
+                    layerCanvases.Add(App.Instance.m_EnvironmentTransform);
+                    layerMask |= LayerMask.GetMask("Environment");
+                }
+                context.ExportLayers = layerMask;
+
+                // Count triangles before export
+                int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
+
+                var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
+                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+
+                return triangleCount;
             }
-            context.ExportLayers = layerMask;
-
-            // Count triangles before export
-            int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
-
-            var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
-
-            return triangleCount;
         }
 
         private static int CountTrianglesInLayers(List<Transform> layerRoots, LayerMask layerMask)
