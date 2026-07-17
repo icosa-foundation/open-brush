@@ -300,13 +300,12 @@ namespace TiltBrush.FrameAnimation
 
         public CanvasScript AddLayerRefresh(CanvasScript canvasAdding)
         {
-            CanvasScript canvasFill;
             Track addingTrack = NewTrack();
             Frame addingFrame;
             for (int i = 0; i < GetTimelineLength(); i++)
             {
-                canvasFill = App.Scene.AddCanvas();
-                addingFrame = NewFrame(i == 0 ? canvasAdding : canvasFill);
+                CanvasScript canvasFill = i == 0 ? canvasAdding : App.Scene.AddCanvas();
+                addingFrame = NewFrame(canvasFill);
                 if (i == FrameOn)
                 {
                     canvasAdding = addingFrame.Canvas;
