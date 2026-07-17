@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-
 namespace TiltBrush.FrameAnimation
 {
     public class AddFrameCommand : BaseCommand
     {
         private (int, int) m_TimelineLocation;
-        private (int, int) m_InsertingAt;
+        private AnimationUI_Manager.AddFrameOperation m_Operation;
         AnimationUI_Manager m_Manager;
 
         bool m_ExpandTimeline;
@@ -37,15 +35,12 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
-            m_InsertingAt = m_Manager.AddKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_Operation = m_Manager.AddKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
         }
 
         protected override void OnUndo()
         {
-            Object.Destroy(m_Manager.Timeline[m_InsertingAt.Item1].Frames[m_InsertingAt.Item2].Canvas);
-            m_Manager.Timeline[m_InsertingAt.Item1].Frames.RemoveAt(m_InsertingAt.Item2);
-            m_Manager.FillTimeline();
-            m_Manager.SelectTimelineFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_Manager.UndoAddFrameOperation(m_Operation, m_TimelineLocation);
         }
     }
 } // namespace TiltBrush.FrameAnimation

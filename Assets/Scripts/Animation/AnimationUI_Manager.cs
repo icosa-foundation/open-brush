@@ -73,6 +73,15 @@ namespace TiltBrush.FrameAnimation
             public (int, int) Location;
         }
 
+        public struct AddFrameOperation
+        {
+            public (int, int) Location;
+            internal List<Track> PreviousTimeline;
+            internal List<CanvasScript> CreatedCanvases;
+
+            public bool Succeeded => PreviousTimeline != null;
+        }
+
         public struct KeyFrameOperation
         {
             public (int, int) Location;
@@ -896,9 +905,10 @@ namespace TiltBrush.FrameAnimation
             }
         }
 
-        public (int, int) AddKeyFrame(int trackNum = -1, int frameNum = -1)
+        public AddFrameOperation AddKeyFrame(int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
+            List<Track> previousTimeline = CloneTimeline();
             (int, int) insertingAt;
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
@@ -923,7 +933,38 @@ namespace TiltBrush.FrameAnimation
             ResetTimeline();
             FillTimeline();
             SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
-            return insertingAt;
+
+            HashSet<CanvasScript> previousCanvases = GetTimelineCanvases(previousTimeline);
+            List<CanvasScript> createdCanvases = GetTimelineCanvases(Timeline)
+                .Where(canvas => !previousCanvases.Contains(canvas)).ToList();
+            return new AddFrameOperation
+            {
+                Location = insertingAt,
+                PreviousTimeline = previousTimeline,
+                CreatedCanvases = createdCanvases,
+            };
+        }
+
+        public void UndoAddFrameOperation(AddFrameOperation operation, (int, int) selection)
+        {
+            if (!operation.Succeeded) return;
+
+            Timeline = operation.PreviousTimeline.Select(track =>
+            {
+                Track clone = track;
+                clone.Frames = new List<Frame>(track.Frames);
+                return clone;
+            }).ToList();
+            SelectTimelineFrame(selection.Item1, selection.Item2);
+
+            foreach (CanvasScript canvas in operation.CreatedCanvases)
+            {
+                if (canvas != null)
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
+            ResetTimeline();
         }
 
         // TODO this is hidden by overload
