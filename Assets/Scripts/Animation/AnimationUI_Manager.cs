@@ -757,26 +757,16 @@ namespace TiltBrush.FrameAnimation
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
             List<Track> previousTimeline = CloneTimeline();
             Frame deletedFrame = Timeline[index.Item1].Frames[index.Item2];
-            List<CanvasScript> replacementCanvases = new List<CanvasScript>();
 
             App.Scene.HideCanvas(deletedFrame.Canvas);
             for (int l = index.Item2; l < nextIndex.Item2; l++)
             {
                 CanvasScript replacementCanvas = App.Scene.AddCanvas();
-                replacementCanvases.Add(replacementCanvas);
                 Frame removingFrame = NewFrame(replacementCanvas);
                 Timeline[index.Item1].Frames[l] = removingFrame;
             }
 
             FillandCleanTimeline();
-            HashSet<CanvasScript> currentCanvases = GetTimelineCanvases(Timeline);
-            foreach (CanvasScript replacementCanvas in replacementCanvases)
-            {
-                if (!currentCanvases.Contains(replacementCanvas))
-                {
-                    App.Scene.DestroyCanvas(replacementCanvas);
-                }
-            }
             SelectTimelineFrame(index.Item1, Math.Clamp(index.Item2, 0, GetTimelineLength() - 1));
             ResetTimeline();
             return CompleteDeleteFrameOperation(index, deletedFrame.AnimatedPath, previousTimeline);
@@ -817,10 +807,12 @@ namespace TiltBrush.FrameAnimation
         {
             int maxTimeline = GetTimelineMaxCanvas();
             var newTimeline = new List<Track>();
+            var removedCanvases = new HashSet<CanvasScript>();
 
             for (int t = 0; t < Timeline.Count; t++)
             {
                 Track addingTrack = NewTrack();
+                addingTrack.Visible = Timeline[t].Visible;
                 addingTrack.Deleted = Timeline[t].Deleted;
                 newTimeline.Add(addingTrack);
                 for (int f = 0; f < Timeline[t].Frames.Count; f++)
@@ -829,9 +821,22 @@ namespace TiltBrush.FrameAnimation
                     {
                         newTimeline[t].Frames.Add(Timeline[t].Frames[f]);
                     }
+                    else
+                    {
+                        removedCanvases.Add(Timeline[t].Frames[f].Canvas);
+                    }
                 }
             }
+
+            HashSet<CanvasScript> retainedCanvases = GetTimelineCanvases(newTimeline);
             Timeline = newTimeline;
+            foreach (CanvasScript canvas in removedCanvases)
+            {
+                if (canvas != null && !retainedCanvases.Contains(canvas))
+                {
+                    App.Scene.DestroyCanvas(canvas);
+                }
+            }
         }
 
         public void FillTimeline()
@@ -842,6 +847,7 @@ namespace TiltBrush.FrameAnimation
             for (int t = 0; t < Timeline.Count; t++)
             {
                 Track addingTrack = NewTrack();
+                addingTrack.Visible = Timeline[t].Visible;
                 addingTrack.Deleted = Timeline[t].Deleted;
                 newTimeline.Add(addingTrack);
                 int f;
