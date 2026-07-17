@@ -671,11 +671,6 @@ namespace TiltBrush
                 pbr.BaseColorFactor = ToGltfColor(baseColor);
                 pbrModified = true;
             }
-            else if (!hasBakedBaseColor && materialNode.PbrMetallicRoughness == null)
-            {
-                pbr.BaseColorFactor = ToGltfColor(material.color);
-                pbrModified = true;
-            }
 
             if (TryGetFloat(material, out var metallic, kMetallicFactorProperties))
             {
