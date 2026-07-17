@@ -634,6 +634,7 @@ namespace TiltBrush
 
             var pbr = materialNode.PbrMetallicRoughness ?? new PbrMetallicRoughness();
             bool pbrModified = materialNode.PbrMetallicRoughness == null;
+            bool hasBakedBaseColor = false;
 
             if (pbr.BaseColorTexture == null && TryExportTexture(
                     exporter, material, kBaseColorTextureProperties,
@@ -652,10 +653,8 @@ namespace TiltBrush
                     if (bakedInfo != null)
                     {
                         pbr.BaseColorTexture = bakedInfo;
-                        if (IsUnsetColor(pbr.BaseColorFactor))
-                        {
-                            pbr.BaseColorFactor = ToGltfColor(Color.white);
-                        }
+                        pbr.BaseColorFactor = ToGltfColor(Color.white);
+                        hasBakedBaseColor = true;
                         pbrModified = true;
                         m_BakedTextures.Add(bakedTexture);
                     }
@@ -666,12 +665,13 @@ namespace TiltBrush
                 }
             }
 
-            if (TryGetColor(material, out var baseColor, kBaseColorProperties))
+            if (!hasBakedBaseColor &&
+                TryGetColor(material, out var baseColor, kBaseColorProperties))
             {
                 pbr.BaseColorFactor = ToGltfColor(baseColor);
                 pbrModified = true;
             }
-            else if (materialNode.PbrMetallicRoughness == null)
+            else if (!hasBakedBaseColor && materialNode.PbrMetallicRoughness == null)
             {
                 pbr.BaseColorFactor = ToGltfColor(material.color);
                 pbrModified = true;
@@ -979,11 +979,6 @@ namespace TiltBrush
         {
             var linear = color.linear;
             return new GLTF.Math.Color(linear.r, linear.g, linear.b, color.a);
-        }
-
-        private static bool IsUnsetColor(GLTF.Math.Color color)
-        {
-            return color.R == 0 && color.G == 0 && color.B == 0 && color.A == 0;
         }
 
         private static void SafeDestroy(Object o)
