@@ -13,7 +13,7 @@
 - [x] Replace transform-child-based frame occupancy with a logical content check and guard canvases not present in the timeline.
 - [x] Stop `AddLayerRefresh()` from creating an unused canvas for the first frame.
 - [x] Prevent failed or no-op animation operations from entering undo history and marking the sketch dirty.
-- [ ] Destroy the full animation-path GameObject when rejecting a path on an empty frame.
+- [x] Destroy the full animation-path GameObject when rejecting a path on an empty frame.
 
 ## Verification
 

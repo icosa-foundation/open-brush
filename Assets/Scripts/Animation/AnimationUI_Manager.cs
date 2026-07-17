@@ -335,7 +335,7 @@ namespace TiltBrush.FrameAnimation
             if (!GetFrameFilled(Loc.Item1, Loc.Item2))
             {
                 TiltBrush.WidgetManager.m_Instance.UnregisterGrabWidget(pathwidget.gameObject);
-                Destroy(pathwidget);
+                Destroy(pathwidget.gameObject);
                 return;
             }
 
