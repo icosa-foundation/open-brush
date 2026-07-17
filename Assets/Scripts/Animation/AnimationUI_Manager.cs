@@ -226,6 +226,72 @@ namespace TiltBrush.FrameAnimation
             return GetFrameFilled(loc.Item1, loc.Item2);
         }
 
+        private bool IsTimelineLocationValid(int track, int frame)
+        {
+            return track >= 0 && track < Timeline.Count &&
+                frame >= 0 && frame < Timeline[track].Frames.Count;
+        }
+
+        public bool CanAddKeyFrame(int track, int frame)
+        {
+            if (!IsTimelineLocationValid(track, frame)) return false;
+
+            (int, int) nextIndex = GetFollowingFrameIndex(track, frame);
+            return nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count ||
+                GetFrameFilled(nextIndex.Item1, nextIndex.Item2);
+        }
+
+        public void SelectFollowingEmptyFrame(int track, int frame)
+        {
+            if (!IsTimelineLocationValid(track, frame)) return;
+
+            (int, int) nextIndex = GetFollowingFrameIndex(track, frame);
+            if (nextIndex.Item2 < Timeline[nextIndex.Item1].Frames.Count &&
+                !GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
+            {
+                SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
+            }
+        }
+
+        public bool CanDeleteKeyFrame(int track, int frame)
+        {
+            return IsTimelineLocationValid(track, frame) &&
+                (track != 0 || frame != 0) && GetFrameFilled(track, frame);
+        }
+
+        public bool CanMoveKeyFrame(bool moveRight, int track, int frame)
+        {
+            if (!IsTimelineLocationValid(track, frame) || !GetFrameFilled(track, frame))
+            {
+                return false;
+            }
+
+            if (!moveRight)
+            {
+                return frame > 0 && !GetFrameFilled(track, frame - 1);
+            }
+
+            (int, int) nextIndex = GetFollowingFrameIndex(track, frame);
+            return nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count ||
+                !GetFrameFilled(nextIndex.Item1, nextIndex.Item2);
+        }
+
+        public bool CanSplitKeyFrame(int track, int frame)
+        {
+            if (!IsTimelineLocationValid(track, frame) || !GetFrameFilled(track, frame))
+            {
+                return false;
+            }
+
+            int frameLength = GetFrameLength(track, frame);
+            return FrameOn > frame && FrameOn < frame + frameLength;
+        }
+
+        public bool CanDuplicateKeyFrame(int track, int frame)
+        {
+            return IsTimelineLocationValid(track, frame) && GetFrameFilled(track, frame);
+        }
+
         public void AddAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
         {
             GameObject moveTransform = pathwidget.gameObject;

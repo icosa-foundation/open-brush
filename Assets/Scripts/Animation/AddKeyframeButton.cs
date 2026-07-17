@@ -18,9 +18,15 @@ namespace TiltBrush.FrameAnimation
     {
         protected override void OnButtonPressed()
         {
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new AddFrameCommand()
-            );
+            var command = new AddFrameCommand();
+            if (command.IsAvailable)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                return;
+            }
+
+            (int, int) location = App.Scene.animationUI_manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            App.Scene.animationUI_manager.SelectFollowingEmptyFrame(location.Item1, location.Item2);
         }
     }
 } // namespace TiltBrush.FrameAnimation

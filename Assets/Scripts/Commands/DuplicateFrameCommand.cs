@@ -32,6 +32,8 @@ namespace TiltBrush.FrameAnimation
         }
 
         public override bool NeedsSave => true;
+        public override bool IsAvailable =>
+            m_Manager.CanDuplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
 
         protected override void OnRedo()
         {
