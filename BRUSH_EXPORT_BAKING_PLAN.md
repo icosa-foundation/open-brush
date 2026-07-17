@@ -60,6 +60,21 @@ The initial default is `None`. Texture baking is enabled only for brushes that h
 
 This table is a starting point, not a complete brush inventory. Every exportable brush must be reviewed and added before texture baking is enabled for it.
 
+## Static mesh audit
+
+The established common mesh baker already covers the significant non-audio deformation for Double Tapered Flat, Double Tapered Marker, Dots, Embers, Bubbles, Snow, Stars, Smoke, Rising Bubbles, LightWire, Disco, Electricity, HyperGrid, Sparks, BubbleWand, DanceFloor, KeijiroTube, WaveformParticles, Rain, and Mylar.
+
+Static-only mesh work currently adds:
+
+- FacetedTube: split vertices per triangle and bake world-orientation face colors into `COLOR_0`.
+- Toon: bake its world-normal body shading into `COLOR_0`; omit its camera-dependent outline pass.
+
+The apparent vertex deformation in Comet, Hypercolor, Soft Highlighter, and Velvet Ink is guarded by `AUDIO_REACTIVE`. Animation and audio are out of scope, so their static geometry is already the source mesh and an additional mesh bake would be a no-op.
+
+Tube Toon Inverted and the Toon outline use additional inflated render passes. A single glTF primitive cannot reproduce those passes, screen-space outline thickness, or front-face culling. They remain best-effort omissions unless static export later gains explicit duplicate outline geometry and materials.
+
+The next large fidelity gains are therefore material and texture work rather than additional vertex deformation: procedural UV color, cutout/alpha, emission, additive appearance, and view-independent fragment effects.
+
 ## Controlled texture-bake mesh
 
 Replace the implicit `Graphics.Blit` quad with an explicitly rendered mesh containing:
