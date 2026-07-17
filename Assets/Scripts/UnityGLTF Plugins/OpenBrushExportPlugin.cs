@@ -420,6 +420,7 @@ namespace TiltBrush
             // Only process Open Brush or Open Blocks materials
             // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
+            var textureBakeMode = BrushBaker.TextureBakeMode.None;
 
             if (shaderName.StartsWith("Brush/"))
             {
@@ -442,6 +443,15 @@ namespace TiltBrush
 
                 var brush = brushes[0];
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+
+                if (BrushBaker.m_Instance != null &&
+                    BrushBaker.m_Instance.TryGetTextureBakeMode(
+                        brush.m_Guid.ToString(), out var configuredTextureBakeMode))
+                {
+                    textureBakeMode = configuredTextureBakeMode;
+                    Debug.Log(
+                        $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}");
+                }
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 // Do we need to override the regular UnityGLTF logic here?
@@ -487,7 +497,7 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.BakeCustomShadersToPbr)
             {
-                BakeCustomShaderToPbr(exporter, material, materialNode);
+                BakeCustomShaderToPbr(exporter, material, materialNode, textureBakeMode);
             }
         }
 
@@ -625,7 +635,8 @@ namespace TiltBrush
         };
 
         private void BakeCustomShaderToPbr(
-            GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode)
+            GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode,
+            BrushBaker.TextureBakeMode textureBakeMode)
         {
             if (materialNode == null)
             {
@@ -644,7 +655,8 @@ namespace TiltBrush
                 pbrModified = true;
             }
 
-            if (pbr.BaseColorTexture == null && ShouldBakeBaseColorTexture(material))
+            if (pbr.BaseColorTexture == null &&
+                ShouldBakeBaseColorTexture(material, textureBakeMode))
             {
                 var bakedTexture = BakeMaterialBaseColor(material);
                 if (bakedTexture != null)
@@ -736,8 +748,15 @@ namespace TiltBrush
             }
         }
 
-        private static bool ShouldBakeBaseColorTexture(Material material)
+        private static bool ShouldBakeBaseColorTexture(
+            Material material, BrushBaker.TextureBakeMode textureBakeMode)
         {
+            if (textureBakeMode != BrushBaker.TextureBakeMode.UvBaseColor &&
+                textureBakeMode != BrushBaker.TextureBakeMode.UvUnlit)
+            {
+                return false;
+            }
+
             if (material == null || material.shader == null ||
                 (!material.shader.name.StartsWith("Brush/", StringComparison.OrdinalIgnoreCase) &&
                  !material.shader.name.StartsWith("Blocks/", StringComparison.OrdinalIgnoreCase)))

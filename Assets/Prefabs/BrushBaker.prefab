@@ -206,4 +206,11 @@ MonoBehaviour:
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 0
+  textureBakePolicies:
+  - name: Double Tapered Flat
+    brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
+    Mode: 0
+  - name: Double Tapered Marker
+    brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
+    Mode: 0
   squeezeAmount: 0.873

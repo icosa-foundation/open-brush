@@ -9,6 +9,7 @@ public class BrushBaker : MonoBehaviour
     private static readonly bool kDropUnusedWideUvComponentsForGltf = false;
 
     public List<ComputeShaderMapping> computeShaders;
+    public List<TextureBakePolicyMapping> textureBakePolicies;
     public float squeezeAmount = 1.0f; // Set this to your desired squeeze amount
     public static BrushBaker m_Instance;
 
@@ -24,6 +25,23 @@ public class BrushBaker : MonoBehaviour
         public bool ModifyUv0;
         public bool ModifyUv1;
         public bool ModifyUv2;
+    }
+
+    public enum TextureBakeMode
+    {
+        None,
+        UvBaseColor,
+        UvUnlit,
+        UvEmission,
+        Unsupported,
+    }
+
+    [Serializable]
+    public struct TextureBakePolicyMapping
+    {
+        public string name;
+        public string brushGuid;
+        public TextureBakeMode Mode;
     }
 
     void Start()
@@ -49,6 +67,21 @@ public class BrushBaker : MonoBehaviour
     public IEnumerable<ComputeShaderMapping> Mappings
     {
         get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
+    }
+
+    public bool TryGetTextureBakeMode(string brushGuid, out TextureBakeMode mode)
+    {
+        mode = TextureBakeMode.None;
+        if (textureBakePolicies == null) return false;
+        foreach (TextureBakePolicyMapping candidate in textureBakePolicies)
+        {
+            if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                mode = candidate.Mode;
+                return true;
+            }
+        }
+        return false;
     }
 
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
