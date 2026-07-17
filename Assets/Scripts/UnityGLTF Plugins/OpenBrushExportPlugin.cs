@@ -26,6 +26,9 @@ namespace TiltBrush
     {
         private Dictionary<int, Batch> _meshesToBatches;
         private List<Camera> m_CameraPathsCameras;
+        private readonly List<Texture2D> m_BakedTextures = new List<Texture2D>();
+
+        public static bool IsNewGlbExportActive { get; set; }
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -408,6 +411,11 @@ namespace TiltBrush
                 }
                 materialNode.PbrMetallicRoughness = pbr;
             }
+
+            if (IsNewGlbExportActive)
+            {
+                BakeCustomShaderToPbr(exporter, material, materialNode);
+            }
         }
 
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
@@ -461,6 +469,468 @@ namespace TiltBrush
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
+
+            foreach (var bakedTexture in m_BakedTextures)
+            {
+                SafeDestroy(bakedTexture);
+            }
+            m_BakedTextures.Clear();
+        }
+
+        static readonly string[] kBaseColorProperties =
+        {
+            "_BaseColor",
+            "_BaseColorFactor",
+            "baseColorFactor",
+            "_Color",
+            "_TintColor"
+        };
+
+        static readonly string[] kBaseColorTextureProperties =
+        {
+            "_BaseMap",
+            "_BaseColorTexture",
+            "baseColorTexture",
+            "_MainTex",
+            "_ColorTexture"
+        };
+
+        static readonly string[] kNormalTextureProperties =
+        {
+            "_BumpMap",
+            "_NormalMap",
+            "_NormalTexture",
+            "normalTexture"
+        };
+
+        static readonly string[] kOcclusionTextureProperties =
+        {
+            "_OcclusionMap",
+            "_OcclusionTexture",
+            "occlusionTexture",
+            "_MaskMap"
+        };
+
+        static readonly string[] kEmissionColorProperties =
+        {
+            "_EmissionColor",
+            "emissiveFactor",
+            "_EmissiveFactor"
+        };
+
+        static readonly string[] kEmissionTextureProperties =
+        {
+            "_EmissionMap",
+            "_EmissiveMap",
+            "_EmissiveTexture",
+            "_EmissiveColorMap",
+            "emissiveTexture"
+        };
+
+        static readonly string[] kMetallicFactorProperties =
+        {
+            "_Metallic",
+            "metallicFactor",
+            "_MetallicFactor"
+        };
+
+        static readonly string[] kRoughnessFactorProperties =
+        {
+            "_Roughness",
+            "roughnessFactor",
+            "_RoughnessFactor"
+        };
+
+        static readonly string[] kSmoothnessFactorProperties =
+        {
+            "_Smoothness",
+            "_Glossiness"
+        };
+
+        private void BakeCustomShaderToPbr(GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode)
+        {
+            if (materialNode == null)
+            {
+                return;
+            }
+
+            var pbr = materialNode.PbrMetallicRoughness ?? new PbrMetallicRoughness();
+            bool pbrModified = materialNode.PbrMetallicRoughness == null;
+
+            if (pbr.BaseColorTexture == null && TryExportTexture(exporter, material, kBaseColorTextureProperties, out var baseColorTextureInfo))
+            {
+                pbr.BaseColorTexture = baseColorTextureInfo;
+                pbrModified = true;
+            }
+
+            if (pbr.BaseColorTexture == null && ShouldBakeBaseColorTexture(material))
+            {
+                var bakedTexture = BakeMaterialBaseColor(material);
+                if (bakedTexture != null)
+                {
+                    var bakedInfo = ExportBakedTexture(exporter, material, bakedTexture);
+                    if (bakedInfo != null)
+                    {
+                        pbr.BaseColorTexture = bakedInfo;
+                        if (IsUnsetColor(pbr.BaseColorFactor))
+                        {
+                            pbr.BaseColorFactor = ToGltfColor(Color.white);
+                        }
+                        pbrModified = true;
+                        m_BakedTextures.Add(bakedTexture);
+                    }
+                    else
+                    {
+                        SafeDestroy(bakedTexture);
+                    }
+                }
+            }
+
+            if (TryGetColor(material, out var baseColor, kBaseColorProperties))
+            {
+                pbr.BaseColorFactor = ToGltfColor(baseColor);
+                pbrModified = true;
+            }
+            else if (materialNode.PbrMetallicRoughness == null)
+            {
+                pbr.BaseColorFactor = ToGltfColor(material.color);
+                pbrModified = true;
+            }
+
+            if (TryGetFloat(material, out var metallic, kMetallicFactorProperties))
+            {
+                pbr.MetallicFactor = Mathf.Clamp01(metallic);
+                pbrModified = true;
+            }
+
+            if (TryGetFloat(material, out var roughness, kRoughnessFactorProperties))
+            {
+                pbr.RoughnessFactor = Mathf.Clamp01(roughness);
+                pbrModified = true;
+            }
+            else if (TryGetFloat(material, out var smoothness, kSmoothnessFactorProperties))
+            {
+                pbr.RoughnessFactor = Mathf.Clamp01(1f - smoothness);
+                pbrModified = true;
+            }
+
+            if (pbrModified)
+            {
+                materialNode.PbrMetallicRoughness = pbr;
+            }
+
+            if (materialNode.NormalTexture == null && TryExportNormalTexture(exporter, material, kNormalTextureProperties, out var normalTexture))
+            {
+                materialNode.NormalTexture = normalTexture;
+            }
+
+            if (materialNode.OcclusionTexture == null && TryExportOcclusionTexture(exporter, material, kOcclusionTextureProperties, out var occlusionTexture))
+            {
+                materialNode.OcclusionTexture = occlusionTexture;
+            }
+
+            if (materialNode.EmissiveTexture == null && TryExportTexture(exporter, material, kEmissionTextureProperties, out var emissiveTexture))
+            {
+                materialNode.EmissiveTexture = emissiveTexture;
+            }
+
+            if (TryGetColor(material, out var emissiveColor, kEmissionColorProperties) && emissiveColor.maxColorComponent > 0f)
+            {
+                materialNode.EmissiveFactor = ToGltfColor(emissiveColor);
+            }
+
+            if (!materialNode.DoubleSided)
+            {
+                if ((material.HasProperty("_Cull") && material.GetInt("_Cull") == (int)UnityEngine.Rendering.CullMode.Off) ||
+                    (material.HasProperty("_CullMode") && material.GetInt("_CullMode") == (int)UnityEngine.Rendering.CullMode.Off))
+                {
+                    materialNode.DoubleSided = true;
+                }
+            }
+
+            if (IsUnlitMaterial(material))
+            {
+                // UnityGLTF's enabled UnlitMaterialsExport plugin owns KHR_materials_unlit serialization.
+                // Keep this Open Brush pass limited to baking/normalizing PBR values for newGLB.
+                if (materialNode.PbrMetallicRoughness != null)
+                {
+                    materialNode.PbrMetallicRoughness.MetallicFactor = 0;
+                    materialNode.PbrMetallicRoughness.RoughnessFactor = 1;
+                }
+            }
+        }
+
+        private static bool ShouldBakeBaseColorTexture(Material material)
+        {
+            if (material == null || material.shader == null)
+            {
+                return false;
+            }
+
+            if (!material.shader.name.StartsWith("Brush/", StringComparison.OrdinalIgnoreCase) &&
+                !material.shader.name.StartsWith("Blocks/", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            foreach (var property in kBaseColorTextureProperties)
+            {
+                if (material.HasProperty(property) && material.GetTexture(property) != null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Texture2D BakeMaterialBaseColor(Material material)
+        {
+            const int textureSize = 512;
+            RenderTexture renderTexture = null;
+            var previous = RenderTexture.active;
+            try
+            {
+                renderTexture = RenderTexture.GetTemporary(textureSize, textureSize, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                RenderTexture.active = renderTexture;
+                GL.Clear(true, true, Color.clear);
+                Graphics.Blit(Texture2D.whiteTexture, renderTexture, material);
+                var bakedTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGBA32, false, true)
+                {
+                    name = material.name + "_BakedBaseColor"
+                };
+                bakedTexture.ReadPixels(new Rect(0, 0, textureSize, textureSize), 0, 0);
+                bakedTexture.Apply();
+                RenderTexture.active = previous;
+                return bakedTexture;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Failed to bake base color for material {material?.name}: {e.Message}");
+                return null;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                if (renderTexture != null)
+                {
+                    RenderTexture.ReleaseTemporary(renderTexture);
+                }
+            }
+        }
+
+        private static TextureInfo ExportBakedTexture(GLTFSceneExporter exporter, Material material, Texture2D bakedTexture)
+        {
+            if (exporter == null || material == null || bakedTexture == null)
+            {
+                return null;
+            }
+
+            foreach (var property in kBaseColorTextureProperties)
+            {
+                if (!material.HasProperty(property))
+                {
+                    continue;
+                }
+
+                var previous = material.GetTexture(property);
+                material.SetTexture(property, bakedTexture);
+                try
+                {
+                    var exported = exporter.ExportTextureInfoWithTextureTransform(material, bakedTexture, property);
+                    if (exported != null)
+                    {
+                        material.SetTexture(property, previous);
+                        return exported;
+                    }
+                }
+                finally
+                {
+                    material.SetTexture(property, previous);
+                }
+            }
+
+            material.SetTexture("_MainTex", bakedTexture);
+            try
+            {
+                return exporter.ExportTextureInfoWithTextureTransform(material, bakedTexture, "_MainTex");
+            }
+            finally
+            {
+                material.SetTexture("_MainTex", null);
+            }
+        }
+
+        private static bool IsUnlitMaterial(Material material)
+        {
+            if (material == null || material.shader == null)
+            {
+                return false;
+            }
+
+            string shaderName = material.shader.name;
+            if (shaderName.IndexOf("Unlit", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            if (material.IsKeywordEnabled("_UNLIT"))
+            {
+                return true;
+            }
+
+            if (material.HasProperty("_UseLighting") && material.GetFloat("_UseLighting") < 0.5f)
+            {
+                return true;
+            }
+
+            if (material.HasProperty("_EnableLighting") && material.GetFloat("_EnableLighting") < 0.5f)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryGetFloat(Material material, out float value, params string[] propertyNames)
+        {
+            foreach (var name in propertyNames)
+            {
+                if (material.HasProperty(name))
+                {
+                    value = material.GetFloat(name);
+                    return true;
+                }
+            }
+
+            value = 0f;
+            return false;
+        }
+
+        private static bool TryGetColor(Material material, out Color color, params string[] propertyNames)
+        {
+            foreach (var name in propertyNames)
+            {
+                if (material.HasProperty(name))
+                {
+                    color = material.GetColor(name);
+                    return true;
+                }
+            }
+
+            color = default;
+            return false;
+        }
+
+        private static bool TryExportTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out TextureInfo textureInfo)
+        {
+            foreach (var name in propertyNames)
+            {
+                if (material.HasProperty(name))
+                {
+                    var texture = material.GetTexture(name);
+                    if (texture is Texture2D)
+                    {
+                        textureInfo = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                        if (textureInfo != null)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            textureInfo = null;
+            return false;
+        }
+
+        private static bool TryExportNormalTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out NormalTextureInfo textureInfo)
+        {
+            foreach (var name in propertyNames)
+            {
+                if (material.HasProperty(name))
+                {
+                    var texture = material.GetTexture(name);
+                    if (texture is Texture2D)
+                    {
+                        var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                        if (exported != null)
+                        {
+                            textureInfo = new NormalTextureInfo
+                            {
+                                Index = exported.Index,
+                                TexCoord = exported.TexCoord,
+                                Extensions = exported.Extensions,
+                                Extras = exported.Extras,
+                                Scale = GetNormalScale(material)
+                            };
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            textureInfo = null;
+            return false;
+        }
+
+        private static bool TryExportOcclusionTexture(GLTFSceneExporter exporter, Material material, string[] propertyNames, out OcclusionTextureInfo textureInfo)
+        {
+            foreach (var name in propertyNames)
+            {
+                if (material.HasProperty(name))
+                {
+                    var texture = material.GetTexture(name);
+                    if (texture is Texture2D)
+                    {
+                        var exported = exporter.ExportTextureInfoWithTextureTransform(material, texture, name);
+                        if (exported != null)
+                        {
+                            textureInfo = new OcclusionTextureInfo
+                            {
+                                Index = exported.Index,
+                                TexCoord = exported.TexCoord,
+                                Extensions = exported.Extensions,
+                                Extras = exported.Extras,
+                                Strength = GetOcclusionStrength(material)
+                            };
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            textureInfo = null;
+            return false;
+        }
+
+        private static double GetNormalScale(Material material)
+        {
+            if (TryGetFloat(material, out var scale, "_NormalScale", "_BumpScale", "normalScale"))
+            {
+                return scale;
+            }
+            return 1.0f;
+        }
+
+        private static double GetOcclusionStrength(Material material)
+        {
+            if (TryGetFloat(material, out var strength, "occlusionStrength", "_OcclusionStrength"))
+            {
+                return Mathf.Clamp01(strength);
+            }
+            return 1.0f;
+        }
+
+        private static GLTF.Math.Color ToGltfColor(Color color)
+        {
+            var linear = color.linear;
+            return new GLTF.Math.Color(linear.r, linear.g, linear.b, color.a);
+        }
+
+        private static bool IsUnsetColor(GLTF.Math.Color color)
+        {
+            return color.R == 0 && color.G == 0 && color.B == 0 && color.A == 0;
         }
 
         private static void SafeDestroy(Object o)

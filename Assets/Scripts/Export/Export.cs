@@ -329,7 +329,15 @@ URL=" + kExportDocumentationUrl;
             }
             context.ExportLayers = layerMask;
             var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            OpenBrushExportPluginConfig.IsNewGlbExportActive = true;
+            try
+            {
+                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            }
+            finally
+            {
+                OpenBrushExportPluginConfig.IsNewGlbExportActive = false;
+            }
         }
     }
 } // namespace TiltBrush
