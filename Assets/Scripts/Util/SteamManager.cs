@@ -93,7 +93,7 @@ namespace TiltBrush
                 }
 
                 SteamClientApi.OpenOverlayUrl(url);
-                Debug.Log($"[STEAM_BROWSER] Opened overlay URL: {url}");
+                Debug.Log($"[STEAM_BROWSER] Requested overlay URL: {url}");
                 return true;
             }
             catch (Exception ex)
@@ -330,7 +330,10 @@ namespace TiltBrush
             private const string NativeLibrary = "steam_api";
             private const int SteamErrorMessageSize = 1024;
             private const int InitResultOk = 0;
-            private const int OverlayPageModeModal = 1;
+            // Steam Frame currently retains a modal browser session across Android app
+            // restarts and ignores later navigation requests. Default mode allows Steam to
+            // open or select a normal overlay browser page for each request.
+            private const int OverlayPageModeDefault = 0;
             private const string SteamClientVersion = "SteamClient023";
             private const string SteamFriendsVersion = "SteamFriends018";
             private const string SteamUtilsVersion = "SteamUtils010";
@@ -386,7 +389,7 @@ namespace TiltBrush
 
             public static void OpenOverlayUrl(string url)
             {
-                NativeActivateGameOverlayToWebPage(m_SteamFriends, url, OverlayPageModeModal);
+                NativeActivateGameOverlayToWebPage(m_SteamFriends, url, OverlayPageModeDefault);
             }
 
             public static void RunCallbacks() => NativeRunCallbacks();
