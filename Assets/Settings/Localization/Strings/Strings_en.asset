@@ -3864,7 +3864,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 467500000000000096
-    m_Localized: Remove Frame
+    m_Localized: Clear Frame Contents
     m_Metadata:
       m_Items: []
   - m_Id: 467500000000000112
