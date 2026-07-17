@@ -421,6 +421,7 @@ namespace TiltBrush
             // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
             var textureBakeMode = BrushBaker.TextureBakeMode.None;
+            var textureBakePass = 0;
 
             if (shaderName.StartsWith("Brush/"))
             {
@@ -445,12 +446,13 @@ namespace TiltBrush
                 var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
 
                 if (BrushBaker.m_Instance != null &&
-                    BrushBaker.m_Instance.TryGetTextureBakeMode(
-                        brush.m_Guid.ToString(), out var configuredTextureBakeMode))
+                    BrushBaker.m_Instance.TryGetTextureBakePolicy(
+                        brush.m_Guid.ToString(), out var textureBakePolicy))
                 {
-                    textureBakeMode = configuredTextureBakeMode;
+                    textureBakeMode = textureBakePolicy.Mode;
+                    textureBakePass = textureBakePolicy.BakePass;
                     Debug.Log(
-                        $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}");
+                        $"[OB_GLTF_BAKE] Brush {manifest.DurableName} uses texture bake mode {textureBakeMode}, pass {textureBakePass}");
                 }
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
@@ -497,7 +499,8 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.BakeCustomShadersToPbr)
             {
-                BakeCustomShaderToPbr(exporter, material, materialNode, textureBakeMode);
+                BakeCustomShaderToPbr(
+                    exporter, material, materialNode, textureBakeMode, textureBakePass);
             }
         }
 
@@ -636,7 +639,7 @@ namespace TiltBrush
 
         private void BakeCustomShaderToPbr(
             GLTFSceneExporter exporter, Material material, GLTFMaterial materialNode,
-            BrushBaker.TextureBakeMode textureBakeMode)
+            BrushBaker.TextureBakeMode textureBakeMode, int textureBakePass)
         {
             if (materialNode == null)
             {
@@ -658,7 +661,7 @@ namespace TiltBrush
             if (pbr.BaseColorTexture == null &&
                 ShouldBakeBaseColorTexture(material, textureBakeMode))
             {
-                var bakedTexture = BakeMaterialBaseColor(material);
+                var bakedTexture = BakeMaterialBaseColor(material, textureBakePass);
                 if (bakedTexture != null)
                 {
                     var bakedInfo = ExportBakedTexture(exporter, material, bakedTexture);
@@ -774,11 +777,13 @@ namespace TiltBrush
             return true;
         }
 
-        private static Texture2D BakeMaterialBaseColor(Material material)
+        private static Texture2D BakeMaterialBaseColor(Material material, int bakePass)
         {
             const int textureSize = 512;
             RenderTexture renderTexture = null;
+            Mesh bakeMesh = null;
             var previous = RenderTexture.active;
+            bool matrixPushed = false;
             try
             {
                 renderTexture = RenderTexture.GetTemporary(
@@ -786,7 +791,17 @@ namespace TiltBrush
                     RenderTextureReadWrite.Linear);
                 RenderTexture.active = renderTexture;
                 GL.Clear(true, true, Color.clear);
-                Graphics.Blit(Texture2D.whiteTexture, renderTexture, material);
+                bakeMesh = CreateTextureBakeMesh();
+                GL.PushMatrix();
+                matrixPushed = true;
+                GL.LoadOrtho();
+                if (!material.SetPass(bakePass))
+                {
+                    Debug.LogWarning(
+                        $"[OB_GLTF_BAKE] Shader pass {bakePass} is unavailable for material {material.name}");
+                    return null;
+                }
+                Graphics.DrawMeshNow(bakeMesh, Matrix4x4.identity);
                 var bakedTexture = new Texture2D(
                     textureSize, textureSize, TextureFormat.RGBA32, false, true)
                 {
@@ -813,12 +828,60 @@ namespace TiltBrush
             }
             finally
             {
+                if (matrixPushed)
+                {
+                    GL.PopMatrix();
+                }
                 RenderTexture.active = previous;
+                SafeDestroy(bakeMesh);
                 if (renderTexture != null)
                 {
                     RenderTexture.ReleaseTemporary(renderTexture);
                 }
             }
+        }
+
+        private static Mesh CreateTextureBakeMesh()
+        {
+            var mesh = new Mesh
+            {
+                name = "OpenBrushTextureBakeMesh",
+                vertices = new[]
+                {
+                    new Vector3(0, 0, 0),
+                    new Vector3(0, 1, 0),
+                    new Vector3(1, 0, 0),
+                    new Vector3(1, 1, 0),
+                },
+                colors = new[] { Color.white, Color.white, Color.white, Color.white },
+                normals = new[]
+                {
+                    Vector3.back, Vector3.back, Vector3.back, Vector3.back,
+                },
+                tangents = new[]
+                {
+                    new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1),
+                    new Vector4(1, 0, 0, 1), new Vector4(1, 0, 0, 1),
+                },
+                triangles = new[] { 0, 1, 2, 2, 1, 3 },
+            };
+            mesh.SetUVs(0, new List<Vector4>
+            {
+                new Vector4(0, 0, 0, 0),
+                new Vector4(0, 1, 0, 0),
+                new Vector4(1, 0, 0, 0),
+                new Vector4(1, 1, 0, 0),
+            });
+            mesh.SetUVs(1, new List<Vector4>
+            {
+                Vector4.zero, Vector4.zero, Vector4.zero, Vector4.zero,
+            });
+            mesh.SetUVs(2, new List<Vector4>
+            {
+                Vector4.zero, Vector4.zero, Vector4.zero, Vector4.zero,
+            });
+            mesh.RecalculateBounds();
+            return mesh;
         }
 
         private static bool HasVisibleBaseColorPixels(Texture2D texture)

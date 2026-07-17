@@ -210,7 +210,9 @@ MonoBehaviour:
   - name: Double Tapered Flat
     brushGuid: 0d3889f3-3ede-470c-8af4-f44813306126
     Mode: 0
+    BakePass: 0
   - name: Double Tapered Marker
     brushGuid: 0d3889f3-3ede-470c-8af4-de4813306126
     Mode: 0
+    BakePass: 0
   squeezeAmount: 0.873

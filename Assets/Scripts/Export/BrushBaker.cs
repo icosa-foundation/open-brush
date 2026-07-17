@@ -42,6 +42,7 @@ public class BrushBaker : MonoBehaviour
         public string name;
         public string brushGuid;
         public TextureBakeMode Mode;
+        public int BakePass;
     }
 
     void Start()
@@ -69,15 +70,16 @@ public class BrushBaker : MonoBehaviour
         get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
     }
 
-    public bool TryGetTextureBakeMode(string brushGuid, out TextureBakeMode mode)
+    public bool TryGetTextureBakePolicy(
+        string brushGuid, out TextureBakePolicyMapping policy)
     {
-        mode = TextureBakeMode.None;
+        policy = default;
         if (textureBakePolicies == null) return false;
         foreach (TextureBakePolicyMapping candidate in textureBakePolicies)
         {
             if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
             {
-                mode = candidate.Mode;
+                policy = candidate;
                 return true;
             }
         }
