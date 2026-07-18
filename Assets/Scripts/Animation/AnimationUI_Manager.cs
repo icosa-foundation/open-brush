@@ -2041,6 +2041,27 @@ namespace TiltBrush.FrameAnimation
             return new DrawingReferenceLease(() => ReleaseSaveDrawingReferences(drawingIds));
         }
 
+        public void RetainDrawingForEditing(CanvasScript canvas)
+        {
+            if (canvas == null) return;
+            EnsureSparseTimeline();
+            if (m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            {
+                m_DrawingReferences.Retain(drawingId);
+            }
+        }
+
+        public void ReleaseDrawingForEditing(CanvasScript canvas)
+        {
+            if (canvas == null ||
+                !m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            {
+                return;
+            }
+            m_DrawingReferences.Release(drawingId);
+            TryDestroyPendingDrawing(drawingId);
+        }
+
         private void ReleaseSaveDrawingReferences(IEnumerable<AnimationDrawingId> drawingIds)
         {
             foreach (AnimationDrawingId drawingId in drawingIds)
