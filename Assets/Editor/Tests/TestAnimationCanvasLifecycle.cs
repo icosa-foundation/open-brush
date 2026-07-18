@@ -171,6 +171,72 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator DenseEmptyFallbackPreservesSparseAndPersistenceSemantics()
+        {
+            Debug.Log($"{kLogPrefix} test=denseEmptyFallback state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            var frameLengths = new List<IReadOnlyList<int>>
+            {
+                new List<int> { 2, 3 },
+                new List<int> { 1, 4 }
+            };
+            var visibility = new List<bool> { true, false };
+
+            manager.ConfigureEmptyCanvasSharingForTests(true);
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(frameLengths, visibility);
+            AnimationMetadata sharedMetadata = App.Scene.AnimationTracksSerialized();
+            manager.GetSparseTimelineCounts(
+                out int sharedSpanCount, out int sharedEmptySpanCount);
+            int sharedCanvasCount = manager.Timeline
+                .SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas)
+                .Distinct()
+                .Count();
+
+            try
+            {
+                manager.ConfigureEmptyCanvasSharingForTests(false);
+                manager.StartTimeline();
+                manager.ConfigureLegacyAnimationTracks(frameLengths, visibility);
+                AnimationMetadata denseMetadata = App.Scene.AnimationTracksSerialized();
+                manager.GetSparseTimelineCounts(
+                    out int denseSpanCount, out int denseEmptySpanCount);
+                int denseCanvasCount = manager.Timeline
+                    .SelectMany(track => track.Frames)
+                    .Select(frame => frame.Canvas)
+                    .Distinct()
+                    .Count();
+
+                Assert.AreEqual(2, sharedCanvasCount,
+                    "Shared empty mode should retain one authoring Canvas per track");
+                Assert.AreEqual(4, denseCanvasCount,
+                    "Diagnostic fallback should materialize one Canvas per legacy key span");
+                Assert.AreEqual(sharedSpanCount, denseSpanCount);
+                Assert.AreEqual(sharedEmptySpanCount, denseEmptySpanCount);
+                Assert.AreEqual(sharedMetadata.Tracks.Length, denseMetadata.Tracks.Length);
+                for (int trackIndex = 0;
+                    trackIndex < sharedMetadata.Tracks.Length; trackIndex++)
+                {
+                    CollectionAssert.AreEqual(
+                        sharedMetadata.Tracks[trackIndex].frameLengths,
+                        denseMetadata.Tracks[trackIndex].frameLengths);
+                    Assert.AreEqual(
+                        sharedMetadata.Tracks[trackIndex].Visible,
+                        denseMetadata.Tracks[trackIndex].Visible);
+                }
+            }
+            finally
+            {
+                manager.ConfigureEmptyCanvasSharingForTests(true);
+            }
+
+            yield return null;
+            Debug.Log($"{kLogPrefix} test=denseEmptyFallback state=passed");
+        }
+
+        [UnityTest]
         public IEnumerator LongHeldTimelineUsesSparseSpansAndDifferentialTraversal()
         {
             const int trackCount = 8;

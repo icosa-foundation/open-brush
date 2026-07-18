@@ -22,6 +22,7 @@
 - [x] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip (2 tracks, 4 drawing spans, 2 unique Canvases).
 - [x] Run the 80,000-cell held-timeline workload and record legacy versus differential traversal and frame-selection timings (719,928 legacy hide visits versus 0 differential; 19.273 ms versus 9.067 ms median across 9 transitions on the validation machine).
 - [x] Verify that layer/frame coordinate consumers materialize only the requested sparse span and preserve legacy frame-length metadata.
+- [x] Verify that disabling empty-Canvas sharing changes only compatibility hierarchy count while sparse spans, track visibility, and persistence metadata remain equivalent.
 
 ## Phase 3 manual working-state gate
 

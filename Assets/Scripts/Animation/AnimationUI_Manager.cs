@@ -124,6 +124,11 @@ namespace TiltBrush.FrameAnimation
             return m_PerformanceStats?.CaptureCounters() ?? default;
         }
 
+        internal void ConfigureEmptyCanvasSharingForTests(bool enabled)
+        {
+            m_ShareEmptyCanvases = enabled;
+        }
+
         internal void ApplyPlaybackFrameForTests(int frameIndex)
         {
             m_FrameOn = frameIndex;
