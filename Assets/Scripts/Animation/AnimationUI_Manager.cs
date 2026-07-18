@@ -48,6 +48,7 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] bool m_UseDifferentialPlayback = true;
         [SerializeField] bool m_ShareEmptyCanvases = true;
         [SerializeField] bool m_ValidateSparseTimeline;
+        [SerializeField, Min(1)] int m_TimelineFramePoolSize = 10;
         AnimationPerformanceStats m_PerformanceStats;
         readonly Dictionary<CanvasScript, (int, int)> m_CanvasLocations = new();
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
@@ -1240,6 +1241,7 @@ namespace TiltBrush.FrameAnimation
 
         private void RefreshTimelineScroll()
         {
+            UpdateNodes();
             UpdateTimelineSlider();
             UpdateTrackScroll();
             UpdateUI(updateTimelineLayout: false);
@@ -1254,29 +1256,28 @@ namespace TiltBrush.FrameAnimation
 
         private void UpdateNodes()
         {
-            int nodeCount; // always 8, unless we increase fps
-            int trackFrameCount;
-            int nodeToMake; // 9 - 8
+            const float frameSpacing = 0.1971429f;
+            int timelineLength = GetTimelineLength();
+            int poolSize = Math.Max(1, m_TimelineFramePoolSize);
+            int firstVisibleFrame = GetFirstPooledTimelineFrame(timelineLength, poolSize);
 
-            nodeCount = frameNotchesWidget.gameObject.transform.childCount; // always 8, unless we increase fps
-            trackFrameCount = GetTimelineLength();
-            nodeToMake = trackFrameCount - nodeCount; // 9 - 8
-
-            if (nodeToMake > 0)
+            while (frameNotchesWidget.transform.childCount < poolSize)
             {
-                float posModifier = nodeCount;
-                for (int make = 0; make < nodeToMake; make++)
-                {
-                    GameObject newFrame = Instantiate(timelineNotchPrefab, frameNotchesWidget.transform, false);
-                    // HARD CODED. MUST GET Vector and Scale info from FrameButton1
-                    newFrame.transform.localPosition = new Vector3(posModifier * 0.1971429f, 0, 0.0087f); // 1.9... is the spacing between framebuttons 0 and 1
-                    newFrame.transform.FindChild("Num").GetComponent<TextMeshPro>().text = "" + (posModifier + 1);
-
-                    posModifier = posModifier + 1;
-                }
+                Instantiate(timelineNotchPrefab, frameNotchesWidget.transform, false);
+            }
+            for (int slot = 0; slot < frameNotchesWidget.transform.childCount; slot++)
+            {
+                Transform notch = frameNotchesWidget.transform.GetChild(slot);
+                int frameIndex = firstVisibleFrame + slot;
+                bool visible = slot < poolSize && frameIndex < timelineLength;
+                notch.gameObject.SetActive(visible);
+                if (!visible) continue;
+                notch.localPosition = new Vector3(frameIndex * frameSpacing, 0, 0.0087f);
+                notch.FindChild("Num").GetComponent<TextMeshPro>().text = $"{frameIndex + 1}";
             }
 
             List<int> activeTrackIndexes = ActiveTrackIndexes();
+            (int, int) activeCanvasLocation = GetCanvasLocation(App.Scene.ActiveCanvas);
 
             foreach (GameObject trackNodes in trackNodesWidget)
             {
@@ -1293,90 +1294,67 @@ namespace TiltBrush.FrameAnimation
                 int scrolledTrack = activeTrackIndexes[activeTrackIndex];
                 if (scrolledTrack < 0 || scrolledTrack >= Timeline.Count) continue;
 
-                if (Timeline[scrolledTrack].Frames.Count > 0) // check if there is a frame here.
+                int trackFrameCount = Timeline[scrolledTrack].Frames.Count;
+                if (trackFrameCount > 0)
                 {
                     trackNodesWidget[localIndex].SetActive(true);
-
-                    nodeCount = trackNodesWidget[localIndex].gameObject.transform.childCount; // always 8, unless we increase fps
-                    trackFrameCount = Timeline[scrolledTrack].Frames.Count;
-                    nodeToMake = trackFrameCount - nodeCount; // 9 - 8
-
-                    if (nodeToMake > 0)
+                    Transform trackTransform = trackNodesWidget[localIndex].transform;
+                    while (trackTransform.childCount < poolSize)
                     {
-                        double posModifier = nodeCount;
-                        for (int make = 0; make < nodeToMake; make++)
-                        {
-                            GameObject newFrame = Instantiate(frameButtonPrefab, trackNodesWidget[localIndex].transform, false);
-                            // TODO : HARD CODED. MUST GET Vector and Scale info from FrameButton1
-                            newFrame.transform.localPosition = new Vector3((float)posModifier * (float)0.1971429, 0, -0.029f); // 1.9... is the spacing between framebuttons 0 and 1
-                            float scale = 0.16175f;
-                            newFrame.transform.localScale = new Vector3(scale, scale, scale);
-                            posModifier = posModifier + 1;
-                        }
-
-                        nodeCount = trackNodesWidget[localIndex].transform.childCount;
+                        GameObject newFrame = Instantiate(
+                            frameButtonPrefab, trackTransform, false);
+                        newFrame.transform.localScale = new Vector3(0.16175f, 0.16175f, 0.16175f);
                     }
 
-                    for (int hideNode = 0; hideNode < nodeCount; hideNode++)
+                    for (int slot = 0; slot < trackTransform.childCount; slot++)
                     {
-                        Transform frameButton = trackNodesWidget[localIndex].transform
-                            .GetChild(hideNode).GetChild(0);
-                        bool frameExists = hideNode < trackFrameCount;
-                        frameButton.gameObject.SetActive(frameExists);
+                        Transform frameWrapper = trackTransform.GetChild(slot);
+                        Transform frameButton = frameWrapper.GetChild(0);
+                        int frameIndex = firstVisibleFrame + slot;
+                        bool frameExists = slot < poolSize && frameIndex < trackFrameCount;
+                        frameWrapper.gameObject.SetActive(frameExists);
                         if (!frameExists) continue;
+                        frameWrapper.localPosition = new Vector3(
+                            frameIndex * frameSpacing, 0, -0.029f);
 
-                        // trackNodesWidget[localIndex].transform.GetChild(hideNode).gameObject.SetActive(false); // already handled in UpdateTimelineSlider below
-                        foreach (Transform buttonState in frameButton) // hide all button state
+                        foreach (Transform buttonState in frameButton)
                         {
-                            buttonState.gameObject.SetActive(false); // trackNodesWidget[t].transform.GetChild(hideNode).GetChild(0).GetChild(X).gameObject.SetActive(false); 
+                            buttonState.gameObject.SetActive(false);
                         }
-                    }
+                        frameButton.GetComponent<FrameButton>().SetButtonCoordinate(
+                            scrolledTrack, frameIndex);
 
-                    int loopLimitFrames = Math.Min(nodeCount, trackFrameCount);
-                    for (int frameNum = 0; frameNum < loopLimitFrames; frameNum++)
-                    {
-                        // trackNodesWidget[localIndex].transform.GetChild(frameNum).gameObject.SetActive(true); // already handled in UpdateTimelineSlider below
-                        var frameButton = trackNodesWidget[localIndex].transform.GetChild(frameNum).GetChild(0); // f is tracknodes; 0 is the control, which is labled "1" in the prefab
-
-                        frameButton.gameObject.GetComponent<FrameButton>().SetButtonCoordinate(scrolledTrack, frameNum); // 0 is the "1" that contains the FrameButton component.
-
-                        //// COPY/PASTE FROM OG. Begin setting the button formatting.
-                        bool filled = GetFrameFilled(scrolledTrack, frameNum); // using boolean as an ON and OFF switch. So buttonState index 0 and 1.
-                        bool backwardsConnect;
-                        bool forwardConnect;
-
-                        backwardsConnect = frameNum > 0 &&
-                            FramesShareSpan(scrolledTrack, frameNum, frameNum - 1);
-                        forwardConnect = frameNum < Timeline[scrolledTrack].Frames.Count - 1 &&
-                            FramesShareSpan(scrolledTrack, frameNum, frameNum + 1);
+                        bool filled = GetFrameFilled(scrolledTrack, frameIndex);
+                        bool backwardsConnect = frameIndex > 0 &&
+                            FramesShareSpan(scrolledTrack, frameIndex, frameIndex - 1);
+                        bool forwardConnect = frameIndex < trackFrameCount - 1 &&
+                            FramesShareSpan(scrolledTrack, frameIndex, frameIndex + 1);
                         frameButton.GetChild(Convert.ToInt32(filled)).gameObject.SetActive(true);
 
-                        int backBox = 6; // buttonState index 6
+                        int backBox = 6;
                         frameButton.GetChild(backBox).gameObject.SetActive(true);
 
-                        // Set behind colours depending whether frame is active
                         Color backColor;
                         if (filled)
                         {
-                            if (Timeline[scrolledTrack].Frames[frameNum].Canvas.Equals(App.Scene.ActiveCanvas))
+                            if (Timeline[scrolledTrack].Frames[frameIndex].Canvas == App.Scene.ActiveCanvas)
                             {
-                                backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f); // neutralgray
+                                backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
                             }
                             else
                             {
-                                backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f); // black
+                                backColor = Color.black;
                             }
                         }
                         else
                         {
-                            (int, int) index = GetCanvasLocation(App.Scene.ActiveCanvas);
-                            if (index.Item1 == scrolledTrack && frameNum == FrameOn)
+                            if (activeCanvasLocation.Item1 == scrolledTrack && frameIndex == FrameOn)
                             {
-                                backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f); // neutralgray
+                                backColor = new Color(150 / 255f, 150 / 255f, 150 / 255f);
                             }
                             else
                             {
-                                backColor = new Color(0 / 255f, 0 / 255f, 0 / 255f); // black
+                                backColor = Color.black;
                             }
                         }
 
@@ -1386,18 +1364,25 @@ namespace TiltBrush.FrameAnimation
 
                         if (backwardsConnect)
                         {
-                            frameButton.GetChild(Convert.ToInt32(filled) + 2).gameObject.SetActive(true); // buttonState index 2 or 3; respectively empty connect left, filled connect left
-                            frameButton.GetChild(backBox + 1).gameObject.SetActive(true); // buttonState index 7: back box left
+                            frameButton.GetChild(Convert.ToInt32(filled) + 2).gameObject.SetActive(true);
+                            frameButton.GetChild(backBox + 1).gameObject.SetActive(true);
                         }
 
                         if (forwardConnect)
                         {
-                            frameButton.GetChild(Convert.ToInt32(filled) + 4).gameObject.SetActive(true); // buttonState index 4 or 5; respectively empty connect right, filled connect right 
-                            frameButton.GetChild(backBox + 2).gameObject.SetActive(true); // buttonState index 8: back box right
+                            frameButton.GetChild(Convert.ToInt32(filled) + 4).gameObject.SetActive(true);
+                            frameButton.GetChild(backBox + 2).gameObject.SetActive(true);
                         }
                     }
                 }
             }
+        }
+
+        private int GetFirstPooledTimelineFrame(int timelineLength, int poolSize)
+        {
+            if (timelineLength <= poolSize) return 0;
+            int firstFrame = Mathf.FloorToInt(m_TimelineOffset / m_SliderFrameSize) - 1;
+            return Math.Clamp(firstFrame, 0, timelineLength - poolSize);
         }
 
         public void UpdateTrackScroll(int scrollOffset, float scrollHeight)
@@ -1528,7 +1513,10 @@ namespace TiltBrush.FrameAnimation
             updateFrameInfo();
             float previousTimelineOffset = m_TimelineOffset;
             if (!timelineInput) UpdateTimelineNob();
-            if (updateTimelineLayout || !Mathf.Approximately(previousTimelineOffset, m_TimelineOffset))
+            bool viewportChanged = !Mathf.Approximately(
+                previousTimelineOffset, m_TimelineOffset);
+            if (viewportChanged) UpdateNodes();
+            if (updateTimelineLayout || viewportChanged)
             {
                 UpdateTimelineSlider();
             }
@@ -2331,6 +2319,8 @@ namespace TiltBrush.FrameAnimation
 
             float max = m_SliderFrameSize * (float)timelineLength - 1;
             m_TimelineOffset = Math.Clamp(m_TimelineOffset, 0, max < 0 ? 0 : max);
+            UpdateNodes();
+            UpdateTimelineSlider();
             gameObject.GetComponent<TiltBrush.Layers.AnimationLayerUI_Manager>().OnEnable();
         }
 
