@@ -143,10 +143,15 @@ namespace TiltBrush
             var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
             for (uint indexFrame = 0; indexFrame < canvases.Count; indexFrame++)
             {
-                for (uint indexLayer = 0; indexLayer < canvases[0].Count; indexLayer++)
+                for (uint indexLayer = 0; indexLayer < canvases[(int)indexFrame].Count; indexLayer++)
                 {
                     var canvas = canvases[(int)indexFrame][(int)indexLayer];
-                    canvasToIndexMap[canvas] = new Tuple<uint, uint>(indexFrame, indexLayer);
+                    if (!canvasToIndexMap.ContainsKey(canvas))
+                    {
+                        // Held spans repeat a drawing across frames. Persist it at the span start.
+                        canvasToIndexMap.Add(
+                            canvas, new Tuple<uint, uint>(indexFrame, indexLayer));
+                    }
                 }
             }
             foreach (var stroke in strokes)
@@ -666,7 +671,7 @@ namespace TiltBrush
                         case StrokeExtension.Frame:
                             UInt32 frameIndex = reader.UInt32();
                             // For Loading Animation
-                            var canvas = App.Scene.animationUI_manager.GetTimelineCanvas((int)thisTrack, (int)frameIndex);
+                            var canvas = App.Scene.animationUI_manager.GetOrCreateContentCanvas((int)thisTrack, (int)frameIndex);
                             stroke.m_IntendedCanvas = canvas;
                             break;
                         case StrokeExtension.ControlPointColors:

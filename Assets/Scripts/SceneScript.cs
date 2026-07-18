@@ -404,7 +404,7 @@ namespace TiltBrush
         {
             if (layerIndex < animationUI_manager.Timeline.Count && frameIndex < animationUI_manager.GetTimelineLength())
             {
-                return animationUI_manager.GetTimelineCanvas(layerIndex, frameIndex);
+                return animationUI_manager.GetOrCreateContentCanvas(layerIndex, frameIndex);
             }
             return GetOrCreateLayer(layerIndex);
         }
@@ -558,30 +558,12 @@ namespace TiltBrush
             var layers = LayerCanvases.ToArray();
             meta.Tracks = new AnimationTrackMetadata[layers.Length];
 
-            var timeline = animationUI_manager.Timeline;
             List<int> activeTrackIndexes = animationUI_manager.ActiveTrackIndexes();
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
-                var frameLengthsFound = new List<int>();
-                for (var f = 0; f < timeline[activeTrackIndexes[i]].Frames.Count; f++)
-                {
-                    if (f > 0)
-                    {
-                        if (timeline[activeTrackIndexes[i]].Frames[f].Canvas.Equals(timeline[activeTrackIndexes[i]].Frames[f - 1].Canvas))
-                        {
-                            frameLengthsFound[frameLengthsFound.Count - 1]++;
-                        }
-                        else
-                        {
-                            frameLengthsFound.Add(1);
-                        }
-                    }
-                    else
-                    {
-                        frameLengthsFound.Add(1);
-                    }
-                }
+                List<int> frameLengthsFound =
+                    animationUI_manager.GetTrackFrameLengths(activeTrackIndexes[i]);
                 meta.Tracks[i] = new AnimationTrackMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
