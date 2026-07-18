@@ -231,7 +231,9 @@ namespace TiltBrush.FrameAnimation
 
         private void OnSketchCommandChanged(BaseCommand command)
         {
-            m_ContentIndexInitialized = false;
+            // Stroke and widget add/remove/canvas-transfer notifications maintain the ownership
+            // index. Commands may still change enabled/active state, so only cached occupancy
+            // values need invalidating here.
             InvalidateDrawingOccupancy();
         }
 
