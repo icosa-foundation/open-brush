@@ -321,5 +321,85 @@ namespace TiltBrush.Tests
             Assert.AreEqual(1, locations[1].Frame);
             Assert.AreEqual(1, locations[1].Track);
         }
+
+        [Test]
+        public void LegacyPersistenceProjectionRoundTripsHeldEmptyPathAndHiddenTracks()
+        {
+            object path = new object();
+            var firstDrawing = new AnimationDrawingId(10);
+            var secondDrawing = new AnimationDrawingId(11);
+            var source = new AnimationTimelineModel();
+            source.Rebuild(
+                new[] { 100, 200, 300 }, new[] { true, false, true },
+                new[] { false, false, true },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(firstDrawing), new(firstDrawing),
+                        new(AnimationDrawingId.Empty, spanIdentity: 1),
+                        new(AnimationDrawingId.Empty, spanIdentity: 1),
+                        new(secondDrawing)
+                    },
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(AnimationDrawingId.Empty, pathToken: path, spanIdentity: 2),
+                        new(AnimationDrawingId.Empty, pathToken: path, spanIdentity: 2),
+                        new(AnimationDrawingId.Empty, spanIdentity: 3),
+                        new(AnimationDrawingId.Empty, spanIdentity: 3),
+                        new(AnimationDrawingId.Empty, spanIdentity: 3)
+                    },
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(new AnimationDrawingId(99))
+                    }
+                });
+
+            List<AnimationTimelineModel.Track> serializedTracks = source.Tracks
+                .Where(track => !track.Deleted)
+                .ToList();
+            long nextEmptyIdentity = 1000;
+            var restoredFrames = new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>();
+            foreach (AnimationTimelineModel.Track serializedTrack in serializedTracks)
+            {
+                List<AnimationTimelineModel.FrameValue> frames =
+                    AnimationTimelineOperations.ExpandLegacyFrameLengths(
+                        serializedTrack.Spans.Select(span => span.Duration).ToList(),
+                        () => new AnimationTimelineModel.FrameValue(
+                            AnimationDrawingId.Empty,
+                            spanIdentity: nextEmptyIdentity++));
+                foreach (AnimationTimelineModel.Span span in serializedTrack.Spans)
+                {
+                    if (span.Value.DrawingId.IsEmpty && span.Value.PathToken == null) continue;
+                    for (int frame = span.StartFrame; frame < span.EndFrameExclusive; frame++)
+                    {
+                        AnimationTimelineModel.FrameValue empty = frames[frame];
+                        frames[frame] = new AnimationTimelineModel.FrameValue(
+                            span.Value.DrawingId, span.Value.Deleted, span.Value.FrameExists,
+                            span.Value.PathToken,
+                            span.Value.DrawingId.IsEmpty ? empty.SpanIdentity : 0);
+                    }
+                }
+                restoredFrames.Add(frames);
+            }
+
+            var restored = new AnimationTimelineModel();
+            restored.Rebuild(
+                new[] { 1, 2 }, serializedTracks.Select(track => track.Visible).ToList(),
+                new[] { false, false }, restoredFrames);
+
+            Assert.AreEqual(2, restored.Tracks.Count);
+            Assert.IsTrue(restored.Tracks[0].Visible);
+            Assert.IsFalse(restored.Tracks[1].Visible);
+            Assert.AreEqual(5, restored.Length);
+            Assert.AreEqual(firstDrawing, restored.Tracks[0].Spans[0].Value.DrawingId);
+            Assert.AreEqual(2, restored.Tracks[0].Spans[0].Duration);
+            Assert.IsTrue(restored.Tracks[0].Spans[1].Value.DrawingId.IsEmpty);
+            Assert.AreEqual(2, restored.Tracks[0].Spans[1].Duration);
+            Assert.AreEqual(secondDrawing, restored.Tracks[0].Spans[2].Value.DrawingId);
+            Assert.AreSame(path, restored.Tracks[1].Spans[0].Value.PathToken);
+            Assert.AreEqual(2, restored.Tracks[1].Spans[0].Duration);
+            Assert.AreEqual(3, restored.Tracks[1].Spans[1].Duration);
+        }
     }
 }
