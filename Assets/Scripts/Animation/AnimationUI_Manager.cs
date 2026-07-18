@@ -46,6 +46,7 @@ namespace TiltBrush.FrameAnimation
         [Header("Animation Performance Diagnostics")]
         [SerializeField] bool m_LogPerformanceStats;
         [SerializeField] bool m_UseDifferentialPlayback = true;
+        [SerializeField] bool m_ShareEmptyCanvases = true;
         AnimationPerformanceStats m_PerformanceStats;
         readonly Dictionary<CanvasScript, (int, int)> m_CanvasLocations = new();
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
@@ -308,6 +309,18 @@ namespace TiltBrush.FrameAnimation
         {
             if (trackIndex < 0 || trackIndex >= Timeline.Count) return preferredCanvas;
             int trackId = Timeline[trackIndex].Id;
+            if (!m_ShareEmptyCanvases)
+            {
+                CanvasScript distinctCanvas = preferredCanvas != null
+                    ? preferredCanvas
+                    : App.Scene.AddCanvas();
+                m_EmptyCanvases.Add(distinctCanvas);
+                if (!m_EmptyCanvasByTrackId.ContainsKey(trackId))
+                {
+                    m_EmptyCanvasByTrackId.Add(trackId, distinctCanvas);
+                }
+                return distinctCanvas;
+            }
             if (m_EmptyCanvasByTrackId.TryGetValue(trackId, out CanvasScript canvas) && canvas != null)
             {
                 return canvas;
@@ -329,8 +342,7 @@ namespace TiltBrush.FrameAnimation
             int trackIndex = -1;
             for (int i = 0; i < Timeline.Count; i++)
             {
-                if (m_EmptyCanvasByTrackId.TryGetValue(Timeline[i].Id, out CanvasScript emptyCanvas) &&
-                    emptyCanvas == populatedCanvas)
+                if (Timeline[i].Frames.Any(frame => frame.Canvas == populatedCanvas))
                 {
                     trackIndex = i;
                     break;
@@ -343,6 +355,21 @@ namespace TiltBrush.FrameAnimation
             if (!m_SparseTimeline.TryResolve(
                 trackIndex, selectedFrame, out AnimationTimelineModel.Span selectedSpan))
             {
+                return;
+            }
+            if (!m_ShareEmptyCanvases)
+            {
+                m_EmptyCanvases.Remove(populatedCanvas);
+                Track distinctTrack = Timeline[trackIndex];
+                for (int frameIndex = selectedSpan.StartFrame;
+                    frameIndex < selectedSpan.EndFrameExclusive; frameIndex++)
+                {
+                    Frame frame = distinctTrack.Frames[frameIndex];
+                    frame.EmptySpanId = 0;
+                    distinctTrack.Frames[frameIndex] = frame;
+                }
+                Timeline[trackIndex] = distinctTrack;
+                InvalidateTimelineStructure();
                 return;
             }
             CanvasScript replacement = App.Scene.AddCanvas();
@@ -628,19 +655,12 @@ namespace TiltBrush.FrameAnimation
             (int, int) Loc = (trackNum, frameNum);
             pathwidget.Path.timelineLocation = Loc;
 
-            CanvasScript origCanvas = Timeline[Loc.Item1].Frames[Loc.Item2].Canvas;
-
             if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
             {
                 WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
             }
 
-            int i = 0;
-
-            while (
-                Loc.Item2 + i < Timeline[Loc.Item1].Frames.Count &&
-                Timeline[Loc.Item1].Frames[Loc.Item2 + i].Canvas.Equals(origCanvas)
-            ) { i++; }
+            int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
 
             for (int c = 0; c < i; c++)
             {
@@ -665,20 +685,13 @@ namespace TiltBrush.FrameAnimation
                 return;
             }
 
-            CanvasScript origCanvas = Timeline[Loc.Item1].Frames[Loc.Item2].Canvas;
-
             if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
             {
                 WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
             }
 
-            int i = 0;
-
             List<Frame> framesChanging = new List<Frame>();
-            while (
-                Loc.Item2 + i < Timeline[Loc.Item1].Frames.Count &&
-                Timeline[Loc.Item1].Frames[Loc.Item2 + i].Canvas.Equals(origCanvas)
-            ) { i++; }
+            int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
 
             for (int c = 0; c < i; c++)
             {
@@ -700,7 +713,11 @@ namespace TiltBrush.FrameAnimation
             Frame addingFrame;
             for (int i = 0; i < timelineLength; i++)
             {
-                addingFrame = NewFrame(canvasAdding);
+                CanvasScript emptyCanvas = m_ShareEmptyCanvases || i == 0
+                    ? canvasAdding
+                    : App.Scene.AddCanvas();
+                m_EmptyCanvases.Add(emptyCanvas);
+                addingFrame = NewFrame(emptyCanvas);
                 addingTrack.Frames.Add(addingFrame);
             }
             Timeline.Add(addingTrack);
@@ -748,7 +765,10 @@ namespace TiltBrush.FrameAnimation
             if (m_SparseTimeline.TryResolve(trackIndex, frameIndex, out AnimationTimelineModel.Span span))
             {
                 CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
-                return canvas != null ? canvas : GetOrCreateEmptyCanvas(trackIndex);
+                if (canvas != null) return canvas;
+                return !m_ShareEmptyCanvases && frameIndex < Timeline[trackIndex].Frames.Count
+                    ? Timeline[trackIndex].Frames[frameIndex].Canvas
+                    : GetOrCreateEmptyCanvas(trackIndex);
             }
             return App.Scene.MainCanvas;
         }
@@ -780,6 +800,14 @@ namespace TiltBrush.FrameAnimation
             return m_SparseTimeline.Tracks[trackIndex].Spans
                 .Select(span => span.Duration)
                 .ToList();
+        }
+
+        internal void GetSparseTimelineCounts(out int spanCount, out int emptySpanCount)
+        {
+            EnsureSparseTimeline();
+            spanCount = m_SparseTimeline.Tracks.Sum(track => track.Spans.Count);
+            emptySpanCount = m_SparseTimeline.Tracks.Sum(track =>
+                track.Spans.Count(span => span.Value.DrawingId.IsEmpty));
         }
 
         public List<int> ActiveTrackIndexes()
@@ -973,8 +1001,10 @@ namespace TiltBrush.FrameAnimation
                         bool backwardsConnect;
                         bool forwardConnect;
 
-                        backwardsConnect = (frameNum > 0 && Timeline[scrolledTrack].Frames[frameNum].Canvas.Equals(Timeline[scrolledTrack].Frames[frameNum - 1].Canvas));
-                        forwardConnect = (frameNum < Timeline[scrolledTrack].Frames.Count - 1 && Timeline[scrolledTrack].Frames[frameNum].Canvas.Equals(Timeline[scrolledTrack].Frames[frameNum + 1].Canvas));
+                        backwardsConnect = frameNum > 0 &&
+                            FramesShareSpan(scrolledTrack, frameNum, frameNum - 1);
+                        forwardConnect = frameNum < Timeline[scrolledTrack].Frames.Count - 1 &&
+                            FramesShareSpan(scrolledTrack, frameNum, frameNum + 1);
                         frameButton.GetChild(Convert.ToInt32(filled)).gameObject.SetActive(true);
 
                         int backBox = 6; // buttonState index 6
@@ -1187,7 +1217,10 @@ namespace TiltBrush.FrameAnimation
                 CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
                 if (canvas == null && includeEmptyCanvases)
                 {
-                    canvas = GetOrCreateEmptyCanvas(trackIndex);
+                    canvas = !m_ShareEmptyCanvases &&
+                        frameIndex < Timeline[trackIndex].Frames.Count
+                        ? Timeline[trackIndex].Frames[frameIndex].Canvas
+                        : GetOrCreateEmptyCanvas(trackIndex);
                 }
                 if (!span.Value.Deleted && canvas != null)
                 {
@@ -1323,6 +1356,16 @@ namespace TiltBrush.FrameAnimation
                 trackNum, frameNum, out AnimationTimelineModel.Span span)
                 ? (trackNum, span.EndFrameExclusive)
                 : (trackNum, frameNum);
+        }
+
+        private bool FramesShareSpan(int trackNum, int firstFrame, int secondFrame)
+        {
+            EnsureSparseTimeline();
+            return m_SparseTimeline.TryResolve(
+                    trackNum, firstFrame, out AnimationTimelineModel.Span firstSpan) &&
+                m_SparseTimeline.TryResolve(
+                    trackNum, secondFrame, out AnimationTimelineModel.Span secondSpan) &&
+                firstSpan.StartFrame == secondSpan.StartFrame;
         }
 
         public int GetTimelineMaxCanvas()

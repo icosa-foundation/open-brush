@@ -101,12 +101,28 @@ namespace TiltBrush.FrameAnimation
             int emptyCells = timeline?.Sum(track =>
                 track.Frames?.Count(frame => frame.Canvas == null ||
                     !m_Manager.GetFrameFilledWithoutStats(frame.Canvas)) ?? 0) ?? 0;
+            m_Manager.GetSparseTimelineCounts(out int spans, out int emptySpans);
+            int emptyCanvases = timeline == null
+                ? 0
+                : timeline
+                    .SelectMany(track => track.Frames ?? new List<AnimationUI_Manager.Frame>())
+                    .Where(frame => frame.EmptySpanId != 0 && frame.Canvas != null)
+                    .Select(frame => frame.Canvas)
+                    .Distinct()
+                    .Count();
             int batches = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountBatches() ?? 0);
             int batchPools = uniqueCanvases.Sum(canvas => canvas.BatchManager?.GetNumBatchPools() ?? 0);
             int vertices = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountAllBatchVertices() ?? 0);
             int triangles = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountAllBatchTriangles() ?? 0);
+            int meshes = uniqueCanvases.Sum(canvas =>
+                canvas.GetComponentsInChildren<MeshFilter>(true).Length);
+            int renderers = uniqueCanvases.Sum(canvas =>
+                canvas.GetComponentsInChildren<Renderer>(true).Length);
+            int materialSlots = uniqueCanvases.Sum(canvas =>
+                canvas.GetComponentsInChildren<Renderer>(true)
+                    .Sum(renderer => renderer.sharedMaterials.Length));
 
-            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} emptyCells={emptyCells} uniqueCanvases={uniqueCanvases.Count} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()}");
+            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} uniqueCanvases={uniqueCanvases.Count} emptyCanvases={emptyCanvases} meshes={meshes} renderers={renderers} materialSlots={materialSlots} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()}");
 
             ResetIntervalCounters();
         }
