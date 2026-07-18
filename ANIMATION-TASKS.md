@@ -18,4 +18,4 @@
 ## Verification
 
 - [x] Add automated model coverage for repeated redo/undo, failed operations, multi-track alignment, track visibility, and drawing ownership reference counts.
-- [ ] Add and run Unity integration coverage for real Canvas creation, promotion, destruction, save/load, and command-history disposal.
+- [x] Add and run Unity integration coverage for real Canvas creation, promotion, destruction, save/load, and command-history disposal.
