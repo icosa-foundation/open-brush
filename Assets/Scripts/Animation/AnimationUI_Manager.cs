@@ -262,6 +262,23 @@ namespace TiltBrush.FrameAnimation
             NotifyDrawingContentChanged(stroke.Canvas);
         }
 
+        public void NotifyStrokeCanvasChanged(
+            Stroke stroke, CanvasScript previousCanvas, CanvasScript nextCanvas)
+        {
+            if (stroke == null || previousCanvas == nextCanvas) return;
+            EnsureDrawingContentIndex();
+            if (previousCanvas != null)
+            {
+                RemoveIndexedContent(m_CanvasStrokes, previousCanvas, stroke);
+                NotifyDrawingContentChanged(previousCanvas);
+            }
+            if (nextCanvas != null)
+            {
+                AddIndexedContent(m_CanvasStrokes, nextCanvas, stroke);
+                NotifyDrawingContentChanged(nextCanvas);
+            }
+        }
+
         public void NotifyWidgetAdded(GrabWidget widget)
         {
             if (widget?.Canvas == null || widget is CameraPathWidget) return;

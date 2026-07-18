@@ -403,6 +403,8 @@ namespace TiltBrush
                         break;
                     }
             }
+            App.Scene?.animationUI_manager?.NotifyStrokeCanvasChanged(
+                this, prevCanvas, canvas);
         }
 
         /// Set the parent canvas of this stroke, preserving the scene-relative position.
@@ -429,6 +431,7 @@ namespace TiltBrush
             TrTransform leftTransformValue = leftTransform ?? canvas.Pose.inverse * prevCanvas.Pose;
             bool bWasTransformed = leftTransform.HasValue &&
                 !TrTransform.Approximately(App.ActiveCanvas.Pose, leftTransform.Value);
+            bool setParentHandlesNotification = m_Type == Type.NotCreated || !bWasTransformed;
             if (m_Type == Type.NotCreated || !bWasTransformed)
             {
                 SetParent(canvas);
@@ -463,6 +466,11 @@ namespace TiltBrush
                     m_BatchSubset.m_Stroke = this;
                     LeftTransformControlPoints(leftTransform.Value);
                 }
+            }
+            if (!setParentHandlesNotification)
+            {
+                App.Scene?.animationUI_manager?.NotifyStrokeCanvasChanged(
+                    this, prevCanvas, canvas);
             }
         }
 
