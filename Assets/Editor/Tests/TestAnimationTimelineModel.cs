@@ -138,5 +138,79 @@ namespace TiltBrush.Tests
             Assert.AreEqual((0, 0), location);
             CollectionAssert.AreEquivalent(new[] { drawing }, snapshot.DrawingIds);
         }
+
+        [Test]
+        public void ApplyEditNormalizesInsertedAndReplacedFrames()
+        {
+            var model = new AnimationTimelineModel();
+            var firstDrawing = new AnimationDrawingId(1);
+            var secondDrawing = new AnimationDrawingId(2);
+            model.Rebuild(
+                new[] { 3 }, new[] { true }, new[] { false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(firstDrawing), new(firstDrawing), new(AnimationDrawingId.Empty)
+                    }
+                });
+
+            model.ApplyEdit(tracks =>
+            {
+                tracks[0].Frames[1] = new AnimationTimelineModel.FrameValue(secondDrawing);
+                tracks[0].Frames.Insert(2, new AnimationTimelineModel.FrameValue(secondDrawing));
+                tracks[0].Visible = false;
+            });
+
+            Assert.AreEqual(4, model.Tracks[0].Length);
+            Assert.AreEqual(3, model.Tracks[0].Spans.Count);
+            Assert.AreEqual(firstDrawing, model.Tracks[0].Spans[0].Value.DrawingId);
+            Assert.AreEqual(secondDrawing, model.Tracks[0].Spans[1].Value.DrawingId);
+            Assert.AreEqual(2, model.Tracks[0].Spans[1].Duration);
+            Assert.IsFalse(model.Tracks[0].Visible);
+        }
+
+        [Test]
+        public void ApplyEditFailureLeavesSparseModelUnchanged()
+        {
+            var model = new AnimationTimelineModel();
+            var drawing = new AnimationDrawingId(4);
+            model.Rebuild(
+                new[] { 7 }, new[] { true }, new[] { false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue> { new(drawing) }
+                });
+
+            Assert.Throws<System.InvalidOperationException>(() => model.ApplyEdit(tracks =>
+            {
+                tracks[0].Frames.Clear();
+                throw new System.InvalidOperationException("cancel edit");
+            }));
+
+            Assert.AreEqual(1, model.Tracks[0].Length);
+            Assert.IsTrue(model.TryResolve(0, 0, out AnimationTimelineModel.Span span));
+            Assert.AreEqual(drawing, span.Value.DrawingId);
+        }
+
+        [Test]
+        public void ApplyEditRejectsDuplicateStableTrackIds()
+        {
+            var model = new AnimationTimelineModel();
+            model.Rebuild(
+                new[] { 1, 2 }, new[] { true, true }, new[] { false, false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>(),
+                    new List<AnimationTimelineModel.FrameValue>()
+                });
+
+            Assert.Throws<System.InvalidOperationException>(() => model.ApplyEdit(tracks =>
+            {
+                tracks[1].Id = tracks[0].Id;
+            }));
+            Assert.AreEqual(2, model.Tracks.Count);
+            Assert.AreEqual(2, model.Tracks[1].Id);
+        }
     }
 }

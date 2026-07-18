@@ -41,6 +41,25 @@ namespace TiltBrush.FrameAnimation
     /// model while commands and persistence are migrated incrementally.
     public sealed class AnimationTimelineModel
     {
+        /// A temporary, Canvas-independent edit view. It is expanded only for the duration of an
+        /// atomic model edit; committed storage remains normalized spans.
+        public sealed class EditableTrack
+        {
+            public int Id { get; set; }
+            public bool Visible { get; set; }
+            public bool Deleted { get; set; }
+            public List<FrameValue> Frames { get; }
+
+            internal EditableTrack(
+                int id, bool visible, bool deleted, List<FrameValue> frames)
+            {
+                Id = id;
+                Visible = visible;
+                Deleted = deleted;
+                Frames = frames;
+            }
+        }
+
         public sealed class Snapshot
         {
             internal IReadOnlyList<TrackSnapshot> Tracks { get; }
@@ -268,6 +287,58 @@ namespace TiltBrush.FrameAnimation
         public bool TryGetTrackIndex(int trackId, out int trackIndex)
         {
             return m_TrackIdToIndex.TryGetValue(trackId, out trackIndex);
+        }
+
+        /// Applies an edit atomically. The callback operates on an expanded value view, and the
+        /// result is normalized back into sparse spans only if the callback completes.
+        public void ApplyEdit(Action<List<EditableTrack>> edit)
+        {
+            if (edit == null) throw new ArgumentNullException(nameof(edit));
+
+            var editableTracks = new List<EditableTrack>(m_Tracks.Count);
+            foreach (Track track in m_Tracks)
+            {
+                var frames = new List<FrameValue>(track.Length);
+                foreach (Span span in track.Spans)
+                {
+                    for (int frame = span.StartFrame; frame < span.EndFrameExclusive; frame++)
+                    {
+                        frames.Add(span.Value);
+                    }
+                }
+                if (frames.Count != track.Length)
+                {
+                    throw new InvalidOperationException(
+                        $"Track {track.Id} span coverage is {frames.Count}, expected {track.Length}");
+                }
+                editableTracks.Add(new EditableTrack(
+                    track.Id, track.Visible, track.Deleted, frames));
+            }
+
+            edit(editableTracks);
+
+            var trackIds = new List<int>(editableTracks.Count);
+            var trackVisibility = new List<bool>(editableTracks.Count);
+            var trackDeletion = new List<bool>(editableTracks.Count);
+            var framesByTrack = new List<IReadOnlyList<FrameValue>>(editableTracks.Count);
+            var uniqueTrackIds = new HashSet<int>();
+            foreach (EditableTrack track in editableTracks)
+            {
+                if (track == null) throw new InvalidOperationException("An edited track cannot be null");
+                if (!uniqueTrackIds.Add(track.Id))
+                {
+                    throw new InvalidOperationException($"Duplicate animation track ID {track.Id}");
+                }
+                if (track.Frames == null)
+                {
+                    throw new InvalidOperationException($"Animation track {track.Id} has no frame list");
+                }
+                trackIds.Add(track.Id);
+                trackVisibility.Add(track.Visible);
+                trackDeletion.Add(track.Deleted);
+                framesByTrack.Add(track.Frames);
+            }
+            Rebuild(trackIds, trackVisibility, trackDeletion, framesByTrack);
         }
 
         public Snapshot CreateSnapshot()
