@@ -26,6 +26,45 @@ namespace TiltBrush.FrameAnimation
     /// inert unless explicitly enabled on AnimationUI_Manager.
     internal sealed class AnimationPerformanceStats
     {
+#if UNITY_EDITOR
+        internal readonly struct CounterSnapshot
+        {
+            internal long UpdateCalls { get; }
+            internal long FocusFrameCalls { get; }
+            internal long HideFrameVisits { get; }
+            internal long CanvasVisibilityRequests { get; }
+            internal long LocationQueries { get; }
+            internal long LocationCellsVisited { get; }
+            internal long OccupancyQueries { get; }
+            internal long TimelineResets { get; }
+            internal long LayerEvents { get; }
+            internal long GlobalStrokeScans { get; }
+            internal long MeshGeometryUploads { get; }
+            internal long MeshTopologyUploads { get; }
+
+            internal CounterSnapshot(
+                long updateCalls, long focusFrameCalls, long hideFrameVisits,
+                long canvasVisibilityRequests, long locationQueries,
+                long locationCellsVisited, long occupancyQueries, long timelineResets,
+                long layerEvents, long globalStrokeScans, long meshGeometryUploads,
+                long meshTopologyUploads)
+            {
+                UpdateCalls = updateCalls;
+                FocusFrameCalls = focusFrameCalls;
+                HideFrameVisits = hideFrameVisits;
+                CanvasVisibilityRequests = canvasVisibilityRequests;
+                LocationQueries = locationQueries;
+                LocationCellsVisited = locationCellsVisited;
+                OccupancyQueries = occupancyQueries;
+                TimelineResets = timelineResets;
+                LayerEvents = layerEvents;
+                GlobalStrokeScans = globalStrokeScans;
+                MeshGeometryUploads = meshGeometryUploads;
+                MeshTopologyUploads = meshTopologyUploads;
+            }
+        }
+#endif
+
         internal readonly struct OperationTimer : IDisposable
         {
             private readonly string m_Operation;
@@ -205,6 +244,22 @@ namespace TiltBrush.FrameAnimation
         {
             return new OperationTimer(operation, s_InstrumentationEnabled);
         }
+
+#if UNITY_EDITOR
+        internal CounterSnapshot CaptureCounters()
+        {
+            return new CounterSnapshot(
+                m_UpdateCalls, m_FocusFrameCalls, m_HideFrameVisits,
+                m_CanvasVisibilityRequests, m_LocationQueries, m_LocationCellsVisited,
+                m_OccupancyQueries, m_TimelineResets, s_LayerEvents, s_GlobalStrokeScans,
+                s_MeshGeometryUploads, s_MeshTopologyUploads);
+        }
+
+        internal void ResetCounters()
+        {
+            ResetIntervalCounters();
+        }
+#endif
 
         internal void UpdateAndMaybeLog()
         {

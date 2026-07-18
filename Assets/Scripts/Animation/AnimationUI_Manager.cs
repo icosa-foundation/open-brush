@@ -105,6 +105,32 @@ namespace TiltBrush.FrameAnimation
         int FrameOn => Math.Clamp((int)m_FrameOn, 0, GetTimelineLength() - 1);
         internal int AppliedFrameForStats => m_PreviousShowingFrame;
 
+#if UNITY_EDITOR
+        internal void ConfigurePlaybackDiagnosticsForTests(bool enabled, bool differential)
+        {
+            m_PerformanceStats ??= new AnimationPerformanceStats(this);
+            m_LogPerformanceStats = enabled;
+            m_PerformanceStats.Enabled = enabled;
+            m_UseDifferentialPlayback = differential;
+        }
+
+        internal void ResetPlaybackDiagnosticsForTests()
+        {
+            m_PerformanceStats?.ResetCounters();
+        }
+
+        internal AnimationPerformanceStats.CounterSnapshot CapturePlaybackDiagnosticsForTests()
+        {
+            return m_PerformanceStats?.CaptureCounters() ?? default;
+        }
+
+        internal void ApplyPlaybackFrameForTests(int frameIndex)
+        {
+            m_FrameOn = frameIndex;
+            FocusFrame(frameIndex, forceFullVisibilityRefresh: false, playbackUpdate: true);
+        }
+#endif
+
         public struct Frame
         {
             public bool Visible;
