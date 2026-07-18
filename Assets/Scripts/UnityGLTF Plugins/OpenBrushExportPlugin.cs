@@ -695,6 +695,8 @@ namespace TiltBrush
             }
 
             bool replaceBaseColorTexture =
+                textureBakeMode == BrushBaker.TextureBakeMode.UvBaseColor ||
+                textureBakeMode == BrushBaker.TextureBakeMode.UvUnlit ||
                 textureBakeMode == BrushBaker.TextureBakeMode.PetalGradient;
             if ((pbr.BaseColorTexture == null || replaceBaseColorTexture) &&
                 ShouldBakeBaseColorTexture(material, textureBakeMode))
@@ -813,18 +815,6 @@ namespace TiltBrush
                 return false;
             }
 
-            if (textureBakeMode == BrushBaker.TextureBakeMode.PetalGradient)
-            {
-                return true;
-            }
-
-            foreach (var property in kBaseColorTextureProperties)
-            {
-                if (material.HasProperty(property) && material.GetTexture(property) != null)
-                {
-                    return false;
-                }
-            }
             return true;
         }
 
