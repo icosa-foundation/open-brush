@@ -18,6 +18,7 @@ using System;
 using TMPro;
 using System.Linq;
 using UnityEditor;
+using UnityEngine.Profiling;
 
 namespace TiltBrush.FrameAnimation
 {
@@ -41,6 +42,10 @@ namespace TiltBrush.FrameAnimation
         bool m_AnimationMode = true;
         float m_SliderFrameSize = 0.12f; // Visual size of frame on timeline
         float m_TimelineOffset;
+
+        [Header("Animation Performance Diagnostics")]
+        [SerializeField] bool m_LogPerformanceStats;
+        AnimationPerformanceStats m_PerformanceStats;
 
         public List<Track> Timeline;
         public GameObject timelineRef;
@@ -145,6 +150,10 @@ namespace TiltBrush.FrameAnimation
         void Awake()
         {
             App.Scene.animationUI_manager = this;
+            m_PerformanceStats = new AnimationPerformanceStats(this)
+            {
+                Enabled = m_LogPerformanceStats
+            };
         }
 
         public void StartTimeline()
@@ -172,11 +181,13 @@ namespace TiltBrush.FrameAnimation
         {
             foreach (Track track in Timeline)
             {
+                m_PerformanceStats?.RecordHideFrameVisit();
                 if (hidingFrame >= track.Frames.Count) { continue; }
                 if (frameOn < track.Frames.Count && track.Frames[hidingFrame].Canvas.Equals(track.Frames[frameOn].Canvas)) continue;
 
                 Frame thisFrame = track.Frames[hidingFrame];
 
+                m_PerformanceStats?.RecordCanvasVisibilityRequest();
                 App.Scene.HideCanvas(thisFrame.Canvas);
                 thisFrame.Visible = false;
                 track.Frames[hidingFrame] = thisFrame;
@@ -193,10 +204,12 @@ namespace TiltBrush.FrameAnimation
                 Frame thisFrame = Timeline[i].Frames[frameIndex];
                 if (Timeline[i].Visible && !thisFrame.Deleted && !Timeline[i].Deleted)
                 {
+                    m_PerformanceStats?.RecordCanvasVisibilityRequest();
                     App.Scene.ShowCanvas(thisFrame.Canvas);
                 }
                 else
                 {
+                    m_PerformanceStats?.RecordCanvasVisibilityRequest();
                     App.Scene.HideCanvas(thisFrame.Canvas);
                     thisFrame.Visible = false;
                 }
@@ -207,6 +220,7 @@ namespace TiltBrush.FrameAnimation
 
         public bool GetFrameFilled(int track, int frame)
         {
+            m_PerformanceStats?.RecordOccupancyQuery();
             if (track < 0 || track >= Timeline.Count ||
                 frame < 0 || frame >= Timeline[track].Frames.Count)
             {
@@ -214,15 +228,19 @@ namespace TiltBrush.FrameAnimation
             }
 
             Frame timelineFrame = Timeline[track].Frames[frame];
-            CanvasScript canvas = timelineFrame.Canvas;
+            return timelineFrame.AnimatedPath != null || GetFrameFilledWithoutStats(timelineFrame.Canvas);
+        }
+
+        internal bool GetFrameFilledWithoutStats(CanvasScript canvas)
+        {
+            if (canvas == null) return false;
             bool hasActiveStrokes = SketchMemoryScript.m_Instance.GetMemoryList.Any(stroke =>
                 stroke.Canvas == canvas && stroke.IsGeometryEnabled &&
                 (stroke.m_Type != Stroke.Type.BatchedBrushStroke ||
                     stroke.m_BatchSubset.m_VertLength > 0));
             bool hasActiveWidgets = canvas.GetComponentsInChildren<GrabWidget>(true)
                 .Any(widget => widget.gameObject.activeSelf);
-            return timelineFrame.AnimatedPath != null ||
-                hasActiveStrokes || hasActiveWidgets;
+            return hasActiveStrokes || hasActiveWidgets;
         }
 
         public bool GetFrameFilled(CanvasScript canvas)
@@ -390,16 +408,20 @@ namespace TiltBrush.FrameAnimation
 
         public (int, int) GetCanvasLocation(CanvasScript canvas)
         {
+            int cellsVisited = 0;
             for (int trackNum = 0; trackNum < Timeline.Count; trackNum++)
             {
                 for (int frameNum = 0; frameNum < Timeline[trackNum].Frames.Count; frameNum++)
                 {
+                    cellsVisited++;
                     if (canvas.Equals(Timeline[trackNum].Frames[frameNum].Canvas))
                     {
+                        m_PerformanceStats?.RecordLocationQuery(cellsVisited);
                         return (trackNum, frameNum);
                     }
                 }
             }
+            m_PerformanceStats?.RecordLocationQuery(cellsVisited);
             return (-1, -1);
         }
 
@@ -502,6 +524,7 @@ namespace TiltBrush.FrameAnimation
 
         public void ResetTimeline()
         {
+            m_PerformanceStats?.RecordTimelineReset();
             UpdateNodes();
             UpdateTimelineSlider();
             UpdateTimelineNob();
@@ -798,6 +821,8 @@ namespace TiltBrush.FrameAnimation
 
         private void FocusFrame(int FrameIndex, bool timelineInput = false)
         {
+            m_PerformanceStats?.RecordFocusFrame();
+            Profiler.BeginSample("OB_ANIM_SCALE.FocusFrame");
             for (int i = 0; i < GetTimelineLength(); i++)
             {
                 if (i == FrameIndex)
@@ -829,6 +854,7 @@ namespace TiltBrush.FrameAnimation
             ShowFrame(FrameIndex);
             UpdateUI(timelineInput);
             App.Scene.TriggerLayersUpdate();
+            Profiler.EndSample();
         }
 
         public DeleteFrameOperation RemoveKeyFrame(int trackNum = -1, int frameNum = -1)
@@ -1600,6 +1626,9 @@ namespace TiltBrush.FrameAnimation
 
         void Update()
         {
+            m_PerformanceStats ??= new AnimationPerformanceStats(this);
+            m_PerformanceStats.Enabled = m_LogPerformanceStats;
+            m_PerformanceStats.RecordUpdate();
             if (m_LastCanvas != App.Scene.ActiveCanvas)
             {
                 m_PreviousCanvasBatches = 0;
@@ -1632,6 +1661,8 @@ namespace TiltBrush.FrameAnimation
                 // Update layer animation transforms
                 UpdateLayerTransforms();
             }
+
+            m_PerformanceStats.UpdateAndMaybeLog();
         }
     }
 } // namespace TiltBrush.FrameAnimation
