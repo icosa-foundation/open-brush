@@ -17,6 +17,8 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
+using UnityEngine.Rendering;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace TiltBrush.FrameAnimation
 {
@@ -24,6 +26,86 @@ namespace TiltBrush.FrameAnimation
     /// inert unless explicitly enabled on AnimationUI_Manager.
     internal sealed class AnimationPerformanceStats
     {
+        internal readonly struct OperationTimer : IDisposable
+        {
+            private readonly string m_Operation;
+            private readonly Stopwatch m_Stopwatch;
+
+            internal OperationTimer(string operation, bool enabled)
+            {
+                m_Operation = operation;
+                m_Stopwatch = enabled ? Stopwatch.StartNew() : null;
+            }
+
+            public void Dispose()
+            {
+                if (m_Stopwatch == null) return;
+                m_Stopwatch.Stop();
+                UnityEngine.Debug.Log(
+                    $"{LogPrefix} operation={m_Operation} elapsedMs={m_Stopwatch.Elapsed.TotalMilliseconds:F3}");
+            }
+        }
+
+        private readonly struct DrawingGeometryStats
+        {
+            internal int Batches { get; }
+            internal int BatchPools { get; }
+            internal int Vertices { get; }
+            internal int Indices { get; }
+            internal int Meshes { get; }
+            internal int Renderers { get; }
+            internal int MaterialSlots { get; }
+            internal int MaterialInstances { get; }
+            internal long CpuMeshBytes { get; }
+            internal long EstimatedGpuMeshBytes { get; }
+
+            internal DrawingGeometryStats(CanvasScript canvas)
+            {
+                Batches = canvas.BatchManager?.CountBatches() ?? 0;
+                BatchPools = canvas.BatchManager?.GetNumBatchPools() ?? 0;
+                Vertices = canvas.BatchManager?.CountAllBatchVertices() ?? 0;
+
+                MeshFilter[] filters = canvas.GetComponentsInChildren<MeshFilter>(true);
+                List<Mesh> meshes = filters.Select(filter => filter.sharedMesh)
+                    .Where(mesh => mesh != null)
+                    .Distinct()
+                    .ToList();
+                Meshes = meshes.Count;
+                Renderers = canvas.GetComponentsInChildren<Renderer>(true).Length;
+                Renderer[] renderers = canvas.GetComponentsInChildren<Renderer>(true);
+                MaterialSlots = renderers.Sum(renderer => renderer.sharedMaterials.Length);
+                MaterialInstances = renderers.SelectMany(renderer => renderer.sharedMaterials)
+                    .Where(material => material != null)
+                    .Distinct()
+                    .Count();
+                Indices = meshes.Sum(GetMeshIndexCount);
+                CpuMeshBytes = meshes.Sum(mesh => Profiler.GetRuntimeMemorySizeLong(mesh));
+                EstimatedGpuMeshBytes = meshes.Sum(GetEstimatedGpuMeshBytes);
+            }
+
+            private static int GetMeshIndexCount(Mesh mesh)
+            {
+                long count = 0;
+                for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+                {
+                    count += (long)mesh.GetIndexCount(subMesh);
+                }
+                return count > int.MaxValue ? int.MaxValue : (int)count;
+            }
+
+            private static long GetEstimatedGpuMeshBytes(Mesh mesh)
+            {
+                long vertexBytes = 0;
+                for (int stream = 0; stream < mesh.vertexBufferCount; stream++)
+                {
+                    vertexBytes += (long)mesh.vertexCount * mesh.GetVertexBufferStride(stream);
+                }
+                long indexBytes = (long)GetMeshIndexCount(mesh) *
+                    (mesh.indexFormat == IndexFormat.UInt32 ? sizeof(uint) : sizeof(ushort));
+                return vertexBytes + indexBytes;
+            }
+        }
+
         internal const string LogPrefix = "[OB_ANIM_SCALE]";
         private const float k_LogIntervalSeconds = 5f;
 
@@ -114,6 +196,11 @@ namespace TiltBrush.FrameAnimation
             if (s_InstrumentationEnabled) s_GlobalStrokeScans++;
         }
 
+        internal static OperationTimer MeasureOperation(string operation)
+        {
+            return new OperationTimer(operation, s_InstrumentationEnabled);
+        }
+
         internal void UpdateAndMaybeLog()
         {
             if (!Enabled || !Debug.isDebugBuild || Time.unscaledTime < m_NextLogTime) return;
@@ -142,35 +229,33 @@ namespace TiltBrush.FrameAnimation
                     .Select(frame => frame.Canvas)
                     .Distinct()
                     .Count();
-            int batches = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountBatches() ?? 0);
-            int batchPools = uniqueCanvases.Sum(canvas => canvas.BatchManager?.GetNumBatchPools() ?? 0);
-            int vertices = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountAllBatchVertices() ?? 0);
-            int triangles = uniqueCanvases.Sum(canvas => canvas.BatchManager?.CountAllBatchTriangles() ?? 0);
-            int meshes = uniqueCanvases.Sum(canvas =>
-                canvas.GetComponentsInChildren<MeshFilter>(true).Length);
-            int renderers = uniqueCanvases.Sum(canvas =>
-                canvas.GetComponentsInChildren<Renderer>(true).Length);
-            int materialSlots = uniqueCanvases.Sum(canvas =>
-                canvas.GetComponentsInChildren<Renderer>(true)
-                    .Sum(renderer => renderer.sharedMaterials.Length));
-            List<Mesh> meshAssets = uniqueCanvases
-                .SelectMany(canvas => canvas.GetComponentsInChildren<MeshFilter>(true))
-                .Select(filter => filter.sharedMesh)
-                .Where(mesh => mesh != null)
-                .Distinct()
+            List<(CanvasScript Canvas, AnimationDrawingId Id)> drawings = uniqueCanvases
+                .Select(canvas => (Canvas: canvas, HasId: m_Manager.TryGetDrawingIdForStats(
+                    canvas, out AnimationDrawingId id), Id: id))
+                .Where(item => item.HasId)
+                .Select(item => (item.Canvas, item.Id))
                 .ToList();
-            long meshBytes = meshAssets.Sum(mesh => Profiler.GetRuntimeMemorySizeLong(mesh));
-            int materialInstances = uniqueCanvases
-                .SelectMany(canvas => canvas.GetComponentsInChildren<Renderer>(true))
-                .SelectMany(renderer => renderer.sharedMaterials)
-                .Where(material => material != null)
-                .Distinct()
-                .Count();
+            var drawingStats = drawings.ToDictionary(
+                drawing => drawing.Canvas,
+                drawing => new DrawingGeometryStats(drawing.Canvas));
+            int batches = drawingStats.Values.Sum(stats => stats.Batches);
+            int batchPools = drawingStats.Values.Sum(stats => stats.BatchPools);
+            int vertices = drawingStats.Values.Sum(stats => stats.Vertices);
+            int indices = drawingStats.Values.Sum(stats => stats.Indices);
+            int meshes = drawingStats.Values.Sum(stats => stats.Meshes);
+            int renderers = drawingStats.Values.Sum(stats => stats.Renderers);
+            int materialSlots = drawingStats.Values.Sum(stats => stats.MaterialSlots);
+            int materialInstances = drawingStats.Values.Sum(stats => stats.MaterialInstances);
+            long meshBytes = drawingStats.Values.Sum(stats => stats.CpuMeshBytes);
+            long estimatedGpuMeshBytes = drawingStats.Values.Sum(
+                stats => stats.EstimatedGpuMeshBytes);
             int sceneCanvases = App.Scene?.AllCanvases.Count() ?? 0;
-            int visibleCanvases = uniqueCanvases.Count(canvas => canvas.gameObject.activeInHierarchy);
+            List<(CanvasScript Canvas, AnimationDrawingId Id)> visibleDrawings = drawings
+                .Where(drawing => drawing.Canvas.gameObject.activeInHierarchy)
+                .ToList();
             int strokes = 0;
             int widgets = 0;
-            foreach (CanvasScript canvas in uniqueCanvases)
+            foreach ((CanvasScript canvas, AnimationDrawingId _) in drawings)
             {
                 m_Manager.GetDrawingContentCountsForStats(
                     canvas, out int drawingStrokes, out int drawingWidgets);
@@ -179,7 +264,17 @@ namespace TiltBrush.FrameAnimation
             }
             long managedBytes = GC.GetTotalMemory(false);
 
-            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} sceneCanvases={sceneCanvases} uniqueDrawingCanvases={uniqueCanvases.Count} visibleCanvases={visibleCanvases} emptyCanvases={emptyCanvases} strokes={strokes} widgets={widgets} meshes={meshes} meshBytes={meshBytes} renderers={renderers} materialSlots={materialSlots} materialInstances={materialInstances} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} meshGeometryUploads={s_MeshGeometryUploads} meshTopologyUploads={s_MeshTopologyUploads} layerEvents={s_LayerEvents} globalStrokeScans={s_GlobalStrokeScans} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} managedBytes={managedBytes} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()} unusedReservedBytes={Profiler.GetTotalUnusedReservedMemoryLong()}");
+            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} sceneCanvases={sceneCanvases} uniqueDrawingCanvases={drawings.Count} visibleDrawingCanvases={visibleDrawings.Count} emptyCanvases={emptyCanvases} strokes={strokes} widgets={widgets} meshes={meshes} meshBytes={meshBytes} estimatedGpuMeshBytes={estimatedGpuMeshBytes} renderers={renderers} materialSlots={materialSlots} materialInstances={materialInstances} batchPools={batchPools} batches={batches} vertices={vertices} indices={indices} meshGeometryUploads={s_MeshGeometryUploads} meshTopologyUploads={s_MeshTopologyUploads} layerEvents={s_LayerEvents} globalStrokeScans={s_GlobalStrokeScans} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} managedBytes={managedBytes} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()} unusedReservedBytes={Profiler.GetTotalUnusedReservedMemoryLong()}");
+
+            foreach ((CanvasScript canvas, AnimationDrawingId drawingId) in drawings)
+            {
+                DrawingGeometryStats stats = drawingStats[canvas];
+                m_Manager.GetDrawingContentCountsForStats(
+                    canvas, out int drawingStrokes, out int drawingWidgets);
+                Debug.Log($"{LogPrefix} drawing={drawingId.Value} visible={canvas.gameObject.activeInHierarchy} strokes={drawingStrokes} widgets={drawingWidgets} batchPools={stats.BatchPools} batches={stats.Batches} meshes={stats.Meshes} renderers={stats.Renderers} materialSlots={stats.MaterialSlots} materialInstances={stats.MaterialInstances} vertices={stats.Vertices} indices={stats.Indices} meshBytes={stats.CpuMeshBytes} estimatedGpuMeshBytes={stats.EstimatedGpuMeshBytes}");
+            }
+
+            Debug.Log($"{LogPrefix} visibleFrame={m_Manager.AppliedFrameForStats} drawings={visibleDrawings.Count} batches={visibleDrawings.Sum(drawing => drawingStats[drawing.Canvas].Batches)} vertices={visibleDrawings.Sum(drawing => drawingStats[drawing.Canvas].Vertices)} indices={visibleDrawings.Sum(drawing => drawingStats[drawing.Canvas].Indices)} meshBytes={visibleDrawings.Sum(drawing => drawingStats[drawing.Canvas].CpuMeshBytes)} estimatedGpuMeshBytes={visibleDrawings.Sum(drawing => drawingStats[drawing.Canvas].EstimatedGpuMeshBytes)}");
 
             ResetIntervalCounters();
         }

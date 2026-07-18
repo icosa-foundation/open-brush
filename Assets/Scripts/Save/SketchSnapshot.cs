@@ -21,6 +21,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using ICSharpCode.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
+using TiltBrush.FrameAnimation;
 
 namespace TiltBrush
 {
@@ -94,6 +95,8 @@ namespace TiltBrush
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("saveSnapshot");
             IDisposable animationDrawingLease = null;
             try
             {

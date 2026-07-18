@@ -103,6 +103,7 @@ namespace TiltBrush.FrameAnimation
         public GameObject frameNotchesWidget;
 
         int FrameOn => Math.Clamp((int)m_FrameOn, 0, GetTimelineLength() - 1);
+        internal int AppliedFrameForStats => m_PreviousShowingFrame;
 
         public struct Frame
         {
@@ -635,6 +636,13 @@ namespace TiltBrush.FrameAnimation
                 : null;
         }
 
+        internal bool TryGetDrawingIdForStats(
+            CanvasScript canvas, out AnimationDrawingId drawingId)
+        {
+            drawingId = default;
+            return canvas != null && m_CanvasDrawingIds.TryGetValue(canvas, out drawingId);
+        }
+
         private void DestroyTimelineCanvas(
             CanvasScript canvas, IEnumerable<Stroke> createdStrokes = null, bool force = false)
         {
@@ -728,19 +736,14 @@ namespace TiltBrush.FrameAnimation
 
         private void PromoteEmptyCanvas(CanvasScript populatedCanvas)
         {
-            int trackIndex = -1;
-            for (int i = 0; i < Timeline.Count; i++)
+            EnsureSparseTimeline();
+            if (!m_EmptyCanvasTrackIds.TryGetValue(populatedCanvas, out int trackId) ||
+                !m_SparseTimeline.TryGetTrackIndex(trackId, out int trackIndex))
             {
-                if (Timeline[i].Frames.Any(frame => frame.Canvas == populatedCanvas))
-                {
-                    trackIndex = i;
-                    break;
-                }
+                return;
             }
-            if (trackIndex < 0) return;
 
             int selectedFrame = Math.Clamp(FrameOn, 0, Timeline[trackIndex].Frames.Count - 1);
-            EnsureSparseTimeline();
             if (!m_SparseTimeline.TryResolve(
                 trackIndex, selectedFrame, out AnimationTimelineModel.Span selectedSpan))
             {
@@ -1132,6 +1135,8 @@ namespace TiltBrush.FrameAnimation
             IReadOnlyList<IReadOnlyList<int>> frameLengths,
             IReadOnlyList<bool> trackVisibility)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("legacyTimelineLoad");
             if (frameLengths == null) throw new ArgumentNullException(nameof(frameLengths));
             if (trackVisibility == null) throw new ArgumentNullException(nameof(trackVisibility));
             if (frameLengths.Count != trackVisibility.Count)
@@ -1790,6 +1795,8 @@ namespace TiltBrush.FrameAnimation
 
         public DeleteFrameOperation RemoveKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("delete");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
@@ -1929,6 +1936,8 @@ namespace TiltBrush.FrameAnimation
 
         public AddFrameOperation AddKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("add");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             (int, int) insertingAt;
@@ -1998,6 +2007,8 @@ namespace TiltBrush.FrameAnimation
 
         public FrameLengthOperation ExtendKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("extend");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             if (!GetFrameFilled(index.Item1, index.Item2))
             {
@@ -2021,6 +2032,8 @@ namespace TiltBrush.FrameAnimation
 
         public FrameLengthOperation ReduceKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("reduce");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             if (frameLength <= 1)
@@ -2485,6 +2498,8 @@ namespace TiltBrush.FrameAnimation
 
         public KeyFrameOperation SplitKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("split");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
@@ -2519,6 +2534,8 @@ namespace TiltBrush.FrameAnimation
 
         public KeyFrameOperation DuplicateKeyFrame(int trackNum = -1, int frameNum = -1)
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("duplicate");
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
