@@ -574,6 +574,7 @@ namespace TiltBrush.FrameAnimation
                 return;
             }
 
+            var expectedDrawingLocations = new Dictionary<AnimationDrawingId, (int, int)>();
             for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
             {
                 Track denseTrack = Timeline[trackIndex];
@@ -590,8 +591,33 @@ namespace TiltBrush.FrameAnimation
                 for (int frameIndex = 0; frameIndex < denseTrack.Frames.Count; frameIndex++)
                 {
                     Frame denseFrame = denseTrack.Frames[frameIndex];
+                    AnimationDrawingId drawingId;
+                    if (denseFrame.EmptySpanId != 0)
+                    {
+                        if (denseFrame.Canvas == null ||
+                            !m_EmptyCanvases.Contains(denseFrame.Canvas))
+                        {
+                            Debug.LogError(
+                                $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=emptyCanvasRegistry track={trackIndex} frame={frameIndex}");
+                            return;
+                        }
+                        drawingId = AnimationDrawingId.Empty;
+                    }
+                    else if (denseFrame.Canvas == null ||
+                        !m_CanvasDrawingIds.TryGetValue(denseFrame.Canvas, out drawingId) ||
+                        !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript indexedCanvas) ||
+                        indexedCanvas != denseFrame.Canvas)
+                    {
+                        Debug.LogError(
+                            $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=drawingRegistry track={trackIndex} frame={frameIndex}");
+                        return;
+                    }
+                    if (!drawingId.IsEmpty && !expectedDrawingLocations.ContainsKey(drawingId))
+                    {
+                        expectedDrawingLocations.Add(drawingId, (trackIndex, frameIndex));
+                    }
                     var expected = new AnimationTimelineModel.FrameValue(
-                        GetOrCreateDrawingId(denseFrame.Canvas), denseFrame.Deleted,
+                        drawingId, denseFrame.Deleted,
                         denseFrame.FrameExists, denseFrame.AnimatedPath, denseFrame.EmptySpanId);
                     if (!sparseTrack.TryResolve(
                             frameIndex, out AnimationTimelineModel.Span sparseSpan) ||
@@ -604,7 +630,79 @@ namespace TiltBrush.FrameAnimation
                 }
             }
 
+            foreach (KeyValuePair<AnimationDrawingId, (int, int)> expected in
+                expectedDrawingLocations)
+            {
+                if (!m_SparseTimeline.TryGetDrawingLocation(
+                        expected.Key, out (int, int) indexedLocation) ||
+                    indexedLocation != expected.Value)
+                {
+                    Debug.LogError(
+                        $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=drawingLocation drawing={expected.Key.Value}");
+                    return;
+                }
+            }
+
             Debug.Log($"{AnimationPerformanceStats.LogPrefix} sparseValidation=passed");
+            ValidateDrawingContentIndexes();
+        }
+
+        private void ValidateDrawingContentIndexes()
+        {
+            EnsureDrawingContentIndex();
+            var expectedStrokes = new Dictionary<CanvasScript, HashSet<Stroke>>();
+            if (SketchMemoryScript.m_Instance != null)
+            {
+                AnimationPerformanceStats.RecordGlobalStrokeScan();
+                foreach (Stroke stroke in SketchMemoryScript.m_Instance.GetMemoryList)
+                {
+                    if (stroke.Canvas != null)
+                    {
+                        AddIndexedContent(expectedStrokes, stroke.Canvas, stroke);
+                    }
+                }
+            }
+
+            var expectedWidgets = new Dictionary<CanvasScript, HashSet<GrabWidget>>();
+            if (Timeline != null)
+            {
+                var canvasesToValidate = new HashSet<CanvasScript>(Timeline
+                    .SelectMany(track => track.Frames)
+                    .Select(frame => frame.Canvas)
+                    .Where(canvas => canvas != null));
+                canvasesToValidate.UnionWith(
+                    m_DrawingCanvases.Values.Where(canvas => canvas != null));
+                if (App.Scene?.SelectionCanvas != null)
+                {
+                    canvasesToValidate.Add(App.Scene.SelectionCanvas);
+                }
+                foreach (CanvasScript canvas in canvasesToValidate)
+                {
+                    foreach (GrabWidget widget in canvas.GetComponentsInChildren<GrabWidget>(true))
+                    {
+                        if (widget is CameraPathWidget) continue;
+                        AddIndexedContent(expectedWidgets, canvas, widget);
+                    }
+                }
+            }
+
+            if (!ContentIndexesMatch(m_CanvasStrokes, expectedStrokes) ||
+                !ContentIndexesMatch(m_CanvasWidgets, expectedWidgets))
+            {
+                Debug.LogError(
+                    $"{AnimationPerformanceStats.LogPrefix} indexMismatch=drawingContent");
+                return;
+            }
+            Debug.Log($"{AnimationPerformanceStats.LogPrefix} indexValidation=passed");
+        }
+
+        private static bool ContentIndexesMatch<T>(
+            Dictionary<CanvasScript, HashSet<T>> actual,
+            Dictionary<CanvasScript, HashSet<T>> expected)
+        {
+            return actual.Count == expected.Count && expected.All(pair =>
+                actual.TryGetValue(pair.Key, out HashSet<T> contents) &&
+                contents.SetEquals(pair.Value));
         }
 #endif
 
@@ -1174,14 +1272,18 @@ namespace TiltBrush.FrameAnimation
         public (int, int) GetCanvasLocation(CanvasScript canvas)
         {
             EnsureSparseTimeline();
-            m_PerformanceStats?.RecordLocationQuery(canvas != null ? 1 : 0);
+            m_PerformanceStats?.RecordLocationQuery(0);
             if (canvas == null) return (-1, -1);
             if (m_EmptyCanvases.Contains(canvas))
             {
                 if (!m_EmptyCanvasTrackIds.TryGetValue(canvas, out int trackId) ||
                     !m_SparseTimeline.TryGetTrackIndex(trackId, out int trackIndex))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    return RebuildTimelineIndexesFromCompatibilityView(canvas);
+#else
                     return (-1, -1);
+#endif
                 }
                 if (!m_ShareEmptyCanvases)
                 {
@@ -1205,7 +1307,11 @@ namespace TiltBrush.FrameAnimation
 
             if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return RebuildTimelineIndexesFromCompatibilityView(canvas);
+#else
                 return (-1, -1);
+#endif
             }
             if (m_SparseTimeline.TryGetDrawingLocation(drawingId, out (int, int) location) &&
                 LocationStillMatches(canvas, location))
@@ -1213,8 +1319,69 @@ namespace TiltBrush.FrameAnimation
                 return location;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return RebuildTimelineIndexesFromCompatibilityView(canvas);
+#else
             return (-1, -1);
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private (int, int) RebuildTimelineIndexesFromCompatibilityView(CanvasScript canvas)
+        {
+            int cellsVisited = 0;
+            (int, int) scannedLocation = (-1, -1);
+            if (Timeline != null)
+            {
+                for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
+                {
+                    for (int frameIndex = 0; frameIndex < Timeline[trackIndex].Frames.Count;
+                        frameIndex++)
+                    {
+                        cellsVisited++;
+                        if (Timeline[trackIndex].Frames[frameIndex].Canvas != canvas) continue;
+                        scannedLocation = (trackIndex, frameIndex);
+                        break;
+                    }
+                    if (scannedLocation.Item1 >= 0) break;
+                }
+            }
+            m_PerformanceStats?.RecordLocationCellsVisited(cellsVisited);
+            if (scannedLocation.Item1 < 0) return scannedLocation;
+
+            Debug.LogWarning(
+                $"{AnimationPerformanceStats.LogPrefix} rebuildingTimelineIndexes canvas={canvas.name}");
+            RebuildEmptyCanvasRegistry();
+            if (!m_EmptyCanvases.Contains(canvas))
+            {
+                if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+                {
+                    KeyValuePair<AnimationDrawingId, CanvasScript> reverseEntry =
+                        m_DrawingCanvases.FirstOrDefault(pair => pair.Value == canvas);
+                    if (!reverseEntry.Key.IsEmpty)
+                    {
+                        drawingId = reverseEntry.Key;
+                        m_CanvasDrawingIds[canvas] = drawingId;
+                    }
+                    else
+                    {
+                        drawingId = GetOrCreateDrawingId(canvas);
+                    }
+                }
+                m_DrawingCanvases[drawingId] = canvas;
+            }
+            InvalidateTimelineStructure();
+            EnsureSparseTimeline();
+            if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId rebuiltDrawingId))
+            {
+                return scannedLocation;
+            }
+            return m_SparseTimeline.TryGetDrawingLocation(
+                rebuiltDrawingId, out (int, int) rebuiltLocation)
+                ? rebuiltLocation
+                : scannedLocation;
+        }
+#endif
 
         public (int, int) GetSerializableTimelineLocation((int, int) runtimeLocation)
         {

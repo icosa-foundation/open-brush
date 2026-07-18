@@ -169,6 +169,11 @@ namespace TiltBrush.FrameAnimation
             m_LocationCellsVisited += cellsVisited;
         }
 
+        internal void RecordLocationCellsVisited(int cellsVisited)
+        {
+            if (Enabled) m_LocationCellsVisited += cellsVisited;
+        }
+
         internal void RecordOccupancyQuery()
         {
             if (Enabled) m_OccupancyQueries++;
