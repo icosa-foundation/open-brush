@@ -298,6 +298,48 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator MissingDrawingIndexRecoversFromCompatibilityViewOnce()
+        {
+            Debug.Log($"{kLogPrefix} test=indexRecovery state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new List<int> { 1, 1 } },
+                new List<bool> { true });
+            CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 1);
+            Assert.AreEqual((0, 1), manager.GetCanvasLocation(drawingCanvas));
+
+            FieldInfo drawingIndexField = typeof(AnimationUI_Manager).GetField(
+                "m_CanvasDrawingIds", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(drawingIndexField);
+            var drawingIndex =
+                (Dictionary<CanvasScript, AnimationDrawingId>)drawingIndexField.GetValue(manager);
+            Assert.IsTrue(drawingIndex.Remove(drawingCanvas));
+
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: true, differential: true);
+            manager.ResetPlaybackDiagnosticsForTests();
+            Assert.AreEqual((0, 1), manager.GetCanvasLocation(drawingCanvas));
+            AnimationPerformanceStats.CounterSnapshot recoveryCounters =
+                manager.CapturePlaybackDiagnosticsForTests();
+            Assert.Greater(recoveryCounters.LocationCellsVisited, 0,
+                "A missing index entry should use the development compatibility scan");
+
+            manager.ResetPlaybackDiagnosticsForTests();
+            Assert.AreEqual((0, 1), manager.GetCanvasLocation(drawingCanvas));
+            AnimationPerformanceStats.CounterSnapshot indexedCounters =
+                manager.CapturePlaybackDiagnosticsForTests();
+            Assert.AreEqual(0, indexedCounters.LocationCellsVisited,
+                "The repaired index should make the next query constant-time");
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: false, differential: true);
+
+            yield return null;
+            Debug.Log($"{kLogPrefix} test=indexRecovery state=passed");
+        }
+
+        [UnityTest]
         public IEnumerator LongHeldTimelineUsesSparseSpansAndDifferentialTraversal()
         {
             const int trackCount = 8;

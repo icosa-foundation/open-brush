@@ -24,6 +24,7 @@
 - [x] Verify that layer/frame coordinate consumers materialize only the requested sparse span and preserve legacy frame-length metadata.
 - [x] Verify that disabling empty-Canvas sharing changes only compatibility hierarchy count while sparse spans, track visibility, and persistence metadata remain equivalent.
 - [x] Verify differential and legacy playback produce identical active drawing sets across distinct drawings and hidden tracks.
+- [x] Verify a missing Canvas/drawing index entry recovers through the development compatibility scan and subsequent queries return to indexed lookup.
 
 ## Phase 3 manual working-state gate
 
