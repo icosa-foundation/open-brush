@@ -45,6 +45,56 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void LongEmptyDurationUsesOneSpanPerTrack()
+        {
+            const int duration = 10000;
+            var emptyFrames = Enumerable.Repeat(
+                new AnimationTimelineModel.FrameValue(
+                    AnimationDrawingId.Empty, spanIdentity: 17), duration).ToArray();
+            var model = new AnimationTimelineModel();
+
+            model.Rebuild(
+                new[] { 1, 2, 3 }, new[] { true, true, true },
+                new[] { false, false, false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    emptyFrames, emptyFrames, emptyFrames
+                });
+
+            Assert.AreEqual(duration, model.Length);
+            Assert.AreEqual(3, model.Tracks.Count);
+            Assert.IsTrue(model.Tracks.All(track => track.Spans.Count == 1));
+            Assert.IsTrue(model.Tracks.All(track => track.Spans[0].Duration == duration));
+            Assert.IsTrue(model.Tracks.All(track => track.Spans[0].Value.DrawingId.IsEmpty));
+        }
+
+        [Test]
+        public void RebuildRejectsDuplicateStableTrackIdsWithoutChangingExistingModel()
+        {
+            var drawing = new AnimationDrawingId(8);
+            var model = new AnimationTimelineModel();
+            model.Rebuild(
+                new[] { 9 }, new[] { true }, new[] { false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue> { new(drawing) }
+                });
+
+            Assert.Throws<System.ArgumentException>(() => model.Rebuild(
+                new[] { 4, 4 }, new[] { true, true }, new[] { false, false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>(),
+                    new List<AnimationTimelineModel.FrameValue>()
+                }));
+
+            Assert.AreEqual(1, model.Tracks.Count);
+            Assert.AreEqual(9, model.Tracks[0].Id);
+            Assert.IsTrue(model.TryResolve(0, 0, out AnimationTimelineModel.Span span));
+            Assert.AreEqual(drawing, span.Value.DrawingId);
+        }
+
+        [Test]
         public void ResolveReturnsContainingSpanAndStableDrawingLocation()
         {
             var model = new AnimationTimelineModel();

@@ -240,6 +240,19 @@ namespace TiltBrush.FrameAnimation
             {
                 throw new ArgumentException("Track metadata and frame lists must have equal lengths");
             }
+            var uniqueTrackIds = new HashSet<int>();
+            for (int trackIndex = 0; trackIndex < frames.Count; trackIndex++)
+            {
+                if (frames[trackIndex] == null)
+                {
+                    throw new ArgumentException($"Animation track {trackIds[trackIndex]} has no frames");
+                }
+                if (!uniqueTrackIds.Add(trackIds[trackIndex]))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate animation track ID {trackIds[trackIndex]}");
+                }
+            }
 
             m_Tracks.Clear();
             m_TrackIdToIndex.Clear();
