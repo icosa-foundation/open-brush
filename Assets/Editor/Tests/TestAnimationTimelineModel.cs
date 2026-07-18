@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
 
@@ -233,6 +234,42 @@ namespace TiltBrush.Tests
             Assert.IsTrue(model.TryGetSerializableTrackIndex(2, out int third));
             Assert.AreEqual(1, third);
             Assert.AreEqual(30, model.Tracks[2].Id);
+        }
+
+        [Test]
+        public void PersistenceProjectionUsesSpanStartsAndExcludesEmptyAndDeletedTracks()
+        {
+            var firstDrawing = new AnimationDrawingId(4);
+            var deletedDrawing = new AnimationDrawingId(5);
+            var lastDrawing = new AnimationDrawingId(6);
+            var model = new AnimationTimelineModel();
+            model.Rebuild(
+                new[] { 1, 2, 3 }, new[] { true, true, false },
+                new[] { false, true, false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(firstDrawing), new(firstDrawing),
+                        new(AnimationDrawingId.Empty, spanIdentity: 1)
+                    },
+                    new List<AnimationTimelineModel.FrameValue> { new(deletedDrawing) },
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(AnimationDrawingId.Empty, spanIdentity: 2), new(lastDrawing)
+                    }
+                });
+
+            List<AnimationTimelineModel.SerializableDrawingLocation> locations =
+                model.EnumerateSerializableDrawingLocations().ToList();
+
+            Assert.AreEqual(2, locations.Count);
+            Assert.AreEqual(firstDrawing, locations[0].DrawingId);
+            Assert.AreEqual(0, locations[0].Frame);
+            Assert.AreEqual(0, locations[0].Track);
+            Assert.AreEqual(lastDrawing, locations[1].DrawingId);
+            Assert.AreEqual(1, locations[1].Frame);
+            Assert.AreEqual(1, locations[1].Track);
         }
     }
 }

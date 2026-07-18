@@ -1131,19 +1131,14 @@ namespace TiltBrush.FrameAnimation
             GetAnimationDrawingSaveLocations()
         {
             EnsureSparseTimeline();
-            int saveTrackIndex = 0;
-            foreach (AnimationTimelineModel.Track track in m_SparseTimeline.Tracks)
+            foreach (AnimationTimelineModel.SerializableDrawingLocation location in
+                m_SparseTimeline.EnumerateSerializableDrawingLocations())
             {
-                if (track.Deleted) continue;
-                foreach (AnimationTimelineModel.Span span in track.Spans)
+                CanvasScript canvas = GetCanvasForDrawing(location.DrawingId);
+                if (canvas != null)
                 {
-                    CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
-                    if (canvas != null)
-                    {
-                        yield return (canvas, span.StartFrame, saveTrackIndex);
-                    }
+                    yield return (canvas, location.Frame, location.Track);
                 }
-                saveTrackIndex++;
             }
         }
 

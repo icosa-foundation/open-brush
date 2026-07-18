@@ -153,6 +153,21 @@ namespace TiltBrush.FrameAnimation
             public bool Contains(int frame) => frame >= StartFrame && frame < EndFrameExclusive;
         }
 
+        public readonly struct SerializableDrawingLocation
+        {
+            public AnimationDrawingId DrawingId { get; }
+            public int Frame { get; }
+            public int Track { get; }
+
+            public SerializableDrawingLocation(
+                AnimationDrawingId drawingId, int frame, int track)
+            {
+                DrawingId = drawingId;
+                Frame = frame;
+                Track = track;
+            }
+        }
+
         public sealed class Track
         {
             private readonly List<Span> m_Spans;
@@ -304,6 +319,24 @@ namespace TiltBrush.FrameAnimation
                 if (!m_Tracks[trackIndex].Deleted) serializedTrackIndex++;
             }
             return true;
+        }
+
+        public IEnumerable<SerializableDrawingLocation> EnumerateSerializableDrawingLocations()
+        {
+            int serializedTrackIndex = 0;
+            foreach (Track track in m_Tracks)
+            {
+                if (track.Deleted) continue;
+                foreach (Span span in track.Spans)
+                {
+                    if (!span.Value.DrawingId.IsEmpty)
+                    {
+                        yield return new SerializableDrawingLocation(
+                            span.Value.DrawingId, span.StartFrame, serializedTrackIndex);
+                    }
+                }
+                serializedTrackIndex++;
+            }
         }
 
         /// Applies an edit atomically. The callback operates on an expanded value view, and the
