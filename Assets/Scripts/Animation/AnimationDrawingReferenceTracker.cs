@@ -27,10 +27,15 @@ namespace TiltBrush.FrameAnimation
             if (drawingIds == null) throw new ArgumentNullException(nameof(drawingIds));
             foreach (AnimationDrawingId drawingId in drawingIds)
             {
-                if (drawingId.IsEmpty) continue;
-                m_References.TryGetValue(drawingId, out int references);
-                m_References[drawingId] = references + 1;
+                Retain(drawingId);
             }
+        }
+
+        public void Retain(AnimationDrawingId drawingId)
+        {
+            if (drawingId.IsEmpty) return;
+            m_References.TryGetValue(drawingId, out int references);
+            m_References[drawingId] = references + 1;
         }
 
         /// Returns true when this release removed the final retained reference.
