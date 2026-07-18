@@ -50,7 +50,6 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] bool m_ValidateSparseTimeline;
         [SerializeField, Min(1)] int m_TimelineFramePoolSize = 10;
         AnimationPerformanceStats m_PerformanceStats;
-        readonly Dictionary<CanvasScript, (int, int)> m_CanvasLocations = new();
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
         readonly Dictionary<CanvasScript, HashSet<Stroke>> m_CanvasStrokes = new();
         readonly Dictionary<CanvasScript, HashSet<GrabWidget>> m_CanvasWidgets = new();
@@ -63,7 +62,6 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
         SketchMemoryScript m_SubscribedMemory;
-        bool m_TimelineIndexesValid;
         bool m_ContentIndexInitialized;
         bool m_SparseTimelineDirty = true;
         int m_CachedTimelineLength;
@@ -204,6 +202,7 @@ namespace TiltBrush.FrameAnimation
         private void OnDisable()
         {
             RemoveMemorySubscriptions();
+            if (m_PerformanceStats != null) m_PerformanceStats.Enabled = false;
         }
 
         private void EnsureMemorySubscriptions()
@@ -350,16 +349,12 @@ namespace TiltBrush.FrameAnimation
 
         private void InvalidateTimelineStructure()
         {
-            m_TimelineIndexesValid = false;
             m_SparseTimelineDirty = true;
-            m_CanvasLocations.Clear();
             InvalidateDrawingOccupancy();
         }
 
         private void InvalidateTimelineProjection()
         {
-            m_TimelineIndexesValid = false;
-            m_CanvasLocations.Clear();
             InvalidateDrawingOccupancy();
         }
 
@@ -428,9 +423,11 @@ namespace TiltBrush.FrameAnimation
         private void ApplySparseTimelineEdit(
             Action<List<AnimationTimelineModel.EditableTrack>> edit)
         {
+            Profiler.BeginSample("OB_ANIM_SCALE.SparseEditAndProjection");
             EnsureSparseTimeline();
             m_SparseTimeline.ApplyEdit(edit);
             ProjectSparseTimelineToCompatibilityView();
+            Profiler.EndSample();
         }
 
         private bool IsSparseFrameFilled(AnimationTimelineModel.FrameValue value)
@@ -772,37 +769,6 @@ namespace TiltBrush.FrameAnimation
             return contentCanvas;
         }
 
-        private void EnsureTimelineIndexes()
-        {
-            if (m_TimelineIndexesValid) return;
-
-            RebuildTimelineIndexes();
-        }
-
-        private void RebuildTimelineIndexes()
-        {
-            EnsureSparseTimeline();
-
-            m_CanvasLocations.Clear();
-            if (Timeline != null)
-            {
-                for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
-                {
-                    List<Frame> frames = Timeline[trackIndex].Frames;
-                    if (frames == null) continue;
-                    for (int frameIndex = 0; frameIndex < frames.Count; frameIndex++)
-                    {
-                        CanvasScript canvas = frames[frameIndex].Canvas;
-                        if (canvas != null && !m_CanvasLocations.ContainsKey(canvas))
-                        {
-                            m_CanvasLocations.Add(canvas, (trackIndex, frameIndex));
-                        }
-                    }
-                }
-            }
-            m_TimelineIndexesValid = true;
-        }
-
         private bool LocationStillMatches(CanvasScript canvas, (int, int) location)
         {
             return location.Item1 >= 0 && location.Item1 < Timeline.Count &&
@@ -916,6 +882,18 @@ namespace TiltBrush.FrameAnimation
             occupied = hasActiveStrokes || hasActiveWidgets;
             m_DrawingOccupancy[canvas] = occupied;
             return occupied;
+        }
+
+        internal void GetDrawingContentCountsForStats(
+            CanvasScript canvas, out int strokeCount, out int widgetCount)
+        {
+            EnsureDrawingContentIndex();
+            strokeCount = m_CanvasStrokes.TryGetValue(canvas, out HashSet<Stroke> strokes)
+                ? strokes.Count
+                : 0;
+            widgetCount = m_CanvasWidgets.TryGetValue(canvas, out HashSet<GrabWidget> widgets)
+                ? widgets.Count
+                : 0;
         }
 
         public bool GetFrameFilled(CanvasScript canvas)
@@ -1228,8 +1206,8 @@ namespace TiltBrush.FrameAnimation
 
         public void ResetTimeline()
         {
+            Profiler.BeginSample("OB_ANIM_SCALE.StructuralTimelineRefresh");
             InvalidateTimelineProjection();
-            EnsureTimelineIndexes();
             m_PerformanceStats?.RecordTimelineReset();
             UpdateNodes();
             UpdateTimelineSlider();
@@ -1237,6 +1215,7 @@ namespace TiltBrush.FrameAnimation
             UpdateTrackScroll();
             UpdateUI();
             App.Scene.TriggerLayersUpdate();
+            Profiler.EndSample();
         }
 
         private void RefreshTimelineScroll()
@@ -1256,6 +1235,7 @@ namespace TiltBrush.FrameAnimation
 
         private void UpdateNodes()
         {
+            Profiler.BeginSample("OB_ANIM_SCALE.VisibleTimelineCells");
             const float frameSpacing = 0.1971429f;
             int timelineLength = GetTimelineLength();
             int poolSize = Math.Max(1, m_TimelineFramePoolSize);
@@ -1376,6 +1356,7 @@ namespace TiltBrush.FrameAnimation
                     }
                 }
             }
+            Profiler.EndSample();
         }
 
         private int GetFirstPooledTimelineFrame(int timelineLength, int poolSize)
@@ -2374,6 +2355,7 @@ namespace TiltBrush.FrameAnimation
 
             // Update layer animation transforms
             if (frameInt < 0) return;
+            Profiler.BeginSample("OB_ANIM_SCALE.AnimationTransforms");
             for (int t = 0; t < Timeline.Count; t++)
             {
                 if (frameInt >= Timeline[t].Frames.Count) { continue; }
@@ -2392,10 +2374,12 @@ namespace TiltBrush.FrameAnimation
                     Timeline[t].Frames[frameInt].AnimatedPath.gameObject.transform.rotation = pathPositionConstant.rotation;
                 }
             }
+            Profiler.EndSample();
         }
 
         void Update()
         {
+            Profiler.BeginSample("OB_ANIM_SCALE.AnimationUpdate");
             m_PerformanceStats ??= new AnimationPerformanceStats(this);
             m_PerformanceStats.Enabled = m_LogPerformanceStats;
             m_PerformanceStats.RecordUpdate();
@@ -2438,6 +2422,7 @@ namespace TiltBrush.FrameAnimation
             }
 
             m_PerformanceStats.UpdateAndMaybeLog();
+            Profiler.EndSample();
         }
     }
 } // namespace TiltBrush.FrameAnimation

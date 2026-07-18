@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -37,8 +38,20 @@ namespace TiltBrush.FrameAnimation
         private long m_LocationCellsVisited;
         private long m_OccupancyQueries;
         private long m_TimelineResets;
+        private static bool s_InstrumentationEnabled;
+        private static long s_MeshGeometryUploads;
+        private static long s_MeshTopologyUploads;
 
-        internal bool Enabled { get; set; }
+        private bool m_Enabled;
+        internal bool Enabled
+        {
+            get => m_Enabled;
+            set
+            {
+                m_Enabled = value;
+                s_InstrumentationEnabled = value;
+            }
+        }
 
         internal AnimationPerformanceStats(AnimationUI_Manager manager)
         {
@@ -82,6 +95,13 @@ namespace TiltBrush.FrameAnimation
             if (Enabled) m_TimelineResets++;
         }
 
+        internal static void RecordMeshUpload(bool geometryChanged)
+        {
+            if (!s_InstrumentationEnabled) return;
+            if (geometryChanged) s_MeshGeometryUploads++;
+            else s_MeshTopologyUploads++;
+        }
+
         internal void UpdateAndMaybeLog()
         {
             if (!Enabled || !Debug.isDebugBuild || Time.unscaledTime < m_NextLogTime) return;
@@ -121,8 +141,33 @@ namespace TiltBrush.FrameAnimation
             int materialSlots = uniqueCanvases.Sum(canvas =>
                 canvas.GetComponentsInChildren<Renderer>(true)
                     .Sum(renderer => renderer.sharedMaterials.Length));
+            List<Mesh> meshAssets = uniqueCanvases
+                .SelectMany(canvas => canvas.GetComponentsInChildren<MeshFilter>(true))
+                .Select(filter => filter.sharedMesh)
+                .Where(mesh => mesh != null)
+                .Distinct()
+                .ToList();
+            long meshBytes = meshAssets.Sum(mesh => Profiler.GetRuntimeMemorySizeLong(mesh));
+            int materialInstances = uniqueCanvases
+                .SelectMany(canvas => canvas.GetComponentsInChildren<Renderer>(true))
+                .SelectMany(renderer => renderer.sharedMaterials)
+                .Where(material => material != null)
+                .Distinct()
+                .Count();
+            int sceneCanvases = App.Scene?.AllCanvases.Count() ?? 0;
+            int visibleCanvases = uniqueCanvases.Count(canvas => canvas.gameObject.activeInHierarchy);
+            int strokes = 0;
+            int widgets = 0;
+            foreach (CanvasScript canvas in uniqueCanvases)
+            {
+                m_Manager.GetDrawingContentCountsForStats(
+                    canvas, out int drawingStrokes, out int drawingWidgets);
+                strokes += drawingStrokes;
+                widgets += drawingWidgets;
+            }
+            long managedBytes = GC.GetTotalMemory(false);
 
-            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} uniqueCanvases={uniqueCanvases.Count} emptyCanvases={emptyCanvases} meshes={meshes} renderers={renderers} materialSlots={materialSlots} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()}");
+            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} sceneCanvases={sceneCanvases} uniqueDrawingCanvases={uniqueCanvases.Count} visibleCanvases={visibleCanvases} emptyCanvases={emptyCanvases} strokes={strokes} widgets={widgets} meshes={meshes} meshBytes={meshBytes} renderers={renderers} materialSlots={materialSlots} materialInstances={materialInstances} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} meshGeometryUploads={s_MeshGeometryUploads} meshTopologyUploads={s_MeshTopologyUploads} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} managedBytes={managedBytes} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()} unusedReservedBytes={Profiler.GetTotalUnusedReservedMemoryLong()}");
 
             ResetIntervalCounters();
         }
@@ -137,6 +182,8 @@ namespace TiltBrush.FrameAnimation
             m_LocationCellsVisited = 0;
             m_OccupancyQueries = 0;
             m_TimelineResets = 0;
+            s_MeshGeometryUploads = 0;
+            s_MeshTopologyUploads = 0;
         }
     }
 }
