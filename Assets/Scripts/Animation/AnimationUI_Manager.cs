@@ -650,6 +650,7 @@ namespace TiltBrush.FrameAnimation
                     return;
                 }
                 m_PendingDrawingDestruction.Remove(drawingId);
+                m_PendingDrawingDemotion.Remove(drawingId);
                 m_CanvasDrawingIds.Remove(canvas);
                 m_DrawingCanvases.Remove(drawingId);
             }
@@ -2177,6 +2178,7 @@ namespace TiltBrush.FrameAnimation
 
             if (!keepExistingEmptyCanvas)
             {
+                m_PendingDrawingDestruction.Remove(drawingId);
                 m_CanvasDrawingIds.Remove(canvas);
                 m_DrawingCanvases.Remove(drawingId);
                 m_EmptyCanvasByTrackId[trackId] = canvas;
