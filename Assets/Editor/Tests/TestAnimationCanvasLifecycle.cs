@@ -126,6 +126,51 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrameCoordinateConsumerMaterializesOnlyRequestedSpan()
+        {
+            Debug.Log($"{kLogPrefix} test=frameCoordinateConsumer state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new List<int> { 2, 3 } },
+                new List<bool> { true });
+
+            CanvasScript initialEmptyCanvas = manager.GetTimelineCanvas(0, 0);
+            Assert.AreSame(initialEmptyCanvas, manager.GetTimelineCanvas(0, 4));
+
+            CanvasScript importedContentCanvas = App.Scene.GetOrCreateLayer(0, 3);
+            Assert.AreNotSame(initialEmptyCanvas, importedContentCanvas);
+            Assert.AreSame(initialEmptyCanvas, manager.GetTimelineCanvas(0, 0));
+            Assert.AreSame(initialEmptyCanvas, manager.GetTimelineCanvas(0, 1));
+            Assert.AreSame(importedContentCanvas, manager.GetTimelineCanvas(0, 2));
+            Assert.AreSame(importedContentCanvas, manager.GetTimelineCanvas(0, 3));
+            Assert.AreSame(importedContentCanvas, manager.GetTimelineCanvas(0, 4));
+            Assert.AreEqual((0, 2), manager.GetCanvasLocation(importedContentCanvas));
+
+            var widgetObject = new GameObject("Animation coordinate consumer test widget");
+            widgetObject.transform.SetParent(importedContentCanvas.transform, false);
+            widgetObject.AddComponent<GrabWidget>();
+            manager.NotifyDrawingContentChanged(importedContentCanvas);
+            Assert.IsTrue(manager.GetFrameFilled(0, 3));
+
+            manager.GetSparseTimelineCounts(out int spanCount, out int emptySpanCount);
+            Assert.AreEqual(2, spanCount);
+            Assert.AreEqual(1, emptySpanCount);
+            Assert.AreEqual(2, manager.Timeline[0].Frames
+                .Select(frame => frame.Canvas).Distinct().Count());
+
+            AnimationMetadata metadata = App.Scene.AnimationTracksSerialized();
+            Assert.AreEqual(1, metadata.Tracks.Length);
+            CollectionAssert.AreEqual(new[] { 2, 3 }, metadata.Tracks[0].frameLengths);
+
+            WidgetManager.m_Instance.UnregisterGrabWidget(widgetObject);
+            UnityEngine.Object.Destroy(widgetObject);
+            yield return null;
+            Debug.Log($"{kLogPrefix} test=frameCoordinateConsumer state=passed");
+        }
+
+        [UnityTest]
         public IEnumerator LongHeldTimelineUsesSparseSpansAndDifferentialTraversal()
         {
             const int trackCount = 8;
