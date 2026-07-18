@@ -237,6 +237,67 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator DifferentialAndLegacyPlaybackProduceEquivalentVisibleSets()
+        {
+            Debug.Log($"{kLogPrefix} test=playbackFallbackEquivalence state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>>
+                {
+                    new List<int> { 1, 1, 1 },
+                    new List<int> { 1, 1, 1 }
+                },
+                new List<bool> { true, false });
+
+            for (int trackIndex = 0; trackIndex < 2; trackIndex++)
+            {
+                for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+                {
+                    manager.GetOrCreateContentCanvas(trackIndex, frameIndex);
+                }
+            }
+
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: false, differential: false);
+            manager.ApplyPlaybackFrameForTests(2);
+            var legacyVisibleSets = new List<HashSet<CanvasScript>>();
+            for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+            {
+                manager.ApplyPlaybackFrameForTests(frameIndex);
+                legacyVisibleSets.Add(CaptureActiveTimelineCanvases(manager));
+            }
+
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: false, differential: true);
+            manager.SelectTimelineFrame(0, 0);
+            var differentialVisibleSets = new List<HashSet<CanvasScript>>();
+            for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+            {
+                manager.ApplyPlaybackFrameForTests(frameIndex);
+                differentialVisibleSets.Add(CaptureActiveTimelineCanvases(manager));
+            }
+
+            for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+            {
+                CollectionAssert.AreEquivalent(
+                    legacyVisibleSets[frameIndex], differentialVisibleSets[frameIndex],
+                    $"Playback paths disagreed at frame {frameIndex}");
+                Assert.AreEqual(1, differentialVisibleSets[frameIndex].Count,
+                    $"Only the visible track drawing should be active at frame {frameIndex}");
+                Assert.Contains(
+                    manager.GetTimelineCanvas(0, frameIndex),
+                    differentialVisibleSets[frameIndex].ToList());
+                Assert.IsFalse(manager.GetTimelineCanvas(1, frameIndex).gameObject.activeSelf,
+                    $"Hidden track drawing became active at frame {frameIndex}");
+            }
+
+            yield return null;
+            Debug.Log($"{kLogPrefix} test=playbackFallbackEquivalence state=passed");
+        }
+
+        [UnityTest]
         public IEnumerator LongHeldTimelineUsesSparseSpansAndDifferentialTraversal()
         {
             const int trackCount = 8;
@@ -480,6 +541,16 @@ namespace TiltBrush.Tests
                 manager.CapturePlaybackDiagnosticsForTests(),
                 elapsedMilliseconds[elapsedMilliseconds.Count / 2],
                 elapsedMilliseconds[elapsedMilliseconds.Count - 1]);
+        }
+
+        private static HashSet<CanvasScript> CaptureActiveTimelineCanvases(
+            AnimationUI_Manager manager)
+        {
+            return manager.Timeline
+                .SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas)
+                .Where(canvas => canvas != null && canvas.gameObject.activeSelf)
+                .ToHashSet();
         }
     }
 }
