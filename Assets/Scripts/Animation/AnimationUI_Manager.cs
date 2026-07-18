@@ -56,8 +56,7 @@ namespace TiltBrush.FrameAnimation
         readonly AnimationTimelineModel m_SparseTimeline = new();
         readonly Dictionary<CanvasScript, AnimationDrawingId> m_CanvasDrawingIds = new();
         readonly Dictionary<AnimationDrawingId, CanvasScript> m_DrawingCanvases = new();
-        readonly Dictionary<AnimationDrawingId, int> m_UndoDrawingRefCounts = new();
-        readonly Dictionary<AnimationDrawingId, int> m_SaveDrawingRefCounts = new();
+        readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
@@ -607,11 +606,8 @@ namespace TiltBrush.FrameAnimation
                 EnsureSparseTimeline();
                 bool activeTimelineOwner = m_SparseTimeline.TryGetDrawingLocation(drawingId, out _);
                 bool activeEditingOwner = App.Scene != null && App.Scene.ActiveCanvas == canvas;
-                bool undoOwner = m_UndoDrawingRefCounts.TryGetValue(
-                    drawingId, out int undoReferences) && undoReferences > 0;
-                bool saveOwner = m_SaveDrawingRefCounts.TryGetValue(
-                    drawingId, out int saveReferences) && saveReferences > 0;
-                if (activeTimelineOwner || activeEditingOwner || undoOwner || saveOwner)
+                if (activeTimelineOwner || activeEditingOwner ||
+                    m_DrawingReferences.IsRetained(drawingId))
                 {
                     m_PendingDrawingDestruction.Add(drawingId);
                     return;
@@ -783,8 +779,7 @@ namespace TiltBrush.FrameAnimation
             m_EmptyCanvases.Clear();
             m_CanvasDrawingIds.Clear();
             m_DrawingCanvases.Clear();
-            m_UndoDrawingRefCounts.Clear();
-            m_SaveDrawingRefCounts.Clear();
+            m_DrawingReferences.Clear();
             m_PendingDrawingDestruction.Clear();
             m_CanvasStrokes.Clear();
             m_CanvasWidgets.Clear();
@@ -1980,11 +1975,7 @@ namespace TiltBrush.FrameAnimation
         {
             EnsureSparseTimeline();
             AnimationTimelineModel.Snapshot snapshot = m_SparseTimeline.CreateSnapshot();
-            foreach (AnimationDrawingId drawingId in snapshot.DrawingIds)
-            {
-                m_UndoDrawingRefCounts.TryGetValue(drawingId, out int references);
-                m_UndoDrawingRefCounts[drawingId] = references + 1;
-            }
+            m_DrawingReferences.Retain(snapshot.DrawingIds);
             return snapshot;
         }
 
@@ -2005,11 +1996,7 @@ namespace TiltBrush.FrameAnimation
                     }
                 }
             }
-            foreach (AnimationDrawingId drawingId in drawingIds)
-            {
-                m_SaveDrawingRefCounts.TryGetValue(drawingId, out int references);
-                m_SaveDrawingRefCounts[drawingId] = references + 1;
-            }
+            m_DrawingReferences.Retain(drawingIds);
             return new DrawingReferenceLease(() => ReleaseSaveDrawingReferences(drawingIds));
         }
 
@@ -2017,9 +2004,7 @@ namespace TiltBrush.FrameAnimation
         {
             foreach (AnimationDrawingId drawingId in drawingIds)
             {
-                if (!m_SaveDrawingRefCounts.TryGetValue(drawingId, out int references)) continue;
-                if (references > 1) m_SaveDrawingRefCounts[drawingId] = references - 1;
-                else m_SaveDrawingRefCounts.Remove(drawingId);
+                m_DrawingReferences.Release(drawingId);
                 TryDestroyPendingDrawing(drawingId);
             }
         }
@@ -2029,14 +2014,7 @@ namespace TiltBrush.FrameAnimation
             if (snapshot == null) return;
             foreach (AnimationDrawingId drawingId in snapshot.DrawingIds)
             {
-                if (!m_UndoDrawingRefCounts.TryGetValue(drawingId, out int references)) continue;
-                if (references > 1)
-                {
-                    m_UndoDrawingRefCounts[drawingId] = references - 1;
-                    continue;
-                }
-
-                m_UndoDrawingRefCounts.Remove(drawingId);
+                m_DrawingReferences.Release(drawingId);
                 TryDestroyPendingDrawing(drawingId);
             }
         }
