@@ -424,43 +424,13 @@ namespace TiltBrush.FrameAnimation
         private int GetSparseTimelineContentLength(
             List<AnimationTimelineModel.EditableTrack> tracks)
         {
-            int lastFilledFrame = 0;
-            foreach (AnimationTimelineModel.EditableTrack track in tracks)
-            {
-                for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
-                {
-                    if (IsSparseFrameFilled(track.Frames[frameIndex]))
-                    {
-                        lastFilledFrame = Math.Max(lastFilledFrame, frameIndex);
-                    }
-                }
-            }
-            return lastFilledFrame + 1;
+            return AnimationTimelineOperations.GetContentLength(tracks, IsSparseFrameFilled);
         }
 
         private void PadSparseTracks(
             List<AnimationTimelineModel.EditableTrack> tracks, int length)
         {
-            foreach (AnimationTimelineModel.EditableTrack track in tracks)
-            {
-                if (track.Frames.Count >= length) continue;
-                AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
-                while (track.Frames.Count < length) track.Frames.Add(emptyValue);
-            }
-        }
-
-        private void NormalizeSparseTimelineLength(
-            List<AnimationTimelineModel.EditableTrack> tracks)
-        {
-            int contentLength = GetSparseTimelineContentLength(tracks);
-            foreach (AnimationTimelineModel.EditableTrack track in tracks)
-            {
-                if (track.Frames.Count > contentLength)
-                {
-                    track.Frames.RemoveRange(contentLength, track.Frames.Count - contentLength);
-                }
-            }
-            PadSparseTracks(tracks, contentLength);
+            AnimationTimelineOperations.PadTracks(tracks, length, NewEmptyFrameValue);
         }
 
         private void ProjectSparseTimelineToCompatibilityView()
@@ -1663,14 +1633,11 @@ namespace TiltBrush.FrameAnimation
             Frame deletedFrame = Timeline[index.Item1].Frames[index.Item2];
 
             App.Scene.HideCanvas(deletedFrame.Canvas);
-            AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int frame = index.Item2; frame < nextIndex.Item2; frame++)
-                {
-                    tracks[index.Item1].Frames[frame] = emptyValue;
-                }
-                NormalizeSparseTimelineLength(tracks);
+                AnimationTimelineOperations.RemoveSpan(
+                    tracks, index.Item1, index.Item2, nextIndex.Item2 - index.Item2,
+                    NewEmptyFrameValue, IsSparseFrameFilled);
             });
 
             SelectTimelineFrame(index.Item1, Math.Clamp(index.Item2, 0, GetTimelineLength() - 1));
@@ -1753,53 +1720,31 @@ namespace TiltBrush.FrameAnimation
         public (int, int) MoveKeyFrame(bool moveRight, int trackNum = -1, int frameNum = -1)
         {
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
-            (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
-            if (moveRight && nextIndex.Item2 < Timeline[nextIndex.Item1].Frames.Count &&
-                GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
+            int frameLength = GetFrameLength(index.Item1, index.Item2);
+            int followingFrame = index.Item2 + frameLength;
+            if (moveRight && followingFrame < Timeline[index.Item1].Frames.Count &&
+                GetFrameFilled(index.Item1, followingFrame))
             {
                 return (-1, -1);
             }
-            if (!moveRight && (index.Item2 <= 0 ||
+            if (!moveRight && (index.Item2 == 0 ||
                 GetFrameFilled(index.Item1, index.Item2 - 1)))
             {
                 return (-1, -1);
             }
-
-            int frameLength = GetFrameLength(index.Item1, index.Item2);
+            int movedFrame = index.Item2;
+            bool moved = false;
             ApplySparseTimelineEdit(tracks =>
             {
-                List<AnimationTimelineModel.FrameValue> frames = tracks[index.Item1].Frames;
-                if (moveRight)
-                {
-                    AnimationTimelineModel.FrameValue moved = frames[index.Item2];
-                    if (nextIndex.Item2 >= frames.Count)
-                    {
-                        frames[index.Item2] = NewEmptyFrameValue();
-                        frames.Add(moved);
-                    }
-                    else
-                    {
-                        (frames[index.Item2], frames[nextIndex.Item2]) =
-                            (frames[nextIndex.Item2], frames[index.Item2]);
-                    }
-                }
-                else
-                {
-                    int lastFrame = index.Item2 + frameLength - 1;
-                    (frames[index.Item2 - 1], frames[lastFrame]) =
-                        (frames[lastFrame], frames[index.Item2 - 1]);
-                }
-                NormalizeSparseTimelineLength(tracks);
+                moved = AnimationTimelineOperations.MoveSpan(
+                    tracks, index.Item1, index.Item2, frameLength, moveRight,
+                    NewEmptyFrameValue, IsSparseFrameFilled, out movedFrame);
             });
+            if (!moved) return (-1, -1);
 
-            if (moveRight)
-            {
-                (int, int) movedTo = (index.Item1, index.Item2 + 1);
-                SelectTimelineFrame(movedTo.Item1, movedTo.Item2);
-                return movedTo;
-            }
-            SelectTimelineFrame(index.Item1, index.Item2 - 1);
-            return (index.Item1, index.Item2 - 1);
+            (int, int) movedTo = (index.Item1, movedFrame);
+            SelectTimelineFrame(movedTo.Item1, movedTo.Item2);
+            return movedTo;
         }
 
         // For loading the scene
@@ -1811,12 +1756,11 @@ namespace TiltBrush.FrameAnimation
 
             ApplySparseTimelineEdit(tracks =>
             {
-                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
-                if (nextIndex.Item2 >= frames.Count) frames.Add(NewEmptyFrameValue());
-                else if (IsSparseFrameFilled(frames[nextIndex.Item2]))
-                {
-                    frames.Insert(nextIndex.Item2, NewEmptyFrameValue());
-                }
+                bool insert = nextIndex.Item2 < tracks[nextIndex.Item1].Frames.Count &&
+                    IsSparseFrameFilled(tracks[nextIndex.Item1].Frames[nextIndex.Item2]);
+                AnimationTimelineOperations.InsertEmptyKey(
+                    tracks, nextIndex.Item1, nextIndex.Item2, insert,
+                    NewEmptyFrameValue, alignTracks: false);
             });
         }
 
@@ -1834,10 +1778,9 @@ namespace TiltBrush.FrameAnimation
                 : nextIndex;
             ApplySparseTimelineEdit(tracks =>
             {
-                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
-                if (append) frames.Add(NewEmptyFrameValue());
-                else if (insert) frames.Insert(nextIndex.Item2, NewEmptyFrameValue());
-                PadSparseTracks(tracks, tracks.Max(track => track.Frames.Count));
+                AnimationTimelineOperations.InsertEmptyKey(
+                    tracks, nextIndex.Item1, nextIndex.Item2, insert,
+                    NewEmptyFrameValue, alignTracks: true);
             });
 
             ResetTimeline();
@@ -1900,30 +1843,11 @@ namespace TiltBrush.FrameAnimation
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             int frameLength = GetFrameLength(index.Item1, index.Item2);
-            int insertIndex = index.Item2 + frameLength;
-
-            bool insertAcrossTracks = insertIndex >= Timeline[index.Item1].Frames.Count ||
-                GetFrameFilled(index.Item1, insertIndex);
             ApplySparseTimelineEdit(tracks =>
             {
-                if (insertAcrossTracks)
-                {
-                    for (int trackIndex = 0; trackIndex < tracks.Count; trackIndex++)
-                    {
-                        List<AnimationTimelineModel.FrameValue> frames = tracks[trackIndex].Frames;
-                        AnimationTimelineModel.FrameValue addingValue = trackIndex == index.Item1
-                            ? frames[index.Item2]
-                            : NewEmptyFrameValue();
-                        AnimationTimelineModel.FrameValue paddingValue = NewEmptyFrameValue();
-                        while (frames.Count < insertIndex) frames.Add(paddingValue);
-                        frames.Insert(insertIndex, addingValue);
-                    }
-                }
-                else
-                {
-                    tracks[index.Item1].Frames[insertIndex] =
-                        tracks[index.Item1].Frames[index.Item2];
-                }
+                AnimationTimelineOperations.ExtendSpan(
+                    tracks, index.Item1, index.Item2, frameLength,
+                    NewEmptyFrameValue, IsSparseFrameFilled);
             });
 
             m_FrameOn++;
@@ -1944,8 +1868,9 @@ namespace TiltBrush.FrameAnimation
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             ApplySparseTimelineEdit(tracks =>
             {
-                tracks[index.Item1].Frames[index.Item2 + frameLength - 1] = NewEmptyFrameValue();
-                NormalizeSparseTimelineLength(tracks);
+                AnimationTimelineOperations.ReduceSpan(
+                    tracks, index.Item1, index.Item2, frameLength,
+                    NewEmptyFrameValue, IsSparseFrameFilled);
             });
 
             m_FrameOn--;
@@ -2265,10 +2190,9 @@ namespace TiltBrush.FrameAnimation
 
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int frame = splittingIndex; frame < index.Item2 + frameLength; frame++)
-                {
-                    tracks[index.Item1].Frames[frame] = newDrawing;
-                }
+                AnimationTimelineOperations.ReplaceRange(
+                    tracks, index.Item1, splittingIndex,
+                    index.Item2 + frameLength - splittingIndex, newDrawing);
             });
 
             SelectTimelineFrame(index.Item1, splittingIndex);
@@ -2295,20 +2219,9 @@ namespace TiltBrush.FrameAnimation
 
             ApplySparseTimelineEdit(tracks =>
             {
-                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
-                for (int frameOffset = 0; frameOffset < frameLength; frameOffset++)
-                {
-                    int destination = nextIndex.Item2 + frameOffset;
-                    if (destination < frames.Count && !IsSparseFrameFilled(frames[destination]))
-                    {
-                        frames[destination] = newDrawing;
-                    }
-                    else
-                    {
-                        frames.Insert(destination, newDrawing);
-                    }
-                }
-                PadSparseTracks(tracks, tracks.Max(track => track.Frames.Count));
+                AnimationTimelineOperations.DuplicateRange(
+                    tracks, nextIndex.Item1, nextIndex.Item2, frameLength, newDrawing,
+                    NewEmptyFrameValue, IsSparseFrameFilled);
             });
 
             SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
