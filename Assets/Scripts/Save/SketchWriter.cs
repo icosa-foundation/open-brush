@@ -139,19 +139,15 @@ namespace TiltBrush
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
             bool resetGroupContinue = false;
-            var canvases = App.Scene.animationUI_manager.GetTrackCanvases();
             var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
-            for (uint indexFrame = 0; indexFrame < canvases.Count; indexFrame++)
+            foreach ((CanvasScript canvas, int frame, int track) in
+                App.Scene.animationUI_manager.GetAnimationDrawingSaveLocations())
             {
-                for (uint indexLayer = 0; indexLayer < canvases[(int)indexFrame].Count; indexLayer++)
+                if (!canvasToIndexMap.ContainsKey(canvas))
                 {
-                    var canvas = canvases[(int)indexFrame][(int)indexLayer];
-                    if (!canvasToIndexMap.ContainsKey(canvas))
-                    {
-                        // Held spans repeat a drawing across frames. Persist it at the span start.
-                        canvasToIndexMap.Add(
-                            canvas, new Tuple<uint, uint>(indexFrame, indexLayer));
-                    }
+                    // Held spans repeat a drawing across frames. Persist it at the span start.
+                    canvasToIndexMap.Add(
+                        canvas, new Tuple<uint, uint>((uint)frame, (uint)track));
                 }
             }
             foreach (var stroke in strokes)

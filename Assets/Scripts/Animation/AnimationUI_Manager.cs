@@ -1136,6 +1136,26 @@ namespace TiltBrush.FrameAnimation
             return timelineCanvases;
         }
 
+        public IEnumerable<(CanvasScript Canvas, int Frame, int Track)>
+            GetAnimationDrawingSaveLocations()
+        {
+            EnsureSparseTimeline();
+            int saveTrackIndex = 0;
+            foreach (AnimationTimelineModel.Track track in m_SparseTimeline.Tracks)
+            {
+                if (track.Deleted) continue;
+                foreach (AnimationTimelineModel.Span span in track.Spans)
+                {
+                    CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
+                    if (canvas != null)
+                    {
+                        yield return (canvas, span.StartFrame, saveTrackIndex);
+                    }
+                }
+                saveTrackIndex++;
+            }
+        }
+
         public List<int> GetTrackFrameLengths(int trackIndex)
         {
             EnsureSparseTimeline();
@@ -1158,10 +1178,11 @@ namespace TiltBrush.FrameAnimation
 
         public List<int> ActiveTrackIndexes()
         {
+            EnsureSparseTimeline();
             List<int> activeTrackIndexes = new();
-            for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
+            for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
             {
-                if (Timeline[trackIndex].Deleted) continue;
+                if (m_SparseTimeline.Tracks[trackIndex].Deleted) continue;
                 activeTrackIndexes.Add(trackIndex);
             }
             return activeTrackIndexes;
