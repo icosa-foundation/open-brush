@@ -59,6 +59,7 @@ namespace TiltBrush.FrameAnimation
         readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
+        readonly Dictionary<CanvasScript, int> m_EmptyCanvasTrackIds = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
         SketchMemoryScript m_SubscribedMemory;
         bool m_ContentIndexInitialized;
@@ -375,6 +376,16 @@ namespace TiltBrush.FrameAnimation
         {
             if (!m_SparseTimelineDirty) return;
 
+            if (Timeline != null)
+            {
+                for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
+                {
+                    Track track = Timeline[trackIndex];
+                    if (track.Id != 0) continue;
+                    track.Id = m_NextTrackId++;
+                    Timeline[trackIndex] = track;
+                }
+            }
             RebuildEmptyCanvasRegistry();
             var trackIds = new List<int>();
             var trackVisibility = new List<bool>();
@@ -385,11 +396,6 @@ namespace TiltBrush.FrameAnimation
                 for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
                 {
                     Track track = Timeline[trackIndex];
-                    if (track.Id == 0)
-                    {
-                        track.Id = m_NextTrackId++;
-                        Timeline[trackIndex] = track;
-                    }
                     trackIds.Add(track.Id);
                     trackVisibility.Add(track.Visible);
                     trackDeletion.Add(track.Deleted);
@@ -572,6 +578,7 @@ namespace TiltBrush.FrameAnimation
         private void RebuildEmptyCanvasRegistry()
         {
             m_EmptyCanvasByTrackId.Clear();
+            m_EmptyCanvasTrackIds.Clear();
             m_EmptyCanvases.Clear();
             if (Timeline == null) return;
 
@@ -582,6 +589,7 @@ namespace TiltBrush.FrameAnimation
                 {
                     if (frame.EmptySpanId == 0 || frame.Canvas == null) continue;
                     m_EmptyCanvases.Add(frame.Canvas);
+                    m_EmptyCanvasTrackIds[frame.Canvas] = track.Id;
                     if (!m_EmptyCanvasByTrackId.ContainsKey(track.Id))
                     {
                         m_EmptyCanvasByTrackId.Add(track.Id, frame.Canvas);
@@ -617,6 +625,7 @@ namespace TiltBrush.FrameAnimation
                 m_DrawingCanvases.Remove(drawingId);
             }
             m_EmptyCanvases.Remove(canvas);
+            m_EmptyCanvasTrackIds.Remove(canvas);
             m_CanvasStrokes.Remove(canvas);
             m_CanvasWidgets.Remove(canvas);
             m_DrawingOccupancy.Remove(canvas);
@@ -654,6 +663,7 @@ namespace TiltBrush.FrameAnimation
                     ? preferredCanvas
                     : App.Scene.AddCanvas();
                 m_EmptyCanvases.Add(distinctCanvas);
+                m_EmptyCanvasTrackIds[distinctCanvas] = trackId;
                 if (!m_EmptyCanvasByTrackId.ContainsKey(trackId))
                 {
                     m_EmptyCanvasByTrackId.Add(trackId, distinctCanvas);
@@ -669,6 +679,7 @@ namespace TiltBrush.FrameAnimation
             canvas = preferredCanvas != null ? preferredCanvas : App.Scene.AddCanvas();
             m_EmptyCanvasByTrackId[trackId] = canvas;
             m_EmptyCanvases.Add(canvas);
+            m_EmptyCanvasTrackIds[canvas] = trackId;
             if (createdCanvas)
             {
                 canvas.gameObject.name = $"Animation Empty Track {trackId}";
@@ -705,10 +716,12 @@ namespace TiltBrush.FrameAnimation
                 replacement.gameObject.SetActive(populatedCanvas.gameObject.activeSelf);
             }
             m_EmptyCanvases.Remove(populatedCanvas);
+            m_EmptyCanvasTrackIds.Remove(populatedCanvas);
             if (replacement != null)
             {
                 m_EmptyCanvasByTrackId[Timeline[trackIndex].Id] = replacement;
                 m_EmptyCanvases.Add(replacement);
+                m_EmptyCanvasTrackIds[replacement] = Timeline[trackIndex].Id;
             }
             else
             {
@@ -776,6 +789,7 @@ namespace TiltBrush.FrameAnimation
         {
             InvalidateTimelineStructure();
             m_EmptyCanvasByTrackId.Clear();
+            m_EmptyCanvasTrackIds.Clear();
             m_EmptyCanvases.Clear();
             m_CanvasDrawingIds.Clear();
             m_DrawingCanvases.Clear();
@@ -1056,20 +1070,35 @@ namespace TiltBrush.FrameAnimation
             if (canvas == null) return (-1, -1);
             if (m_EmptyCanvases.Contains(canvas))
             {
-                for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
+                if (!m_EmptyCanvasTrackIds.TryGetValue(canvas, out int trackId) ||
+                    !m_SparseTimeline.TryGetTrackIndex(trackId, out int trackIndex))
                 {
-                    List<Frame> frames = Timeline[trackIndex].Frames;
-                    if (FrameOn >= 0 && FrameOn < frames.Count && frames[FrameOn].Canvas == canvas)
-                    {
-                        return (trackIndex, FrameOn);
-                    }
-                    int frameIndex = frames.FindIndex(frame => frame.Canvas == canvas);
-                    if (frameIndex >= 0) return (trackIndex, frameIndex);
+                    return (-1, -1);
                 }
-                return (-1, -1);
+                if (!m_ShareEmptyCanvases)
+                {
+                    int frameIndex = Timeline[trackIndex].Frames.FindIndex(
+                        frame => frame.Canvas == canvas);
+                    return frameIndex >= 0 ? (trackIndex, frameIndex) : (-1, -1);
+                }
+                if (FrameOn >= 0 &&
+                    m_SparseTimeline.TryResolve(
+                        trackIndex, FrameOn, out AnimationTimelineModel.Span currentSpan) &&
+                    currentSpan.Value.DrawingId.IsEmpty)
+                {
+                    return (trackIndex, FrameOn);
+                }
+                AnimationTimelineModel.Span firstEmptySpan = m_SparseTimeline.Tracks[trackIndex]
+                    .Spans.FirstOrDefault(span => span.Value.DrawingId.IsEmpty);
+                return firstEmptySpan.Duration > 0
+                    ? (trackIndex, firstEmptySpan.StartFrame)
+                    : (-1, -1);
             }
 
-            AnimationDrawingId drawingId = GetOrCreateDrawingId(canvas);
+            if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            {
+                return (-1, -1);
+            }
             if (m_SparseTimeline.TryGetDrawingLocation(drawingId, out (int, int) location) &&
                 LocationStillMatches(canvas, location))
             {
