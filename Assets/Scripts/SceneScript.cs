@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 using TiltBrush.FrameAnimation;
 
 namespace TiltBrush
@@ -201,7 +202,7 @@ namespace TiltBrush
             m_LayerCanvases = new List<CanvasScript>();
             m_DeletedLayers = new HashSet<int>();
             m_ActiveCanvas = MainCanvas;
-            if (notify) App.Scene.LayerCanvasesUpdate?.Invoke();
+            if (notify) NotifyLayerCanvasesUpdate();
         }
 
 
@@ -254,7 +255,7 @@ namespace TiltBrush
             var layer = go.AddComponent<CanvasScript>();
             m_LayerCanvases.Add(layer);
             App.Scene.ActiveCanvas = layer;
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
             // Add canvases for other animation frames
             layer = animationUI_manager.AddLayerRefresh(layer);
             return layer;
@@ -273,6 +274,7 @@ namespace TiltBrush
 
         public void DestroyCanvas(CanvasScript layer, IEnumerable<Stroke> ownedStrokes = null)
         {
+            AnimationPerformanceStats.RecordGlobalStrokeScan();
             List<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(stroke => stroke.Canvas == layer).ToList();
             if (ownedStrokes != null)
@@ -382,14 +384,28 @@ namespace TiltBrush
 
         public void TriggerLayersUpdate()
         {
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
+        }
+
+        private void NotifyLayerCanvasesUpdate()
+        {
+            AnimationPerformanceStats.RecordLayerEvent();
+            Profiler.BeginSample("OB_ANIM_SCALE.LayerCanvasesUpdate");
+            try
+            {
+                LayerCanvasesUpdate?.Invoke();
+            }
+            finally
+            {
+                Profiler.EndSample();
+            }
         }
 
         public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
         public void ShowLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(true);
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         public void ShowCanvas(CanvasScript canvas)
@@ -401,7 +417,7 @@ namespace TiltBrush
         public void HideLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         public void HideCanvas(CanvasScript canvas)
@@ -434,7 +450,7 @@ namespace TiltBrush
         public void ClearLayerContents(CanvasScript canvas)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         public bool IsLayerVisible(CanvasScript layer)
@@ -446,7 +462,7 @@ namespace TiltBrush
         {
             if (layer == MainCanvas) return;
             m_DeletedLayers.Add(GetIndexOfCanvas(layer).Item1 - 1);
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
 
             animationUI_manager.MarkLayerAsDeleteRefresh(layer);
         }
@@ -455,7 +471,7 @@ namespace TiltBrush
         {
             if (layer == MainCanvas) return;
             layer.gameObject.name = newName;
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         /// <summary>
@@ -531,12 +547,12 @@ namespace TiltBrush
             m_DeletedLayers.Remove(GetIndexOfCanvas(layer).Item1 - 1);
             animationUI_manager.MarkLayerAsNotDeleteRefresh(layer);
 
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         public void BroadcastCanvasUpdate()
         {
-            App.Scene.LayerCanvasesUpdate?.Invoke();
+            NotifyLayerCanvasesUpdate();
         }
 
         public CanvasScript GetCanvasByLayerIndex(int layerIndex)

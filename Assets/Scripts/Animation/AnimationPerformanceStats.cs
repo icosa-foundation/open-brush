@@ -39,6 +39,8 @@ namespace TiltBrush.FrameAnimation
         private long m_OccupancyQueries;
         private long m_TimelineResets;
         private static bool s_InstrumentationEnabled;
+        private static long s_LayerEvents;
+        private static long s_GlobalStrokeScans;
         private static long s_MeshGeometryUploads;
         private static long s_MeshTopologyUploads;
 
@@ -100,6 +102,16 @@ namespace TiltBrush.FrameAnimation
             if (!s_InstrumentationEnabled) return;
             if (geometryChanged) s_MeshGeometryUploads++;
             else s_MeshTopologyUploads++;
+        }
+
+        internal static void RecordLayerEvent()
+        {
+            if (s_InstrumentationEnabled) s_LayerEvents++;
+        }
+
+        internal static void RecordGlobalStrokeScan()
+        {
+            if (s_InstrumentationEnabled) s_GlobalStrokeScans++;
         }
 
         internal void UpdateAndMaybeLog()
@@ -167,7 +179,7 @@ namespace TiltBrush.FrameAnimation
             }
             long managedBytes = GC.GetTotalMemory(false);
 
-            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} sceneCanvases={sceneCanvases} uniqueDrawingCanvases={uniqueCanvases.Count} visibleCanvases={visibleCanvases} emptyCanvases={emptyCanvases} strokes={strokes} widgets={widgets} meshes={meshes} meshBytes={meshBytes} renderers={renderers} materialSlots={materialSlots} materialInstances={materialInstances} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} meshGeometryUploads={s_MeshGeometryUploads} meshTopologyUploads={s_MeshTopologyUploads} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} managedBytes={managedBytes} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()} unusedReservedBytes={Profiler.GetTotalUnusedReservedMemoryLong()}");
+            Debug.Log($"{LogPrefix} tracks={tracks} cells={cells} spans={spans} emptyCells={emptyCells} emptySpans={emptySpans} sceneCanvases={sceneCanvases} uniqueDrawingCanvases={uniqueCanvases.Count} visibleCanvases={visibleCanvases} emptyCanvases={emptyCanvases} strokes={strokes} widgets={widgets} meshes={meshes} meshBytes={meshBytes} renderers={renderers} materialSlots={materialSlots} materialInstances={materialInstances} batchPools={batchPools} batches={batches} vertices={vertices} triangles={triangles} meshGeometryUploads={s_MeshGeometryUploads} meshTopologyUploads={s_MeshTopologyUploads} layerEvents={s_LayerEvents} globalStrokeScans={s_GlobalStrokeScans} updates={m_UpdateCalls} focusCalls={m_FocusFrameCalls} hideVisits={m_HideFrameVisits} visibilityRequests={m_CanvasVisibilityRequests} locationQueries={m_LocationQueries} locationCells={m_LocationCellsVisited} occupancyQueries={m_OccupancyQueries} timelineResets={m_TimelineResets} managedBytes={managedBytes} allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} reservedBytes={Profiler.GetTotalReservedMemoryLong()} unusedReservedBytes={Profiler.GetTotalUnusedReservedMemoryLong()}");
 
             ResetIntervalCounters();
         }
@@ -182,6 +194,8 @@ namespace TiltBrush.FrameAnimation
             m_LocationCellsVisited = 0;
             m_OccupancyQueries = 0;
             m_TimelineResets = 0;
+            s_LayerEvents = 0;
+            s_GlobalStrokeScans = 0;
             s_MeshGeometryUploads = 0;
             s_MeshTopologyUploads = 0;
         }

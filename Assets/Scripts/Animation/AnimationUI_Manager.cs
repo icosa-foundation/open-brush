@@ -338,6 +338,7 @@ namespace TiltBrush.FrameAnimation
             m_CanvasWidgets.Clear();
             if (SketchMemoryScript.m_Instance != null)
             {
+                AnimationPerformanceStats.RecordGlobalStrokeScan();
                 foreach (Stroke stroke in SketchMemoryScript.m_Instance.GetMemoryList)
                 {
                     if (stroke.Canvas != null)
@@ -2286,6 +2287,7 @@ namespace TiltBrush.FrameAnimation
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
 
+            AnimationPerformanceStats.RecordGlobalStrokeScan();
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
 
@@ -2319,6 +2321,7 @@ namespace TiltBrush.FrameAnimation
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
 
+            AnimationPerformanceStats.RecordGlobalStrokeScan();
             List<Stroke> oldStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == oldCanvas).ToList();
 
