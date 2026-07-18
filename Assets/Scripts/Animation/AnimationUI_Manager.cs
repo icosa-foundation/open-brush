@@ -45,6 +45,7 @@ namespace TiltBrush.FrameAnimation
 
         [Header("Animation Performance Diagnostics")]
         [SerializeField] bool m_LogPerformanceStats;
+        [SerializeField] bool m_UseDifferentialPlayback = true;
         AnimationPerformanceStats m_PerformanceStats;
 
         public List<Track> Timeline;
@@ -802,11 +803,15 @@ namespace TiltBrush.FrameAnimation
             textRef.GetComponent<TextMeshPro>().text = (adjustedFrameOn.ToString("0")) + " / " + GetTimelineLength();
         }
 
-        public void UpdateUI(bool timelineInput = false)
+        public void UpdateUI(bool timelineInput = false, bool updateTimelineLayout = true)
         {
             updateFrameInfo();
-            UpdateTimelineSlider();
+            float previousTimelineOffset = m_TimelineOffset;
             if (!timelineInput) UpdateTimelineNob();
+            if (updateTimelineLayout || !Mathf.Approximately(previousTimelineOffset, m_TimelineOffset))
+            {
+                UpdateTimelineSlider();
+            }
 
             deleteFrameButton.GetComponent<RemoveKeyFrameButton>().SetButtonAvailable(
                 App.Scene.ActiveCanvas != null && App.Scene.ActiveCanvas != Timeline[0].Frames[0].Canvas &&
@@ -819,41 +824,119 @@ namespace TiltBrush.FrameAnimation
             FocusFrame(frameNum);
         }
 
-        private void FocusFrame(int FrameIndex, bool timelineInput = false)
+        private HashSet<CanvasScript> GetVisibleCanvasesAtFrame(int frameIndex)
         {
-            m_PerformanceStats?.RecordFocusFrame();
-            Profiler.BeginSample("OB_ANIM_SCALE.FocusFrame");
-            for (int i = 0; i < GetTimelineLength(); i++)
+            var visibleCanvases = new HashSet<CanvasScript>();
+            for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
             {
-                if (i == FrameIndex)
+                Track track = Timeline[trackIndex];
+                if (!track.Visible || track.Deleted || frameIndex < 0 || frameIndex >= track.Frames.Count)
                 {
                     continue;
                 }
-                HideFrame(i, FrameIndex);
+
+                Frame frame = track.Frames[frameIndex];
+                if (!frame.Deleted && frame.Canvas != null)
+                {
+                    visibleCanvases.Add(frame.Canvas);
+                }
+            }
+            return visibleCanvases;
+        }
+
+        private void SetCanvasActive(CanvasScript canvas, bool active)
+        {
+            if (canvas == null || canvas.gameObject.activeSelf == active) return;
+            m_PerformanceStats?.RecordCanvasVisibilityRequest();
+            canvas.gameObject.SetActive(active);
+        }
+
+        private void ApplyDifferentialFrameVisibility(int previousFrame, int nextFrame)
+        {
+            HashSet<CanvasScript> previousCanvases = GetVisibleCanvasesAtFrame(previousFrame);
+            HashSet<CanvasScript> nextCanvases = GetVisibleCanvasesAtFrame(nextFrame);
+            var canvasesToHide = new List<CanvasScript>();
+            var canvasesToShow = new List<CanvasScript>();
+            AnimationSetDiff.GetChanges(
+                previousCanvases, nextCanvases, canvasesToHide, canvasesToShow);
+
+            foreach (CanvasScript canvas in canvasesToHide)
+            {
+                SetCanvasActive(canvas, false);
+            }
+            foreach (CanvasScript canvas in canvasesToShow)
+            {
+                SetCanvasActive(canvas, true);
+            }
+        }
+
+        private void ApplyFullFrameVisibility(int frameIndex)
+        {
+            HashSet<CanvasScript> visibleCanvases = GetVisibleCanvasesAtFrame(frameIndex);
+            foreach (CanvasScript canvas in Timeline
+                .SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas)
+                .Where(canvas => canvas != null)
+                .Distinct())
+            {
+                SetCanvasActive(canvas, visibleCanvases.Contains(canvas));
+            }
+        }
+
+        private void ApplyLegacyFrameVisibility(int frameIndex)
+        {
+            for (int i = 0; i < GetTimelineLength(); i++)
+            {
+                if (i != frameIndex) HideFrame(i, frameIndex);
+            }
+            ShowFrame(frameIndex);
+        }
+
+        private void FocusFrame(
+            int frameIndex, bool timelineInput = false, bool forceFullVisibilityRefresh = true,
+            bool playbackUpdate = false)
+        {
+            m_PerformanceStats?.RecordFocusFrame();
+            Profiler.BeginSample("OB_ANIM_SCALE.FocusFrame");
+
+            int previousFrame = m_PreviousShowingFrame;
+            if (!m_UseDifferentialPlayback)
+            {
+                ApplyLegacyFrameVisibility(frameIndex);
+            }
+            else if (forceFullVisibilityRefresh || previousFrame < 0)
+            {
+                ApplyFullFrameVisibility(frameIndex);
+            }
+            else
+            {
+                ApplyDifferentialFrameVisibility(previousFrame, frameIndex);
             }
 
             App.Scene.m_LayerCanvases = new List<CanvasScript>();
             for (int i = 0; i < Timeline.Count; i++)
             {
-                if (FrameIndex >= Timeline[i].Frames.Count) continue;
+                if (frameIndex >= Timeline[i].Frames.Count) continue;
 
                 if (i == 0)
                 {
-                    App.Scene.m_MainCanvas = Timeline[i].Frames[FrameIndex].Canvas;
+                    App.Scene.m_MainCanvas = Timeline[i].Frames[frameIndex].Canvas;
                     continue;
                 }
-                App.Scene.m_LayerCanvases.Add(Timeline[i].Frames[FrameIndex].Canvas);
+                CanvasScript canvas = Timeline[i].Frames[frameIndex].Canvas;
+                if (canvas != null) App.Scene.m_LayerCanvases.Add(canvas);
             }
 
             (int, int) previousActiveCanvas = GetCanvasLocation(App.Scene.ActiveCanvas);
-            if (previousActiveCanvas.Item1 != -1 && FrameIndex < Timeline[previousActiveCanvas.Item1].Frames.Count)
+            if (previousActiveCanvas.Item1 != -1 && frameIndex < Timeline[previousActiveCanvas.Item1].Frames.Count)
             {
-                App.Scene.ActiveCanvas = Timeline[previousActiveCanvas.Item1].Frames[FrameIndex].Canvas;
+                CanvasScript nextActiveCanvas = Timeline[previousActiveCanvas.Item1].Frames[frameIndex].Canvas;
+                if (nextActiveCanvas != null) App.Scene.ActiveCanvas = nextActiveCanvas;
             }
 
-            ShowFrame(FrameIndex);
-            UpdateUI(timelineInput);
-            App.Scene.TriggerLayersUpdate();
+            m_PreviousShowingFrame = frameIndex;
+            UpdateUI(timelineInput, updateTimelineLayout: !playbackUpdate);
+            if (!playbackUpdate) App.Scene.TriggerLayersUpdate();
             Profiler.EndSample();
         }
 
@@ -1559,6 +1642,7 @@ namespace TiltBrush.FrameAnimation
         public void StopAnimation()
         {
             m_Playing = false;
+            App.Scene.TriggerLayersUpdate();
         }
 
         public bool GetChanging()
@@ -1656,7 +1740,11 @@ namespace TiltBrush.FrameAnimation
                 m_FrameOn = m_Current / (1000f / m_Fps);
 
                 m_FrameOn %= GetTimelineLength();
-                FocusFrame(FrameOn);
+                if (AnimationSetDiff.ShouldApplyFrame(m_PreviousShowingFrame, FrameOn))
+                {
+                    FocusFrame(
+                        FrameOn, forceFullVisibilityRefresh: false, playbackUpdate: true);
+                }
 
                 // Update layer animation transforms
                 UpdateLayerTransforms();
