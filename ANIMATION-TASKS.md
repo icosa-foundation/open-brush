@@ -18,4 +18,20 @@
 ## Verification
 
 - [x] Add automated model coverage for repeated redo/undo, failed operations, multi-track alignment, track visibility, and drawing ownership reference counts.
-- [x] Add and run Unity integration coverage for real Canvas creation, promotion, destruction, save/load, and command-history disposal.
+- [x] Run Unity integration coverage for real Canvas creation, promotion, destruction, save leases, and command-history disposal.
+- [ ] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip.
+- [ ] Run the 80,000-cell held-timeline workload and record legacy versus differential traversal and frame-selection timings.
+
+## Phase 3 manual working-state gate
+
+Run this pass after the automated Phase 0-3 suite is green. This is the final Phase 3 gate, not an
+early implementation check.
+
+- [ ] Create a multi-track animation and exercise add, delete, move, duplicate, split, extend, and reduce; verify undo and redo for each operation.
+- [ ] Verify held frames, independent duplicated frames, track visibility/deletion/focus/rename/squash, active-track selection, and timeline scrolling.
+- [ ] Verify sequential playback, looping, reverse stepping, home/end, and random scrubbing without drawing flashes or repeated UI reconstruction.
+- [ ] Verify strokes, widgets, and animation paths remain associated with the correct frame and Canvas after editing and selection transfers.
+- [ ] Save, reload, autosave, generate a thumbnail, export, and import; compare timing, visibility, content, and active-frame targeting.
+- [ ] Exercise API and Lua calls that use layer/frame coordinates, then check sketch-meter accounting and that discarded drawings release their resources.
+- [ ] Repeat the playback and editing smoke pass in desktop and headset/XR modes and check the Unity log for current `[OB_ANIM_SCALE]` errors or index-recovery warnings.
+- [ ] Check the supported render-pipeline and XR single-pass/multiview configurations used for release targets.
