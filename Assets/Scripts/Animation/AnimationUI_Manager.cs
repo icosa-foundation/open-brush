@@ -246,7 +246,7 @@ namespace TiltBrush.FrameAnimation
 
         public void NotifyWidgetAdded(GrabWidget widget)
         {
-            if (widget?.Canvas == null) return;
+            if (widget?.Canvas == null || widget is CameraPathWidget) return;
             EnsureDrawingContentIndex();
             AddIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
             NotifyDrawingContentChanged(widget.Canvas);
@@ -254,7 +254,7 @@ namespace TiltBrush.FrameAnimation
 
         public void NotifyWidgetRemoved(GrabWidget widget)
         {
-            if (widget?.Canvas == null) return;
+            if (widget?.Canvas == null || widget is CameraPathWidget) return;
             EnsureDrawingContentIndex();
             RemoveIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
             NotifyDrawingContentChanged(widget.Canvas);
@@ -263,7 +263,7 @@ namespace TiltBrush.FrameAnimation
         public void NotifyWidgetCanvasChanged(
             GrabWidget widget, CanvasScript previousCanvas, CanvasScript nextCanvas)
         {
-            if (widget == null) return;
+            if (widget == null || widget is CameraPathWidget) return;
             EnsureDrawingContentIndex();
             if (previousCanvas != null)
             {
@@ -321,6 +321,7 @@ namespace TiltBrush.FrameAnimation
                 {
                     foreach (GrabWidget widget in canvas.GetComponentsInChildren<GrabWidget>(true))
                     {
+                        if (widget is CameraPathWidget) continue;
                         AddIndexedContent(m_CanvasWidgets, canvas, widget);
                     }
                 }
@@ -768,7 +769,8 @@ namespace TiltBrush.FrameAnimation
                     stroke.m_BatchSubset.m_VertLength > 0));
             bool hasActiveWidgets = m_CanvasWidgets.TryGetValue(
                 canvas, out HashSet<GrabWidget> widgets) && widgets.Any(widget =>
-                widget != null && widget.gameObject.activeSelf);
+                widget != null && widget.gameObject.activeSelf &&
+                widget.transform.IsChildOf(canvas.transform));
             occupied = hasActiveStrokes || hasActiveWidgets;
             m_DrawingOccupancy[canvas] = occupied;
             return occupied;
@@ -1039,6 +1041,7 @@ namespace TiltBrush.FrameAnimation
                     thisTrack.Frames[i] = changingFrame;
                 }
                 Timeline[canvasIndex.Item1] = thisTrack;
+                InvalidateTimelineStructure();
             }
         }
 
