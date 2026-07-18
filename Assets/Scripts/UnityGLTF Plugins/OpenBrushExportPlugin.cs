@@ -760,17 +760,23 @@ namespace TiltBrush
                 materialNode.OcclusionTexture = occlusionTexture;
             }
 
+            bool addedEmissiveTexture = false;
             if (materialNode.EmissiveTexture == null && TryExportTexture(
                     exporter, material, kEmissionTextureProperties,
                     GLTFSceneExporter.TextureMapType.Emissive, out var emissiveTexture))
             {
                 materialNode.EmissiveTexture = emissiveTexture;
+                addedEmissiveTexture = true;
             }
 
             if (TryGetColor(material, out var emissiveColor, kEmissionColorProperties) &&
                 emissiveColor.maxColorComponent > 0f)
             {
                 materialNode.EmissiveFactor = ToGltfColor(emissiveColor);
+            }
+            else if (addedEmissiveTexture)
+            {
+                materialNode.EmissiveFactor = ToGltfColor(Color.white);
             }
 
             if (!materialNode.DoubleSided &&
