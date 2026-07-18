@@ -337,6 +337,13 @@ namespace TiltBrush.FrameAnimation
             InvalidateDrawingOccupancy();
         }
 
+        private void InvalidateTimelineProjection()
+        {
+            m_TimelineIndexesValid = false;
+            m_CanvasLocations.Clear();
+            InvalidateDrawingOccupancy();
+        }
+
         private AnimationDrawingId GetOrCreateDrawingId(CanvasScript canvas)
         {
             if (canvas == null || m_EmptyCanvases.Contains(canvas)) return AnimationDrawingId.Empty;
@@ -383,6 +390,144 @@ namespace TiltBrush.FrameAnimation
             m_SparseTimeline.Rebuild(trackIds, trackVisibility, trackDeletion, modelFrames);
             m_CachedTimelineLength = m_SparseTimeline.Length;
             m_SparseTimelineDirty = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (m_ValidateSparseTimeline) ValidateSparseTimelineProjection();
+#endif
+        }
+
+        private AnimationTimelineModel.FrameValue NewEmptyFrameValue()
+        {
+            return new AnimationTimelineModel.FrameValue(
+                AnimationDrawingId.Empty, spanIdentity: m_NextEmptySpanId++);
+        }
+
+        private AnimationTimelineModel.FrameValue NewDrawingFrameValue(CanvasScript canvas)
+        {
+            return new AnimationTimelineModel.FrameValue(GetOrCreateDrawingId(canvas));
+        }
+
+        private void ApplySparseTimelineEdit(
+            Action<List<AnimationTimelineModel.EditableTrack>> edit)
+        {
+            EnsureSparseTimeline();
+            m_SparseTimeline.ApplyEdit(edit);
+            ProjectSparseTimelineToCompatibilityView();
+        }
+
+        private bool IsSparseFrameFilled(AnimationTimelineModel.FrameValue value)
+        {
+            if (value.PathToken != null) return true;
+            CanvasScript canvas = GetCanvasForDrawing(value.DrawingId);
+            return canvas != null && GetFrameFilledWithoutStats(canvas);
+        }
+
+        private int GetSparseTimelineContentLength(
+            List<AnimationTimelineModel.EditableTrack> tracks)
+        {
+            int lastFilledFrame = 0;
+            foreach (AnimationTimelineModel.EditableTrack track in tracks)
+            {
+                for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
+                {
+                    if (IsSparseFrameFilled(track.Frames[frameIndex]))
+                    {
+                        lastFilledFrame = Math.Max(lastFilledFrame, frameIndex);
+                    }
+                }
+            }
+            return lastFilledFrame + 1;
+        }
+
+        private void PadSparseTracks(
+            List<AnimationTimelineModel.EditableTrack> tracks, int length)
+        {
+            foreach (AnimationTimelineModel.EditableTrack track in tracks)
+            {
+                if (track.Frames.Count >= length) continue;
+                AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
+                while (track.Frames.Count < length) track.Frames.Add(emptyValue);
+            }
+        }
+
+        private void NormalizeSparseTimelineLength(
+            List<AnimationTimelineModel.EditableTrack> tracks)
+        {
+            int contentLength = GetSparseTimelineContentLength(tracks);
+            foreach (AnimationTimelineModel.EditableTrack track in tracks)
+            {
+                if (track.Frames.Count > contentLength)
+                {
+                    track.Frames.RemoveRange(contentLength, track.Frames.Count - contentLength);
+                }
+            }
+            PadSparseTracks(tracks, contentLength);
+        }
+
+        private void ProjectSparseTimelineToCompatibilityView()
+        {
+            m_CachedTimelineLength = m_SparseTimeline.Length;
+            m_SparseTimelineDirty = false;
+
+            List<Track> previousTimeline = Timeline;
+            var previousEmptyCanvases = new HashSet<CanvasScript>(m_EmptyCanvases);
+            Timeline = new List<Track>(m_SparseTimeline.Tracks.Count);
+            for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
+            {
+                AnimationTimelineModel.Track sparseTrack = m_SparseTimeline.Tracks[trackIndex];
+                Timeline.Add(new Track
+                {
+                    Id = sparseTrack.Id,
+                    Frames = new List<Frame>(sparseTrack.Length),
+                    Visible = sparseTrack.Visible,
+                    Deleted = sparseTrack.Deleted,
+                });
+
+                foreach (AnimationTimelineModel.Span span in sparseTrack.Spans)
+                {
+                    CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
+                    if (span.Value.DrawingId.IsEmpty)
+                    {
+                        CanvasScript preferredCanvas = null;
+                        if (!m_ShareEmptyCanvases && previousTimeline != null)
+                        {
+                            int previousTrackIndex = previousTimeline.FindIndex(
+                                track => track.Id == sparseTrack.Id);
+                            if (previousTrackIndex >= 0 &&
+                                span.StartFrame < previousTimeline[previousTrackIndex].Frames.Count)
+                            {
+                                CanvasScript candidate = previousTimeline[previousTrackIndex]
+                                    .Frames[span.StartFrame].Canvas;
+                                if (candidate != null && previousEmptyCanvases.Contains(candidate))
+                                {
+                                    preferredCanvas = candidate;
+                                }
+                            }
+                        }
+                        canvas = GetOrCreateEmptyCanvas(trackIndex, preferredCanvas);
+                    }
+                    for (int frameIndex = span.StartFrame;
+                        frameIndex < span.EndFrameExclusive; frameIndex++)
+                    {
+                        Timeline[trackIndex].Frames.Add(new Frame
+                        {
+                            Visible = sparseTrack.Visible,
+                            Deleted = span.Value.Deleted,
+                            FrameExists = span.Value.FrameExists,
+                            Canvas = canvas,
+                            AnimatedPath = span.Value.PathToken as CameraPathWidget,
+                            EmptySpanId = span.Value.SpanIdentity,
+                        });
+                    }
+                }
+            }
+
+            RebuildEmptyCanvasRegistry();
+            foreach (CanvasScript unusedCanvas in previousEmptyCanvases.Where(
+                canvas => canvas != null && !m_EmptyCanvases.Contains(canvas)))
+            {
+                DestroyTimelineCanvas(unusedCanvas);
+            }
+            InvalidateTimelineProjection();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (m_ValidateSparseTimeline) ValidateSparseTimelineProjection();
 #endif
@@ -501,8 +646,20 @@ namespace TiltBrush.FrameAnimation
 
         private CanvasScript GetOrCreateEmptyCanvas(int trackIndex, CanvasScript preferredCanvas = null)
         {
-            if (trackIndex < 0 || trackIndex >= Timeline.Count) return preferredCanvas;
-            int trackId = Timeline[trackIndex].Id;
+            if (trackIndex < 0) return preferredCanvas;
+            int trackId;
+            if (trackIndex < m_SparseTimeline.Tracks.Count)
+            {
+                trackId = m_SparseTimeline.Tracks[trackIndex].Id;
+            }
+            else if (Timeline != null && trackIndex < Timeline.Count)
+            {
+                trackId = Timeline[trackIndex].Id;
+            }
+            else
+            {
+                return preferredCanvas;
+            }
             if (!m_ShareEmptyCanvases)
             {
                 CanvasScript distinctCanvas = preferredCanvas != null
@@ -551,49 +708,37 @@ namespace TiltBrush.FrameAnimation
             {
                 return;
             }
-            if (!m_ShareEmptyCanvases)
+            CanvasScript replacement = null;
+            if (m_ShareEmptyCanvases)
             {
-                m_EmptyCanvases.Remove(populatedCanvas);
-                Track distinctTrack = Timeline[trackIndex];
+                replacement = App.Scene.AddCanvas();
+                replacement.gameObject.name = populatedCanvas.gameObject.name;
+                replacement.LocalPose = populatedCanvas.LocalPose;
+                replacement.gameObject.SetActive(populatedCanvas.gameObject.activeSelf);
+            }
+            m_EmptyCanvases.Remove(populatedCanvas);
+            if (replacement != null)
+            {
+                m_EmptyCanvasByTrackId[Timeline[trackIndex].Id] = replacement;
+                m_EmptyCanvases.Add(replacement);
+            }
+            else
+            {
+                m_EmptyCanvasByTrackId.Remove(Timeline[trackIndex].Id);
+            }
+
+            AnimationDrawingId drawingId = GetOrCreateDrawingId(populatedCanvas);
+            ApplySparseTimelineEdit(tracks =>
+            {
                 for (int frameIndex = selectedSpan.StartFrame;
                     frameIndex < selectedSpan.EndFrameExclusive; frameIndex++)
                 {
-                    Frame frame = distinctTrack.Frames[frameIndex];
-                    frame.EmptySpanId = 0;
-                    distinctTrack.Frames[frameIndex] = frame;
+                    AnimationTimelineModel.FrameValue value = tracks[trackIndex].Frames[frameIndex];
+                    tracks[trackIndex].Frames[frameIndex] =
+                        new AnimationTimelineModel.FrameValue(
+                            drawingId, value.Deleted, value.FrameExists, value.PathToken);
                 }
-                Timeline[trackIndex] = distinctTrack;
-                InvalidateTimelineStructure();
-                return;
-            }
-            CanvasScript replacement = App.Scene.AddCanvas();
-            replacement.gameObject.name = populatedCanvas.gameObject.name;
-            replacement.LocalPose = populatedCanvas.LocalPose;
-            replacement.gameObject.SetActive(populatedCanvas.gameObject.activeSelf);
-            m_EmptyCanvases.Remove(populatedCanvas);
-            m_EmptyCanvasByTrackId[Timeline[trackIndex].Id] = replacement;
-            m_EmptyCanvases.Add(replacement);
-
-            Track track = Timeline[trackIndex];
-            for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
-            {
-                if (track.Frames[frameIndex].Canvas != populatedCanvas)
-                {
-                    continue;
-                }
-                Frame frame = track.Frames[frameIndex];
-                if (selectedSpan.Contains(frameIndex))
-                {
-                    frame.EmptySpanId = 0;
-                }
-                else
-                {
-                    frame.Canvas = replacement;
-                }
-                track.Frames[frameIndex] = frame;
-            }
-            Timeline[trackIndex] = track;
-            InvalidateTimelineStructure();
+            });
         }
 
         public CanvasScript GetOrCreateContentCanvas(int trackIndex, int frameIndex)
@@ -619,15 +764,16 @@ namespace TiltBrush.FrameAnimation
                 contentCanvas.LocalPose = emptyCanvas.LocalPose;
                 contentCanvas.gameObject.SetActive(emptyCanvas.gameObject.activeSelf);
             }
-            for (int i = span.StartFrame; i < span.EndFrameExclusive; i++)
+            AnimationDrawingId drawingId = GetOrCreateDrawingId(contentCanvas);
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame frame = track.Frames[i];
-                frame.Canvas = contentCanvas;
-                frame.EmptySpanId = 0;
-                track.Frames[i] = frame;
-            }
-            Timeline[trackIndex] = track;
-            InvalidateTimelineStructure();
+                for (int i = span.StartFrame; i < span.EndFrameExclusive; i++)
+                {
+                    AnimationTimelineModel.FrameValue value = tracks[trackIndex].Frames[i];
+                    tracks[trackIndex].Frames[i] = new AnimationTimelineModel.FrameValue(
+                        drawingId, value.Deleted, value.FrameExists, value.PathToken);
+                }
+            });
             return contentCanvas;
         }
 
@@ -858,19 +1004,24 @@ namespace TiltBrush.FrameAnimation
             (int, int) Loc = (trackNum, frameNum);
             pathwidget.Path.timelineLocation = Loc;
 
-            if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
+            CameraPathWidget previousPath = Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath;
+            if (previousPath != null)
             {
-                WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
+                WidgetManager.m_Instance.DeleteCameraPath(previousPath);
             }
 
             int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
-
-            for (int c = 0; c < i; c++)
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame changingFrame = Timeline[Loc.Item1].Frames[Loc.Item2 + c];
-                changingFrame.AnimatedPath = pathwidget;
-                Timeline[Loc.Item1].Frames[Loc.Item2 + c] = changingFrame;
-            }
+                for (int c = 0; c < i; c++)
+                {
+                    AnimationTimelineModel.FrameValue value = tracks[Loc.Item1].Frames[Loc.Item2 + c];
+                    tracks[Loc.Item1].Frames[Loc.Item2 + c] =
+                        new AnimationTimelineModel.FrameValue(
+                            value.DrawingId, value.Deleted, value.FrameExists,
+                            pathwidget, value.SpanIdentity);
+                }
+            });
         }
 
         public void AddAnimationPath(CameraPathWidget pathwidget)
@@ -888,42 +1039,43 @@ namespace TiltBrush.FrameAnimation
                 return;
             }
 
-            if (Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath != null)
+            CameraPathWidget previousPath = Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath;
+            if (previousPath != null)
             {
-                WidgetManager.m_Instance.DeleteCameraPath(Timeline[Loc.Item1].Frames[Loc.Item2].AnimatedPath);
+                WidgetManager.m_Instance.DeleteCameraPath(previousPath);
             }
 
-            List<Frame> framesChanging = new List<Frame>();
             int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
-
-            for (int c = 0; c < i; c++)
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame changingFrame = Timeline[Loc.Item1].Frames[Loc.Item2 + c];
-                changingFrame.AnimatedPath = pathwidget;
-                Timeline[Loc.Item1].Frames[Loc.Item2 + c] = changingFrame;
-            }
+                for (int c = 0; c < i; c++)
+                {
+                    AnimationTimelineModel.FrameValue value = tracks[Loc.Item1].Frames[Loc.Item2 + c];
+                    tracks[Loc.Item1].Frames[Loc.Item2 + c] =
+                        new AnimationTimelineModel.FrameValue(
+                            value.DrawingId, value.Deleted, value.FrameExists,
+                            pathwidget, value.SpanIdentity);
+                }
+            });
 
             ResetTimeline();
         }
 
         public CanvasScript AddLayerRefresh(CanvasScript canvasAdding)
         {
-            InvalidateTimelineStructure();
+            EnsureSparseTimeline();
             int timelineLength = GetTimelineLength();
             Track addingTrack = NewTrack();
             m_EmptyCanvasByTrackId[addingTrack.Id] = canvasAdding;
             m_EmptyCanvases.Add(canvasAdding);
-            Frame addingFrame;
-            for (int i = 0; i < timelineLength; i++)
+            AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
+            ApplySparseTimelineEdit(tracks =>
             {
-                CanvasScript emptyCanvas = m_ShareEmptyCanvases || i == 0
-                    ? canvasAdding
-                    : App.Scene.AddCanvas();
-                m_EmptyCanvases.Add(emptyCanvas);
-                addingFrame = NewFrame(emptyCanvas);
-                addingTrack.Frames.Add(addingFrame);
-            }
-            Timeline.Add(addingTrack);
+                var frames = new List<AnimationTimelineModel.FrameValue>(timelineLength);
+                for (int i = 0; i < timelineLength; i++) frames.Add(emptyValue);
+                tracks.Add(new AnimationTimelineModel.EditableTrack(
+                    addingTrack.Id, true, false, frames));
+            });
             ResetTimeline();
             return canvasAdding;
         }
@@ -955,11 +1107,7 @@ namespace TiltBrush.FrameAnimation
                 return location;
             }
 
-            // Timeline is temporarily exposed as a mutable compatibility view. Detect callers
-            // that mutate it without invalidating the sparse projection and recover safely.
-            m_SparseTimelineDirty = true;
-            EnsureSparseTimeline();
-            return m_SparseTimeline.TryGetDrawingLocation(drawingId, out location) ? location : (-1, -1);
+            return (-1, -1);
         }
 
         public CanvasScript GetTimelineCanvas(int trackIndex, int frameIndex)
@@ -1031,17 +1179,7 @@ namespace TiltBrush.FrameAnimation
 
             if (canvasIndex.Item2 != -1)
             {
-                Track thisTrack = Timeline[canvasIndex.Item1];
-                thisTrack.Visible = visible;
-
-                for (int i = 0; i < thisTrack.Frames.Count; i++)
-                {
-                    Frame changingFrame = thisTrack.Frames[i];
-                    changingFrame.Visible = visible;
-                    thisTrack.Frames[i] = changingFrame;
-                }
-                Timeline[canvasIndex.Item1] = thisTrack;
-                InvalidateTimelineStructure();
+                ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Visible = visible);
             }
         }
 
@@ -1050,9 +1188,7 @@ namespace TiltBrush.FrameAnimation
             (int, int) canvasIndex = GetCanvasLocation(canvas);
             if (canvasIndex.Item2 != -1)
             {
-                Track thisTrack = Timeline[canvasIndex.Item1];
-                thisTrack.Deleted = true;
-                Timeline[canvasIndex.Item1] = thisTrack;
+                ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Deleted = true);
             }
             ResetTimeline();
         }
@@ -1062,9 +1198,7 @@ namespace TiltBrush.FrameAnimation
             (int, int) canvasIndex = GetCanvasLocation(canvas);
             if (canvasIndex.Item2 != -1)
             {
-                Track thisTrack = Timeline[canvasIndex.Item1];
-                thisTrack.Deleted = false;
-                Timeline[canvasIndex.Item1] = thisTrack;
+                ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Deleted = false);
             }
             ResetTimeline();
         }
@@ -1072,22 +1206,12 @@ namespace TiltBrush.FrameAnimation
         public int GetTimelineLength()
         {
             EnsureSparseTimeline();
-            int currentLength = Timeline == null || Timeline.Count == 0
-                ? 0
-                : Timeline.Max(track => track.Frames?.Count ?? 0);
-            if (currentLength != m_CachedTimelineLength)
-            {
-                // See GetCanvasLocation(): this guards the compatibility view until Phase 3 makes
-                // the sparse model authoritative.
-                m_SparseTimelineDirty = true;
-                EnsureSparseTimeline();
-            }
             return m_CachedTimelineLength;
         }
 
         public void ResetTimeline()
         {
-            InvalidateTimelineStructure();
+            InvalidateTimelineProjection();
             EnsureTimelineIndexes();
             m_PerformanceStats?.RecordTimelineReset();
             UpdateNodes();
@@ -1533,21 +1657,22 @@ namespace TiltBrush.FrameAnimation
 
         public DeleteFrameOperation RemoveKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             Frame deletedFrame = Timeline[index.Item1].Frames[index.Item2];
 
             App.Scene.HideCanvas(deletedFrame.Canvas);
-            for (int l = index.Item2; l < nextIndex.Item2; l++)
+            AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
+            ApplySparseTimelineEdit(tracks =>
             {
-                CanvasScript replacementCanvas = GetOrCreateEmptyCanvas(index.Item1);
-                Frame removingFrame = NewFrame(replacementCanvas);
-                Timeline[index.Item1].Frames[l] = removingFrame;
-            }
+                for (int frame = index.Item2; frame < nextIndex.Item2; frame++)
+                {
+                    tracks[index.Item1].Frames[frame] = emptyValue;
+                }
+                NormalizeSparseTimelineLength(tracks);
+            });
 
-            FillandCleanTimeline();
             SelectTimelineFrame(index.Item1, Math.Clamp(index.Item2, 0, GetTimelineLength() - 1));
             ResetTimeline();
             return CompleteDeleteFrameOperation(index, deletedFrame.AnimatedPath, previousTimeline);
@@ -1591,74 +1716,31 @@ namespace TiltBrush.FrameAnimation
 
         public void CleanTimeline()
         {
-            InvalidateTimelineStructure();
-            int maxTimeline = GetTimelineMaxCanvas();
-            var newTimeline = new List<Track>();
-            var removedCanvases = new HashSet<CanvasScript>();
-
-            for (int t = 0; t < Timeline.Count; t++)
+            HashSet<CanvasScript> previousCanvases = GetDrawingCanvases(Timeline);
+            ApplySparseTimelineEdit(tracks =>
             {
-                Track addingTrack = NewTrack();
-                addingTrack.Id = Timeline[t].Id;
-                addingTrack.Visible = Timeline[t].Visible;
-                addingTrack.Deleted = Timeline[t].Deleted;
-                newTimeline.Add(addingTrack);
-                for (int f = 0; f < Timeline[t].Frames.Count; f++)
+                int contentLength = GetSparseTimelineContentLength(tracks);
+                foreach (AnimationTimelineModel.EditableTrack track in tracks)
                 {
-                    if (f <= maxTimeline)
+                    if (track.Frames.Count > contentLength)
                     {
-                        newTimeline[t].Frames.Add(Timeline[t].Frames[f]);
-                    }
-                    else
-                    {
-                        removedCanvases.Add(Timeline[t].Frames[f].Canvas);
+                        track.Frames.RemoveRange(
+                            contentLength, track.Frames.Count - contentLength);
                     }
                 }
-            }
-
-            HashSet<CanvasScript> retainedCanvases = GetAllTimelineCanvases(newTimeline);
-            Timeline = newTimeline;
-            InvalidateTimelineStructure();
-            foreach (CanvasScript canvas in removedCanvases)
+            });
+            HashSet<CanvasScript> retainedCanvases = GetDrawingCanvases(Timeline);
+            foreach (CanvasScript canvas in previousCanvases.Where(
+                canvas => !retainedCanvases.Contains(canvas)))
             {
-                if (canvas != null && !retainedCanvases.Contains(canvas))
-                {
-                    DestroyTimelineCanvas(canvas);
-                }
+                DestroyTimelineCanvas(canvas);
             }
         }
 
         public void FillTimeline()
         {
-            InvalidateTimelineStructure();
             int maxTimeline = GetTimelineLength();
-            var newTimeline = new List<Track>();
-
-            for (int t = 0; t < Timeline.Count; t++)
-            {
-                Track addingTrack = NewTrack();
-                addingTrack.Id = Timeline[t].Id;
-                addingTrack.Visible = Timeline[t].Visible;
-                addingTrack.Deleted = Timeline[t].Deleted;
-                newTimeline.Add(addingTrack);
-                int f;
-                for (f = 0; f < Timeline[t].Frames.Count; f++)
-                {
-                    newTimeline[t].Frames.Add(Timeline[t].Frames[f]);
-                }
-
-                if (f < maxTimeline)
-                {
-                    while (f < maxTimeline)
-                    {
-                        Frame addingFrame = NewFrame(GetOrCreateEmptyCanvas(t));
-                        newTimeline[t].Frames.Add(addingFrame);
-                        f++;
-                    }
-                }
-            }
-            Timeline = newTimeline;
-            InvalidateTimelineStructure();
+            ApplySparseTimelineEdit(tracks => PadSparseTracks(tracks, maxTimeline));
         }
 
         // Make sure there aren't too many or too few empty frames
@@ -1670,52 +1752,51 @@ namespace TiltBrush.FrameAnimation
 
         public (int, int) MoveKeyFrame(bool moveRight, int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
-            bool failure = false;
-
-            if (moveRight)
+            if (moveRight && nextIndex.Item2 < Timeline[nextIndex.Item1].Frames.Count &&
+                GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
             {
-                if (nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count)
+                return (-1, -1);
+            }
+            if (!moveRight && (index.Item2 <= 0 ||
+                GetFrameFilled(index.Item1, index.Item2 - 1)))
+            {
+                return (-1, -1);
+            }
+
+            int frameLength = GetFrameLength(index.Item1, index.Item2);
+            ApplySparseTimelineEdit(tracks =>
+            {
+                List<AnimationTimelineModel.FrameValue> frames = tracks[index.Item1].Frames;
+                if (moveRight)
                 {
-                    Frame emptyFrame = NewFrame(GetOrCreateEmptyCanvas(index.Item1));
-                    Frame movedFrame = Timeline[index.Item1].Frames[index.Item2];
-                    Timeline[index.Item1].Frames[index.Item2] = emptyFrame;
-                    Timeline[nextIndex.Item1].Frames.Insert(Timeline[nextIndex.Item1].Frames.Count, movedFrame);
-                }
-                else if (!GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
-                {
-                    Frame tempFrame = Timeline[nextIndex.Item1].Frames[nextIndex.Item2];
-                    Timeline[nextIndex.Item1].Frames[nextIndex.Item2] = Timeline[index.Item1].Frames[index.Item2];
-                    Timeline[index.Item1].Frames[index.Item2] = tempFrame;
+                    AnimationTimelineModel.FrameValue moved = frames[index.Item2];
+                    if (nextIndex.Item2 >= frames.Count)
+                    {
+                        frames[index.Item2] = NewEmptyFrameValue();
+                        frames.Add(moved);
+                    }
+                    else
+                    {
+                        (frames[index.Item2], frames[nextIndex.Item2]) =
+                            (frames[nextIndex.Item2], frames[index.Item2]);
+                    }
                 }
                 else
                 {
-                    failure = true;
+                    int lastFrame = index.Item2 + frameLength - 1;
+                    (frames[index.Item2 - 1], frames[lastFrame]) =
+                        (frames[lastFrame], frames[index.Item2 - 1]);
                 }
-            }
-            else
-            {
-                if (index.Item2 > 0 && !GetFrameFilled(index.Item1, index.Item2 - 1))
-                {
-                    int frameLength = GetFrameLength(index.Item1, index.Item2);
-                    Frame tempFrame = Timeline[index.Item1].Frames[index.Item2 - 1];
-                    Timeline[index.Item1].Frames[index.Item2 - 1] = Timeline[index.Item1].Frames[index.Item2 + frameLength - 1];
-                    Timeline[index.Item1].Frames[index.Item2 + frameLength - 1] = tempFrame;
-                }
-                else
-                {
-                    failure = true;
-                }
-            }
-            if (failure) return (-1, -1);
-            FillandCleanTimeline();
+                NormalizeSparseTimelineLength(tracks);
+            });
 
             if (moveRight)
             {
-                SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
-                return (index.Item1, index.Item2 + 1);
+                (int, int) movedTo = (index.Item1, index.Item2 + 1);
+                SelectTimelineFrame(movedTo.Item1, movedTo.Item2);
+                return movedTo;
             }
             SelectTimelineFrame(index.Item1, index.Item2 - 1);
             return (index.Item1, index.Item2 - 1);
@@ -1725,53 +1806,42 @@ namespace TiltBrush.FrameAnimation
         // TODO Hidden by overloads
         public void AddKeyFrame(int trackNum)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum, Timeline[trackNum].Frames.Count - 1);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
-            if (nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count)
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame addingFrame = NewFrame(GetOrCreateEmptyCanvas(nextIndex.Item1));
-                Timeline[nextIndex.Item1].Frames.Insert(Timeline[nextIndex.Item1].Frames.Count, addingFrame);
-                nextIndex.Item2 = Timeline[nextIndex.Item1].Frames.Count - 1;
-            }
-            else if (GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
-            {
-                Frame addingFrame = NewFrame(GetOrCreateEmptyCanvas(nextIndex.Item1));
-                Timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
-            }
-            InvalidateTimelineStructure();
+                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
+                if (nextIndex.Item2 >= frames.Count) frames.Add(NewEmptyFrameValue());
+                else if (IsSparseFrameFilled(frames[nextIndex.Item2]))
+                {
+                    frames.Insert(nextIndex.Item2, NewEmptyFrameValue());
+                }
+            });
         }
 
         public AddFrameOperation AddKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             (int, int) insertingAt;
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
-            if (nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count)
+            bool append = nextIndex.Item2 >= Timeline[nextIndex.Item1].Frames.Count;
+            bool insert = !append && GetFrameFilled(nextIndex.Item1, nextIndex.Item2);
+            insertingAt = append
+                ? (nextIndex.Item1, Timeline[nextIndex.Item1].Frames.Count)
+                : nextIndex;
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame addingFrame = NewFrame(GetOrCreateEmptyCanvas(nextIndex.Item1));
-                Timeline[nextIndex.Item1].Frames.Insert(Timeline[nextIndex.Item1].Frames.Count, addingFrame);
-                nextIndex.Item2 = Timeline[nextIndex.Item1].Frames.Count - 1;
-                insertingAt = (nextIndex.Item1, Timeline[nextIndex.Item1].Frames.Count - 1);
-            }
-            else if (GetFrameFilled(nextIndex.Item1, nextIndex.Item2))
-            {
-                Frame addingFrame = NewFrame(GetOrCreateEmptyCanvas(nextIndex.Item1));
-                Timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2, addingFrame);
-                insertingAt = nextIndex;
-            }
-            else
-            {
-                insertingAt = nextIndex;
-            }
+                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
+                if (append) frames.Add(NewEmptyFrameValue());
+                else if (insert) frames.Insert(nextIndex.Item2, NewEmptyFrameValue());
+                PadSparseTracks(tracks, tracks.Max(track => track.Frames.Count));
+            });
 
             ResetTimeline();
-            FillTimeline();
-            SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
+            SelectTimelineFrame(insertingAt.Item1, insertingAt.Item2);
 
             HashSet<CanvasScript> previousCanvases = GetTimelineCanvases(previousTimeline);
             List<CanvasScript> createdCanvases = GetDrawingCanvases(Timeline)
@@ -1787,7 +1857,7 @@ namespace TiltBrush.FrameAnimation
         public void UndoAddFrameOperation(AddFrameOperation operation, (int, int) selection)
         {
             if (!operation.Succeeded) return;
-            InvalidateTimelineStructure();
+            InvalidateTimelineProjection();
 
             RestoreTimelineSnapshot(operation.PreviousTimeline);
             ReleaseTimelineSnapshot(operation.PreviousTimeline);
@@ -1812,16 +1882,16 @@ namespace TiltBrush.FrameAnimation
         // TODO this is hidden by overload
         public void ExtendKeyFrame(int trackNum)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum, Timeline[trackNum].Frames.Count - 1);
-            Frame addingFrame = Timeline[index.Item1].Frames[index.Item2];
-            Timeline[index.Item1].Frames.Insert(index.Item2 + 1, addingFrame);
-            InvalidateTimelineStructure();
+            ApplySparseTimelineEdit(tracks =>
+            {
+                AnimationTimelineModel.FrameValue value = tracks[index.Item1].Frames[index.Item2];
+                tracks[index.Item1].Frames.Insert(index.Item2 + 1, value);
+            });
         }
 
         public FrameLengthOperation ExtendKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             if (!GetFrameFilled(index.Item1, index.Item2))
             {
@@ -1832,34 +1902,30 @@ namespace TiltBrush.FrameAnimation
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             int insertIndex = index.Item2 + frameLength;
 
-            if (insertIndex >= Timeline[index.Item1].Frames.Count ||
-                GetFrameFilled(index.Item1, insertIndex))
+            bool insertAcrossTracks = insertIndex >= Timeline[index.Item1].Frames.Count ||
+                GetFrameFilled(index.Item1, insertIndex);
+            ApplySparseTimelineEdit(tracks =>
             {
-                for (int l = 0; l < Timeline.Count; l++)
+                if (insertAcrossTracks)
                 {
-                    Frame addingFrame;
-                    if (l == index.Item1)
+                    for (int trackIndex = 0; trackIndex < tracks.Count; trackIndex++)
                     {
-                        addingFrame = Timeline[l].Frames[index.Item2];
+                        List<AnimationTimelineModel.FrameValue> frames = tracks[trackIndex].Frames;
+                        AnimationTimelineModel.FrameValue addingValue = trackIndex == index.Item1
+                            ? frames[index.Item2]
+                            : NewEmptyFrameValue();
+                        AnimationTimelineModel.FrameValue paddingValue = NewEmptyFrameValue();
+                        while (frames.Count < insertIndex) frames.Add(paddingValue);
+                        frames.Insert(insertIndex, addingValue);
                     }
-                    else
-                    {
-                        addingFrame = NewFrame(GetOrCreateEmptyCanvas(l));
-                    }
-                    while (Timeline[l].Frames.Count < insertIndex)
-                    {
-                        Timeline[l].Frames.Add(NewFrame(GetOrCreateEmptyCanvas(l)));
-                    }
-                    Timeline[l].Frames.Insert(insertIndex, addingFrame);
                 }
-            }
-            else
-            {
-                Frame addingFrame = Timeline[index.Item1].Frames[index.Item2];
-                Timeline[index.Item1].Frames[insertIndex] = addingFrame;
-            }
+                else
+                {
+                    tracks[index.Item1].Frames[insertIndex] =
+                        tracks[index.Item1].Frames[index.Item2];
+                }
+            });
 
-            InvalidateTimelineStructure();
             m_FrameOn++;
             FocusFrame((int)m_FrameOn);
             ResetTimeline();
@@ -1868,7 +1934,6 @@ namespace TiltBrush.FrameAnimation
 
         public FrameLengthOperation ReduceKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             if (frameLength <= 1)
@@ -1877,14 +1942,15 @@ namespace TiltBrush.FrameAnimation
             }
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
-            Frame emptyFrame = NewFrame(GetOrCreateEmptyCanvas(index.Item1));
-            Timeline[index.Item1].Frames[index.Item2 + frameLength - 1] = emptyFrame;
+            ApplySparseTimelineEdit(tracks =>
+            {
+                tracks[index.Item1].Frames[index.Item2 + frameLength - 1] = NewEmptyFrameValue();
+                NormalizeSparseTimelineLength(tracks);
+            });
 
-            InvalidateTimelineStructure();
             m_FrameOn--;
             FocusFrame(FrameOn);
             ResetTimeline();
-            FillandCleanTimeline();
             return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
@@ -2003,58 +2069,10 @@ namespace TiltBrush.FrameAnimation
                 .Where(canvas => canvas != null && !m_EmptyCanvases.Contains(canvas)));
         }
 
-        private static HashSet<CanvasScript> GetAllTimelineCanvases(List<Track> timeline)
-        {
-            return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames)
-                .Select(frame => frame.Canvas)
-                .Where(canvas => canvas != null));
-        }
-
         private void RestoreTimelineSnapshot(AnimationTimelineModel.Snapshot snapshot)
         {
             m_SparseTimeline.Restore(snapshot);
-            m_CachedTimelineLength = m_SparseTimeline.Length;
-            m_SparseTimelineDirty = false;
-
-            Timeline = new List<Track>(m_SparseTimeline.Tracks.Count);
-            for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
-            {
-                AnimationTimelineModel.Track sparseTrack = m_SparseTimeline.Tracks[trackIndex];
-                Timeline.Add(new Track
-                {
-                    Id = sparseTrack.Id,
-                    Frames = new List<Frame>(sparseTrack.Length),
-                    Visible = sparseTrack.Visible,
-                    Deleted = sparseTrack.Deleted,
-                });
-
-                foreach (AnimationTimelineModel.Span span in sparseTrack.Spans)
-                {
-                    CanvasScript canvas = GetCanvasForDrawing(span.Value.DrawingId);
-                    if (span.Value.DrawingId.IsEmpty)
-                    {
-                        canvas = GetOrCreateEmptyCanvas(trackIndex);
-                    }
-                    for (int frameIndex = span.StartFrame;
-                        frameIndex < span.EndFrameExclusive; frameIndex++)
-                    {
-                        Timeline[trackIndex].Frames.Add(new Frame
-                        {
-                            Visible = sparseTrack.Visible,
-                            Deleted = span.Value.Deleted,
-                            FrameExists = span.Value.FrameExists,
-                            Canvas = canvas,
-                            AnimatedPath = span.Value.PathToken as CameraPathWidget,
-                            EmptySpanId = span.Value.SpanIdentity,
-                        });
-                    }
-                }
-            }
-
-            RebuildEmptyCanvasRegistry();
-            m_TimelineIndexesValid = false;
-            m_CanvasLocations.Clear();
-            InvalidateDrawingOccupancy();
+            ProjectSparseTimelineToCompatibilityView();
         }
 
         private DeleteFrameOperation CompleteDeleteFrameOperation(
@@ -2078,7 +2096,7 @@ namespace TiltBrush.FrameAnimation
         public void UndoDeleteFrameOperation(DeleteFrameOperation operation)
         {
             if (!operation.Succeeded) return;
-            InvalidateTimelineStructure();
+            InvalidateTimelineProjection();
 
             RestoreTimelineSnapshot(operation.PreviousTimeline);
             ReleaseTimelineSnapshot(operation.PreviousTimeline);
@@ -2135,7 +2153,7 @@ namespace TiltBrush.FrameAnimation
         public void UndoFrameLengthOperation(FrameLengthOperation operation, (int, int) selection)
         {
             if (!operation.Succeeded) return;
-            InvalidateTimelineStructure();
+            InvalidateTimelineProjection();
 
             RestoreTimelineSnapshot(operation.PreviousTimeline);
             ReleaseTimelineSnapshot(operation.PreviousTimeline);
@@ -2191,7 +2209,7 @@ namespace TiltBrush.FrameAnimation
         public void UndoKeyFrameOperation(KeyFrameOperation operation, (int, int) selection)
         {
             if (!operation.Succeeded) return;
-            InvalidateTimelineStructure();
+            InvalidateTimelineProjection();
 
             RestoreTimelineSnapshot(operation.PreviousTimeline);
             ReleaseTimelineSnapshot(operation.PreviousTimeline);
@@ -2227,7 +2245,6 @@ namespace TiltBrush.FrameAnimation
 
         public KeyFrameOperation SplitKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
@@ -2244,14 +2261,16 @@ namespace TiltBrush.FrameAnimation
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
+            AnimationTimelineModel.FrameValue newDrawing = NewDrawingFrameValue(newCanvas);
 
-            for (int f = splittingIndex; f < index.Item2 + frameLength; f++)
+            ApplySparseTimelineEdit(tracks =>
             {
-                Frame addingFrame = NewFrame(newCanvas);
-                Timeline[index.Item1].Frames[f] = addingFrame;
-            }
+                for (int frame = splittingIndex; frame < index.Item2 + frameLength; frame++)
+                {
+                    tracks[index.Item1].Frames[frame] = newDrawing;
+                }
+            });
 
-            InvalidateTimelineStructure();
             SelectTimelineFrame(index.Item1, splittingIndex);
             ResetTimeline();
             return CompleteKeyFrameOperation(
@@ -2260,8 +2279,6 @@ namespace TiltBrush.FrameAnimation
 
         public KeyFrameOperation DuplicateKeyFrame(int trackNum = -1, int frameNum = -1)
         {
-            InvalidateTimelineStructure();
-
             (int, int) index = (trackNum == -1 || frameNum == -1) ? GetCanvasLocation(App.Scene.ActiveCanvas) : (trackNum, frameNum);
 
             CanvasScript oldCanvas = Timeline[index.Item1].Frames[index.Item2].Canvas;
@@ -2271,28 +2288,29 @@ namespace TiltBrush.FrameAnimation
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
             CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
+            AnimationTimelineModel.FrameValue newDrawing = NewDrawingFrameValue(newCanvas);
 
             int frameLength = GetFrameLength(index.Item1, index.Item2);
             (int, int) nextIndex = GetFollowingFrameIndex(index.Item1, index.Item2);
 
-            for (int f = 0; f < frameLength; f++)
+            ApplySparseTimelineEdit(tracks =>
             {
-                if (nextIndex.Item2 + f < Timeline[nextIndex.Item1].Frames.Count &&
-                    !GetFrameFilled(nextIndex.Item1, nextIndex.Item2 + f))
+                List<AnimationTimelineModel.FrameValue> frames = tracks[nextIndex.Item1].Frames;
+                for (int frameOffset = 0; frameOffset < frameLength; frameOffset++)
                 {
-                    Frame addingFrame = NewFrame(newCanvas);
-
-                    Timeline[nextIndex.Item1].Frames[nextIndex.Item2 + f] = addingFrame;
+                    int destination = nextIndex.Item2 + frameOffset;
+                    if (destination < frames.Count && !IsSparseFrameFilled(frames[destination]))
+                    {
+                        frames[destination] = newDrawing;
+                    }
+                    else
+                    {
+                        frames.Insert(destination, newDrawing);
+                    }
                 }
-                else
-                {
-                    Frame addingFrame = NewFrame(newCanvas);
-                    Timeline[nextIndex.Item1].Frames.Insert(nextIndex.Item2 + f, addingFrame);
-                }
-            }
+                PadSparseTracks(tracks, tracks.Max(track => track.Frames.Count));
+            });
 
-            InvalidateTimelineStructure();
-            FillTimeline();
             SelectTimelineFrame(nextIndex.Item1, nextIndex.Item2);
             ResetTimeline();
             return CompleteKeyFrameOperation(nextIndex, newCanvas, newStrokes, previousTimeline);

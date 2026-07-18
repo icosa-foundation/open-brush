@@ -769,7 +769,6 @@ namespace TiltBrush
                     if (jsonData.AnimationTracks != null)
                     {
 
-                        var timeline = App.Scene.animationUI_manager.Timeline;
                         for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++) // Skip the main canvas
                         {
                             for (int f = 0; f < jsonData.AnimationTracks.Tracks[i].frameLengths.Count; f++)
@@ -785,7 +784,6 @@ namespace TiltBrush
                                 }
                             }
                         }
-                        App.Scene.animationUI_manager.Timeline = timeline;
                     }
                 }
 
