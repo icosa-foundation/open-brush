@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
@@ -34,6 +35,10 @@ namespace TiltBrush.Tests
         [UnitySetUp]
         public IEnumerator EnterRuntime()
         {
+            // LuaManager does not currently clear its private singleton when Play mode exits.
+            // Isolate repeated Play-mode integration cases from that existing lifecycle bug.
+            typeof(LuaManager).GetField(
+                "m_Instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
             yield return new EnterPlayMode();
             float deadline = Time.realtimeSinceStartup + 60f;
             while ((App.Scene == null || App.Scene.animationUI_manager == null ||
