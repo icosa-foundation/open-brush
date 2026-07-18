@@ -1654,6 +1654,7 @@ namespace TiltBrush.FrameAnimation
             Profiler.BeginSample("OB_ANIM_SCALE.FocusFrame");
 
             int previousFrame = m_PreviousShowingFrame;
+            Profiler.BeginSample("OB_ANIM_SCALE.FrameVisibility");
             if (!m_UseDifferentialPlayback)
             {
                 ApplyLegacyFrameVisibility(frameIndex);
@@ -1666,7 +1667,9 @@ namespace TiltBrush.FrameAnimation
             {
                 ApplyDifferentialFrameVisibility(previousFrame, frameIndex);
             }
+            Profiler.EndSample();
 
+            Profiler.BeginSample("OB_ANIM_SCALE.ActiveCanvasRebuild");
             App.Scene.m_LayerCanvases = new List<CanvasScript>();
             for (int i = 0; i < Timeline.Count; i++)
             {
@@ -1687,6 +1690,7 @@ namespace TiltBrush.FrameAnimation
                 CanvasScript nextActiveCanvas = Timeline[previousActiveCanvas.Item1].Frames[frameIndex].Canvas;
                 if (nextActiveCanvas != null) App.Scene.ActiveCanvas = nextActiveCanvas;
             }
+            Profiler.EndSample();
 
             m_PreviousShowingFrame = frameIndex;
             UpdateUI(timelineInput, updateTimelineLayout: !playbackUpdate);
