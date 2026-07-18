@@ -551,6 +551,7 @@ namespace TiltBrush
             {
                 m_ScenePlayback.AddStroke(stroke);
             }
+            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(stroke.Canvas);
         }
 
         public void MemorizeBatchedBrushStroke(
@@ -786,6 +787,7 @@ namespace TiltBrush
         /// It's the caller's responsibility to destroy if (if desired).
         public void RemoveMemoryObject(Stroke stroke)
         {
+            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(stroke.Canvas);
             var nodeByTime = stroke.m_NodeByTime;
             if (nodeByTime.List != null)
             { // implies stroke object

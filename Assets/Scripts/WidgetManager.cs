@@ -1321,6 +1321,7 @@ namespace TiltBrush
                 m_GrabWidgets.Add(new GrabWidgetData(generic));
             }
 
+            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(generic.Canvas);
             RefreshPinAndUnpinLists();
         }
 
@@ -1339,8 +1340,10 @@ namespace TiltBrush
 
         public void UnregisterGrabWidget(GameObject rWidget)
         {
+            GrabWidget removedWidget = rWidget.GetComponent<GrabWidget>();
+            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(removedWidget.Canvas);
             // Get this widget's batchId out of the map.
-            sm_BatchMap.Remove(rWidget.GetComponent<GrabWidget>().BatchId);
+            sm_BatchMap.Remove(removedWidget.BatchId);
 
             // Pull out of pin tool lists.
             RefreshPinAndUnpinLists();
