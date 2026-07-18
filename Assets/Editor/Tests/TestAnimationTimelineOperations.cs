@@ -73,6 +73,28 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void LegacyFrameLengthsExpandOnceWithStableKeyBoundaries()
+        {
+            long nextEmpty = 100;
+
+            List<AnimationTimelineModel.FrameValue> frames =
+                AnimationTimelineOperations.ExpandLegacyFrameLengths(
+                    new[] { 3, 0, 2 }, () => Empty(nextEmpty++));
+
+            Assert.AreEqual(6, frames.Count);
+            Assert.AreEqual(100, frames[0].SpanIdentity);
+            Assert.AreEqual(100, frames[2].SpanIdentity);
+            Assert.AreEqual(101, frames[3].SpanIdentity);
+            Assert.AreEqual(102, frames[4].SpanIdentity);
+            Assert.AreEqual(102, frames[5].SpanIdentity);
+
+            AnimationTimelineModel model = CreateModel(frames.ToArray());
+            Assert.AreEqual(3, model.Tracks[0].Spans.Count);
+            CollectionAssert.AreEqual(
+                new[] { 3, 1, 2 }, model.Tracks[0].Spans.Select(span => span.Duration));
+        }
+
+        [Test]
         public void MoveHeldSpanRightThenLeftRestoresResolvedFrames()
         {
             AnimationTimelineModel model = CreateModel(

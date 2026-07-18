@@ -58,6 +58,23 @@ namespace TiltBrush.FrameAnimation
             }
         }
 
+        public static List<AnimationTimelineModel.FrameValue> ExpandLegacyFrameLengths(
+            IReadOnlyList<int> frameLengths,
+            Func<AnimationTimelineModel.FrameValue> createEmpty)
+        {
+            if (frameLengths == null) throw new ArgumentNullException(nameof(frameLengths));
+            if (createEmpty == null) throw new ArgumentNullException(nameof(createEmpty));
+
+            var frames = new List<AnimationTimelineModel.FrameValue>();
+            foreach (int serializedLength in frameLengths)
+            {
+                int duration = Math.Max(1, serializedLength);
+                AnimationTimelineModel.FrameValue empty = createEmpty();
+                for (int frame = 0; frame < duration; frame++) frames.Add(empty);
+            }
+            return frames;
+        }
+
         public static void NormalizeLength(
             IReadOnlyList<AnimationTimelineModel.EditableTrack> tracks,
             Func<AnimationTimelineModel.FrameValue, bool> isFilled,

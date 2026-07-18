@@ -1128,6 +1128,42 @@ namespace TiltBrush.FrameAnimation
             return canvasAdding;
         }
 
+        public void ConfigureLegacyAnimationTracks(
+            IReadOnlyList<IReadOnlyList<int>> frameLengths,
+            IReadOnlyList<bool> trackVisibility)
+        {
+            if (frameLengths == null) throw new ArgumentNullException(nameof(frameLengths));
+            if (trackVisibility == null) throw new ArgumentNullException(nameof(trackVisibility));
+            if (frameLengths.Count != trackVisibility.Count)
+            {
+                throw new ArgumentException(
+                    "Animation frame lengths and visibility must have equal track counts");
+            }
+
+            ApplySparseTimelineEdit(tracks =>
+            {
+                while (tracks.Count < frameLengths.Count)
+                {
+                    tracks.Add(new AnimationTimelineModel.EditableTrack(
+                        m_NextTrackId++, visible: true, deleted: false,
+                        frames: new List<AnimationTimelineModel.FrameValue>
+                        {
+                            NewEmptyFrameValue()
+                        }));
+                }
+                for (int trackIndex = 0; trackIndex < frameLengths.Count; trackIndex++)
+                {
+                    tracks[trackIndex].Visible = trackVisibility[trackIndex];
+                    if (frameLengths[trackIndex].Count == 0) continue;
+                    List<AnimationTimelineModel.FrameValue> frames =
+                        AnimationTimelineOperations.ExpandLegacyFrameLengths(
+                            frameLengths[trackIndex], NewEmptyFrameValue);
+                    tracks[trackIndex].Frames.Clear();
+                    tracks[trackIndex].Frames.AddRange(frames);
+                }
+            });
+        }
+
         public (int, int) GetCanvasLocation(CanvasScript canvas)
         {
             EnsureSparseTimeline();

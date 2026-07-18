@@ -768,24 +768,14 @@ namespace TiltBrush
 
                     if (jsonData.AnimationTracks != null)
                     {
-
-                        for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++) // Skip the main canvas
-                        {
-                            AnimationTrackMetadata track = jsonData.AnimationTracks.Tracks[i];
-                            for (int f = 0; f < track.frameLengths.Count; f++)
-                            {
-                                if (f > 0)
-                                {
-                                    App.Scene.animationUI_manager.AddKeyFrame(i);
-                                }
-
-                                for (int l = 0; l < track.frameLengths[f] - 1; l++)
-                                {
-                                    App.Scene.animationUI_manager.ExtendKeyFrame(i);
-                                }
-                            }
-                            App.Scene.animationUI_manager.SetTrackVisibility(i, track.Visible);
-                        }
+                        var frameLengths = jsonData.AnimationTracks.Tracks
+                            .Select(track => (IReadOnlyList<int>)(track.frameLengths ?? new List<int>()))
+                            .ToList();
+                        var trackVisibility = jsonData.AnimationTracks.Tracks
+                            .Select(track => track.Visible)
+                            .ToList();
+                        App.Scene.animationUI_manager.ConfigureLegacyAnimationTracks(
+                            frameLengths, trackVisibility);
                     }
                 }
 
