@@ -289,6 +289,23 @@ namespace TiltBrush.FrameAnimation
             return m_TrackIdToIndex.TryGetValue(trackId, out trackIndex);
         }
 
+        public bool TryGetSerializableTrackIndex(int runtimeTrackIndex, out int serializedTrackIndex)
+        {
+            serializedTrackIndex = -1;
+            if (runtimeTrackIndex < 0 || runtimeTrackIndex >= m_Tracks.Count ||
+                m_Tracks[runtimeTrackIndex].Deleted)
+            {
+                return false;
+            }
+
+            serializedTrackIndex = 0;
+            for (int trackIndex = 0; trackIndex < runtimeTrackIndex; trackIndex++)
+            {
+                if (!m_Tracks[trackIndex].Deleted) serializedTrackIndex++;
+            }
+            return true;
+        }
+
         /// Applies an edit atomically. The callback operates on an expanded value view, and the
         /// result is normalized back into sparse spans only if the callback completes.
         public void ApplyEdit(Action<List<EditableTrack>> edit)

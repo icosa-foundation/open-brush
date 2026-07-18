@@ -319,6 +319,15 @@ namespace TiltBrush
             return App.Scene.animationUI_manager.GetCanvasLocation(canvas);
         }
 
+        public (int, int) GetSerializableIndexOfCanvas(CanvasScript canvas)
+        {
+            if (animationUI_manager == null || animationUI_manager.GetTimelineLength() == 0)
+            {
+                return GetIndexOfCanvas(canvas);
+            }
+            return animationUI_manager.GetSerializableCanvasLocation(canvas);
+        }
+
         public int GetLayerNumFromCanvas(CanvasScript canvas)
         {
             int index = 0;

@@ -1762,6 +1762,10 @@ namespace TiltBrush
 
         public CameraPathMetadata SerializeToCameraPathMetadata()
         {
+            (int, int) serializedTimelineLocation = belongsToAnimation &&
+                App.Scene?.animationUI_manager != null
+                ? App.Scene.animationUI_manager.GetSerializableTimelineLocation(timelineLocation)
+                : timelineLocation;
             return new CameraPathMetadata()
             {
                 PathKnots = PositionKnots.Select(k => k.AsSerializable()).ToArray(),
@@ -1769,7 +1773,7 @@ namespace TiltBrush
                 SpeedKnots = SpeedKnots.Select(k => k.AsSerializable()).ToArray(),
                 FovKnots = FovKnots.Select(k => k.AsSerializable()).ToArray(),
                 belongsAnimation = belongsToAnimation,
-                timelineLoc = timelineLocation,
+                timelineLoc = serializedTimelineLocation,
 
             };
         }

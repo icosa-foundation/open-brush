@@ -212,5 +212,27 @@ namespace TiltBrush.Tests
             Assert.AreEqual(2, model.Tracks.Count);
             Assert.AreEqual(2, model.Tracks[1].Id);
         }
+
+        [Test]
+        public void SerializableTrackIndexesExcludeDeletedTracksWithoutChangingStableIds()
+        {
+            var model = new AnimationTimelineModel();
+            model.Rebuild(
+                new[] { 10, 20, 30 }, new[] { true, true, true },
+                new[] { false, true, false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>(),
+                    new List<AnimationTimelineModel.FrameValue>(),
+                    new List<AnimationTimelineModel.FrameValue>()
+                });
+
+            Assert.IsTrue(model.TryGetSerializableTrackIndex(0, out int first));
+            Assert.AreEqual(0, first);
+            Assert.IsFalse(model.TryGetSerializableTrackIndex(1, out _));
+            Assert.IsTrue(model.TryGetSerializableTrackIndex(2, out int third));
+            Assert.AreEqual(1, third);
+            Assert.AreEqual(30, model.Tracks[2].Id);
+        }
     }
 }

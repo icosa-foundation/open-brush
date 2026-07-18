@@ -129,7 +129,8 @@ namespace TiltBrush
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                (newEntry.layerId, newEntry.frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -196,7 +197,8 @@ namespace TiltBrush
 
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
-                (int layerId, int frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
                     FilePath = widget.SoundClip.PersistentPath,
@@ -224,7 +226,8 @@ namespace TiltBrush
 
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
-                (int layerId, int frameId) = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 TiltVideo video = new TiltVideo
                 {
                     // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
@@ -296,7 +299,8 @@ namespace TiltBrush
                 newEntry.Transform = lightWidget.GetSaveTransform();
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
-                (newEntry.LayerId, newEntry.FrameId) = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                (newEntry.LayerId, newEntry.FrameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(lightWidget.Canvas);
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
@@ -349,7 +353,8 @@ namespace TiltBrush
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                (newEntry.layerId, newEntry.frameId) = App.Scene.GetIndexOfCanvas(image.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
                 imagesByPath[path].Add(newEntry);
             }

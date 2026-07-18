@@ -1084,6 +1084,23 @@ namespace TiltBrush.FrameAnimation
             return (-1, -1);
         }
 
+        public (int, int) GetSerializableTimelineLocation((int, int) runtimeLocation)
+        {
+            EnsureSparseTimeline();
+            int runtimeTrack = runtimeLocation.Item1;
+            if (!m_SparseTimeline.TryGetSerializableTrackIndex(
+                runtimeTrack, out int serializedTrack))
+            {
+                return (-1, -1);
+            }
+            return (serializedTrack, runtimeLocation.Item2);
+        }
+
+        public (int, int) GetSerializableCanvasLocation(CanvasScript canvas)
+        {
+            return GetSerializableTimelineLocation(GetCanvasLocation(canvas));
+        }
+
         public CanvasScript GetTimelineCanvas(int trackIndex, int frameIndex)
         {
             EnsureSparseTimeline();
