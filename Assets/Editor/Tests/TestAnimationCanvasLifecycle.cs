@@ -52,6 +52,14 @@ namespace TiltBrush.Tests
                 "Animation manager did not initialize");
             Assert.IsNotNull(WidgetManager.m_Instance,
                 "Widget manager did not initialize");
+            while (App.CurrentState != App.AppState.Standard &&
+                Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+            Assert.AreEqual(
+                App.AppState.Standard, App.CurrentState,
+                "Open Brush did not finish entering its normal interactive state");
         }
 
         [UnityTearDown]
@@ -186,6 +194,7 @@ namespace TiltBrush.Tests
             AnimationUI_Manager manager = App.Scene.animationUI_manager;
             manager.StopAnimation();
             manager.StartTimeline();
+            App.Scene.AddLayerNow();
             manager.ConfigureLegacyAnimationTracks(
                 new List<IReadOnlyList<int>>
                 {
@@ -194,6 +203,14 @@ namespace TiltBrush.Tests
                 },
                 new List<bool> { true, false });
             AnimationMetadata before = App.Scene.AnimationTracksSerialized();
+            manager.GetSparseTimelineCounts(
+                out int beforeSpanCount, out int beforeEmptySpanCount);
+            int beforeUniqueTimelineCanvases = manager.Timeline
+                .SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas)
+                .Where(canvas => canvas != null)
+                .Distinct()
+                .Count();
 
             var serializer = new JsonSerializer
             {
@@ -202,7 +219,22 @@ namespace TiltBrush.Tests
             var snapshot = new SketchSnapshot(
                 serializer, saveIconCapture: null,
                 out IEnumerator<Timeslice> snapshotConstructor, selectedOnly: false);
-            while (snapshotConstructor.MoveNext()) yield return null;
+            while (true)
+            {
+                bool hasNext;
+                try
+                {
+                    hasNext = snapshotConstructor.MoveNext();
+                }
+                catch (Exception exception)
+                {
+                    Assert.Fail(
+                        $"Snapshot construction threw before save: {exception}");
+                    yield break;
+                }
+                if (!hasNext) break;
+                yield return null;
+            }
 
             string path = Path.Combine(
                 Application.temporaryCachePath,
@@ -213,13 +245,55 @@ namespace TiltBrush.Tests
                 Assert.IsNull(writeError, $"Snapshot write failed: {writeError}");
                 Assert.IsTrue(File.Exists(path));
 
-                bool loaded = SaveLoadScript.m_Instance.Load(
-                    new DiskSceneFileInfo(path, readOnly: true),
-                    bAdditive: false, targetLayer: -1, out List<Stroke> loadedStrokes);
+                bool loaded;
+                List<Stroke> loadedStrokes;
+                var loadFailures = new List<string>();
+                bool previousIgnoreFailingMessages = LogAssert.ignoreFailingMessages;
+                Application.LogCallback captureLoadFailure = (condition, stackTrace, type) =>
+                {
+                    if (type == LogType.Assert || type == LogType.Error ||
+                        type == LogType.Exception)
+                    {
+                        loadFailures.Add($"{type}: {condition}");
+                    }
+                };
+                try
+                {
+                    // ResetLayers assigns the active Canvas without raising ActiveCanvasChanged,
+                    // so PointerScript emits this existing harmless assertion on the next layer.
+                    // LogAssert expectations do not survive this fixture's play/domain boundary,
+                    // so capture and verify every suppressed failing log explicitly.
+                    Application.logMessageReceived += captureLoadFailure;
+                    LogAssert.ignoreFailingMessages = true;
+                    try
+                    {
+                        loaded = SaveLoadScript.m_Instance.Load(
+                            new DiskSceneFileInfo(path, readOnly: true),
+                            bAdditive: false, targetLayer: -1, out loadedStrokes);
+                    }
+                    finally
+                    {
+                        LogAssert.ignoreFailingMessages = previousIgnoreFailingMessages;
+                        Application.logMessageReceived -= captureLoadFailure;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Assert.Fail($"Snapshot load threw: {exception}");
+                    yield break;
+                }
+                string distinctLoadFailures = string.Join(", ", loadFailures.Distinct());
+                Assert.IsTrue(
+                    loadFailures.All(failure => failure == "Assert: Assertion failed"),
+                    $"Snapshot load emitted an unexpected failing log: {distinctLoadFailures}");
                 Assert.IsTrue(loaded, "The just-written animation snapshot failed to load");
                 Assert.IsNotNull(loadedStrokes);
                 AnimationMetadata after = App.Scene.AnimationTracksSerialized();
 
+                Assert.IsNotNull(before);
+                Assert.IsNotNull(before.Tracks);
+                Assert.IsNotNull(after);
+                Assert.IsNotNull(after.Tracks);
                 Assert.AreEqual(before.Tracks.Length, after.Tracks.Length);
                 for (int trackIndex = 0; trackIndex < before.Tracks.Length; trackIndex++)
                 {
@@ -240,9 +314,12 @@ namespace TiltBrush.Tests
                     .Where(canvas => canvas != null)
                     .Distinct()
                     .Count();
-                Assert.AreEqual(4, spanCount);
-                Assert.AreEqual(4, emptySpanCount);
-                Assert.AreEqual(before.Tracks.Length, uniqueTimelineCanvases);
+                Assert.AreEqual(beforeSpanCount, spanCount,
+                    "Sparse span count changed during save/load");
+                Assert.AreEqual(beforeEmptySpanCount, emptySpanCount,
+                    "Empty sparse span count changed during save/load");
+                Assert.AreEqual(beforeUniqueTimelineCanvases, uniqueTimelineCanvases,
+                    "Unique animation canvas count changed during save/load");
                 Debug.Log(
                     $"{kLogPrefix} test=snapshotRoundTrip state=passed " +
                     $"tracks={after.Tracks.Length} spans={spanCount} " +

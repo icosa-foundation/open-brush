@@ -19,8 +19,8 @@
 
 - [x] Add automated model coverage for repeated redo/undo, failed operations, multi-track alignment, track visibility, and drawing ownership reference counts.
 - [x] Run Unity integration coverage for real Canvas creation, promotion, destruction, save leases, and command-history disposal.
-- [ ] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip.
-- [ ] Run the 80,000-cell held-timeline workload and record legacy versus differential traversal and frame-selection timings.
+- [x] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip (2 tracks, 4 drawing spans, 2 unique Canvases).
+- [x] Run the 80,000-cell held-timeline workload and record legacy versus differential traversal and frame-selection timings (719,928 legacy hide visits versus 0 differential; 19.273 ms versus 9.067 ms median across 9 transitions on the validation machine).
 
 ## Phase 3 manual working-state gate
 
