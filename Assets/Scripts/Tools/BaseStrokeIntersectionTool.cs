@@ -68,6 +68,28 @@ namespace TiltBrush
         protected bool m_TimesUp = false;
         protected bool m_ResetDetection = false;
 
+        override protected void Awake()
+        {
+            base.Awake();
+            App.Scene.ActiveCanvasChanged += OnActiveCanvasChanged;
+        }
+
+        override protected void OnDestroy()
+        {
+            App.Scene.ActiveCanvasChanged -= OnActiveCanvasChanged;
+            base.OnDestroy();
+        }
+
+        private void OnActiveCanvasChanged(CanvasScript previous, CanvasScript current)
+        {
+            if (m_CurrentCanvas == null || m_CurrentCanvas == previous)
+            {
+                m_CurrentCanvas = current;
+                m_PreviousCanvas = current;
+                ResetDetection();
+            }
+        }
+
         override public void Init()
         {
             base.Init();
