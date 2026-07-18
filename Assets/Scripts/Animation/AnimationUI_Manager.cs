@@ -58,6 +58,8 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<AnimationDrawingId, CanvasScript> m_DrawingCanvases = new();
         readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
+        readonly HashSet<AnimationDrawingId> m_PendingDrawingDemotion = new();
+        readonly HashSet<CanvasScript> m_CanvasesBeingDestroyed = new();
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
         readonly Dictionary<CanvasScript, int> m_EmptyCanvasTrackIds = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
@@ -246,6 +248,11 @@ namespace TiltBrush.FrameAnimation
             }
         }
 
+        public void NotifyCanvasWillBeDestroyed(CanvasScript canvas)
+        {
+            if (canvas != null) m_CanvasesBeingDestroyed.Add(canvas);
+        }
+
         public void NotifyStrokeAdded(Stroke stroke)
         {
             if (stroke?.Canvas == null) return;
@@ -257,9 +264,11 @@ namespace TiltBrush.FrameAnimation
         public void NotifyStrokeRemoved(Stroke stroke)
         {
             if (stroke?.Canvas == null) return;
+            CanvasScript canvas = stroke.Canvas;
             EnsureDrawingContentIndex();
-            RemoveIndexedContent(m_CanvasStrokes, stroke.Canvas, stroke);
-            NotifyDrawingContentChanged(stroke.Canvas);
+            RemoveIndexedContent(m_CanvasStrokes, canvas, stroke);
+            NotifyDrawingContentChanged(canvas);
+            TryDemoteDrawingCanvas(canvas);
         }
 
         public void NotifyStrokeCanvasChanged(
@@ -290,9 +299,11 @@ namespace TiltBrush.FrameAnimation
         public void NotifyWidgetRemoved(GrabWidget widget)
         {
             if (widget?.Canvas == null || widget is CameraPathWidget) return;
+            CanvasScript canvas = widget.Canvas;
             EnsureDrawingContentIndex();
-            RemoveIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
-            NotifyDrawingContentChanged(widget.Canvas);
+            RemoveIndexedContent(m_CanvasWidgets, canvas, widget);
+            NotifyDrawingContentChanged(canvas);
+            TryDemoteDrawingCanvas(canvas);
         }
 
         public void NotifyWidgetCanvasChanged(
@@ -813,6 +824,8 @@ namespace TiltBrush.FrameAnimation
             m_DrawingCanvases.Clear();
             m_DrawingReferences.Clear();
             m_PendingDrawingDestruction.Clear();
+            m_PendingDrawingDemotion.Clear();
+            m_CanvasesBeingDestroyed.Clear();
             m_CanvasStrokes.Clear();
             m_CanvasWidgets.Clear();
             m_ContentIndexInitialized = false;
@@ -2064,6 +2077,8 @@ namespace TiltBrush.FrameAnimation
                 return;
             }
             m_DrawingReferences.Release(drawingId);
+            TryDemoteDrawingCanvas(canvas);
+            TryDemotePendingDrawing(drawingId);
             TryDestroyPendingDrawing(drawingId);
         }
 
@@ -2072,6 +2087,7 @@ namespace TiltBrush.FrameAnimation
             foreach (AnimationDrawingId drawingId in drawingIds)
             {
                 m_DrawingReferences.Release(drawingId);
+                TryDemotePendingDrawing(drawingId);
                 TryDestroyPendingDrawing(drawingId);
             }
         }
@@ -2082,7 +2098,95 @@ namespace TiltBrush.FrameAnimation
             foreach (AnimationDrawingId drawingId in snapshot.DrawingIds)
             {
                 m_DrawingReferences.Release(drawingId);
+                TryDemotePendingDrawing(drawingId);
                 TryDestroyPendingDrawing(drawingId);
+            }
+        }
+
+        private void TryDemotePendingDrawing(AnimationDrawingId drawingId)
+        {
+            if (!m_PendingDrawingDemotion.Contains(drawingId) ||
+                !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas))
+            {
+                return;
+            }
+            TryDemoteDrawingCanvas(canvas);
+        }
+
+        private void TryDemoteDrawingCanvas(CanvasScript canvas)
+        {
+            if (canvas == null || m_CanvasesBeingDestroyed.Contains(canvas) ||
+                !m_CanvasDrawingIds.TryGetValue(
+                canvas, out AnimationDrawingId drawingId))
+            {
+                return;
+            }
+
+            EnsureDrawingContentIndex();
+            bool hasStrokeOwners = m_CanvasStrokes.TryGetValue(
+                canvas, out HashSet<Stroke> strokes) && strokes.Count > 0;
+            bool hasWidgetOwners = m_CanvasWidgets.TryGetValue(
+                canvas, out HashSet<GrabWidget> widgets) && widgets.Count > 0;
+            if (hasStrokeOwners || hasWidgetOwners)
+            {
+                m_PendingDrawingDemotion.Remove(drawingId);
+                return;
+            }
+
+            EnsureSparseTimeline();
+            var owningTracks = new List<int>();
+            for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
+            {
+                AnimationTimelineModel.Track track = m_SparseTimeline.Tracks[trackIndex];
+                bool ownsDrawing = false;
+                foreach (AnimationTimelineModel.Span span in track.Spans)
+                {
+                    if (span.Value.DrawingId != drawingId) continue;
+                    if (span.Value.PathToken != null)
+                    {
+                        m_PendingDrawingDemotion.Remove(drawingId);
+                        return;
+                    }
+                    ownsDrawing = true;
+                }
+                if (ownsDrawing) owningTracks.Add(trackIndex);
+            }
+            if (owningTracks.Count == 0)
+            {
+                m_PendingDrawingDemotion.Remove(drawingId);
+                return;
+            }
+            if (owningTracks.Count != 1 || m_DrawingReferences.IsRetained(drawingId))
+            {
+                m_PendingDrawingDemotion.Add(drawingId);
+                return;
+            }
+
+            int owningTrack = owningTracks[0];
+            int trackId = m_SparseTimeline.Tracks[owningTrack].Id;
+            m_EmptyCanvasByTrackId.TryGetValue(trackId, out CanvasScript existingEmptyCanvas);
+            bool keepExistingEmptyCanvas = existingEmptyCanvas != null &&
+                existingEmptyCanvas != canvas && App.Scene.ActiveCanvas != canvas;
+
+            if (!keepExistingEmptyCanvas)
+            {
+                m_CanvasDrawingIds.Remove(canvas);
+                m_DrawingCanvases.Remove(drawingId);
+                m_EmptyCanvasByTrackId[trackId] = canvas;
+                m_EmptyCanvasTrackIds[canvas] = trackId;
+                m_EmptyCanvases.Add(canvas);
+            }
+
+            ApplySparseTimelineEdit(tracks =>
+            {
+                AnimationTimelineOperations.ReplaceDrawingWithEmptySpans(
+                    tracks, drawingId, NewEmptyFrameValue);
+            });
+
+            m_PendingDrawingDemotion.Remove(drawingId);
+            if (keepExistingEmptyCanvas)
+            {
+                DestroyTimelineCanvas(canvas);
             }
         }
 

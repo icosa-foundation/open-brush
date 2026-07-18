@@ -274,6 +274,7 @@ namespace TiltBrush
 
         public void DestroyCanvas(CanvasScript layer, IEnumerable<Stroke> ownedStrokes = null)
         {
+            animationUI_manager?.NotifyCanvasWillBeDestroyed(layer);
             AnimationPerformanceStats.RecordGlobalStrokeScan();
             List<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(stroke => stroke.Canvas == layer).ToList();

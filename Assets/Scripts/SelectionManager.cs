@@ -769,8 +769,8 @@ namespace TiltBrush
                 }
 
                 stroke.m_PreviousCanvas = stroke.Canvas;
-                stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 App.Scene.animationUI_manager?.RetainDrawingForEditing(stroke.m_PreviousCanvas);
+                stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
 
                 if (!m_GroupToSelectedStrokes.TryGetValue(stroke.Group, out var groupStrokes))
@@ -856,8 +856,8 @@ namespace TiltBrush
                 return;
             }
             widget.m_PreviousCanvas = widget.Canvas;
-            widget.SetCanvas(App.Scene.SelectionCanvas);
             App.Scene.animationUI_manager?.RetainDrawingForEditing(widget.m_PreviousCanvas);
+            widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
             m_SelectedWidgets.Add(widget);

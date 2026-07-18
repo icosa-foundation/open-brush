@@ -163,6 +163,37 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void DemotingDrawingPreservesBoundariesAndFrameMetadata()
+        {
+            var drawing = new AnimationDrawingId(7);
+            object path = new object();
+            AnimationTimelineModel model = CreateModel(new[]
+            {
+                new AnimationTimelineModel.FrameValue(drawing, deleted: true),
+                new AnimationTimelineModel.FrameValue(drawing, deleted: true),
+                Drawing(2),
+                new AnimationTimelineModel.FrameValue(
+                    drawing, frameExists: false, pathToken: path)
+            });
+            long nextEmpty = 70;
+
+            model.ApplyEdit(tracks => Assert.AreEqual(
+                3, AnimationTimelineOperations.ReplaceDrawingWithEmptySpans(
+                    tracks, drawing, () => Empty(nextEmpty++))));
+
+            Assert.AreEqual(4, model.Length);
+            Assert.AreEqual(3, model.Tracks[0].Spans.Count);
+            Assert.AreEqual(2, model.Tracks[0].Spans[0].Duration);
+            Assert.IsTrue(model.Tracks[0].Spans[0].Value.DrawingId.IsEmpty);
+            Assert.IsTrue(model.Tracks[0].Spans[0].Value.Deleted);
+            Assert.AreEqual(70, model.Tracks[0].Spans[0].Value.SpanIdentity);
+            Assert.IsTrue(model.Tracks[0].Spans[2].Value.DrawingId.IsEmpty);
+            Assert.IsFalse(model.Tracks[0].Spans[2].Value.FrameExists);
+            Assert.AreSame(path, model.Tracks[0].Spans[2].Value.PathToken);
+            Assert.AreEqual(71, model.Tracks[0].Spans[2].Value.SpanIdentity);
+        }
+
+        [Test]
         public void RepeatedSnapshotRestorePreservesStableDrawingIdsAndTrackState()
         {
             AnimationTimelineModel model = CreateModel(

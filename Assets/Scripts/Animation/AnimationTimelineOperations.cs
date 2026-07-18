@@ -215,6 +215,47 @@ namespace TiltBrush.FrameAnimation
             }
         }
 
+        public static int ReplaceDrawingWithEmptySpans(
+            IReadOnlyList<AnimationTimelineModel.EditableTrack> tracks,
+            AnimationDrawingId drawingId,
+            Func<AnimationTimelineModel.FrameValue> createEmpty)
+        {
+            if (tracks == null) throw new ArgumentNullException(nameof(tracks));
+            if (drawingId.IsEmpty) throw new ArgumentException(
+                "Cannot demote the empty drawing sentinel", nameof(drawingId));
+            if (createEmpty == null) throw new ArgumentNullException(nameof(createEmpty));
+
+            int replacements = 0;
+            foreach (AnimationTimelineModel.EditableTrack track in tracks)
+            {
+                AnimationTimelineModel.FrameValue emptyTemplate = default;
+                bool replacingPreviousFrame = false;
+                for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
+                {
+                    AnimationTimelineModel.FrameValue value = track.Frames[frameIndex];
+                    bool replacing = value.DrawingId == drawingId;
+                    if (replacing && !replacingPreviousFrame)
+                    {
+                        emptyTemplate = createEmpty();
+                        if (!emptyTemplate.DrawingId.IsEmpty)
+                        {
+                            throw new InvalidOperationException(
+                                "The empty frame factory returned a drawing");
+                        }
+                    }
+                    if (replacing)
+                    {
+                        track.Frames[frameIndex] = new AnimationTimelineModel.FrameValue(
+                            AnimationDrawingId.Empty, value.Deleted, value.FrameExists,
+                            value.PathToken, emptyTemplate.SpanIdentity);
+                        replacements++;
+                    }
+                    replacingPreviousFrame = replacing;
+                }
+            }
+            return replacements;
+        }
+
         public static void DuplicateRange(
             IReadOnlyList<AnimationTimelineModel.EditableTrack> tracks,
             int trackIndex, int destinationFrame, int duration,
