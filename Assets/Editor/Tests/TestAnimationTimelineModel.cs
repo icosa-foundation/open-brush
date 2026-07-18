@@ -101,5 +101,42 @@ namespace TiltBrush.Tests
             Assert.IsTrue(model.TryGetTrackIndex(9, out int trackIndex));
             Assert.AreEqual(0, trackIndex);
         }
+
+        [Test]
+        public void SnapshotRestorePreservesSpansTracksAndDrawingLocations()
+        {
+            var model = new AnimationTimelineModel();
+            var drawing = new AnimationDrawingId(12);
+            var frames = new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+            {
+                new List<AnimationTimelineModel.FrameValue>
+                {
+                    new(drawing), new(drawing),
+                    new(AnimationDrawingId.Empty, spanIdentity: 4)
+                }
+            };
+            model.Rebuild(new[] { 31 }, new[] { false }, new[] { true }, frames);
+            AnimationTimelineModel.Snapshot snapshot = model.CreateSnapshot();
+
+            model.Rebuild(
+                new[] { 99 }, new[] { true }, new[] { false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new List<AnimationTimelineModel.FrameValue>
+                    {
+                        new(new AnimationDrawingId(50))
+                    }
+                });
+            model.Restore(snapshot);
+
+            Assert.AreEqual(3, model.Length);
+            Assert.AreEqual(31, model.Tracks[0].Id);
+            Assert.IsFalse(model.Tracks[0].Visible);
+            Assert.IsTrue(model.Tracks[0].Deleted);
+            Assert.AreEqual(2, model.Tracks[0].Spans.Count);
+            Assert.IsTrue(model.TryGetDrawingLocation(drawing, out (int, int) location));
+            Assert.AreEqual((0, 0), location);
+            CollectionAssert.AreEquivalent(new[] { drawing }, snapshot.DrawingIds);
+        }
     }
 }

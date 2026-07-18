@@ -41,6 +41,39 @@ namespace TiltBrush.FrameAnimation
     /// model while commands and persistence are migrated incrementally.
     public sealed class AnimationTimelineModel
     {
+        public sealed class Snapshot
+        {
+            internal IReadOnlyList<TrackSnapshot> Tracks { get; }
+            public IReadOnlyList<AnimationDrawingId> DrawingIds { get; }
+
+            internal Snapshot(
+                IReadOnlyList<TrackSnapshot> tracks,
+                IReadOnlyList<AnimationDrawingId> drawingIds)
+            {
+                Tracks = tracks;
+                DrawingIds = drawingIds;
+            }
+        }
+
+        internal sealed class TrackSnapshot
+        {
+            internal int Id { get; }
+            internal bool Visible { get; }
+            internal bool Deleted { get; }
+            internal int Length { get; }
+            internal IReadOnlyList<Span> Spans { get; }
+
+            internal TrackSnapshot(
+                int id, bool visible, bool deleted, int length, IReadOnlyList<Span> spans)
+            {
+                Id = id;
+                Visible = visible;
+                Deleted = deleted;
+                Length = length;
+                Spans = spans;
+            }
+        }
+
         public readonly struct FrameValue : IEquatable<FrameValue>
         {
             public AnimationDrawingId DrawingId { get; }
@@ -235,6 +268,53 @@ namespace TiltBrush.FrameAnimation
         public bool TryGetTrackIndex(int trackId, out int trackIndex)
         {
             return m_TrackIdToIndex.TryGetValue(trackId, out trackIndex);
+        }
+
+        public Snapshot CreateSnapshot()
+        {
+            var tracks = new List<TrackSnapshot>(m_Tracks.Count);
+            var drawingIds = new HashSet<AnimationDrawingId>();
+            foreach (Track track in m_Tracks)
+            {
+                var spans = new List<Span>(track.Spans.Count);
+                foreach (Span span in track.Spans)
+                {
+                    spans.Add(span);
+                    if (!span.Value.DrawingId.IsEmpty)
+                    {
+                        drawingIds.Add(span.Value.DrawingId);
+                    }
+                }
+                tracks.Add(new TrackSnapshot(
+                    track.Id, track.Visible, track.Deleted, track.Length, spans.AsReadOnly()));
+            }
+            return new Snapshot(
+                tracks.AsReadOnly(), new List<AnimationDrawingId>(drawingIds).AsReadOnly());
+        }
+
+        public void Restore(Snapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+
+            m_Tracks.Clear();
+            m_TrackIdToIndex.Clear();
+            m_DrawingLocations.Clear();
+            Length = 0;
+            for (int trackIndex = 0; trackIndex < snapshot.Tracks.Count; trackIndex++)
+            {
+                TrackSnapshot source = snapshot.Tracks[trackIndex];
+                var spans = new List<Span>(source.Spans.Count);
+                foreach (Span span in source.Spans)
+                {
+                    spans.Add(span);
+                    IndexDrawing(span.Value.DrawingId, trackIndex, span.StartFrame);
+                }
+
+                m_TrackIdToIndex.Add(source.Id, trackIndex);
+                m_Tracks.Add(new Track(
+                    source.Id, source.Visible, source.Deleted, source.Length, spans));
+                Length = Math.Max(Length, source.Length);
+            }
         }
     }
 }

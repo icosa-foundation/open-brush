@@ -19,6 +19,7 @@ namespace TiltBrush.FrameAnimation
         private (int, int) m_TimelineLocation;
         private AnimationUI_Manager.AddFrameOperation m_Operation;
         AnimationUI_Manager m_Manager;
+        bool m_IsApplied;
 
         bool m_ExpandTimeline;
         bool m_JustMoved = true;
@@ -38,11 +39,21 @@ namespace TiltBrush.FrameAnimation
         protected override void OnRedo()
         {
             m_Operation = m_Manager.AddKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
+            m_IsApplied = m_Operation.Succeeded;
+        }
+
+        protected override void OnDispose()
+        {
+            if (m_IsApplied)
+            {
+                m_Manager.DiscardAddFrameOperationUndoState(m_Operation);
+            }
         }
 
         protected override void OnUndo()
         {
             m_Manager.UndoAddFrameOperation(m_Operation, m_TimelineLocation);
+            m_IsApplied = false;
         }
     }
 } // namespace TiltBrush.FrameAnimation
