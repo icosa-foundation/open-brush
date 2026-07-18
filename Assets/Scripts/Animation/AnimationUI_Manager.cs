@@ -57,6 +57,7 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<CanvasScript, AnimationDrawingId> m_CanvasDrawingIds = new();
         readonly Dictionary<AnimationDrawingId, CanvasScript> m_DrawingCanvases = new();
         readonly Dictionary<AnimationDrawingId, int> m_UndoDrawingRefCounts = new();
+        readonly Dictionary<AnimationDrawingId, int> m_SaveDrawingRefCounts = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
@@ -68,6 +69,23 @@ namespace TiltBrush.FrameAnimation
         int m_NextTrackId = 1;
         long m_NextDrawingId = 1;
         long m_NextEmptySpanId = 1;
+
+        private sealed class DrawingReferenceLease : IDisposable
+        {
+            private Action m_Release;
+
+            internal DrawingReferenceLease(Action release)
+            {
+                m_Release = release;
+            }
+
+            public void Dispose()
+            {
+                Action release = m_Release;
+                m_Release = null;
+                release?.Invoke();
+            }
+        }
 
         public List<Track> Timeline;
         public GameObject timelineRef;
@@ -588,8 +606,14 @@ namespace TiltBrush.FrameAnimation
             if (canvas == null) return;
             if (m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
             {
-                if (m_UndoDrawingRefCounts.TryGetValue(drawingId, out int references) &&
-                    references > 0)
+                EnsureSparseTimeline();
+                bool activeTimelineOwner = m_SparseTimeline.TryGetDrawingLocation(drawingId, out _);
+                bool activeEditingOwner = App.Scene != null && App.Scene.ActiveCanvas == canvas;
+                bool undoOwner = m_UndoDrawingRefCounts.TryGetValue(
+                    drawingId, out int undoReferences) && undoReferences > 0;
+                bool saveOwner = m_SaveDrawingRefCounts.TryGetValue(
+                    drawingId, out int saveReferences) && saveReferences > 0;
+                if (activeTimelineOwner || activeEditingOwner || undoOwner || saveOwner)
                 {
                     m_PendingDrawingDestruction.Add(drawingId);
                     return;
@@ -793,6 +817,7 @@ namespace TiltBrush.FrameAnimation
             m_CanvasDrawingIds.Clear();
             m_DrawingCanvases.Clear();
             m_UndoDrawingRefCounts.Clear();
+            m_SaveDrawingRefCounts.Clear();
             m_PendingDrawingDestruction.Clear();
             m_CanvasStrokes.Clear();
             m_CanvasWidgets.Clear();
@@ -1956,6 +1981,29 @@ namespace TiltBrush.FrameAnimation
             return snapshot;
         }
 
+        public IDisposable RetainTimelineDrawingsForSave()
+        {
+            EnsureSparseTimeline();
+            AnimationTimelineModel.Snapshot snapshot = m_SparseTimeline.CreateSnapshot();
+            foreach (AnimationDrawingId drawingId in snapshot.DrawingIds)
+            {
+                m_SaveDrawingRefCounts.TryGetValue(drawingId, out int references);
+                m_SaveDrawingRefCounts[drawingId] = references + 1;
+            }
+            return new DrawingReferenceLease(() => ReleaseSaveDrawingReferences(snapshot.DrawingIds));
+        }
+
+        private void ReleaseSaveDrawingReferences(IReadOnlyList<AnimationDrawingId> drawingIds)
+        {
+            foreach (AnimationDrawingId drawingId in drawingIds)
+            {
+                if (!m_SaveDrawingRefCounts.TryGetValue(drawingId, out int references)) continue;
+                if (references > 1) m_SaveDrawingRefCounts[drawingId] = references - 1;
+                else m_SaveDrawingRefCounts.Remove(drawingId);
+                TryDestroyPendingDrawing(drawingId);
+            }
+        }
+
         private void ReleaseTimelineSnapshot(AnimationTimelineModel.Snapshot snapshot)
         {
             if (snapshot == null) return;
@@ -1969,14 +2017,18 @@ namespace TiltBrush.FrameAnimation
                 }
 
                 m_UndoDrawingRefCounts.Remove(drawingId);
-                if (!m_PendingDrawingDestruction.Remove(drawingId)) continue;
-                EnsureSparseTimeline();
-                if (!m_SparseTimeline.TryGetDrawingLocation(drawingId, out _) &&
-                    m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas))
-                {
-                    DestroyTimelineCanvas(canvas);
-                }
+                TryDestroyPendingDrawing(drawingId);
             }
+        }
+
+        private void TryDestroyPendingDrawing(AnimationDrawingId drawingId)
+        {
+            if (!m_PendingDrawingDestruction.Contains(drawingId) ||
+                !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas))
+            {
+                return;
+            }
+            DestroyTimelineCanvas(canvas);
         }
 
         private HashSet<CanvasScript> GetTimelineCanvases(
