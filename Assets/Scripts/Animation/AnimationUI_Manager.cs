@@ -1241,8 +1241,15 @@ namespace TiltBrush.FrameAnimation
 
             if (canvasIndex.Item2 != -1)
             {
-                ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Visible = visible);
+                SetTrackVisibility(canvasIndex.Item1, visible);
             }
+        }
+
+        public void SetTrackVisibility(int trackIndex, bool visible)
+        {
+            EnsureSparseTimeline();
+            if (trackIndex < 0 || trackIndex >= m_SparseTimeline.Tracks.Count) return;
+            ApplySparseTimelineEdit(tracks => tracks[trackIndex].Visible = visible);
         }
 
         public void MarkLayerAsDeleteRefresh(CanvasScript canvas)

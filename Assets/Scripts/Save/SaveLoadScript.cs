@@ -771,18 +771,20 @@ namespace TiltBrush
 
                         for (int i = 0; i < jsonData.AnimationTracks.Tracks.Length; i++) // Skip the main canvas
                         {
-                            for (int f = 0; f < jsonData.AnimationTracks.Tracks[i].frameLengths.Count; f++)
+                            AnimationTrackMetadata track = jsonData.AnimationTracks.Tracks[i];
+                            for (int f = 0; f < track.frameLengths.Count; f++)
                             {
                                 if (f > 0)
                                 {
                                     App.Scene.animationUI_manager.AddKeyFrame(i);
                                 }
 
-                                for (int l = 0; l < jsonData.AnimationTracks.Tracks[i].frameLengths[f] - 1; l++)
+                                for (int l = 0; l < track.frameLengths[f] - 1; l++)
                                 {
                                     App.Scene.animationUI_manager.ExtendKeyFrame(i);
                                 }
                             }
+                            App.Scene.animationUI_manager.SetTrackVisibility(i, track.Visible);
                         }
                     }
                 }
