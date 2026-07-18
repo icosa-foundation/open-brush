@@ -51,6 +51,8 @@ namespace TiltBrush.FrameAnimation
         AnimationPerformanceStats m_PerformanceStats;
         readonly Dictionary<CanvasScript, (int, int)> m_CanvasLocations = new();
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
+        readonly Dictionary<CanvasScript, HashSet<Stroke>> m_CanvasStrokes = new();
+        readonly Dictionary<CanvasScript, HashSet<GrabWidget>> m_CanvasWidgets = new();
         readonly AnimationTimelineModel m_SparseTimeline = new();
         readonly Dictionary<CanvasScript, AnimationDrawingId> m_CanvasDrawingIds = new();
         readonly Dictionary<AnimationDrawingId, CanvasScript> m_DrawingCanvases = new();
@@ -60,6 +62,7 @@ namespace TiltBrush.FrameAnimation
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
         SketchMemoryScript m_SubscribedMemory;
         bool m_TimelineIndexesValid;
+        bool m_ContentIndexInitialized;
         bool m_SparseTimelineDirty = true;
         int m_CachedTimelineLength;
         int m_NextTrackId = 1;
@@ -206,6 +209,7 @@ namespace TiltBrush.FrameAnimation
 
         private void OnSketchCommandChanged(BaseCommand command)
         {
+            m_ContentIndexInitialized = false;
             InvalidateDrawingOccupancy();
         }
 
@@ -222,6 +226,106 @@ namespace TiltBrush.FrameAnimation
             {
                 PromoteEmptyCanvas(canvas);
             }
+        }
+
+        public void NotifyStrokeAdded(Stroke stroke)
+        {
+            if (stroke?.Canvas == null) return;
+            EnsureDrawingContentIndex();
+            AddIndexedContent(m_CanvasStrokes, stroke.Canvas, stroke);
+            NotifyDrawingContentChanged(stroke.Canvas);
+        }
+
+        public void NotifyStrokeRemoved(Stroke stroke)
+        {
+            if (stroke?.Canvas == null) return;
+            EnsureDrawingContentIndex();
+            RemoveIndexedContent(m_CanvasStrokes, stroke.Canvas, stroke);
+            NotifyDrawingContentChanged(stroke.Canvas);
+        }
+
+        public void NotifyWidgetAdded(GrabWidget widget)
+        {
+            if (widget?.Canvas == null) return;
+            EnsureDrawingContentIndex();
+            AddIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
+            NotifyDrawingContentChanged(widget.Canvas);
+        }
+
+        public void NotifyWidgetRemoved(GrabWidget widget)
+        {
+            if (widget?.Canvas == null) return;
+            EnsureDrawingContentIndex();
+            RemoveIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
+            NotifyDrawingContentChanged(widget.Canvas);
+        }
+
+        public void NotifyWidgetCanvasChanged(
+            GrabWidget widget, CanvasScript previousCanvas, CanvasScript nextCanvas)
+        {
+            if (widget == null) return;
+            EnsureDrawingContentIndex();
+            if (previousCanvas != null)
+            {
+                RemoveIndexedContent(m_CanvasWidgets, previousCanvas, widget);
+                NotifyDrawingContentChanged(previousCanvas);
+            }
+            if (nextCanvas != null)
+            {
+                AddIndexedContent(m_CanvasWidgets, nextCanvas, widget);
+                NotifyDrawingContentChanged(nextCanvas);
+            }
+        }
+
+        private static void AddIndexedContent<T>(
+            Dictionary<CanvasScript, HashSet<T>> index, CanvasScript canvas, T content)
+        {
+            if (!index.TryGetValue(canvas, out HashSet<T> contents))
+            {
+                contents = new HashSet<T>();
+                index.Add(canvas, contents);
+            }
+            contents.Add(content);
+        }
+
+        private static void RemoveIndexedContent<T>(
+            Dictionary<CanvasScript, HashSet<T>> index, CanvasScript canvas, T content)
+        {
+            if (!index.TryGetValue(canvas, out HashSet<T> contents)) return;
+            contents.Remove(content);
+            if (contents.Count == 0) index.Remove(canvas);
+        }
+
+        private void EnsureDrawingContentIndex()
+        {
+            if (m_ContentIndexInitialized) return;
+            m_CanvasStrokes.Clear();
+            m_CanvasWidgets.Clear();
+            if (SketchMemoryScript.m_Instance != null)
+            {
+                foreach (Stroke stroke in SketchMemoryScript.m_Instance.GetMemoryList)
+                {
+                    if (stroke.Canvas != null)
+                    {
+                        AddIndexedContent(m_CanvasStrokes, stroke.Canvas, stroke);
+                    }
+                }
+            }
+            if (Timeline != null)
+            {
+                foreach (CanvasScript canvas in Timeline
+                    .SelectMany(track => track.Frames)
+                    .Select(frame => frame.Canvas)
+                    .Where(canvas => canvas != null)
+                    .Distinct())
+                {
+                    foreach (GrabWidget widget in canvas.GetComponentsInChildren<GrabWidget>(true))
+                    {
+                        AddIndexedContent(m_CanvasWidgets, canvas, widget);
+                    }
+                }
+            }
+            m_ContentIndexInitialized = true;
         }
 
         private void InvalidateTimelineStructure()
@@ -379,6 +483,9 @@ namespace TiltBrush.FrameAnimation
                 m_DrawingCanvases.Remove(drawingId);
             }
             m_EmptyCanvases.Remove(canvas);
+            m_CanvasStrokes.Remove(canvas);
+            m_CanvasWidgets.Remove(canvas);
+            m_DrawingOccupancy.Remove(canvas);
             foreach (int trackId in m_EmptyCanvasByTrackId
                 .Where(pair => pair.Value == canvas)
                 .Select(pair => pair.Key)
@@ -570,6 +677,9 @@ namespace TiltBrush.FrameAnimation
             m_DrawingCanvases.Clear();
             m_UndoDrawingRefCounts.Clear();
             m_PendingDrawingDestruction.Clear();
+            m_CanvasStrokes.Clear();
+            m_CanvasWidgets.Clear();
+            m_ContentIndexInitialized = false;
             m_NextTrackId = 1;
             m_NextDrawingId = 1;
             m_NextEmptySpanId = 1;
@@ -650,12 +760,15 @@ namespace TiltBrush.FrameAnimation
         {
             if (canvas == null) return false;
             if (m_DrawingOccupancy.TryGetValue(canvas, out bool occupied)) return occupied;
-            bool hasActiveStrokes = SketchMemoryScript.m_Instance.GetMemoryList.Any(stroke =>
-                stroke.Canvas == canvas && stroke.IsGeometryEnabled &&
+            EnsureDrawingContentIndex();
+            bool hasActiveStrokes = m_CanvasStrokes.TryGetValue(
+                canvas, out HashSet<Stroke> strokes) && strokes.Any(stroke =>
+                stroke.IsGeometryEnabled &&
                 (stroke.m_Type != Stroke.Type.BatchedBrushStroke ||
                     stroke.m_BatchSubset.m_VertLength > 0));
-            bool hasActiveWidgets = canvas.GetComponentsInChildren<GrabWidget>(true)
-                .Any(widget => widget.gameObject.activeSelf);
+            bool hasActiveWidgets = m_CanvasWidgets.TryGetValue(
+                canvas, out HashSet<GrabWidget> widgets) && widgets.Any(widget =>
+                widget != null && widget.gameObject.activeSelf);
             occupied = hasActiveStrokes || hasActiveWidgets;
             m_DrawingOccupancy[canvas] = occupied;
             return occupied;

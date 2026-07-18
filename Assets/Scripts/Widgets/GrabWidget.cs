@@ -583,8 +583,6 @@ namespace TiltBrush
             // Set the new widget size. This needs to be done right after the transform has been reparented
             // because both those operations adjust the local scale.
             Debug.Assert(originalCanvas != null);
-            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(originalCanvas);
-            App.Scene?.animationUI_manager?.NotifyDrawingContentChanged(newCanvas);
             float originalScale = originalCanvas.Pose.scale;
             float newScale = newCanvas.Pose.scale;
             float originalWidgetSize = GetSignedWidgetSize();
@@ -596,6 +594,8 @@ namespace TiltBrush
             {
                 m_NonScaleChild.ParentCanvas = newCanvas;
             }
+            App.Scene?.animationUI_manager?.NotifyWidgetCanvasChanged(
+                this, originalCanvas, newCanvas);
 
             var addKeywords = newCanvas.BatchManager.MaterialKeywords.Except(
                 originalCanvas.BatchManager.MaterialKeywords);
