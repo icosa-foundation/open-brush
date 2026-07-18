@@ -347,6 +347,8 @@ namespace TiltBrush.FrameAnimation
             }
             CanvasScript replacement = App.Scene.AddCanvas();
             replacement.gameObject.name = populatedCanvas.gameObject.name;
+            replacement.LocalPose = populatedCanvas.LocalPose;
+            replacement.gameObject.SetActive(populatedCanvas.gameObject.activeSelf);
             m_EmptyCanvases.Remove(populatedCanvas);
             m_EmptyCanvasByTrackId[Timeline[trackIndex].Id] = replacement;
             m_EmptyCanvases.Add(replacement);
@@ -385,9 +387,17 @@ namespace TiltBrush.FrameAnimation
             CanvasScript existing = GetCanvasForDrawing(span.Value.DrawingId);
             if (existing != null) return existing;
 
-            CanvasScript contentCanvas = App.Scene.AddCanvas();
-            contentCanvas.gameObject.name = $"Animation Drawing Track {Timeline[trackIndex].Id}";
             Track track = Timeline[trackIndex];
+            CanvasScript emptyCanvas = track.Frames[span.StartFrame].Canvas;
+            CanvasScript contentCanvas = App.Scene.AddCanvas();
+            contentCanvas.gameObject.name = emptyCanvas != null
+                ? emptyCanvas.gameObject.name
+                : $"Animation Drawing Track {track.Id}";
+            if (emptyCanvas != null)
+            {
+                contentCanvas.LocalPose = emptyCanvas.LocalPose;
+                contentCanvas.gameObject.SetActive(emptyCanvas.gameObject.activeSelf);
+            }
             for (int i = span.StartFrame; i < span.EndFrameExclusive; i++)
             {
                 Frame frame = track.Frames[i];
