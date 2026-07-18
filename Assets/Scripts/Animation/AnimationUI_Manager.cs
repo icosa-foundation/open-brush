@@ -60,6 +60,7 @@ namespace TiltBrush.FrameAnimation
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDemotion = new();
         readonly HashSet<CanvasScript> m_CanvasesBeingDestroyed = new();
+        readonly HashSet<CanvasScript> m_PendingEmptyCanvasDestruction = new();
         readonly Dictionary<int, CanvasScript> m_EmptyCanvasByTrackId = new();
         readonly Dictionary<CanvasScript, int> m_EmptyCanvasTrackIds = new();
         readonly HashSet<CanvasScript> m_EmptyCanvases = new();
@@ -635,16 +636,24 @@ namespace TiltBrush.FrameAnimation
         }
 
         private void DestroyTimelineCanvas(
-            CanvasScript canvas, IEnumerable<Stroke> createdStrokes = null)
+            CanvasScript canvas, IEnumerable<Stroke> createdStrokes = null, bool force = false)
         {
             if (canvas == null) return;
-            if (m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            bool isDrawing = m_CanvasDrawingIds.TryGetValue(
+                canvas, out AnimationDrawingId drawingId);
+            if (!force && !isDrawing && App.Scene != null && App.Scene.ActiveCanvas == canvas)
+            {
+                m_PendingEmptyCanvasDestruction.Add(canvas);
+                return;
+            }
+            m_PendingEmptyCanvasDestruction.Remove(canvas);
+            if (isDrawing)
             {
                 EnsureSparseTimeline();
                 bool activeTimelineOwner = m_SparseTimeline.TryGetDrawingLocation(drawingId, out _);
                 bool activeEditingOwner = App.Scene != null && App.Scene.ActiveCanvas == canvas;
-                if (activeTimelineOwner || activeEditingOwner ||
-                    m_DrawingReferences.IsRetained(drawingId))
+                if (!force && (activeTimelineOwner || activeEditingOwner ||
+                    m_DrawingReferences.IsRetained(drawingId)))
                 {
                     m_PendingDrawingDestruction.Add(drawingId);
                     return;
@@ -817,6 +826,7 @@ namespace TiltBrush.FrameAnimation
 
         public void StartTimeline()
         {
+            DestroyPreviousTimelineCanvases();
             InvalidateTimelineStructure();
             m_EmptyCanvasByTrackId.Clear();
             m_EmptyCanvasTrackIds.Clear();
@@ -827,6 +837,7 @@ namespace TiltBrush.FrameAnimation
             m_PendingDrawingDestruction.Clear();
             m_PendingDrawingDemotion.Clear();
             m_CanvasesBeingDestroyed.Clear();
+            m_PendingEmptyCanvasDestruction.Clear();
             m_CanvasStrokes.Clear();
             m_CanvasWidgets.Clear();
             m_ContentIndexInitialized = false;
@@ -849,6 +860,28 @@ namespace TiltBrush.FrameAnimation
                 m_AnimationPathCanvas = new GameObject("AnimationPaths");
                 m_AnimationPathCanvas.transform.parent = App.Scene.gameObject.transform;
                 m_AnimationPathCanvas.AddComponent<CanvasScript>();
+            }
+        }
+
+        private void DestroyPreviousTimelineCanvases()
+        {
+            var previousCanvases = new HashSet<CanvasScript>();
+            if (Timeline != null)
+            {
+                foreach (CanvasScript canvas in Timeline
+                    .SelectMany(track => track.Frames ?? new List<Frame>())
+                    .Select(frame => frame.Canvas))
+                {
+                    if (canvas != null) previousCanvases.Add(canvas);
+                }
+            }
+            previousCanvases.UnionWith(m_PendingEmptyCanvasDestruction.Where(
+                canvas => canvas != null));
+            previousCanvases.Remove(App.Scene?.m_MainCanvas);
+            previousCanvases.Remove(App.Scene?.SelectionCanvas);
+            foreach (CanvasScript canvas in previousCanvases)
+            {
+                DestroyTimelineCanvas(canvas, force: true);
             }
         }
 
@@ -2209,6 +2242,22 @@ namespace TiltBrush.FrameAnimation
             DestroyTimelineCanvas(canvas);
         }
 
+        private void TryDestroyPendingEmptyCanvases()
+        {
+            if (m_PendingEmptyCanvasDestruction.Count == 0) return;
+            foreach (CanvasScript canvas in m_PendingEmptyCanvasDestruction.ToList())
+            {
+                if (canvas == null)
+                {
+                    m_PendingEmptyCanvasDestruction.Remove(canvas);
+                }
+                else if (App.Scene == null || App.Scene.ActiveCanvas != canvas)
+                {
+                    DestroyTimelineCanvas(canvas);
+                }
+            }
+        }
+
         private HashSet<CanvasScript> GetTimelineCanvases(
             AnimationTimelineModel.Snapshot snapshot)
         {
@@ -2570,6 +2619,7 @@ namespace TiltBrush.FrameAnimation
         void Update()
         {
             Profiler.BeginSample("OB_ANIM_SCALE.AnimationUpdate");
+            TryDestroyPendingEmptyCanvases();
             m_PerformanceStats ??= new AnimationPerformanceStats(this);
             m_PerformanceStats.Enabled = m_LogPerformanceStats;
             m_PerformanceStats.RecordUpdate();
