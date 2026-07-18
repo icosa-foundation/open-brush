@@ -47,6 +47,7 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] bool m_LogPerformanceStats;
         [SerializeField] bool m_UseDifferentialPlayback = true;
         [SerializeField] bool m_ShareEmptyCanvases = true;
+        [SerializeField] bool m_ValidateSparseTimeline;
         AnimationPerformanceStats m_PerformanceStats;
         readonly Dictionary<CanvasScript, (int, int)> m_CanvasLocations = new();
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
@@ -275,7 +276,61 @@ namespace TiltBrush.FrameAnimation
             m_SparseTimeline.Rebuild(trackIds, trackVisibility, trackDeletion, modelFrames);
             m_CachedTimelineLength = m_SparseTimeline.Length;
             m_SparseTimelineDirty = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (m_ValidateSparseTimeline) ValidateSparseTimelineProjection();
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [ContextMenu("Validate Sparse Animation Timeline")]
+        private void ValidateSparseTimeline()
+        {
+            EnsureSparseTimeline();
+            ValidateSparseTimelineProjection();
+        }
+
+        private void ValidateSparseTimelineProjection()
+        {
+            if (Timeline == null || m_SparseTimeline.Tracks.Count != Timeline.Count)
+            {
+                Debug.LogError(
+                    $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=trackCount");
+                return;
+            }
+
+            for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
+            {
+                Track denseTrack = Timeline[trackIndex];
+                AnimationTimelineModel.Track sparseTrack = m_SparseTimeline.Tracks[trackIndex];
+                if (sparseTrack.Id != denseTrack.Id || sparseTrack.Visible != denseTrack.Visible ||
+                    sparseTrack.Deleted != denseTrack.Deleted ||
+                    sparseTrack.Length != denseTrack.Frames.Count)
+                {
+                    Debug.LogError(
+                        $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=track track={trackIndex}");
+                    return;
+                }
+
+                for (int frameIndex = 0; frameIndex < denseTrack.Frames.Count; frameIndex++)
+                {
+                    Frame denseFrame = denseTrack.Frames[frameIndex];
+                    var expected = new AnimationTimelineModel.FrameValue(
+                        GetOrCreateDrawingId(denseFrame.Canvas), denseFrame.Deleted,
+                        denseFrame.FrameExists, denseFrame.AnimatedPath, denseFrame.EmptySpanId);
+                    if (!sparseTrack.TryResolve(
+                            frameIndex, out AnimationTimelineModel.Span sparseSpan) ||
+                        !sparseSpan.Value.Equals(expected))
+                    {
+                        Debug.LogError(
+                            $"{AnimationPerformanceStats.LogPrefix} sparseMismatch=frame track={trackIndex} frame={frameIndex}");
+                        return;
+                    }
+                }
+            }
+
+            Debug.Log($"{AnimationPerformanceStats.LogPrefix} sparseValidation=passed");
+        }
+#endif
 
         private void RebuildEmptyCanvasRegistry()
         {
