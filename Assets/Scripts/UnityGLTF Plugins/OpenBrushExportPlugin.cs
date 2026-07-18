@@ -60,7 +60,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
-                cam.enabled = false;
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
             }
         }
 
@@ -96,10 +96,10 @@ namespace TiltBrush
                     var knot = rotKnots[j];
                     var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
                 }
-                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
 
                 var fovKnots = widget.WidgetScript.Path.FovKnots;
                 var fovTimes = new float[fovKnots.Count];
@@ -107,16 +107,27 @@ namespace TiltBrush
                 for (var j = 0; j < fovKnots.Count; j++)
                 {
                     var knot = fovKnots[j];
-                    var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
                 }
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
                 exporter.GetRoot().Animations.Add(anim);
-                GameObject.Destroy(cam);
             }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -485,6 +496,10 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
             }
 
             if (App.UserConfig.Export.ExportCustomSkybox)
