@@ -94,8 +94,7 @@ namespace TiltBrush
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
-            IDisposable animationDrawingLease =
-                App.Scene?.animationUI_manager?.RetainTimelineDrawingsForSave();
+            IDisposable animationDrawingLease = null;
             try
             {
                 System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
@@ -111,8 +110,13 @@ namespace TiltBrush
                 }
                 else
                 {
-                    strokes = SketchMemoryScript.AllStrokes();
+                    strokes = SketchMemoryScript.AllStrokes().ToList();
                 }
+                animationDrawingLease = App.Scene?.animationUI_manager?
+                    .RetainTimelineDrawingsForSave(strokes.Select(stroke =>
+                        stroke.Canvas == App.Scene.SelectionCanvas
+                            ? stroke.m_PreviousCanvas
+                            : stroke.Canvas));
                 m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
                 foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
                 {

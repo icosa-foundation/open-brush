@@ -1457,7 +1457,7 @@ namespace TiltBrush.FrameAnimation
             App.Scene.ActiveCanvas = Timeline[trackNum].Frames[frameNum].Canvas;
             m_FrameOn = Math.Clamp((int)frameNum, 0, Timeline[trackNum].Frames.Count - 1);
             FocusFrame(frameNum);
-            ResetTimeline();
+            UpdateNodes();
             UpdateTimelineNob();
         }
 
@@ -1971,19 +1971,32 @@ namespace TiltBrush.FrameAnimation
             return snapshot;
         }
 
-        public IDisposable RetainTimelineDrawingsForSave()
+        public IDisposable RetainTimelineDrawingsForSave(
+            IEnumerable<CanvasScript> additionalCanvases = null)
         {
             EnsureSparseTimeline();
             AnimationTimelineModel.Snapshot snapshot = m_SparseTimeline.CreateSnapshot();
-            foreach (AnimationDrawingId drawingId in snapshot.DrawingIds)
+            var drawingIds = new HashSet<AnimationDrawingId>(snapshot.DrawingIds);
+            if (additionalCanvases != null)
+            {
+                foreach (CanvasScript canvas in additionalCanvases)
+                {
+                    if (canvas != null && m_CanvasDrawingIds.TryGetValue(
+                        canvas, out AnimationDrawingId drawingId))
+                    {
+                        drawingIds.Add(drawingId);
+                    }
+                }
+            }
+            foreach (AnimationDrawingId drawingId in drawingIds)
             {
                 m_SaveDrawingRefCounts.TryGetValue(drawingId, out int references);
                 m_SaveDrawingRefCounts[drawingId] = references + 1;
             }
-            return new DrawingReferenceLease(() => ReleaseSaveDrawingReferences(snapshot.DrawingIds));
+            return new DrawingReferenceLease(() => ReleaseSaveDrawingReferences(drawingIds));
         }
 
-        private void ReleaseSaveDrawingReferences(IReadOnlyList<AnimationDrawingId> drawingIds)
+        private void ReleaseSaveDrawingReferences(IEnumerable<AnimationDrawingId> drawingIds)
         {
             foreach (AnimationDrawingId drawingId in drawingIds)
             {
