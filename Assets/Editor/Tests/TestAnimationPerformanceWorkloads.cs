@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.TestTools;
@@ -34,7 +35,9 @@ namespace TiltBrush.Tests
     internal class TestAnimationPerformanceWorkloads
     {
         private const string kLogPrefix = "[OB_ANIM_PHASE0]";
+        private const string kRenderLogPrefix = "[OB_ANIM_RENDER]";
         private const int kTransitionCount = 33;
+        private const int kRenderSampleCount = 60;
         private static string s_RunId;
 
         [UnitySetUp]
@@ -267,6 +270,63 @@ namespace TiltBrush.Tests
                 "state=passed");
         }
 
+        [UnityTest]
+        [Category("AnimationPerformance")]
+        public IEnumerator RenderedFrameWorkloadMatrix()
+        {
+            s_RunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
+            Debug.Log($"{kRenderLogPrefix} run={s_RunId} matrix=renderedFrame " +
+                $"state=started samples={kRenderSampleCount}");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            Stroke simpleStroke = LoadFirstStroke("Simple.tilt");
+
+            ConfigureHeldTimeline(manager, trackCount: 8, frameCount: 10000);
+            List<CanvasScript> heldCanvases = MaterializeHeldTrackDrawings(manager, 8);
+            PopulateCanvasesToVertexTarget(
+                heldCanvases, new[] { simpleStroke }, targetVerticesPerDrawing: 10000,
+                offsetForCopy: copyIndex => Vector3.zero);
+            yield return MeasureRenderedModes(
+                manager, workload: "longHeld", frameCount: 10000,
+                pattern: "sequential");
+
+            List<CanvasScript> uniqueCanvases = ConfigureUniqueDrawingTimeline(manager, 16);
+            PopulateCanvasesToVertexTarget(
+                uniqueCanvases, new[] { simpleStroke }, targetVerticesPerDrawing: 10000,
+                offsetForCopy: copyIndex => Vector3.zero);
+            yield return MeasureRenderedModes(
+                manager, workload: "uniqueComplex", frameCount: 16,
+                pattern: "sequential");
+            yield return MeasureRenderedModes(
+                manager, workload: "uniqueComplex", frameCount: 16,
+                pattern: "random");
+
+            Stroke[] diverseStrokes =
+            {
+                simpleStroke,
+                LoadFirstStroke("Marker.tilt"),
+                LoadFirstStroke("Ink.tilt"),
+                LoadFirstStroke("Flat.tilt"),
+                LoadFirstStroke("ThickPaint.tilt"),
+                LoadFirstStroke("OilPaint.tilt"),
+                LoadFirstStroke("Wire.tilt"),
+                LoadFirstStroke("LightWire.tilt")
+            };
+            List<CanvasScript> materialCanvases = ConfigureUniqueDrawingTimeline(manager, 4);
+            PopulateCanvasesToVertexTarget(
+                materialCanvases, diverseStrokes, targetVerticesPerDrawing: 10000,
+                offsetForCopy: copyIndex => Vector3.zero,
+                includeEachSourceOnceThenFillWithFirst: true);
+            yield return MeasureRenderedModes(
+                manager, workload: "materialDiverse", frameCount: 4,
+                pattern: "sequential");
+
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: false, differential: true);
+            Debug.Log($"{kRenderLogPrefix} run={s_RunId} matrix=renderedFrame " +
+                "state=passed");
+        }
+
         private static void ConfigureHeldTimeline(
             AnimationUI_Manager manager, int trackCount, int frameCount)
         {
@@ -410,6 +470,122 @@ namespace TiltBrush.Tests
                 elapsedMilliseconds[elapsedMilliseconds.Count - 1]);
         }
 
+        private static IEnumerator MeasureRenderedModes(
+            AnimationUI_Manager manager, string workload, int frameCount, string pattern)
+        {
+            int[] frames = CreateSelectionPattern(frameCount, pattern);
+            RenderMeasurement legacy = null;
+            yield return MeasureRenderedFrames(
+                manager, differential: false, frames: frames,
+                completed: measurement => legacy = measurement);
+            LogRenderMeasurement(workload, "legacy", pattern, legacy);
+
+            RenderMeasurement differential = null;
+            yield return MeasureRenderedFrames(
+                manager, differential: true, frames: frames,
+                completed: measurement => differential = measurement);
+            LogRenderMeasurement(workload, "differential", pattern, differential);
+        }
+
+        private static IEnumerator MeasureRenderedFrames(
+            AnimationUI_Manager manager, bool differential, IReadOnlyList<int> frames,
+            Action<RenderMeasurement> completed)
+        {
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: true, differential: differential);
+            manager.SelectTimelineFrame(0, 0);
+            for (int warmup = 0; warmup < 10; warmup++)
+            {
+                manager.ApplyPlaybackFrameForTests(frames[warmup % frames.Count]);
+                FrameTimingManager.CaptureFrameTimings();
+                yield return null;
+            }
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            manager.ResetPlaybackDiagnosticsForTests();
+
+            var measurement = new RenderMeasurement();
+            var frameTimings = new FrameTiming[1];
+            for (int sample = 0; sample < kRenderSampleCount; sample++)
+            {
+                manager.ApplyPlaybackFrameForTests(frames[sample % frames.Count]);
+                FrameTimingManager.CaptureFrameTimings();
+                yield return null;
+
+                measurement.DeltaMilliseconds.Add(Time.unscaledDeltaTime * 1000.0);
+                measurement.EditorFrameMilliseconds.Add(UnityStats.frameTime * 1000.0);
+                measurement.EditorRenderMilliseconds.Add(UnityStats.renderTime * 1000.0);
+                measurement.DrawCalls.Add(UnityStats.drawCalls);
+                measurement.Batches.Add(UnityStats.batches);
+                measurement.SetPassCalls.Add(UnityStats.setPassCalls);
+                measurement.Vertices.Add(UnityStats.vertices);
+                measurement.Triangles.Add(UnityStats.triangles);
+                measurement.VboUploads.Add(UnityStats.vboUploads);
+                measurement.VboUploadBytes.Add(UnityStats.vboUploadBytes);
+                uint timingCount = FrameTimingManager.GetLatestTimings(1, frameTimings);
+                if (timingCount > 0)
+                {
+                    measurement.CpuFrameMilliseconds.Add(frameTimings[0].cpuFrameTime);
+                    if (frameTimings[0].gpuFrameTime > 0)
+                    {
+                        measurement.GpuFrameMilliseconds.Add(frameTimings[0].gpuFrameTime);
+                    }
+                }
+            }
+            measurement.Counters = manager.CapturePlaybackDiagnosticsForTests();
+            completed(measurement);
+        }
+
+        private static void LogRenderMeasurement(
+            string workload, string mode, string pattern, RenderMeasurement measurement)
+        {
+            Debug.Log(
+                $"{kRenderLogPrefix} run={s_RunId} workload={workload} mode={mode} " +
+                $"pattern={pattern} samples={kRenderSampleCount} " +
+                $"deltaMedianMs={Median(measurement.DeltaMilliseconds):F3} " +
+                $"deltaP95Ms={Percentile(measurement.DeltaMilliseconds, 0.95):F3} " +
+                $"editorFrameMedianMs={Median(measurement.EditorFrameMilliseconds):F3} " +
+                $"editorRenderMedianMs={Median(measurement.EditorRenderMilliseconds):F3} " +
+                $"cpuTimingSamples={measurement.CpuFrameMilliseconds.Count} " +
+                $"cpuMedianMs={Median(measurement.CpuFrameMilliseconds):F3} " +
+                $"gpuTimingSamples={measurement.GpuFrameMilliseconds.Count} " +
+                $"gpuMedianMs={Median(measurement.GpuFrameMilliseconds):F3} " +
+                $"drawCalls={Median(measurement.DrawCalls):F0} " +
+                $"batches={Median(measurement.Batches):F0} " +
+                $"setPassCalls={Median(measurement.SetPassCalls):F0} " +
+                $"vertices={Median(measurement.Vertices):F0} " +
+                $"triangles={Median(measurement.Triangles):F0} " +
+                $"vboUploads={Median(measurement.VboUploads):F0} " +
+                $"vboUploadBytes={Median(measurement.VboUploadBytes):F0} " +
+                $"hideVisits={measurement.Counters.HideFrameVisits} " +
+                $"visibilityRequests={measurement.Counters.CanvasVisibilityRequests} " +
+                $"allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} " +
+                $"reservedBytes={Profiler.GetTotalReservedMemoryLong()}");
+        }
+
+        private static double Median<T>(IEnumerable<T> values)
+        {
+            double[] sorted = values
+                .Select(value => Convert.ToDouble(value))
+                .OrderBy(value => value)
+                .ToArray();
+            return sorted.Length == 0 ? 0 : sorted[sorted.Length / 2];
+        }
+
+        private static double Percentile<T>(IEnumerable<T> values, double percentile)
+        {
+            double[] sorted = values
+                .Select(value => Convert.ToDouble(value))
+                .OrderBy(value => value)
+                .ToArray();
+            if (sorted.Length == 0) return 0;
+            int index = Mathf.Clamp(
+                Mathf.CeilToInt((float)(sorted.Length * percentile)) - 1,
+                0, sorted.Length - 1);
+            return sorted[index];
+        }
+
         private static void LogMeasurement(
             AnimationUI_Manager manager, string workload, string mode, int trackCount,
             int frameCount, int uniqueDrawingCount, string pattern, Measurement measurement)
@@ -510,6 +686,23 @@ namespace TiltBrush.Tests
                 P95Milliseconds = p95Milliseconds;
                 WorstMilliseconds = worstMilliseconds;
             }
+        }
+
+        private sealed class RenderMeasurement
+        {
+            internal readonly List<double> DeltaMilliseconds = new();
+            internal readonly List<double> EditorFrameMilliseconds = new();
+            internal readonly List<double> EditorRenderMilliseconds = new();
+            internal readonly List<double> CpuFrameMilliseconds = new();
+            internal readonly List<double> GpuFrameMilliseconds = new();
+            internal readonly List<int> DrawCalls = new();
+            internal readonly List<int> Batches = new();
+            internal readonly List<int> SetPassCalls = new();
+            internal readonly List<int> Vertices = new();
+            internal readonly List<int> Triangles = new();
+            internal readonly List<int> VboUploads = new();
+            internal readonly List<int> VboUploadBytes = new();
+            internal AnimationPerformanceStats.CounterSnapshot Counters;
         }
     }
 }

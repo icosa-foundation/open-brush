@@ -20,7 +20,10 @@ until the same representative workloads have Player/headset render and memory ca
   `20260719T103830191Z`.
 - Real-stroke scale run IDs: `20260719T103345047Z`, `20260719T103537445Z`,
   `20260719T103805173Z`.
-- Test results: three combined jobs passed 3/3 (9/9 total). The initial cold validation encountered the
+- Rendered-frame run IDs: `20260719T104734176Z`, `20260719T104857076Z`,
+  `20260719T105121285Z`.
+- Test results: three combined jobs passed 3/3 and three render jobs passed 1/1 (12/12 total).
+  The initial cold validation encountered the
   existing `TiltBrushStandardSpecular.shader` D3D11 compile error; its unchanged warm rerun passed.
 
 ### Held timeline length: 8 tracks, empty geometry
@@ -105,6 +108,34 @@ vertices per frame. These are frame-selection results, not rendered-frame result
 Real batches preserve the timeline-length and track-count gains. Increasing unique drawings or
 changing selection order on a short timeline does not produce a material median improvement.
 
+## Editor rendered-frame matrix
+
+Each mode warms for 10 frames and samples 60 normal player-loop frames. The long-held workload has
+8 tracks × 10,000 frames and about 10k vertices per visible track. Unique-complex has 16 unique
+10k-vertex drawings. Material-diverse has 4 unique drawings, each with 8 brush groups and about
+10k vertices.
+
+The EditMode-driven Play Mode loop runs at about 10 Hz on this machine; approximately 95.5 ms is
+reported as Editor render time. These absolute CPU/frame values are not representative of a Player
+build or headset. They are retained as repeatable same-environment comparisons and to validate
+render counters. GPU timing was supported for all 60 samples per row.
+
+| Workload | Mode | Delta median / p95 (ms) | Editor render (ms) | GPU (ms) | Draws / batches / SetPass | Hide visits / visibility requests |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Long held, sequential | Legacy | 102.495 / 110.127 | 95.605 | 0.145 | 109 / 109 / 109 | 4,799,520 / 480 |
+| Long held, sequential | Differential | 101.399 / 107.283 | 95.510 | 0.084 | 109 / 109 / 109 | 0 / 0 |
+| Unique complex, sequential | Legacy | 101.342 / 108.762 | 95.685 | 0.144 | 109 / 109 / 109 | 900 / 959 |
+| Unique complex, sequential | Differential | 101.898 / 108.380 | 95.841 | 0.146 | 109 / 109 / 109 | 0 / 118 |
+| Unique complex, random | Legacy | 102.905 / 108.853 | 95.653 | 0.138 | 109 / 109 / 109 | 900 / 959 |
+| Unique complex, random | Differential | 103.112 / 108.584 | 95.834 | 0.137 | 109 / 109 / 109 | 0 / 118 |
+| Material diverse | Legacy | 101.050 / 109.601 | 95.573 | 0.131 | 177 / 177 / 177 | 180 / 239 |
+| Material diverse | Differential | 101.784 / 107.049 | 95.769 | 0.138 | 177 / 177 / 177 | 0 / 118 |
+
+The differential path does not change visible rendering work: draw calls, batches, SetPass calls,
+vertices, and triangles match legacy for each workload. The long-timeline median improves by
+1.096 ms in this render-dominated Editor loop, while short unique/material workloads show no
+consistent frame-time change. This supports a control-traversal claim, not a GPU optimization.
+
 ## What is established
 
 - Phase 1 differential playback removes full-timeline traversal and provides the first measured
@@ -118,8 +149,9 @@ changing selection order on a short timeline does not produce a material median 
 
 - Desktop Player and headset runs of every W1-W7 workload from
   `ANIMATION-PERFORMANCE-WORKLOADS.md`.
-- CPU/GPU rendered frame time, draw calls, native/mesh/GPU memory, allocation/GC, uploads/rebuilds,
-  culling, save/load latency, and first-display latency.
+- Target CPU/GPU rendered frame time, native/mesh/GPU memory, allocation/GC, uploads/rebuilds,
+  culling, save/load latency, and first-display latency. Editor draw-call/GPU samples above do not
+  replace target captures.
 - Numeric pre-change Phase 0 baselines for metrics that cannot be recreated using the retained
   legacy/full-refresh diagnostic path.
 
