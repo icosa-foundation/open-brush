@@ -32,6 +32,40 @@ namespace TiltBrush.Tests
     {
         private const string kLogPrefix = "[OB_ANIM_P3_INTEGRATION]";
 
+        [Test]
+        public void AnimationMetadataKeepsLegacyReadButWritesSparseSpans()
+        {
+            const string legacyJson =
+                "{\"Tracks\":[{\"frameLengths\":[2,3],\"Visible\":true}],\"numFrames\":1}";
+            AnimationMetadata legacy = JsonConvert.DeserializeObject<AnimationMetadata>(legacyJson);
+
+            Assert.AreEqual(0, legacy.Version);
+            CollectionAssert.AreEqual(new[] { 2, 3 }, legacy.Tracks[0].frameLengths);
+            Assert.IsNull(legacy.Tracks[0].Spans);
+
+            var current = new AnimationMetadata
+            {
+                Version = AnimationMetadata.CurrentVersion,
+                Tracks = new[]
+                {
+                    new AnimationTrackMetadata
+                    {
+                        Visible = true,
+                        Spans = new List<AnimationSpanMetadata>
+                        {
+                            new() { Duration = 2 },
+                            new() { Duration = 3 },
+                        }
+                    }
+                }
+            };
+            string currentJson = JsonConvert.SerializeObject(current);
+
+            StringAssert.Contains("\"Version\":2", currentJson);
+            StringAssert.Contains("\"Spans\"", currentJson);
+            StringAssert.DoesNotContain("frameLengths", currentJson);
+        }
+
         [UnitySetUp]
         public IEnumerator EnterRuntime()
         {
@@ -161,8 +195,11 @@ namespace TiltBrush.Tests
                 .Select(frame => frame.Canvas).Distinct().Count());
 
             AnimationMetadata metadata = App.Scene.AnimationTracksSerialized();
+            Assert.AreEqual(AnimationMetadata.CurrentVersion, metadata.Version);
             Assert.AreEqual(1, metadata.Tracks.Length);
-            CollectionAssert.AreEqual(new[] { 2, 3 }, metadata.Tracks[0].frameLengths);
+            Assert.IsNull(metadata.Tracks[0].frameLengths);
+            CollectionAssert.AreEqual(new[] { 2, 3 },
+                metadata.Tracks[0].Spans.Select(span => span.Duration));
 
             WidgetManager.m_Instance.UnregisterGrabWidget(widgetObject);
             UnityEngine.Object.Destroy(widgetObject);
@@ -220,8 +257,8 @@ namespace TiltBrush.Tests
                     trackIndex < sharedMetadata.Tracks.Length; trackIndex++)
                 {
                     CollectionAssert.AreEqual(
-                        sharedMetadata.Tracks[trackIndex].frameLengths,
-                        denseMetadata.Tracks[trackIndex].frameLengths);
+                        sharedMetadata.Tracks[trackIndex].Spans.Select(span => span.Duration),
+                        denseMetadata.Tracks[trackIndex].Spans.Select(span => span.Duration));
                     Assert.AreEqual(
                         sharedMetadata.Tracks[trackIndex].Visible,
                         denseMetadata.Tracks[trackIndex].Visible);
@@ -298,7 +335,7 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
-        public IEnumerator MissingDrawingIndexRecoversFromCompatibilityViewOnce()
+        public IEnumerator MissingDrawingIndexRecoversFromFrameAdapterOnce()
         {
             Debug.Log($"{kLogPrefix} test=indexRecovery state=started");
             AnimationUI_Manager manager = App.Scene.animationUI_manager;
@@ -508,12 +545,14 @@ namespace TiltBrush.Tests
                 Assert.IsNotNull(before.Tracks);
                 Assert.IsNotNull(after);
                 Assert.IsNotNull(after.Tracks);
+                Assert.AreEqual(AnimationMetadata.CurrentVersion, after.Version);
                 Assert.AreEqual(before.Tracks.Length, after.Tracks.Length);
                 for (int trackIndex = 0; trackIndex < before.Tracks.Length; trackIndex++)
                 {
+                    Assert.IsNull(after.Tracks[trackIndex].frameLengths);
                     CollectionAssert.AreEqual(
-                        before.Tracks[trackIndex].frameLengths,
-                        after.Tracks[trackIndex].frameLengths,
+                        before.Tracks[trackIndex].Spans.Select(span => span.Duration),
+                        after.Tracks[trackIndex].Spans.Select(span => span.Duration),
                         $"Track {trackIndex} timing changed during save/load");
                     Assert.AreEqual(
                         before.Tracks[trackIndex].Visible,

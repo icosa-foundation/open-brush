@@ -127,6 +127,14 @@ namespace TiltBrush.FrameAnimation
                 return result;
             }
 
+            internal static SparseFrameList FromRepeatedValue(FrameValue value, int count)
+            {
+                if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+                var result = new SparseFrameList(0, Array.Empty<Span>());
+                result.InsertRepeat(0, count, value);
+                return result;
+            }
+
             public void Clear()
             {
                 m_Spans.Clear();

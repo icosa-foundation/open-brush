@@ -768,14 +768,20 @@ namespace TiltBrush
 
                     if (jsonData.AnimationTracks != null)
                     {
-                        var frameLengths = jsonData.AnimationTracks.Tracks
-                            .Select(track => (IReadOnlyList<int>)(track.frameLengths ?? new List<int>()))
+                        bool hasSparseMetadata =
+                            jsonData.AnimationTracks.Version >= AnimationMetadata.CurrentVersion &&
+                            jsonData.AnimationTracks.Tracks.All(track => track.Spans != null);
+                        var spanDurations = jsonData.AnimationTracks.Tracks
+                            .Select(track => (IReadOnlyList<int>)(hasSparseMetadata
+                                ? track.Spans.Select(span => span.Duration).ToList()
+                                : track.frameLengths ?? new List<int>()))
                             .ToList();
                         var trackVisibility = jsonData.AnimationTracks.Tracks
                             .Select(track => track.Visible)
                             .ToList();
-                        App.Scene.animationUI_manager.ConfigureLegacyAnimationTracks(
-                            frameLengths, trackVisibility);
+                        App.Scene.animationUI_manager.ConfigureAnimationTracks(
+                            spanDurations, trackVisibility,
+                            hasSparseMetadata ? "sparseTimelineLoad" : "legacyTimelineLoad");
                     }
                 }
 

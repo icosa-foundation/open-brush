@@ -580,7 +580,7 @@ namespace TiltBrush
 
         public AnimationMetadata AnimationTracksSerialized()
         {
-            var meta = new AnimationMetadata();
+            var meta = new AnimationMetadata { Version = AnimationMetadata.CurrentVersion };
             var layers = LayerCanvases.ToArray();
             meta.Tracks = new AnimationTrackMetadata[layers.Length];
 
@@ -588,13 +588,15 @@ namespace TiltBrush
             for (var i = 0; i < layers.Length; i++)
             {
                 var layer = layers[i];
-                List<int> frameLengthsFound =
-                    animationUI_manager.GetTrackFrameLengths(activeTrackIndexes[i]);
+                List<AnimationSpanMetadata> spans = animationUI_manager
+                    .GetTrackFrameLengths(activeTrackIndexes[i])
+                    .Select(duration => new AnimationSpanMetadata { Duration = duration })
+                    .ToList();
                 meta.Tracks[i] = new AnimationTrackMetadata
                 {
                     Visible = layer.gameObject.activeSelf,
                     Name = layer.name,
-                    frameLengths = frameLengthsFound
+                    Spans = spans
                 };
             }
 

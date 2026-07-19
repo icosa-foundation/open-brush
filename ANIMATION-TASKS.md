@@ -30,10 +30,17 @@
 - [x] Run Unity integration coverage for real Canvas creation, promotion, destruction, save leases, and command-history disposal.
 - [x] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip (2 tracks, 4 drawing spans, 2 unique Canvases).
 - [x] Run the 80,000-cell held-timeline workload and record legacy versus differential traversal and frame-selection timings (719,928 legacy hide visits versus 0 differential; 19.273 ms versus 9.067 ms median across 9 transitions on the validation machine).
-- [x] Verify that layer/frame coordinate consumers materialize only the requested sparse span and preserve legacy frame-length metadata.
-- [x] Verify that disabling empty-Canvas sharing changes only compatibility hierarchy count while sparse spans, track visibility, and persistence metadata remain equivalent.
+- [x] Verify that layer/frame coordinate consumers resolve through the span-backed adapter without
+  allocating one projected object per frame coordinate.
+- [x] Verify that disabling empty-Canvas sharing changes only diagnostic hierarchy count while
+  sparse spans, track visibility, and persistence metadata remain equivalent.
 - [x] Verify differential and legacy playback produce identical active drawing sets across distinct drawings and hidden tracks.
-- [x] Verify a missing Canvas/drawing index entry recovers through the development compatibility scan and subsequent queries return to indexed lookup.
+- [x] Verify a missing Canvas/drawing index entry recovers through the development frame-adapter
+  scan and subsequent queries return to indexed lookup.
+- [ ] Run the versioned sparse-metadata snapshot round trip and the legacy `frameLengths` import
+  check after the frame-adapter migration.
+- [ ] Capture three manager adapter/persistence runs at 100, 1,000, and 10,000 held frames and
+  compare them with the retained eager-projection result.
 
 ## Phase 0 baseline gate
 

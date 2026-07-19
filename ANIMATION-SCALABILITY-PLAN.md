@@ -47,7 +47,9 @@ useful lessons are the separation of timeline data, drawing data, render state, 
 - Replacing all Open Brush brush shaders with IMM's five-section brush model.
 - Combining materials or brush geometries that are not render-state compatible.
 - Building a streaming system before realistic scene measurements justify it.
-- Changing the saved sketch format without a backward-compatible migration path.
+- Breaking ordinary non-animation `.tilt` sketches. Animation-branch metadata has a lightweight
+  legacy reader, but compatibility with experimental animation builds is not a reason to retain
+  a second runtime representation.
 - Optimizing editor-only operations that are already infrequent unless profiling identifies
   them as material user-facing stalls.
 
@@ -62,11 +64,13 @@ For this plan, a **working state** means:
 
 - the project compiles and starts normally;
 - existing non-animation drawing and editing workflows still work;
-- existing animation sketches load and play with equivalent timing and visible content;
+- animation sketches using the immediately preceding `frameLengths` metadata load, convert to
+  sparse spans during open, and play with equivalent timing and visible content;
 - animation creation, editing, undo/redo, save, and reload work for the content types supported
   before the phase began;
 - unsupported content continues through the previous Canvas-backed path;
-- a new optimization can be disabled without converting or losing sketch data;
+- a new rendering optimization can be disabled without converting or losing sketch data; the
+  sparse timeline itself becomes the sole runtime representation in Phase 3;
 - saved files are not written in a representation that the active loader cannot read;
 - automated correctness tests and the phase's targeted smoke tests pass.
 
@@ -382,8 +386,8 @@ Each subphase below is a required working-app checkpoint:
 #### Phase 3A: introduce the model behind adapters
 
 - Add stable Track and Drawing IDs and sparse span classes without changing the active timeline.
-- Add frame-resolution and enumeration adapters that can present the sparse model through the
-  current frame/Canvas-oriented API.
+- Add a span-backed frame-coordinate adapter that can resolve the current frame/Canvas-oriented
+  API without allocating one compatibility object per timeline cell.
 - In development builds, build a shadow sparse model from the current timeline and compare every
   resolved track/frame against the existing representation.
 - Keep the existing timeline authoritative and keep all saves in the existing format.
@@ -394,34 +398,42 @@ unreachable from normal app behavior except for equivalence validation.
 #### Phase 3B: make the sparse model authoritative
 
 - Redirect read operations through the adapter, then redirect one edit command family at a time.
-- Keep the existing dense view as a generated compatibility view for UI and unconverted callers.
+- Keep a span-backed coordinate adapter for UI and unconverted callers. Do not generate or retain
+  an eager dense compatibility view; explicit full enumeration is allowed only at cold boundaries
+  that genuinely require individual coordinates.
 - Convert add/delete, move, extend/reduce, and duplicate/split separately, with command and
   undo/redo tests at each step.
 - Continue to use Canvas-backed drawings for every non-empty drawing and continue writing the
   existing save representation.
 
 **Working state:** the sparse model is authoritative, but rendering, editing, UI, and persistence
-still observe the same Canvas/frame contract through adapters. A temporary feature flag can select
-the old authoritative model while rollout validation is in progress.
+still observe the same Canvas/frame contract through the span-backed coordinate adapter. Each edit
+family is validated before the next is redirected; rollback is by build/commit, not by retaining a
+second authoritative runtime model.
 
 #### Phase 3C: remove empty canvases
 
 - Introduce the empty drawing sentinel and transient empty authoring Canvas.
 - Stop allocating persistent canvases for empty spans in newly created or edited timelines.
 - Load old sketches into sparse empty spans without manufacturing canvases for every empty cell.
-- Retain a diagnostic compatibility mode that can materialize the dense view when investigating
-  regressions, without making it the stored model.
+- Validate the span-backed coordinate adapter directly. Do not retain a diagnostic mode that
+  materializes a dense timeline, because that mode recreates the scaling failure and has no
+  meaningful deployed compatibility audience.
 
 **Working state:** all non-empty drawings remain on the existing Canvas render/edit path. Only
-empty-cell representation changes, and disabling sparse-empty behavior does not alter saved data.
+empty-cell representation changes. Empty cells still acquire a transient authoring Canvas when
+selected, so drawing, undo/redo, and save/reload remain usable without a dense fallback mode.
 
 #### Phase 3D: finalize persistence and remove temporary dual writes
 
 - Validate old-file load, new-file save/reload, autosave, thumbnail, export, and API consumers.
-- Add versioned sparse metadata only if expanding spans into the current external representation
-  is insufficient.
-- Keep the old reader and conversion path for every supported legacy file version.
-- Remove shadow-model or dual-write code only after the sparse model has been the tested default.
+- Write versioned sparse-span metadata and stop writing the experimental `frameLengths` field.
+- Keep a small `frameLengths` fallback reader for older animation-branch files. Convert those
+  durations immediately into the authoritative sparse model during open; do not carry a legacy
+  mode or dual representation beyond the load boundary.
+- Do not require new animation files to open in older experimental animation builds. The expected
+  legacy user count is close to zero, so golden-file coverage is limited to the preceding format
+  and no broader migration framework is justified.
 
 **Working state:** files written by the default path can be read immediately by that build, and
 legacy files still migrate without requiring the old runtime timeline.
@@ -457,15 +469,14 @@ Drawing ID or update all references in one operation.
 
 ### Save/load compatibility
 
-1. Keep existing saved frame and track coordinates readable.
-2. On load, group adjacent frame coordinates that resolve to the same drawing into spans.
-3. On save, either expand spans into the current external frame/track representation or add a
-   versioned sparse metadata representation while continuing to emit compatible stroke location
-   data.
+1. Keep ordinary `.tilt` content and the preceding animation `frameLengths` metadata readable.
+2. On load, convert legacy durations directly into spans before normal runtime work begins.
+3. On save, emit versioned sparse-span metadata while continuing to emit the stroke frame/track
+   locations used to associate drawing content with span starts.
 4. Define how empty spans, held drawings, duplicate-but-independent drawings, animation paths,
    hidden tracks, and deleted tracks round-trip.
-5. Add golden-file tests for sketches saved before the sparse model and for new sketches opened by
-   the oldest supported reader where backward compatibility is required.
+5. Add one legacy animation fixture plus new-format round-trip coverage. Do not add old-reader
+   support for new animation files unless real usage later establishes that requirement.
 
 ### Exit criteria
 
@@ -752,11 +763,12 @@ another one.
 
 ## Rollout and compatibility
 
-Use feature flags for sparse-model and render-proxy stages until file compatibility and editing
-behavior are established. During migration:
+Use feature flags for render-proxy stages until editing behavior is established. The Phase 3
+sparse model is a one-way runtime migration rather than a permanently selectable legacy mode.
+During migration:
 
-- retain a validation mode that resolves both old and new timeline representations and compares
-  them;
+- validate the sparse model against value snapshots and the span-backed coordinate adapter; do not
+  retain an eager dense runtime representation merely for comparison;
 - keep saved-format changes versioned and one-way migrations explicit;
 - prefer a mixed runtime capable of retaining legacy Canvas-backed drawings;
 - add diagnostic summaries to bug reports without logging stroke content or user data;

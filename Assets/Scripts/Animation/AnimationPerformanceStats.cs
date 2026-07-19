@@ -272,19 +272,19 @@ namespace TiltBrush.FrameAnimation
             List<CanvasScript> uniqueCanvases = timeline == null
                 ? new List<CanvasScript>()
                 : timeline
-                    .SelectMany(track => track.Frames ?? new List<AnimationUI_Manager.Frame>())
+                    .SelectMany(track => track.Frames?.SpanFrames ??
+                        Enumerable.Empty<AnimationUI_Manager.Frame>())
                     .Select(frame => frame.Canvas)
                     .Where(canvas => canvas != null)
                     .Distinct()
                     .ToList();
-            int emptyCells = timeline?.Sum(track =>
-                track.Frames?.Count(frame => frame.Canvas == null ||
-                    !m_Manager.GetFrameFilledWithoutStats(frame.Canvas)) ?? 0) ?? 0;
+            int emptyCells = m_Manager.GetSparseEmptyCellCount();
             m_Manager.GetSparseTimelineCounts(out int spans, out int emptySpans);
             int emptyCanvases = timeline == null
                 ? 0
                 : timeline
-                    .SelectMany(track => track.Frames ?? new List<AnimationUI_Manager.Frame>())
+                    .SelectMany(track => track.Frames?.SpanFrames ??
+                        Enumerable.Empty<AnimationUI_Manager.Frame>())
                     .Where(frame => frame.EmptySpanId != 0 && frame.Canvas != null)
                     .Select(frame => frame.Canvas)
                     .Distinct()

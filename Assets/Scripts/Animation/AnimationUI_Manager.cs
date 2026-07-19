@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -146,6 +147,84 @@ namespace TiltBrush.FrameAnimation
             public long EmptySpanId;
         }
 
+        /// Frame-coordinate adapter backed by one projected record per sparse span. Indexing is
+        /// logarithmic in span count; allocating one Frame per timeline cell is deliberately
+        /// avoided. Full enumeration remains available only for legacy callers that explicitly
+        /// request every coordinate.
+        public sealed class FrameProjection : IReadOnlyList<Frame>
+        {
+            private readonly List<ProjectedSpan> m_Spans = new();
+            public int Count { get; private set; }
+            internal int SpanCount => m_Spans.Count;
+
+            private readonly struct ProjectedSpan
+            {
+                internal int StartFrame { get; }
+                internal int Duration { get; }
+                internal int EndFrameExclusive => StartFrame + Duration;
+                internal Frame Frame { get; }
+
+                internal ProjectedSpan(int startFrame, int duration, Frame frame)
+                {
+                    StartFrame = startFrame;
+                    Duration = duration;
+                    Frame = frame;
+                }
+            }
+
+            public Frame this[int index]
+            {
+                get
+                {
+                    if (index < 0 || index >= Count)
+                    {
+                        throw new ArgumentOutOfRangeException(nameof(index));
+                    }
+                    int low = 0;
+                    int high = m_Spans.Count - 1;
+                    while (low <= high)
+                    {
+                        int middle = low + ((high - low) / 2);
+                        ProjectedSpan span = m_Spans[middle];
+                        if (index < span.StartFrame) high = middle - 1;
+                        else if (index >= span.EndFrameExclusive) low = middle + 1;
+                        else return span.Frame;
+                    }
+                    throw new InvalidOperationException(
+                        $"Projected animation frame {index} has no containing span");
+                }
+            }
+
+            internal IEnumerable<Frame> SpanFrames => m_Spans.Select(span => span.Frame);
+
+            internal void AddSpan(int duration, Frame frame)
+            {
+                if (duration <= 0) throw new ArgumentOutOfRangeException(nameof(duration));
+                m_Spans.Add(new ProjectedSpan(Count, duration, frame));
+                Count += duration;
+            }
+
+            internal int FindIndex(Predicate<Frame> match)
+            {
+                if (match == null) throw new ArgumentNullException(nameof(match));
+                foreach (ProjectedSpan span in m_Spans)
+                {
+                    if (match(span.Frame)) return span.StartFrame;
+                }
+                return -1;
+            }
+
+            public IEnumerator<Frame> GetEnumerator()
+            {
+                foreach (ProjectedSpan span in m_Spans)
+                {
+                    for (int frame = 0; frame < span.Duration; frame++) yield return span.Frame;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
         public struct DeletedFrame
         {
             public Frame Frame;
@@ -198,7 +277,7 @@ namespace TiltBrush.FrameAnimation
         public struct Track
         {
             public int Id;
-            public List<Frame> Frames;
+            public FrameProjection Frames;
             public bool Visible;
             public bool Deleted;
         }
@@ -219,7 +298,7 @@ namespace TiltBrush.FrameAnimation
         {
             Track thisFrame;
             thisFrame.Id = m_NextTrackId++;
-            thisFrame.Frames = new List<Frame>();
+            thisFrame.Frames = new FrameProjection();
             thisFrame.Visible = true;
             thisFrame.Deleted = false;
             return thisFrame;
@@ -396,7 +475,7 @@ namespace TiltBrush.FrameAnimation
             if (Timeline != null)
             {
                 foreach (CanvasScript canvas in Timeline
-                    .SelectMany(track => track.Frames)
+                    .SelectMany(track => track.Frames.SpanFrames)
                     .Select(frame => frame.Canvas)
                     .Where(canvas => canvas != null)
                     .Distinct())
@@ -495,7 +574,7 @@ namespace TiltBrush.FrameAnimation
             Profiler.BeginSample("OB_ANIM_SCALE.SparseEditAndProjection");
             EnsureSparseTimeline();
             m_SparseTimeline.ApplyEdit(edit);
-            ProjectSparseTimelineToCompatibilityView();
+            RebuildFrameCoordinateAdapter();
             Profiler.EndSample();
         }
 
@@ -533,7 +612,7 @@ namespace TiltBrush.FrameAnimation
             AnimationTimelineOperations.PadTracks(tracks, length, NewEmptyFrameValue);
         }
 
-        private void ProjectSparseTimelineToCompatibilityView()
+        private void RebuildFrameCoordinateAdapter()
         {
             m_CachedTimelineLength = m_SparseTimeline.Length;
             m_SparseTimelineDirty = false;
@@ -547,7 +626,7 @@ namespace TiltBrush.FrameAnimation
                 Timeline.Add(new Track
                 {
                     Id = sparseTrack.Id,
-                    Frames = new List<Frame>(sparseTrack.Length),
+                    Frames = new FrameProjection(),
                     Visible = sparseTrack.Visible,
                     Deleted = sparseTrack.Deleted,
                 });
@@ -575,19 +654,15 @@ namespace TiltBrush.FrameAnimation
                         }
                         canvas = GetOrCreateEmptyCanvas(trackIndex, preferredCanvas);
                     }
-                    for (int frameIndex = span.StartFrame;
-                        frameIndex < span.EndFrameExclusive; frameIndex++)
+                    Timeline[trackIndex].Frames.AddSpan(span.Duration, new Frame
                     {
-                        Timeline[trackIndex].Frames.Add(new Frame
-                        {
-                            Visible = sparseTrack.Visible,
-                            Deleted = span.Value.Deleted,
-                            FrameExists = span.Value.FrameExists,
-                            Canvas = canvas,
-                            AnimatedPath = span.Value.PathToken as CameraPathWidget,
-                            EmptySpanId = span.Value.SpanIdentity,
-                        });
-                    }
+                        Visible = sparseTrack.Visible,
+                        Deleted = span.Value.Deleted,
+                        FrameExists = span.Value.FrameExists,
+                        Canvas = canvas,
+                        AnimatedPath = span.Value.PathToken as CameraPathWidget,
+                        EmptySpanId = span.Value.SpanIdentity,
+                    });
                 }
             }
 
@@ -713,7 +788,7 @@ namespace TiltBrush.FrameAnimation
             if (Timeline != null)
             {
                 var canvasesToValidate = new HashSet<CanvasScript>(Timeline
-                    .SelectMany(track => track.Frames)
+                    .SelectMany(track => track.Frames.SpanFrames)
                     .Select(frame => frame.Canvas)
                     .Where(canvas => canvas != null));
                 canvasesToValidate.UnionWith(
@@ -762,7 +837,7 @@ namespace TiltBrush.FrameAnimation
             foreach (Track track in Timeline)
             {
                 if (track.Frames == null) continue;
-                foreach (Frame frame in track.Frames)
+                foreach (Frame frame in track.Frames.SpanFrames)
                 {
                     if (frame.EmptySpanId == 0 || frame.Canvas == null) continue;
                     m_EmptyCanvases.Add(frame.Canvas);
@@ -990,7 +1065,7 @@ namespace TiltBrush.FrameAnimation
             Timeline = new List<Track>();
             Track mainTrack = NewTrack();
             Frame originFrame = NewFrame(App.Scene.m_MainCanvas);
-            mainTrack.Frames.Add(originFrame);
+            mainTrack.Frames.AddSpan(1, originFrame);
             Timeline.Add(mainTrack);
             App.Scene.animationUI_manager = this;
             FocusFrame(0);
@@ -1012,7 +1087,7 @@ namespace TiltBrush.FrameAnimation
             if (Timeline != null)
             {
                 foreach (CanvasScript canvas in Timeline
-                    .SelectMany(track => track.Frames ?? new List<Frame>())
+                    .SelectMany(track => track.Frames?.SpanFrames ?? Enumerable.Empty<Frame>())
                     .Select(frame => frame.Canvas))
                 {
                     if (canvas != null) previousCanvases.Add(canvas);
@@ -1036,12 +1111,8 @@ namespace TiltBrush.FrameAnimation
                 if (hidingFrame >= track.Frames.Count) { continue; }
                 if (frameOn < track.Frames.Count && track.Frames[hidingFrame].Canvas.Equals(track.Frames[frameOn].Canvas)) continue;
 
-                Frame thisFrame = track.Frames[hidingFrame];
-
                 m_PerformanceStats?.RecordCanvasVisibilityRequest();
-                App.Scene.HideCanvas(thisFrame.Canvas);
-                thisFrame.Visible = false;
-                track.Frames[hidingFrame] = thisFrame;
+                App.Scene.HideCanvas(track.Frames[hidingFrame].Canvas);
             }
         }
 
@@ -1062,9 +1133,7 @@ namespace TiltBrush.FrameAnimation
                 {
                     m_PerformanceStats?.RecordCanvasVisibilityRequest();
                     App.Scene.HideCanvas(thisFrame.Canvas);
-                    thisFrame.Visible = false;
                 }
-                Timeline[i].Frames[frameIndex] = thisFrame;
             }
             m_PreviousShowingFrame = frameIndex;
         }
@@ -1256,10 +1325,10 @@ namespace TiltBrush.FrameAnimation
             AnimationTimelineModel.FrameValue emptyValue = NewEmptyFrameValue();
             ApplySparseTimelineEdit(tracks =>
             {
-                var frames = new List<AnimationTimelineModel.FrameValue>(timelineLength);
-                for (int i = 0; i < timelineLength; i++) frames.Add(emptyValue);
                 tracks.Add(new AnimationTimelineModel.EditableTrack(
-                    addingTrack.Id, true, false, frames));
+                    addingTrack.Id, true, false,
+                    AnimationTimelineModel.SparseFrameList.FromRepeatedValue(
+                        emptyValue, timelineLength)));
             });
             ResetTimeline();
             return canvasAdding;
@@ -1269,19 +1338,27 @@ namespace TiltBrush.FrameAnimation
             IReadOnlyList<IReadOnlyList<int>> frameLengths,
             IReadOnlyList<bool> trackVisibility)
         {
+            ConfigureAnimationTracks(frameLengths, trackVisibility, "legacyTimelineLoad");
+        }
+
+        public void ConfigureAnimationTracks(
+            IReadOnlyList<IReadOnlyList<int>> spanDurations,
+            IReadOnlyList<bool> trackVisibility,
+            string performanceOperation = "sparseTimelineLoad")
+        {
             using AnimationPerformanceStats.OperationTimer operationTimer =
-                AnimationPerformanceStats.MeasureOperation("legacyTimelineLoad");
-            if (frameLengths == null) throw new ArgumentNullException(nameof(frameLengths));
+                AnimationPerformanceStats.MeasureOperation(performanceOperation);
+            if (spanDurations == null) throw new ArgumentNullException(nameof(spanDurations));
             if (trackVisibility == null) throw new ArgumentNullException(nameof(trackVisibility));
-            if (frameLengths.Count != trackVisibility.Count)
+            if (spanDurations.Count != trackVisibility.Count)
             {
                 throw new ArgumentException(
-                    "Animation frame lengths and visibility must have equal track counts");
+                    "Animation span durations and visibility must have equal track counts");
             }
 
             ApplySparseTimelineEdit(tracks =>
             {
-                while (tracks.Count < frameLengths.Count)
+                while (tracks.Count < spanDurations.Count)
                 {
                     tracks.Add(new AnimationTimelineModel.EditableTrack(
                         m_NextTrackId++, visible: true, deleted: false,
@@ -1290,16 +1367,16 @@ namespace TiltBrush.FrameAnimation
                             NewEmptyFrameValue()
                         }));
                 }
-                for (int trackIndex = 0; trackIndex < frameLengths.Count; trackIndex++)
+                for (int trackIndex = 0; trackIndex < spanDurations.Count; trackIndex++)
                 {
                     tracks[trackIndex].Visible = trackVisibility[trackIndex];
-                    if (frameLengths[trackIndex].Count == 0) continue;
+                    if (spanDurations[trackIndex].Count == 0) continue;
                     tracks[trackIndex].Frames.Clear();
-                    foreach (int serializedLength in frameLengths[trackIndex])
+                    foreach (int serializedDuration in spanDurations[trackIndex])
                     {
                         tracks[trackIndex].Frames.InsertRepeat(
                             tracks[trackIndex].Frames.Count,
-                            Math.Max(1, serializedLength), NewEmptyFrameValue());
+                            Math.Max(1, serializedDuration), NewEmptyFrameValue());
                     }
                 }
             });
@@ -1316,7 +1393,7 @@ namespace TiltBrush.FrameAnimation
                     !m_SparseTimeline.TryGetTrackIndex(trackId, out int trackIndex))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    return RebuildTimelineIndexesFromCompatibilityView(canvas);
+                    return RebuildTimelineIndexesFromFrameAdapter(canvas);
 #else
                     return (-1, -1);
 #endif
@@ -1344,7 +1421,7 @@ namespace TiltBrush.FrameAnimation
             if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                return RebuildTimelineIndexesFromCompatibilityView(canvas);
+                return RebuildTimelineIndexesFromFrameAdapter(canvas);
 #else
                 return (-1, -1);
 #endif
@@ -1356,14 +1433,14 @@ namespace TiltBrush.FrameAnimation
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return RebuildTimelineIndexesFromCompatibilityView(canvas);
+            return RebuildTimelineIndexesFromFrameAdapter(canvas);
 #else
             return (-1, -1);
 #endif
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private (int, int) RebuildTimelineIndexesFromCompatibilityView(CanvasScript canvas)
+        private (int, int) RebuildTimelineIndexesFromFrameAdapter(CanvasScript canvas)
         {
             int cellsVisited = 0;
             (int, int) scannedLocation = (-1, -1);
@@ -1371,15 +1448,14 @@ namespace TiltBrush.FrameAnimation
             {
                 for (int trackIndex = 0; trackIndex < Timeline.Count; trackIndex++)
                 {
-                    for (int frameIndex = 0; frameIndex < Timeline[trackIndex].Frames.Count;
-                        frameIndex++)
+                    cellsVisited += Timeline[trackIndex].Frames.SpanCount;
+                    int frameIndex = Timeline[trackIndex].Frames.FindIndex(
+                        frame => frame.Canvas == canvas);
+                    if (frameIndex >= 0)
                     {
-                        cellsVisited++;
-                        if (Timeline[trackIndex].Frames[frameIndex].Canvas != canvas) continue;
                         scannedLocation = (trackIndex, frameIndex);
                         break;
                     }
-                    if (scannedLocation.Item1 >= 0) break;
                 }
             }
             m_PerformanceStats?.RecordLocationCellsVisited(cellsVisited);
@@ -1500,6 +1576,14 @@ namespace TiltBrush.FrameAnimation
             spanCount = m_SparseTimeline.Tracks.Sum(track => track.Spans.Count);
             emptySpanCount = m_SparseTimeline.Tracks.Sum(track =>
                 track.Spans.Count(span => span.Value.DrawingId.IsEmpty));
+        }
+
+        internal int GetSparseEmptyCellCount()
+        {
+            EnsureSparseTimeline();
+            return m_SparseTimeline.Tracks.Sum(track => track.Spans
+                .Where(span => !IsSparseFrameFilled(span.Value))
+                .Sum(span => span.Duration));
         }
 
         public List<int> ActiveTrackIndexes()
@@ -1927,9 +2011,8 @@ namespace TiltBrush.FrameAnimation
         {
             HashSet<CanvasScript> visibleCanvases = GetVisibleCanvasesAtFrame(
                 frameIndex, includeEmptyCanvases);
-            foreach (CanvasScript canvas in Timeline
-                .SelectMany(track => track.Frames)
-                .Select(frame => frame.Canvas)
+            foreach (CanvasScript canvas in m_DrawingCanvases.Values
+                .Concat(includeEmptyCanvases ? m_EmptyCanvases : Enumerable.Empty<CanvasScript>())
                 .Where(canvas => canvas != null)
                 .Distinct())
             {
@@ -2041,19 +2124,20 @@ namespace TiltBrush.FrameAnimation
 
         public int GetTimelineMaxCanvas()
         {
-            int maxLength = 0;
-
-            for (int t = 0; t < Timeline.Count; t++)
+            EnsureSparseTimeline();
+            int maxFrame = 0;
+            foreach (AnimationTimelineModel.Track track in m_SparseTimeline.Tracks)
             {
-                for (int f = 0; f < Timeline[t].Frames.Count; f++)
+                foreach (AnimationTimelineModel.Span span in track.Spans)
                 {
-                    if (f > maxLength && GetFrameFilled(t, f))
+                    if (span.EndFrameExclusive - 1 > maxFrame &&
+                        IsSparseFrameFilled(span.Value))
                     {
-                        maxLength = f;
+                        maxFrame = span.EndFrameExclusive - 1;
                     }
                 }
             }
-            return maxLength;
+            return maxFrame;
         }
 
         public void CleanTimeline()
@@ -2522,7 +2606,7 @@ namespace TiltBrush.FrameAnimation
 
         private HashSet<CanvasScript> GetDrawingCanvases(List<Track> timeline)
         {
-            return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames)
+            return new HashSet<CanvasScript>(timeline.SelectMany(track => track.Frames.SpanFrames)
                 .Select(frame => frame.Canvas)
                 .Where(canvas => canvas != null && !m_EmptyCanvases.Contains(canvas)));
         }
@@ -2530,7 +2614,7 @@ namespace TiltBrush.FrameAnimation
         private void RestoreTimelineSnapshot(AnimationTimelineModel.Snapshot snapshot)
         {
             m_SparseTimeline.Restore(snapshot);
-            ProjectSparseTimelineToCompatibilityView();
+            RebuildFrameCoordinateAdapter();
         }
 
         private DeleteFrameOperation CompleteDeleteFrameOperation(
@@ -2576,7 +2660,7 @@ namespace TiltBrush.FrameAnimation
             ReleaseTimelineSnapshot(operation.PreviousTimeline);
 
             if (operation.RemovedPath != null &&
-                !Timeline.SelectMany(track => track.Frames)
+                !Timeline.SelectMany(track => track.Frames.SpanFrames)
                     .Any(frame => frame.AnimatedPath == operation.RemovedPath))
             {
                 WidgetManager.m_Instance.DeleteCameraPath(operation.RemovedPath);

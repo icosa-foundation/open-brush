@@ -646,20 +646,32 @@ namespace TiltBrush
     // }
 
     [Serializable]
+    public class AnimationSpanMetadata
+    {
+        public int Duration;
+    }
+
+    [Serializable]
     public class AnimationTrackMetadata
     {
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string Name;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
 
+        // Legacy animation-branch metadata. Read-only compatibility: new sketches write Spans.
         public List<int> frameLengths;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<AnimationSpanMetadata> Spans;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool Visible;
     }
     [Serializable]
     public class AnimationMetadata
     {
+        public const int CurrentVersion = 2;
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int Version;
         public AnimationTrackMetadata[] Tracks;
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

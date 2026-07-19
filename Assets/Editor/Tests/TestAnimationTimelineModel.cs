@@ -72,6 +72,24 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void FrameCoordinateAdapterStoresHeldDurationAsOneSpan()
+        {
+            const int duration = 10000;
+            var projection = new AnimationUI_Manager.FrameProjection();
+            projection.AddSpan(duration, new AnimationUI_Manager.Frame
+            {
+                FrameExists = true,
+                EmptySpanId = 17,
+            });
+
+            Assert.AreEqual(duration, projection.Count);
+            Assert.AreEqual(1, projection.SpanCount);
+            Assert.AreEqual(17, projection[0].EmptySpanId);
+            Assert.AreEqual(17, projection[duration - 1].EmptySpanId);
+            Assert.AreEqual(0, projection.FindIndex(frame => frame.EmptySpanId == 17));
+        }
+
+        [Test]
         public void RebuildRejectsDuplicateStableTrackIdsWithoutChangingExistingModel()
         {
             var drawing = new AnimationDrawingId(8);

@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
 using UnityEditor;
@@ -36,6 +37,8 @@ namespace TiltBrush.Tests
     {
         private const string kLogPrefix = "[OB_ANIM_PHASE0]";
         private const string kRenderLogPrefix = "[OB_ANIM_RENDER]";
+        private const string kSparseEditLogPrefix = "[OB_ANIM_SPARSE_EDIT]";
+        private const string kPersistenceLogPrefix = "[OB_ANIM_SPARSE_PERSISTENCE]";
         private const int kTransitionCount = 33;
         private const int kRenderSampleCount = 60;
         private static string s_RunId;
@@ -272,6 +275,91 @@ namespace TiltBrush.Tests
 
         [UnityTest]
         [Category("AnimationPerformance")]
+        public IEnumerator ManagerEditAdapterMatrix()
+        {
+            s_RunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
+            Debug.Log(
+                $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter " +
+                "state=started samples=11 tracks=8");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+
+            foreach (int frameCount in new[] { 100, 1000, 10000 })
+            {
+                ConfigureHeldTimeline(manager, trackCount: 8, frameCount: frameCount);
+                yield return null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                long managedBefore = GC.GetTotalMemory(false);
+                long monoUsedBefore = Profiler.GetMonoUsedSizeLong();
+                var elapsedMilliseconds = new List<double>();
+                var stopwatch = new Stopwatch();
+                for (int sample = 0; sample < 11; sample++)
+                {
+                    stopwatch.Restart();
+                    manager.SetTrackVisibility(0, sample % 2 == 0);
+                    stopwatch.Stop();
+                    elapsedMilliseconds.Add(stopwatch.Elapsed.TotalMilliseconds);
+                }
+
+                manager.GetSparseTimelineCounts(out int spanCount, out int emptySpanCount);
+                Assert.AreEqual(8, spanCount);
+                Assert.AreEqual(8, emptySpanCount);
+                Debug.Log(
+                    $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter " +
+                    $"frames={frameCount} tracks=8 cells={frameCount * 8} samples=11 " +
+                    $"medianMs={Median(elapsedMilliseconds):F4} " +
+                    $"p95Ms={Percentile(elapsedMilliseconds, 0.95):F4} " +
+                    $"worstMs={elapsedMilliseconds.Max():F4} spans={spanCount} " +
+                    $"managedDeltaBytes=" +
+                    $"{Math.Max(0, GC.GetTotalMemory(false) - managedBefore)} " +
+                    $"monoUsedDeltaBytes=" +
+                    $"{Math.Max(0, Profiler.GetMonoUsedSizeLong() - monoUsedBefore)}");
+
+                var saveMilliseconds = new List<double>();
+                var loadAndFirstDisplayMilliseconds = new List<double>();
+                string json = null;
+                for (int sample = 0; sample < 11; sample++)
+                {
+                    stopwatch.Restart();
+                    json = JsonConvert.SerializeObject(CreateSparseMetadata(manager));
+                    stopwatch.Stop();
+                    saveMilliseconds.Add(stopwatch.Elapsed.TotalMilliseconds);
+
+                    AnimationMetadata metadata =
+                        JsonConvert.DeserializeObject<AnimationMetadata>(json);
+                    IReadOnlyList<IReadOnlyList<int>> durations = metadata.Tracks
+                        .Select(track => (IReadOnlyList<int>)track.Spans
+                            .Select(span => span.Duration).ToList())
+                        .ToList();
+                    IReadOnlyList<bool> visibility = metadata.Tracks
+                        .Select(track => track.Visible).ToList();
+                    stopwatch.Restart();
+                    manager.ConfigureAnimationTracks(durations, visibility);
+                    manager.SelectTimelineFrame(0, 0);
+                    stopwatch.Stop();
+                    loadAndFirstDisplayMilliseconds.Add(
+                        stopwatch.Elapsed.TotalMilliseconds);
+                }
+                Debug.Log(
+                    $"{kPersistenceLogPrefix} run={s_RunId} matrix=metadataAdapter " +
+                    $"frames={frameCount} tracks=8 cells={frameCount * 8} samples=11 " +
+                    $"jsonBytes={System.Text.Encoding.UTF8.GetByteCount(json)} " +
+                    $"saveMedianMs={Median(saveMilliseconds):F4} " +
+                    $"saveP95Ms={Percentile(saveMilliseconds, 0.95):F4} " +
+                    $"loadFirstDisplayMedianMs=" +
+                    $"{Median(loadAndFirstDisplayMilliseconds):F4} " +
+                    $"loadFirstDisplayP95Ms=" +
+                    $"{Percentile(loadAndFirstDisplayMilliseconds, 0.95):F4}");
+            }
+
+            Debug.Log(
+                $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter state=passed");
+        }
+
+        [UnityTest]
+        [Category("AnimationPerformance")]
         public IEnumerator RenderedFrameWorkloadMatrix()
         {
             s_RunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
@@ -339,6 +427,23 @@ namespace TiltBrush.Tests
                 visibility.Add(true);
             }
             manager.ConfigureLegacyAnimationTracks(frameLengths, visibility);
+        }
+
+        private static AnimationMetadata CreateSparseMetadata(AnimationUI_Manager manager)
+        {
+            List<int> activeTrackIndexes = manager.ActiveTrackIndexes();
+            return new AnimationMetadata
+            {
+                Version = AnimationMetadata.CurrentVersion,
+                Tracks = activeTrackIndexes.Select(trackIndex => new AnimationTrackMetadata
+                {
+                    Visible = manager.Timeline[trackIndex].Visible,
+                    Spans = manager.GetTrackFrameLengths(trackIndex)
+                        .Select(duration => new AnimationSpanMetadata { Duration = duration })
+                        .ToList()
+                }).ToArray(),
+                numFrames = activeTrackIndexes.Count
+            };
         }
 
         private static List<CanvasScript> ConfigureUniqueDrawingTimeline(
