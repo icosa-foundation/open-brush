@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
+using UnityEngine;
 
 namespace TiltBrush.Tests
 {
@@ -222,6 +225,77 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void MillionFrameEditRetainsSparseStorageAndBoundedAllocation()
+        {
+            const int duration = 1000000;
+            var empty = new AnimationTimelineModel.FrameValue(
+                AnimationDrawingId.Empty, spanIdentity: 1);
+            var model = new AnimationTimelineModel();
+            model.Rebuild(
+                new[] { 1 }, new[] { true }, new[] { false },
+                new List<IReadOnlyList<AnimationTimelineModel.FrameValue>>
+                {
+                    new RepeatedFrameValues(empty, duration)
+                });
+            Assert.AreEqual(1, model.Tracks[0].Spans.Count);
+
+            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            model.ApplyEdit(tracks => tracks[0].Frames.ReplaceRange(
+                duration / 2, 1,
+                new AnimationTimelineModel.FrameValue(new AnimationDrawingId(9))));
+            long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+
+            Assert.AreEqual(duration, model.Tracks[0].Length);
+            Assert.AreEqual(3, model.Tracks[0].Spans.Count);
+            Assert.Less(allocatedBytes, 1024 * 1024,
+                $"A sparse edit allocated {allocatedBytes} bytes");
+            Debug.Log(
+                $"[OB_ANIM_SPARSE_EDIT] frames={duration} spansBefore=1 spansAfter=3 " +
+                $"allocatedBytes={allocatedBytes}");
+        }
+
+        [Test]
+        public void SparseFrameAdapterMatchesListEditsAndKeepsNormalizedSpans()
+        {
+            AnimationTimelineModel.FrameValue first =
+                new(new AnimationDrawingId(1));
+            AnimationTimelineModel.FrameValue second =
+                new(new AnimationDrawingId(2));
+            AnimationTimelineModel.FrameValue third =
+                new(new AnimationDrawingId(3));
+            var expected = new List<AnimationTimelineModel.FrameValue>
+            {
+                first, first, second, second, first
+            };
+            AnimationTimelineModel.SparseFrameList actual =
+                AnimationTimelineModel.SparseFrameList.FromValues(expected);
+
+            actual.ReplaceRange(1, 2, third);
+            expected[1] = third;
+            expected[2] = third;
+            actual.InsertRepeat(3, 4, second);
+            expected.InsertRange(3, Enumerable.Repeat(second, 4));
+            actual.RemoveRange(0, 2);
+            expected.RemoveRange(0, 2);
+            actual.Insert(actual.Count, first);
+            expected.Add(first);
+            actual.AddRange(new[] { third, third, first });
+            expected.AddRange(new[] { third, third, first });
+
+            CollectionAssert.AreEqual(expected, actual);
+            for (int spanIndex = 1; spanIndex < actual.Spans.Count; spanIndex++)
+            {
+                Assert.AreEqual(
+                    actual.Spans[spanIndex - 1].EndFrameExclusive,
+                    actual.Spans[spanIndex].StartFrame);
+                Assert.AreNotEqual(
+                    actual.Spans[spanIndex - 1].Value,
+                    actual.Spans[spanIndex].Value,
+                    "Adjacent equal spans should be normalized");
+            }
+        }
+
+        [Test]
         public void ApplyEditFailureLeavesSparseModelUnchanged()
         {
             var model = new AnimationTimelineModel();
@@ -400,6 +474,35 @@ namespace TiltBrush.Tests
             Assert.AreSame(path, restored.Tracks[1].Spans[0].Value.PathToken);
             Assert.AreEqual(2, restored.Tracks[1].Spans[0].Duration);
             Assert.AreEqual(3, restored.Tracks[1].Spans[1].Duration);
+        }
+
+        private sealed class RepeatedFrameValues : IReadOnlyList<AnimationTimelineModel.FrameValue>
+        {
+            private readonly AnimationTimelineModel.FrameValue m_Value;
+            public int Count { get; }
+
+            internal RepeatedFrameValues(
+                AnimationTimelineModel.FrameValue value, int count)
+            {
+                m_Value = value;
+                Count = count;
+            }
+
+            public AnimationTimelineModel.FrameValue this[int index]
+            {
+                get
+                {
+                    if (index < 0 || index >= Count) throw new ArgumentOutOfRangeException(nameof(index));
+                    return m_Value;
+                }
+            }
+
+            public IEnumerator<AnimationTimelineModel.FrameValue> GetEnumerator()
+            {
+                for (int index = 0; index < Count; index++) yield return m_Value;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
     }
 }

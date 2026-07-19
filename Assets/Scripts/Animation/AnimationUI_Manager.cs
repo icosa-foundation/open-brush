@@ -499,6 +499,21 @@ namespace TiltBrush.FrameAnimation
             Profiler.EndSample();
         }
 
+        private static void TransformSparseRange(
+            AnimationTimelineModel.SparseFrameList frames, int startFrame, int duration,
+            Func<AnimationTimelineModel.FrameValue, AnimationTimelineModel.FrameValue> transform)
+        {
+            int endFrame = startFrame + duration;
+            foreach (AnimationTimelineModel.Span span in frames.Spans.ToList())
+            {
+                int replaceStart = Math.Max(startFrame, span.StartFrame);
+                int replaceEnd = Math.Min(endFrame, span.EndFrameExclusive);
+                if (replaceStart >= replaceEnd) continue;
+                frames.ReplaceRange(
+                    replaceStart, replaceEnd - replaceStart, transform(span.Value));
+            }
+        }
+
         private bool IsSparseFrameFilled(AnimationTimelineModel.FrameValue value)
         {
             if (value.PathToken != null) return true;
@@ -904,14 +919,10 @@ namespace TiltBrush.FrameAnimation
             AnimationDrawingId drawingId = GetOrCreateDrawingId(populatedCanvas);
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int frameIndex = selectedSpan.StartFrame;
-                    frameIndex < selectedSpan.EndFrameExclusive; frameIndex++)
-                {
-                    AnimationTimelineModel.FrameValue value = tracks[trackIndex].Frames[frameIndex];
-                    tracks[trackIndex].Frames[frameIndex] =
-                        new AnimationTimelineModel.FrameValue(
-                            drawingId, value.Deleted, value.FrameExists, value.PathToken);
-                }
+                TransformSparseRange(
+                    tracks[trackIndex].Frames, selectedSpan.StartFrame, selectedSpan.Duration,
+                    value => new AnimationTimelineModel.FrameValue(
+                        drawingId, value.Deleted, value.FrameExists, value.PathToken));
             });
         }
 
@@ -941,12 +952,10 @@ namespace TiltBrush.FrameAnimation
             AnimationDrawingId drawingId = GetOrCreateDrawingId(contentCanvas);
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int i = span.StartFrame; i < span.EndFrameExclusive; i++)
-                {
-                    AnimationTimelineModel.FrameValue value = tracks[trackIndex].Frames[i];
-                    tracks[trackIndex].Frames[i] = new AnimationTimelineModel.FrameValue(
-                        drawingId, value.Deleted, value.FrameExists, value.PathToken);
-                }
+                TransformSparseRange(
+                    tracks[trackIndex].Frames, span.StartFrame, span.Duration,
+                    value => new AnimationTimelineModel.FrameValue(
+                        drawingId, value.Deleted, value.FrameExists, value.PathToken));
             });
             return contentCanvas;
         }
@@ -1195,14 +1204,11 @@ namespace TiltBrush.FrameAnimation
             int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int c = 0; c < i; c++)
-                {
-                    AnimationTimelineModel.FrameValue value = tracks[Loc.Item1].Frames[Loc.Item2 + c];
-                    tracks[Loc.Item1].Frames[Loc.Item2 + c] =
-                        new AnimationTimelineModel.FrameValue(
-                            value.DrawingId, value.Deleted, value.FrameExists,
-                            pathwidget, value.SpanIdentity);
-                }
+                TransformSparseRange(
+                    tracks[Loc.Item1].Frames, Loc.Item2, i,
+                    value => new AnimationTimelineModel.FrameValue(
+                        value.DrawingId, value.Deleted, value.FrameExists,
+                        pathwidget, value.SpanIdentity));
             });
         }
 
@@ -1230,14 +1236,11 @@ namespace TiltBrush.FrameAnimation
             int i = GetFollowingFrameIndex(Loc.Item1, Loc.Item2).Item2 - Loc.Item2;
             ApplySparseTimelineEdit(tracks =>
             {
-                for (int c = 0; c < i; c++)
-                {
-                    AnimationTimelineModel.FrameValue value = tracks[Loc.Item1].Frames[Loc.Item2 + c];
-                    tracks[Loc.Item1].Frames[Loc.Item2 + c] =
-                        new AnimationTimelineModel.FrameValue(
-                            value.DrawingId, value.Deleted, value.FrameExists,
-                            pathwidget, value.SpanIdentity);
-                }
+                TransformSparseRange(
+                    tracks[Loc.Item1].Frames, Loc.Item2, i,
+                    value => new AnimationTimelineModel.FrameValue(
+                        value.DrawingId, value.Deleted, value.FrameExists,
+                        pathwidget, value.SpanIdentity));
             });
 
             ResetTimeline();
@@ -1291,11 +1294,13 @@ namespace TiltBrush.FrameAnimation
                 {
                     tracks[trackIndex].Visible = trackVisibility[trackIndex];
                     if (frameLengths[trackIndex].Count == 0) continue;
-                    List<AnimationTimelineModel.FrameValue> frames =
-                        AnimationTimelineOperations.ExpandLegacyFrameLengths(
-                            frameLengths[trackIndex], NewEmptyFrameValue);
                     tracks[trackIndex].Frames.Clear();
-                    tracks[trackIndex].Frames.AddRange(frames);
+                    foreach (int serializedLength in frameLengths[trackIndex])
+                    {
+                        tracks[trackIndex].Frames.InsertRepeat(
+                            tracks[trackIndex].Frames.Count,
+                            Math.Max(1, serializedLength), NewEmptyFrameValue());
+                    }
                 }
             });
         }

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TiltBrush.FrameAnimation
 {
@@ -48,15 +50,298 @@ namespace TiltBrush.FrameAnimation
             public int Id { get; set; }
             public bool Visible { get; set; }
             public bool Deleted { get; set; }
-            public List<FrameValue> Frames { get; }
+            public SparseFrameList Frames { get; }
 
             internal EditableTrack(
-                int id, bool visible, bool deleted, List<FrameValue> frames)
+                int id, bool visible, bool deleted, SparseFrameList frames)
             {
                 Id = id;
                 Visible = visible;
                 Deleted = deleted;
                 Frames = frames;
+            }
+
+            internal EditableTrack(
+                int id, bool visible, bool deleted, IEnumerable<FrameValue> frames)
+                : this(id, visible, deleted, SparseFrameList.FromValues(frames))
+            {
+            }
+        }
+
+        /// Mutable frame-compatible adapter backed by normalized spans. This preserves the
+        /// command API while ensuring an edit does not allocate one FrameValue per timeline cell.
+        public sealed class SparseFrameList : IList<FrameValue>
+        {
+            private readonly List<Span> m_Spans;
+            private int m_Count;
+
+            internal IReadOnlyList<Span> Spans => m_Spans;
+            public int Count => m_Count;
+            public bool IsReadOnly => false;
+
+            internal SparseFrameList(int count, IEnumerable<Span> spans)
+            {
+                m_Count = count;
+                m_Spans = spans.ToList();
+                ValidateCoverage();
+            }
+
+            public FrameValue this[int index]
+            {
+                get
+                {
+                    int spanIndex = FindSpanIndex(index);
+                    return m_Spans[spanIndex].Value;
+                }
+                set => ReplaceRange(index, 1, value);
+            }
+
+            public void Add(FrameValue item) => InsertRepeat(m_Count, 1, item);
+
+            public void AddRange(IEnumerable<FrameValue> items)
+            {
+                if (items == null) throw new ArgumentNullException(nameof(items));
+                using IEnumerator<FrameValue> enumerator = items.GetEnumerator();
+                if (!enumerator.MoveNext()) return;
+                FrameValue runValue = enumerator.Current;
+                int runLength = 1;
+                while (enumerator.MoveNext())
+                {
+                    if (enumerator.Current.Equals(runValue))
+                    {
+                        runLength++;
+                        continue;
+                    }
+                    InsertRepeat(m_Count, runLength, runValue);
+                    runValue = enumerator.Current;
+                    runLength = 1;
+                }
+                InsertRepeat(m_Count, runLength, runValue);
+            }
+
+            internal static SparseFrameList FromValues(IEnumerable<FrameValue> values)
+            {
+                if (values == null) throw new ArgumentNullException(nameof(values));
+                var result = new SparseFrameList(0, Array.Empty<Span>());
+                result.AddRange(values);
+                return result;
+            }
+
+            public void Clear()
+            {
+                m_Spans.Clear();
+                m_Count = 0;
+            }
+
+            public bool Contains(FrameValue item) => IndexOf(item) >= 0;
+
+            public void CopyTo(FrameValue[] array, int arrayIndex)
+            {
+                if (array == null) throw new ArgumentNullException(nameof(array));
+                foreach (FrameValue value in this) array[arrayIndex++] = value;
+            }
+
+            public IEnumerator<FrameValue> GetEnumerator()
+            {
+                foreach (Span span in m_Spans)
+                {
+                    for (int frame = 0; frame < span.Duration; frame++) yield return span.Value;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            public int IndexOf(FrameValue item)
+            {
+                foreach (Span span in m_Spans)
+                {
+                    if (span.Value.Equals(item)) return span.StartFrame;
+                }
+                return -1;
+            }
+
+            public int FindIndex(Predicate<FrameValue> match)
+            {
+                if (match == null) throw new ArgumentNullException(nameof(match));
+                foreach (Span span in m_Spans)
+                {
+                    if (match(span.Value)) return span.StartFrame;
+                }
+                return -1;
+            }
+
+            public void Insert(int index, FrameValue item) => InsertRepeat(index, 1, item);
+
+            public void InsertRepeat(int index, int count, FrameValue value)
+            {
+                if (index < 0 || index > m_Count) throw new ArgumentOutOfRangeException(nameof(index));
+                if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
+                if (count == 0) return;
+
+                var result = new List<Span>(m_Spans.Count + 2);
+                foreach (Span span in m_Spans)
+                {
+                    if (span.EndFrameExclusive <= index)
+                    {
+                        AppendNormalized(result, span.StartFrame, span.Duration, span.Value);
+                    }
+                    else if (span.StartFrame >= index)
+                    {
+                        AppendNormalized(result, span.StartFrame + count, span.Duration, span.Value);
+                    }
+                    else
+                    {
+                        AppendNormalized(result, span.StartFrame, index - span.StartFrame, span.Value);
+                        AppendNormalized(result, index + count,
+                            span.EndFrameExclusive - index, span.Value);
+                    }
+                }
+                AppendNormalized(result, index, count, value);
+                result.Sort((left, right) => left.StartFrame.CompareTo(right.StartFrame));
+                ReplaceSpansWithNormalized(result, m_Count + count);
+            }
+
+            public bool Remove(FrameValue item)
+            {
+                int index = IndexOf(item);
+                if (index < 0) return false;
+                RemoveAt(index);
+                return true;
+            }
+
+            public void RemoveAt(int index) => RemoveRange(index, 1);
+
+            public void RemoveRange(int index, int count)
+            {
+                ValidateRange(index, count);
+                if (count == 0) return;
+                int end = index + count;
+                var result = new List<Span>(m_Spans.Count);
+                foreach (Span span in m_Spans)
+                {
+                    if (span.EndFrameExclusive <= index)
+                    {
+                        AppendNormalized(result, span.StartFrame, span.Duration, span.Value);
+                    }
+                    else if (span.StartFrame >= end)
+                    {
+                        AppendNormalized(result, span.StartFrame - count, span.Duration, span.Value);
+                    }
+                    else
+                    {
+                        if (span.StartFrame < index)
+                        {
+                            AppendNormalized(result, span.StartFrame,
+                                index - span.StartFrame, span.Value);
+                        }
+                        if (span.EndFrameExclusive > end)
+                        {
+                            AppendNormalized(result, index,
+                                span.EndFrameExclusive - end, span.Value);
+                        }
+                    }
+                }
+                ReplaceSpansWithNormalized(result, m_Count - count);
+            }
+
+            public void ReplaceRange(int index, int count, FrameValue value)
+            {
+                ValidateRange(index, count);
+                if (count == 0) return;
+                int end = index + count;
+                var result = new List<Span>(m_Spans.Count + 2);
+                foreach (Span span in m_Spans)
+                {
+                    if (span.EndFrameExclusive <= index || span.StartFrame >= end)
+                    {
+                        AppendNormalized(result, span.StartFrame, span.Duration, span.Value);
+                        continue;
+                    }
+                    if (span.StartFrame < index)
+                    {
+                        AppendNormalized(result, span.StartFrame,
+                            index - span.StartFrame, span.Value);
+                    }
+                    if (span.EndFrameExclusive > end)
+                    {
+                        AppendNormalized(result, end,
+                            span.EndFrameExclusive - end, span.Value);
+                    }
+                }
+                AppendNormalized(result, index, count, value);
+                result.Sort((left, right) => left.StartFrame.CompareTo(right.StartFrame));
+                ReplaceSpansWithNormalized(result, m_Count);
+            }
+
+            private int FindSpanIndex(int index)
+            {
+                if (index < 0 || index >= m_Count) throw new ArgumentOutOfRangeException(nameof(index));
+                int low = 0;
+                int high = m_Spans.Count - 1;
+                while (low <= high)
+                {
+                    int middle = low + ((high - low) / 2);
+                    Span span = m_Spans[middle];
+                    if (index < span.StartFrame) high = middle - 1;
+                    else if (index >= span.EndFrameExclusive) low = middle + 1;
+                    else return middle;
+                }
+                throw new InvalidOperationException($"Sparse frame index {index} has no span");
+            }
+
+            private void ValidateRange(int index, int count)
+            {
+                if (index < 0 || count < 0 || index + count > m_Count)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
+            }
+
+            private static void AppendNormalized(
+                List<Span> spans, int start, int duration, FrameValue value)
+            {
+                if (duration <= 0) return;
+                if (spans.Count > 0)
+                {
+                    Span previous = spans[spans.Count - 1];
+                    if (previous.EndFrameExclusive == start && previous.Value.Equals(value))
+                    {
+                        spans[spans.Count - 1] = new Span(
+                            previous.StartFrame, previous.Duration + duration, value);
+                        return;
+                    }
+                }
+                spans.Add(new Span(start, duration, value));
+            }
+
+            private void ReplaceSpansWithNormalized(IEnumerable<Span> spans, int count)
+            {
+                m_Spans.Clear();
+                foreach (Span span in spans.OrderBy(span => span.StartFrame))
+                {
+                    AppendNormalized(m_Spans, span.StartFrame, span.Duration, span.Value);
+                }
+                m_Count = count;
+                ValidateCoverage();
+            }
+
+            private void ValidateCoverage()
+            {
+                int nextStart = 0;
+                foreach (Span span in m_Spans)
+                {
+                    if (span.StartFrame != nextStart)
+                    {
+                        throw new InvalidOperationException(
+                            $"Sparse spans have a gap or overlap at frame {nextStart}");
+                    }
+                    nextStart = span.EndFrameExclusive;
+                }
+                if (nextStart != m_Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Sparse span coverage is {nextStart}, expected {m_Count}");
+                }
             }
         }
 
@@ -352,8 +637,8 @@ namespace TiltBrush.FrameAnimation
             }
         }
 
-        /// Applies an edit atomically. The callback operates on an expanded value view, and the
-        /// result is normalized back into sparse spans only if the callback completes.
+        /// Applies an edit atomically through a frame-compatible sparse adapter. The callback can
+        /// retain existing command logic without expanding the timeline into per-frame storage.
         public void ApplyEdit(Action<List<EditableTrack>> edit)
         {
             if (edit == null) throw new ArgumentNullException(nameof(edit));
@@ -361,29 +646,13 @@ namespace TiltBrush.FrameAnimation
             var editableTracks = new List<EditableTrack>(m_Tracks.Count);
             foreach (Track track in m_Tracks)
             {
-                var frames = new List<FrameValue>(track.Length);
-                foreach (Span span in track.Spans)
-                {
-                    for (int frame = span.StartFrame; frame < span.EndFrameExclusive; frame++)
-                    {
-                        frames.Add(span.Value);
-                    }
-                }
-                if (frames.Count != track.Length)
-                {
-                    throw new InvalidOperationException(
-                        $"Track {track.Id} span coverage is {frames.Count}, expected {track.Length}");
-                }
                 editableTracks.Add(new EditableTrack(
-                    track.Id, track.Visible, track.Deleted, frames));
+                    track.Id, track.Visible, track.Deleted,
+                    new SparseFrameList(track.Length, track.Spans)));
             }
 
             edit(editableTracks);
 
-            var trackIds = new List<int>(editableTracks.Count);
-            var trackVisibility = new List<bool>(editableTracks.Count);
-            var trackDeletion = new List<bool>(editableTracks.Count);
-            var framesByTrack = new List<IReadOnlyList<FrameValue>>(editableTracks.Count);
             var uniqueTrackIds = new HashSet<int>();
             foreach (EditableTrack track in editableTracks)
             {
@@ -392,16 +661,25 @@ namespace TiltBrush.FrameAnimation
                 {
                     throw new InvalidOperationException($"Duplicate animation track ID {track.Id}");
                 }
-                if (track.Frames == null)
-                {
-                    throw new InvalidOperationException($"Animation track {track.Id} has no frame list");
-                }
-                trackIds.Add(track.Id);
-                trackVisibility.Add(track.Visible);
-                trackDeletion.Add(track.Deleted);
-                framesByTrack.Add(track.Frames);
             }
-            Rebuild(trackIds, trackVisibility, trackDeletion, framesByTrack);
+
+            m_Tracks.Clear();
+            m_TrackIdToIndex.Clear();
+            m_DrawingLocations.Clear();
+            Length = 0;
+            for (int trackIndex = 0; trackIndex < editableTracks.Count; trackIndex++)
+            {
+                EditableTrack source = editableTracks[trackIndex];
+                var spans = source.Frames.Spans.ToList();
+                foreach (Span span in spans)
+                {
+                    IndexDrawing(span.Value.DrawingId, trackIndex, span.StartFrame);
+                }
+                m_TrackIdToIndex.Add(source.Id, trackIndex);
+                m_Tracks.Add(new Track(
+                    source.Id, source.Visible, source.Deleted, source.Frames.Count, spans));
+                Length = Math.Max(Length, source.Frames.Count);
+            }
         }
 
         public Snapshot CreateSnapshot()

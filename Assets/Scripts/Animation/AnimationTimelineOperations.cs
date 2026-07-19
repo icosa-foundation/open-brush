@@ -31,11 +31,12 @@ namespace TiltBrush.FrameAnimation
             int lastFilledFrame = 0;
             foreach (AnimationTimelineModel.EditableTrack track in tracks)
             {
-                for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
+                foreach (AnimationTimelineModel.Span span in track.Frames.Spans)
                 {
-                    if (isFilled(track.Frames[frameIndex]))
+                    if (isFilled(span.Value))
                     {
-                        lastFilledFrame = Math.Max(lastFilledFrame, frameIndex);
+                        lastFilledFrame = Math.Max(
+                            lastFilledFrame, span.EndFrameExclusive - 1);
                     }
                 }
             }
@@ -54,7 +55,8 @@ namespace TiltBrush.FrameAnimation
             {
                 if (track.Frames.Count >= length) continue;
                 AnimationTimelineModel.FrameValue emptyValue = createEmpty();
-                while (track.Frames.Count < length) track.Frames.Add(emptyValue);
+                track.Frames.InsertRepeat(
+                    track.Frames.Count, length - track.Frames.Count, emptyValue);
             }
         }
 
@@ -98,11 +100,8 @@ namespace TiltBrush.FrameAnimation
             Func<AnimationTimelineModel.FrameValue, bool> isFilled)
         {
             ValidateSpan(tracks, trackIndex, startFrame, duration);
-            AnimationTimelineModel.FrameValue emptyValue = createEmpty();
-            for (int frame = startFrame; frame < startFrame + duration; frame++)
-            {
-                tracks[trackIndex].Frames[frame] = emptyValue;
-            }
+            tracks[trackIndex].Frames.ReplaceRange(
+                startFrame, duration, createEmpty());
             NormalizeLength(tracks, isFilled, createEmpty);
         }
 
@@ -114,7 +113,7 @@ namespace TiltBrush.FrameAnimation
             out int newStartFrame)
         {
             ValidateSpan(tracks, trackIndex, startFrame, duration);
-            List<AnimationTimelineModel.FrameValue> frames = tracks[trackIndex].Frames;
+            AnimationTimelineModel.SparseFrameList frames = tracks[trackIndex].Frames;
             if (moveRight)
             {
                 int followingFrame = startFrame + duration;
@@ -164,7 +163,7 @@ namespace TiltBrush.FrameAnimation
             bool alignTracks)
         {
             ValidateTrack(tracks, trackIndex);
-            List<AnimationTimelineModel.FrameValue> frames = tracks[trackIndex].Frames;
+            AnimationTimelineModel.SparseFrameList frames = tracks[trackIndex].Frames;
             if (frameIndex < 0 || frameIndex > frames.Count)
             {
                 throw new ArgumentOutOfRangeException(nameof(frameIndex));
@@ -186,7 +185,7 @@ namespace TiltBrush.FrameAnimation
         {
             ValidateSpan(tracks, trackIndex, startFrame, duration);
             int insertIndex = startFrame + duration;
-            List<AnimationTimelineModel.FrameValue> targetFrames = tracks[trackIndex].Frames;
+            AnimationTimelineModel.SparseFrameList targetFrames = tracks[trackIndex].Frames;
             bool insertAcrossTracks = insertIndex >= targetFrames.Count ||
                 isFilled(targetFrames[insertIndex]);
             if (!insertAcrossTracks)
@@ -197,12 +196,16 @@ namespace TiltBrush.FrameAnimation
 
             for (int currentTrack = 0; currentTrack < tracks.Count; currentTrack++)
             {
-                List<AnimationTimelineModel.FrameValue> frames = tracks[currentTrack].Frames;
+                AnimationTimelineModel.SparseFrameList frames = tracks[currentTrack].Frames;
                 AnimationTimelineModel.FrameValue addingValue = currentTrack == trackIndex
                     ? frames[startFrame]
                     : createEmpty();
                 AnimationTimelineModel.FrameValue paddingValue = createEmpty();
-                while (frames.Count < insertIndex) frames.Add(paddingValue);
+                if (frames.Count < insertIndex)
+                {
+                    frames.InsertRepeat(
+                        frames.Count, insertIndex - frames.Count, paddingValue);
+                }
                 frames.Insert(insertIndex, addingValue);
             }
         }
@@ -226,10 +229,7 @@ namespace TiltBrush.FrameAnimation
             AnimationTimelineModel.FrameValue value)
         {
             ValidateSpan(tracks, trackIndex, startFrame, duration);
-            for (int frame = startFrame; frame < startFrame + duration; frame++)
-            {
-                tracks[trackIndex].Frames[frame] = value;
-            }
+            tracks[trackIndex].Frames.ReplaceRange(startFrame, duration, value);
         }
 
         public static int ReplaceDrawingWithEmptySpans(
@@ -245,29 +245,22 @@ namespace TiltBrush.FrameAnimation
             int replacements = 0;
             foreach (AnimationTimelineModel.EditableTrack track in tracks)
             {
-                AnimationTimelineModel.FrameValue emptyTemplate = default;
-                bool replacingPreviousFrame = false;
-                for (int frameIndex = 0; frameIndex < track.Frames.Count; frameIndex++)
+                foreach (AnimationTimelineModel.Span span in track.Frames.Spans.ToList())
                 {
-                    AnimationTimelineModel.FrameValue value = track.Frames[frameIndex];
-                    bool replacing = value.DrawingId == drawingId;
-                    if (replacing && !replacingPreviousFrame)
+                    if (span.Value.DrawingId != drawingId) continue;
+                    AnimationTimelineModel.FrameValue emptyTemplate = createEmpty();
+                    if (!emptyTemplate.DrawingId.IsEmpty)
                     {
-                        emptyTemplate = createEmpty();
-                        if (!emptyTemplate.DrawingId.IsEmpty)
-                        {
-                            throw new InvalidOperationException(
-                                "The empty frame factory returned a drawing");
-                        }
+                        throw new InvalidOperationException(
+                            "The empty frame factory returned a drawing");
                     }
-                    if (replacing)
-                    {
-                        track.Frames[frameIndex] = new AnimationTimelineModel.FrameValue(
-                            AnimationDrawingId.Empty, value.Deleted, value.FrameExists,
-                            value.PathToken, emptyTemplate.SpanIdentity);
-                        replacements++;
-                    }
-                    replacingPreviousFrame = replacing;
+                    track.Frames.ReplaceRange(
+                        span.StartFrame, span.Duration,
+                        new AnimationTimelineModel.FrameValue(
+                            AnimationDrawingId.Empty, span.Value.Deleted,
+                            span.Value.FrameExists, span.Value.PathToken,
+                            emptyTemplate.SpanIdentity));
+                    replacements += span.Duration;
                 }
             }
             return replacements;
@@ -286,18 +279,34 @@ namespace TiltBrush.FrameAnimation
                 throw new ArgumentOutOfRangeException();
             }
 
-            List<AnimationTimelineModel.FrameValue> frames = tracks[trackIndex].Frames;
-            for (int frameOffset = 0; frameOffset < duration; frameOffset++)
+            AnimationTimelineModel.SparseFrameList frames = tracks[trackIndex].Frames;
+            if (destinationFrame > frames.Count)
             {
-                int destination = destinationFrame + frameOffset;
-                if (destination < frames.Count && !isFilled(frames[destination]))
-                {
-                    frames[destination] = value;
-                }
-                else
-                {
-                    frames.Insert(destination, value);
-                }
+                throw new ArgumentOutOfRangeException(nameof(destinationFrame));
+            }
+
+            int replaceCount = 0;
+            int replaceLimit = Math.Min(duration, frames.Count - destinationFrame);
+            foreach (AnimationTimelineModel.Span span in frames.Spans)
+            {
+                if (span.EndFrameExclusive <= destinationFrame) continue;
+                if (span.StartFrame >= destinationFrame + replaceLimit) break;
+                if (isFilled(span.Value)) break;
+                int overlapStart = Math.Max(destinationFrame, span.StartFrame);
+                int overlapEnd = Math.Min(
+                    destinationFrame + replaceLimit, span.EndFrameExclusive);
+                if (overlapStart != destinationFrame + replaceCount) break;
+                replaceCount += overlapEnd - overlapStart;
+                if (replaceCount == replaceLimit) break;
+            }
+            if (replaceCount > 0)
+            {
+                frames.ReplaceRange(destinationFrame, replaceCount, value);
+            }
+            int insertCount = duration - replaceCount;
+            if (insertCount > 0)
+            {
+                frames.InsertRepeat(destinationFrame + replaceCount, insertCount, value);
             }
             PadTracks(tracks, tracks.Max(track => track.Frames.Count), createEmpty);
         }
