@@ -70,6 +70,7 @@ namespace TiltBrush.FrameAnimation
             foreach (Transform child in Root.transform)
             {
                 child.gameObject.SetActive(false);
+                child.SetParent(null, worldPositionStays: false);
             }
             m_ContentResources.Dispose();
             m_ContentResources = new FrameDrawingProxyResources();

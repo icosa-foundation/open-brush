@@ -3,7 +3,7 @@
 ## Status
 
 Phases 0-3 are implemented on the animation-refactor branch. The repeatable Editor suites pass:
-25 model/operation tests, 9 Canvas lifecycle/persistence tests, and the three-repeat manager
+25 model/operation tests, 10 Canvas lifecycle/persistence tests, and the three-repeat manager
 adapter/persistence benchmark. Phase 4A is in progress: `FrameDrawing` and its repository now own
 drawing identity, Canvas adapter lookup, lifetime removal, and logical content revision while all
 rendering remains Canvas-backed. Dormant Phase 4B infrastructure defines proxy contracts,
@@ -17,6 +17,13 @@ target-performance gates remain before this path
 can become a default. Phase 3 is not complete until the manual desktop/headset working-state gate
 and the remaining target-device Phase 0 captures in `ANIMATION-TASKS.md` are complete. This
 document does not supersede that checklist.
+
+Phase 4D now has an explicit authoring binding over the retained Canvas adapter. Selecting a
+proxy-rendered drawing restores that Canvas immediately; selection transfers, grouping, repaint,
+delete, duplication, undo, and redo retain the logical drawing identity and dirty its content
+revision. Starting playback commits the binding and resynchronizes the reusable proxy. The
+existing snapshot suite continues to cover save/reload, while a combined manual edit/save/reload
+pass remains required before declaring the subphase complete.
 
 ## Problem statement
 

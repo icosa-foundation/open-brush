@@ -515,6 +515,148 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator ProxyDrawingSelectionAndUndoRoundTripThroughAuthoringCanvas()
+        {
+            const string authoringLogPrefix = "[OB_ANIM_P4_AUTHORING]";
+            Debug.Log($"{authoringLogPrefix} test=authoringHandoff state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 1, 1 } },
+                new List<bool> { true });
+            CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 1);
+            Stroke stroke = LoadFirstPerformanceStroke("Simple.tilt");
+            BatchSubset subset = TestBrush.CreateSubsetFromStroke(drawingCanvas, stroke);
+            Assert.IsNotNull(subset);
+            stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+            stroke.m_BatchSubset = subset;
+            subset.m_Stroke = stroke;
+            drawingCanvas.BatchManager.FlushMeshUpdates();
+            manager.NotifyStrokeAdded(stroke);
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                drawingCanvas, out FrameDrawing drawing));
+            AnimationDrawingId drawingId = drawing.Id;
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.IsFalse(drawingCanvas.gameObject.activeSelf);
+
+            manager.SelectTimelineFrame(0, 1);
+            Assert.IsTrue(drawingCanvas.gameObject.activeSelf,
+                "Selecting a proxy drawing must restore its authoring Canvas");
+            Assert.AreSame(drawingCanvas, App.Scene.ActiveCanvas);
+            Assert.AreEqual(0, manager.GetVisibleDrawingRenderProxyCountForTests());
+            Assert.IsTrue(manager.TryGetAuthoringDrawingStateForTests(
+                out AnimationDrawingId authoringId, out bool initiallyDirty));
+            Assert.AreEqual(drawingId, authoringId);
+            Assert.IsFalse(initiallyDirty);
+
+            SelectionManager.m_Instance.SelectStrokes(new[] { stroke }, preserveTool: true);
+            Assert.AreSame(App.Scene.SelectionCanvas, stroke.Canvas);
+            Assert.AreSame(drawingCanvas, stroke.m_PreviousCanvas);
+            SelectionManager.m_Instance.DeselectStrokes(new[] { stroke }, drawingCanvas);
+            Assert.AreSame(drawingCanvas, stroke.Canvas);
+            Assert.AreSame(stroke, stroke.m_BatchSubset.m_Stroke,
+                "Selection handoff must preserve stroke identity");
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                drawingCanvas, out FrameDrawing drawingAfterSelection));
+            Assert.AreSame(drawing, drawingAfterSelection);
+
+            manager.StartAnimation();
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.IsFalse(drawingCanvas.gameObject.activeSelf,
+                "Committed selection changes should return to proxy playback");
+            manager.StopAnimation();
+            Assert.IsTrue(drawingCanvas.gameObject.activeSelf);
+            Assert.IsTrue(manager.TryGetAuthoringDrawingStateForTests(
+                out authoringId, out initiallyDirty),
+                "Stopping playback must bind the active drawing for authoring");
+            Assert.AreEqual(drawingId, authoringId);
+            Assert.IsFalse(initiallyDirty);
+
+            SketchMemoryScript memory = SketchMemoryScript.m_Instance;
+            memory.MemoryListAdd(stroke);
+            memory.SetLastOperationStackCount();
+            SketchGroupTag originalGroup = stroke.Group;
+            var groupCommand = new GroupStrokesAndWidgetsCommand(
+                new[] { stroke }, Array.Empty<GrabWidget>(), targetGroup: null);
+            memory.PerformAndRecordCommand(groupCommand);
+            SketchGroupTag editedGroup = stroke.Group;
+            Assert.AreNotEqual(originalGroup, editedGroup);
+            Assert.IsTrue(memory.IsMemoryDirty(),
+                "A grouped drawing must retain the app's unsaved-dirty state");
+            Assert.IsTrue(manager.TryGetAuthoringDrawingStateForTests(
+                out authoringId, out bool authoringDirty),
+                "The grouped drawing must remain the bound authoring drawing");
+            Assert.AreEqual(drawingId, authoringId);
+            Assert.IsTrue(authoringDirty,
+                "A save-affecting command must dirty the bound authoring revision");
+
+            memory.StepBack();
+            Assert.AreEqual(originalGroup, stroke.Group);
+            Assert.IsFalse(memory.IsMemoryDirty());
+            Assert.AreSame(drawing, drawingAfterSelection);
+            memory.StepForward();
+            Assert.AreEqual(editedGroup, stroke.Group);
+            Assert.IsTrue(memory.IsMemoryDirty(),
+                "Redo must restore the app's unsaved-dirty state");
+
+            Color originalColor = stroke.m_Color;
+            Color repaintedColor = new Color(
+                1f - originalColor.r, 1f - originalColor.g, 1f - originalColor.b,
+                originalColor.a);
+            memory.PerformAndRecordCommand(new RepaintStrokeCommand(
+                stroke, repaintedColor, stroke.m_BrushGuid, stroke.m_BrushSize));
+            Assert.AreSame(drawingCanvas, stroke.Canvas);
+            Assert.AreSame(stroke, stroke.m_BatchSubset.m_Stroke);
+            memory.StepBack();
+            Assert.AreEqual(originalColor, stroke.m_Color);
+            memory.StepForward();
+
+            memory.PerformAndRecordCommand(new DeleteStrokeCommand(stroke));
+            Assert.IsFalse(stroke.IsGeometryEnabled);
+            memory.StepBack();
+            Assert.IsTrue(stroke.IsGeometryEnabled);
+            memory.StepForward();
+            Assert.IsFalse(stroke.IsGeometryEnabled);
+            memory.StepBack();
+            Assert.IsTrue(stroke.IsGeometryEnabled,
+                "Undoing delete must leave the edited stroke available for playback");
+
+            int strokeCountBeforeDuplicate = SketchMemoryScript.AllStrokesCount();
+            Stroke duplicate = memory.DuplicateStroke(stroke, drawingCanvas, transform: null);
+            memory.PerformAndRecordCommand(new BrushStrokeCommand(duplicate));
+            Assert.AreEqual(strokeCountBeforeDuplicate + 1,
+                SketchMemoryScript.AllStrokesCount());
+            Assert.AreNotSame(stroke, duplicate);
+            Assert.AreSame(drawingCanvas, duplicate.Canvas);
+            memory.StepBack();
+            Assert.IsFalse(duplicate.IsGeometryEnabled);
+            memory.StepForward();
+            Assert.IsTrue(duplicate.IsGeometryEnabled);
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                drawingCanvas, out FrameDrawing drawingAfterEdits));
+            Assert.AreSame(drawing, drawingAfterEdits);
+
+            manager.StartAnimation();
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.IsTrue(manager.TryGetDrawingRenderProxyForTests(
+                manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy),
+                "The committed drawing must retain its reusable track proxy");
+            Assert.AreEqual(drawing.ContentRevision, proxy.SourceRevision,
+                "Proxy playback must synchronize the committed authoring revision");
+            Assert.AreEqual(drawingId, proxy.DrawingId);
+            manager.StopAnimation();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+
+            yield return null;
+            Debug.Log(
+                $"{authoringLogPrefix} test=authoringHandoff state=passed " +
+                $"drawing={drawingId.Value} revision={drawing.ContentRevision}");
+        }
+
+        [UnityTest]
         public IEnumerator SnapshotWriteAndLoadRoundTripsSparseTrackTimingAndVisibility()
         {
             Debug.Log($"{kLogPrefix} test=snapshotRoundTrip state=started");

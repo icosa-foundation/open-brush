@@ -114,3 +114,19 @@ early implementation check.
   and material-property behavior before treating Phase 4C as complete.
 - [ ] Validate desktop and headset/XR rendering and measure active renderer/GameObject counts,
   CPU/GPU time, and allocations with the proxy flag both off and on.
+
+## Phase 4D: editing transitions
+
+- [x] Bind the retained source Canvas as the authoring representation when a proxy-rendered frame
+  is selected; hiding proxies and restoring Canvas rendering requires no data conversion.
+- [x] Track the bound drawing and its baseline content revision, and establish command-event
+  subscriptions synchronously before editing begins.
+- [x] Invalidate only the bound drawing for save-affecting commands and their undo/redo events;
+  structural stroke/widget notifications continue to update their actual owning drawings.
+- [x] Detach retired proxy children before play-mode deferred destruction so an edited revision's
+  topology comparison cannot count stale renderers and falsely fall back.
+- [x] Verify proxy-to-authoring-to-proxy handoff across frame selection, stroke selection,
+  grouping, repaint, delete, duplication, undo/redo, unsaved-dirty state, drawing/stroke identity,
+  and revision resynchronization (`[OB_ANIM_P4_AUTHORING]`).
+- [ ] Manually open, edit, play, undo, save, and reload the same proxy-eligible drawing, including
+  a failed/unsupported proxy fallback, before treating Phase 4D as complete.

@@ -63,6 +63,8 @@ namespace TiltBrush.FrameAnimation
         FrameDrawingPlaybackProxyController m_PlaybackProxies;
         bool m_ProxyVisibilityApplied;
         int m_ProxyClassificationCount;
+        AnimationDrawingId m_AuthoringDrawingId;
+        long m_AuthoringBaselineRevision;
         readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDemotion = new();
@@ -174,6 +176,14 @@ namespace TiltBrush.FrameAnimation
             GetDrawingRenderProxyWorkCountsForTests()
         {
             return (m_ProxyClassificationCount, m_PlaybackProxies?.SynchronizationCount ?? 0);
+        }
+
+        internal bool TryGetAuthoringDrawingStateForTests(
+            out AnimationDrawingId drawingId, out bool dirty)
+        {
+            drawingId = m_AuthoringDrawingId;
+            dirty = IsAuthoringDrawingDirty;
+            return !drawingId.IsEmpty;
         }
 #endif
 
@@ -357,6 +367,7 @@ namespace TiltBrush.FrameAnimation
         {
             RemoveMemorySubscriptions();
             if (m_PerformanceStats != null) m_PerformanceStats.Enabled = false;
+            CommitAuthoringDrawing();
             DisposePlaybackProxies();
         }
 
@@ -383,9 +394,15 @@ namespace TiltBrush.FrameAnimation
         private void OnSketchCommandChanged(BaseCommand command)
         {
             // Stroke and widget add/remove/canvas-transfer notifications maintain the ownership
-            // index. Commands may still change enabled/active state, so only cached occupancy
-            // values need invalidating here.
+            // index. Repaint, delete, grouping, duplication and their undo/redo paths can also
+            // change render data without changing ownership. They operate on the bound authoring
+            // drawing, so invalidate that one drawing rather than scanning every animation frame.
             InvalidateDrawingOccupancy();
+            if (command?.NeedsSave == true &&
+                m_Drawings.TryGet(m_AuthoringDrawingId, out FrameDrawing drawing))
+            {
+                MarkDrawingContentChanged(drawing);
+            }
         }
 
         private void InvalidateDrawingOccupancy()
@@ -396,16 +413,25 @@ namespace TiltBrush.FrameAnimation
         public void NotifyDrawingContentChanged(CanvasScript canvas)
         {
             if (canvas == null) return;
-            if (m_Drawings.TryGet(canvas, out FrameDrawing drawing))
-            {
-                drawing.MarkContentChanged();
-                m_ProxyCompatibility.Remove(drawing.Id);
-            }
             m_DrawingOccupancy.Remove(canvas);
             if (m_EmptyCanvases.Contains(canvas) && GetFrameFilledWithoutStats(canvas))
             {
                 PromoteEmptyCanvas(canvas);
             }
+            if (m_Drawings.TryGet(canvas, out FrameDrawing drawing))
+            {
+                MarkDrawingContentChanged(drawing);
+                if (App.Scene != null && App.Scene.ActiveCanvas == canvas)
+                {
+                    BindAuthoringCanvas(canvas);
+                }
+            }
+        }
+
+        private void MarkDrawingContentChanged(FrameDrawing drawing)
+        {
+            drawing.MarkContentChanged();
+            m_ProxyCompatibility.Remove(drawing.Id);
         }
 
         public void NotifyCanvasWillBeDestroyed(CanvasScript canvas)
@@ -927,6 +953,7 @@ namespace TiltBrush.FrameAnimation
                 m_PendingDrawingDestruction.Remove(drawingId);
                 m_PendingDrawingDemotion.Remove(drawingId);
                 m_ProxyCompatibility.Remove(drawingId);
+                if (m_AuthoringDrawingId == drawingId) CommitAuthoringDrawing();
                 m_Drawings.Remove(drawingId);
             }
             m_EmptyCanvases.Remove(canvas);
@@ -1081,6 +1108,7 @@ namespace TiltBrush.FrameAnimation
 
         public void StartTimeline()
         {
+            CommitAuthoringDrawing();
             DisposePlaybackProxies();
             DestroyPreviousTimelineCanvases();
             InvalidateTimelineStructure();
@@ -2141,6 +2169,31 @@ namespace TiltBrush.FrameAnimation
             ApplyFullFrameVisibility(FrameOn, includeEmptyCanvases: false);
         }
 
+        private bool IsAuthoringDrawingDirty =>
+            !m_AuthoringDrawingId.IsEmpty &&
+            m_Drawings.TryGet(m_AuthoringDrawingId, out FrameDrawing drawing) &&
+            drawing.ContentRevision != m_AuthoringBaselineRevision;
+
+        private void BindAuthoringCanvas(CanvasScript canvas)
+        {
+            EnsureMemorySubscriptions();
+            if (canvas == null || !m_Drawings.TryGet(canvas, out FrameDrawing drawing))
+            {
+                CommitAuthoringDrawing();
+                return;
+            }
+            if (drawing.Id == m_AuthoringDrawingId) return;
+            CommitAuthoringDrawing();
+            m_AuthoringDrawingId = drawing.Id;
+            m_AuthoringBaselineRevision = drawing.ContentRevision;
+        }
+
+        private void CommitAuthoringDrawing()
+        {
+            m_AuthoringDrawingId = default;
+            m_AuthoringBaselineRevision = 0;
+        }
+
         private void DisposePlaybackProxies()
         {
             m_PlaybackProxies?.Dispose();
@@ -2208,6 +2261,7 @@ namespace TiltBrush.FrameAnimation
             Profiler.EndSample();
 
             m_PreviousShowingFrame = frameIndex;
+            if (!playbackUpdate) BindAuthoringCanvas(App.Scene.ActiveCanvas);
             UpdateUI(timelineInput, updateTimelineLayout: !playbackUpdate);
             if (!playbackUpdate) App.Scene.TriggerLayersUpdate();
             Profiler.EndSample();
@@ -2683,6 +2737,7 @@ namespace TiltBrush.FrameAnimation
             {
                 m_PendingDrawingDestruction.Remove(drawingId);
                 m_ProxyCompatibility.Remove(drawingId);
+                if (m_AuthoringDrawingId == drawingId) CommitAuthoringDrawing();
                 m_Drawings.Remove(drawingId);
                 m_EmptyCanvasByTrackId[trackId] = canvas;
                 m_EmptyCanvasTrackIds[canvas] = trackId;
@@ -3021,6 +3076,7 @@ namespace TiltBrush.FrameAnimation
         public void StartAnimation()
         {
             m_Start = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            CommitAuthoringDrawing();
             ApplyFullFrameVisibility(FrameOn, includeEmptyCanvases: false);
             m_Playing = true;
         }
@@ -3029,6 +3085,7 @@ namespace TiltBrush.FrameAnimation
         {
             m_Playing = false;
             RestoreCanvasPlaybackRendering();
+            BindAuthoringCanvas(App.Scene?.ActiveCanvas);
             App.Scene.TriggerLayersUpdate();
         }
 
