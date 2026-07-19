@@ -1854,9 +1854,28 @@ namespace TiltBrush
             }
 
             m_SnapshotCaptureInProgress = true;
+            GameObject odsCaptureRoot = null;
             try
             {
-                IEnumerator capture = TakeScreenshotInternalAsync(saveName, style);
+                HybridCamera odsCamera = null;
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    odsCamera = SketchControlsScript.m_Instance.MultiCamCaptureRig.OdsCameraFromStyle(style);
+                    if (odsCamera == null)
+                    {
+                        Debug.LogError("[Snapshot360Capture] Missing HybridCamera on the Snapshot360 capture object.");
+                        yield break;
+                    }
+
+                    odsCaptureRoot = new GameObject("Snapshot360 Frozen Capture Origin");
+                    odsCaptureRoot.hideFlags = HideFlags.HideAndDontSave;
+                    odsCaptureRoot.transform.SetPositionAndRotation(
+                        odsCamera.transform.position, odsCamera.transform.rotation);
+                    odsCaptureRoot.transform.localScale = odsCamera.transform.lossyScale;
+                }
+
+                IEnumerator capture = TakeScreenshotInternalAsync(
+                    saveName, style, odsCamera, odsCaptureRoot?.transform);
                 if (style == MultiCamStyle.Snapshot360)
                 {
                     yield return OverlayManager.m_Instance.RunInCompositor(
@@ -1869,11 +1888,17 @@ namespace TiltBrush
             }
             finally
             {
+                if (odsCaptureRoot != null)
+                {
+                    Destroy(odsCaptureRoot);
+                }
                 m_SnapshotCaptureInProgress = false;
             }
         }
 
-        private IEnumerator TakeScreenshotInternalAsync(string saveName, MultiCamStyle style)
+        private IEnumerator TakeScreenshotInternalAsync(
+            string saveName, MultiCamStyle style, HybridCamera odsCamera,
+            Transform odsCaptureTransform)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1905,15 +1930,8 @@ namespace TiltBrush
                     App.UserConfig.Flags.SnapshotHeight :
                     m_ScreenshotHeight;
 
-                HybridCamera odsCamera = null;
                 if (style == MultiCamStyle.Snapshot360)
                 {
-                    odsCamera = SketchControlsScript.m_Instance.MultiCamCaptureRig.OdsCameraFromStyle(style);
-                    if (odsCamera == null)
-                    {
-                        Debug.LogError("[Snapshot360Capture] Missing HybridCamera on the Snapshot360 capture object.");
-                        yield break;
-                    }
                     snapshotHeight = snapshotWidth;
                 }
 
@@ -1937,7 +1955,7 @@ namespace TiltBrush
                     if (odsCamera != null)
                     {
                         odsCamera.imageWidth = snapshotWidth;
-                        yield return odsCamera.Render(odsCamera.transform, saveImage: false);
+                        yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
                         Graphics.Blit(odsCamera.FinalImage, tmp);
                     }
                     else
