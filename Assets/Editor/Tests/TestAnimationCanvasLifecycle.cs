@@ -391,6 +391,12 @@ namespace TiltBrush.Tests
             Assert.AreEqual(transitionCount, differential.Counters.FocusFrameCalls);
             Assert.AreEqual(0, differential.Counters.CanvasVisibilityRequests,
                 "Held drawings must not be deactivated and reactivated");
+            Assert.AreEqual(0, differential.Counters.TimelineResets,
+                "Ordinary playback must not rebuild timeline structure");
+            Assert.AreEqual(0, differential.Counters.LayerEvents,
+                "Ordinary playback must not broadcast structural layer events");
+            Assert.AreEqual(0, differential.Counters.GlobalStrokeScans,
+                "Ordinary playback must not scan the global stroke list");
 
             Debug.Log(
                 $"{kLogPrefix} test=longHeldPerformance state=passed tracks={trackCount} " +
@@ -402,6 +408,51 @@ namespace TiltBrush.Tests
                 $"legacyWorstMs={legacy.WorstMilliseconds:F3} " +
                 $"differentialMedianMs={differential.MedianMilliseconds:F3} " +
                 $"differentialWorstMs={differential.WorstMilliseconds:F3}");
+        }
+
+        [UnityTest]
+        public IEnumerator TimelineWidgetPoolDoesNotGrowWithTimelineDuration()
+        {
+            const int trackCount = 8;
+            Debug.Log($"{kLogPrefix} test=boundedTimelineWidgets state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigurePlaybackDiagnosticsForTests(enabled: true, differential: true);
+
+            ConfigureHeldTracks(manager, trackCount, frameCount: 100);
+            manager.ResetTimeline();
+            yield return null;
+            int shortNotches = manager.frameNotchesWidget.transform.childCount;
+            int shortFrameButtons = manager.trackNodesWidget.Sum(
+                trackNodes => trackNodes.transform.childCount);
+
+            ConfigureHeldTracks(manager, trackCount, frameCount: 10000);
+            manager.ResetPlaybackDiagnosticsForTests();
+            manager.ResetTimeline();
+            yield return null;
+            int longNotches = manager.frameNotchesWidget.transform.childCount;
+            int longFrameButtons = manager.trackNodesWidget.Sum(
+                trackNodes => trackNodes.transform.childCount);
+            AnimationPerformanceStats.CounterSnapshot counters =
+                manager.CapturePlaybackDiagnosticsForTests();
+
+            Assert.AreEqual(10000, manager.GetTimelineLength(),
+                "The long-duration fixture must remain configured during verification");
+            Assert.Greater(shortNotches, 0,
+                "The test must observe an instantiated timeline-notch pool");
+            Assert.Greater(shortFrameButtons, 0,
+                "The test must observe instantiated frame-button pools");
+            Assert.AreEqual(shortNotches, longNotches,
+                "Timeline notch allocation must be bounded by the visible frame pool");
+            Assert.AreEqual(shortFrameButtons, longFrameButtons,
+                "Frame-button allocation must be bounded by visible tracks and frames");
+            Assert.AreEqual(0, counters.GlobalStrokeScans,
+                "A duration-only structural refresh must use the occupancy index");
+            Debug.Log(
+                $"{kLogPrefix} test=boundedTimelineWidgets state=passed " +
+                $"tracks={trackCount} shortFrames=100 longFrames=10000 " +
+                $"notches={longNotches} frameButtons={longFrameButtons}");
         }
 
         [UnityTest]
@@ -588,6 +639,19 @@ namespace TiltBrush.Tests
                 manager.CapturePlaybackDiagnosticsForTests(),
                 elapsedMilliseconds[elapsedMilliseconds.Count / 2],
                 elapsedMilliseconds[elapsedMilliseconds.Count - 1]);
+        }
+
+        private static void ConfigureHeldTracks(
+            AnimationUI_Manager manager, int trackCount, int frameCount)
+        {
+            var durations = new List<IReadOnlyList<int>>(trackCount);
+            var visibility = new List<bool>(trackCount);
+            for (int trackIndex = 0; trackIndex < trackCount; trackIndex++)
+            {
+                durations.Add(new[] { frameCount });
+                visibility.Add(true);
+            }
+            manager.ConfigureAnimationTracks(durations, visibility);
         }
 
         private static HashSet<CanvasScript> CaptureActiveTimelineCanvases(
