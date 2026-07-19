@@ -183,8 +183,9 @@ namespace TiltBrush
         [LuaDocsParameter("height", "Image height")]
         [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
         [LuaDocsParameter("renderDepth", "If true then render as a depth map")]
+        [LuaDocsParameter("removeBackground", "If true then render with a transparent background")]
         [LuaDocsParameter("renderNormals", "If true then render as a normals map")]
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false, bool renderNormals = false)
         {
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
         }
