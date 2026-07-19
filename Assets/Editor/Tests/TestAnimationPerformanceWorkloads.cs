@@ -839,18 +839,18 @@ namespace TiltBrush.Tests
 
         private sealed class RenderMeasurement
         {
-            internal readonly List<double> DeltaMilliseconds = new();
-            internal readonly List<double> EditorFrameMilliseconds = new();
-            internal readonly List<double> EditorRenderMilliseconds = new();
-            internal readonly List<double> CpuFrameMilliseconds = new();
-            internal readonly List<double> GpuFrameMilliseconds = new();
-            internal readonly List<int> DrawCalls = new();
-            internal readonly List<int> Batches = new();
-            internal readonly List<int> SetPassCalls = new();
-            internal readonly List<int> Vertices = new();
-            internal readonly List<int> Triangles = new();
-            internal readonly List<int> VboUploads = new();
-            internal readonly List<int> VboUploadBytes = new();
+            internal readonly List<double> DeltaMilliseconds = new(kRenderSampleCount);
+            internal readonly List<double> EditorFrameMilliseconds = new(kRenderSampleCount);
+            internal readonly List<double> EditorRenderMilliseconds = new(kRenderSampleCount);
+            internal readonly List<double> CpuFrameMilliseconds = new(kRenderSampleCount);
+            internal readonly List<double> GpuFrameMilliseconds = new(kRenderSampleCount);
+            internal readonly List<int> DrawCalls = new(kRenderSampleCount);
+            internal readonly List<int> Batches = new(kRenderSampleCount);
+            internal readonly List<int> SetPassCalls = new(kRenderSampleCount);
+            internal readonly List<int> Vertices = new(kRenderSampleCount);
+            internal readonly List<int> Triangles = new(kRenderSampleCount);
+            internal readonly List<int> VboUploads = new(kRenderSampleCount);
+            internal readonly List<int> VboUploadBytes = new(kRenderSampleCount);
             internal AnimationPerformanceStats.CounterSnapshot Counters;
             internal long ManagedAllocatedBytes;
             internal int RetainedCanvasObjects;
