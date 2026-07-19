@@ -598,8 +598,9 @@ namespace TiltBrush
 
                 // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
                 // Blue=enc.x, Alpha=enc.y
-                float depth = pixel.b * 1.0f + pixel.a * (1.0f / 255.0f);
+                float depth = 1.0f - (pixel.b * 1.0f + pixel.a * (1.0f / 255.0f));
 
+                // Export disparity-style grayscale: white is near and black is far.
                 pixels[i] = new Color(depth, depth, depth, 1.0f);
             }
 
