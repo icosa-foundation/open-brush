@@ -688,31 +688,37 @@ namespace TiltBrush
                 wrapper.SuperSampling = superSampling;
 
                 bool watermarkEnabled = CameraConfig.Watermark;
-                CameraConfig.Watermark = false;
                 bool postEffectsEnabled = CameraConfig.PostEffects;
-                CameraConfig.PostEffects = false;
-
-                if (renderDepth)
+                try
                 {
-                    rMgr.RenderDepthToTexture(tmp);
-                    var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
-                    using (var fs = new FileStream(depthPath, FileMode.Create))
+                    CameraConfig.Watermark = false;
+                    CameraConfig.PostEffects = false;
+
+                    if (renderDepth)
                     {
-                        SaveDepth(fs, tmp);
+                        rMgr.RenderDepthToTexture(tmp);
+                        var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
+                        using (var fs = new FileStream(depthPath, FileMode.Create))
+                        {
+                            SaveDepth(fs, tmp);
+                        }
+                    }
+
+                    if (renderNormals)
+                    {
+                        rMgr.RenderDepthNormalToTexture(tmp);
+                        var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                        using (var fs = new FileStream(normalPath, FileMode.Create))
+                        {
+                            SaveNormals(fs, tmp);
+                        }
                     }
                 }
-
-                if (renderNormals)
+                finally
                 {
-                    rMgr.RenderDepthNormalToTexture(tmp);
-                    var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
-                    using (var fs = new FileStream(normalPath, FileMode.Create))
-                    {
-                        SaveNormals(fs, tmp);
-                    }
+                    CameraConfig.Watermark = watermarkEnabled;
+                    CameraConfig.PostEffects = postEffectsEnabled;
                 }
-                CameraConfig.Watermark = watermarkEnabled;
-                CameraConfig.PostEffects = postEffectsEnabled;
 
                 rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
                 using (var fs = new FileStream(path, FileMode.Create))
