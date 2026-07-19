@@ -112,10 +112,23 @@ namespace TiltBrush.FrameAnimation
         private void SynchronizeRootTransform(CanvasScript canvas)
         {
             Transform source = canvas.transform;
-            Root.transform.SetParent(source.parent, false);
-            Root.transform.localPosition = source.localPosition;
-            Root.transform.localRotation = source.localRotation;
-            Root.transform.localScale = source.localScale;
+            Transform destination = Root.transform;
+            if (destination.parent != source.parent)
+            {
+                destination.SetParent(source.parent, false);
+            }
+            if (destination.localPosition != source.localPosition)
+            {
+                destination.localPosition = source.localPosition;
+            }
+            if (destination.localRotation != source.localRotation)
+            {
+                destination.localRotation = source.localRotation;
+            }
+            if (destination.localScale != source.localScale)
+            {
+                destination.localScale = source.localScale;
+            }
         }
 
         private void CreateBatchRenderer(CanvasScript canvas, Batch sourceBatch)
@@ -163,7 +176,18 @@ namespace TiltBrush.FrameAnimation
         private readonly Dictionary<int, CanvasBatchRenderProxy> m_TrackProxies = new();
         private readonly HashSet<int> m_TracksUsedThisFrame = new();
 
-        public int VisibleProxyCount => m_TrackProxies.Values.Count(proxy => proxy.IsVisible);
+        public int VisibleProxyCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (CanvasBatchRenderProxy proxy in m_TrackProxies.Values)
+                {
+                    if (proxy.IsVisible) count++;
+                }
+                return count;
+            }
+        }
         public int ObjectCount => m_TrackProxies.Values.Sum(
             proxy => proxy.Root == null
                 ? 0

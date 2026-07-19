@@ -60,6 +60,8 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<AnimationDrawingId,
             (long Revision, FrameDrawingProxyCompatibility Compatibility)>
             m_ProxyCompatibility = new();
+        readonly List<(int TrackId, FrameDrawing Drawing)> m_ProxyVisibleEntries = new();
+        readonly HashSet<AnimationDrawingId> m_ProxyIneligibleDrawings = new();
         FrameDrawingPlaybackProxyController m_PlaybackProxies;
         bool m_ProxyVisibilityApplied;
         int m_ProxyClassificationCount;
@@ -2130,9 +2132,8 @@ namespace TiltBrush.FrameAnimation
         {
             m_PlaybackProxies ??= new FrameDrawingPlaybackProxyController();
             m_PlaybackProxies.BeginFrame();
-            var visibleEntries = new List<(
-                int TrackId, FrameDrawing Drawing, bool Eligible)>();
-            var drawingEligibility = new Dictionary<AnimationDrawingId, bool>();
+            m_ProxyVisibleEntries.Clear();
+            m_ProxyIneligibleDrawings.Clear();
             for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
             {
                 AnimationTimelineModel.Track track = m_SparseTimeline.Tracks[trackIndex];
@@ -2145,20 +2146,13 @@ namespace TiltBrush.FrameAnimation
                 }
                 bool eligible = ClassifyDrawingForProxy(
                     drawing, hasAnimatedPath: span.Value.PathToken != null).IsEligible;
-                visibleEntries.Add((track.Id, drawing, eligible));
-                if (drawingEligibility.TryGetValue(drawing.Id, out bool previousEligibility))
-                {
-                    drawingEligibility[drawing.Id] = previousEligibility && eligible;
-                }
-                else
-                {
-                    drawingEligibility.Add(drawing.Id, eligible);
-                }
+                m_ProxyVisibleEntries.Add((track.Id, drawing));
+                if (!eligible) m_ProxyIneligibleDrawings.Add(drawing.Id);
             }
 
-            foreach (var entry in visibleEntries)
+            foreach (var entry in m_ProxyVisibleEntries)
             {
-                bool useProxy = drawingEligibility[entry.Drawing.Id] &&
+                bool useProxy = !m_ProxyIneligibleDrawings.Contains(entry.Drawing.Id) &&
                     m_PlaybackProxies.TryShow(entry.TrackId, entry.Drawing, out _);
                 SetCanvasActive(entry.Drawing.Canvas, !useProxy);
             }
