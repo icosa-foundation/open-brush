@@ -130,3 +130,50 @@ early implementation check.
   and revision resynchronization (`[OB_ANIM_P4_AUTHORING]`).
 - [ ] Manually open, edit, play, undo, save, and reload the same proxy-eligible drawing, including
   a failed/unsupported proxy fallback, before treating Phase 4D as complete.
+
+## Phase 4E: animated paths and transforms
+
+- [x] Allow an animated-path drawing through compatibility classification only when the active
+  proxy implementation explicitly declares support for path transforms.
+- [x] Compose the proxy under the source drawing's scene parent, retain drawing-local batch
+  transforms, and synchronize the drawing root after animated-path updates without rebuilding
+  unchanged mesh/material resources.
+- [x] Avoid transform hierarchy writes for unchanged held drawings and keep unsupported future
+  path implementations on the per-drawing Canvas fallback.
+- [ ] Pass the proxy unit suite and the real-path lifecycle check
+  (`[OB_ANIM_P4_TRANSFORM]`), including within-span path motion and unchanged drawing revision.
+- [ ] Manually verify a moving/rotating/scaling path drawing in desktop and XR playback, then stop
+  playback and edit the same drawing through its Canvas adapter.
+
+## Phase 4F: widgets and remaining content
+
+- [x] Keep widget-bearing and mixed stroke/widget drawings entirely Canvas-backed; no widget is
+  detached, duplicated, or moved into an incomplete proxy representation.
+- [x] Preserve batch mesh/material sharing, material property blocks, source activation, camera
+  culling layer, rendering-layer mask, shadows, sorting layer/order, and drawing/scene transforms
+  for eligible brush-only proxies.
+- [x] Reuse one proxy hierarchy per track and deterministically detach every retired child before
+  deferred play-mode destruction when a drawing revision changes.
+- [ ] Pass the mixed two-track proxy/Canvas ownership and renderer-order check
+  (`[OB_ANIM_P4_CONTENT]`).
+- [ ] Pass the controlled real-brush Canvas/proxy image comparison
+  (`[OB_ANIM_P4_IMAGE]`) and rerun the complete Canvas lifecycle suite.
+- [ ] Verify save/load, thumbnail, import/export, Canvas-exposing APIs, and undo behavior through
+  the retained compatibility adapters for both eligible and fallback drawings.
+
+## Phase 4G: proxy rendering default
+
+- [ ] Run the rendered-frame matrix in legacy, differential, and proxy modes and report ordinary
+  CPU/GPU frame time, draw calls, uploads, managed allocations, active Canvases, retained Canvas
+  hierarchy objects, and proxy objects for realistic held, unique, and material-diverse drawings.
+- [ ] Confirm on desktop and target headset/XR that eligible proxies improve the limiting metric
+  without an unacceptable rendering, CPU/GPU, allocation, or memory regression.
+- [ ] Make proxy rendering the default for eligible drawings only after the measurement and
+  mixed-mode gates pass; retain the Canvas policy switch and per-drawing fallback for diagnosis.
+- [ ] Rerun all animation model, lifecycle, persistence, and performance suites with the new
+  default, then complete the combined manual edit/play/undo/save/reload pass.
+
+Phase 4 deliberately retains inactive source Canvas resources as compatibility adapters. Its
+object-count boundary concerns active playback hierarchies: eligible drawings use simple proxy
+renderers that scale with visible tracks. Releasing or bounding inactive Canvas, Mesh, and GPU
+resources is the separate Phase 5 residency decision and must be justified by measured memory.
