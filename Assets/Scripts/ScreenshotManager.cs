@@ -485,7 +485,8 @@ namespace TiltBrush
                 var prevDepthTextureMode = camera.depthTextureMode;
                 camera.targetTexture = targetA;
                 camera.depthTextureMode = DepthTextureMode.Depth;
-                camera.RenderWithShader(Shader.Find("Hidden/Internal-DepthNormalsTexture"), "");
+                camera.RenderWithShader(
+                    Shader.Find("Hidden/Internal-DepthNormalsTexture"), "RenderType");
                 camera.depthTextureMode = prevDepthTextureMode;
                 camera.targetTexture = prev;
             }
@@ -511,7 +512,7 @@ namespace TiltBrush
             camera.depthTextureMode = DepthTextureMode.Depth;
 
             Shader depthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
-            camera.RenderWithShader(depthNormalsShader, "");
+            camera.RenderWithShader(depthNormalsShader, "RenderType");
 
             // Restore camera state
             camera.targetTexture = prevTarget;
