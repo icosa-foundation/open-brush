@@ -522,6 +522,10 @@ namespace TiltBrush.Tests
                     BatchSubset subset = TestBrush.CreateSubsetFromStroke(canvas, stroke);
                     Assert.IsNotNull(subset,
                         $"Brush {stroke.m_BrushGuid} did not produce batched geometry");
+                    stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+                    stroke.m_BatchSubset = subset;
+                    subset.m_Stroke = stroke;
+                    App.Scene.animationUI_manager.NotifyStrokeAdded(stroke);
                     copyIndex++;
                 }
                 canvas.BatchManager.FlushMeshUpdates();
@@ -600,14 +604,22 @@ namespace TiltBrush.Tests
                 manager, differential: true, frames: frames,
                 completed: measurement => differential = measurement);
             LogRenderMeasurement(workload, "differential", pattern, differential);
+
+            RenderMeasurement proxy = null;
+            yield return MeasureRenderedFrames(
+                manager, differential: true, frames: frames,
+                completed: measurement => proxy = measurement, drawingProxies: true);
+            LogRenderMeasurement(workload, "proxy", pattern, proxy);
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
         }
 
         private static IEnumerator MeasureRenderedFrames(
             AnimationUI_Manager manager, bool differential, IReadOnlyList<int> frames,
-            Action<RenderMeasurement> completed)
+            Action<RenderMeasurement> completed, bool drawingProxies = false)
         {
             manager.ConfigurePlaybackDiagnosticsForTests(
                 enabled: true, differential: differential);
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: drawingProxies);
             manager.SelectTimelineFrame(0, 0);
             for (int warmup = 0; warmup < 10; warmup++)
             {
@@ -621,6 +633,7 @@ namespace TiltBrush.Tests
             manager.ResetPlaybackDiagnosticsForTests();
 
             var measurement = new RenderMeasurement();
+            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             var frameTimings = new FrameTiming[1];
             for (int sample = 0; sample < kRenderSampleCount; sample++)
             {
@@ -648,6 +661,21 @@ namespace TiltBrush.Tests
                     }
                 }
             }
+            measurement.ManagedAllocatedBytes = Math.Max(
+                0, GC.GetAllocatedBytesForCurrentThread() - allocatedBefore);
+            List<CanvasScript> drawingCanvases = manager.Timeline
+                .SelectMany(track => track.Frames)
+                .Select(frame => frame.Canvas)
+                .Where(canvas => canvas != null)
+                .Distinct()
+                .ToList();
+            measurement.RetainedCanvasObjects = drawingCanvases.Count;
+            measurement.ActiveCanvasObjects = drawingCanvases.Count(
+                canvas => canvas.gameObject.activeInHierarchy);
+            measurement.RetainedCanvasHierarchyObjects = drawingCanvases.Sum(
+                canvas => canvas.GetComponentsInChildren<Transform>(true).Length);
+            measurement.ProxyObjects = manager.GetDrawingRenderProxyObjectCountForTests();
+            measurement.VisibleProxies = manager.GetVisibleDrawingRenderProxyCountForTests();
             measurement.Counters = manager.CapturePlaybackDiagnosticsForTests();
             completed(measurement);
         }
@@ -675,6 +703,12 @@ namespace TiltBrush.Tests
                 $"vboUploadBytes={Median(measurement.VboUploadBytes):F0} " +
                 $"hideVisits={measurement.Counters.HideFrameVisits} " +
                 $"visibilityRequests={measurement.Counters.CanvasVisibilityRequests} " +
+                $"retainedCanvases={measurement.RetainedCanvasObjects} " +
+                $"activeCanvases={measurement.ActiveCanvasObjects} " +
+                $"retainedCanvasHierarchyObjects={measurement.RetainedCanvasHierarchyObjects} " +
+                $"proxyObjects={measurement.ProxyObjects} " +
+                $"visibleProxies={measurement.VisibleProxies} " +
+                $"managedAllocatedBytes={measurement.ManagedAllocatedBytes} " +
                 $"allocatedBytes={Profiler.GetTotalAllocatedMemoryLong()} " +
                 $"reservedBytes={Profiler.GetTotalReservedMemoryLong()}");
         }
@@ -818,6 +852,12 @@ namespace TiltBrush.Tests
             internal readonly List<int> VboUploads = new();
             internal readonly List<int> VboUploadBytes = new();
             internal AnimationPerformanceStats.CounterSnapshot Counters;
+            internal long ManagedAllocatedBytes;
+            internal int RetainedCanvasObjects;
+            internal int ActiveCanvasObjects;
+            internal int RetainedCanvasHierarchyObjects;
+            internal int ProxyObjects;
+            internal int VisibleProxies;
         }
     }
 }

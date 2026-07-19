@@ -27,6 +27,7 @@ namespace TiltBrush.FrameAnimation
     {
         private FrameDrawingProxyResources m_ContentResources = new();
         private int m_BatchCount;
+        private CanvasScript m_SourceCanvas;
 
         public AnimationDrawingId DrawingId { get; private set; }
         public long SourceRevision { get; private set; } = -1;
@@ -49,6 +50,7 @@ namespace TiltBrush.FrameAnimation
             {
                 throw new InvalidOperationException("A Canvas-backed proxy requires a source Canvas.");
             }
+            m_SourceCanvas = drawing.Canvas;
             SynchronizeRootTransform(drawing.Canvas);
             if (DrawingId == drawing.Id && SourceRevision == drawing.ContentRevision) return;
 
@@ -67,8 +69,9 @@ namespace TiltBrush.FrameAnimation
 
             bool wasVisible = Root.activeSelf;
             Root.SetActive(false);
-            foreach (Transform child in Root.transform)
+            for (int childIndex = Root.transform.childCount - 1; childIndex >= 0; childIndex--)
             {
+                Transform child = Root.transform.GetChild(childIndex);
                 child.gameObject.SetActive(false);
                 child.SetParent(null, worldPositionStays: false);
             }
@@ -88,6 +91,11 @@ namespace TiltBrush.FrameAnimation
         public void SetVisible(bool visible)
         {
             if (Root.activeSelf != visible) Root.SetActive(visible);
+        }
+
+        public void SynchronizeTransform()
+        {
+            if (m_SourceCanvas != null) SynchronizeRootTransform(m_SourceCanvas);
         }
 
         public void Dispose()
@@ -115,6 +123,8 @@ namespace TiltBrush.FrameAnimation
             var proxyObject = m_ContentResources.Own(
                 new GameObject($"Proxy {sourceBatch.gameObject.name}"));
             proxyObject.transform.SetParent(Root.transform, false);
+            proxyObject.layer = sourceBatch.gameObject.layer;
+            proxyObject.SetActive(sourceBatch.gameObject.activeSelf);
             Matrix4x4 relative = canvas.transform.worldToLocalMatrix *
                 sourceBatch.transform.localToWorldMatrix;
             proxyObject.transform.localPosition = relative.GetColumn(3);
@@ -138,6 +148,7 @@ namespace TiltBrush.FrameAnimation
             destination.reflectionProbeUsage = source.reflectionProbeUsage;
             destination.motionVectorGenerationMode = source.motionVectorGenerationMode;
             destination.allowOcclusionWhenDynamic = source.allowOcclusionWhenDynamic;
+            destination.renderingLayerMask = source.renderingLayerMask;
             destination.sortingLayerID = source.sortingLayerID;
             destination.sortingOrder = source.sortingOrder;
             var propertyBlock = new MaterialPropertyBlock();
@@ -153,6 +164,10 @@ namespace TiltBrush.FrameAnimation
         private readonly HashSet<int> m_TracksUsedThisFrame = new();
 
         public int VisibleProxyCount => m_TrackProxies.Values.Count(proxy => proxy.IsVisible);
+        public int ObjectCount => m_TrackProxies.Values.Sum(
+            proxy => proxy.Root == null
+                ? 0
+                : proxy.Root.GetComponentsInChildren<Transform>(true).Length);
         public int SynchronizationCount { get; private set; }
 
         public void BeginFrame()
@@ -211,6 +226,14 @@ namespace TiltBrush.FrameAnimation
             foreach (KeyValuePair<int, CanvasBatchRenderProxy> pair in m_TrackProxies)
             {
                 if (!m_TracksUsedThisFrame.Contains(pair.Key)) pair.Value.SetVisible(false);
+            }
+        }
+
+        public void SynchronizeVisibleTransforms()
+        {
+            foreach (CanvasBatchRenderProxy proxy in m_TrackProxies.Values)
+            {
+                if (proxy.IsVisible) proxy.SynchronizeTransform();
             }
         }
 

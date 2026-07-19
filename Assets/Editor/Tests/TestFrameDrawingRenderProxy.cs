@@ -56,6 +56,30 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void ClassifierAcceptsSupportedAnimatedPathAndRetainsUnsupportedFallback()
+        {
+            Batch batch = new GameObject("Path proxy batch").AddComponent<Batch>();
+            batch.transform.SetParent(m_Canvas.transform, false);
+            var subset = new BatchSubset { m_ParentBatch = batch };
+            var stroke = new Stroke
+            {
+                m_Type = Stroke.Type.BatchedBrushStroke,
+                m_BatchSubset = subset,
+            };
+
+            FrameDrawingProxyCompatibility supported = FrameDrawingProxyClassifier.Classify(
+                m_Drawing, new[] { stroke }, new GrabWidget[0], hasAnimatedPath: true,
+                supportsAnimatedPath: true, supportsBatch: candidate => candidate == batch);
+            FrameDrawingProxyCompatibility unsupported = FrameDrawingProxyClassifier.Classify(
+                m_Drawing, new[] { stroke }, new GrabWidget[0], hasAnimatedPath: true,
+                supportsAnimatedPath: false, supportsBatch: candidate => candidate == batch);
+
+            Assert.IsTrue(supported.IsEligible);
+            Assert.AreNotEqual(
+                0, unsupported.Reasons & FrameDrawingProxyIncompatibility.AnimatedPath);
+        }
+
+        [Test]
         public void ClassifierReportsIndependentFallbackReasons()
         {
             var unbatchedStroke = new Stroke
@@ -131,6 +155,15 @@ namespace TiltBrush.Tests
             batchObject.transform.SetParent(m_Canvas.transform, false);
             batchObject.AddComponent<Batch>();
             Mesh sourceMesh = batchObject.GetComponent<MeshFilter>().sharedMesh;
+            MeshRenderer sourceRenderer = batchObject.GetComponent<MeshRenderer>();
+            batchObject.layer = 23;
+            sourceRenderer.sortingLayerID = 0;
+            sourceRenderer.sortingOrder = 23;
+            sourceRenderer.receiveShadows = false;
+            sourceRenderer.renderingLayerMask = 0x2a;
+            var sourceProperties = new MaterialPropertyBlock();
+            sourceProperties.SetFloat("_OBProxyTestValue", 17f);
+            sourceRenderer.SetPropertyBlock(sourceProperties);
             var proxy = new CanvasBatchRenderProxy(trackId: 4);
             try
             {
@@ -144,12 +177,72 @@ namespace TiltBrush.Tests
                 Mesh proxyMesh = proxy.Root.GetComponentInChildren<MeshFilter>().sharedMesh;
                 Assert.AreSame(sourceMesh, proxyMesh,
                     "The dormant proxy path must not duplicate source mesh memory");
+                MeshRenderer proxyRenderer = proxy.Root.GetComponentInChildren<MeshRenderer>();
+                Assert.AreEqual(batchObject.layer, proxyRenderer.gameObject.layer);
+                Assert.AreEqual(sourceRenderer.sortingLayerID, proxyRenderer.sortingLayerID);
+                Assert.AreEqual(sourceRenderer.sortingOrder, proxyRenderer.sortingOrder);
+                Assert.AreEqual(sourceRenderer.receiveShadows, proxyRenderer.receiveShadows);
+                Assert.AreEqual(sourceRenderer.renderingLayerMask, proxyRenderer.renderingLayerMask);
+                var proxyProperties = new MaterialPropertyBlock();
+                proxyRenderer.GetPropertyBlock(proxyProperties);
+                Assert.AreEqual(17f, proxyProperties.GetFloat("_OBProxyTestValue"));
             }
             finally
             {
                 proxy.Dispose();
                 Object.DestroyImmediate(sourceMesh);
             }
+        }
+
+        [Test]
+        public void CanvasBatchProxyPreservesDrawingAndSceneTransformComposition()
+        {
+            var sceneParent = new GameObject("Proxy scene parent");
+            m_Canvas.transform.SetParent(sceneParent.transform, false);
+            sceneParent.transform.SetPositionAndRotation(
+                new Vector3(4f, -2f, 7f), Quaternion.Euler(10f, 25f, -15f));
+            sceneParent.transform.localScale = Vector3.one * 1.2f;
+            m_Canvas.transform.localPosition = new Vector3(1f, 2f, 3f);
+            m_Canvas.transform.localRotation = Quaternion.Euler(5f, 35f, 12f);
+            m_Canvas.transform.localScale = Vector3.one * 0.75f;
+            GameObject batchObject = CreateTriangleRoot("Transformed source batch");
+            batchObject.transform.SetParent(m_Canvas.transform, false);
+            batchObject.transform.localPosition = new Vector3(-2f, 0.5f, 1f);
+            batchObject.transform.localRotation = Quaternion.Euler(20f, 5f, 40f);
+            Batch batch = batchObject.AddComponent<Batch>();
+            var proxy = new CanvasBatchRenderProxy(trackId: 9);
+            Mesh sourceMesh = batchObject.GetComponent<MeshFilter>().sharedMesh;
+            try
+            {
+                proxy.Synchronize(m_Drawing);
+                MeshFilter proxyFilter = proxy.Root.GetComponentInChildren<MeshFilter>(true);
+                AssertTransformsMatch(batch.transform, proxyFilter.transform);
+
+                m_Canvas.transform.localPosition = new Vector3(-3f, 4f, 2f);
+                m_Canvas.transform.localRotation = Quaternion.Euler(-15f, 60f, 8f);
+                m_Canvas.transform.localScale = Vector3.one * 1.3f;
+                proxy.SynchronizeTransform();
+
+                Assert.AreSame(sceneParent.transform, proxy.Root.transform.parent);
+                AssertTransformsMatch(m_Canvas.transform, proxy.Root.transform);
+                AssertTransformsMatch(batch.transform, proxyFilter.transform);
+                Assert.AreEqual(m_Drawing.ContentRevision, proxy.SourceRevision,
+                    "Transform-only synchronization must not rebuild drawing content");
+            }
+            finally
+            {
+                proxy.Dispose();
+                m_Canvas.transform.SetParent(null, true);
+                Object.DestroyImmediate(sceneParent);
+                Object.DestroyImmediate(sourceMesh);
+            }
+        }
+
+        private static void AssertTransformsMatch(Transform expected, Transform actual)
+        {
+            Assert.Less(Vector3.Distance(expected.position, actual.position), 0.0001f);
+            Assert.Less(Quaternion.Angle(expected.rotation, actual.rotation), 0.01f);
+            Assert.Less(Vector3.Distance(expected.lossyScale, actual.lossyScale), 0.0001f);
         }
 
         private static GameObject CreateTriangleRoot(string name)

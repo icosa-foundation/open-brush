@@ -58,6 +58,7 @@ namespace TiltBrush.FrameAnimation
         public static FrameDrawingProxyCompatibility Classify(
             FrameDrawing drawing, IEnumerable<Stroke> strokes,
             IEnumerable<GrabWidget> widgets, bool hasAnimatedPath,
+            bool supportsAnimatedPath = false,
             Func<Batch, bool> supportsBatch = null)
         {
             if (drawing == null) throw new ArgumentNullException(nameof(drawing));
@@ -67,7 +68,10 @@ namespace TiltBrush.FrameAnimation
 
             FrameDrawingProxyIncompatibility reasons = FrameDrawingProxyIncompatibility.None;
             if (drawing.Canvas == null) reasons |= FrameDrawingProxyIncompatibility.MissingCanvas;
-            if (hasAnimatedPath) reasons |= FrameDrawingProxyIncompatibility.AnimatedPath;
+            if (hasAnimatedPath && !supportsAnimatedPath)
+            {
+                reasons |= FrameDrawingProxyIncompatibility.AnimatedPath;
+            }
 
             int strokeCount = 0;
             var batches = new HashSet<Batch>();

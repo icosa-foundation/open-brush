@@ -657,6 +657,249 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator ProxyDrawingFollowsAnimatedPathCanvasTransform()
+        {
+            const string transformLogPrefix = "[OB_ANIM_P4_TRANSFORM]";
+            Debug.Log($"{transformLogPrefix} test=animatedPath state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 3 } },
+                new List<bool> { true });
+            CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 0);
+            Stroke stroke = LoadFirstPerformanceStroke("Simple.tilt");
+            BatchSubset subset = TestBrush.CreateSubsetFromStroke(drawingCanvas, stroke);
+            Assert.IsNotNull(subset);
+            stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+            stroke.m_BatchSubset = subset;
+            subset.m_Stroke = stroke;
+            drawingCanvas.BatchManager.FlushMeshUpdates();
+            manager.NotifyStrokeAdded(stroke);
+            manager.SelectTimelineFrame(0, 0);
+
+            var frames = new List<FlyPathRecorder.RecordedFrame>
+            {
+                new(Vector3.zero, Quaternion.identity, 0f, 1f),
+                new(new Vector3(3f, 1f, -2f), Quaternion.Euler(0f, 45f, 0f), 1f, 1f),
+            };
+            var createPath = new CreateCameraPathFromFramesCommand(frames);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createPath);
+            Assert.IsNotNull(createPath.Widget);
+            manager.AddAnimationPath(createPath.Widget, 0, 0);
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+            manager.ApplyPlaybackFrameForTests(0);
+            manager.UpdateLayerTransforms();
+            manager.SynchronizePlaybackProxyTransformsForTests();
+            Assert.IsTrue(manager.TryGetDrawingRenderProxyForTests(
+                manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy));
+            Assert.AreEqual(1, manager.GetVisibleDrawingRenderProxyCountForTests(),
+                "A supported animated path should remain proxy-rendered");
+            AssertTransformsMatch(drawingCanvas.transform, proxy.Root.transform);
+            Vector3 startPosition = proxy.Root.transform.position;
+
+            manager.ApplyPlaybackFrameForTests(2);
+            manager.UpdateLayerTransforms();
+            manager.SynchronizePlaybackProxyTransformsForTests();
+            AssertTransformsMatch(drawingCanvas.transform, proxy.Root.transform);
+            Assert.Greater(Vector3.Distance(startPosition, proxy.Root.transform.position), 0.1f,
+                "The proxy must follow path motion within a held drawing span");
+            Assert.AreEqual(1, manager.GetVisibleDrawingRenderProxyCountForTests());
+
+            manager.StopAnimation();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            yield return null;
+            Debug.Log(
+                $"{transformLogPrefix} test=animatedPath state=passed " +
+                $"distance={Vector3.Distance(startPosition, drawingCanvas.transform.position):F3}");
+        }
+
+        [UnityTest]
+        public IEnumerator MixedProxyAndWidgetCanvasDrawingsPreserveOwnershipAndRendererOrder()
+        {
+            const string contentLogPrefix = "[OB_ANIM_P4_CONTENT]";
+            Debug.Log($"{contentLogPrefix} test=mixedContent state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            App.Scene.AddLayerNow();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 2 }, new[] { 2 } },
+                new List<bool> { true, true });
+            CanvasScript proxyCanvas = manager.GetOrCreateContentCanvas(0, 0);
+            CanvasScript widgetCanvas = manager.GetOrCreateContentCanvas(1, 0);
+            Stroke proxyStroke = AddPerformanceStroke(manager, proxyCanvas, "Simple.tilt");
+            Stroke widgetStroke = AddPerformanceStroke(manager, widgetCanvas, "Simple.tilt");
+            MeshRenderer proxySourceRenderer =
+                proxyStroke.m_BatchSubset.m_ParentBatch.GetComponent<MeshRenderer>();
+            MeshRenderer widgetSourceRenderer =
+                widgetStroke.m_BatchSubset.m_ParentBatch.GetComponent<MeshRenderer>();
+            proxySourceRenderer.sortingOrder = 11;
+            widgetSourceRenderer.sortingOrder = 29;
+
+            var widgetObject = new GameObject("Mixed content fallback widget");
+            widgetObject.transform.SetParent(widgetCanvas.transform, false);
+            GrabWidget widget = widgetObject.AddComponent<GrabWidget>();
+            manager.NotifyWidgetAdded(widget);
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                proxyCanvas, out FrameDrawing proxyDrawing));
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                widgetCanvas, out FrameDrawing widgetDrawing));
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+            manager.ApplyPlaybackFrameForTests(0);
+            Assert.IsFalse(proxyCanvas.gameObject.activeSelf);
+            Assert.IsTrue(widgetCanvas.gameObject.activeSelf,
+                "A widget-bearing drawing must remain entirely Canvas-backed");
+            Assert.IsTrue(widgetObject.activeInHierarchy);
+            Assert.AreSame(widgetCanvas, widget.Canvas);
+            Assert.AreSame(widgetCanvas.transform, widget.transform.parent);
+            Assert.AreEqual(1, manager.GetVisibleDrawingRenderProxyCountForTests());
+            Assert.IsTrue(manager.TryGetDrawingRenderProxyForTests(
+                manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy));
+            MeshRenderer proxyRenderer = proxy.Root.GetComponentInChildren<MeshRenderer>();
+            Assert.AreEqual(proxySourceRenderer.sortingLayerID, proxyRenderer.sortingLayerID);
+            Assert.AreEqual(proxySourceRenderer.sortingOrder, proxyRenderer.sortingOrder);
+            Assert.AreEqual(29, widgetSourceRenderer.sortingOrder);
+            Assert.AreEqual(proxyDrawing.Id, proxy.DrawingId);
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                widgetCanvas, out FrameDrawing widgetDrawingAfterPlayback));
+            Assert.AreSame(widgetDrawing, widgetDrawingAfterPlayback);
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            Assert.IsTrue(proxyCanvas.gameObject.activeSelf);
+            Assert.IsTrue(widgetCanvas.gameObject.activeSelf);
+            Assert.IsTrue(widgetObject.activeInHierarchy);
+            manager.NotifyWidgetRemoved(widget);
+            UnityEngine.Object.Destroy(widgetObject);
+
+            yield return null;
+            Debug.Log(
+                $"{contentLogPrefix} test=mixedContent state=passed " +
+                $"proxyDrawing={proxyDrawing.Id.Value} widgetDrawing={widgetDrawing.Id.Value}");
+        }
+
+        [UnityTest]
+        public IEnumerator ProxyImageMatchesCanvasForRepresentativeBrushAndOrderingState()
+        {
+            const string imageLogPrefix = "[OB_ANIM_P4_IMAGE]";
+            const int captureSize = 128;
+            const int captureLayer = 30;
+            Debug.Log($"{imageLogPrefix} test=representativeBrushes state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 2 } },
+                new List<bool> { true });
+            CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 0);
+            AddPerformanceStroke(manager, drawingCanvas, "Simple.tilt");
+            AddPerformanceStroke(manager, drawingCanvas, "Ink.tilt");
+            AddPerformanceStroke(manager, drawingCanvas, "LightWire.tilt");
+            MeshRenderer[] sourceRenderers =
+                drawingCanvas.GetComponentsInChildren<MeshRenderer>(true)
+                    .Where(renderer => renderer.GetComponent<Batch>() != null)
+                    .ToArray();
+            Assert.IsNotEmpty(sourceRenderers);
+            for (int index = 0; index < sourceRenderers.Length; index++)
+            {
+                sourceRenderers[index].gameObject.layer = captureLayer;
+                sourceRenderers[index].sortingOrder = index * 3;
+            }
+
+            var cameraObject = new GameObject("Animation proxy image comparison camera");
+            Camera captureCamera = cameraObject.AddComponent<Camera>();
+            captureCamera.enabled = false;
+            captureCamera.clearFlags = CameraClearFlags.SolidColor;
+            captureCamera.backgroundColor = Color.clear;
+            captureCamera.cullingMask = 1 << captureLayer;
+            captureCamera.orthographic = true;
+            captureCamera.allowHDR = false;
+            captureCamera.allowMSAA = false;
+            captureCamera.nearClipPlane = 0.01f;
+            captureCamera.farClipPlane = 1000f;
+            var target = new RenderTexture(
+                captureSize, captureSize, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = 1,
+            };
+            captureCamera.targetTexture = target;
+            Texture2D canvasImage = null;
+            Texture2D proxyImage = null;
+            try
+            {
+                Bounds bounds = sourceRenderers[0].bounds;
+                foreach (MeshRenderer renderer in sourceRenderers.Skip(1))
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+                float extent = Mathf.Max(
+                    0.1f, Mathf.Max(bounds.extents.x, Mathf.Max(
+                        bounds.extents.y, bounds.extents.z)));
+                Vector3 viewDirection = new Vector3(0.25f, 0.15f, 1f).normalized;
+                captureCamera.transform.position = bounds.center - viewDirection * extent * 4f;
+                captureCamera.transform.rotation =
+                    Quaternion.LookRotation(viewDirection, Vector3.up);
+                captureCamera.orthographicSize = extent * 1.6f;
+
+                manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+                manager.ApplyPlaybackFrameForTests(0);
+                canvasImage = CaptureCamera(captureCamera, target, captureSize);
+
+                manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+                manager.ApplyPlaybackFrameForTests(0);
+                Assert.IsTrue(manager.TryGetDrawingRenderProxyForTests(
+                    manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy));
+                MeshRenderer[] proxyRenderers =
+                    proxy.Root.GetComponentsInChildren<MeshRenderer>(true);
+                Assert.AreEqual(sourceRenderers.Length, proxyRenderers.Length);
+                foreach (MeshRenderer renderer in proxyRenderers)
+                {
+                    Assert.AreEqual(captureLayer, renderer.gameObject.layer,
+                        "The proxy must preserve the source camera-culling layer");
+                }
+                proxyImage = CaptureCamera(captureCamera, target, captureSize);
+
+                Color32[] sourcePixels = canvasImage.GetPixels32();
+                Color32[] proxyPixels = proxyImage.GetPixels32();
+                int visiblePixels = sourcePixels.Count(pixel => pixel.a > 2);
+                Assert.Greater(visiblePixels, 32,
+                    "The controlled source render must contain visible brush pixels");
+                int mismatchedPixels = 0;
+                for (int pixelIndex = 0; pixelIndex < sourcePixels.Length; pixelIndex++)
+                {
+                    Color32 source = sourcePixels[pixelIndex];
+                    Color32 renderedProxy = proxyPixels[pixelIndex];
+                    int maxDifference = Mathf.Max(
+                        Mathf.Abs(source.r - renderedProxy.r),
+                        Mathf.Max(Mathf.Abs(source.g - renderedProxy.g),
+                            Mathf.Max(Mathf.Abs(source.b - renderedProxy.b),
+                                Mathf.Abs(source.a - renderedProxy.a))));
+                    if (maxDifference > 2) mismatchedPixels++;
+                }
+                Assert.LessOrEqual(
+                    mismatchedPixels, Mathf.CeilToInt(sourcePixels.Length * 0.001f),
+                    "Canvas and proxy image captures differ beyond the controlled tolerance");
+                Debug.Log(
+                    $"{imageLogPrefix} test=representativeBrushes state=passed " +
+                    $"brushes=3 visiblePixels={visiblePixels} " +
+                    $"mismatchedPixels={mismatchedPixels}");
+            }
+            finally
+            {
+                manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+                captureCamera.targetTexture = null;
+                if (canvasImage != null) UnityEngine.Object.Destroy(canvasImage);
+                if (proxyImage != null) UnityEngine.Object.Destroy(proxyImage);
+                UnityEngine.Object.Destroy(target);
+                UnityEngine.Object.Destroy(cameraObject);
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator SnapshotWriteAndLoadRoundTripsSparseTrackTimingAndVisibility()
         {
             Debug.Log($"{kLogPrefix} test=snapshotRoundTrip state=started");
@@ -862,6 +1105,46 @@ namespace TiltBrush.Tests
             List<Stroke> strokes = TestBrush.GetStrokesFromTilt(path);
             Assert.IsNotEmpty(strokes, $"Performance sketch contains no strokes: {fileName}");
             return new Stroke(strokes[0]);
+        }
+
+        private static Stroke AddPerformanceStroke(
+            AnimationUI_Manager manager, CanvasScript canvas, string fileName)
+        {
+            Stroke stroke = LoadFirstPerformanceStroke(fileName);
+            BatchSubset subset = TestBrush.CreateSubsetFromStroke(canvas, stroke);
+            Assert.IsNotNull(subset);
+            stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+            stroke.m_BatchSubset = subset;
+            subset.m_Stroke = stroke;
+            canvas.BatchManager.FlushMeshUpdates();
+            manager.NotifyStrokeAdded(stroke);
+            return stroke;
+        }
+
+        private static Texture2D CaptureCamera(
+            Camera camera, RenderTexture target, int size)
+        {
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                camera.Render();
+                RenderTexture.active = target;
+                var image = new Texture2D(size, size, TextureFormat.RGBA32, mipChain: false);
+                image.ReadPixels(new Rect(0, 0, size, size), 0, 0);
+                image.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+                return image;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+            }
+        }
+
+        private static void AssertTransformsMatch(Transform expected, Transform actual)
+        {
+            Assert.Less(Vector3.Distance(expected.position, actual.position), 0.0001f);
+            Assert.Less(Quaternion.Angle(expected.rotation, actual.rotation), 0.01f);
+            Assert.Less(Vector3.Distance(expected.lossyScale, actual.lossyScale), 0.0001f);
         }
 
         private static HashSet<CanvasScript> CaptureActiveTimelineCanvases(

@@ -185,6 +185,16 @@ namespace TiltBrush.FrameAnimation
             dirty = IsAuthoringDrawingDirty;
             return !drawingId.IsEmpty;
         }
+
+        internal void SynchronizePlaybackProxyTransformsForTests()
+        {
+            m_PlaybackProxies?.SynchronizeVisibleTransforms();
+        }
+
+        internal int GetDrawingRenderProxyObjectCountForTests()
+        {
+            return m_PlaybackProxies?.ObjectCount ?? 0;
+        }
 #endif
 
         public struct Frame
@@ -2094,11 +2104,6 @@ namespace TiltBrush.FrameAnimation
         private FrameDrawingProxyCompatibility ClassifyDrawingForProxy(
             FrameDrawing drawing, bool hasAnimatedPath)
         {
-            if (hasAnimatedPath)
-            {
-                return new FrameDrawingProxyCompatibility(
-                    FrameDrawingProxyIncompatibility.AnimatedPath, 0, 0, 0);
-            }
             if (m_ProxyCompatibility.TryGetValue(
                     drawing.Id, out var cachedCompatibility) &&
                 cachedCompatibility.Revision == drawing.ContentRevision)
@@ -2115,7 +2120,7 @@ namespace TiltBrush.FrameAnimation
                 ? drawingWidgets
                 : Enumerable.Empty<GrabWidget>();
             FrameDrawingProxyCompatibility compatibility = FrameDrawingProxyClassifier.Classify(
-                drawing, strokes, widgets, hasAnimatedPath);
+                drawing, strokes, widgets, hasAnimatedPath, supportsAnimatedPath: true);
             m_ProxyClassificationCount++;
             m_ProxyCompatibility[drawing.Id] = (drawing.ContentRevision, compatibility);
             return compatibility;
@@ -3191,6 +3196,7 @@ namespace TiltBrush.FrameAnimation
 
                 // Update layer animation transforms
                 UpdateLayerTransforms();
+                m_PlaybackProxies?.SynchronizeVisibleTransforms();
             }
 
             m_PerformanceStats.UpdateAndMaybeLog();
