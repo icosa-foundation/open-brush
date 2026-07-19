@@ -628,17 +628,17 @@ namespace TiltBrush
                 RenderTexture.active = prev;
             }
 
-            // Extract normals from red and green channels, reconstruct Z component
+            // Decode the stereographically encoded view-space normals from red and green.
             Color[] pixels = normalTexture.GetPixels();
             for (int i = 0; i < pixels.Length; i++)
             {
-                // Unity's DepthNormalsTexture encodes normals as:
-                // Red channel: normal.x * 0.5 + 0.5
-                // Green channel: normal.y * 0.5 + 0.5
-                // We need to decode and reconstruct the full normal vector
-                float nx = pixels[i].r * 2.0f - 1.0f;
-                float ny = pixels[i].g * 2.0f - 1.0f;
-                float nz = Mathf.Sqrt(1.0f - Mathf.Clamp01(nx * nx + ny * ny));
+                const float kStereoScale = 1.7777f;
+                float encodedX = pixels[i].r * (2.0f * kStereoScale) - kStereoScale;
+                float encodedY = pixels[i].g * (2.0f * kStereoScale) - kStereoScale;
+                float scale = 2.0f / (encodedX * encodedX + encodedY * encodedY + 1.0f);
+                float nx = encodedX * scale;
+                float ny = encodedY * scale;
+                float nz = scale - 1.0f;
 
                 // Convert back to 0-1 range for storage
                 pixels[i] = new Color(nx * 0.5f + 0.5f, ny * 0.5f + 0.5f, nz * 0.5f + 0.5f, 1.0f);
