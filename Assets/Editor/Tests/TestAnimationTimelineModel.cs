@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
 using UnityEngine;
@@ -24,6 +25,40 @@ namespace TiltBrush.Tests
 {
     internal class TestAnimationTimelineModel
     {
+        [Test]
+        public void AnimationMetadataKeepsLegacyReadButWritesSparseSpans()
+        {
+            const string legacyJson =
+                "{\"Tracks\":[{\"frameLengths\":[2,3],\"Visible\":true}],\"numFrames\":1}";
+            AnimationMetadata legacy = JsonConvert.DeserializeObject<AnimationMetadata>(legacyJson);
+
+            Assert.AreEqual(0, legacy.Version);
+            CollectionAssert.AreEqual(new[] { 2, 3 }, legacy.Tracks[0].frameLengths);
+            Assert.IsNull(legacy.Tracks[0].Spans);
+
+            var current = new AnimationMetadata
+            {
+                Version = AnimationMetadata.CurrentVersion,
+                Tracks = new[]
+                {
+                    new AnimationTrackMetadata
+                    {
+                        Visible = true,
+                        Spans = new List<AnimationSpanMetadata>
+                        {
+                            new() { Duration = 2 },
+                            new() { Duration = 3 },
+                        }
+                    }
+                }
+            };
+            string currentJson = JsonConvert.SerializeObject(current);
+
+            StringAssert.Contains("\"Version\":2", currentJson);
+            StringAssert.Contains("\"Spans\"", currentJson);
+            StringAssert.DoesNotContain("frameLengths", currentJson);
+        }
+
         [Test]
         public void RebuildMergesHeldAndEmptyFramesIntoSpans()
         {

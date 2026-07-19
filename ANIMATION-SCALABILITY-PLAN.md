@@ -2,8 +2,11 @@
 
 ## Status
 
-Proposed architectural and performance plan. This document does not supersede
-`ANIMATION-TASKS.md`, which remains the checklist for known correctness and lifecycle work.
+Phases 0-3 are implemented on the animation-refactor branch. The repeatable Editor suites pass:
+25 model/operation tests, 7 Canvas lifecycle/persistence tests, and the three-repeat manager
+adapter/persistence benchmark. Phase 3 is not complete until the manual desktop/headset working-
+state gate and the remaining target-device Phase 0 captures in `ANIMATION-TASKS.md` are complete.
+This document does not supersede that checklist.
 
 ## Problem statement
 

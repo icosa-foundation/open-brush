@@ -37,9 +37,9 @@
 - [x] Verify differential and legacy playback produce identical active drawing sets across distinct drawings and hidden tracks.
 - [x] Verify a missing Canvas/drawing index entry recovers through the development frame-adapter
   scan and subsequent queries return to indexed lookup.
-- [ ] Run the versioned sparse-metadata snapshot round trip and the legacy `frameLengths` import
+- [x] Run the versioned sparse-metadata snapshot round trip and the legacy `frameLengths` import
   check after the frame-adapter migration.
-- [ ] Capture three manager adapter/persistence runs at 100, 1,000, and 10,000 held frames and
+- [x] Capture three manager adapter/persistence runs at 100, 1,000, and 10,000 held frames and
   compare them with the retained eager-projection result.
 
 ## Phase 0 baseline gate

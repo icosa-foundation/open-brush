@@ -159,6 +159,36 @@ million-frame correctness test enforces bounded managed-memory growth so a futur
 silently restore per-frame edit expansion. This is direct Phase 3 model-edit evidence; it is not a
 claim about compatibility-view reconstruction, save/load, rendering, or target-device frame time.
 
+## Manager adapter and sparse-metadata matrix
+
+`TestAnimationPerformanceWorkloads.ManagerEditAdapterMatrix` measures the complete manager edit:
+span mutation, derived-index rebuild, and reconstruction of the public frame-coordinate adapter.
+The pre-change row retained an eager `Frame` record for every timeline coordinate. The post-change
+adapter retains one projected record per sparse span. Three passing post-change repetitions each
+contain 11 samples per tier; the table reports the median of their medians and p95 values.
+
+| Held frames × 8 tracks | Eager projection median (ms) | Span adapter median / p95 (ms) | Median change | Managed heap delta eager / span-adapter median |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 0.4792 | 0.0213 / 0.0829 | -95.6% | 385,024 / 0 bytes |
+| 1,000 | 3.0113 | 0.0223 / 0.0979 | -99.3% | 2,883,584 / 0 bytes |
+| 10,000 | 38.8202 | 0.0227 / 0.0874 | -99.94% | 28,999,680 / 0 bytes |
+
+The same repetitions serialize versioned sparse-span metadata, deserialize it, configure the
+manager, rebuild the adapter, and select the first frame. This is an in-memory metadata-boundary
+measurement, not full `.tilt` disk I/O or brush-geometry reconstruction.
+
+| Held frames × 8 tracks | JSON bytes | Save median / p95 (ms) | Load + first display median / p95 (ms) |
+| ---: | ---: | ---: | ---: |
+| 100 | 390 | 0.0727 / 0.1058 | 0.9065 / 3.9171 |
+| 1,000 | 398 | 0.0713 / 0.1410 | 0.8695 / 4.2912 |
+| 10,000 | 406 | 0.0961 / 0.1344 | 1.2279 / 4.2755 |
+
+The metadata grows by 16 bytes while timeline coordinates grow from 800 to 80,000. Save time is
+flat at this scale. Load plus first display remains close to one millisecond, with no
+duration-proportional trend established by these three tiers. The existing snapshot integration
+test separately covers real `.tilt` write/load correctness for two tracks and four spans; target
+Player/headset file latency remains an open Phase 0 measurement.
+
 ## What is established
 
 - Phase 1 differential playback removes full-timeline traversal and provides the first measured
@@ -166,8 +196,11 @@ claim about compatibility-view reconstruction, save/load, rendering, or target-d
 - Phase 3 span-native editing removes the former duration-proportional temporary frame list. At
   one million held frames the isolated Editor model edit falls from 90.0203 ms and a 32,002,048-byte
   heap delta to 0.0419 ms with no measurable heap increase.
-- Sparse Phase 3 rendering/device improvements are not established by the model-edit result. The
-  compatibility projection and target CPU/GPU/memory gates remain to be measured.
+- The span-backed manager adapter removes the duration-proportional projection cost: at 8 tracks ×
+  10,000 held frames the measured edit falls from 38.8202 ms and a 28,999,680-byte heap delta to
+  0.0227 ms with a zero median heap delta.
+- Sparse Phase 3 rendering/device improvements are not established by the model or manager-edit
+  results. Target CPU/GPU/memory gates remain to be measured.
 - Real brush batches do not materially change four-frame selection medians in this Editor test.
   No GPU, draw-call, or visible-frame performance claim follows from these numbers.
 

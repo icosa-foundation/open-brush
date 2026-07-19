@@ -277,10 +277,19 @@ namespace TiltBrush.Tests
         [Category("AnimationPerformance")]
         public IEnumerator ManagerEditAdapterMatrix()
         {
+            const int runCount = 3;
+            for (int runIndex = 1; runIndex <= runCount; runIndex++)
+            {
+                yield return MeasureManagerEditAdapterRun(runIndex, runCount);
+            }
+        }
+
+        private static IEnumerator MeasureManagerEditAdapterRun(int runIndex, int runCount)
+        {
             s_RunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
             Debug.Log(
                 $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter " +
-                "state=started samples=11 tracks=8");
+                $"state=started samples=11 tracks=8 repetition={runIndex}/{runCount}");
             AnimationUI_Manager manager = App.Scene.animationUI_manager;
             manager.StopAnimation();
 
@@ -355,7 +364,8 @@ namespace TiltBrush.Tests
             }
 
             Debug.Log(
-                $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter state=passed");
+                $"{kSparseEditLogPrefix} run={s_RunId} matrix=managerAdapter state=passed " +
+                $"repetition={runIndex}/{runCount}");
         }
 
         [UnityTest]
