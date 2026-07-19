@@ -17,6 +17,11 @@
 
 ## Verification
 
+- [x] Add and run a repeatable desktop Editor control-path matrix for timeline length, track count,
+  unique empty-geometry drawings, and sequential/random selection; record all results and limits in
+  `ANIMATION-PERFORMANCE-BASELINE.md`.
+- [x] Add and run three desktop Editor frame-selection samples with real brush batches, independently
+  varying vertices/drawing, brush groups at comparable geometry, and compact/spread geometry.
 - [x] Add automated model coverage for repeated redo/undo, failed operations, multi-track alignment, track visibility, and drawing ownership reference counts.
 - [x] Run Unity integration coverage for real Canvas creation, promotion, destruction, save leases, and command-history disposal.
 - [x] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip (2 tracks, 4 drawing spans, 2 unique Canvases).
@@ -25,6 +30,20 @@
 - [x] Verify that disabling empty-Canvas sharing changes only compatibility hierarchy count while sparse spans, track visibility, and persistence metadata remain equivalent.
 - [x] Verify differential and legacy playback produce identical active drawing sets across distinct drawings and hidden tracks.
 - [x] Verify a missing Canvas/drawing index entry recovers through the development compatibility scan and subsequent queries return to indexed lookup.
+
+## Phase 0 baseline gate
+
+The control-path matrix is only partial Phase 0 evidence. These items must be complete before any
+Phase 0-3 phase is declared complete.
+
+- [x] Repeat the control-path matrix at least three times and report run-to-run variance.
+- [ ] Capture all W1-W7 workloads from `ANIMATION-PERFORMANCE-WORKLOADS.md` with representative
+  brush geometry on the intended desktop target.
+- [ ] Capture the same representative workload set on the intended headset target.
+- [ ] Record ordinary CPU/GPU frame time, hierarchy/component counts, managed/native/mesh/GPU
+  memory, rendering counts, uploads/rebuilds, allocations/GC, save/load, and first-display latency.
+- [ ] Assign each dominant cost to traversal, UI/events, hierarchy, CPU/GPU memory, uploads, or
+  visible rendering and report numeric legacy/baseline versus Phase 1-3 comparisons.
 
 ## Phase 3 manual working-state gate
 
