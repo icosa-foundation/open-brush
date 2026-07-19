@@ -193,6 +193,7 @@ namespace TiltBrush
         private bool m_LockToController;
 
         private float m_ShotTimer;
+        private bool m_SnapshotCaptureInProgress;
         private bool m_EatPadInput = false;
 
         private State m_CurrentState;
@@ -508,7 +509,7 @@ namespace TiltBrush
                     break;
             }
 
-            return m_ShotTimer <= 0.0f && bStyleOK;
+            return !m_SnapshotCaptureInProgress && m_ShotTimer <= 0.0f && bStyleOK;
         }
 
         public void ExternalObjectNextCameraStyle()
@@ -535,6 +536,11 @@ namespace TiltBrush
 
         bool CanSwitchCameras()
         {
+            if (m_SnapshotCaptureInProgress)
+            {
+                return false;
+            }
+
             switch (CurrentCameraStyle)
             {
                 case MultiCamStyle.AutoGif: return m_AutoGifCreationState != GifCreationState.Capturing;
@@ -1841,6 +1847,24 @@ namespace TiltBrush
         //
 
         public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style)
+        {
+            if (m_SnapshotCaptureInProgress)
+            {
+                yield break;
+            }
+
+            m_SnapshotCaptureInProgress = true;
+            try
+            {
+                yield return TakeScreenshotInternalAsync(saveName, style);
+            }
+            finally
+            {
+                m_SnapshotCaptureInProgress = false;
+            }
+        }
+
+        private IEnumerator TakeScreenshotInternalAsync(string saveName, MultiCamStyle style)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
