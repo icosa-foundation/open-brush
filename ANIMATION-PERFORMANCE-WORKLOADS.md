@@ -27,6 +27,11 @@ For every workload:
 Editor `Stopwatch` results isolate the synchronous frame-selection call. They are not ordinary
 render frame time and must be labelled as Editor control-path measurements.
 
+Phase 3 model edits have a separate `TestAnimationSparseEditPerformance` matrix at 100, 1,000,
+10,000, and 1,000,000 held frames. It compares span-native edits with the former
+expand/edit/recompress algorithm and records elapsed time plus managed-heap deltas. This isolates
+edit representation cost and does not replace W1-W7 Player/headset captures.
+
 ## Workload matrix
 
 | ID | Scaling dimension | Required tiers | Status and driver |

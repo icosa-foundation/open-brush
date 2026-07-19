@@ -239,19 +239,23 @@ namespace TiltBrush.Tests
                 });
             Assert.AreEqual(1, model.Tracks[0].Spans.Count);
 
-            long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            long threadAllocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            long managedBefore = GC.GetTotalMemory(false);
             model.ApplyEdit(tracks => tracks[0].Frames.ReplaceRange(
                 duration / 2, 1,
                 new AnimationTimelineModel.FrameValue(new AnimationDrawingId(9))));
-            long allocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+            long threadAllocatedBytes =
+                GC.GetAllocatedBytesForCurrentThread() - threadAllocatedBefore;
+            long managedDeltaBytes = Math.Max(0, GC.GetTotalMemory(false) - managedBefore);
 
             Assert.AreEqual(duration, model.Tracks[0].Length);
             Assert.AreEqual(3, model.Tracks[0].Spans.Count);
-            Assert.Less(allocatedBytes, 1024 * 1024,
-                $"A sparse edit allocated {allocatedBytes} bytes");
+            Assert.Less(managedDeltaBytes, 1024 * 1024,
+                $"A sparse edit increased managed memory by {managedDeltaBytes} bytes");
             Debug.Log(
                 $"[OB_ANIM_SPARSE_EDIT] frames={duration} spansBefore=1 spansAfter=3 " +
-                $"allocatedBytes={allocatedBytes}");
+                $"threadAllocatedBytes={threadAllocatedBytes} " +
+                $"managedDeltaBytes={managedDeltaBytes}");
         }
 
         [Test]

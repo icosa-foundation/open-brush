@@ -136,12 +136,38 @@ vertices, and triangles match legacy for each workload. The long-timeline median
 1.096 ms in this render-dominated Editor loop, while short unique/material workloads show no
 consistent frame-time change. This supports a control-traversal claim, not a GPU optimization.
 
+## Sparse model-edit matrix
+
+`TestAnimationSparseEditPerformance.HeldTimelineEditMatrix` compares the former
+expand/edit/recompress implementation with the authoritative span edit on the same held timeline.
+Each of three passing jobs records three samples per row and alternates which mode runs first. The
+table reports the median of the three run medians and the median of their worst samples.
+
+The Mono runtime returns zero from `GC.GetAllocatedBytesForCurrentThread()`, so that counter is
+explicitly reported as unsupported. Managed-memory and Unity Mono-used deltas agree and measure
+the dense temporary list retained at the end of the measured call.
+
+| Held frames | Expanded median / worst (ms) | Sparse median / worst (ms) | Median change | Managed heap delta expanded / sparse |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 0.0384 / 0.0387 | 0.0416 / 0.0597 | +8.3% | 4,096 / 0 bytes |
+| 1,000 | 0.1172 / 0.1175 | 0.0426 / 0.0460 | -63.7% | 32,768 / 0 bytes |
+| 10,000 | 0.9218 / 0.9310 | 0.0433 / 0.0521 | -95.3% | 323,584 / 0 bytes |
+| 1,000,000 | 90.0203 / 92.5262 | 0.0419 / 0.0447 | -99.95% | 32,002,048 / 0 bytes |
+
+Both paths finish with the same three normalized spans and resolved drawing. A separate
+million-frame correctness test enforces bounded managed-memory growth so a future change cannot
+silently restore per-frame edit expansion. This is direct Phase 3 model-edit evidence; it is not a
+claim about compatibility-view reconstruction, save/load, rendering, or target-device frame time.
+
 ## What is established
 
 - Phase 1 differential playback removes full-timeline traversal and provides the first measured
   performance improvement. The gain grows with held timeline length and track count.
-- Sparse Phase 3 representation is evidenced by 8 spans for 80,000 cells, but no Phase 3 CPU/GPU
-  or memory improvement is yet proven against a true pre-change Phase 0 capture.
+- Phase 3 span-native editing removes the former duration-proportional temporary frame list. At
+  one million held frames the isolated Editor model edit falls from 90.0203 ms and a 32,002,048-byte
+  heap delta to 0.0419 ms with no measurable heap increase.
+- Sparse Phase 3 rendering/device improvements are not established by the model-edit result. The
+  compatibility projection and target CPU/GPU/memory gates remain to be measured.
 - Real brush batches do not materially change four-frame selection medians in this Editor test.
   No GPU, draw-call, or visible-frame performance claim follows from these numbers.
 
@@ -153,6 +179,6 @@ consistent frame-time change. This supports a control-traversal claim, not a GPU
   culling, save/load latency, and first-display latency. Editor draw-call/GPU samples above do not
   replace target captures.
 - Numeric pre-change Phase 0 baselines for metrics that cannot be recreated using the retained
-  legacy/full-refresh diagnostic path.
+  legacy/full-refresh or expand/edit/recompress comparison paths.
 
 Until those captures exist, Phase 0 and therefore the Phase 1-3 completion gates remain open.
