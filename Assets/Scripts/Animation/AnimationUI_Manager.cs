@@ -55,8 +55,7 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<CanvasScript, HashSet<Stroke>> m_CanvasStrokes = new();
         readonly Dictionary<CanvasScript, HashSet<GrabWidget>> m_CanvasWidgets = new();
         readonly AnimationTimelineModel m_SparseTimeline = new();
-        readonly Dictionary<CanvasScript, AnimationDrawingId> m_CanvasDrawingIds = new();
-        readonly Dictionary<AnimationDrawingId, CanvasScript> m_DrawingCanvases = new();
+        readonly FrameDrawingRepository m_Drawings = new();
         readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDemotion = new();
@@ -134,6 +133,16 @@ namespace TiltBrush.FrameAnimation
         {
             m_FrameOn = frameIndex;
             FocusFrame(frameIndex, forceFullVisibilityRefresh: false, playbackUpdate: true);
+        }
+
+        internal bool RemoveDrawingCanvasIndexForTests(CanvasScript canvas)
+        {
+            return m_Drawings.RemoveCanvasIndexForTests(canvas);
+        }
+
+        internal bool TryGetFrameDrawingForTests(CanvasScript canvas, out FrameDrawing drawing)
+        {
+            return m_Drawings.TryGet(canvas, out drawing);
         }
 #endif
 
@@ -355,6 +364,10 @@ namespace TiltBrush.FrameAnimation
         public void NotifyDrawingContentChanged(CanvasScript canvas)
         {
             if (canvas == null) return;
+            if (m_Drawings.TryGet(canvas, out FrameDrawing drawing))
+            {
+                drawing.MarkContentChanged();
+            }
             m_DrawingOccupancy.Remove(canvas);
             if (m_EmptyCanvases.Contains(canvas) && GetFrameFilledWithoutStats(canvas))
             {
@@ -504,15 +517,8 @@ namespace TiltBrush.FrameAnimation
         private AnimationDrawingId GetOrCreateDrawingId(CanvasScript canvas)
         {
             if (canvas == null || m_EmptyCanvases.Contains(canvas)) return AnimationDrawingId.Empty;
-            if (m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
-            {
-                return drawingId;
-            }
-
-            drawingId = new AnimationDrawingId(m_NextDrawingId++);
-            m_CanvasDrawingIds.Add(canvas, drawingId);
-            m_DrawingCanvases.Add(drawingId, canvas);
-            return drawingId;
+            return m_Drawings.GetOrCreate(
+                canvas, () => new AnimationDrawingId(m_NextDrawingId++)).Id;
         }
 
         private void EnsureSparseTimeline()
@@ -725,8 +731,8 @@ namespace TiltBrush.FrameAnimation
                         drawingId = AnimationDrawingId.Empty;
                     }
                     else if (denseFrame.Canvas == null ||
-                        !m_CanvasDrawingIds.TryGetValue(denseFrame.Canvas, out drawingId) ||
-                        !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript indexedCanvas) ||
+                        !m_Drawings.TryGetDrawingId(denseFrame.Canvas, out drawingId) ||
+                        !m_Drawings.TryGetCanvas(drawingId, out CanvasScript indexedCanvas) ||
                         indexedCanvas != denseFrame.Canvas)
                     {
                         Debug.LogError(
@@ -792,7 +798,7 @@ namespace TiltBrush.FrameAnimation
                     .Select(frame => frame.Canvas)
                     .Where(canvas => canvas != null));
                 canvasesToValidate.UnionWith(
-                    m_DrawingCanvases.Values.Where(canvas => canvas != null));
+                    m_Drawings.Canvases.Where(canvas => canvas != null));
                 if (App.Scene?.SelectionCanvas != null)
                 {
                     canvasesToValidate.Add(App.Scene.SelectionCanvas);
@@ -852,23 +858,21 @@ namespace TiltBrush.FrameAnimation
 
         private CanvasScript GetCanvasForDrawing(AnimationDrawingId drawingId)
         {
-            return !drawingId.IsEmpty && m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas)
-                ? canvas
-                : null;
+            return m_Drawings.TryGetCanvas(drawingId, out CanvasScript canvas) ? canvas : null;
         }
 
         internal bool TryGetDrawingIdForStats(
             CanvasScript canvas, out AnimationDrawingId drawingId)
         {
             drawingId = default;
-            return canvas != null && m_CanvasDrawingIds.TryGetValue(canvas, out drawingId);
+            return m_Drawings.TryGetDrawingId(canvas, out drawingId);
         }
 
         private void DestroyTimelineCanvas(
             CanvasScript canvas, IEnumerable<Stroke> createdStrokes = null, bool force = false)
         {
             if (canvas == null) return;
-            bool isDrawing = m_CanvasDrawingIds.TryGetValue(
+            bool isDrawing = m_Drawings.TryGetDrawingId(
                 canvas, out AnimationDrawingId drawingId);
             if (!force && !isDrawing && App.Scene != null && App.Scene.ActiveCanvas == canvas)
             {
@@ -889,8 +893,7 @@ namespace TiltBrush.FrameAnimation
                 }
                 m_PendingDrawingDestruction.Remove(drawingId);
                 m_PendingDrawingDemotion.Remove(drawingId);
-                m_CanvasDrawingIds.Remove(canvas);
-                m_DrawingCanvases.Remove(drawingId);
+                m_Drawings.Remove(drawingId);
             }
             m_EmptyCanvases.Remove(canvas);
             m_EmptyCanvasTrackIds.Remove(canvas);
@@ -1049,8 +1052,7 @@ namespace TiltBrush.FrameAnimation
             m_EmptyCanvasByTrackId.Clear();
             m_EmptyCanvasTrackIds.Clear();
             m_EmptyCanvases.Clear();
-            m_CanvasDrawingIds.Clear();
-            m_DrawingCanvases.Clear();
+            m_Drawings.Clear();
             m_DrawingReferences.Clear();
             m_PendingDrawingDestruction.Clear();
             m_PendingDrawingDemotion.Clear();
@@ -1418,7 +1420,7 @@ namespace TiltBrush.FrameAnimation
                     : (-1, -1);
             }
 
-            if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            if (!m_Drawings.TryGetDrawingId(canvas, out AnimationDrawingId drawingId))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 return RebuildTimelineIndexesFromFrameAdapter(canvas);
@@ -1466,25 +1468,21 @@ namespace TiltBrush.FrameAnimation
             RebuildEmptyCanvasRegistry();
             if (!m_EmptyCanvases.Contains(canvas))
             {
-                if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+                if (!m_Drawings.TryGetDrawingId(canvas, out AnimationDrawingId drawingId))
                 {
-                    KeyValuePair<AnimationDrawingId, CanvasScript> reverseEntry =
-                        m_DrawingCanvases.FirstOrDefault(pair => pair.Value == canvas);
-                    if (!reverseEntry.Key.IsEmpty)
+                    if (m_Drawings.TryRepairCanvasIndex(canvas, out FrameDrawing repairedDrawing))
                     {
-                        drawingId = reverseEntry.Key;
-                        m_CanvasDrawingIds[canvas] = drawingId;
+                        drawingId = repairedDrawing.Id;
                     }
                     else
                     {
                         drawingId = GetOrCreateDrawingId(canvas);
                     }
                 }
-                m_DrawingCanvases[drawingId] = canvas;
             }
             InvalidateTimelineStructure();
             EnsureSparseTimeline();
-            if (!m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId rebuiltDrawingId))
+            if (!m_Drawings.TryGetDrawingId(canvas, out AnimationDrawingId rebuiltDrawingId))
             {
                 return scannedLocation;
             }
@@ -2011,7 +2009,7 @@ namespace TiltBrush.FrameAnimation
         {
             HashSet<CanvasScript> visibleCanvases = GetVisibleCanvasesAtFrame(
                 frameIndex, includeEmptyCanvases);
-            foreach (CanvasScript canvas in m_DrawingCanvases.Values
+            foreach (CanvasScript canvas in m_Drawings.Canvases
                 .Concat(includeEmptyCanvases ? m_EmptyCanvases : Enumerable.Empty<CanvasScript>())
                 .Where(canvas => canvas != null)
                 .Distinct())
@@ -2427,7 +2425,7 @@ namespace TiltBrush.FrameAnimation
             {
                 foreach (CanvasScript canvas in additionalCanvases)
                 {
-                    if (canvas != null && m_CanvasDrawingIds.TryGetValue(
+                    if (canvas != null && m_Drawings.TryGetDrawingId(
                         canvas, out AnimationDrawingId drawingId))
                     {
                         drawingIds.Add(drawingId);
@@ -2442,7 +2440,7 @@ namespace TiltBrush.FrameAnimation
         {
             if (canvas == null) return;
             EnsureSparseTimeline();
-            if (m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+            if (m_Drawings.TryGetDrawingId(canvas, out AnimationDrawingId drawingId))
             {
                 m_DrawingReferences.Retain(drawingId);
             }
@@ -2451,7 +2449,7 @@ namespace TiltBrush.FrameAnimation
         public void ReleaseDrawingForEditing(CanvasScript canvas)
         {
             if (canvas == null ||
-                !m_CanvasDrawingIds.TryGetValue(canvas, out AnimationDrawingId drawingId))
+                !m_Drawings.TryGetDrawingId(canvas, out AnimationDrawingId drawingId))
             {
                 return;
             }
@@ -2485,7 +2483,7 @@ namespace TiltBrush.FrameAnimation
         private void TryDemotePendingDrawing(AnimationDrawingId drawingId)
         {
             if (!m_PendingDrawingDemotion.Contains(drawingId) ||
-                !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas))
+                !m_Drawings.TryGetCanvas(drawingId, out CanvasScript canvas))
             {
                 return;
             }
@@ -2495,7 +2493,7 @@ namespace TiltBrush.FrameAnimation
         private void TryDemoteDrawingCanvas(CanvasScript canvas)
         {
             if (canvas == null || m_CanvasesBeingDestroyed.Contains(canvas) ||
-                !m_CanvasDrawingIds.TryGetValue(
+                !m_Drawings.TryGetDrawingId(
                 canvas, out AnimationDrawingId drawingId))
             {
                 return;
@@ -2550,8 +2548,7 @@ namespace TiltBrush.FrameAnimation
             if (!keepExistingEmptyCanvas)
             {
                 m_PendingDrawingDestruction.Remove(drawingId);
-                m_CanvasDrawingIds.Remove(canvas);
-                m_DrawingCanvases.Remove(drawingId);
+                m_Drawings.Remove(drawingId);
                 m_EmptyCanvasByTrackId[trackId] = canvas;
                 m_EmptyCanvasTrackIds[canvas] = trackId;
                 m_EmptyCanvases.Add(canvas);
@@ -2573,7 +2570,7 @@ namespace TiltBrush.FrameAnimation
         private void TryDestroyPendingDrawing(AnimationDrawingId drawingId)
         {
             if (!m_PendingDrawingDestruction.Contains(drawingId) ||
-                !m_DrawingCanvases.TryGetValue(drawingId, out CanvasScript canvas))
+                !m_Drawings.TryGetCanvas(drawingId, out CanvasScript canvas))
             {
                 return;
             }

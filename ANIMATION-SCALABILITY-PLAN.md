@@ -3,8 +3,10 @@
 ## Status
 
 Phases 0-3 are implemented on the animation-refactor branch. The repeatable Editor suites pass:
-25 model/operation tests, 7 Canvas lifecycle/persistence tests, and the three-repeat manager
-adapter/persistence benchmark. Phase 3 is not complete until the manual desktop/headset working-
+25 model/operation tests, 8 Canvas lifecycle/persistence tests, and the three-repeat manager
+adapter/persistence benchmark. Phase 4A is in progress: `FrameDrawing` and its repository now own
+drawing identity, Canvas adapter lookup, lifetime removal, and logical content revision while all
+rendering remains Canvas-backed. Phase 3 is not complete until the manual desktop/headset working-
 state gate and the remaining target-device Phase 0 captures in `ANIMATION-TASKS.md` are complete.
 This document does not supersede that checklist.
 

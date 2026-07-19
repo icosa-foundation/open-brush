@@ -69,3 +69,16 @@ early implementation check.
 - [ ] Exercise API and Lua calls that use layer/frame coordinates, then check sketch-meter accounting and that discarded drawings release their resources.
 - [ ] Repeat the playback and editing smoke pass in desktop and headset/XR modes and check the Unity log for current `[OB_ANIM_SCALE]` errors or index-recovery warnings.
 - [ ] Check the supported render-pipeline and XR single-pass/multiview configurations used for release targets.
+
+## Phase 4A: drawing identity with universal Canvas backing
+
+- [x] Introduce `FrameDrawing` and a repository that owns stable drawing IDs and both directions
+  of the temporary Canvas adapter lookup.
+- [x] Route timeline identity lookup, retained-reference lifetime decisions, drawing removal, and
+  development index repair through the repository without changing rendering.
+- [x] Track logical content revisions on `FrameDrawing` and verify Canvas content notifications
+  update them.
+- [x] Verify repository identity, lookup, removal, and repair invariants (4 Editor tests) and rerun
+  the Canvas lifecycle suite (8 Editor tests).
+- [ ] Exercise selection, grouping, repaint, duplication, undo/redo, save/load, and Canvas-facing
+  APIs in a manual working-state pass before declaring Phase 4A complete.

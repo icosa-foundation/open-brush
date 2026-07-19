@@ -97,6 +97,12 @@ namespace TiltBrush.Tests
             Assert.AreSame(authoringCanvas, manager.GetTimelineCanvas(0, 1));
             Assert.AreSame(authoringCanvas, manager.GetTimelineCanvas(0, 2));
             Assert.AreNotSame(authoringCanvas, manager.GetTimelineCanvas(0, 0));
+            Assert.IsTrue(manager.TryGetFrameDrawingForTests(
+                authoringCanvas, out FrameDrawing promotedDrawing));
+            long revisionBeforeChange = promotedDrawing.ContentRevision;
+            manager.NotifyDrawingContentChanged(authoringCanvas);
+            Assert.AreEqual(revisionBeforeChange + 1, promotedDrawing.ContentRevision,
+                "Canvas content notifications must update the logical drawing revision");
 
             AnimationUI_Manager.DeleteFrameOperation undoOperation =
                 manager.RemoveKeyFrame(0, 1);
@@ -313,12 +319,7 @@ namespace TiltBrush.Tests
             CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 1);
             Assert.AreEqual((0, 1), manager.GetCanvasLocation(drawingCanvas));
 
-            FieldInfo drawingIndexField = typeof(AnimationUI_Manager).GetField(
-                "m_CanvasDrawingIds", BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(drawingIndexField);
-            var drawingIndex =
-                (Dictionary<CanvasScript, AnimationDrawingId>)drawingIndexField.GetValue(manager);
-            Assert.IsTrue(drawingIndex.Remove(drawingCanvas));
+            Assert.IsTrue(manager.RemoveDrawingCanvasIndexForTests(drawingCanvas));
 
             manager.ConfigurePlaybackDiagnosticsForTests(
                 enabled: true, differential: true);
