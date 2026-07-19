@@ -1933,13 +1933,13 @@ namespace TiltBrush
                     }
                     else
                     {
-                        rMgr.RenderToTexture(tmp, asDepth: false);
+                        rMgr.RenderToTexture(tmp);
                     }
                     if (style == MultiCamStyle.Depth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
                             snapshotWidth, snapshotHeight);
-                        rMgr.RenderToTexture(tmpDepth, asDepth: true);
+                        rMgr.RenderDepthToTexture(tmpDepth);
                     }
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
@@ -1957,9 +1957,10 @@ namespace TiltBrush
                         if (style == MultiCamStyle.Depth)
                         {
                             var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
+
                             using (var fs = new FileStream(fullDepthPath, FileMode.Create))
                             {
-                                ScreenshotManager.Save(fs, tmpDepth, bSaveAsPng: true);
+                                ScreenshotManager.SaveDepth(fs, tmpDepth);
                             }
                         }
                     }
