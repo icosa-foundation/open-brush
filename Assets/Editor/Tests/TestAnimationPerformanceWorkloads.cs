@@ -198,6 +198,75 @@ namespace TiltBrush.Tests
             Debug.Log($"{kLogPrefix} run={s_RunId} matrix=realStroke state=passed");
         }
 
+        [UnityTest]
+        [Category("AnimationPerformance")]
+        public IEnumerator RealStrokeTimelineScaleMatrix()
+        {
+            s_RunId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ");
+            Debug.Log($"{kLogPrefix} run={s_RunId} matrix=realStrokeTimelineScale " +
+                $"state=started transitions={kTransitionCount}");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            Stroke simpleStroke = LoadFirstStroke("Simple.tilt");
+
+            foreach (int frameCount in new[] { 100, 1000, 10000 })
+            {
+                ConfigureHeldTimeline(manager, trackCount: 8, frameCount: frameCount);
+                List<CanvasScript> canvases = MaterializeHeldTrackDrawings(
+                    manager, trackCount: 8);
+                PopulateCanvasesToVertexTarget(
+                    canvases, new[] { simpleStroke }, targetVerticesPerDrawing: 1000,
+                    offsetForCopy: copyIndex => Vector3.zero);
+                yield return null;
+                RunBothModes(
+                    manager, workload: "realTimelineLength", trackCount: 8,
+                    frameCount: frameCount, uniqueDrawingCount: 8,
+                    pattern: "sequential");
+            }
+
+            foreach (int trackCount in new[] { 1, 8, 32 })
+            {
+                const int frameCount = 1000;
+                ConfigureHeldTimeline(manager, trackCount: trackCount, frameCount: frameCount);
+                List<CanvasScript> canvases = MaterializeHeldTrackDrawings(
+                    manager, trackCount);
+                PopulateCanvasesToVertexTarget(
+                    canvases, new[] { simpleStroke }, targetVerticesPerDrawing: 1000,
+                    offsetForCopy: copyIndex => Vector3.zero);
+                yield return null;
+                RunBothModes(
+                    manager, workload: "realTrackCount", trackCount: trackCount,
+                    frameCount: frameCount, uniqueDrawingCount: trackCount,
+                    pattern: "sequential");
+            }
+
+            foreach (int uniqueDrawingCount in new[] { 4, 16, 64 })
+            {
+                List<CanvasScript> canvases = ConfigureUniqueDrawingTimeline(
+                    manager, uniqueDrawingCount);
+                PopulateCanvasesToVertexTarget(
+                    canvases, new[] { simpleStroke }, targetVerticesPerDrawing: 1000,
+                    offsetForCopy: copyIndex => Vector3.zero);
+                yield return null;
+                RunBothModes(
+                    manager, workload: "realUniqueDrawings", trackCount: 1,
+                    frameCount: uniqueDrawingCount,
+                    uniqueDrawingCount: uniqueDrawingCount, pattern: "sequential");
+            }
+
+            RunBothModes(
+                manager, workload: "realSelectionPattern", trackCount: 1,
+                frameCount: 64, uniqueDrawingCount: 64, pattern: "sequential");
+            RunBothModes(
+                manager, workload: "realSelectionPattern", trackCount: 1,
+                frameCount: 64, uniqueDrawingCount: 64, pattern: "random");
+
+            manager.ConfigurePlaybackDiagnosticsForTests(
+                enabled: false, differential: true);
+            Debug.Log($"{kLogPrefix} run={s_RunId} matrix=realStrokeTimelineScale " +
+                "state=passed");
+        }
+
         private static void ConfigureHeldTimeline(
             AnimationUI_Manager manager, int trackCount, int frameCount)
         {
@@ -226,6 +295,17 @@ namespace TiltBrush.Tests
             for (int frameIndex = 0; frameIndex < uniqueDrawingCount; frameIndex++)
             {
                 canvases.Add(manager.GetOrCreateContentCanvas(0, frameIndex));
+            }
+            return canvases;
+        }
+
+        private static List<CanvasScript> MaterializeHeldTrackDrawings(
+            AnimationUI_Manager manager, int trackCount)
+        {
+            var canvases = new List<CanvasScript>(trackCount);
+            for (int trackIndex = 0; trackIndex < trackCount; trackIndex++)
+            {
+                canvases.Add(manager.GetOrCreateContentCanvas(trackIndex, 0));
             }
             return canvases;
         }
@@ -306,6 +386,9 @@ namespace TiltBrush.Tests
             manager.ConfigurePlaybackDiagnosticsForTests(
                 enabled: true, differential: differential);
             manager.SelectTimelineFrame(0, 0);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
             manager.ResetPlaybackDiagnosticsForTests();
             var elapsedMilliseconds = new List<double>(frames.Count);
             var stopwatch = new Stopwatch();

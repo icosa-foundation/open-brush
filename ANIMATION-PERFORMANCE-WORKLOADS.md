@@ -31,13 +31,13 @@ render frame time and must be labelled as Editor control-path measurements.
 
 | ID | Scaling dimension | Required tiers | Status and driver |
 | --- | --- | --- | --- |
-| W1 | Timeline length with held drawings | 100, 1,000, and 10,000 frames across 8 tracks | Automated control-path coverage in `TestAnimationPerformanceWorkloads`; real-content desktop/headset captures remain required. |
-| W2 | Unique non-empty drawings | 4, 16, and 64 unique drawings | Automated empty-geometry Canvas coverage; repeat with representative drawing content. |
-| W3 | Track count | 1, 8, and 32 tracks with 1,000 held frames | Automated control-path coverage; repeat on target devices. |
+| W1 | Timeline length with held drawings | 100, 1,000, and 10,000 frames across 8 tracks | Automated empty and real-stroke Editor frame-selection coverage; Player/headset captures remain required. |
+| W2 | Unique non-empty drawings | 4, 16, and 64 unique drawings | Automated empty and 1k-vertex/drawing Editor coverage; Player/headset captures remain required. |
+| W3 | Track count | 1, 8, and 32 tracks with 1,000 held frames | Automated empty and real-stroke Editor frame-selection coverage; repeat on target devices. |
 | W4 | Geometry complexity per drawing | About 1k, 10k, and 100k vertices using one brush | Automated real-stroke Editor frame-selection coverage; Player/headset rendering remains required. |
 | W5 | Brush/material diversity | 1, 4, and 8 compatible brush groups at about 10k vertices/drawing | Automated real-stroke Editor frame-selection coverage; render/batch cost on targets remains required. |
 | W6 | Large spatial drawing | Compact and 10-metre-spaced versions of identical geometry | Automated construction/frame-selection coverage; culling and GPU measurements remain required. |
-| W7 | Selection pattern | Sequential and deterministic random selection of 64 unique drawings | Automated empty-geometry coverage; repeat with W4/W5 representative content. |
+| W7 | Selection pattern | Sequential and deterministic random selection of 64 unique drawings | Automated empty and 1k-vertex/drawing Editor coverage; Player/headset captures remain required. |
 
 ## Representative content construction
 
@@ -52,7 +52,6 @@ snapshot. Do not use a single large sketch as evidence for all three dimensions.
 
 ## Completion rule
 
-Automated rows currently close the Editor frame-selection portion of W1-W7, with W1-W3/W7 still
-needing real-content scale coverage. Phase 0 remains incomplete until W1-W7 have repeatable desktop
-Player and headset captures and the dominant costs can be assigned to traversal, UI/events,
-hierarchy, CPU/GPU memory, uploads, or visible rendering.
+Automated rows close the repeatable Editor frame-selection portion of W1-W7. Phase 0 remains
+incomplete until W1-W7 have repeatable desktop Player and headset captures and the dominant costs
+can be assigned to traversal, UI/events, hierarchy, CPU/GPU memory, uploads, or visible rendering.

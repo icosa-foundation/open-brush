@@ -22,6 +22,8 @@
   `ANIMATION-PERFORMANCE-BASELINE.md`.
 - [x] Add and run three desktop Editor frame-selection samples with real brush batches, independently
   varying vertices/drawing, brush groups at comparable geometry, and compact/spread geometry.
+- [x] Add and run three desktop Editor real-stroke scale samples for timeline length, track count,
+  unique drawings, and sequential/random selection, with equivalent pre-sample GC for both modes.
 - [x] Add automated model coverage for repeated redo/undo, failed operations, multi-track alignment, track visibility, and drawing ownership reference counts.
 - [x] Run Unity integration coverage for real Canvas creation, promotion, destruction, save leases, and command-history disposal.
 - [x] Run the real `.tilt` snapshot write/load integration test and confirm sparse timing, track visibility, and empty-Canvas scaling round-trip (2 tracks, 4 drawing spans, 2 unique Canvases).
