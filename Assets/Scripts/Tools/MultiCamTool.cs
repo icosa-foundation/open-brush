@@ -1856,7 +1856,16 @@ namespace TiltBrush
             m_SnapshotCaptureInProgress = true;
             try
             {
-                yield return TakeScreenshotInternalAsync(saveName, style);
+                IEnumerator capture = TakeScreenshotInternalAsync(saveName, style);
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    yield return OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.Export, capture, fadeDuration: 0.25f);
+                }
+                else
+                {
+                    yield return capture;
+                }
             }
             finally
             {
