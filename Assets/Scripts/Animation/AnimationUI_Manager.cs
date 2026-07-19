@@ -488,16 +488,22 @@ namespace TiltBrush.FrameAnimation
 
         public void NotifyWidgetAdded(GrabWidget widget)
         {
-            if (widget?.Canvas == null || widget is CameraPathWidget) return;
+            // CameraPathWidget registers from Awake before its caller has parented it to a
+            // Canvas. Exclude camera paths before querying GrabWidget.Canvas, whose getter
+            // requires a parent transform.
+            if (widget == null || widget is CameraPathWidget) return;
+            CanvasScript canvas = widget.Canvas;
+            if (canvas == null) return;
             EnsureDrawingContentIndex();
-            AddIndexedContent(m_CanvasWidgets, widget.Canvas, widget);
-            NotifyDrawingContentChanged(widget.Canvas);
+            AddIndexedContent(m_CanvasWidgets, canvas, widget);
+            NotifyDrawingContentChanged(canvas);
         }
 
         public void NotifyWidgetRemoved(GrabWidget widget)
         {
-            if (widget?.Canvas == null || widget is CameraPathWidget) return;
+            if (widget == null || widget is CameraPathWidget) return;
             CanvasScript canvas = widget.Canvas;
+            if (canvas == null) return;
             EnsureDrawingContentIndex();
             RemoveIndexedContent(m_CanvasWidgets, canvas, widget);
             NotifyDrawingContentChanged(canvas);

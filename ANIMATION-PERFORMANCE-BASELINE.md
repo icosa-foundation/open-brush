@@ -136,6 +136,34 @@ vertices, and triangles match legacy for each workload. The long-timeline median
 1.096 ms in this render-dominated Editor loop, while short unique/material workloads show no
 consistent frame-time change. This supports a control-traversal claim, not a GPU optimization.
 
+## Phase 4 proxy rendered-frame matrix
+
+Run `20260719T154451692Z` added the proxy policy to the same 60-frame Editor matrix. The test
+passed 1/1. Values below are single-run medians, intended to decide whether Phase 4G can be enabled,
+not to replace the still-missing Player/headset captures.
+
+| Workload | Mode | Delta median / p95 (ms) | CPU / GPU median (ms) | Draws / VBO uploads | Active Canvases | Proxy objects / visible | Retained Canvas hierarchy |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Long held, sequential | Legacy | 108.729 / 118.452 | 107.959 / 0.129 | 109 / 61 | 8 | 0 / 0 | 304 |
+| Long held, sequential | Differential | 107.594 / 113.444 | 108.202 / 0.130 | 109 / 61 | 8 | 0 / 0 | 304 |
+| Long held, sequential | Proxy | 108.058 / 114.613 | 107.847 / 0.130 | 109 / 61 | 0 | 16 / 8 | 304 |
+| Unique complex, sequential | Legacy | 108.345 / 115.717 | 108.002 / 0.131 | 109 / 61 | 1 | 0 / 0 | 608 |
+| Unique complex, sequential | Differential | 108.399 / 120.049 | 108.046 / 0.130 | 109 / 61 | 1 | 0 / 0 | 608 |
+| Unique complex, sequential | Proxy | 107.059 / 114.303 | 107.946 / 0.130 | 109 / 61 | 0 | 2 / 1 | 608 |
+| Unique complex, random | Legacy | 108.938 / 113.307 | 107.859 / 0.128 | 109 / 61 | 1 | 2 / 0 | 608 |
+| Unique complex, random | Differential | 107.267 / 115.613 | 108.001 / 0.091 | 109 / 61 | 1 | 2 / 0 | 608 |
+| Unique complex, random | Proxy | 108.149 / 113.753 | 107.937 / 0.122 | 109 / 61 | 0 | 2 / 1 | 608 |
+| Material diverse | Legacy | 108.802 / 112.850 | 108.056 / 0.130 | 177 / 61 | 1 | 0 / 0 | 180 |
+| Material diverse | Differential | 107.896 / 115.034 | 107.997 / 0.130 | 177 / 61 | 1 | 0 / 0 | 180 |
+| Material diverse | Proxy | 107.878 / 115.266 | 108.001 / 0.129 | 177 / 61 | 0 | 9 / 1 | 180 |
+
+All rows reported zero managed bytes allocated by the sampled current thread. Proxies achieved the
+Phase 4 active-hierarchy boundary: no source drawing Canvas remained active, and visible proxy
+count tracked visible tracks/drawings. They did not reduce draw calls, VBO uploads, retained Canvas
+hierarchy, or measured CPU/GPU frame time. This implementation reuses the same meshes, materials,
+and renderers through a lighter active hierarchy; it is not a batching or submission reduction.
+These data do not satisfy the Phase 4G improvement gate, so proxy rendering remains opt-in.
+
 ## Sparse model-edit matrix
 
 `TestAnimationSparseEditPerformance.HeldTimelineEditMatrix` compares the former

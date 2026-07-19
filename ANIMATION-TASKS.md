@@ -140,7 +140,7 @@ early implementation check.
   unchanged mesh/material resources.
 - [x] Avoid transform hierarchy writes for unchanged held drawings and keep unsupported future
   path implementations on the per-drawing Canvas fallback.
-- [ ] Pass the proxy unit suite and the real-path lifecycle check
+- [x] Pass the proxy unit suite and the real-path lifecycle check
   (`[OB_ANIM_P4_TRANSFORM]`), including within-span path motion and unchanged drawing revision.
 - [ ] Manually verify a moving/rotating/scaling path drawing in desktop and XR playback, then stop
   playback and edit the same drawing through its Canvas adapter.
@@ -154,18 +154,29 @@ early implementation check.
   for eligible brush-only proxies.
 - [x] Reuse one proxy hierarchy per track and deterministically detach every retired child before
   deferred play-mode destruction when a drawing revision changes.
-- [ ] Pass the mixed two-track proxy/Canvas ownership and renderer-order check
+- [x] Pass the mixed two-track proxy/Canvas ownership and renderer-order check
   (`[OB_ANIM_P4_CONTENT]`).
-- [ ] Pass the controlled real-brush Canvas/proxy image comparison
-  (`[OB_ANIM_P4_IMAGE]`) and rerun the complete Canvas lifecycle suite.
+- [x] Pass a controlled Canvas/proxy image comparison using three representative real-brush meshes,
+  deterministic capture materials, preserved material slots and renderer order
+  (`[OB_ANIM_P4_IMAGE]`: 108 visible pixels, 0 mismatches), then rerun the complete Canvas lifecycle
+  suite (13/13) and proxy suite (7/7).
+- [ ] Validate actual Open Brush brush shaders, including transparency and material-property
+  behavior, in the normal desktop and headset/XR render paths; isolated EditMode cameras do not
+  reproduce the full Open Brush brush-render context.
 - [ ] Verify save/load, thumbnail, import/export, Canvas-exposing APIs, and undo behavior through
   the retained compatibility adapters for both eligible and fallback drawings.
 
 ## Phase 4G: proxy rendering default
 
-- [ ] Run the rendered-frame matrix in legacy, differential, and proxy modes and report ordinary
+- [x] Run the rendered-frame matrix in legacy, differential, and proxy modes and report ordinary
   CPU/GPU frame time, draw calls, uploads, managed allocations, active Canvases, retained Canvas
   hierarchy objects, and proxy objects for realistic held, unique, and material-diverse drawings.
+  The 2026-07-19 desktop Editor run passed: proxies reduced active drawing Canvases from 8 to 0 for
+  long-held content and from 1 to 0 for unique/material-diverse content, with 0 measured managed
+  allocation bytes. Draw calls, uploads, retained Canvas hierarchy, and median CPU/GPU timings were
+  effectively unchanged; the Editor frame was dominated by approximately 108 ms of unrelated
+  render cost, so this is evidence against enabling the proxy default, not evidence of a frame-time
+  improvement.
 - [ ] Confirm on desktop and target headset/XR that eligible proxies improve the limiting metric
   without an unacceptable rendering, CPU/GPU, allocation, or memory regression.
 - [ ] Make proxy rendering the default for eligible drawings only after the measurement and

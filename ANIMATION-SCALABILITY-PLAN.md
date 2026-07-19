@@ -4,17 +4,21 @@
 
 Phases 0-3 are implemented on the animation-refactor branch. The repeatable Editor suites pass:
 25 model/operation tests, 10 Canvas lifecycle/persistence tests, and the three-repeat manager
-adapter/persistence benchmark. Phase 4A is in progress: `FrameDrawing` and its repository now own
+adapter/persistence benchmark. Phase 4A is implemented pending its manual working-state gate:
+`FrameDrawing` and its repository now own
 drawing identity, Canvas adapter lookup, lifetime removal, and logical content revision while all
 rendering remains Canvas-backed. Dormant Phase 4B infrastructure defines proxy contracts,
 per-drawing compatibility reasons, explicit proxy-resource ownership, and render-comparison
-metrics. Phase 4C is in progress behind a disabled-by-default playback flag: eligible pure batched
+metrics. Phase 4C is implemented behind a disabled-by-default playback flag: eligible pure batched
 drawings can use one reusable proxy per visible track while meshes and materials remain shared with
 the Canvas source; unsupported, widget-bearing, path-bearing, or comparison-mismatched drawings
 fall back individually. Compatibility is cached by content revision, so an unchanged held frame
-does not reclassify, resynchronize, or recompare its drawing. Image, XR, transform, and
-target-performance gates remain before this path
-can become a default. Phase 3 is not complete until the manual desktop/headset working-state gate
+does not reclassify, resynchronize, or recompare its drawing. The automated transform,
+mixed-content, and controlled image checks now pass, as do all 13 Canvas lifecycle tests and all 7
+render-proxy tests. A 2026-07-19 rendered-frame matrix showed that proxies reduce active drawing
+Canvases to zero but do not reduce draw calls, retained Canvas hierarchy, or measured CPU/GPU frame
+time; Phase 4G therefore remains disabled pending target-device evidence of a limiting-metric
+improvement. Phase 3 is not complete until the manual desktop/headset working-state gate
 and the remaining target-device Phase 0 captures in `ANIMATION-TASKS.md` are complete. This
 document does not supersede that checklist.
 

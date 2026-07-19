@@ -802,6 +802,23 @@ namespace TiltBrush.Tests
                     .Where(renderer => renderer.GetComponent<Batch>() != null)
                     .ToArray();
             Assert.IsNotEmpty(sourceRenderers);
+            Shader captureShader = Shader.Find("Unlit/Color");
+            Assert.IsNotNull(captureShader,
+                "The controlled proxy capture requires Unity's deterministic Unlit/Color shader");
+            Material[][] originalSourceMaterials = sourceRenderers
+                .Select(renderer => renderer.sharedMaterials).ToArray();
+            Color[] captureColors = { Color.red, Color.green, Color.blue };
+            Material[] captureMaterials = sourceRenderers.Select((renderer, index) =>
+            {
+                var material = new Material(captureShader)
+                {
+                    name = $"Animation proxy capture material {index}",
+                    color = captureColors[index % captureColors.Length],
+                };
+                renderer.sharedMaterials = Enumerable.Repeat(
+                    material, renderer.sharedMaterials.Length).ToArray();
+                return material;
+            }).ToArray();
             for (int index = 0; index < sourceRenderers.Length; index++)
             {
                 sourceRenderers[index].gameObject.layer = captureLayer;
@@ -810,6 +827,10 @@ namespace TiltBrush.Tests
 
             var cameraObject = new GameObject("Animation proxy image comparison camera");
             Camera captureCamera = cameraObject.AddComponent<Camera>();
+            Camera vrCamera = App.VrSdk.GetVrCamera();
+            Assert.IsNotNull(vrCamera,
+                "The controlled brush capture requires the initialized Open Brush camera");
+            captureCamera.CopyFrom(vrCamera);
             captureCamera.enabled = false;
             captureCamera.clearFlags = CameraClearFlags.SolidColor;
             captureCamera.backgroundColor = Color.clear;
@@ -817,6 +838,7 @@ namespace TiltBrush.Tests
             captureCamera.orthographic = true;
             captureCamera.allowHDR = false;
             captureCamera.allowMSAA = false;
+            captureCamera.stereoTargetEye = StereoTargetEyeMask.None;
             captureCamera.nearClipPlane = 0.01f;
             captureCamera.farClipPlane = 1000f;
             var target = new RenderTexture(
@@ -824,16 +846,22 @@ namespace TiltBrush.Tests
             {
                 antiAliasing = 1,
             };
+            Assert.IsTrue(target.Create(),
+                "The controlled image-comparison render target must be created");
             captureCamera.targetTexture = target;
             Texture2D canvasImage = null;
             Texture2D proxyImage = null;
             try
             {
-                Bounds bounds = sourceRenderers[0].bounds;
-                foreach (MeshRenderer renderer in sourceRenderers.Skip(1))
-                {
-                    bounds.Encapsulate(renderer.bounds);
-                }
+                manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+                manager.SelectTimelineFrame(0, 0);
+                Assert.IsTrue(drawingCanvas.gameObject.activeInHierarchy,
+                    "The controlled source Canvas must be active before capture");
+                Assert.IsTrue(sourceRenderers.All(renderer => renderer.enabled &&
+                    renderer.gameObject.activeInHierarchy),
+                    "Every controlled source batch renderer must be renderable before capture");
+
+                Bounds bounds = CalculateWorldVertexBounds(sourceRenderers);
                 float extent = Mathf.Max(
                     0.1f, Mathf.Max(bounds.extents.x, Mathf.Max(
                         bounds.extents.y, bounds.extents.z)));
@@ -842,9 +870,21 @@ namespace TiltBrush.Tests
                 captureCamera.transform.rotation =
                     Quaternion.LookRotation(viewDirection, Vector3.up);
                 captureCamera.orthographicSize = extent * 1.6f;
+                Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(captureCamera);
+                bool geometryInFrustum =
+                    GeometryUtility.TestPlanesAABB(frustumPlanes, bounds);
+                int sourceVertexCount = sourceRenderers.Sum(renderer =>
+                    renderer.GetComponent<MeshFilter>()?.sharedMesh?.vertexCount ?? 0);
+                int sourceTriangleCount = sourceRenderers.Sum(renderer =>
+                    (renderer.GetComponent<MeshFilter>()?.sharedMesh?.triangles.Length ?? 0) / 3);
+                Debug.Log(
+                    $"{imageLogPrefix} checkpoint=cameraSetup " +
+                    $"boundsCenter={bounds.center} boundsExtents={bounds.extents} " +
+                    $"geometryInFrustum={geometryInFrustum} " +
+                    $"sourceVertexCount={sourceVertexCount} " +
+                    $"sourceTriangleCount={sourceTriangleCount} " +
+                    $"controlledMaterials={captureMaterials.Length}");
 
-                manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
-                manager.ApplyPlaybackFrameForTests(0);
                 canvasImage = CaptureCamera(captureCamera, target, captureSize);
 
                 manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
@@ -854,16 +894,31 @@ namespace TiltBrush.Tests
                 MeshRenderer[] proxyRenderers =
                     proxy.Root.GetComponentsInChildren<MeshRenderer>(true);
                 Assert.AreEqual(sourceRenderers.Length, proxyRenderers.Length);
-                foreach (MeshRenderer renderer in proxyRenderers)
+                for (int index = 0; index < proxyRenderers.Length; index++)
                 {
+                    MeshRenderer renderer = proxyRenderers[index];
                     Assert.AreEqual(captureLayer, renderer.gameObject.layer,
                         "The proxy must preserve the source camera-culling layer");
+                    Assert.AreEqual(sourceRenderers[index].sortingOrder, renderer.sortingOrder,
+                        "The proxy must preserve renderer sorting order");
+                    CollectionAssert.AreEqual(
+                        sourceRenderers[index].sharedMaterials, renderer.sharedMaterials,
+                        "The proxy must preserve every source material slot");
                 }
                 proxyImage = CaptureCamera(captureCamera, target, captureSize);
 
                 Color32[] sourcePixels = canvasImage.GetPixels32();
                 Color32[] proxyPixels = proxyImage.GetPixels32();
                 int visiblePixels = sourcePixels.Count(pixel => pixel.a > 2);
+                int visibleColorPixels = sourcePixels.Count(pixel =>
+                    pixel.r > 2 || pixel.g > 2 || pixel.b > 2);
+                Debug.Log(
+                    $"{imageLogPrefix} checkpoint=sourceCapture " +
+                    $"visiblePixels={visiblePixels} visibleColorPixels={visibleColorPixels} " +
+                    $"maxR={sourcePixels.Max(pixel => pixel.r)} " +
+                    $"maxG={sourcePixels.Max(pixel => pixel.g)} " +
+                    $"maxB={sourcePixels.Max(pixel => pixel.b)} " +
+                    $"maxA={sourcePixels.Max(pixel => pixel.a)}");
                 Assert.Greater(visiblePixels, 32,
                     "The controlled source render must contain visible brush pixels");
                 int mismatchedPixels = 0;
@@ -878,6 +933,9 @@ namespace TiltBrush.Tests
                                 Mathf.Abs(source.a - renderedProxy.a))));
                     if (maxDifference > 2) mismatchedPixels++;
                 }
+                Debug.Log(
+                    $"{imageLogPrefix} checkpoint=proxyComparison " +
+                    $"mismatchedPixels={mismatchedPixels}");
                 Assert.LessOrEqual(
                     mismatchedPixels, Mathf.CeilToInt(sourcePixels.Length * 0.001f),
                     "Canvas and proxy image captures differ beyond the controlled tolerance");
@@ -889,6 +947,14 @@ namespace TiltBrush.Tests
             finally
             {
                 manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+                for (int index = 0; index < sourceRenderers.Length; index++)
+                {
+                    sourceRenderers[index].sharedMaterials = originalSourceMaterials[index];
+                }
+                foreach (Material material in captureMaterials)
+                {
+                    UnityEngine.Object.Destroy(material);
+                }
                 captureCamera.targetTexture = null;
                 if (canvasImage != null) UnityEngine.Object.Destroy(canvasImage);
                 if (proxyImage != null) UnityEngine.Object.Destroy(proxyImage);
@@ -1138,6 +1204,34 @@ namespace TiltBrush.Tests
             {
                 RenderTexture.active = previous;
             }
+        }
+
+        private static Bounds CalculateWorldVertexBounds(
+            IEnumerable<MeshRenderer> renderers)
+        {
+            Bounds bounds = default;
+            bool hasVertex = false;
+            foreach (MeshRenderer renderer in renderers)
+            {
+                Mesh mesh = renderer.GetComponent<MeshFilter>()?.sharedMesh;
+                if (mesh == null) continue;
+                foreach (Vector3 vertex in mesh.vertices)
+                {
+                    Vector3 worldVertex = renderer.transform.TransformPoint(vertex);
+                    if (!hasVertex)
+                    {
+                        bounds = new Bounds(worldVertex, Vector3.zero);
+                        hasVertex = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(worldVertex);
+                    }
+                }
+            }
+            Assert.IsTrue(hasVertex,
+                "The controlled source batches must contain mesh vertices");
+            return bounds;
         }
 
         private static void AssertTransformsMatch(Transform expected, Transform actual)
