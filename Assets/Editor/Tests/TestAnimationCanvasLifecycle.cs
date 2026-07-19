@@ -457,6 +457,64 @@ namespace TiltBrush.Tests
         }
 
         [UnityTest]
+        public IEnumerator PureBrushPlaybackProxyFallsBackPerDrawingAndRestoresCanvasRendering()
+        {
+            const string proxyLogPrefix = "[OB_ANIM_P4_PROXY]";
+            Debug.Log($"{proxyLogPrefix} test=mixedPlayback state=started");
+            AnimationUI_Manager manager = App.Scene.animationUI_manager;
+            manager.StopAnimation();
+            manager.StartTimeline();
+            manager.ConfigureLegacyAnimationTracks(
+                new List<IReadOnlyList<int>> { new[] { 1, 1 } },
+                new List<bool> { true });
+            CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 1);
+            Stroke stroke = LoadFirstPerformanceStroke("Simple.tilt");
+            BatchSubset subset = TestBrush.CreateSubsetFromStroke(drawingCanvas, stroke);
+            Assert.IsNotNull(subset);
+            stroke.m_Type = Stroke.Type.BatchedBrushStroke;
+            stroke.m_BatchSubset = subset;
+            subset.m_Stroke = stroke;
+            drawingCanvas.BatchManager.FlushMeshUpdates();
+            manager.NotifyStrokeAdded(stroke);
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.IsFalse(drawingCanvas.gameObject.activeSelf,
+                "An eligible playback drawing should render through its track proxy");
+            Assert.AreEqual(1, manager.GetVisibleDrawingRenderProxyCountForTests());
+            Assert.IsTrue(manager.TryGetDrawingRenderProxyForTests(
+                manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy));
+            Assert.AreEqual(
+                FrameDrawingRenderMetrics.CaptureBatches(drawingCanvas), proxy.Metrics);
+            var initialWork = manager.GetDrawingRenderProxyWorkCountsForTests();
+            manager.ApplyPlaybackFrameForTests(1);
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.AreEqual(initialWork, manager.GetDrawingRenderProxyWorkCountsForTests(),
+                "An unchanged held frame must not reclassify or rebuild its drawing proxy");
+
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            Assert.IsTrue(drawingCanvas.gameObject.activeSelf,
+                "Disabling proxies must immediately restore Canvas rendering");
+            Assert.AreEqual(0, manager.GetVisibleDrawingRenderProxyCountForTests());
+
+            var widgetObject = new GameObject("Proxy fallback widget");
+            widgetObject.transform.SetParent(drawingCanvas.transform, false);
+            GrabWidget widget = widgetObject.AddComponent<GrabWidget>();
+            manager.NotifyWidgetAdded(widget);
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
+            manager.ApplyPlaybackFrameForTests(1);
+            Assert.IsTrue(drawingCanvas.gameObject.activeSelf,
+                "Widget-bearing drawings must remain on the Canvas path");
+            Assert.AreEqual(0, manager.GetVisibleDrawingRenderProxyCountForTests());
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+
+            yield return null;
+            Debug.Log(
+                $"{proxyLogPrefix} test=mixedPlayback state=passed " +
+                $"batches={proxy.Metrics.Batches} meshes={proxy.Metrics.Meshes}");
+        }
+
+        [UnityTest]
         public IEnumerator SnapshotWriteAndLoadRoundTripsSparseTrackTimingAndVisibility()
         {
             Debug.Log($"{kLogPrefix} test=snapshotRoundTrip state=started");
@@ -653,6 +711,15 @@ namespace TiltBrush.Tests
                 visibility.Add(true);
             }
             manager.ConfigureAnimationTracks(durations, visibility);
+        }
+
+        private static Stroke LoadFirstPerformanceStroke(string fileName)
+        {
+            string path = Path.GetFullPath(Path.Combine(
+                Application.dataPath, "../Support/Sketches/PerfTest", fileName));
+            List<Stroke> strokes = TestBrush.GetStrokesFromTilt(path);
+            Assert.IsNotEmpty(strokes, $"Performance sketch contains no strokes: {fileName}");
+            return new Stroke(strokes[0]);
         }
 
         private static HashSet<CanvasScript> CaptureActiveTimelineCanvases(

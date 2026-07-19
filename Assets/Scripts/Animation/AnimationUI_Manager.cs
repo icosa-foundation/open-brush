@@ -49,6 +49,7 @@ namespace TiltBrush.FrameAnimation
         [SerializeField] bool m_UseDifferentialPlayback = true;
         [SerializeField] bool m_ShareEmptyCanvases = true;
         [SerializeField] bool m_ValidateSparseTimeline;
+        [SerializeField] bool m_UseDrawingRenderProxies;
         [SerializeField, Min(1)] int m_TimelineFramePoolSize = 10;
         AnimationPerformanceStats m_PerformanceStats;
         readonly Dictionary<CanvasScript, bool> m_DrawingOccupancy = new();
@@ -56,6 +57,12 @@ namespace TiltBrush.FrameAnimation
         readonly Dictionary<CanvasScript, HashSet<GrabWidget>> m_CanvasWidgets = new();
         readonly AnimationTimelineModel m_SparseTimeline = new();
         readonly FrameDrawingRepository m_Drawings = new();
+        readonly Dictionary<AnimationDrawingId,
+            (long Revision, FrameDrawingProxyCompatibility Compatibility)>
+            m_ProxyCompatibility = new();
+        FrameDrawingPlaybackProxyController m_PlaybackProxies;
+        bool m_ProxyVisibilityApplied;
+        int m_ProxyClassificationCount;
         readonly AnimationDrawingReferenceTracker m_DrawingReferences = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDestruction = new();
         readonly HashSet<AnimationDrawingId> m_PendingDrawingDemotion = new();
@@ -143,6 +150,30 @@ namespace TiltBrush.FrameAnimation
         internal bool TryGetFrameDrawingForTests(CanvasScript canvas, out FrameDrawing drawing)
         {
             return m_Drawings.TryGet(canvas, out drawing);
+        }
+
+        internal void ConfigureDrawingRenderProxiesForTests(bool enabled)
+        {
+            m_UseDrawingRenderProxies = enabled;
+            if (!enabled) RestoreCanvasPlaybackRendering();
+        }
+
+        internal int GetVisibleDrawingRenderProxyCountForTests()
+        {
+            return m_PlaybackProxies?.VisibleProxyCount ?? 0;
+        }
+
+        internal bool TryGetDrawingRenderProxyForTests(
+            int trackId, out CanvasBatchRenderProxy proxy)
+        {
+            proxy = null;
+            return m_PlaybackProxies != null && m_PlaybackProxies.TryGetProxy(trackId, out proxy);
+        }
+
+        internal (int Classifications, int Synchronizations)
+            GetDrawingRenderProxyWorkCountsForTests()
+        {
+            return (m_ProxyClassificationCount, m_PlaybackProxies?.SynchronizationCount ?? 0);
         }
 #endif
 
@@ -326,6 +357,7 @@ namespace TiltBrush.FrameAnimation
         {
             RemoveMemorySubscriptions();
             if (m_PerformanceStats != null) m_PerformanceStats.Enabled = false;
+            DisposePlaybackProxies();
         }
 
         private void EnsureMemorySubscriptions()
@@ -367,6 +399,7 @@ namespace TiltBrush.FrameAnimation
             if (m_Drawings.TryGet(canvas, out FrameDrawing drawing))
             {
                 drawing.MarkContentChanged();
+                m_ProxyCompatibility.Remove(drawing.Id);
             }
             m_DrawingOccupancy.Remove(canvas);
             if (m_EmptyCanvases.Contains(canvas) && GetFrameFilledWithoutStats(canvas))
@@ -893,6 +926,7 @@ namespace TiltBrush.FrameAnimation
                 }
                 m_PendingDrawingDestruction.Remove(drawingId);
                 m_PendingDrawingDemotion.Remove(drawingId);
+                m_ProxyCompatibility.Remove(drawingId);
                 m_Drawings.Remove(drawingId);
             }
             m_EmptyCanvases.Remove(canvas);
@@ -1047,12 +1081,14 @@ namespace TiltBrush.FrameAnimation
 
         public void StartTimeline()
         {
+            DisposePlaybackProxies();
             DestroyPreviousTimelineCanvases();
             InvalidateTimelineStructure();
             m_EmptyCanvasByTrackId.Clear();
             m_EmptyCanvasTrackIds.Clear();
             m_EmptyCanvases.Clear();
             m_Drawings.Clear();
+            m_ProxyCompatibility.Clear();
             m_DrawingReferences.Clear();
             m_PendingDrawingDestruction.Clear();
             m_PendingDrawingDemotion.Clear();
@@ -2027,6 +2063,91 @@ namespace TiltBrush.FrameAnimation
             ShowFrame(frameIndex);
         }
 
+        private FrameDrawingProxyCompatibility ClassifyDrawingForProxy(
+            FrameDrawing drawing, bool hasAnimatedPath)
+        {
+            if (hasAnimatedPath)
+            {
+                return new FrameDrawingProxyCompatibility(
+                    FrameDrawingProxyIncompatibility.AnimatedPath, 0, 0, 0);
+            }
+            if (m_ProxyCompatibility.TryGetValue(
+                    drawing.Id, out var cachedCompatibility) &&
+                cachedCompatibility.Revision == drawing.ContentRevision)
+            {
+                return cachedCompatibility.Compatibility;
+            }
+            EnsureDrawingContentIndex();
+            IEnumerable<Stroke> strokes = m_CanvasStrokes.TryGetValue(
+                drawing.Canvas, out HashSet<Stroke> drawingStrokes)
+                ? drawingStrokes
+                : Enumerable.Empty<Stroke>();
+            IEnumerable<GrabWidget> widgets = m_CanvasWidgets.TryGetValue(
+                drawing.Canvas, out HashSet<GrabWidget> drawingWidgets)
+                ? drawingWidgets
+                : Enumerable.Empty<GrabWidget>();
+            FrameDrawingProxyCompatibility compatibility = FrameDrawingProxyClassifier.Classify(
+                drawing, strokes, widgets, hasAnimatedPath);
+            m_ProxyClassificationCount++;
+            m_ProxyCompatibility[drawing.Id] = (drawing.ContentRevision, compatibility);
+            return compatibility;
+        }
+
+        private void ApplyPlaybackProxyVisibility(int frameIndex)
+        {
+            m_PlaybackProxies ??= new FrameDrawingPlaybackProxyController();
+            m_PlaybackProxies.BeginFrame();
+            var visibleEntries = new List<(
+                int TrackId, FrameDrawing Drawing, bool Eligible)>();
+            var drawingEligibility = new Dictionary<AnimationDrawingId, bool>();
+            for (int trackIndex = 0; trackIndex < m_SparseTimeline.Tracks.Count; trackIndex++)
+            {
+                AnimationTimelineModel.Track track = m_SparseTimeline.Tracks[trackIndex];
+                if (!track.Visible || track.Deleted ||
+                    !track.TryResolve(frameIndex, out AnimationTimelineModel.Span span) ||
+                    span.Value.Deleted || span.Value.DrawingId.IsEmpty ||
+                    !m_Drawings.TryGet(span.Value.DrawingId, out FrameDrawing drawing))
+                {
+                    continue;
+                }
+                bool eligible = ClassifyDrawingForProxy(
+                    drawing, hasAnimatedPath: span.Value.PathToken != null).IsEligible;
+                visibleEntries.Add((track.Id, drawing, eligible));
+                if (drawingEligibility.TryGetValue(drawing.Id, out bool previousEligibility))
+                {
+                    drawingEligibility[drawing.Id] = previousEligibility && eligible;
+                }
+                else
+                {
+                    drawingEligibility.Add(drawing.Id, eligible);
+                }
+            }
+
+            foreach (var entry in visibleEntries)
+            {
+                bool useProxy = drawingEligibility[entry.Drawing.Id] &&
+                    m_PlaybackProxies.TryShow(entry.TrackId, entry.Drawing, out _);
+                SetCanvasActive(entry.Drawing.Canvas, !useProxy);
+            }
+            m_PlaybackProxies.EndFrame();
+            m_ProxyVisibilityApplied = m_PlaybackProxies.VisibleProxyCount > 0;
+        }
+
+        private void RestoreCanvasPlaybackRendering()
+        {
+            if (!m_ProxyVisibilityApplied) return;
+            m_PlaybackProxies?.HideAll();
+            m_ProxyVisibilityApplied = false;
+            ApplyFullFrameVisibility(FrameOn, includeEmptyCanvases: false);
+        }
+
+        private void DisposePlaybackProxies()
+        {
+            m_PlaybackProxies?.Dispose();
+            m_PlaybackProxies = null;
+            m_ProxyVisibilityApplied = false;
+        }
+
         private void FocusFrame(
             int frameIndex, bool timelineInput = false, bool forceFullVisibilityRefresh = true,
             bool playbackUpdate = false)
@@ -2035,6 +2156,11 @@ namespace TiltBrush.FrameAnimation
             Profiler.BeginSample("OB_ANIM_SCALE.FocusFrame");
 
             int previousFrame = m_PreviousShowingFrame;
+            bool usePlaybackProxies = m_UseDrawingRenderProxies && playbackUpdate;
+            if (!usePlaybackProxies && m_ProxyVisibilityApplied)
+            {
+                forceFullVisibilityRefresh = true;
+            }
             Profiler.BeginSample("OB_ANIM_SCALE.FrameVisibility");
             if (!m_UseDifferentialPlayback)
             {
@@ -2047,6 +2173,14 @@ namespace TiltBrush.FrameAnimation
             else
             {
                 ApplyDifferentialFrameVisibility(previousFrame, frameIndex);
+            }
+            if (usePlaybackProxies)
+            {
+                ApplyPlaybackProxyVisibility(frameIndex);
+            }
+            else if (m_ProxyVisibilityApplied)
+            {
+                RestoreCanvasPlaybackRendering();
             }
             Profiler.EndSample();
 
@@ -2548,6 +2682,7 @@ namespace TiltBrush.FrameAnimation
             if (!keepExistingEmptyCanvas)
             {
                 m_PendingDrawingDestruction.Remove(drawingId);
+                m_ProxyCompatibility.Remove(drawingId);
                 m_Drawings.Remove(drawingId);
                 m_EmptyCanvasByTrackId[trackId] = canvas;
                 m_EmptyCanvasTrackIds[canvas] = trackId;
@@ -2893,6 +3028,7 @@ namespace TiltBrush.FrameAnimation
         public void StopAnimation()
         {
             m_Playing = false;
+            RestoreCanvasPlaybackRendering();
             App.Scene.TriggerLayersUpdate();
         }
 

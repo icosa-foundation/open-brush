@@ -94,3 +94,23 @@ early implementation check.
 - [x] Add source/proxy topology and renderer comparison metrics and verify classification,
   fallback reasons, resource disposal, and comparison behavior (4 Editor tests).
 - [x] Keep proxy infrastructure unreachable from normal sessions and make no saved-data changes.
+
+## Phase 4C: proxy-render pure brush drawings
+
+- [x] Add a disabled-by-default playback flag and one reusable current-drawing proxy per visible
+  track; do not change saved data.
+- [x] Reuse source batch meshes, material instances, renderer settings, and property blocks rather
+  than duplicating mesh memory.
+- [x] Compare source/proxy topology and renderer counts before hiding the source Canvas; fall back
+  per drawing on classification, synchronization, or comparison failure.
+- [x] Restore Canvas rendering immediately when playback stops, the feature is disabled, or the
+  drawing contains widgets; verify with a real batched brush stroke.
+- [x] Pass the proxy infrastructure suite (5 Editor tests) and the expanded Canvas lifecycle suite
+  (9 Editor tests).
+- [x] Cache compatibility by drawing content revision and synchronize/compare a track proxy only
+  when its drawing or revision changes; verify repeated updates of an unchanged held frame add no
+  classifications or synchronizations.
+- [ ] Run controlled image comparisons for representative supported brushes, transparency/order,
+  and material-property behavior before treating Phase 4C as complete.
+- [ ] Validate desktop and headset/XR rendering and measure active renderer/GameObject counts,
+  CPU/GPU time, and allocations with the proxy flag both off and on.

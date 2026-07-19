@@ -124,6 +124,34 @@ namespace TiltBrush.Tests
             }
         }
 
+        [Test]
+        public void CanvasBatchProxySharesRenderResourcesAndMatchesSourceMetrics()
+        {
+            GameObject batchObject = CreateTriangleRoot("Canvas proxy source batch");
+            batchObject.transform.SetParent(m_Canvas.transform, false);
+            batchObject.AddComponent<Batch>();
+            Mesh sourceMesh = batchObject.GetComponent<MeshFilter>().sharedMesh;
+            var proxy = new CanvasBatchRenderProxy(trackId: 4);
+            try
+            {
+                proxy.Synchronize(m_Drawing);
+                proxy.SetVisible(true);
+
+                Assert.AreEqual(m_Drawing.Id, proxy.DrawingId);
+                Assert.IsTrue(proxy.IsVisible);
+                Assert.AreEqual(
+                    FrameDrawingRenderMetrics.CaptureBatches(m_Canvas), proxy.Metrics);
+                Mesh proxyMesh = proxy.Root.GetComponentInChildren<MeshFilter>().sharedMesh;
+                Assert.AreSame(sourceMesh, proxyMesh,
+                    "The dormant proxy path must not duplicate source mesh memory");
+            }
+            finally
+            {
+                proxy.Dispose();
+                Object.DestroyImmediate(sourceMesh);
+            }
+        }
+
         private static GameObject CreateTriangleRoot(string name)
         {
             var root = new GameObject(name);

@@ -206,6 +206,33 @@ namespace TiltBrush.FrameAnimation
                 : Capture(canvas.gameObject, canvas.BatchManager?.CountBatches() ?? 0);
         }
 
+        public static FrameDrawingRenderMetrics CaptureBatches(CanvasScript canvas)
+        {
+            if (canvas == null) return default;
+            Batch[] batches = canvas.GetComponentsInChildren<Batch>(true);
+            Mesh[] meshes = batches
+                .Select(batch => batch.GetComponent<MeshFilter>()?.sharedMesh)
+                .Where(mesh => mesh != null)
+                .Distinct()
+                .ToArray();
+            Renderer[] renderers = batches
+                .Select(batch => batch.GetComponent<Renderer>())
+                .Where(renderer => renderer != null)
+                .ToArray();
+            long indices = 0;
+            foreach (Mesh mesh in meshes)
+            {
+                for (int subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+                {
+                    indices += (long)mesh.GetIndexCount(subMesh);
+                }
+            }
+            return new FrameDrawingRenderMetrics(
+                batches.Length, meshes.Length, renderers.Length,
+                renderers.Sum(renderer => renderer.sharedMaterials.Length),
+                meshes.Sum(mesh => mesh.vertexCount), indices);
+        }
+
         public bool Equals(FrameDrawingRenderMetrics other)
         {
             return Batches == other.Batches && Meshes == other.Meshes &&
