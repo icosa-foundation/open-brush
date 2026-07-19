@@ -6,9 +6,11 @@ Phases 0-3 are implemented on the animation-refactor branch. The repeatable Edit
 25 model/operation tests, 8 Canvas lifecycle/persistence tests, and the three-repeat manager
 adapter/persistence benchmark. Phase 4A is in progress: `FrameDrawing` and its repository now own
 drawing identity, Canvas adapter lookup, lifetime removal, and logical content revision while all
-rendering remains Canvas-backed. Phase 3 is not complete until the manual desktop/headset working-
-state gate and the remaining target-device Phase 0 captures in `ANIMATION-TASKS.md` are complete.
-This document does not supersede that checklist.
+rendering remains Canvas-backed. Dormant Phase 4B infrastructure defines proxy contracts,
+per-drawing compatibility reasons, explicit proxy-resource ownership, and render-comparison
+metrics; no normal playback caller can activate it. Phase 3 is not complete until the manual
+desktop/headset working-state gate and the remaining target-device Phase 0 captures in
+`ANIMATION-TASKS.md` are complete. This document does not supersede that checklist.
 
 ## Problem statement
 

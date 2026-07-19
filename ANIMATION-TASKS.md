@@ -82,3 +82,15 @@ early implementation check.
   the Canvas lifecycle suite (8 Editor tests).
 - [ ] Exercise selection, grouping, repaint, duplication, undo/redo, save/load, and Canvas-facing
   APIs in a manual working-state pass before declaring Phase 4A complete.
+
+## Phase 4B: dormant render-proxy infrastructure
+
+- [x] Define the playback-proxy synchronization/visibility contract without adding a normal
+  playback implementation or feature flag.
+- [x] Classify fallback per drawing, with independent reasons for empty, non-batched, missing or
+  unsupported batch, widget, and animated-path content.
+- [x] Add explicit ownership and deterministic disposal for Unity objects created by future
+  proxies.
+- [x] Add source/proxy topology and renderer comparison metrics and verify classification,
+  fallback reasons, resource disposal, and comparison behavior (4 Editor tests).
+- [x] Keep proxy infrastructure unreachable from normal sessions and make no saved-data changes.
