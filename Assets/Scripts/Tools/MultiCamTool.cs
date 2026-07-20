@@ -2014,6 +2014,10 @@ namespace TiltBrush
                 {
                     // Do not put away the camera.
                     m_RequestExit = false;
+                    if (tmpDepth != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmpDepth);
+                    }
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }
