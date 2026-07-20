@@ -471,6 +471,11 @@ namespace TiltBrush
         /// with CreateTemporaryTargetForSave().
         public void RenderDepthNormalToTexture(RenderTexture rTexture)
         {
+            RenderEncodedDepthNormalsToTexture(rTexture);
+        }
+
+        private void RenderEncodedDepthNormalsToTexture(RenderTexture rTexture)
+        {
             RenderTextureFormat format = CameraFormat();
             int depth = 24;
 
@@ -503,7 +508,7 @@ namespace TiltBrush
         /// with CreateTemporaryTargetForSave().
         public void RenderDepthToTexture(RenderTexture rTexture)
         {
-            RenderDepthNormalToTexture(rTexture);
+            RenderEncodedDepthNormalsToTexture(rTexture);
         }
 
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
