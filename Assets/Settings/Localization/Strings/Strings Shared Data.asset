@@ -3655,6 +3655,10 @@ MonoBehaviour:
     m_Key: CAPTURE_TRAY_BOX_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 522559370036862976
+    m_Key: LABS_PANEL_SPLAT_CAPTURE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

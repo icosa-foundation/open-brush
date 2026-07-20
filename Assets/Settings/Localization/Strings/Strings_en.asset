@@ -3804,23 +3804,27 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 482980427487338496
-    m_Localized: Capture Gaussian Splat
+    m_Localized: Export Gaussian Poses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: Add Box Capture Area
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000001
     m_Localized: Add Spherical Capture Area
     m_Metadata:
       m_Items: []
-  - m_Id: 520000000000000002
-    m_Localized: Add Ellipsoidal Capture Area
-    m_Metadata:
-      m_Items: []
   - m_Id: 520000000000000003
     m_Localized: Add Hemispherical Capture Area
     m_Metadata:
       m_Items: []
-  - m_Id: 520000000000000004
-    m_Localized: Add Box Capture Area
+  - m_Id: 520000000000000002
+    m_Localized: Add Ellipsoidal Capture Area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: Gaussian Splat Pose Capture
     m_Metadata:
       m_Items: []
   references:
