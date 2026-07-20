@@ -666,12 +666,15 @@ namespace TiltBrush
                 App.Scene.AsScene[rig.gameObject.transform] = tr;
                 var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
                 var initialState = rig.gameObject.activeSelf;
-                rig.gameObject.SetActive(true);
-                RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                RenderTexture tmp = null;
+                RenderWrapper wrapper = null;
+                float ssaaRestore = 0;
                 try
                 {
-                    RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
-                    float ssaaRestore = wrapper.SuperSampling;
+                    rig.gameObject.SetActive(true);
+                    tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                    wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                    ssaaRestore = wrapper.SuperSampling;
                     wrapper.SuperSampling = superSampling;
 
                     bool watermarkEnabled = CameraConfig.Watermark;
@@ -713,12 +716,18 @@ namespace TiltBrush
                         Save(fs, tmp, bSaveAsPng: saveAsPng);
                     }
 
-                    wrapper.SuperSampling = ssaaRestore;
-                    rig.gameObject.SetActive(initialState);
                 }
                 finally
                 {
-                    RenderTexture.ReleaseTemporary(tmp);
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                    rig.gameObject.SetActive(initialState);
+                    if (tmp != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmp);
+                    }
                 }
             }
         }
