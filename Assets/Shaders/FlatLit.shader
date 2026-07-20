@@ -28,6 +28,7 @@ Properties {
 }
 
 SubShader {
+  Tags { "RenderType" = "Opaque" }
   Pass {
     Tags { "LightMode" = "ForwardBase" }
     Blend SrcAlpha OneMinusSrcAlpha

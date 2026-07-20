@@ -23,6 +23,7 @@ Properties {
 }
 
 SubShader {
+  Tags { "RenderType"="Opaque" }
   Cull Back
 
   CGPROGRAM
