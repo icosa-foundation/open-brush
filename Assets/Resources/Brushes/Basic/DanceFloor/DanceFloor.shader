@@ -36,6 +36,7 @@ Category {
   Cull Off Lighting Off ZWrite On Fog { Color (0,0,0,0) }
 
   SubShader {
+    Tags { "RenderType"="Opaque" }
     Pass {
 
       CGPROGRAM
