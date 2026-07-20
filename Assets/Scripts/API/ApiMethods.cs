@@ -1221,7 +1221,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "app.snapshot",
-            "Takes a snapshot using the given camera position and direction",
+            "Takes a color snapshot and saves depth and normals sidecars using the given camera position and direction",
             "0,10,0,0,45,45,hello,1024,768"
         )]
         public static void TakeSnapshot(Vector3 position, Vector3 direction, string filename, int width, int height)
