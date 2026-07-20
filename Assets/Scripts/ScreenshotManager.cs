@@ -663,51 +663,58 @@ namespace TiltBrush
                 var initialState = rig.gameObject.activeSelf;
                 rig.gameObject.SetActive(true);
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(width, height);
-                RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
-                float ssaaRestore = wrapper.SuperSampling;
-                wrapper.SuperSampling = superSampling;
-
-                bool watermarkEnabled = CameraConfig.Watermark;
-                bool postEffectsEnabled = CameraConfig.PostEffects;
                 try
                 {
-                    CameraConfig.Watermark = false;
-                    CameraConfig.PostEffects = false;
+                    RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                    float ssaaRestore = wrapper.SuperSampling;
+                    wrapper.SuperSampling = superSampling;
 
-                    if (renderDepth)
+                    bool watermarkEnabled = CameraConfig.Watermark;
+                    bool postEffectsEnabled = CameraConfig.PostEffects;
+                    try
                     {
-                        rMgr.RenderDepthToTexture(tmp);
-                        var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
-                        using (var fs = new FileStream(depthPath, FileMode.Create))
+                        CameraConfig.Watermark = false;
+                        CameraConfig.PostEffects = false;
+
+                        if (renderDepth)
                         {
-                            SaveDepth(fs, tmp);
+                            rMgr.RenderDepthToTexture(tmp);
+                            var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
+                            using (var fs = new FileStream(depthPath, FileMode.Create))
+                            {
+                                SaveDepth(fs, tmp);
+                            }
+                        }
+
+                        if (renderNormals)
+                        {
+                            rMgr.RenderDepthNormalToTexture(tmp);
+                            var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                            using (var fs = new FileStream(normalPath, FileMode.Create))
+                            {
+                                SaveNormals(fs, tmp);
+                            }
                         }
                     }
-
-                    if (renderNormals)
+                    finally
                     {
-                        rMgr.RenderDepthNormalToTexture(tmp);
-                        var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
-                        using (var fs = new FileStream(normalPath, FileMode.Create))
-                        {
-                            SaveNormals(fs, tmp);
-                        }
+                        CameraConfig.Watermark = watermarkEnabled;
+                        CameraConfig.PostEffects = postEffectsEnabled;
                     }
+
+                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                    using (var fs = new FileStream(path, FileMode.Create))
+                    {
+                        Save(fs, tmp, bSaveAsPng: saveAsPng);
+                    }
+
+                    wrapper.SuperSampling = ssaaRestore;
+                    rig.gameObject.SetActive(initialState);
                 }
                 finally
                 {
-                    CameraConfig.Watermark = watermarkEnabled;
-                    CameraConfig.PostEffects = postEffectsEnabled;
+                    RenderTexture.ReleaseTemporary(tmp);
                 }
-
-                rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
-                using (var fs = new FileStream(path, FileMode.Create))
-                {
-                    Save(fs, tmp, bSaveAsPng: saveAsPng);
-                }
-
-                wrapper.SuperSampling = ssaaRestore;
-                rig.gameObject.SetActive(initialState);
             }
         }
     }
