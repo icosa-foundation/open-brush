@@ -167,6 +167,7 @@ MonoBehaviour:
   alphaThreshold: 0.05
   depthReplacementShader: {fileID: 4800000, guid: 0da7fe4fde6d6784696f9dd8e3c781f4,
     type: 3}
+  nativeDepthShader: {fileID: 4800000, guid: 5f2e1d3cb8944e9b8f657386a6b6e5ce, type: 3}
   saveDepthDebugImages: 0
   saveDepthDebugPreviewPng: 0
   saveOpaqueDepthReference: 0

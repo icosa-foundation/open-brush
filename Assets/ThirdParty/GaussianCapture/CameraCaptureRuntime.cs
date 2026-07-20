@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using UnityEngine.Rendering;
 using TiltBrush;
 using Debug = UnityEngine.Debug;
 
@@ -64,6 +65,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     [Range(0f, 1f)] public float alphaThreshold = 0.05f;
     [Tooltip("Replacement shader qui �crit la profondeur en R, avec alpha-clip.")]
     public Shader depthReplacementShader;
+    [Tooltip("Copies the RGB camera's native opaque depth into linear eye-depth values.")]
+    public Shader nativeDepthShader;
 
     [Header("Depth Debug Output")]
     [Tooltip("Write the depth image used for point-cloud generation next to each captured image.")]
@@ -78,11 +81,18 @@ public class CameraCaptureRuntime : MonoBehaviour
     private bool isRunning = false;
     private bool cancel = false;
     private Material _eyeDepthMat;
+    private Material m_NativeDepthMaterial;
     private Transform m_VolumeTransform;
     private float m_OverlayProgress;
+    private bool m_LoggedNativeDepthStats;
 
     private float m_PreCaptureTimeScale = 1f;
     private bool m_ScenePausedForCapture;
+    private readonly List<Behaviour> m_DisabledAudioVisualizers = new List<Behaviour>();
+    private readonly Dictionary<Animator, float> m_PausedAnimators =
+        new Dictionary<Animator, float>();
+    private readonly List<ParticleSystem> m_PausedParticleSystems =
+        new List<ParticleSystem>();
 
     public enum OutputFormat { PSHT, PLY }
     public enum TrainingProfile { Splat3, MCMC, ADC }
@@ -511,6 +521,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         try
         {
             PauseSceneForCapture();
+            m_LoggedNativeDepthStats = false;
             cameraToUse.depthTextureMode |= DepthTextureMode.Depth;
             string camerasTxt = Path.Combine(folderPath, "cameras.txt");
             float fov = cameraToUse.fieldOfView;
@@ -535,7 +546,12 @@ public class CameraCaptureRuntime : MonoBehaviour
                 imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
                 imgWriter.WriteLine("# POINTS2D[] as X, Y, POINT3D_ID");
 
-                RenderTexture rt = CreateCaptureRenderTexture(multisampled: true);
+                // A multisampled depth attachment cannot be sampled portably. The default
+                // opaque path copies the native depth buffer from the RGB render, so use a
+                // single-sample target there. Transparent-inclusive replacement capture can
+                // retain the configured MSAA level.
+                RenderTexture rt = CreateCaptureRenderTexture(
+                    multisampled: includeTransparentsAndParticles);
                 RenderTexture resolvedRt = CreateCaptureRenderTexture(multisampled: false);
                 Texture2D tex = new Texture2D(width, height, CaptureTextureFormat, false);
 
@@ -594,17 +610,26 @@ public class CameraCaptureRuntime : MonoBehaviour
                             string imageName = $"{domeTarget.FilePrefix}_view_{imageId:D4}.png";
                             string imagePath = Path.Combine(folderPath, imageName);
                             SetupCaptureCamera();
-                            RenderColorCaptureToTexture(tex, rt, resolvedRt);
+                            Texture2D capturedOpaqueDepth =
+                                RenderColorCaptureToTexture(tex, rt, resolvedRt);
 
-                            CapturePointCloudFromCamera(
-                                cameraToUse,
-                                tex,
-                                raysPerView,
-                                writer3D,
-                                imageId,
-                                ref pointId,
-                                debugOutputBasePath: Path.Combine(
-                                    folderPath, Path.GetFileNameWithoutExtension(imageName)));
+                            try
+                            {
+                                CapturePointCloudFromCamera(
+                                    cameraToUse,
+                                    tex,
+                                    raysPerView,
+                                    writer3D,
+                                    imageId,
+                                    ref pointId,
+                                    debugOutputBasePath: Path.Combine(
+                                        folderPath, Path.GetFileNameWithoutExtension(imageName)),
+                                    capturedOpaqueDepth: capturedOpaqueDepth);
+                            }
+                            finally
+                            {
+                                SafeDestroy(capturedOpaqueDepth);
+                            }
 
                             File.WriteAllBytes(imagePath, tex.EncodeToPNG());
 
@@ -670,17 +695,26 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 string imagePath = Path.Combine(folderPath, imageName);
 
                                 SetupCaptureCamera();
-                                RenderColorCaptureToTexture(tex, rt, resolvedRt);
+                                Texture2D capturedOpaqueDepth =
+                                    RenderColorCaptureToTexture(tex, rt, resolvedRt);
 
-                                CapturePointCloudFromCamera(
-                                    cameraToUse,
-                                    tex,
-                                    raysPerView,
-                                    writer3D,
-                                    imageId,
-                                    ref pointId,
-                                    debugOutputBasePath: Path.Combine(
-                                        folderPath, Path.GetFileNameWithoutExtension(imageName)));
+                                try
+                                {
+                                    CapturePointCloudFromCamera(
+                                        cameraToUse,
+                                        tex,
+                                        raysPerView,
+                                        writer3D,
+                                        imageId,
+                                        ref pointId,
+                                        debugOutputBasePath: Path.Combine(
+                                            folderPath, Path.GetFileNameWithoutExtension(imageName)),
+                                        capturedOpaqueDepth: capturedOpaqueDepth);
+                                }
+                                finally
+                                {
+                                    SafeDestroy(capturedOpaqueDepth);
+                                }
 
                                 byte[] pngData = tex.EncodeToPNG();
                                 File.WriteAllBytes(imagePath, pngData);
@@ -896,12 +930,16 @@ public class CameraCaptureRuntime : MonoBehaviour
         fxaa.mat = new Material(Shader.Find("FX/FXAA"));
     }
 
-    private void RenderColorCaptureToTexture(Texture2D tex, RenderTexture sceneRt, RenderTexture resolvedRt)
+    private Texture2D RenderColorCaptureToTexture(
+        Texture2D tex, RenderTexture sceneRt, RenderTexture resolvedRt)
     {
         var originalTarget = cameraToUse.targetTexture;
         bool originalAllowMsaa = cameraToUse.allowMSAA;
         FXAA fxaa = cameraToUse.GetComponent<FXAA>();
         bool fxaaWasEnabled = fxaa != null && fxaa.enabled;
+        RenderTexture linearDepthRt = null;
+        CommandBuffer depthCopyCommand = null;
+        Texture2D capturedOpaqueDepth = null;
 
         try
         {
@@ -912,7 +950,107 @@ public class CameraCaptureRuntime : MonoBehaviour
 
             cameraToUse.allowMSAA = sceneRt != null && sceneRt.antiAliasing > 1;
             cameraToUse.targetTexture = sceneRt;
+
+            if (!includeTransparentsAndParticles)
+            {
+                if (m_NativeDepthMaterial == null)
+                {
+                    Shader captureDepthShader = nativeDepthShader != null
+                        ? nativeDepthShader
+                        : Shader.Find("Hidden/CaptureNativeEyeDepth");
+                    if (captureDepthShader == null)
+                    {
+                        Debug.LogError(
+                            "[GaussianNativeDepth] Hidden/CaptureNativeEyeDepth shader was not found.");
+                    }
+                    else
+                    {
+                        m_NativeDepthMaterial = new Material(captureDepthShader)
+                        {
+                            hideFlags = HideFlags.DontSave
+                        };
+                    }
+                }
+
+                if (m_NativeDepthMaterial != null)
+                {
+                    RenderTextureFormat depthFormat = SystemInfo.SupportsRenderTextureFormat(
+                        RenderTextureFormat.RFloat)
+                        ? RenderTextureFormat.RFloat
+                        : RenderTextureFormat.ARGBFloat;
+                    linearDepthRt = RenderTexture.GetTemporary(
+                        width, height, 0, depthFormat, RenderTextureReadWrite.Linear);
+                    linearDepthRt.filterMode = FilterMode.Point;
+
+                    RenderTexture depthPreviousActive = RenderTexture.active;
+                    RenderTexture.active = linearDepthRt;
+                    GL.Clear(false, true, new Color(cameraToUse.farClipPlane, 0f, 0f, 1f));
+                    RenderTexture.active = depthPreviousActive;
+
+                    depthCopyCommand = new CommandBuffer
+                    {
+                        name = "GaussianNativeDepthCopy"
+                    };
+                    depthCopyCommand.SetGlobalTexture(
+                        "_CaptureNativeDepth", BuiltinRenderTextureType.Depth);
+                    depthCopyCommand.Blit(
+                        BuiltinRenderTextureType.CurrentActive,
+                        linearDepthRt,
+                        m_NativeDepthMaterial);
+                    // At this event the original opaque and alpha-tested shaders have written
+                    // their actual, potentially vertex-deformed geometry, but the transparent
+                    // queue has not yet contributed.
+                    cameraToUse.AddCommandBuffer(
+                        CameraEvent.BeforeForwardAlpha, depthCopyCommand);
+                }
+            }
+
             cameraToUse.Render();
+
+            if (linearDepthRt != null)
+            {
+                RenderTexture depthPreviousActive = RenderTexture.active;
+                RenderTexture.active = linearDepthRt;
+                TextureFormat depthTextureFormat = linearDepthRt.format == RenderTextureFormat.RFloat
+                    ? TextureFormat.RFloat
+                    : TextureFormat.RGBAFloat;
+                capturedOpaqueDepth = new Texture2D(
+                    width, height, depthTextureFormat, false, true);
+                capturedOpaqueDepth.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+                capturedOpaqueDepth.Apply(false, false);
+                RenderTexture.active = depthPreviousActive;
+
+                if (!m_LoggedNativeDepthStats)
+                {
+                    float sampledMin = float.PositiveInfinity;
+                    float sampledMax = 0f;
+                    const int samplesPerAxis = 16;
+                    for (int sampleY = 0; sampleY < samplesPerAxis; ++sampleY)
+                    {
+                        for (int sampleX = 0; sampleX < samplesPerAxis; ++sampleX)
+                        {
+                            int x = (sampleX * width + width / 2) / samplesPerAxis;
+                            int y = (sampleY * height + height / 2) / samplesPerAxis;
+                            float depth = capturedOpaqueDepth.GetPixel(
+                                Mathf.Clamp(x, 0, width - 1),
+                                Mathf.Clamp(y, 0, height - 1)).r;
+                            if (float.IsNaN(depth) || float.IsInfinity(depth)) { continue; }
+                            sampledMin = Mathf.Min(sampledMin, depth);
+                            sampledMax = Mathf.Max(sampledMax, depth);
+                        }
+                    }
+
+                    Debug.Log(
+                        $"[GaussianNativeDepth] Sampled linear depth range: {sampledMin:F4} to {sampledMax:F4} metres; camera range {cameraToUse.nearClipPlane:F4} to {cameraToUse.farClipPlane:F1} metres.");
+                    if (sampledMax <= cameraToUse.nearClipPlane * 1.01f)
+                    {
+                        Debug.LogError(
+                            "[GaussianNativeDepth] Depth readback collapsed to the near plane; " +
+                            "sparse points for this capture are invalid.");
+                    }
+                    m_LoggedNativeDepthStats = true;
+                }
+            }
 
             if (fxaaWasEnabled)
             {
@@ -936,9 +1074,21 @@ public class CameraCaptureRuntime : MonoBehaviour
             tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
             tex.Apply();
             RenderTexture.active = previousActive;
+
+            return capturedOpaqueDepth;
         }
         finally
         {
+            if (depthCopyCommand != null)
+            {
+                cameraToUse.RemoveCommandBuffer(
+                    CameraEvent.BeforeForwardAlpha, depthCopyCommand);
+                depthCopyCommand.Release();
+            }
+            if (linearDepthRt != null)
+            {
+                RenderTexture.ReleaseTemporary(linearDepthRt);
+            }
             if (fxaa != null)
             {
                 fxaa.enabled = fxaaWasEnabled;
@@ -1004,6 +1154,37 @@ public class CameraCaptureRuntime : MonoBehaviour
         if (m_ScenePausedForCapture) { return; }
         m_PreCaptureTimeScale = Time.timeScale;
         Time.timeScale = 0f;
+
+        m_DisabledAudioVisualizers.Clear();
+        foreach (VisualizerScript visualizer in GameObject.FindObjectsOfType<VisualizerScript>())
+        {
+            if (!visualizer.enabled) { continue; }
+            visualizer.enabled = false;
+            m_DisabledAudioVisualizers.Add(visualizer);
+        }
+        foreach (VisualizerManager visualizer in GameObject.FindObjectsOfType<VisualizerManager>())
+        {
+            if (!visualizer.enabled) { continue; }
+            visualizer.enabled = false;
+            m_DisabledAudioVisualizers.Add(visualizer);
+        }
+
+        m_PausedAnimators.Clear();
+        foreach (Animator animator in GameObject.FindObjectsOfType<Animator>())
+        {
+            if (!animator.enabled || animator.speed == 0f) { continue; }
+            m_PausedAnimators.Add(animator, animator.speed);
+            animator.speed = 0f;
+        }
+
+        m_PausedParticleSystems.Clear();
+        foreach (ParticleSystem particles in GameObject.FindObjectsOfType<ParticleSystem>())
+        {
+            if (!particles.isPlaying) { continue; }
+            particles.Pause(withChildren: false);
+            m_PausedParticleSystems.Add(particles);
+        }
+
         m_ScenePausedForCapture = true;
     }
 
@@ -1011,6 +1192,25 @@ public class CameraCaptureRuntime : MonoBehaviour
     {
         if (!m_ScenePausedForCapture) { return; }
         Time.timeScale = m_PreCaptureTimeScale;
+
+        foreach (Behaviour visualizer in m_DisabledAudioVisualizers)
+        {
+            if (visualizer != null) { visualizer.enabled = true; }
+        }
+        m_DisabledAudioVisualizers.Clear();
+
+        foreach (KeyValuePair<Animator, float> entry in m_PausedAnimators)
+        {
+            if (entry.Key != null) { entry.Key.speed = entry.Value; }
+        }
+        m_PausedAnimators.Clear();
+
+        foreach (ParticleSystem particles in m_PausedParticleSystems)
+        {
+            if (particles != null) { particles.Play(withChildren: false); }
+        }
+        m_PausedParticleSystems.Clear();
+
         m_ScenePausedForCapture = false;
     }
 
@@ -1302,12 +1502,13 @@ public class CameraCaptureRuntime : MonoBehaviour
         float maxDepthEpsilon = 0.01f,
         float clampMinMeters = 0f,
         float clampMaxMeters = 0f,
-        bool useFloat32 = false
+        bool useFloat32 = false,
+        Texture2D capturedOpaqueDepth = null
     )
     {
         if (cam == null || colorTex == null || writer == null) return;
 
-        if (_eyeDepthMat == null)
+        if (capturedOpaqueDepth == null && _eyeDepthMat == null)
         {
             var sh = eyeDepthShader;
             if (sh == null && !(includeTransparentsAndParticles && depthReplacementShader != null))
@@ -1324,6 +1525,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         Texture2D depthTex = null;
         RenderTexture rtDepth = null;
+        bool ownsDepthTexture = false;
 
         int oldMask = cam.cullingMask;
         int noCloudLayer = LayerMask.NameToLayer("NoCloud");
@@ -1331,11 +1533,16 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         try
         {
-            if (depthReplacementShader != null)
+            if (capturedOpaqueDepth != null)
+            {
+                depthTex = capturedOpaqueDepth;
+            }
+            else if (depthReplacementShader != null)
             {
                 depthTex = RenderLinearDepth(
                     cam, w, h, includeTransparentsAndParticles);
                 if (depthTex == null) return;
+                ownsDepthTexture = true;
             }
             else
             {
@@ -1355,6 +1562,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
                 depthTex.Apply(false, false);
                 RenderTexture.active = prev;
+                ownsDepthTexture = true;
             }
 
             int sqrtRayCount = Mathf.CeilToInt(Mathf.Sqrt(Mathf.Max(1, rayCount)));
@@ -1445,7 +1653,10 @@ public class CameraCaptureRuntime : MonoBehaviour
             }
 
             SafeDestroy(opaqueDepthDebugTex);
-            SafeDestroy(depthTex);
+            if (ownsDepthTexture)
+            {
+                SafeDestroy(depthTex);
+            }
         }
         finally
         {
