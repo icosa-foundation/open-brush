@@ -515,7 +515,10 @@ public class CameraCaptureRuntime : MonoBehaviour
             string camerasTxt = Path.Combine(folderPath, "cameras.txt");
             float fov = cameraToUse.fieldOfView;
             float fy = 0.5f * height / Mathf.Tan(0.5f * fov * Mathf.Deg2Rad);
-            float fx = fy * ((float)width / height);
+            // Unity's fieldOfView is vertical. With square pixels, the horizontal and
+            // vertical focal lengths in pixels are equal; image width affects the
+            // horizontal field of view through cx/fx, not by scaling fx again.
+            float fx = fy;
             float cx = width / 2f;
             float cy = height / 2f;
             using (StreamWriter camWriter = new StreamWriter(camerasTxt))
@@ -600,7 +603,8 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 writer3D,
                                 imageId,
                                 ref pointId,
-                                debugOutputBasePath: Path.Combine(folderPath, Path.GetFileNameWithoutExtension(imageName)));
+                                debugOutputBasePath: Path.Combine(
+                                    folderPath, Path.GetFileNameWithoutExtension(imageName)));
 
                             File.WriteAllBytes(imagePath, tex.EncodeToPNG());
 
@@ -675,7 +679,8 @@ public class CameraCaptureRuntime : MonoBehaviour
                                     writer3D,
                                     imageId,
                                     ref pointId,
-                                    debugOutputBasePath: Path.Combine(folderPath, Path.GetFileNameWithoutExtension(imageName)));
+                                    debugOutputBasePath: Path.Combine(
+                                        folderPath, Path.GetFileNameWithoutExtension(imageName)));
 
                                 byte[] pngData = tex.EncodeToPNG();
                                 File.WriteAllBytes(imagePath, pngData);
@@ -1009,11 +1014,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         m_ScenePausedForCapture = false;
     }
 
-    private Texture2D RenderDepthIncludingTransparents(Camera srcCam, int w, int h)
+    private Texture2D RenderLinearDepth(
+        Camera srcCam, int w, int h, bool includeTransparentGeometry)
     {
         if (depthReplacementShader == null)
         {
-            Debug.LogError("[Capture] depthReplacementShader manquant.");
+            Debug.LogError("[GaussianDepthCapture] A linear-depth replacement shader is required.");
             return null;
         }
 
@@ -1021,6 +1027,8 @@ public class CameraCaptureRuntime : MonoBehaviour
         go.hideFlags = HideFlags.HideAndDontSave;
         var depthCam = go.AddComponent<Camera>();
         depthCam.CopyFrom(srcCam);
+        depthCam.transform.SetPositionAndRotation(
+            srcCam.transform.position, srcCam.transform.rotation);
         depthCam.allowHDR = false;
         depthCam.allowMSAA = false;
         depthCam.clearFlags = CameraClearFlags.SolidColor;
@@ -1032,8 +1040,11 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         Shader.SetGlobalFloat("_CaptureFar", srcCam.farClipPlane);
         Shader.SetGlobalFloat("_AlphaThreshold", alphaThreshold);
+        Shader.SetGlobalFloat("_EnableAlphaClip", includeTransparentGeometry ? 1f : 0f);
 
-        depthCam.RenderWithShader(depthReplacementShader, null);
+        depthCam.RenderWithShader(
+            depthReplacementShader,
+            includeTransparentGeometry ? null : "RenderType");
 
         var prev = RenderTexture.active;
         RenderTexture.active = rt;
@@ -1086,7 +1097,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
     }
 
-    private void AppendVisibleParticlesToPointCloud(StreamWriter writer, Camera cam, int imageId, ref int pointId, float minAlpha = 0.05f)
+    private void AppendVisibleParticlesToPointCloud(
+        StreamWriter writer,
+        Camera cam,
+        int imageId,
+        ref int pointId,
+        float minAlpha = 0.05f)
     {
         var systems = GameObject.FindObjectsOfType<ParticleSystem>();
         var planes = GeometryUtility.CalculateFrustumPlanes(cam);
@@ -1315,9 +1331,10 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         try
         {
-            if (includeTransparentsAndParticles && depthReplacementShader != null)
+            if (depthReplacementShader != null)
             {
-                depthTex = RenderDepthIncludingTransparents(cam, w, h);
+                depthTex = RenderLinearDepth(
+                    cam, w, h, includeTransparentsAndParticles);
                 if (depthTex == null) return;
             }
             else
@@ -1344,24 +1361,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             float stepX = w / (float)sqrtRayCount;
             float stepY = h / (float)sqrtRayCount;
 
-            float skipThreshold = -1f;
-            if (skipMaxDepthPlane)
-            {
-                Color[] dpx = depthTex.GetPixels();
-                float measuredMaxDepth = 0f;
-                for (int i = 0; i < dpx.Length; i++)
-                {
-                    float v = dpx[i].r;
-                    if (v <= 0f || float.IsNaN(v) || float.IsInfinity(v)) continue;
-                    if (v > measuredMaxDepth) measuredMaxDepth = v;
-                }
-                float refMax = (clampMaxMeters > clampMinMeters && clampMaxMeters > 0f)
-                    ? clampMaxMeters
-                    : cam.farClipPlane;
-                if (measuredMaxDepth > 0f) measuredMaxDepth = Mathf.Min(measuredMaxDepth, refMax);
-                else measuredMaxDepth = refMax;
-                skipThreshold = Mathf.Max(0f, measuredMaxDepth - Mathf.Max(1e-6f, maxDepthEpsilon));
-            }
+            float maxValidDepth = (clampMaxMeters > clampMinMeters && clampMaxMeters > 0f)
+                ? clampMaxMeters
+                : cam.farClipPlane;
+            float skipThreshold = skipMaxDepthPlane
+                ? Mathf.Max(0f, maxValidDepth - Mathf.Max(1e-6f, maxDepthEpsilon))
+                : float.PositiveInfinity;
 
             SaveDepthDebugFiles(depthTex, cam, debugOutputBasePath, skipThreshold);
             Texture2D opaqueDepthDebugTex = null;
@@ -1384,12 +1389,26 @@ public class CameraCaptureRuntime : MonoBehaviour
                         Mathf.Clamp((int)py, 0, h - 1)).r;
 
                     if (d <= 0f || float.IsNaN(d) || float.IsInfinity(d)) continue;
+                    if (d < cam.nearClipPlane) continue;
                     if (skipMaxDepthPlane && d >= skipThreshold) continue;
 
                     Vector3 worldPos;
                     if (useScreenToWorldPoint)
                     {
-                        worldPos = cam.ScreenToWorldPoint(new Vector3(px + 0.5f, py + 0.5f, d));
+                        // ScreenToWorldPoint uses the camera's currently attached target.
+                        // The capture RT has already been detached here, so in VR its pixel
+                        // dimensions/projection can differ from the captured depth texture.
+                        // Reconstruct against the same pinhole model written to cameras.txt.
+                        float tanHalfVerticalFov = Mathf.Tan(
+                            0.5f * cam.fieldOfView * Mathf.Deg2Rad);
+                        float captureAspect = w / (float)h;
+                        float normalizedX = ((px + 0.5f) / w) * 2f - 1f;
+                        float normalizedY = ((py + 0.5f) / h) * 2f - 1f;
+                        Vector3 cameraSpacePoint = new Vector3(
+                            normalizedX * d * tanHalfVerticalFov * captureAspect,
+                            normalizedY * d * tanHalfVerticalFov,
+                            d);
+                        worldPos = cam.transform.TransformPoint(cameraSpacePoint);
                     }
                     else
                     {

@@ -11,7 +11,7 @@ Shader "Hidden/CaptureLinearEyeDepth"
     }
     SubShader
     {
-        Tags { "IgnoreProjector" = "True" }
+        Tags { "IgnoreProjector" = "True" "RenderType" = "Opaque" }
         Pass
         {
             Tags { "LightMode" = "Always" }
@@ -36,6 +36,7 @@ Shader "Hidden/CaptureLinearEyeDepth"
 
             float  _AlphaThreshold; 
             float  _CaptureFar;     
+            float  _EnableAlphaClip;
 
             struct appdata
             {
@@ -78,8 +79,11 @@ Shader "Hidden/CaptureLinearEyeDepth"
 
             float4 frag(v2f i) : SV_Target
             {
-                float a = ComputeAlpha(i);
-                clip(a - _AlphaThreshold);
+                if (_EnableAlphaClip > 0.5)
+                {
+                    float a = ComputeAlpha(i);
+                    clip(a - _AlphaThreshold);
+                }
 
                 float depth = (i.eyeZ > 0) ? i.eyeZ : _CaptureFar;
                 return float4(depth, 0, 0, 1);
