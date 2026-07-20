@@ -1932,6 +1932,7 @@ namespace TiltBrush
 
                 if (style == MultiCamStyle.Snapshot360)
                 {
+                    snapshotWidth = odsCamera.GetClampedImageWidth(snapshotWidth);
                     snapshotHeight = snapshotWidth;
                 }
 

@@ -140,6 +140,17 @@ public class HybridCamera : MonoBehaviour {
     }
   }
 
+  public int GetClampedImageWidth(int requestedImageWidth) {
+    int bloomPaddingMultiplier = vr180 ? 4 : 2;
+    int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
+    int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
+    int clampedBloomRadius = Math.Min(bloomRadius, maxBloomRadius);
+    int bloomPadding = bloomPaddingMultiplier * clampedBloomRadius;
+    int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
+    maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
+    return Math.Min(((requestedImageWidth + 3) / 4) * 4, maxImageWidth);
+  }
+
   public IEnumerator Render(Transform node, bool saveImage = true) {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
@@ -150,10 +161,7 @@ public class HybridCamera : MonoBehaviour {
       int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
       int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
       bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
-      int bloomPadding = bloomPaddingMultiplier * bloomRadius;
-      int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
-      maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
-      imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, maxImageWidth );
+      imageWidth = GetClampedImageWidth(imageWidth);
 
       SetupTextures();
 
