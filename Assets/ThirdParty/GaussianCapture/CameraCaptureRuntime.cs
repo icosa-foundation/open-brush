@@ -116,6 +116,14 @@ public class CameraCaptureRuntime : MonoBehaviour
         public string FilePrefix;
     }
 
+    private struct SparseDepthCandidate
+    {
+        public float PixelX;
+        public float PixelY;
+        public float Depth;
+        public int CellIndex;
+    }
+
     public void Awake()
     {
         m_Instance = this;
@@ -1526,6 +1534,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         Texture2D depthTex = null;
         RenderTexture rtDepth = null;
         bool ownsDepthTexture = false;
+        Texture2D opaqueDepthDebugTex = null;
 
         int oldMask = cam.cullingMask;
         int noCloudLayer = LayerMask.NameToLayer("NoCloud");
@@ -1565,19 +1574,20 @@ public class CameraCaptureRuntime : MonoBehaviour
                 ownsDepthTexture = true;
             }
 
-            int sqrtRayCount = Mathf.CeilToInt(Mathf.Sqrt(Mathf.Max(1, rayCount)));
-            float stepX = w / (float)sqrtRayCount;
-            float stepY = h / (float)sqrtRayCount;
-
             float maxValidDepth = (clampMaxMeters > clampMinMeters && clampMaxMeters > 0f)
                 ? clampMaxMeters
                 : cam.farClipPlane;
+            // Linearizing a large hardware-depth range loses precision near the far plane.
+            // With a 10 km far clip, clear depth currently reads back around 9986 m, so a
+            // fixed centimetre tolerance mistakes sky pixels for scene geometry. Reserve
+            // the final 0.5% of the depth range for clear/sky rejection.
+            float farDepthTolerance = Mathf.Max(
+                Mathf.Max(1e-6f, maxDepthEpsilon), maxValidDepth * 0.005f);
             float skipThreshold = skipMaxDepthPlane
-                ? Mathf.Max(0f, maxValidDepth - Mathf.Max(1e-6f, maxDepthEpsilon))
+                ? Mathf.Max(0f, maxValidDepth - farDepthTolerance)
                 : float.PositiveInfinity;
 
             SaveDepthDebugFiles(depthTex, cam, debugOutputBasePath, skipThreshold);
-            Texture2D opaqueDepthDebugTex = null;
             if (saveOpaqueDepthReference && includeTransparentsAndParticles && eyeDepthShader != null)
             {
                 opaqueDepthDebugTex = RenderOpaqueDepthTexture(cam, w, h, clampMinMeters, clampMaxMeters, useFloat32);
@@ -1585,12 +1595,23 @@ public class CameraCaptureRuntime : MonoBehaviour
 
             SaveDepthComparisonPreview(depthTex, opaqueDepthDebugTex, debugOutputBasePath, skipThreshold);
 
-            for (int i = 0; i < sqrtRayCount; i++)
+            int targetPointCount = Mathf.Max(1, rayCount);
+            int targetAxis = Mathf.CeilToInt(Mathf.Sqrt(targetPointCount));
+            const int candidateOversampling = 4;
+            int candidateAxis = targetAxis * candidateOversampling;
+            float candidateStepX = w / (float)candidateAxis;
+            float candidateStepY = h / (float)candidateAxis;
+            var candidates = new List<SparseDepthCandidate>(candidateAxis * candidateAxis);
+            var candidatesByCell = new List<int>[targetAxis * targetAxis];
+            var candidateDepths = new List<float>(candidateAxis * candidateAxis);
+            float deepestCandidate = 0f;
+
+            for (int candidateX = 0; candidateX < candidateAxis; ++candidateX)
             {
-                for (int j = 0; j < sqrtRayCount; j++)
+                for (int candidateY = 0; candidateY < candidateAxis; ++candidateY)
                 {
-                    float px = i * stepX + stepX * 0.5f;
-                    float py = j * stepY + stepY * 0.5f;
+                    float px = (candidateX + 0.5f) * candidateStepX;
+                    float py = (candidateY + 0.5f) * candidateStepY;
 
                     float d = depthTex.GetPixel(
                         Mathf.Clamp((int)px, 0, w - 1),
@@ -1598,7 +1619,95 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                     if (d <= 0f || float.IsNaN(d) || float.IsInfinity(d)) continue;
                     if (d < cam.nearClipPlane) continue;
+                    // A clear depth buffer and the Unity skybox resolve to the far plane.
+                    // They are not physical geometry and must never seed sparse points.
                     if (skipMaxDepthPlane && d >= skipThreshold) continue;
+
+                    int cellX = candidateX / candidateOversampling;
+                    int cellY = candidateY / candidateOversampling;
+                    int cellIndex = cellY * targetAxis + cellX;
+                    int candidateIndex = candidates.Count;
+                    candidates.Add(new SparseDepthCandidate
+                    {
+                        PixelX = px,
+                        PixelY = py,
+                        Depth = d,
+                        CellIndex = cellIndex
+                    });
+                    candidateDepths.Add(d);
+                    deepestCandidate = Mathf.Max(deepestCandidate, d);
+                    if (candidatesByCell[cellIndex] == null)
+                    {
+                        candidatesByCell[cellIndex] = new List<int>(
+                            candidateOversampling * candidateOversampling);
+                    }
+                    candidatesByCell[cellIndex].Add(candidateIndex);
+                }
+            }
+
+            if (candidates.Count == 0)
+            {
+                return;
+            }
+
+            if (deepestCandidate <= cam.nearClipPlane * 1.01f)
+            {
+                Debug.LogError(
+                    $"[GaussianNativeDepth] All valid depth candidates collapsed near the camera plane for image {imageId}; no sparse points were written for this view.");
+                return;
+            }
+
+            candidateDepths.Sort();
+            float foregroundScale = candidateDepths[
+                Mathf.Clamp(candidateDepths.Count / 4, 0, candidateDepths.Count - 1)];
+            var random = new System.Random(unchecked(imageId * 486187739 + 31));
+            int[] cellOrder = Enumerable.Range(0, candidatesByCell.Length).ToArray();
+            for (int i = cellOrder.Length - 1; i > 0; --i)
+            {
+                int swapIndex = random.Next(i + 1);
+                int temp = cellOrder[i];
+                cellOrder[i] = cellOrder[swapIndex];
+                cellOrder[swapIndex] = temp;
+            }
+
+            var selectedCandidateIndices = new List<int>(targetPointCount);
+            var selectedCandidateSet = new HashSet<int>();
+            foreach (int cellIndex in cellOrder)
+            {
+                if (selectedCandidateIndices.Count >= targetPointCount) { break; }
+                List<int> cellCandidates = candidatesByCell[cellIndex];
+                if (cellCandidates == null || cellCandidates.Count == 0) { continue; }
+                int selectedIndex = ChooseDepthBiasedCandidate(
+                    cellCandidates, candidates, foregroundScale, random);
+                selectedCandidateIndices.Add(selectedIndex);
+                selectedCandidateSet.Add(selectedIndex);
+            }
+
+            if (selectedCandidateIndices.Count < targetPointCount)
+            {
+                var fillCandidates = new List<(double key, int index)>(candidates.Count);
+                for (int candidateIndex = 0; candidateIndex < candidates.Count; ++candidateIndex)
+                {
+                    if (selectedCandidateSet.Contains(candidateIndex)) { continue; }
+                    float weight = GetSparseDepthBiasWeight(
+                        candidates[candidateIndex].Depth, foregroundScale);
+                    double uniform = Math.Max(random.NextDouble(), 1e-12);
+                    fillCandidates.Add((-Math.Log(uniform) / weight, candidateIndex));
+                }
+                fillCandidates.Sort((left, right) => left.key.CompareTo(right.key));
+                foreach (var fillCandidate in fillCandidates)
+                {
+                    if (selectedCandidateIndices.Count >= targetPointCount) { break; }
+                    selectedCandidateIndices.Add(fillCandidate.index);
+                }
+            }
+
+            foreach (int candidateIndex in selectedCandidateIndices)
+            {
+                    SparseDepthCandidate candidate = candidates[candidateIndex];
+                    float px = candidate.PixelX;
+                    float py = candidate.PixelY;
+                    float d = candidate.Depth;
 
                     Vector3 worldPos;
                     if (useScreenToWorldPoint)
@@ -1644,7 +1753,6 @@ public class CameraCaptureRuntime : MonoBehaviour
                         $"{r} {g} {b} 1.0"
                     );
                     pointId++;
-                }
             }
 
             if (includeTransparentsAndParticles)
@@ -1652,17 +1760,49 @@ public class CameraCaptureRuntime : MonoBehaviour
                 AppendVisibleParticlesToPointCloud(writer, cam, imageId, ref pointId);
             }
 
+        }
+        finally
+        {
             SafeDestroy(opaqueDepthDebugTex);
             if (ownsDepthTexture)
             {
                 SafeDestroy(depthTex);
             }
-        }
-        finally
-        {
             cam.cullingMask = oldMask;
             if (rtDepth != null) RenderTexture.ReleaseTemporary(rtDepth);
         }
+    }
+
+    private static float GetSparseDepthBiasWeight(float depth, float foregroundScale)
+    {
+        float scale = Mathf.Max(foregroundScale, 1e-4f);
+        float normalizedDepth = depth / scale;
+        // The 0.25 floor keeps distant real geometry eligible while giving closer
+        // geometry up to four times its sampling probability.
+        return 0.25f + 0.75f / (1f + normalizedDepth * normalizedDepth);
+    }
+
+    private static int ChooseDepthBiasedCandidate(
+        List<int> candidateIndices,
+        List<SparseDepthCandidate> candidates,
+        float foregroundScale,
+        System.Random random)
+    {
+        float totalWeight = 0f;
+        foreach (int candidateIndex in candidateIndices)
+        {
+            totalWeight += GetSparseDepthBiasWeight(
+                candidates[candidateIndex].Depth, foregroundScale);
+        }
+
+        double selection = random.NextDouble() * totalWeight;
+        foreach (int candidateIndex in candidateIndices)
+        {
+            selection -= GetSparseDepthBiasWeight(
+                candidates[candidateIndex].Depth, foregroundScale);
+            if (selection <= 0d) { return candidateIndex; }
+        }
+        return candidateIndices[candidateIndices.Count - 1];
     }
 
     private void TryRunPostshotBatch(string captureOutputFolder)
