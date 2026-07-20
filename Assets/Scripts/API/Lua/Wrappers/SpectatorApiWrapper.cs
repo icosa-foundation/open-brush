@@ -103,6 +103,13 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Sets whether the spectator camera controls the LIV camera")]
+        public static bool drivesLivCamera
+        {
+            get => SketchControlsScript.m_Instance.GetDropCampWidget().DriveLivCamera;
+            set => SketchControlsScript.m_Instance.GetDropCampWidget().DriveLivCamera = value;
+        }
+
         [LuaDocsDescription("The 3D position of the Spectator Camera Widget")]
         public static Vector3 position
         {

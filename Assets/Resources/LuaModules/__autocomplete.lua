@@ -1652,6 +1652,7 @@ function Sketch:ImportSkybox(filename) end
 ---@field canSeeUi boolean Sets whether Ui are visible to the spectator camera
 ---@field canSeeUsertools boolean Sets whether Usertools are visible to the spectator camera
 ---@field active boolean Is the spectator camera currently active?
+---@field drivesLivCamera boolean Sets whether the spectator camera controls the LIV camera
 ---@field position Vector3 | number[] The 3D position of the Spectator Camera Widget
 ---@field rotation Rotation | number[] The 3D orientation of the Spectator Camera
 ---@field lockedToScene boolean Sets whether the spectator camera moves with the scene or with the user
