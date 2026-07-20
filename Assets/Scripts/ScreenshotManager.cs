@@ -503,20 +503,7 @@ namespace TiltBrush
         /// with CreateTemporaryTargetForSave().
         public void RenderDepthToTexture(RenderTexture rTexture)
         {
-            var camera = LeftInfo.camera;
-
-            var prevTarget = camera.targetTexture;
-            var prevDepthTextureMode = camera.depthTextureMode;
-
-            camera.targetTexture = rTexture;
-            camera.depthTextureMode = DepthTextureMode.Depth;
-
-            Shader depthNormalsShader = Shader.Find("Hidden/Internal-DepthNormalsTexture");
-            camera.RenderWithShader(depthNormalsShader, "RenderType");
-
-            // Restore camera state
-            camera.targetTexture = prevTarget;
-            camera.depthTextureMode = prevDepthTextureMode;
+            RenderDepthNormalToTexture(rTexture);
         }
 
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
