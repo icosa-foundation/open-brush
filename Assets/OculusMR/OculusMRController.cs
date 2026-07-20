@@ -22,7 +22,7 @@ namespace TiltBrush
 {
     public class OculusMRController : MonoBehaviour
     {
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         public static OculusMRController m_Instance;
 
         public OVRSceneManager ovrSceneManager;
@@ -31,6 +31,9 @@ namespace TiltBrush
         private bool loadedScene;
 
         private bool host;
+        private bool started;
+
+        public bool IsHosting => host;
 
         void Awake()
         {
@@ -63,19 +66,39 @@ namespace TiltBrush
 
         public async void StartMRExperience(bool isHosting)
         {
+            if (started)
+            {
+                Debug.LogWarning("Oculus MR experience has already been started.");
+                return;
+            }
+
             if (!await RequestScenePermissionAsync())
             {
                 Debug.LogWarning("Oculus scene permission is required to start MR experience.");
                 return;
             }
 
+            started = true;
             host = isHosting;
 
             if (host)
             {
-                await m_SpatialAnchorManager.CreateSpatialAnchor();
-                m_SpatialAnchorManager.SceneLocalizeToAnchor();
-                MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
+                if (!await m_SpatialAnchorManager.CreateSpatialAnchor())
+                {
+                    Debug.LogError("Failed to create the colocation spatial anchor.");
+                    started = false;
+                    return;
+                }
+
+                if (!m_SpatialAnchorManager.SceneLocalizeToAnchor())
+                {
+                    Debug.LogError("Failed to localize the scene to the colocation spatial anchor.");
+                    started = false;
+                    return;
+                }
+
+                LoadSceneModel();
+                await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12
@@ -83,7 +106,7 @@ namespace TiltBrush
             }
             else
             {
-                MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
+                await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12
@@ -93,14 +116,28 @@ namespace TiltBrush
 
         public async void RemoteSyncToAnchor(string uuid)
         {
-            await m_SpatialAnchorManager.SyncToRemoteAnchor(uuid, OVRSpace.StorageLocation.Cloud);
+            bool success = await m_SpatialAnchorManager.SyncToRemoteAnchor(
+                uuid, OVRSpace.StorageLocation.Cloud);
 
-            if (!loadedScene)
+            if (!success)
             {
-                ovrSceneManager.LoadSceneModel();
-                loadedScene = true;
+                Debug.LogError("Failed to synchronize to the remote colocation anchor.");
+                return;
             }
+
+            LoadSceneModel();
         }
-#endif // OCULUS_SUPPORTED
+
+        private void LoadSceneModel()
+        {
+            if (loadedScene)
+            {
+                return;
+            }
+
+            ovrSceneManager.LoadSceneModel();
+            loadedScene = true;
+        }
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
     }
 }

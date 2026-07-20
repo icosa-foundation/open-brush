@@ -50,5 +50,23 @@ namespace TiltBrush
             }
         }
 
+        [ApiEndpoint("colocation.host", "Hosts a Meta Quest colocation session")]
+        public static void HostColocation()
+        {
+            if (!ColocationBootstrap.TryStart(true))
+            {
+                Debug.LogWarning("Colocation is unsupported or has not finished initializing.");
+            }
+        }
+
+        [ApiEndpoint("colocation.join", "Joins a Meta Quest colocation session")]
+        public static void JoinColocation()
+        {
+            if (!ColocationBootstrap.TryStart(false))
+            {
+                Debug.LogWarning("Colocation is unsupported or has not finished initializing.");
+            }
+        }
+
     }
 }

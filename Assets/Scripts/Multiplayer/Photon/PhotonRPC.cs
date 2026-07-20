@@ -436,9 +436,12 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
-#if OCULUS_SUPPORTED
-            OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
-#endif // OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            if (OculusMRController.m_Instance != null)
+            {
+                OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
+            }
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         }
 
         [Rpc(InvokeLocal = false)]

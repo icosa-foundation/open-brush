@@ -279,7 +279,7 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp -btb-android-target-sdk 34
             versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
+            extra_defines: OCULUS_SUPPORTED OCULUS_COLOCATION_SUPPORTED USE_QUEST_PACKAGE_NAME
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Android Pico

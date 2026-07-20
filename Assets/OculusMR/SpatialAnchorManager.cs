@@ -22,7 +22,7 @@ namespace TiltBrush
 {
     public class SpatialAnchorManager : MonoBehaviour
     {
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         const string kOriginSpatialAnchorPref = "ORIGIN_SPATIAL_ANCHOR";
 
         OVRSpatialAnchor m_Anchor;
@@ -117,7 +117,11 @@ namespace TiltBrush
 
         public async Task<bool> SyncToRemoteAnchor(string uuid, OVRSpace.StorageLocation defaultStorageLocation = OVRSpace.StorageLocation.Local)
         {
-            var guid = new Guid(uuid);
+            if (!Guid.TryParse(uuid, out Guid guid))
+            {
+                Debug.LogError($"Invalid remote anchor UUID: {uuid}");
+                return false;
+            }
 
             var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
             {
@@ -140,6 +144,12 @@ namespace TiltBrush
 
         async Task<bool> BindAnchors(OVRSpatialAnchor.UnboundAnchor[] anchors)
         {
+            if (anchors == null || anchors.Length == 0)
+            {
+                Debug.LogError("No spatial anchors were returned.");
+                return false;
+            }
+
             var unboundAnchor = anchors[0];
 
             var anchorGO = new GameObject("Origin Anchor");
@@ -186,6 +196,6 @@ namespace TiltBrush
 
             return false;
         }
-#endif // OCULUS_SUPPORTED
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
     }
 }

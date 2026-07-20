@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using Fusion;
 #endif
 using UnityEngine;
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
 using OVRPlatform = Oculus.Platform;
 #endif
 using TiltBrush;
@@ -136,13 +136,12 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
                 {
                     myOculusUserId = msg.GetUser().ID;
                     Debug.Log($"OculusID: {myOculusUserId}");
-                    oculusPlayerIds.Add(myOculusUserId);
                 }
                 else
                 {
@@ -466,7 +465,7 @@ namespace OpenBrush.Multiplayer
                 if (!player.IsSpawned) continue;
 
                 data = player.ReceiveData();
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
                 {
@@ -475,13 +474,16 @@ namespace OpenBrush.Multiplayer
                     oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
                     newUser = true;
                 }
-#endif // OCULUS_SUPPORTED
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
             }
 
-            if (newUser)
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            if (newUser && OculusMRController.m_Instance != null &&
+                OculusMRController.m_Instance.IsHosting)
             {
                 ShareAnchors();
             }
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         }
 
         void OnLocalPlayerJoined(int id, ITransientData<PlayerRigData> playerData)
@@ -672,7 +674,13 @@ namespace OpenBrush.Multiplayer
 
         async void ShareAnchors()
         {
-#if OCULUS_SUPPORTED
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            if (OculusMRController.m_Instance == null ||
+                !OculusMRController.m_Instance.IsHosting)
+            {
+                return;
+            }
+
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
@@ -683,7 +691,7 @@ namespace OpenBrush.Multiplayer
                     await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }
             }
-#endif // OCULUS_SUPPORTED
+#endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         }
 
         private void OnConnectionHandlerDisconnected()
