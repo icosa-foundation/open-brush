@@ -30,9 +30,11 @@
 			v2f vert(appdata_base v)
 			{
 				v2f o;
-				o.vertex.xy = v.vertex.xy * 2.0;
-				o.vertex.z = 0;
-				o.vertex.w = 1;
+				float2 uv = -1.0 + v.vertex.xy * 2.0;
+				uv.y *= _ProjectionParams.x;
+				o.vertex.xy = uv;
+				o.vertex.z = 0.0;
+				o.vertex.w = 1.0;
 				return o;
 			}
 

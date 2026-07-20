@@ -6,102 +6,148 @@ namespace LIV.SDK.Unity
 {
     [CustomEditor(typeof(LIV))]
     public class LIVEditor : Editor
-    {        
-        const string EXCLUDE_BEHAVIOURS_FOLDOUT_KEY = "liv_excludeBehavioursfoldout";
+    {
+        #region UI NAME REFERENCES
 
-        const string STAGE_PROPERTY = "_stage";
-        const string STAGE_TRANSFORM_PROPERTY = "_stageTransform";
-        const string HMD_CAMERA_PROPERTY = "_HMDCamera";
-        const string MR_CAMERA_PREFAB_PROPERTY = "_MRCameraPrefab";
-        const string DISABLE_STANDARD_ASSETS_PROPERTY = "_disableStandardAssets";
-        const string SPECTATOR_LAYER_MASK_PROPERTY = "_spectatorLayerMask";
-        const string EXCLUDE_BEHAVIOURS_PROPERTY = "_excludeBehaviours";
-        const string FIX_POST_EFFECTS_ALPHA_PROPERTY = "_fixPostEffectsAlpha";
+        private const string STAGE_PROPERTY = "_stage";
+        private const string HMD_CAMERA_PROPERTY = "_HMDCamera";
+        private const string MR_CAMERA_PREFAB_PROPERTY = "_MRCameraPrefab";
+        private const string SPECTATOR_LAYER_MASK_PROPERTY = "_spectatorLayerMask";
+        private const string PASSTHROUGH_LAYER_MASK_PROPERTY = "_passthroughLayerMask";
+        private const string FIX_POST_EFFECTS_ALPHA_PROPERTY = "_fixPostEffectsAlpha";
+        private const string EXCLUDE_BEHAVIOURS_PROPERTY = "_excludeBehaviours";
+        private const string OVERRIDE_ALPHA_FROM_DEPTH_BUFFER = "_overrideAlphaFromDepthBuffer";
 
-        static GUIContent REQUIRED_FOLDOUT_GUICONTENT = new GUIContent("Required");
-        static GUIContent OPTIONAL_FOLDOUT_GUICONTENT = new GUIContent("Optional");
+        #endregion
 
-        static GUIContent STAGE_GUICONTENT = new GUIContent("Stage");
-        static GUIContent STAGE_INFO_GUICONTENT = new GUIContent(
+        #region CONTENT DATA
+
+        private static GUIContent TRACKING_ID_CONTENT = new GUIContent(
+            "Tracking ID",
+            "Tracking ID that identifies your game to the LIV backend, allowing you to get usage analytics.");
+
+        private static GUIContent TRACKING_SPACE_CONTENT = new GUIContent(
+            "XR Origin",
             "The origin of tracked space.\n" +
-            "This is the object that you use to move the player around."
-            );
+            "This is the object that you use to move the player around.");
 
-        static GUIContent STAGE_TRANSFORM_GUICONTENT = new GUIContent("Stage Transform");
-        static GUIContent STAGE_TRANSFORM_INFO_GUICONTENT = new GUIContent(
-            "This transform defines the stage transform."
-            );
+        private static GUIContent HMD_CAMERA_CONTENT = new GUIContent(
+            "HMD Camera",
+            "Set this to the camera used to render the HMD's point of view.");
 
-        static GUIContent HMD_CAMERA_GUICONTENT = new GUIContent("HMD Camera");
-        static GUIContent HMD_CAMERA_INFO_GUICONTENT = new GUIContent(
-            "Set this to the camera used to render the HMD's point of view."
-            );
+        private static GUIContent MR_CAMERA_PREFAB_CONTENT = new GUIContent(
+            "MR Camera Prefab",
+            "Set custom camera prefab.");
 
-        static GUIContent MR_CAMERA_PREFAB_GUICONTENT = new GUIContent("MR Camera Prefab");
-        static GUIContent MR_CAMERA_PREFAB_INFO_GUICONTENT = new GUIContent(
-            "Set custom camera prefab."
-            );
+        private static GUIContent SPECTATOR_LAYER_MASK_CONTENT = new GUIContent(
+            "Spectator Layer Mask",
+            "By default, we'll show everything on the spectator camera.\n" +
+            "If you want to disable certain objects from showing, update this mask property.");
 
-        static GUIContent DISABLE_STANDARD_ASSETS_GUICONTENT = new GUIContent("Disable Standard Assets");
-        static GUIContent DISABLE_STANDARD_INFO_ASSETS_GUICONTENT = new GUIContent(
-            "If you're using Unity's standard effects and they're interfering with MR rendering, check this box."
-            );
+        private static GUIContent PASSTHROUGH_LAYER_MASK_CONTENT = new GUIContent(
+            "Passthrough Layer Mask",
+            "Render only certain layers when passthrough rendering is turned on.");
 
-        static GUIContent SPECTATOR_LAYER_MASK_GUICONTENT = new GUIContent("Spectator Layer Mask");
-        static GUIContent SPECTATOR_LAYER_MASK_INFO_GUICONTENT = new GUIContent(
-            "By default, we'll show everything on the spectator camera. If you want to disable certain objects from showing, update this mask property."
-            );
+        private static GUIContent FIX_POST_EFFECTS_ALPHA_CONTENT = new GUIContent(
+            "Fix Post Effect Alpha Channel",
+            "Some post-effects corrupt the alpha channel.\n" +
+            "This fix tries to recover it.");
 
-        static GUIContent FIX_POST_EFFECTS_ALPHA_GUICONTENT = new GUIContent("Fix Post-Effects alpha channel");
-        static GUIContent FIX_POST_EFFECTS_ALPHA_INFO_GUICONTENT = new GUIContent(
-            "Some post-effects corrupt the alpha channel, this fix tries to recover it."
-            );
+        private static GUIContent OVERRIDE_ALPHA_FROM_DEPTH_BUFFER_CONTENT = new GUIContent(
+            "Override Alpha From Depth Buffer",
+            "Overrides alpha using depth buffer from opaque render pass, " +
+            "enable only when opaque render pass has corrupted alpha channel.");
 
+        #endregion
 
-        static GUIContent EXCLUDE_BEHAVIOURS_GUICONTENT = new GUIContent("Exclude Behaviours");
+        #region URLS
 
-        static GUIStyle VERSION_STYLE {
-            get {
-                GUIStyle g = new GUIStyle(EditorStyles.label);
-                g.alignment = TextAnchor.LowerLeft;
-                g.normal.textColor = Color.white;
-                g.fontStyle = FontStyle.Bold;
-                return g;
+        private const string TUTORIAL_URL = "https://www.youtube.com/watch?v=FSXfNXu0mT0&list=PL_411laEMx3IGPBf548ZpOoJyiVPLEE6u";
+        private const string DOCUMENTATION_URL = "https://mrc-docs.liv.tv/intro";
+        private const string DEVELOPER_PORTAL_URL = "https://dev.liv.tv/";
+        private const string DISCORD_URL = "https://discord.gg/liv";
+        private const string HELP_URL = "https://help.liv.tv/hc/en-us";
+
+        #endregion
+
+        #region STYLES
+
+        private static GUIStyle SECTION_TITLE_STYLE
+        {
+            get
+            {
+                var style = new GUIStyle(EditorStyles.boldLabel);
+                return style;
             }
         }
 
-        static GUIStyle LIV_BUTTON_STYLE {
-            get {
-                GUIStyle g = new GUIStyle();                
-                return g;
+        private static GUIStyle ERROR_LABEL_STYLE
+        {
+            get
+            {
+                var style = new GUIStyle(EditorStyles.label);
+                style.normal.textColor = ERROR_COLOR;
+                return style;
             }
         }
 
-        static Color darkBGColor {
-            get {
-                if (EditorGUIUtility.isProSkin)
-                {
-                    return new Color(0f, 0f, 0f, 0.5f);
-                } else
-                {
-                    return new Color(1f, 1f, 1f, 0.5f);
-                }
-            }
-        }
-        static Color lightRedBGColor {
-            get {
-                return new Color(1f, 0.5f, 0.5f, 1f);
-            }
-        }
-        static Color lightBGColor {
-            get {
-                return new Color(1f, 1, 1, 1f);
+        private static GUIStyle ERROR_DESC_STYLE
+        {
+            get
+            {
+                var style = new GUIStyle(EditorStyles.miniLabel);
+                return style;
             }
         }
 
-        ReorderableList excludeBehavioursList;
+        private static GUIStyle LINK_STYLE
+        {
+            get
+            {
+                var style = new GUIStyle(EditorStyles.label);
+                style.alignment = TextAnchor.MiddleLeft;
+                style.normal.textColor = Color.white;
+                style.wordWrap = false;
+                return style;
+            }
+        }
 
-        static bool excludeBehavioursFoldoutValue {
+        private static GUIStyle VERSION_STYLE {
+            get {
+                GUIStyle style = new GUIStyle(EditorStyles.label);
+                style.alignment = TextAnchor.MiddleLeft;
+                style.normal.textColor = VERSION_COLOR;
+                return style;
+            }
+        }
+
+        #endregion
+
+        #region COLORS
+
+        static Color ERROR_COLOR = new Color(1f, 0.3058824f, 0.3058824f, 1f);
+        static Color SEPARATOR_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.2f);
+        static Color VERSION_COLOR
+        {
+            get
+            {
+                return EditorStyles.label.normal.textColor;
+            }
+        }
+
+        #endregion
+
+        #region MARGINS AND SIZES
+
+        private const float BASE_MARGIN = 2f;
+
+        #endregion
+
+        #region REORDERABLE LIST
+
+        private ReorderableList _excludeBehavioursList;
+        private const string EXCLUDE_BEHAVIOURS_FOLDOUT_KEY = "liv_excludeBehavioursfoldout";
+        private static bool excludeBehavioursFoldoutValue {
             get {
                 if (!EditorPrefs.HasKey(EXCLUDE_BEHAVIOURS_FOLDOUT_KEY)) return false;
                 return EditorPrefs.GetBool(EXCLUDE_BEHAVIOURS_FOLDOUT_KEY);
@@ -111,168 +157,273 @@ namespace LIV.SDK.Unity
             }
         }
 
-        SerializedProperty stageProperty = null;
-        SerializedProperty stageTransformProperty = null;
-        SerializedProperty hmdCameraProperty = null;
-        SerializedProperty mrCameraPrefabProperty = null;
-        SerializedProperty disableStandardAssetsProperty = null;
-        SerializedProperty SpectatorLayerMaskProperty = null;
-        SerializedProperty ExcludeBehavioursProperty = null;
-        SerializedProperty FixPostEffectsAlphaProperty = null;
+        #endregion
 
-        static Texture2D _livLogo;
-        void OnEnable()
+        #region PROPERTIES
+
+        private SerializedProperty _stageProperty;
+        private SerializedProperty _hmdCameraProperty;
+        private SerializedProperty _mrCameraPrefabProperty;
+        private SerializedProperty _spectatorLayerMaskProperty;
+        private SerializedProperty _passthroughLayerMaskProperty;
+        private SerializedProperty _excludeBehavioursProperty;
+        private SerializedProperty _fixPostEffectsAlphaProperty;
+        private SerializedProperty _overrideAlphaFromDepthBuffer;
+
+        #endregion
+
+        #region ICONS
+
+        private Texture2D _logo;
+        private Texture2D _tutorial;
+        private Texture2D _documentation;
+        private Texture2D _discord;
+        private Texture2D _info;
+        private Texture2D _devPortal;
+        private Texture2D _componentLogo;
+
+        #endregion
+
+        #region UNITY METHODS
+
+        private void OnEnable()
         {
-            string[] livLogoGUID = AssetDatabase.FindAssets("LIVLogo t:texture2D");            
-            if (livLogoGUID.Length > 0)
-            {                
-                _livLogo = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(livLogoGUID[0]));
-            }
+            GetTexturesForIcons();
 
-            stageProperty = serializedObject.FindProperty(STAGE_PROPERTY);
-            stageTransformProperty = serializedObject.FindProperty(STAGE_TRANSFORM_PROPERTY);
-            hmdCameraProperty = serializedObject.FindProperty(HMD_CAMERA_PROPERTY);
-            mrCameraPrefabProperty = serializedObject.FindProperty(MR_CAMERA_PREFAB_PROPERTY);
-            disableStandardAssetsProperty = serializedObject.FindProperty(DISABLE_STANDARD_ASSETS_PROPERTY);            
-            SpectatorLayerMaskProperty = serializedObject.FindProperty(SPECTATOR_LAYER_MASK_PROPERTY);
-            ExcludeBehavioursProperty = serializedObject.FindProperty(EXCLUDE_BEHAVIOURS_PROPERTY);
-            FixPostEffectsAlphaProperty = serializedObject.FindProperty(FIX_POST_EFFECTS_ALPHA_PROPERTY);
-
-            excludeBehavioursList = new ReorderableList(serializedObject, ExcludeBehavioursProperty, true, true, true, true);
-            excludeBehavioursList.drawElementCallback = DrawListItems;
-            excludeBehavioursList.headerHeight = 2;
-        }
-
-        void DrawListItems(Rect rect, int index, bool isActive, bool isFocused)
-        {
-            EditorGUI.PropertyField(rect, excludeBehavioursList.serializedProperty.GetArrayElementAtIndex(index), new GUIContent(""), false);
-        }
-
-        void DrawList(SerializedProperty property, GUIContent guiContent)
-        {
-            EditorGUILayout.PropertyField(property, guiContent);
-            while (true)
-            {                
-                if(!property.Next(true))
-                {
-                    break;
-                }
-                EditorGUILayout.PropertyField(property);
-            }
-        }
-
-        void DrawProperty(SerializedProperty property, GUIContent label, GUIContent content, Color color)
-        {
-            Color lastAccentColor = GUI.color;
-            GUI.color = darkBGColor;
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            GUI.color = lastAccentColor;
-            GUILayout.Space(2);
-            EditorGUILayout.PropertyField(property, label);            
-            Color lastBackgroundColor = GUI.backgroundColor;
-            GUI.backgroundColor = color;
-            EditorGUILayout.LabelField(content, EditorStyles.helpBox);
-            GUI.backgroundColor = lastBackgroundColor;
-            EditorGUILayout.EndVertical();
-        }
-
-        void RenderStageField()
-        {
-            Color color = lightBGColor;
-            GUIContent content = new GUIContent(STAGE_INFO_GUICONTENT);
-            if (stageProperty.objectReferenceValue == null)
+            #if UNITY_2021_2_OR_NEWER
+            if (_componentLogo != null)
             {
-                color = lightRedBGColor;
-                content.text += "\nThe stage has to be set!";
-                content.image = EditorGUIUtility.IconContent("console.erroricon").image;
+                MonoScript script = MonoScript.FromMonoBehaviour((MonoBehaviour)target);
+                EditorGUIUtility.SetIconForObject(script, _componentLogo);
             }
+            #endif
 
-            DrawProperty(stageProperty, STAGE_GUICONTENT, content, color);
-        }
+            _stageProperty = serializedObject.FindProperty(STAGE_PROPERTY);
+            _hmdCameraProperty = serializedObject.FindProperty(HMD_CAMERA_PROPERTY);
+            _mrCameraPrefabProperty = serializedObject.FindProperty(MR_CAMERA_PREFAB_PROPERTY);
+            _spectatorLayerMaskProperty = serializedObject.FindProperty(SPECTATOR_LAYER_MASK_PROPERTY);
+            _passthroughLayerMaskProperty = serializedObject.FindProperty(PASSTHROUGH_LAYER_MASK_PROPERTY);
+            _excludeBehavioursProperty = serializedObject.FindProperty(EXCLUDE_BEHAVIOURS_PROPERTY);
+            _fixPostEffectsAlphaProperty = serializedObject.FindProperty(FIX_POST_EFFECTS_ALPHA_PROPERTY);
+            _overrideAlphaFromDepthBuffer = serializedObject.FindProperty(OVERRIDE_ALPHA_FROM_DEPTH_BUFFER);
 
-        void RenderHMDField()
-        {
-            Color color = lightBGColor;
-            GUIContent content = new GUIContent(HMD_CAMERA_INFO_GUICONTENT);
-            if (hmdCameraProperty.objectReferenceValue == null)
-            {
-                color = lightRedBGColor;
-                content.text += "\nThe camera has to be set!";
-                content.image = EditorGUIUtility.IconContent("console.erroricon").image;
-            }
-
-            DrawProperty(hmdCameraProperty, HMD_CAMERA_GUICONTENT, content, color);
-        }
-
-        void RenderSpectatorLayerMaskField()
-        {
-            Color color = lightBGColor;
-            GUIContent content = new GUIContent(SPECTATOR_LAYER_MASK_INFO_GUICONTENT);            
-            if (SpectatorLayerMaskProperty.intValue == 0)
-            {
-                color = lightRedBGColor;
-                content.text += "\nAre you sure you want to render nothing?";
-                content.image = EditorGUIUtility.IconContent("console.warnicon").image;
-            } 
-
-            DrawProperty(SpectatorLayerMaskProperty, SPECTATOR_LAYER_MASK_GUICONTENT, content, color);
+            _excludeBehavioursList = new ReorderableList(serializedObject, _excludeBehavioursProperty, true, false, true, true);
+            _excludeBehavioursList.drawElementCallback = DrawListItems;
         }
 
         public override void OnInspectorGUI()
         {
-            serializedObject.Update();            
-            if (_livLogo != null)
+            serializedObject.Update();
+            DrawUI();
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        #endregion
+
+        #region DRAWING UI METHODS
+
+        private void DrawUI()
+        {
+            DrawSectionTitle("Required");
+            DrawGap();
+            DrawTrackingID();
+            DrawGap(4);
+            DrawTrackedSpace();
+            DrawHMDField();
+            DrawGap();
+            DrawLineSeparator();
+            DrawSectionTitle("Optional");
+            DrawGap();
+            DrawProperty(_mrCameraPrefabProperty, MR_CAMERA_PREFAB_CONTENT, EditorStyles.label);
+            DrawSpectatorLayerMaskField();
+            DrawPassthroughLayerMaskField();
+            DrawProperty(_fixPostEffectsAlphaProperty, FIX_POST_EFFECTS_ALPHA_CONTENT, EditorStyles.label);
+            DrawProperty(_overrideAlphaFromDepthBuffer, OVERRIDE_ALPHA_FROM_DEPTH_BUFFER_CONTENT, EditorStyles.label);
+            DrawGap();
+            DrawLineSeparator();
+            DrawExcludeBehaviours();
+            DrawGap();
+            DrawLineSeparator();
+            DrawFooter();
+        }
+
+        private void DrawSectionTitle(string titleName)
+        {
+             EditorGUILayout.LabelField(titleName, SECTION_TITLE_STYLE, GUILayout.ExpandWidth(false));
+        }
+
+        private void DrawGap(int factor = 1)
+        {
+            GUILayout.Space(BASE_MARGIN * factor);
+        }
+
+        void DrawTrackingID()
+        {
+            string trackingID = SDKSettings.instance.trackingID;
+            bool isTrackingIDMissing = string.IsNullOrEmpty(trackingID);
+
+            EditorGUILayout.BeginHorizontal();
+
+            string valueText = isTrackingIDMissing ? "None" : trackingID;
+            GUIStyle fieldStyle = isTrackingIDMissing ? ERROR_LABEL_STYLE : EditorStyles.label;
+            EditorGUILayout.LabelField(TRACKING_ID_CONTENT, fieldStyle, GUILayout.ExpandWidth(false));
+            EditorGUILayout.LabelField(valueText, EditorStyles.label);
+
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.LabelField("", GUILayout.ExpandWidth(false));
+
+            if (GUILayout.Button("Open Settings", GUILayout.ExpandWidth(true)))
             {
-                Color lastBackgroundColor = GUI.color;
-                GUI.color = new Color(0f, 0f, 0f, 0.5f);
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                GUI.color = lastBackgroundColor;
-                Rect originalRect = EditorGUILayout.GetControlRect(GUILayout.Height(_livLogo.height));                
-                Rect imageRect = originalRect;
-                imageRect.x = (originalRect.width - _livLogo.width);
-                imageRect.width = _livLogo.width;
-                GUI.DrawTexture(imageRect, _livLogo);
-                GUI.Label(originalRect, "v" + SDKConstants.SDK_VERSION, VERSION_STYLE);
-                if(GUI.Button(originalRect, new GUIContent(), LIV_BUTTON_STYLE)) {
-                    Application.OpenURL("https://liv.tv/");
-                }
-                EditorGUILayout.EndVertical();
+                Selection.activeObject = SDKSettings.instance;
             }
+            EditorGUILayout.EndHorizontal();
+        }
 
-            EditorGUILayout.LabelField(REQUIRED_FOLDOUT_GUICONTENT, EditorStyles.boldLabel);
-            RenderStageField();
-            RenderHMDField();
-            DrawProperty(disableStandardAssetsProperty, DISABLE_STANDARD_ASSETS_GUICONTENT, DISABLE_STANDARD_INFO_ASSETS_GUICONTENT, lightBGColor);
-            
-            RenderSpectatorLayerMaskField();
+        private void DrawTrackedSpace()
+        {
+            GUIStyle labelStyle = _stageProperty.objectReferenceValue ? EditorStyles.label : ERROR_LABEL_STYLE;
+            DrawProperty(_stageProperty, TRACKING_SPACE_CONTENT, labelStyle);
+        }
 
-            Color lastAccentColor = GUI.color;
-            GUI.color = darkBGColor;
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            GUI.color = lastAccentColor;
+        private void DrawHMDField()
+        {
+            GUIStyle labelStyle = _hmdCameraProperty.objectReferenceValue ? EditorStyles.label : ERROR_LABEL_STYLE;
+            DrawProperty(_hmdCameraProperty, HMD_CAMERA_CONTENT, labelStyle);
+        }
 
+        private void DrawSpectatorLayerMaskField()
+        {
+            bool isEmpty = _spectatorLayerMaskProperty.intValue == 0;
+            DrawProperty(_spectatorLayerMaskProperty, SPECTATOR_LAYER_MASK_CONTENT, isEmpty ? ERROR_LABEL_STYLE : EditorStyles.label);
+            if (isEmpty)
+                RenderFieldError("Nothing will be rendered.");
+        }
+
+        private void DrawPassthroughLayerMaskField()
+        {
+            bool isEmpty = _passthroughLayerMaskProperty.intValue == 0;
+            DrawProperty(_passthroughLayerMaskProperty, PASSTHROUGH_LAYER_MASK_CONTENT, isEmpty ? ERROR_LABEL_STYLE : EditorStyles.label);
+            if (isEmpty)
+                RenderFieldError("Nothing will be rendered.");
+        }
+
+        private void DrawExcludeBehaviours()
+        {
             EditorGUI.indentLevel++;
-            excludeBehavioursFoldoutValue = EditorGUILayout.Foldout(excludeBehavioursFoldoutValue, EXCLUDE_BEHAVIOURS_GUICONTENT);
+            excludeBehavioursFoldoutValue = EditorGUILayout.Foldout(excludeBehavioursFoldoutValue,
+                "Exclude Behaviours (" + _excludeBehavioursList.count + ")");
             EditorGUI.indentLevel--;
+
             if (excludeBehavioursFoldoutValue)
             {
-                excludeBehavioursList.DoLayoutList();
+                DrawGap(2);
+                _excludeBehavioursList.DoLayoutList();
             }
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.LabelField(OPTIONAL_FOLDOUT_GUICONTENT, EditorStyles.boldLabel);
-            DrawProperty(stageTransformProperty, STAGE_TRANSFORM_GUICONTENT, STAGE_TRANSFORM_INFO_GUICONTENT, lightBGColor);
-            DrawProperty(mrCameraPrefabProperty, MR_CAMERA_PREFAB_GUICONTENT, MR_CAMERA_PREFAB_INFO_GUICONTENT, lightBGColor);
-            DrawProperty(FixPostEffectsAlphaProperty, FIX_POST_EFFECTS_ALPHA_GUICONTENT, FIX_POST_EFFECTS_ALPHA_INFO_GUICONTENT, lightBGColor);
-            serializedObject.ApplyModifiedProperties();
-            
-            GUIContent helpContent = new GUIContent(EditorGUIUtility.IconContent("_Help"));
-            helpContent.text = "Help";
-            if (GUILayout.Button(helpContent))
-            {
-                Application.OpenURL(@"https://liv.tv/sdk-unity-docs");
-            }
-            EditorGUILayout.Space();
         }
+
+        private void DrawFooter()
+        {
+            DrawLogo();
+            GUILayout.Space(-14); // Offset rest UI to align with logo
+            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginHorizontal();
+            CreateButtonLinkWithIcon("Tutorials", _tutorial, TUTORIAL_URL);
+            CreateButtonLinkWithIcon("Discord", _discord, DISCORD_URL);
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            CreateButtonLinkWithIcon("Documentation", _documentation, DOCUMENTATION_URL);
+            CreateButtonLinkWithIcon("Developer's Portal", _devPortal, DEVELOPER_PORTAL_URL);
+            EditorGUILayout.EndHorizontal();
+            CreateButtonLinkWithIcon("Help Desk", _info, HELP_URL);
+            EditorGUILayout.LabelField("v" + LivApi.GetVersion(), VERSION_STYLE);
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawLogo()
+        {
+            if (_logo == null) return;
+
+            GUI.color = EditorStyles.label.normal.textColor;
+            float logoWidth = 56f;
+            float logoHeight = 32f;
+            Rect originalRect = EditorGUILayout.GetControlRect();
+            Rect logoRect = originalRect;
+            logoRect.height = logoHeight;
+            logoRect.width = logoWidth;
+            logoRect.x = (originalRect.width - logoWidth / 2 -14);
+            GUI.DrawTexture(logoRect, _logo);
+        }
+
+        #endregion
+
+        #region UTILS
+
+        private void DrawListItems(Rect rect, int index, bool isActive, bool isFocused)
+        {
+            rect.height = EditorGUIUtility.singleLineHeight;
+            EditorGUI.PropertyField(rect, _excludeBehavioursList.serializedProperty.GetArrayElementAtIndex(index), GUIContent.none);
+        }
+
+        private void GetTexturesForIcons()
+        {
+            _logo = GetIconTexture("liv_logo");
+            _tutorial = GetIconTexture("liv_tutorial");
+            _documentation = GetIconTexture("liv_doc");
+            _discord = GetIconTexture("liv_discord");
+            _info = GetIconTexture("liv_info");
+            _devPortal = GetIconTexture("liv_dev");
+            _componentLogo = GetIconTexture("liv_component_logo");
+        }
+
+        private static Texture2D GetIconTexture(string iconName)
+        {
+            string[] iconGuid = AssetDatabase.FindAssets(iconName + " t:texture2D");
+
+            if (iconGuid.Length > 0)
+                return AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(iconGuid[0]));
+
+            return null;
+        }
+
+        private void RenderFieldError(string message)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("", GUILayout.ExpandWidth(false));
+            EditorGUILayout.LabelField(message, ERROR_DESC_STYLE, GUILayout.ExpandWidth(true));
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawProperty(SerializedProperty property, GUIContent label, GUIStyle labelStyle)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(label, labelStyle, GUILayout.ExpandWidth(false));
+            EditorGUILayout.PropertyField(property, GUIContent.none);
+            EditorGUILayout.EndHorizontal();
+        }
+        private void DrawLineSeparator()
+        {
+            GUILayout.Space(BASE_MARGIN * 2);
+            Rect rect = EditorGUILayout.GetControlRect(false, 1);
+            rect.width = EditorGUIUtility.currentViewWidth;
+            rect.x = 0;
+            EditorGUI.DrawRect(rect, SEPARATOR_COLOR);
+            GUILayout.Space(BASE_MARGIN * 2);
+        }
+
+        private void CreateButtonLinkWithIcon(string text, Texture2D icon, string url)
+        {
+            GUI.color = EditorStyles.label.normal.textColor;
+            GUIContent content = icon != null ? new GUIContent(" " + text, icon) : new GUIContent(text);
+
+            if(GUILayout.Button(content, LINK_STYLE, GUILayout.Width(160), GUILayout.Height(16)))
+            {
+                Application.OpenURL(url);
+            }
+        }
+
+        #endregion
     }
 }

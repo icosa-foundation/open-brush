@@ -6,10 +6,10 @@ namespace LIV.SDK.Unity
 {
     public struct SDKConstants
     {
-        public const string SDK_ID = "LSBAQRQ61KGJX6TX6INTQEWQWVQL5GEN";
-        public const string SDK_VERSION = "1.5.4";
+        public const string SDK_VERSION = "2.1.2";
         public const string ENGINE_NAME = "unity";
     }
+
 
     public enum PRIORITY : sbyte
     {
@@ -31,7 +31,9 @@ namespace LIV.SDK.Unity
         RELEASE_CONTROL = 1L << 15,
         OPTIMIZED_RENDER = 1L << 28,
         INTERLACED_RENDER = 1L << 29,
+        AVATAR_ENABLED = 1L << 30,
         DEBUG_CLIP_PLANE = 1L << 48,
+        ENABLE_PASSTHROUGH = 1L << 49,
     }
 
     public enum TEXTURE_ID : uint
@@ -93,10 +95,10 @@ namespace LIV.SDK.Unity
 
         public override string ToString()
         {
-            return 
-$@"SDKResolution:
-width: {width}
-height: {height}";
+            return
+                string.Format(@"SDKResolution:
+width: {0}
+height: {1}", width, height);
         }
     }
 
@@ -185,10 +187,10 @@ height: {height}";
         public override string ToString()
         {
             return
-$@"SDKVector3:
-x: {x}
-y: {y}
-z: {z}";
+                string.Format(@"SDKVector3:
+x: {0}
+y: {1}
+z: {2}", x, y, z);
         }
     }
 
@@ -268,11 +270,11 @@ z: {z}";
         public override string ToString()
         {
             return
-$@"SDKQuaternion:
-x: {x}
-y: {y}
-z: {z}
-w: {w}";
+                string.Format(@"SDKQuaternion:
+x: {0}
+y: {1}
+z: {2}
+w: {3}", x, y, z, w);
         }
     }
 
@@ -506,16 +508,16 @@ w: {w}";
         public override string ToString()
         {
             return
-$@"Matrix4x4:
-{m00} {m01} {m02} {m03}
-{m10} {m11} {m12} {m13}
-{m20} {m21} {m22} {m23}
-{m30} {m31} {m32} {m33}";
+                string.Format(@"Matrix4x4:
+{0} {1} {2} {3}
+{4} {5} {6} {7}
+{8} {9} {10} {11}
+{12} {13} {14} {15}", m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
         }
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct SDKPlane 
+    public struct SDKPlane
     {
         public float distance;
         public SDKVector3 normal;
@@ -538,8 +540,8 @@ $@"Matrix4x4:
         public override string ToString()
         {
             return
-$@"SDKPlane:
-{distance} {normal}";
+                string.Format(@"SDKPlane:
+{0} {1}", distance, normal);
         }
     }
 
@@ -574,8 +576,9 @@ $@"SDKPlane:
         public override string ToString()
         {
             return
-$@"Priority:
-pose: {pose}, clipPlane: {clipPlane}, stage: {stage}, resolution: {resolution}, feature: {feature}, nearFarAdjustment: {nearFarAdjustment}, groundPlane: {groundPlane}";
+                string.Format(@"Priority:
+pose: {0}, clipPlane: {1}, stage: {2}, resolution: {3}, feature: {4}, nearFarAdjustment: {5}, groundPlane: {6}", pose,
+                    clipPlane, stage, resolution, feature, nearFarAdjustment, groundPlane);
         }
     }
 
@@ -603,7 +606,6 @@ pose: {pose}, clipPlane: {clipPlane}, stage: {stage}, resolution: {resolution}, 
                     applicationVersion = string.Empty,
                     xrDeviceName = string.Empty,
                     graphicsAPI = string.Empty,
-                    sdkID = SDKConstants.SDK_ID,
                     sdkVersion = string.Empty
                 };
             }
@@ -612,16 +614,17 @@ pose: {pose}, clipPlane: {clipPlane}, stage: {stage}, resolution: {resolution}, 
         public override string ToString()
         {
             return
-$@"SDKApplicationOutput:
-supportedFeatures: {supportedFeatures}
-engineName: {engineName}
-engineVersion: {engineVersion}
-applicationName: {applicationName}
-applicationVersion: {applicationVersion}
-xrDeviceName: {xrDeviceName}
-graphicsAPI: {graphicsAPI}
-sdkID: {sdkID}
-sdkVersion: {sdkVersion}";
+                string.Format(@"SDKApplicationOutput:
+supportedFeatures: {0}
+engineName: {1}
+engineVersion: {2}
+applicationName: {3}
+applicationVersion: {4}
+xrDeviceName: {5}
+graphicsAPI: {6}
+sdkID: {7}
+sdkVersion: {8}", supportedFeatures, engineName, engineVersion, applicationName, applicationVersion, xrDeviceName,
+                    graphicsAPI, sdkID, sdkVersion);
         }
     }
 
@@ -635,8 +638,8 @@ sdkVersion: {sdkVersion}";
         public SDKClipPlane groundClipPlane;
 
         public ulong frameid; // This is actually the time stamp of this frame - its populated by the bridge at creation time.
-        public ulong referenceframe; // Use the previous frames frameid to populate this field - it must be set to the correct frame id, or it will fail. 
-        public SDKPriority priority; // this is a mixed field combining flags and priority - the contents of this flag are not yet set in stone            
+        public ulong referenceframe; // Use the previous frames frameid to populate this field - it must be set to the correct frame id, or it will fail.
+        public SDKPriority priority; // this is a mixed field combining flags and priority - the contents of this flag are not yet set in stone
 
         public static SDKInputFrame empty {
             get {
@@ -668,15 +671,15 @@ sdkVersion: {sdkVersion}";
         public override string ToString()
         {
             return
-$@"SDKInputFrame:
-pose: {pose}
-clipPlane: {clipPlane}
-stageTransform: {stageTransform}
-features: {features}
-groundClipPlane: {groundClipPlane}
-frameid: {frameid}
-referenceframe: {referenceframe}
-priority: {priority:X4}";
+                string.Format(@"SDKInputFrame:
+pose: {0}
+clipPlane: {1}
+stageTransform: {2}
+features: {3}
+groundClipPlane: {4}
+frameid: {5}
+referenceframe: {6}
+priority: {7:X4}", pose, clipPlane, stageTransform, features, groundClipPlane, frameid, referenceframe, priority);
         }
     }
 
@@ -699,9 +702,9 @@ priority: {priority:X4}";
         public override string ToString()
         {
             return
-$@"SDKOutputFrame:
-renderingPipeline: {renderingPipeline}
-trackedSpace: {trackedSpace}";
+                string.Format(@"SDKOutputFrame:
+renderingPipeline: {0}
+trackedSpace: {1}", renderingPipeline, trackedSpace);
         }
     }
 
@@ -730,12 +733,13 @@ trackedSpace: {trackedSpace}";
         public override string ToString()
         {
             return
-$@"SDKTrackedSpace:
-trackedSpaceWorldPosition: {trackedSpaceWorldPosition}
-trackedSpaceWorldRotation: {trackedSpaceWorldRotation}
-trackedSpaceLocalScale: {trackedSpaceLocalScale}
-trackedSpaceLocalToWorldMatrix: {trackedSpaceLocalToWorldMatrix}
-trackedSpaceWorldToLocalMatrix: {trackedSpaceWorldToLocalMatrix}";
+                string.Format(@"SDKTrackedSpace:
+trackedSpaceWorldPosition: {0}
+trackedSpaceWorldRotation: {1}
+trackedSpaceLocalScale: {2}
+trackedSpaceLocalToWorldMatrix: {3}
+trackedSpaceWorldToLocalMatrix: {4}", trackedSpaceWorldPosition, trackedSpaceWorldRotation, trackedSpaceLocalScale,
+                    trackedSpaceLocalToWorldMatrix, trackedSpaceWorldToLocalMatrix);
         }
     }
 
@@ -774,17 +778,17 @@ trackedSpaceWorldToLocalMatrix: {trackedSpaceWorldToLocalMatrix}";
         public override string ToString()
         {
             return
-$@"SDKTexture:
-id: {id}
-texturePtr: {texturePtr}
-SharedHandle: {SharedHandle}
-device: {device}
-dummy: {dummy}
-type: {type}
-format: {format}
-colorSpace: {colorSpace}
-width: {width}
-height: {height}";
+                string.Format(@"SDKTexture:
+id: {0}
+texturePtr: {1}
+SharedHandle: {2}
+device: {3}
+dummy: {4}
+type: {5}
+format: {6}
+colorSpace: {7}
+width: {8}
+height: {9}", id, texturePtr, SharedHandle, device, dummy, type, format, colorSpace, width, height);
         }
     }
 
@@ -809,10 +813,10 @@ height: {height}";
         public override string ToString()
         {
             return
-$@"SDKTransform:
-localPosition: {localPosition}
-localRotation: {localRotation}
-localScale: {localScale}";
+                string.Format(@"SDKTransform:
+localPosition: {0}
+localRotation: {1}
+localScale: {2}", localPosition, localRotation, localScale);
         }
     }
 
@@ -839,11 +843,11 @@ localScale: {localScale}";
         public override string ToString()
         {
             return
-$@"SDKClipPlane:
-transform: {transform}
-width: {width}
-height: {height}
-tesselation: {tesselation}";
+                string.Format(@"SDKClipPlane:
+transform: {0}
+width: {1}
+height: {2}
+tesselation: {3}", transform, width, height, tesselation);
         }
     }
 
@@ -886,17 +890,18 @@ tesselation: {tesselation}";
         public override string ToString()
         {
             return
-$@"SDKControllerState:
-hmdposition: {hmdposition}
-hmdrotation: {hmdrotation}
-calibrationcameraposition: {calibrationcameraposition}
-calibrationcamerarotation: {calibrationcamerarotation}
-cameraposition: {cameraposition}
-camerarotation: {camerarotation}
-leftposition: {leftposition}
-leftrotation: {leftrotation}
-rightposition: {rightposition}
-rightrotation: {rightrotation}";
+                string.Format(@"SDKControllerState:
+hmdposition: {0}
+hmdrotation: {1}
+calibrationcameraposition: {2}
+calibrationcamerarotation: {3}
+cameraposition: {4}
+camerarotation: {5}
+leftposition: {6}
+leftrotation: {7}
+rightposition: {8}
+rightrotation: {9}", hmdposition, hmdrotation, calibrationcameraposition, calibrationcamerarotation, cameraposition,
+                    camerarotation, leftposition, leftrotation, rightposition, rightrotation);
         }
     }
 
@@ -918,8 +923,8 @@ rightrotation: {rightrotation}";
                 {
                     projectionMatrix = SDKMatrix4x4.Perspective(90f, 1f, 0.01f, 1000f),
                     localPosition = SDKVector3.zero,
-                    localRotation = SDKQuaternion.identity,                    
-                    verticalFieldOfView = 90f,
+                    localRotation = SDKQuaternion.identity,
+                    verticalFieldOfView = 60f,
                     nearClipPlane = 0.01f,
                     farClipPlane = 1000f,
                 };
@@ -929,13 +934,13 @@ rightrotation: {rightrotation}";
         public override string ToString()
         {
             return
-$@"SDKPose:
-projectionMatrix: {projectionMatrix}
-localPosition: {localPosition}
-localRotation: {localRotation}
-verticalFieldOfView: {verticalFieldOfView}
-nearClipPlane: {nearClipPlane}
-farClipPlane: {farClipPlane}";
+                string.Format(@"SDKPose:
+projectionMatrix: {0}
+localPosition: {1}
+localRotation: {2}
+verticalFieldOfView: {3}
+nearClipPlane: {4}
+farClipPlane: {5}", projectionMatrix, localPosition, localRotation, verticalFieldOfView, nearClipPlane, farClipPlane);
         }
     }
 }

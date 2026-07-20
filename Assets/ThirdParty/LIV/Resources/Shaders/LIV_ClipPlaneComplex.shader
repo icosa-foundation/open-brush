@@ -2,6 +2,7 @@
 {
 	Properties{
 		_LivClipPlaneHeightMap("Clip Plane Height Map", 2D) = "black" {}
+    	_LivTessellation("Liv Tessellation", float) = 0
 	}
 
 	SubShader
@@ -28,7 +29,9 @@
 			#include "UnityCG.cginc"
 
 			sampler2D _LivClipPlaneHeightMap;
+      CBUFFER_START(UnityPerMaterial)
 			float _LivTessellation;
+      CBUFFER_END
 
 			struct VertexData {
 				float4 vertex : POSITION;

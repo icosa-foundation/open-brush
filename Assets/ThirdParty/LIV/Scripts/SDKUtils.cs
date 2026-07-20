@@ -6,6 +6,44 @@ namespace LIV.SDK.Unity
 {
     public static class SDKUtils
     {
+        private const float MAX_BOUNDS_VALUE = 10000f;
+
+#if LIV_UNIVERSAL_RENDER
+        public static string standard_shader_name = "Universal Render Pipeline/Lit";
+        public static string standard_shader_color_name = "_BaseColor";
+        public static string standard_shader_smoothness_name = "_Smoothness";
+#else
+        public static string standard_shader_name = "Standard";
+        public static string standard_shader_color_name = "_Color";
+        public static string standard_shader_smoothness_name = "_Glossiness";
+#endif
+
+        public static void CreateQuad(Mesh mesh)
+        {
+            mesh.Clear();
+            mesh.vertices = new Vector3[] {
+            new Vector3(0, 0f, 0f),
+            new Vector3(1, 0f, 0f),
+            new Vector3(1f, 1f, 0f),
+            new Vector3(0, 1f, 0f)
+            };
+
+            mesh.uv = new Vector2[]{
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+            };
+
+            mesh.triangles = new int[]
+            {
+                2,1,0,
+                3,2,0
+            };
+
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * MAX_BOUNDS_VALUE);
+        }
+
         public static void CreateClipPlane(Mesh mesh, int resX, int resY, bool useQuads, float skirtLength)
         {
             int vertexCount = (resX + 1) * (resY + 1);
@@ -37,7 +75,7 @@ namespace LIV.SDK.Unity
             mesh.Clear();
             mesh.vertices = v;
             mesh.uv = uv;
-            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * float.MaxValue);
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * MAX_BOUNDS_VALUE);
 
             {
                 int faces = resX * resY;
@@ -73,6 +111,129 @@ namespace LIV.SDK.Unity
                     mesh.SetIndices(t, MeshTopology.Triangles, 0);
                 }
             }
+        }
+
+        public static void CreateBox(Mesh mesh, Vector3 scale)
+        {
+            mesh.Clear();
+
+            float length = scale.z;
+            float width = scale.x;
+            float height = scale.y;
+
+            Vector3 p0 = new Vector3(-length * .5f, -width * .5f, height * .5f);
+            Vector3 p1 = new Vector3(length * .5f, -width * .5f, height * .5f);
+            Vector3 p2 = new Vector3(length * .5f, -width * .5f, -height * .5f);
+            Vector3 p3 = new Vector3(-length * .5f, -width * .5f, -height * .5f);
+
+            Vector3 p4 = new Vector3(-length * .5f, width * .5f, height * .5f);
+            Vector3 p5 = new Vector3(length * .5f, width * .5f, height * .5f);
+            Vector3 p6 = new Vector3(length * .5f, width * .5f, -height * .5f);
+            Vector3 p7 = new Vector3(-length * .5f, width * .5f, -height * .5f);
+
+            mesh.vertices = new Vector3[]
+            {
+	            // Bottom
+	            p0, p1, p2, p3,
+
+	            // Left
+	            p7, p4, p0, p3,
+
+	            // Front
+	            p4, p5, p1, p0,
+
+	            // Back
+	            p6, p7, p3, p2,
+
+	            // Right
+	            p5, p6, p2, p1,
+
+	            // Top
+	            p7, p6, p5, p4
+            };
+
+            Vector3 up = Vector3.up;
+            Vector3 down = Vector3.down;
+            Vector3 front = Vector3.forward;
+            Vector3 back = Vector3.back;
+            Vector3 left = Vector3.left;
+            Vector3 right = Vector3.right;
+
+            mesh.normals = new Vector3[]
+            {
+	            // Bottom
+	            down, down, down, down,
+
+	            // Left
+	            left, left, left, left,
+
+	            // Front
+	            front, front, front, front,
+
+	            // Back
+	            back, back, back, back,
+
+	            // Right
+	            right, right, right, right,
+
+	            // Top
+	            up, up, up, up
+            };
+
+            Vector2 _00 = new Vector2(0f, 0f);
+            Vector2 _10 = new Vector2(1f, 0f);
+            Vector2 _01 = new Vector2(0f, 1f);
+            Vector2 _11 = new Vector2(1f, 1f);
+
+            mesh.uv = new Vector2[]
+            {
+	            // Bottom
+	            _11, _01, _00, _10,
+
+	            // Left
+	            _11, _01, _00, _10,
+
+	            // Front
+	            _11, _01, _00, _10,
+
+	            // Back
+	            _11, _01, _00, _10,
+
+	            // Right
+	            _11, _01, _00, _10,
+
+	            // Top
+	            _11, _01, _00, _10,
+            };
+
+            mesh.triangles = new int[]
+            {
+	            // Bottom
+	            3, 1, 0,
+                3, 2, 1,
+
+	            // Left
+	            3 + 4 * 1, 1 + 4 * 1, 0 + 4 * 1,
+                3 + 4 * 1, 2 + 4 * 1, 1 + 4 * 1,
+
+	            // Front
+	            3 + 4 * 2, 1 + 4 * 2, 0 + 4 * 2,
+                3 + 4 * 2, 2 + 4 * 2, 1 + 4 * 2,
+
+	            // Back
+	            3 + 4 * 3, 1 + 4 * 3, 0 + 4 * 3,
+                3 + 4 * 3, 2 + 4 * 3, 1 + 4 * 3,
+
+	            // Right
+	            3 + 4 * 4, 1 + 4 * 4, 0 + 4 * 4,
+                3 + 4 * 4, 2 + 4 * 4, 1 + 4 * 4,
+
+	            // Top
+	            3 + 4 * 5, 1 + 4 * 5, 0 + 4 * 5,
+                3 + 4 * 5, 2 + 4 * 5, 1 + 4 * 5,
+            };
+
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * MAX_BOUNDS_VALUE);
         }
 
         public static RenderTextureReadWrite GetReadWriteFromColorSpace(TEXTURE_COLOR_SPACE colorSpace)
@@ -161,10 +322,10 @@ namespace LIV.SDK.Unity
             }
         }
 
-        public static void GetCameraPositionAndRotation(SDKPose pose, Matrix4x4 originLocalToWorldMatrix, out Vector3 position, out Quaternion rotation)
+        public static void GetCameraPositionAndRotation(Vector3 localPosition, Quaternion localRotation, Matrix4x4 originLocalToWorldMatrix, out Vector3 position, out Quaternion rotation)
         {
-            position = originLocalToWorldMatrix.MultiplyPoint(pose.localPosition);
-            rotation = RotateQuaternionByMatrix(originLocalToWorldMatrix, pose.localRotation);
+            position = originLocalToWorldMatrix.MultiplyPoint(localPosition);
+            rotation = RotateQuaternionByMatrix(originLocalToWorldMatrix, localRotation);
         }
 
         public static void CleanCameraBehaviours(Camera camera, string[] excludeBehaviours)
@@ -186,19 +347,13 @@ namespace LIV.SDK.Unity
         {
             Vector3 worldPosition = Vector3.zero;
             Quaternion worldRotation = Quaternion.identity;
-            float verticalFieldOfView = inputFrame.pose.verticalFieldOfView;
-            float nearClipPlane = inputFrame.pose.nearClipPlane;
-            float farClipPlane = inputFrame.pose.farClipPlane;
-            Matrix4x4 projectionMatrix = inputFrame.pose.projectionMatrix;
-
-            GetCameraPositionAndRotation(inputFrame.pose, originLocalToWorldMatrix, out worldPosition, out worldRotation);
+            GetCameraPositionAndRotation(inputFrame.pose.localPosition, inputFrame.pose.localRotation, originLocalToWorldMatrix, out worldPosition, out worldRotation);
 
             cameraTransform.position = worldPosition;
             cameraTransform.rotation = worldRotation;
-            camera.fieldOfView = verticalFieldOfView;
-            camera.nearClipPlane = nearClipPlane;
-            camera.farClipPlane = farClipPlane;
-            camera.projectionMatrix = projectionMatrix;
+            camera.fieldOfView = inputFrame.pose.verticalFieldOfView;
+            camera.nearClipPlane = inputFrame.pose.nearClipPlane;
+            camera.farClipPlane = inputFrame.pose.farClipPlane;
             camera.cullingMask = layerMask;
         }
 
@@ -275,6 +430,7 @@ namespace LIV.SDK.Unity
             _renderTexture = null;
         }
 
+        // TODO: is this robust enough?
         public static void ApplyUserSpaceTransform(SDKRender render)
         {
             if (render.stageTransform == null) return;
@@ -283,7 +439,7 @@ namespace LIV.SDK.Unity
             render.stageTransform.localScale = render.inputFrame.stageTransform.localScale;
         }
 
-        public static void CreateBridgeOutputFrame(SDKRender render)
+        public static SDKBridge.ErrorCode CreateBridgeOutputFrame(SDKRender render)
         {
             RENDERING_PIPELINE renderingPipeline = RENDERING_PIPELINE.UNDEFINED;
 #if LIV_UNIVERSAL_RENDER
@@ -294,7 +450,7 @@ namespace LIV.SDK.Unity
                 renderingPipeline = SDKUtils.GetRenderingPipeline(render.cameraInstance.actualRenderingPath);
             }
 #endif
-            SDKBridge.CreateFrame(new SDKOutputFrame()
+            return SDKBridge.CreateFrame(new SDKOutputFrame()
             {
                 renderingPipeline = renderingPipeline,
                 trackedSpace = SDKUtils.GetTrackedSpace(render.stageTransform == null ? render.stage : render.stageTransform)
@@ -335,7 +491,7 @@ namespace LIV.SDK.Unity
         }
 
         public static void ForceForwardRendering(Camera cameraInstance, Mesh clipPlaneMesh, Material forceForwardRenderingMaterial)
-        {            
+        {
             Matrix4x4 forceForwardRenderingMatrix = cameraInstance.transform.localToWorldMatrix * Matrix4x4.TRS(Vector3.forward * (cameraInstance.nearClipPlane + 0.1f), Quaternion.identity, Vector3.one);
             Graphics.DrawMesh(clipPlaneMesh, forceForwardRenderingMatrix, forceForwardRenderingMaterial, 0, cameraInstance, 0, new MaterialPropertyBlock(), false, false, false);
         }

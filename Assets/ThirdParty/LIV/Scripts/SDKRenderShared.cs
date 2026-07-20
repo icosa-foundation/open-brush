@@ -1,94 +1,297 @@
 ﻿using UnityEngine;
 using UnityEngine.Rendering;
-using System.Collections;
 
 namespace LIV.SDK.Unity
-{    
+{
+    public class CaptureCameraSettings
+    {
+        private CameraClearFlags _cameraClearFlags;
+        private Color _cameraBackgroundColor;
+
+        public void Capture(Camera camera)
+        {
+            _cameraClearFlags = camera.clearFlags;
+            _cameraBackgroundColor = camera.backgroundColor;
+        }
+
+        public void Release(Camera camera)
+        {
+            camera.clearFlags = _cameraClearFlags;
+            camera.backgroundColor = _cameraBackgroundColor;
+        }
+    }
+
     public partial class SDKRender : System.IDisposable
     {
-        private LIV _liv = null;
-        public LIV liv {
-            get {
-                return _liv;
+        public System.Action<SDKRender> onPreRender = null;
+        /// <summary>
+        /// triggered before the LIV SDK starts rendering background image.
+        /// </summary>
+        public System.Action<SDKRender> onPreRenderBackground = null;
+        /// <summary>
+        /// triggered after the LIV SDK starts rendering background image.
+        /// </summary>
+        public System.Action<SDKRender> onPostRenderBackground = null;
+        /// <summary>
+        /// triggered before the LIV SDK starts rendering the foreground image.
+        /// </summary>
+        public System.Action<SDKRender> onPreRenderForeground = null;
+        /// <summary>
+        /// triggered after the LIV SDK starts rendering the foreground image.
+        /// </summary>
+        public System.Action<SDKRender> onPostRenderForeground = null;
+        /// <summary>
+        /// triggered after the Mixed Reality camera has finished rendering.
+        /// </summary>
+        public System.Action<SDKRender> onPostRender = null;
+        /// <summary>
+        /// triggered when the LIV SDK passthrough is activated by the LIV App.
+        /// </summary>
+        public System.Action onPassthroughActivated = null;
+        /// <summary>
+        /// triggered when the LIV SDK passthrough is deactivated by the LIV App.
+        /// </summary>
+        public System.Action onPassthroughDeactivated = null;
+
+        private LivDescriptor _livDescriptor;
+        public LivDescriptor livDescriptor
+        {
+            get
+            {
+                return _livDescriptor;
             }
         }
 
+        // quad
+        private Mesh _quadMesh = null;
+        // Tessellated quad
+        private Mesh _clipPlaneMesh = null;
+        // box
+        private Mesh _boxMesh = null;
+        // debug font
+        private SDKFont _sdkFont = null;
+
+        private MaterialPropertyBlock _clipPlaneMaterialProperty;
+        private MaterialPropertyBlock _groundPlaneMaterialProperty;
+        private MaterialPropertyBlock _hmdMaterialProperty;
+
         private SDKOutputFrame _outputFrame = SDKOutputFrame.empty;
-        public SDKOutputFrame outputFrame {
-            get {
+        public SDKOutputFrame outputFrame
+        {
+            get
+            {
                 return _outputFrame;
             }
         }
 
+        private SDKInputFrame _lastInputFrame = SDKInputFrame.empty;
         private SDKInputFrame _inputFrame = SDKInputFrame.empty;
-        public SDKInputFrame inputFrame {
-            get {
+        public SDKInputFrame inputFrame
+        {
+            get
+            {
                 return _inputFrame;
             }
         }
 
         private SDKResolution _resolution = SDKResolution.zero;
-        public SDKResolution resolution {
-            get {
+        public SDKResolution resolution
+        {
+            get
+            {
                 return _resolution;
             }
         }
 
         private Camera _cameraInstance = null;
-        public Camera cameraInstance {
-            get {
+        public Camera cameraInstance
+        {
+            get
+            {
                 return _cameraInstance;
             }
         }
 
-        public Camera cameraReference {
-            get {
-                return _liv.MRCameraPrefab == null ? _liv.HMDCamera : _liv.MRCameraPrefab;
+        public Camera cameraReference
+        {
+            get
+            {
+                return _livDescriptor.cameraPrefab == null ? _livDescriptor.HMDCamera : _livDescriptor.cameraPrefab;
             }
         }
 
-        public Camera hmdCamera {
-            get {
-                return _liv.HMDCamera;
+        public Camera hmdCamera
+        {
+            get
+            {
+                return _livDescriptor.HMDCamera;
             }
         }
 
-        public Transform stage {
-            get {
-                return _liv.stage;
+        public Transform stage
+        {
+            get
+            {
+                return _livDescriptor.stage;
             }
         }
 
-        public Transform stageTransform {
-            get {
-                return _liv.stageTransform;
+        public Transform stageTransform
+        {
+            get
+            {
+                return _livDescriptor.stageTransform;
             }
         }
 
-        public Matrix4x4 stageLocalToWorldMatrix {
-            get {
-                return _liv.stage == null ? Matrix4x4.identity : _liv.stage.localToWorldMatrix;
+        public Matrix4x4 stageLocalToWorldMatrix
+        {
+            get
+            {
+                return _livDescriptor.stage == null ? Matrix4x4.identity : _livDescriptor.stage.localToWorldMatrix;
             }
         }
 
-        public Matrix4x4 localToWorldMatrix {
-            get {
-                return _liv.stageTransform == null ? stageLocalToWorldMatrix : _liv.stageTransform.localToWorldMatrix;
+        public Matrix4x4 localToWorldMatrix
+        {
+            get
+            {
+                return _livDescriptor.stageTransform == null ? stageLocalToWorldMatrix : _livDescriptor.stageTransform.localToWorldMatrix;
             }
         }
 
-        public int spectatorLayerMask {
-            get {
-                return _liv.spectatorLayerMask;
+        public bool disableStandardAssets
+        {
+            get
+            {
+                return _livDescriptor.disableStandardAssets;
             }
         }
 
-        public bool disableStandardAssets {
-            get {
-                return _liv.disableStandardAssets;
+        public LayerMask renderingLayerMask
+        {
+            get
+            {
+                if (isPassthroughEnabled)
+                    return _livDescriptor.passthroughLayerMask;
+                return _livDescriptor.spectatorLayerMask;
             }
         }
-        
+
+        public bool isPassthroughEnabled
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.ENABLE_PASSTHROUGH);
+            }
+        }
+
+        /// <summary>
+        /// Is LIV Avatar mode enabled and avatar toggled on?
+        /// </summary>
+        public bool IsAvatarEnabled
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.AVATAR_ENABLED);
+            }
+        }
+
+        bool useDeferredRendering
+        {
+            get
+            {
+                if (_cameraInstance == null)
+                    return false;
+
+                return _cameraInstance.actualRenderingPath == RenderingPath.DeferredLighting ||
+                       _cameraInstance.actualRenderingPath == RenderingPath.DeferredShading;
+            }
+        }
+
+        bool interlacedRendering
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.INTERLACED_RENDER);
+            }
+        }
+
+        bool canRenderBackground
+        {
+            get
+            {
+                if (interlacedRendering)
+                {
+                    // Render only if frame is even 
+                    if (Time.frameCount % 2 != 0) return false;
+                }
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.BACKGROUND_RENDER) && _backgroundRenderTexture != null;
+            }
+        }
+
+        bool canRenderForeground
+        {
+            get
+            {
+                if (interlacedRendering)
+                {
+                    // Render only if frame is odd 
+                    if (Time.frameCount % 2 != 1) return false;
+                }
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.FOREGROUND_RENDER) && _foregroundRenderTexture != null;
+            }
+        }
+
+        bool canRenderOptimized
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.OPTIMIZED_RENDER) && _optimizedRenderTexture != null; ;
+            }
+        }
+
+        bool debugClipPlane
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.DEBUG_CLIP_PLANE);
+            }
+        }
+
+        bool renderComplexClipPlane
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.COMPLEX_CLIP_PLANE);
+            }
+        }
+
+        bool renderGroundClipPlane
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.GROUND_CLIP_PLANE);
+            }
+        }
+
+        bool overridePostProcessing
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.OVERRIDE_POST_PROCESSING);
+            }
+        }
+
+        bool fixPostEffectsAlpha
+        {
+            get
+            {
+                return SDKUtils.FeatureEnabled(inputFrame.features, FEATURES.FIX_FOREGROUND_ALPHA) |
+                       _livDescriptor.fixPostEffectsAlpha;
+            }
+        }
+
         private SDKPose _requestedPose = SDKPose.empty;
         private int _requestedPoseFrameIndex = 0;
 
@@ -116,7 +319,8 @@ namespace LIV.SDK.Unity
         /// </example>
         public bool canSetPose
         {
-            get {
+            get
+            {
                 if (_inputFrame.frameid == 0) return false;
                 return _inputFrame.priority.pose <= (sbyte)PRIORITY.GAME;
             }
@@ -149,7 +353,7 @@ namespace LIV.SDK.Unity
         {
             if (_inputFrame.frameid == 0) return false;
             SDKPose inputPose = _inputFrame.pose;
-            float aspect = 1f;            
+            float aspect = 1f;
             if (_resolution.height > 0)
             {
                 aspect = (float)_resolution.width / (float)_resolution.height;
@@ -159,7 +363,7 @@ namespace LIV.SDK.Unity
             {
                 Matrix4x4 worldToLocal = Matrix4x4.identity;
                 Transform localTransform = stageTransform == null ? stage : stageTransform;
-                if(localTransform != null) worldToLocal = localTransform.worldToLocalMatrix;
+                if (localTransform != null) worldToLocal = localTransform.worldToLocalMatrix;
                 position = worldToLocal.MultiplyPoint(position);
                 rotation = SDKUtils.RotateQuaternionByMatrix(worldToLocal, rotation);
             }
@@ -184,7 +388,7 @@ namespace LIV.SDK.Unity
         /// The local space has to be relative to stage or stage transform if set.
         /// </para>
         /// </remarks>        
-        public void SetGroundPlane(float distance, Vector3 normal, bool useLocalSpace = false)
+        public SDKBridge.ErrorCode SetGroundPlane(float distance, Vector3 normal, bool useLocalSpace = false)
         {
             float outputDistance = distance;
             Vector3 outputNormal = normal;
@@ -198,7 +402,7 @@ namespace LIV.SDK.Unity
                 outputDistance = -Vector3.Dot(normal, localPosition);
             }
 
-            SDKBridge.SetGroundPlane(new SDKPlane() { distance = outputDistance, normal = outputNormal });
+            return SDKBridge.SetGroundPlane(new SDKPlane() { distance = outputDistance, normal = outputNormal });
         }
 
         /// <summary>
@@ -242,7 +446,7 @@ namespace LIV.SDK.Unity
         public void SetGroundPlane(Transform transform, bool useLocalSpace = false)
         {
             if (transform == null) return;
-            Quaternion rotation = useLocalSpace ? transform.localRotation : transform.rotation;            
+            Quaternion rotation = useLocalSpace ? transform.localRotation : transform.rotation;
             Vector3 position = useLocalSpace ? transform.localPosition : transform.position;
             Vector3 normal = rotation * Vector3.up;
             SetGroundPlane(-Vector3.Dot(normal, position), normal, useLocalSpace);
@@ -251,12 +455,13 @@ namespace LIV.SDK.Unity
         private void ReleaseBridgePoseControl()
         {
             _inputFrame.ReleaseControl();
-            SDKBridge.UpdateInputFrame(ref _inputFrame);
+            // Propagate release control.
+            UpdateInputFrame();
         }
 
-        private void UpdateBridgeResolution()
+        private SDKBridge.ErrorCode UpdateBridgeResolution()
         {
-            SDKBridge.GetResolution(ref _resolution);
+            return SDKBridge.GetResolution(ref _resolution);
         }
 
         private void UpdateBridgeInputFrame()
@@ -272,44 +477,77 @@ namespace LIV.SDK.Unity
                 _inputFrame.ReleaseControl();
             }
 
-            if (_cameraInstance != null)
+            // store last input frame
+            _lastInputFrame = _inputFrame;
+            UpdateInputFrame();
+
+            if (cameraReference != null)
             {
-                // Near and far is always driven by game
-                _inputFrame.pose.nearClipPlane = _cameraInstance.nearClipPlane;
-                _inputFrame.pose.farClipPlane = _cameraInstance.farClipPlane;
+                // Near and far is always driven by game!
+                _inputFrame.pose.nearClipPlane = cameraReference.nearClipPlane;
+                _inputFrame.pose.farClipPlane = cameraReference.farClipPlane;
             }
 
-            SDKBridge.UpdateInputFrame(ref _inputFrame);
+            bool wasPassthroughEnabled = SDKUtils.FeatureEnabled(_lastInputFrame.features, FEATURES.ENABLE_PASSTHROUGH);
+            bool isPassTroughEnabled = SDKUtils.FeatureEnabled(_inputFrame.features, FEATURES.ENABLE_PASSTHROUGH);
+
+            if (!wasPassthroughEnabled && isPassTroughEnabled)
+            {
+                if (onPassthroughActivated != null)
+                    onPassthroughActivated.Invoke();
+            }
+
+            if (wasPassthroughEnabled && !isPassTroughEnabled)
+            {
+                if (onPassthroughDeactivated != null)
+                    onPassthroughDeactivated.Invoke();
+            }
+        }
+
+        private SDKBridge.ErrorCode UpdateInputFrame()
+        {
+            SDKBridge.ErrorCode errorCode = SDKBridge.UpdateInputFrame(ref _inputFrame);
+            if (errorCode != SDKBridge.ErrorCode.OK)
+            {
+                return errorCode;
+            }
+
+            return SDKBridge.ErrorCode.OK;
         }
 
         private void InvokePreRender()
         {
-            if (_liv.onPreRender != null) _liv.onPreRender(this);
+            if (onPreRender != null) onPreRender(this);
         }
 
         private void IvokePostRender()
         {
-            if (_liv.onPostRender != null) _liv.onPostRender(this);
+            if (onPostRender != null)
+                onPostRender(this);
         }
 
         private void InvokePreRenderBackground()
         {
-            if (_liv.onPreRenderBackground != null) _liv.onPreRenderBackground(this);
+            if (onPreRenderBackground != null)
+                onPreRenderBackground(this);
         }
 
         private void InvokePostRenderBackground()
         {
-            if (_liv.onPostRenderBackground != null) _liv.onPostRenderBackground(this);
+            if (onPostRenderBackground != null)
+                onPostRenderBackground(this);
         }
 
         private void InvokePreRenderForeground()
         {
-            if (_liv.onPreRenderForeground != null) _liv.onPreRenderForeground(this);
+            if (onPreRenderForeground != null)
+                onPreRenderForeground(this);
         }
 
         private void InvokePostRenderForeground()
         {
-            if (_liv.onPostRenderForeground != null) _liv.onPostRenderForeground(this);
+            if (onPostRenderForeground != null)
+                onPostRenderForeground(this);
         }
 
         private void CreateBackgroundTexture()
@@ -322,7 +560,7 @@ namespace LIV.SDK.Unity
             }
             else
             {
-                Debug.LogError("LIV: Unable to create background texture!");
+                Debug.LogError("LIV Render: Unable to create background texture!");
             }
         }
 
@@ -336,7 +574,7 @@ namespace LIV.SDK.Unity
             }
             else
             {
-                Debug.LogError("LIV: Unable to create foreground texture!");
+                Debug.LogError("LIV Render: Unable to create foreground texture!");
             }
         }
 
@@ -350,7 +588,7 @@ namespace LIV.SDK.Unity
             }
             else
             {
-                Debug.LogError("LIV: Unable to create optimized texture!");
+                Debug.LogError("LIV Render: Unable to create optimized texture!");
             }
         }
 
@@ -364,7 +602,7 @@ namespace LIV.SDK.Unity
             }
             else
             {
-                Debug.LogError("LIV: Unable to create complex clip plane texture!");
+                Debug.LogError("LIV Render: Unable to create complex clip plane texture!");
             }
         }
 
@@ -435,21 +673,85 @@ namespace LIV.SDK.Unity
             }
         }
 
-        void SendTextureToBridge(RenderTexture texture, TEXTURE_ID id)
+        SDKBridge.ErrorCode SendTextureToBridge(RenderTexture texture, TEXTURE_ID id)
         {
-            SDKBridge.AddTexture(new SDKTexture()
+            return SDKBridge.AddTexture(texture, id);
+        }
+
+        Material GetClipPlaneMaterial(bool debugClipPlane, bool complexClipPlane, ColorWriteMask colorWriteMask, ref MaterialPropertyBlock materialPropertyBlock)
+        {
+            Material output;
+
+            if (complexClipPlane)
             {
-                id = id,
-                texturePtr = texture.GetNativeTexturePtr(),
-                SharedHandle = System.IntPtr.Zero,
-                device = SDKUtils.GetDevice(),
-                dummy = 0,
-                type = TEXTURE_TYPE.COLOR_BUFFER,
-                format = TEXTURE_FORMAT.ARGB32,
-                colorSpace = SDKUtils.GetColorSpace(texture),
-                width = texture.width,
-                height = texture.height
-            });
+                output = debugClipPlane ? _clipPlaneComplexDebugMaterial : _clipPlaneComplexMaterial;
+                materialPropertyBlock.SetTexture(SDKShaders.LIV_CLIP_PLANE_HEIGHT_MAP_PROPERTY, _complexClipPlaneRenderTexture);
+                materialPropertyBlock.SetFloat(SDKShaders.LIV_TESSELLATION_PROPERTY, _inputFrame.clipPlane.tesselation);
+            }
+            else
+            {
+                output = debugClipPlane ? _clipPlaneSimpleDebugMaterial : _clipPlaneSimpleMaterial;
+            }
+
+            output.SetInt(SDKShaders.LIV_COLOR_MASK, (int)colorWriteMask);
+            return output;
+        }
+
+        void RenderFrameStamps(RenderTexture renderTexture)
+        {
+            float aspect = (float)renderTexture.width / (float)renderTexture.height;
+            int height = 50;
+            int width = (int)(height * aspect);
+            if (_sdkFont == null) _sdkFont = new SDKFont(width, height);
+            _sdkFont.Resize(width, height);
+            _sdkFont.Clear();
+            string frameCount = Time.frameCount.ToString();
+
+            System.TimeSpan timeSpan = System.TimeSpan.FromSeconds(Time.realtimeSinceStartup);
+            string timeStamp = string.Format("{0:00}:{1:00}:{2:00}:{3:000}", timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds, timeSpan.Milliseconds);
+            _sdkFont.SetText(0, 0, frameCount);
+            _sdkFont.SetText(width - frameCount.Length, 0, frameCount);
+            _sdkFont.SetText(0, height - 1, string.Format("{0} {1}", frameCount, timeStamp));
+            _sdkFont.SetText(width - frameCount.Length, height - 1, frameCount);
+            _sdkFont.Apply();
+
+            Graphics.Blit(null, renderTexture, _sdkFont.fontMaterial);
+        }
+
+        void RenderDebugHMD()
+        {
+            Graphics.DrawMesh(_boxMesh,
+                _livDescriptor.HMDCamera.transform.localToWorldMatrix * Matrix4x4.Scale(Vector3.one * 0.1f),
+                _clipPlaneSimpleDebugMaterial,
+                0,
+                _cameraInstance,
+                0,
+                _hmdMaterialProperty,
+                false,
+                false,
+                false);
+        }
+
+        void RenderDebugPreRender()
+        {
+            RenderDebugHMD();
+        }
+
+        void RenderDebugPostRender(RenderTexture renderTexture)
+        {
+            RenderBuffer activeColorBuffer = Graphics.activeColorBuffer;
+            RenderBuffer activeDepthBuffer = Graphics.activeDepthBuffer;
+            RenderFrameStamps(renderTexture);
+            Graphics.SetRenderTarget(activeColorBuffer, activeDepthBuffer);
+        }
+
+        protected void DisposeDebug()
+        {
+            if (_sdkFont != null)
+            {
+                _sdkFont.Dispose();
+                _sdkFont = null;
+            }
         }
     }
 }

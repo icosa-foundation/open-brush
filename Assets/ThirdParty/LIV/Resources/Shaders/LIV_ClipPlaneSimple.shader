@@ -3,7 +3,7 @@
 	SubShader
 	{
 		Tags { "Queue" = "Overlay" "LightMode" = "Always" "IgnoreProjector" = "True" "ForceNoShadowCasting" = "True"}
-		
+        
 		Pass {
 			Name "CLIP_PLANE_SIMPLE"
 			Cull Off
@@ -26,7 +26,7 @@
 			};
 
 			struct VertexToFragData {
-				float4 vertex : POSITION;
+				float4 vertex : SV_POSITION;
 			};
 
 			VertexToFragData VertexProgram(VertexData v)

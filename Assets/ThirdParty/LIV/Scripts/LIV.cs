@@ -1,62 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Serialization;
-using System.Collections;
-using System;
-
-#if UNITY_2017_2_OR_NEWER
-using UnityEngine.XR;
-#endif
 
 namespace LIV.SDK.Unity
 {
-    [System.Flags]
-    public enum INVALIDATION_FLAGS : uint
-    {
-        NONE = 0,
-        HMD_CAMERA = 1,
-        STAGE = 2,
-        MR_CAMERA_PREFAB = 4,
-        EXCLUDE_BEHAVIOURS = 8
-    }
-
-    /// <summary>
-    /// The LIV SDK provides a spectator view of your application. 
-    /// </summary>
-    /// <remarks>
-    /// <para>It contextualizes what the user feels & experiences by capturing their body directly inside your world!</para>
-    /// <para>Thanks to our software, creators can film inside your app and have full control over the camera.</para>
-    /// <para>With the power of out-of-engine compositing, a creator can express themselves freely without limits;</para>
-    /// <para>as a real person or an avatar!</para>
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// public class StartFromScriptExample : MonoBehaviour
-    /// {
-    ///     [SerializeField] Camera _hmdCamera;
-    ///     [SerializeField] Transform _stage;
-    ///     [SerializeField] Transform _stageTransform;
-    ///     [SerializeField] Camera _mrCameraPrefab;
-
-    ///     LIV.SDK.Unity.LIV _liv;
-
-    ///     private void OnEnable()
-    ///     {
-    ///         _liv = gameObject.AddComponent<LIV.SDK.Unity.LIV>();
-    ///         _liv.HMDCamera = _hmdCamera;
-    ///         _liv.stage = _stage;
-    ///         _liv.stageTransform = _stageTransform;
-    ///         _liv.MRCameraPrefab = _mrCameraPrefab;
-    ///     }
-
-    ///     private void OnDisable()
-    ///     {
-    ///         if (_liv == null) return;
-    ///         Destroy(_liv);
-    ///         _liv = null;
-    ///     }
-    /// }
-    /// </code>
-    /// </example>
     [HelpURL("https://liv.tv/sdk-unity-docs")]
     [AddComponentMenu("LIV/LIV")]
     public class LIV : MonoBehaviour
@@ -64,11 +11,11 @@ namespace LIV.SDK.Unity
         /// <summary>
         /// triggered when the LIV SDK is activated by the LIV App and enabled by the game.
         /// </summary>
-        public System.Action onActivate = null;        
+        public System.Action onActivate = null;
         /// <summary>
         /// triggered before the Mixed Reality camera is about to render.
         /// </summary>
-        public System.Action<SDKRender> onPreRender = null;             
+        public System.Action<SDKRender> onPreRender = null;
         /// <summary>
         /// triggered before the LIV SDK starts rendering background image.
         /// </summary>
@@ -90,13 +37,31 @@ namespace LIV.SDK.Unity
         /// </summary>
         public System.Action<SDKRender> onPostRender = null;
         /// <summary>
+        /// triggered when the LIV SDK passthrough is activated by the LIV App.
+        /// </summary>
+        public System.Action onPassthroughActivated = null;
+        /// <summary>
+        /// triggered when the LIV SDK passthrough is deactivated by the LIV App.
+        /// </summary>
+        public System.Action onPassthroughDeactivated = null;
+        /// <summary>
         /// triggered when the LIV SDK is deactivated by the LIV App or disabled by the game.
         /// </summary>
         public System.Action onDeactivate = null;
+        /// <summary>
+        /// triggered when the Volumetric capture SDK validation fails.
+        /// </summary>
+        public event Action<ValidationError, string> onValidationError = null;
 
-        [Tooltip("This is the topmost transform of your VR rig.")]
-        [FormerlySerializedAs("TrackedSpaceOrigin")]
-        [SerializeField] Transform _stage = null;
+        /// <summary>
+        /// Tracking ID that identifies your game to the LIV backend, allowing you to get usage analytics
+        /// </summary>
+        public string trackingID {
+            get {
+                return SDKSettings.instance.trackingID;
+            }
+        }
+
         /// <summary>
         /// This is the topmost transform of your VR rig.
         /// </summary>
@@ -105,49 +70,23 @@ namespace LIV.SDK.Unity
         /// <para>this is the GameObject that you should move around your scene.</para>
         /// <para>It represents the centre of the user’s playspace.</para>
         /// </remarks>
+        [Tooltip("Topmost transform of your XR rig.")]
+        [FormerlySerializedAs("TrackedSpaceOrigin")]
+        [SerializeField] private Transform _stage = null;
         public Transform stage {
             get {
-                return _stage == null ? transform.parent : _stage;
+                return _stage;
             }
             set {
-                if (value == null)
-                {
-                    Debug.LogWarning("LIV: Stage cannot be null!");
-                }
-
-                if (_stage != value)
-                {
-                    _stageCandidate = value;
-                    _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.STAGE, true);
-                }
-            }
-        }
-
-        [Obsolete("Use stage instead")]
-        public Transform trackedSpaceOrigin {
-            get {
-                return stage;
-            }
-            set {
-                stage = value;
-            }
-        }
-
-        public Matrix4x4 stageLocalToWorldMatrix {
-            get {
-                return (stage != null) ? stage.localToWorldMatrix : Matrix4x4.identity;
-            }
-        }
-
-        public Matrix4x4 stageWorldToLocalMatrix {
-            get {
-                return (stage != null) ? stage.worldToLocalMatrix : Matrix4x4.identity;
+                _stage = value;
+                CreateOrUpdateService();
             }
         }
 
         [Tooltip("This transform is an additional wrapper to the user’s playspace.")]
         [FormerlySerializedAs("StageTransform")]
         [SerializeField] Transform _stageTransform = null;
+
         /// <summary>
         /// This transform is an additional wrapper to the user’s playspace.
         /// </summary>
@@ -161,12 +100,10 @@ namespace LIV.SDK.Unity
             }
             set {
                 _stageTransform = value;
+                CreateOrUpdateService();
             }
         }
 
-        [Tooltip("This is the camera responsible for rendering the user’s HMD.")]
-        [FormerlySerializedAs("HMDCamera")]
-        [SerializeField] Camera _HMDCamera = null;
         /// <summary>
         /// This is the camera responsible for rendering the user’s HMD.
         /// </summary>
@@ -174,27 +111,19 @@ namespace LIV.SDK.Unity
         /// <para>The LIV SDK, by default clones this object to match your application’s rendering setup.</para>
         /// <para>You can use your own camera prefab should you want to!</para>
         /// </remarks>
+        [Tooltip("Camera responsible for rendering the user’s HMD.")]
+        [FormerlySerializedAs("HMDCamera")]
+        [SerializeField] private Camera _HMDCamera = null;
         public Camera HMDCamera {
             get {
                 return _HMDCamera;
             }
             set {
-                if (value == null)
-                {
-                    Debug.LogWarning("LIV: HMD Camera cannot be null!");
-                }
-
-                if (_HMDCamera != value)
-                {
-                    _HMDCameraCandidate = value;
-                    _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.HMD_CAMERA, true);
-                }
+                _HMDCamera = value;
+                CreateOrUpdateService();
             }
         }
 
-        [Tooltip("Camera prefab for customized rendering.")]
-        [FormerlySerializedAs("MRCameraPrefab")]
-        [SerializeField] Camera _MRCameraPrefab = null;
         /// <summary>
         /// Camera prefab for customized rendering.
         /// </summary>
@@ -204,40 +133,38 @@ namespace LIV.SDK.Unity
         /// <para>However, some games can experience issues because of custom MonoBehaviours attached to this camera.</para>
         /// <para>You can use a custom camera prefab for those cases.</para>
         /// </remarks>
+        [Tooltip("Camera prefab for customized rendering.")]
+        [FormerlySerializedAs("MRCameraPrefab")]
+        [SerializeField] private Camera _MRCameraPrefab = null;
         public Camera MRCameraPrefab {
             get {
                 return _MRCameraPrefab;
             }
             set {
-                if (_MRCameraPrefab != value)
-                {
-                    _MRCameraPrefabCandidate = value;
-                    _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.MR_CAMERA_PREFAB, true);
-                }
+                _MRCameraPrefab = value;
+                CreateOrUpdateService();
             }
         }
 
-        [Tooltip("This option disables all standard Unity assets for the Mixed Reality rendering.")]
-        [FormerlySerializedAs("DisableStandardAssets")]
-        [SerializeField] bool _disableStandardAssets = false;
         /// <summary>
         /// This option disables all standard Unity assets for the Mixed Reality rendering.
-        /// </summary>        
+        /// </summary>
         /// <remarks>
         /// <para>Unity’s standard assets can interfere with the alpha channel that LIV needs to composite MR correctly.</para>
         /// </remarks>
+        [Tooltip("This option disables all standard Unity assets for the Mixed Reality rendering.")]
+        [FormerlySerializedAs("DisableStandardAssets")]
+        [SerializeField] bool _disableStandardAssets = false;
         public bool disableStandardAssets {
             get {
                 return _disableStandardAssets;
             }
             set {
                 _disableStandardAssets = value;
+                CreateOrUpdateService();
             }
         }
 
-        [Tooltip("The layer mask defines exactly which object layers should be rendered in MR.")]
-        [FormerlySerializedAs("SpectatorLayerMask")]
-        [SerializeField] LayerMask _spectatorLayerMask = ~0;
         /// <summary>
         /// The layer mask defines exactly which object layers should be rendered in MR.
         /// </summary>
@@ -248,25 +175,41 @@ namespace LIV.SDK.Unity
         /// <para>Also, this can be used to render special effects or additional UI only to the MR camera.</para>
         /// <para>Useful for showing the player’s health, or current score!</para>
         /// </remarks>
+        [Tooltip("The layer mask defines exactly which object layers should be rendered.")]
+        [FormerlySerializedAs("SpectatorLayerMask")]
+        [SerializeField] LayerMask _spectatorLayerMask = ~0;
         public LayerMask spectatorLayerMask {
             get {
                 return _spectatorLayerMask;
             }
             set {
                 _spectatorLayerMask = value;
+                CreateOrUpdateService();
             }
         }
 
-        [Tooltip("This is for removing unwanted scripts from the cloned MR camera.")]
-        [FormerlySerializedAs("ExcludeBehaviours")]
-        [SerializeField]
-        string[] _excludeBehaviours = new string[] {
-            "AudioListener",
-            "Collider",
-            "SteamVR_Camera",
-            "SteamVR_Fade",
-            "SteamVR_ExternalCamera"
-        };
+        /// <summary>
+        /// The layer mask works exactly as spectatorLayerMask but is activated only when passtrough MR
+        /// is enabled in the LIV APP. Disable layers which contain background rendering in order to
+        /// make passthrough rendering possible.
+        /// </summary>
+        /// <remarks>
+        /// <para>Passthrough simulates augmented reality effect.</para>
+        /// <para>Disable background rendering in order so LIV can replace it with camera footage.</para>
+        /// <para>Certain HMD-based effects should be disabled here too.</para>
+        /// </remarks>
+        [Tooltip("The layer mask defines exactly which object layers should be rendered in passthrough MR.")]
+        [SerializeField] private LayerMask _passthroughLayerMask = ~0;
+        public LayerMask passthroughLayerMask {
+            get {
+                return _passthroughLayerMask;
+            }
+            set {
+                _passthroughLayerMask = value;
+                CreateOrUpdateService();
+            }
+        }
+
         /// <summary>
         /// This is for removing unwanted scripts from the cloned MR camera.
         /// </summary>
@@ -274,249 +217,214 @@ namespace LIV.SDK.Unity
         /// <para>By default, we remove the AudioListener, Colliders and SteamVR scripts, as these are not necessary for rendering MR!</para>
         /// <para>The excluded string must match the name of the MonoBehaviour.</para>
         /// </remarks>
+        [Tooltip("List for removing unwanted scripts from the cloned camera.")]
+        [FormerlySerializedAs("ExcludeBehaviours")]
+        [SerializeField]
+        private string[] _excludeBehaviours = LivDescriptor.GetDefaultExcludeBehaviours();
+
         public string[] excludeBehaviours {
             get {
                 return _excludeBehaviours;
             }
             set {
-                if (_excludeBehaviours != value)
-                {
-                    _excludeBehavioursCandidate = value;
-                    _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.EXCLUDE_BEHAVIOURS, true);
-                }
+                _excludeBehaviours = value;
+                CreateOrUpdateService();
             }
         }
-
 
         /// <summary>
         /// Recovers corrupted alpha channel when using post-effects.
         /// </summary>
-        /// 
+        ///
         [Tooltip("Recovers corrupted alpha channel when using post-effects.")]
         [FormerlySerializedAs("FixPostEffectsAlpha")]
         [SerializeField]
-        private bool _fixPostEffectsAlpha = false;
+        private bool _fixPostEffectsAlpha = true;
         public bool fixPostEffectsAlpha {
             get {
                 return _fixPostEffectsAlpha;
             }
             set {
                 _fixPostEffectsAlpha = value;
+                CreateOrUpdateService();
             }
         }
 
         /// <summary>
-        /// Is the curret LIV SDK setup valid.
+        /// Overrides alpha using depth buffer from opaque render pass, enable only when opaque render pass has corrupted alpha channel.
         /// </summary>
-        public bool isValid {
-            get {
-                if (_invalidate != INVALIDATION_FLAGS.NONE) return false;
+        [Tooltip("Overrides alpha using depth buffer from opaque render pass, enable only when opaque render pass has corrupted alpha channel.")]
+        [SerializeField]
+        private bool _overrideAlphaFromDepthBuffer = false;
 
-                if (_HMDCamera == null)
-                {
-                    Debug.LogError("LIV: HMD Camera is a required parameter!");
-                    return false;
-                }
-
-                if (_stage == null)
-                {
-                    Debug.LogWarning("LIV: Tracked space origin should be assigned!");
-                }
-
-                if (_spectatorLayerMask == 0)
-                {
-                    Debug.LogWarning("LIV: The spectator layer mask is set to not show anything. Is this correct?");
-                }
-
-                return true;
+        public bool overrideAlphaFromDepthBuffer
+        {
+            get
+            {
+                return _overrideAlphaFromDepthBuffer;
+            }
+            set
+            {
+                _overrideAlphaFromDepthBuffer = value;
+                CreateOrUpdateService();
             }
         }
 
-        bool _isActive = false;
-        /// <summary>
-        /// Is the LIV SDK currently active.
-        /// </summary>
         public bool isActive {
             get {
-                return _isActive;
+                if (LivCaptureService.Service == null)
+                    return false;
+
+                return LivCaptureService.Service.isActive;
             }
         }
 
-        private bool _isReady {
+        public SDKRender render {
             get {
-                return isValid && _enabled && SDKBridge.IsActive;
+                if (LivCaptureService.Service == null)
+                    return null;
+
+                return LivCaptureService.Service.render;
             }
         }
 
-        private SDKRender _render = null;
-
-        /// <summary>
-        /// Script responsible for the MR rendering.
-        /// </summary>
-        public SDKRender render { get { return _render; } }
-
-        private bool _wasReady = false;
-
-        private INVALIDATION_FLAGS _invalidate = INVALIDATION_FLAGS.NONE;
-        private Transform _stageCandidate = null;
-        private Camera _HMDCameraCandidate = null;
-        private Camera _MRCameraPrefabCandidate = null;
-        private string[] _excludeBehavioursCandidate = null;
-
-        private bool _enabled = false;
-        private Coroutine _waitForEndOfFrameCoroutine;
-
-        void OnEnable()
+        private void CreateOrUpdateService()
         {
-            _enabled = true;
-            UpdateSDKReady();
-        }
-
-        void Update()
-        {
-            UpdateSDKReady();
-            Invalidate();
-        }
-
-        void OnDisable()
-        {
-            _enabled = false;
-            UpdateSDKReady();
-        }
-
-        IEnumerator WaitForUnityEndOfFrame()
-        {
-            while (Application.isPlaying && enabled)
+            LivDescriptor livDescriptor = new LivDescriptor
             {
-                yield return new WaitForEndOfFrame();
-                if (isActive)
-                {
-                    _render.Render();
-                }
-            }
-        }
+                trackingID = trackingID,
+                stage = stage,
+                stageTransform = stageTransform,
+                HMDCamera = HMDCamera,
+                cameraPrefab = MRCameraPrefab,
+                disableStandardAssets = disableStandardAssets,
+                spectatorLayerMask = spectatorLayerMask,
+                passthroughLayerMask = passthroughLayerMask,
+                excludeBehaviours = excludeBehaviours,
+                fixPostEffectsAlpha = fixPostEffectsAlpha,
+                overrideAlphaWithDepthBuffer = overrideAlphaFromDepthBuffer
+            };
 
-        void UpdateSDKReady()
-        {
-            bool ready = _isReady;
-            if (ready != _wasReady)
+            // Update descriptor if service exists
+            if (LivCaptureService.Service)
             {
-                OnSDKReadyChanged(ready);
-                _wasReady = ready;
-            }
-        }
-
-        void OnSDKReadyChanged(bool value)
-        {
-            if (value)
-            {
-                OnSDKActivate();
+                LivCaptureService.Service.descriptor = livDescriptor;
             }
             else
             {
-                OnSDKDeactivate();
+                // create service
+                var livResult = LivApi.CreateService(livDescriptor);
+                if (!livResult.isOk) Debug.LogWarning(livResult.message);
             }
         }
 
-        void OnSDKActivate()
+        private void Awake()
         {
-            Debug.Log("LIV: Compositor connected, setting up Mixed Reality!");
-            SubmitSDKOutput();
-            CreateAssets();
-            StartRenderCoroutine();
-            _isActive = true;
-            if (onActivate != null) onActivate.Invoke();
+            CreateOrUpdateService();
         }
 
-        void OnSDKDeactivate()
+        private void OnEnable()
         {
-            Debug.Log("LIV: Compositor disconnected, cleaning up Mixed Reality.");            
-            if (onDeactivate != null) onDeactivate.Invoke();            
-            StopRenderCoroutine();
-            DestroyAssets();
-            _isActive = false;
+            LivCaptureService service = LivCaptureService.Service;
+            if (service == null)
+                return;
+
+            service.onActivate += OnLivActivate;
+            service.onPreRender += OnLivPreRender;
+            service.onPreRenderBackground += OnLivPreRenderBackground;
+            service.onPostRenderBackground += OnLivPostRenderBackground;
+            service.onPreRenderForeground += OnLivPreRenderForeground;
+            service.onPostRenderForeground += OnLivPostRenderForeground;
+            service.onPostRender += OnLivPostRender;
+            service.onPassthroughActivated += OnLivPassthroughActivated;
+            service.onPassthroughDeactivated += OnLivPassthroughDeactivated;
+            service.onDeactivate += OnLivDeactivate;
+            service.onValidationError += OnLivValidationError;
         }
 
-        void CreateAssets()
+        private void OnDisable()
         {
-            DestroyAssets();
-            _render = new SDKRender(this);
+            LivCaptureService service = LivCaptureService.Service;
+            if (service == null)
+                return;
+
+            service.onActivate -= OnLivActivate;
+            service.onPreRender -= OnLivPreRender;
+            service.onPreRenderBackground -= OnLivPreRenderBackground;
+            service.onPostRenderBackground -= OnLivPostRenderBackground;
+            service.onPreRenderForeground -= OnLivPreRenderForeground;
+            service.onPostRenderForeground -= OnLivPostRenderForeground;
+            service.onPostRender -= OnLivPostRender;
+            service.onPassthroughActivated -= OnLivPassthroughActivated;
+            service.onPassthroughDeactivated -= OnLivPassthroughDeactivated;
+            service.onDeactivate -= OnLivDeactivate;
+            service.onValidationError -= OnLivValidationError;
         }
 
-        void DestroyAssets()
+        private void OnLivActivate()
         {
-            if (_render != null)
-            {
-                _render.Dispose();
-                _render = null;
-            }
+            if (onActivate != null)
+                onActivate.Invoke();
         }
 
-        void StartRenderCoroutine()
+        private void OnLivPreRender(SDKRender livRenderer)
         {
-            StopRenderCoroutine();
-            _waitForEndOfFrameCoroutine = StartCoroutine(WaitForUnityEndOfFrame());
+            if (onPreRender != null)
+                onPreRender.Invoke(livRenderer);
         }
 
-        void StopRenderCoroutine()
+        private void OnLivPreRenderBackground(SDKRender livRenderer)
         {
-            if (_waitForEndOfFrameCoroutine != null)
-            {
-                StopCoroutine(_waitForEndOfFrameCoroutine);
-                _waitForEndOfFrameCoroutine = null;
-            }
+            if (onPreRenderBackground != null)
+                onPreRenderBackground.Invoke(livRenderer);
         }
 
-        void SubmitSDKOutput()
+        private void OnLivPostRenderBackground(SDKRender livRenderer)
         {
-            SDKApplicationOutput output = SDKApplicationOutput.empty;
-            output.supportedFeatures = FEATURES.BACKGROUND_RENDER |
-                                        FEATURES.FOREGROUND_RENDER |
-                                        FEATURES.OVERRIDE_POST_PROCESSING |
-                                        FEATURES.FIX_FOREGROUND_ALPHA;
-
-            output.sdkID = SDKConstants.SDK_ID;
-            output.sdkVersion = SDKConstants.SDK_VERSION;
-            output.engineName = SDKConstants.ENGINE_NAME;
-            output.engineVersion = Application.unityVersion;
-            output.applicationName = Application.productName;
-            output.applicationVersion = Application.version;
-            output.graphicsAPI = SystemInfo.graphicsDeviceType.ToString();
-#if UNITY_2017_2_OR_NEWER
-            output.xrDeviceName = XRSettings.loadedDeviceName;
-#endif
-            SDKBridge.SubmitApplicationOutput(output);
+            if (onPostRenderBackground != null)
+                onPostRenderBackground.Invoke(livRenderer);
         }
 
-        void Invalidate()
+        private void OnLivPreRenderForeground(SDKRender livRenderer)
         {
-            if (SDKUtils.ContainsFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.STAGE))
-            {
-                _stage = _stageCandidate;
-                _stageCandidate = null;
-                _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.STAGE, false);
-            }
+            if (onPreRenderForeground != null)
+                onPreRenderForeground.Invoke(livRenderer);
+        }
 
-            if (SDKUtils.ContainsFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.HMD_CAMERA))
-            {
-                _HMDCamera = _HMDCameraCandidate;
-                _HMDCameraCandidate = null;
-                _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.HMD_CAMERA, false);
-            }
+        private void OnLivPostRenderForeground(SDKRender livRenderer)
+        {
+            if (onPostRenderForeground != null)
+                onPostRenderForeground.Invoke(livRenderer);
+        }
 
-            if (SDKUtils.ContainsFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.MR_CAMERA_PREFAB))
-            {
-                _MRCameraPrefab = _MRCameraPrefabCandidate;
-                _MRCameraPrefabCandidate = null;
-                _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.MR_CAMERA_PREFAB, false);
-            }
+        private void OnLivPostRender(SDKRender livRenderer)
+        {
+            if (onPostRender != null)
+                onPostRender.Invoke(livRenderer);
+        }
 
-            if (SDKUtils.ContainsFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.EXCLUDE_BEHAVIOURS))
-            {
-                _excludeBehaviours = _excludeBehavioursCandidate;
-                _excludeBehavioursCandidate = null;
-                _invalidate = (INVALIDATION_FLAGS)SDKUtils.SetFlag((uint)_invalidate, (uint)INVALIDATION_FLAGS.EXCLUDE_BEHAVIOURS, false);
-            }
+        private void OnLivPassthroughActivated()
+        {
+            if (onPassthroughActivated != null)
+                onPassthroughActivated.Invoke();
+        }
+
+        private void OnLivPassthroughDeactivated()
+        {
+            if (onPassthroughDeactivated != null)
+                onPassthroughDeactivated.Invoke();
+        }
+
+        private void OnLivDeactivate()
+        {
+            if (onDeactivate != null)
+                onDeactivate.Invoke();
+        }
+
+        private void OnLivValidationError(ValidationError validationError, string validationErrorMessage)
+        {
+            if (onValidationError != null)
+                onValidationError(validationError, validationErrorMessage);
         }
     }
 }

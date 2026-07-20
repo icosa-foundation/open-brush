@@ -11,7 +11,11 @@
 		Pass
 		{
 			Name "WRITE"
-			ZTest Always ZWrite Off 
+
+			Blend Off
+			ZTest Always
+			ZWrite Off
+			Cull Off
 			ColorMask [_LivColorMask]
 			Fog{ Mode Off }
 
@@ -35,12 +39,19 @@
 			};
 
 			sampler2D _MainTex;
+      CBUFFER_START(UnityPerMaterial)
+			uniform float4 _MainTex_ST;
+      CBUFFER_END
 
 			v2f vert(appdata v)
 			{
 				v2f o;
-				o.vertex = UnityObjectToClipPos(v.vertex);
-				o.uv = v.uv;
+				float2 uv = -1.0 + v.vertex.xy * 2.0;
+				uv.y *= _ProjectionParams.x;
+				o.vertex.xy = uv;
+				o.vertex.z = 0.0;
+				o.vertex.w = 1.0;
+				o.uv = TRANSFORM_TEX(v.uv.xy, _MainTex);				
 				return o;
 			}
 

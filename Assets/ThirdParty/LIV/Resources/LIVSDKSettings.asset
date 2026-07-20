@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3dfdebc0b9ab27a4197307aefa35f53d, type: 3}
+  m_Name: LIVSDKSettings
+  m_EditorClassIdentifier: 
+  _trackingID: testing_tracking_id
+  _captureProtocolType: 0
