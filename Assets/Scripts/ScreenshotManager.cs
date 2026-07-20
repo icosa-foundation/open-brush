@@ -488,12 +488,26 @@ namespace TiltBrush
                 var camera = LeftInfo.camera;
                 var prev = camera.targetTexture;
                 var prevDepthTextureMode = camera.depthTextureMode;
-                camera.targetTexture = targetA;
-                camera.depthTextureMode = DepthTextureMode.Depth;
-                camera.RenderWithShader(
-                    Shader.Find("Hidden/Internal-DepthNormalsTexture"), "RenderType");
-                camera.depthTextureMode = prevDepthTextureMode;
-                camera.targetTexture = prev;
+                var prevClearFlags = camera.clearFlags;
+                var prevBackgroundColor = camera.backgroundColor;
+                try
+                {
+                    camera.targetTexture = targetA;
+                    camera.depthTextureMode = DepthTextureMode.Depth;
+                    camera.clearFlags = CameraClearFlags.SolidColor;
+                    // Neutral view-space normal and maximum encoded depth. This makes pixels
+                    // untouched by the replacement shader decode as far rather than near.
+                    camera.backgroundColor = new Color(0.5f, 0.5f, 1.0f, 0.0f);
+                    camera.RenderWithShader(
+                        Shader.Find("Hidden/Internal-DepthNormalsTexture"), "RenderType");
+                }
+                finally
+                {
+                    camera.backgroundColor = prevBackgroundColor;
+                    camera.clearFlags = prevClearFlags;
+                    camera.depthTextureMode = prevDepthTextureMode;
+                    camera.targetTexture = prev;
+                }
             }
 
             if (targetA != rTexture)
