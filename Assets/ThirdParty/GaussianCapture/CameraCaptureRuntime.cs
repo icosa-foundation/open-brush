@@ -467,10 +467,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         isRunning = true;
         string folderPath = PathCombineSafe(outputFolder, outAdd);
         Directory.CreateDirectory(folderPath);
+        DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
         try
         {
             PauseSceneForCapture();
+            cameraToUse.depthTextureMode |= DepthTextureMode.Depth;
             string camerasTxt = Path.Combine(folderPath, "cameras.txt");
             float fov = cameraToUse.fieldOfView;
             float fy = 0.5f * height / Mathf.Tan(0.5f * fov * Mathf.Deg2Rad);
@@ -666,6 +668,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         finally
         {
+            cameraToUse.depthTextureMode = previousDepthTextureMode;
             ResumeSceneAfterCapture();
         }
 
@@ -1248,8 +1251,6 @@ public class CameraCaptureRuntime : MonoBehaviour
     )
     {
         if (cam == null || colorTex == null || writer == null) return;
-
-        cam.depthTextureMode = DepthTextureMode.Depth;
 
         if (_eyeDepthMat == null)
         {
