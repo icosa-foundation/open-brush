@@ -273,9 +273,11 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         this.target = domeTargets[0].Transform;
         this.radius = domeTargets[0].Radii.Max();
+        string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, null)
-            : CaptureTargetsAndExportColmap(domeTargets, null, outAdd: ""));
+            ? RuntimeSequenceCoroutine(domeTargets, null, captureOutputFolder)
+            : CaptureTargetsAndExportColmap(
+                domeTargets, null, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start Volume Capture")]
@@ -297,9 +299,11 @@ public class CameraCaptureRuntime : MonoBehaviour
         this.volumeCenter = volumeTargets[0].Transform.position;
         this.volumeSize = volumeTargets[0].Transform.lossyScale;
 
+        string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(null, volumeTargets)
-            : CaptureTargetsAndExportColmap(null, volumeTargets, outAdd: ""));
+            ? RuntimeSequenceCoroutine(null, volumeTargets, captureOutputFolder)
+            : CaptureTargetsAndExportColmap(
+                null, volumeTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start All Capture")]
@@ -332,9 +336,11 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
         }
 
+        string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets)
-            : CaptureTargetsAndExportColmap(domeTargets, volumeTargets, outAdd: ""));
+            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, captureOutputFolder)
+            : CaptureTargetsAndExportColmap(
+                domeTargets, volumeTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Cancel")]
@@ -370,9 +376,36 @@ public class CameraCaptureRuntime : MonoBehaviour
         return true;
     }
 
+    private string CreateUniqueCaptureOutputFolder()
+    {
+        var current = SaveLoadScript.m_Instance.SceneFile;
+        string basename = current.Valid
+            ? current.HumanName
+            : "Untitled";
+        basename = FileUtils.SanitizeFilename(basename);
+        if (string.IsNullOrEmpty(basename))
+        {
+            basename = "Untitled";
+        }
+
+        for (int i = 0; i < int.MaxValue; ++i)
+        {
+            string folderName = $"{basename}_{i:00}";
+            string candidate = Path.Combine(outputFolder, folderName);
+            if (!File.Exists(candidate) && !Directory.Exists(candidate))
+            {
+                Directory.CreateDirectory(candidate);
+                return candidate;
+            }
+        }
+
+        throw new IOException($"Could not allocate a Gaussian capture folder in {outputFolder}");
+    }
+
     private IEnumerator RuntimeSequenceCoroutine(
         List<DomeCaptureTarget> domeTargets,
-        List<VolumeCaptureTarget> volumeTargets)
+        List<VolumeCaptureTarget> volumeTargets,
+        string captureOutputFolder)
     {
         int totalFrames = Mathf.Max(1, Mathf.RoundToInt(duration * Mathf.Max(1, fbs)));
         isRunning = true;
@@ -383,14 +416,15 @@ public class CameraCaptureRuntime : MonoBehaviour
             if (cancel) break;
             ReportProgress((float)i / totalFrames, $"Runtime sequence {i + 1}/{totalFrames}");
             string outAdd = "/" + i + "/";
-            yield return StartCoroutine(CaptureTargetsAndExportColmap(domeTargets, volumeTargets, outAdd));
+            yield return StartCoroutine(CaptureTargetsAndExportColmap(
+                domeTargets, volumeTargets, captureOutputFolder, outAdd));
             isRunning = true;
             yield return new WaitForSecondsRealtime(frameDt);
         }
 
         if (trainPostShot && !cancel)
         {
-            TryRunPostshotBatch();
+            TryRunPostshotBatch(captureOutputFolder);
         }
         isRunning = false;
         cancel = false;
@@ -450,22 +484,27 @@ public class CameraCaptureRuntime : MonoBehaviour
     public IEnumerator CaptureViewsAndExportColmap(string outAdd)
     {
         var domeTargets = GetActiveDomeCaptureTargets();
-        yield return StartCoroutine(CaptureTargetsAndExportColmap(domeTargets, null, outAdd));
+        string captureOutputFolder = CreateUniqueCaptureOutputFolder();
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(
+            domeTargets, null, captureOutputFolder, outAdd));
     }
 
     public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
     {
         var volumeTargets = GetActiveVolumeCaptureTargets();
-        yield return StartCoroutine(CaptureTargetsAndExportColmap(null, volumeTargets, outAdd));
+        string captureOutputFolder = CreateUniqueCaptureOutputFolder();
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(
+            null, volumeTargets, captureOutputFolder, outAdd));
     }
 
     private IEnumerator CaptureTargetsAndExportColmap(
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
+        string captureOutputFolder,
         string outAdd)
     {
         isRunning = true;
-        string folderPath = PathCombineSafe(outputFolder, outAdd);
+        string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
         Directory.CreateDirectory(folderPath);
         DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
@@ -676,7 +715,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         isRunning = false;
 
         if (!runtimeSequence && trainPostShot && !cancel)
-            TryRunPostshotBatch();
+            TryRunPostshotBatch(captureOutputFolder);
 
         yield return new WaitForEndOfFrame();
     }
@@ -1396,20 +1435,22 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
     }
 
-    private void TryRunPostshotBatch()
+    private void TryRunPostshotBatch(string captureOutputFolder)
     {
 #if UNITY_EDITOR
         
 #endif
 #if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
-        if (string.IsNullOrEmpty(outputFolder) || !Directory.Exists(outputFolder))
+        if (string.IsNullOrEmpty(captureOutputFolder) || !Directory.Exists(captureOutputFolder))
         {
             Debug.LogError("Output folder does not exist for PostShot training.");
             return;
         }
 
-        var subDirs = Directory.GetDirectories(outputFolder);
-        List<string> foldersToProcess = subDirs.Length > 0 ? new List<string>(subDirs) : new List<string> { outputFolder };
+        var subDirs = Directory.GetDirectories(captureOutputFolder);
+        List<string> foldersToProcess = subDirs.Length > 0
+            ? new List<string>(subDirs)
+            : new List<string> { captureOutputFolder };
 
         List<string> commands = new List<string>();
         foreach (string folder in foldersToProcess)
@@ -1425,7 +1466,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             };
 
             string ext = (outputFormat == OutputFormat.PLY) ? "ply" : "psht";
-            string outFile = Path.Combine(outputFolder, $"{folderName}.{ext}");
+            string outFile = Path.Combine(captureOutputFolder, $"{folderName}.{ext}");
 
 #if UNITY_STANDALONE_WIN
             string cmd = $"\"{postShotCliPath}\" train -i \"{folder}\" -s {trainSteps} --profile \"{profileCLI}\"";
