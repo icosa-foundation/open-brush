@@ -3636,7 +3636,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 482980427487338496
-    m_Key: LABS_PANEL_GAUSSIAN_CAPTURE_BUTTON_DESCRIPTION
+    m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Key: CAPTURE_TRAY_SPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Key: CAPTURE_TRAY_ELLIPSOID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Key: CAPTURE_TRAY_HEMISPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Key: CAPTURE_TRAY_BOX_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:
