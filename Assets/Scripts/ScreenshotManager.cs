@@ -570,15 +570,6 @@ namespace TiltBrush
             // Decode using: dot(enc, float2(1.0, 1/255.0))
             Color[] pixels = texture.GetPixels();
 
-            // Debug: Check what we're actually getting
-            if (pixels.Length > 0)
-            {
-                Color centerPixel = pixels[pixels.Length / 2];
-                float decodedDepth = centerPixel.b * 1.0f + centerPixel.a * (1.0f / 255.0f);
-                Debug.Log($"Depth render center pixel RGBA: {centerPixel.r:F3}, {centerPixel.g:F3}, {centerPixel.b:F3}, {centerPixel.a:F3}");
-                Debug.Log($"Decoded depth value: {decodedDepth:F3}");
-            }
-
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color pixel = pixels[i];
