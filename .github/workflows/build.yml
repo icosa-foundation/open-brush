@@ -117,12 +117,12 @@ jobs:
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
-          echo "googleplaytrack=$GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
+          # upload-google-play accepts a comma-separated track list. Remove
+          # whitespace before exporting it, then match the exact production token.
+          NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
+          echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
           echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
 
-          # upload-google-play accepts a comma-separated track list. Remove
-          # whitespace, pad it with commas, and match the exact production token.
-          NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
           case ",$NORMALIZED_GOOGLE_PLAY_TRACKS," in
             *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
             *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
