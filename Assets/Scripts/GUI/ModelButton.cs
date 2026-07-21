@@ -162,6 +162,18 @@ namespace TiltBrush
             // Button forward is into the panel, not out of the panel; so flip it around
             TrTransform xfSpawn = Coords.AsGlobal[transform]
                 * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
+            if (model.IsNativeBlocksModel)
+            {
+                model.CreateNativeBlocksWidget(
+                    xfSpawn, m_PreviewBaseRotation, false,
+                    SelectionManager.m_Instance.SnappingGridSize,
+                    SelectionManager.m_Instance.SnappingAngle);
+                WidgetManager.m_Instance.WidgetsDormant = false;
+                SketchControlsScript.m_Instance.EatGazeObjectInput();
+                SelectionManager.m_Instance.RemoveFromSelection(false);
+                return;
+            }
+
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation,
                 false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle

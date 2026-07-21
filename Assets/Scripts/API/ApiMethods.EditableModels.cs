@@ -89,7 +89,8 @@ namespace TiltBrush
             var ext = uri.Segments.Last().Split('.').Last();
 
             // Is it a valid 3d model extension?
-            if (ext != "off" && ext != "obj" && ext != "gltf" && ext != "glb" && ext != "fbx" && ext != "svg")
+            if (ext != "off" && ext != "obj" && ext != "gltf" && ext != "glb" && ext != "fbx" && ext != "svg" &&
+                ext != "blocks" && ext != "poly" && ext != "peltzer")
             {
                 return;
             }
@@ -187,6 +188,25 @@ namespace TiltBrush
             }
             var tr = _CurrentBrushTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
+
+            // Native Blocks geometry is inherently editable, so bypass the ordinary model-widget path.
+            if (model.IsNativeBlocksModel)
+            {
+                AsyncHelpers.RunSync(() => model.LoadModelAsync());
+                if (!model.m_Valid)
+                {
+                    OutputWindowScript.Error(
+                        $"Couldn't load native Blocks model: {model.Error?.message}",
+                        model.Error?.detail);
+                    return null;
+                }
+
+                EditableModelWidget blocksWidget = model.CreateNativeBlocksWidget(tr);
+                WidgetManager.m_Instance.WidgetsDormant = false;
+                SketchControlsScript.m_Instance.EatGazeObjectInput();
+                SelectionManager.m_Instance.RemoveFromSelection(false);
+                return blocksWidget;
+            }
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);

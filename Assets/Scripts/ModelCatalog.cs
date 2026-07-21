@@ -366,12 +366,19 @@ namespace TiltBrush
                 var blocksRoot = App.BlocksModelLibraryPath();
                 bool isBlocksTree = !string.IsNullOrEmpty(blocksRoot) && rootDirectory == blocksRoot;
                 bool isBlocksRoot = isBlocksTree && sPath.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+                string preferredBlocksModel = isBlocksTree
+                    ? GetPreferredBlocksModelFile(aFiles)
+                    : null;
 
                 // For Blocks: skip files in the root directory (only process subdirectories)
                 if (!isBlocksRoot)
                 {
                     // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+                    List<string> extensions = new()
+                    {
+                        ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox",
+                        ".blocks", ".poly", ".peltzer"
+                    };
 
 #if USD_SUPPORTED
                     extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
@@ -385,8 +392,10 @@ namespace TiltBrush
                         string filename = Path.GetFileName(aFiles[i]);
                         string sExtension = Path.GetExtension(aFiles[i]).ToLower();
 
-                        // For Blocks tree: only process files named "model.obj"
-                        if (isBlocksTree && !filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
+                        // Open Blocks exports both native and OBJ versions. Use exactly one, preferring
+                        // native geometry so it can be instantiated as an editable model.
+                        if (isBlocksTree && !aFiles[i].Equals(
+                            preferredBlocksModel, StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
                         }
@@ -425,6 +434,24 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        private static string GetPreferredBlocksModelFile(IEnumerable<string> files)
+        {
+            string[] preferredNames =
+            {
+                "model.blocks", "model.poly", "model.peltzer", "model.obj"
+            };
+            foreach (string preferredName in preferredNames)
+            {
+                string match = files.FirstOrDefault(file => Path.GetFileName(file).Equals(
+                    preferredName, StringComparison.OrdinalIgnoreCase));
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            return null;
         }
 
         /// GetModel, for .tilt files written by TB 7.5 and up

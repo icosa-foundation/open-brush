@@ -162,13 +162,21 @@ namespace TiltBrush.MeshEditing
         }
 
 
-        public EditableModelWidget GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr)
+        public EditableModelWidget GeneratePolyMesh(
+            PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr,
+            Quaternion? desiredEndForward = null, bool forceTransform = true,
+            float snapGrid = 0, float snapAngle = 0)
         {
             var meshData = poly.BuildMeshData(colors: polyRecipe.Colors, colorMethod: polyRecipe.ColorMethod);
-            return GeneratePolyMesh(poly, polyRecipe, tr, meshData);
+            return GeneratePolyMesh(
+                poly, polyRecipe, tr, meshData, desiredEndForward,
+                forceTransform, snapGrid, snapAngle);
         }
 
-        public EditableModelWidget GeneratePolyMesh(PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr, PolyMesh.MeshData meshData)
+        public EditableModelWidget GeneratePolyMesh(
+            PolyMesh poly, PolyRecipe polyRecipe, TrTransform tr, PolyMesh.MeshData meshData,
+            Quaternion? desiredEndForward = null, bool forceTransform = true,
+            float snapGrid = 0, float snapAngle = 0)
         {
             // Create Mesh from PolyMesh
             // var mat = ModelCatalog.m_Instance.m_ObjLoaderVertexColorMaterial;
@@ -182,7 +190,8 @@ namespace TiltBrush.MeshEditing
             // Create the widget
 
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, forceTransform: true);
+                WidgetManager.m_Instance.EditableModelWidgetPrefab, tr, desiredEndForward,
+                forceTransform, snapGrid, snapAngle);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var widget = createCommand.Widget as EditableModelWidget;
             if (widget != null)

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Polyhydra.Core;
 using TiltBrush.MeshEditing;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
@@ -262,6 +263,11 @@ namespace TiltBrush
 
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
+        private PolyMesh m_EditablePolyMesh;
+        private PolyRecipe m_EditablePolyRecipe;
+
+        public bool IsNativeBlocksModel => BlocksReader.IsSupportedExtension(m_Location.Extension);
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -695,6 +701,28 @@ namespace TiltBrush
             }
         }
 
+        GameObject LoadBlocks(List<string> warningsOut)
+        {
+            try
+            {
+                var reader = new BlocksReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector, poly, recipe) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_EditablePolyMesh = poly;
+                m_EditablePolyRecipe = recipe;
+                m_AllowExport = m_ImportMaterialCollector != null;
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         // New Obj loader for editable models
         GameObject LoadObj(List<string> warningsOut, bool editable)
         {
@@ -950,6 +978,34 @@ namespace TiltBrush
             StartCreatePrefab(go, true);
         }
 
+        public EditableModelWidget CreateNativeBlocksWidget(
+            TrTransform spawnTransform, Quaternion? desiredEndForward = null,
+            bool forceTransform = true, float snapGrid = 0, float snapAngle = 0)
+        {
+            if (!IsNativeBlocksModel || m_EditablePolyMesh == null)
+            {
+                throw new InvalidOperationException(
+                    $"Native Blocks geometry has not been loaded for {m_Location}");
+            }
+
+            PolyMesh poly = m_EditablePolyMesh.Duplicate();
+            PolyRecipe recipe = m_EditablePolyRecipe.Clone();
+            recipe.Vertices = new List<Vector3>(m_EditablePolyRecipe.Vertices);
+            recipe.Faces = m_EditablePolyRecipe.Faces.Select(face => new List<int>(face)).ToList();
+            recipe.FaceRoles = new List<int>(m_EditablePolyRecipe.FaceRoles);
+            recipe.VertexRoles = new List<int>(m_EditablePolyRecipe.VertexRoles);
+            recipe.FaceTags = m_EditablePolyRecipe.FaceTags
+                .Select(tags => new HashSet<string>(tags)).ToList();
+            poly.FaceTags = recipe.FaceTags;
+
+            Debug.Log($"[BLOCKS_EDITABLE_IMPORT] Creating EditableModelWidget for {m_Location} " +
+                      $"with {poly.Vertices.Count} vertices and {poly.Faces.Count} faces.");
+
+            return EditableModelManager.m_Instance.GeneratePolyMesh(
+                poly, recipe, spawnTransform, desiredEndForward,
+                forceTransform, snapGrid, snapAngle);
+        }
+
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
         /// or take a previously (probably asynchronously-loaded) GameObject hierarchy and do the same.
         ///
@@ -999,7 +1055,16 @@ namespace TiltBrush
                 // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
                 var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
                 int __icosaStartFrame = Time.frameCount;
-                if (isLocal && ext == ".usd")
+                if (BlocksReader.IsSupportedExtension(ext))
+                {
+                    go = LoadBlocks(warnings);
+                    if (go != null)
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
+                }
+                else if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
