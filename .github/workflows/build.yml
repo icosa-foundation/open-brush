@@ -66,8 +66,10 @@ jobs:
       - name: Calculate version and stamp
         id: version
         env:
-          # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
-          # Default prerelease uploads to completed internal-track releases so testers receive them.
+          # Google Play uploads default to completed internal-track releases so testers receive them.
+          # Override either release type independently with repository variables.
+          GOOGLE_PLAY_RELEASE_TRACK: ${{ vars.GOOGLE_PLAY_RELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_RELEASE_STATUS: ${{ vars.GOOGLE_PLAY_RELEASE_STATUS || 'completed' }}
           GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
           GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
@@ -102,8 +104,8 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=production" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=completed" >> $GITHUB_OUTPUT
+            echo "googleplaytrack=$GOOGLE_PLAY_RELEASE_TRACK" >> $GITHUB_OUTPUT
+            echo "googleplaystatus=$GOOGLE_PLAY_RELEASE_STATUS" >> $GITHUB_OUTPUT
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
@@ -1348,11 +1350,11 @@ jobs:
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
-          # Prereleases must reach testers without submitting reviewable changes.
+          # Testing-track releases must reach testers without submitting reviewable changes.
           # The probe above supplies the package-specific API spelling required
-          # to express that intent. Production releases retain the action default
-          # so a formal release cannot silently remain waiting for manual review.
-          changesNotSentForReview: ${{ needs.configuration.outputs.prerelease == 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
+          # to express that intent. Production-track releases retain the action
+          # default so they cannot silently remain waiting for manual review.
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplaytrack != 'production' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
     name: Publish Google Play Viewer Release
@@ -1403,7 +1405,7 @@ jobs:
           # See google_play_review_state. Viewer currently requires true because
           # of its retained rejected beta release; the probe keeps this adaptive
           # if Google later changes either package's hidden review state.
-          changesNotSentForReview: ${{ needs.configuration.outputs.prerelease == 'true' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplaytrack != 'production' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
