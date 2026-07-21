@@ -46,6 +46,7 @@ jobs:
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
       googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
+      googleplayhasproduction: ${{ steps.version.outputs.googleplayhasproduction }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
       flavors: ${{ steps.flavors.outputs.flavors }}
@@ -104,8 +105,8 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=$GOOGLE_PLAY_RELEASE_TRACK" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=$GOOGLE_PLAY_RELEASE_STATUS" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_RELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_RELEASE_STATUS"
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
@@ -113,9 +114,19 @@ jobs:
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=$GOOGLE_PLAY_PRERELEASE_TRACK" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=$GOOGLE_PLAY_PRERELEASE_STATUS" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
+          echo "googleplaytrack=$GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
+          echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
+
+          # upload-google-play accepts a comma-separated track list. Remove
+          # whitespace, pad it with commas, and match the exact production token.
+          NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
+          case ",$NORMALIZED_GOOGLE_PLAY_TRACKS," in
+            *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
+            *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
+          esac
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
@@ -1354,7 +1365,7 @@ jobs:
           # The probe above supplies the package-specific API spelling required
           # to express that intent. Production-track releases retain the action
           # default so they cannot silently remain waiting for manual review.
-          changesNotSentForReview: ${{ needs.configuration.outputs.googleplaytrack != 'production' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
     name: Publish Google Play Viewer Release
@@ -1405,7 +1416,7 @@ jobs:
           # See google_play_review_state. Viewer currently requires true because
           # of its retained rejected beta release; the probe keeps this adaptive
           # if Google later changes either package's hidden review state.
-          changesNotSentForReview: ${{ needs.configuration.outputs.googleplaytrack != 'production' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
