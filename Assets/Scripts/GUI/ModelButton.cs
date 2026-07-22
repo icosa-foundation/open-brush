@@ -167,7 +167,8 @@ namespace TiltBrush
                 model.CreateNativeBlocksWidget(
                     xfSpawn, m_PreviewBaseRotation, false,
                     SelectionManager.m_Instance.SnappingGridSize,
-                    SelectionManager.m_Instance.SnappingAngle);
+                    SelectionManager.m_Instance.SnappingAngle,
+                    normalizeSize: true);
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);

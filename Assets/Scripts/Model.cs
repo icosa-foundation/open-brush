@@ -981,7 +981,8 @@ namespace TiltBrush
 
         public EditableModelWidget CreateNativeBlocksWidget(
             TrTransform spawnTransform, Quaternion? desiredEndForward = null,
-            bool forceTransform = true, float snapGrid = 0, float snapAngle = 0)
+            bool forceTransform = true, float snapGrid = 0, float snapAngle = 0,
+            bool normalizeSize = false)
         {
             if (!IsNativeBlocksModel || m_EditablePolyMesh == null)
             {
@@ -1002,9 +1003,14 @@ namespace TiltBrush
             Debug.Log($"[BLOCKS_EDITABLE_IMPORT] Creating EditableModelWidget for {m_Location} " +
                       $"with {poly.Vertices.Count} vertices and {poly.Faces.Count} faces.");
 
-            return EditableModelManager.m_Instance.GeneratePolyMesh(
+            EditableModelWidget widget = EditableModelManager.m_Instance.GeneratePolyMesh(
                 poly, recipe, spawnTransform, desiredEndForward,
                 forceTransform, snapGrid, snapAngle);
+            if (normalizeSize)
+            {
+                widget.SetSignedWidgetSize(widget.InitSize_CS);
+            }
+            return widget;
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"

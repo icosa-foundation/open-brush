@@ -947,7 +947,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 if (model.IsNativeBlocksModel)
                 {
-                    model.CreateNativeBlocksWidget(new TrTransform());
+                    model.CreateNativeBlocksWidget(
+                        new TrTransform(), normalizeSize: true);
                     WidgetManager.m_Instance.WidgetsDormant = false;
                     SketchControlsScript.m_Instance.EatGazeObjectInput();
                     SelectionManager.m_Instance.RemoveFromSelection(false);
