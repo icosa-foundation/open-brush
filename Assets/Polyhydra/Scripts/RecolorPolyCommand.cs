@@ -24,6 +24,7 @@ namespace TiltBrush
         private readonly PolyMesh m_PolyMesh;
         private readonly Color[] m_NewColors;
         private readonly Color[] m_PreviousColors;
+        private readonly ColorMethods m_PreviousColorMethod;
 
         public override bool NeedsSave { get { return true; } }
 
@@ -33,17 +34,20 @@ namespace TiltBrush
             m_PolyMesh = ewidget.m_PolyMesh;
             m_NewColors = colors;
             m_PreviousColors = (Color[])ewidget.m_PolyRecipe.Colors.Clone();
+            m_PreviousColorMethod = ewidget.m_PolyRecipe.ColorMethod;
         }
 
         protected override void OnRedo()
         {
             m_Ewidget.m_PolyRecipe.Colors = m_NewColors;
+            m_Ewidget.m_PolyRecipe.ColorMethod = ColorMethods.ByIndex;
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 
         protected override void OnUndo()
         {
             m_Ewidget.m_PolyRecipe.Colors = m_PreviousColors;
+            m_Ewidget.m_PolyRecipe.ColorMethod = m_PreviousColorMethod;
             EditableModelManager.m_Instance.RegenerateMesh(m_Ewidget, m_PolyMesh);
         }
 

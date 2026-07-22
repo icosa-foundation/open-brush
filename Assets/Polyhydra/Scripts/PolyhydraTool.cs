@@ -201,7 +201,8 @@ namespace TiltBrush
                         Color color = PointerManager.m_Instance.CalculateJitteredColor(
                             PointerManager.m_Instance.PointerColor
                         );
-                        Color[] colors = Enumerable.Repeat(color, PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors.Length).ToArray();
+                        int colorCount = Mathf.Max(1, ewidget.m_PolyRecipe.Colors?.Length ?? 0);
+                        Color[] colors = Enumerable.Repeat(color, colorCount).ToArray();
 
                         SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                             new RecolorPolyCommand(ewidget, colors)
