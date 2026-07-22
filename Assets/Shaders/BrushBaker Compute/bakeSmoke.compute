@@ -1,5 +1,7 @@
 #pragma kernel CSMain
 
+#include "../../ThirdParty/Shaders/Noise.cginc"
+
 uniform float4x4 TransformObjectToWorld;
 
 RWStructuredBuffer<float3> vertexBuffer;
@@ -11,6 +13,9 @@ RWStructuredBuffer<float4> uv1Buffer;
 uint _VertexCount;
 
 static const float kRecipSquareRootOfTwo = 0.70710678;
+static const float kSmokeExportTime = 0.0;
+static const float kSmokeCurlScale = 5.0;
+static const float kDecimetersToWorldUnits = 1.0;
 
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
@@ -51,23 +56,14 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
         preBillboard = float3(length, -length, 0);
     }
 
-    // the movement is based on Unity Built-in shader variables
-    // _Time.y (t) and _Time.x (t/20)
-    // we will take the t = 0 in this compute shader
-    float timedoty = 0;
-    float timedotx = timedoty / 20;
-
-    
-    // // leaving this parameters here for generating animated mesh in the future
-
-    // float time = timedotx * 5;
-    // float d = 30;
-    // float freq = 0.1;
-    // float3 disp = float3(1, 0, 0) * curlX(originWS.xyz * freq + time, d);
-    // disp += float3(0,1,0) * curlY(originWS.xyz * freq + time, d);
-    // disp += float3(0,0,1) * curlZ(originWS.xyz * freq + time, d);
-    // disp = disp * 5 * 0.1;
-    // vertex += disp;
+    // Bake a fixed-time snapshot of Smoke's animated curl displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float d = 30;
+    float freq = 0.1;
+    float3 disp = float3(1, 0, 0) * curlX(originWS.xyz * freq + kSmokeExportTime, d);
+    disp += float3(0, 1, 0) * curlY(originWS.xyz * freq + kSmokeExportTime, d);
+    disp += float3(0, 0, 1) * curlZ(originWS.xyz * freq + kSmokeExportTime, d);
+    originWS.xyz += disp * kSmokeCurlScale * kDecimetersToWorldUnits;
 
     vertex = originWS.xyz + preBillboard;
     vertexBuffer[id.x] = vertex;
