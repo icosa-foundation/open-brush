@@ -956,6 +956,13 @@ namespace TiltBrush
 
         public void LoadFromDefinition(EditableModelDefinition emd)
         {
+            // GeometryData has no generator controls that can reconstruct its source mesh.
+            // Preserve the complete recipe before UI synchronization requests a preview rebuild.
+            if (emd.GeneratorType == GeneratorTypes.GeometryData)
+            {
+                PreviewPolyhedron.m_Instance.m_PolyRecipe = PolyRecipe.FromDef(emd);
+            }
+
             void setSlidersFromGeneratorParams(List<string> names)
             {
                 if (names.Count == 0) return;

@@ -78,6 +78,11 @@ namespace TiltBrush
                 (Color32)PreviewPolyhedron.GetFaceColorForStrokes(
                     rebuiltPoly, recipe, 0),
                 Is.EqualTo(new Color32(244, 67, 54, 255)));
+            var roundTrippedRecipe = PolyRecipe.FromDef(
+                new EditableModelDefinition(recipe));
+            var (roundTrippedPoly, _) = PolyBuilder.BuildFromPolyDef(roundTrippedRecipe);
+            Assert.That(roundTrippedPoly.Vertices, Has.Count.EqualTo(poly.Vertices.Count));
+            Assert.That(roundTrippedPoly.Faces, Has.Count.EqualTo(poly.Faces.Count));
             Assert.That(warnings, Is.Empty);
         }
 
