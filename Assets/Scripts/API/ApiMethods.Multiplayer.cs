@@ -53,18 +53,20 @@ namespace TiltBrush
         [ApiEndpoint("colocation.host", "Hosts a Meta Quest colocation session")]
         public static void HostColocation()
         {
+            Debug.Log("[Colocation] Host command invoked.");
             if (!ColocationBootstrap.TryStart(true))
             {
-                Debug.LogWarning("Colocation is unsupported or has not finished initializing.");
+                Debug.LogWarning("[Colocation] Host command rejected because colocation is unsupported or has not finished initializing.");
             }
         }
 
         [ApiEndpoint("colocation.join", "Joins a Meta Quest colocation session")]
         public static void JoinColocation()
         {
+            Debug.Log("[Colocation] Join command invoked.");
             if (!ColocationBootstrap.TryStart(false))
             {
-                Debug.LogWarning("Colocation is unsupported or has not finished initializing.");
+                Debug.LogWarning("[Colocation] Join command rejected because colocation is unsupported or has not finished initializing.");
             }
         }
 

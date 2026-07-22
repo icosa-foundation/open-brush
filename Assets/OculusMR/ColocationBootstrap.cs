@@ -40,9 +40,17 @@ namespace TiltBrush
             m_Instance = this;
 
 #if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            Debug.Log($"[Colocation] Bootstrap awake. Prefab assigned: {m_OculusMrPrefab != null}. Existing controller: {OculusMRController.m_Instance != null}.");
             if (OculusMRController.m_Instance == null)
             {
-                Instantiate(m_OculusMrPrefab);
+                if (m_OculusMrPrefab == null)
+                {
+                    Debug.LogError("[Colocation] Oculus MR prefab is not assigned to the bootstrap.");
+                    return;
+                }
+
+                var instance = Instantiate(m_OculusMrPrefab);
+                Debug.Log($"[Colocation] Instantiated Oculus MR prefab: {instance.name}.");
             }
 #endif
         }
@@ -50,14 +58,17 @@ namespace TiltBrush
         public static bool TryStart(bool isHosting)
         {
 #if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            Debug.Log($"[Colocation] Start requested. Role: {(isHosting ? "host" : "joiner")}. Bootstrap: {m_Instance != null}. Controller: {OculusMRController.m_Instance != null}. Multiplayer: {MultiplayerManager.m_Instance != null}. Multiplayer state: {(MultiplayerManager.m_Instance != null ? MultiplayerManager.m_Instance.State.ToString() : "unavailable")}.");
             if (!IsSupported || MultiplayerManager.m_Instance == null)
             {
+                Debug.LogWarning($"[Colocation] Start prerequisites unavailable. IsSupported: {IsSupported}. Multiplayer: {MultiplayerManager.m_Instance != null}.");
                 return false;
             }
 
             OculusMRController.m_Instance.StartMRExperience(isHosting);
             return true;
 #else
+            Debug.LogWarning($"[Colocation] Start requested for role {(isHosting ? "host" : "joiner")} in a build without Android colocation support.");
             return false;
 #endif
         }

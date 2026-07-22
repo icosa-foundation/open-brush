@@ -41,6 +41,7 @@ namespace TiltBrush
 
             ovrSceneManager = GetComponent<OVRSceneManager>();
             m_SpatialAnchorManager = GetComponent<SpatialAnchorManager>();
+            Debug.Log($"[Colocation] Oculus MR controller awake. Scene manager: {ovrSceneManager != null}. Spatial anchor manager: {m_SpatialAnchorManager != null}.");
         }
 
         Task<bool> RequestScenePermissionAsync()
@@ -49,82 +50,107 @@ namespace TiltBrush
             const string permissionString = "com.oculus.permission.USE_SCENE";
             if (UnityEngine.Android.Permission.HasUserAuthorizedPermission(permissionString))
             {
+                Debug.Log("[Colocation] Scene permission is already granted.");
                 return Task.FromResult(true);
             }
 
+            Debug.Log("[Colocation] Requesting Meta scene permission.");
             var completion = new TaskCompletionSource<bool>();
             var callbacks = new UnityEngine.Android.PermissionCallbacks();
-            callbacks.PermissionGranted += _ => completion.TrySetResult(true);
-            callbacks.PermissionDenied += _ => completion.TrySetResult(false);
-            callbacks.PermissionDeniedAndDontAskAgain += _ => completion.TrySetResult(false);
+            callbacks.PermissionGranted += _ =>
+            {
+                Debug.Log("[Colocation] Scene permission granted.");
+                completion.TrySetResult(true);
+            };
+            callbacks.PermissionDenied += _ =>
+            {
+                Debug.LogWarning("[Colocation] Scene permission denied.");
+                completion.TrySetResult(false);
+            };
+            callbacks.PermissionDeniedAndDontAskAgain += _ =>
+            {
+                Debug.LogWarning("[Colocation] Scene permission denied with do-not-ask-again.");
+                completion.TrySetResult(false);
+            };
             UnityEngine.Android.Permission.RequestUserPermission(permissionString, callbacks);
             return completion.Task;
 #else
+            Debug.Log("[Colocation] Scene permission check bypassed outside an Android player.");
             return Task.FromResult(true);
 #endif
         }
 
         public async void StartMRExperience(bool isHosting)
         {
+            Debug.Log($"[Colocation] Starting MR experience as {(isHosting ? "host" : "joiner")}. Already started: {started}.");
             if (started)
             {
-                Debug.LogWarning("Oculus MR experience has already been started.");
+                Debug.LogWarning($"[Colocation] Start ignored because the MR experience has already started as {(host ? "host" : "joiner")}.");
                 return;
             }
 
             if (!await RequestScenePermissionAsync())
             {
-                Debug.LogWarning("Oculus scene permission is required to start MR experience.");
+                Debug.LogWarning("[Colocation] Scene permission is required to start the MR experience.");
                 return;
             }
 
             started = true;
             host = isHosting;
+            Debug.Log($"[Colocation] Scene permission ready. Role set to {(host ? "host" : "joiner")}.");
 
             if (host)
             {
+                Debug.Log("[Colocation] Host is creating the origin spatial anchor.");
                 if (!await m_SpatialAnchorManager.CreateSpatialAnchor())
                 {
-                    Debug.LogError("Failed to create the colocation spatial anchor.");
+                    Debug.LogError("[Colocation] Host failed to create and save the colocation spatial anchor.");
                     started = false;
                     return;
                 }
 
+                Debug.Log($"[Colocation] Host spatial anchor ready. UUID: {m_SpatialAnchorManager.AnchorUuid}.");
                 if (!m_SpatialAnchorManager.SceneLocalizeToAnchor())
                 {
-                    Debug.LogError("Failed to localize the scene to the colocation spatial anchor.");
+                    Debug.LogError("[Colocation] Host failed to localize the scene to the colocation spatial anchor.");
                     started = false;
                     return;
                 }
 
                 LoadSceneModel();
-                await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
+                Debug.Log("[Colocation] Host is joining Photon room OculusMRRoom.");
+                bool joinedRoom = await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12
                 });
+                Debug.Log($"[Colocation] Host room join completed. Success: {joinedRoom}. Multiplayer state: {MultiplayerManager.m_Instance.State}. Error: {MultiplayerManager.m_Instance.LastError ?? "none"}.");
             }
             else
             {
-                await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
+                Debug.Log("[Colocation] Joiner is joining Photon room OculusMRRoom.");
+                bool joinedRoom = await MultiplayerManager.m_Instance.JoinRoom(new RoomCreateData()
                 {
                     roomName = "OculusMRRoom",
                     maxPlayers = 12
                 });
+                Debug.Log($"[Colocation] Joiner room join completed. Success: {joinedRoom}. Multiplayer state: {MultiplayerManager.m_Instance.State}. Error: {MultiplayerManager.m_Instance.LastError ?? "none"}.");
             }
         }
 
         public async void RemoteSyncToAnchor(string uuid)
         {
+            Debug.Log($"[Colocation] Received request to synchronize to remote anchor UUID {uuid}.");
             bool success = await m_SpatialAnchorManager.SyncToRemoteAnchor(
                 uuid, OVRSpace.StorageLocation.Cloud);
 
             if (!success)
             {
-                Debug.LogError("Failed to synchronize to the remote colocation anchor.");
+                Debug.LogError($"[Colocation] Failed to synchronize to remote colocation anchor UUID {uuid}.");
                 return;
             }
 
+            Debug.Log($"[Colocation] Successfully localized to remote anchor UUID {uuid}.");
             LoadSceneModel();
         }
 
@@ -132,9 +158,11 @@ namespace TiltBrush
         {
             if (loadedScene)
             {
+                Debug.Log("[Colocation] Scene model load skipped because it was already requested.");
                 return;
             }
 
+            Debug.Log("[Colocation] Requesting Meta scene model load.");
             ovrSceneManager.LoadSceneModel();
             loadedScene = true;
         }

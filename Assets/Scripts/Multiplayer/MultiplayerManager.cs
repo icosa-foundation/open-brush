@@ -137,15 +137,16 @@ namespace OpenBrush.Multiplayer
         void Start()
         {
 #if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            Debug.Log("[Colocation] Requesting the logged-in Meta user ID.");
             OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
                 if (!msg.IsError)
                 {
                     myOculusUserId = msg.GetUser().ID;
-                    Debug.Log($"OculusID: {myOculusUserId}");
+                    Debug.Log($"[Colocation] Logged-in Meta user ID received: {myOculusUserId}.");
                 }
                 else
                 {
-                    Debug.LogError(msg.GetError());
+                    Debug.LogError($"[Colocation] Failed to retrieve the logged-in Meta user ID: {msg.GetError()}.");
                 }
             });
 #endif
@@ -469,8 +470,7 @@ namespace OpenBrush.Multiplayer
                 // New user, share the anchor with them
                 if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
                 {
-                    Debug.Log("detected new user!");
-                    Debug.Log(data.ExtraData.OculusPlayerId);
+                    Debug.Log($"[Colocation] Detected remote multiplayer user with Meta user ID {data.ExtraData.OculusPlayerId} and player ID {player.PlayerId}.");
                     oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
                     newUser = true;
                 }
@@ -481,6 +481,7 @@ namespace OpenBrush.Multiplayer
             if (newUser && OculusMRController.m_Instance != null &&
                 OculusMRController.m_Instance.IsHosting)
             {
+                Debug.Log($"[Colocation] Host detected a new Meta user and will start anchor sharing. Tracked Meta users: {oculusPlayerIds.Count}.");
                 ShareAnchors();
             }
 #endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
@@ -496,11 +497,19 @@ namespace OpenBrush.Multiplayer
             m_LocalPlayer = playerData;
             m_LocalPlayer.PlayerId = id;
 
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            Debug.Log($"[Colocation] Local multiplayer player joined. Player ID: {id}. Room owner: {isUserRoomOwner}. Meta user ID currently available: {myOculusUserId}.");
+#endif
+
         }
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
             m_RemotePlayers.AddPlayer(newRemotePlayer);
+
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            Debug.Log($"[Colocation] Remote multiplayer player joined. Player ID: {newRemotePlayer.PlayerId}. Local room owner: {isUserRoomOwner}.");
+#endif
 
             if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
 
@@ -678,17 +687,26 @@ namespace OpenBrush.Multiplayer
             if (OculusMRController.m_Instance == null ||
                 !OculusMRController.m_Instance.IsHosting)
             {
+                Debug.LogWarning($"[Colocation] Anchor sharing skipped. Controller available: {OculusMRController.m_Instance != null}. Hosting: {OculusMRController.m_Instance != null && OculusMRController.m_Instance.IsHosting}.");
                 return;
             }
 
-            Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
+            Debug.Log($"[Colocation] Sharing host anchor with {oculusPlayerIds.Count} tracked Meta users.");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
+            Debug.Log($"[Colocation] Host anchor share operation returned success: {success}.");
 
             if (success)
             {
                 if (!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
                 {
-                    await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
+                    string anchorUuid = OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid;
+                    Debug.Log($"[Colocation] Queueing shared anchor UUID RPC for anchor {anchorUuid}.");
+                    bool rpcQueued = await m_Manager.RpcSyncToSharedAnchor(anchorUuid);
+                    Debug.Log($"[Colocation] Shared anchor UUID RPC queue result: {rpcQueued}.");
+                }
+                else
+                {
+                    Debug.LogError("[Colocation] Anchor sharing succeeded but the host anchor UUID is empty.");
                 }
             }
 #endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID

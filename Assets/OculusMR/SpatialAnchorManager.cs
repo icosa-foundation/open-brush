@@ -41,6 +41,7 @@ namespace TiltBrush
 
         public async Task<bool> CreateSpatialAnchor()
         {
+            Debug.Log("[Colocation] Creating OVR spatial anchor component at the scene origin.");
             var anchorGO = new GameObject("Origin Anchor");
             m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
 
@@ -49,28 +50,33 @@ namespace TiltBrush
 
         async Task<bool> SaveAnchor()
         {
+            Debug.Log("[Colocation] Waiting for the local spatial anchor to be created or localized.");
             while (!m_Anchor.Created && !m_Anchor.Localized)
             {
                 await Task.Yield();
             }
 
+            Debug.Log($"[Colocation] Spatial anchor creation wait completed. Created: {m_Anchor.Created}. Localized: {m_Anchor.Localized}. UUID: {m_Anchor.Uuid}.");
             //Local save, then cloud save.
             var success = await m_Anchor.SaveAsync();
 
             if (!success)
             {
+                Debug.LogError($"[Colocation] Failed to save spatial anchor {m_Anchor.Uuid} to local storage.");
                 return false;
             }
 
-            Debug.Log("Anchor saved to device!");
+            Debug.Log($"[Colocation] Spatial anchor {m_Anchor.Uuid} saved to local storage.");
             PlayerPrefs.SetString(kOriginSpatialAnchorPref, m_Anchor.Uuid.ToString());
 
+            Debug.Log($"[Colocation] Saving spatial anchor {m_Anchor.Uuid} to Meta cloud storage.");
             success = await m_Anchor.SaveAsync(saveOptions: new OVRSpatialAnchor.SaveOptions { Storage = OVRSpace.StorageLocation.Cloud });
             if (!success)
             {
+                Debug.LogError($"[Colocation] Failed to save spatial anchor {m_Anchor.Uuid} to Meta cloud storage.");
                 return false;
             }
-            Debug.Log("Anchor saved to cloud!");
+            Debug.Log($"[Colocation] Spatial anchor {m_Anchor.Uuid} saved to Meta cloud storage.");
 
             return true;
         }
@@ -102,6 +108,7 @@ namespace TiltBrush
         {
             if (m_Anchor == null)
             {
+                Debug.LogError("[Colocation] Cannot localize the scene because there is no bound spatial anchor.");
                 return false;
             }
 
@@ -111,15 +118,16 @@ namespace TiltBrush
                 SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
             App.Scene.Pose = newPose;
 
-            Debug.Log("Anchor localized!");
+            Debug.Log($"[Colocation] Scene localized to spatial anchor {m_Anchor.Uuid}. Anchor position: {m_Anchor.transform.position}.");
             return true;
         }
 
         public async Task<bool> SyncToRemoteAnchor(string uuid, OVRSpace.StorageLocation defaultStorageLocation = OVRSpace.StorageLocation.Local)
         {
+            Debug.Log($"[Colocation] Loading remote anchor UUID {uuid} from {defaultStorageLocation} storage.");
             if (!Guid.TryParse(uuid, out Guid guid))
             {
-                Debug.LogError($"Invalid remote anchor UUID: {uuid}");
+                Debug.LogError($"[Colocation] Invalid remote anchor UUID: {uuid}.");
                 return false;
             }
 
@@ -128,17 +136,18 @@ namespace TiltBrush
                 StorageLocation = defaultStorageLocation,
                 Timeout = 0,
                 Uuids = new List<Guid>() { guid }
-            }
+                }
             );
 
-            Debug.Log("Remote anchor recieved!");
+            Debug.Log($"[Colocation] Remote anchor load completed for UUID {uuid}. Returned anchor count: {data?.Length ?? 0}.");
             bool bindSuccess = await BindAnchors(data);
 
             if (bindSuccess)
             {
-                Debug.Log("Remote anchor bound!");
+                Debug.Log($"[Colocation] Remote anchor UUID {uuid} bound successfully.");
                 return SceneLocalizeToAnchor();
             }
+            Debug.LogError($"[Colocation] Failed to bind remote anchor UUID {uuid}.");
             return false;
         }
 
@@ -146,10 +155,11 @@ namespace TiltBrush
         {
             if (anchors == null || anchors.Length == 0)
             {
-                Debug.LogError("No spatial anchors were returned.");
+                Debug.LogError("[Colocation] No spatial anchors were returned for binding.");
                 return false;
             }
 
+            Debug.Log($"[Colocation] Binding the first of {anchors.Length} returned spatial anchors.");
             var unboundAnchor = anchors[0];
 
             var anchorGO = new GameObject("Origin Anchor");
@@ -161,13 +171,15 @@ namespace TiltBrush
                 await Task.Yield();
             }
 
-            Debug.Log("Cached anchor created!");
+            Debug.Log($"[Colocation] Bound anchor creation completed. UUID: {m_Anchor.Uuid}. Localized: {m_Anchor.Localized}.");
 
+            Debug.Log($"[Colocation] Waiting for bound anchor {m_Anchor.Uuid} to localize.");
             while (!m_Anchor.Localized)
             {
                 await Task.Yield();
             }
 
+            Debug.Log($"[Colocation] Bound anchor {m_Anchor.Uuid} localized.");
             return true;
         }
 
@@ -175,25 +187,27 @@ namespace TiltBrush
         {
             if (m_Anchor == null)
             {
+                Debug.LogError("[Colocation] Cannot share the anchor because no spatial anchor exists.");
                 return false;
             }
 
+            Debug.Log($"[Colocation] Preparing to share anchor {m_Anchor.Uuid} with {playerIds.Count} Meta users: {string.Join(",", playerIds)}.");
             var spaceUserList = new List<OVRSpaceUser>();
             foreach (var id in playerIds)
             {
-                Debug.Log($"new share id: {id}");
                 spaceUserList.Add(new OVRSpaceUser(id));
             }
 
             // TODO: Check anchor exists and is in cloud storage.
             var result = await m_Anchor.ShareAsync(spaceUserList);
+            Debug.Log($"[Colocation] Meta anchor share completed for {m_Anchor.Uuid}. Result: {result}.");
 
             if (result == OVRSpatialAnchor.OperationResult.Success)
             {
-                Debug.Log($"Share complete!");
                 return true;
             }
 
+            Debug.LogError($"[Colocation] Meta anchor share failed for {m_Anchor.Uuid}. Result: {result}.");
             return false;
         }
 #endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID

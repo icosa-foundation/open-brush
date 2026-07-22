@@ -357,6 +357,7 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> RpcSyncToSharedAnchor(string uuid)
         {
+            Debug.Log($"[Colocation] Enqueueing Photon shared anchor RPC for UUID {uuid}. Runner available: {m_Runner != null}.");
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid); });
             await Task.Yield();
