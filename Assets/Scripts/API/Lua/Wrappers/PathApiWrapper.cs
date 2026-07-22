@@ -141,7 +141,24 @@ namespace TiltBrush
 
         [LuaDocsDescription("Draws this path as a brush stroke using current settings")]
         [LuaDocsExample("myPath:Draw()")]
-        public void Draw() => LuaApiMethods.DrawPath(this);
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper Draw() => LuaApiMethods.DrawPath(this);
+
+        [LuaDocsDescription("Draws this path as a brush stroke with explicit draw settings")]
+        [LuaDocsExample(@"myStrokes = myPath:DrawWithBrush(""Ink"", 0.05, Color.red, 0.1)")]
+        [LuaDocsParameter("brushType", "The brush name or guid to use")]
+        [LuaDocsParameter("brushSize", "The brush size to use")]
+        [LuaDocsParameter("color", "The brush color to use")]
+        [LuaDocsParameter("smoothing", "The amount of smoothing to apply")]
+        [LuaDocsParameter("layer", "The layer to draw on. Defaults to the active layer")]
+        [LuaDocsParameter("group", "The group to assign the new strokes to")]
+        [LuaDocsReturnValue("The strokes that were created")]
+        public StrokeListApiWrapper DrawWithBrush(
+            string brushType, float brushSize, ColorApiWrapper color, float smoothing = 0,
+            LayerApiWrapper layer = null, GroupApiWrapper group = null)
+        {
+            return LuaApiMethods.DrawPath(this, brushType, brushSize, color, smoothing, layer, group);
+        }
 
         [LuaDocsDescription("Returns the number of points in this path")]
         public int count => _Path?.Count ?? 0;
@@ -155,6 +172,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("Returns the last point in this path")]
         public TransformApiWrapper last => new(_Path[^1]);
+
+        [LuaDocsDescription("The axis-aligned bounds that contain this path")]
+        public BoundsApiWrapper bounds => new(BoundsApiWrapper.Calculate(_Path.Select(t => t.translation)));
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
         [LuaDocsExample("myPath:Insert(myTransform")]
@@ -293,6 +313,57 @@ namespace TiltBrush
                 tr.translation = (tr.translation - center) * size;
                 _Path[i] = tr;
             }
+        }
+
+        [LuaDocsDescription("Scales and shifts this path so that it fits inside the target bounds")]
+        [LuaDocsExample("myPath:FitInside(bounds, true)")]
+        [LuaDocsParameter("targetBounds", "The bounds to fit inside")]
+        [LuaDocsParameter("keepAspect", "If true, scale uniformly so the path keeps its proportions")]
+        public void FitInside(BoundsApiWrapper targetBounds, bool keepAspect = true)
+        {
+            if (_Path == null || _Path.Count == 0) return;
+            var source = bounds._Bounds;
+            var target = targetBounds._Bounds;
+            var scale = CalculateFitScale(source.size, target.size, keepAspect);
+            for (var i = 0; i < _Path.Count; i++)
+            {
+                var tr = _Path[i];
+                tr.translation = Vector3.Scale(tr.translation - source.center, scale) + target.center;
+                _Path[i] = tr;
+            }
+        }
+
+        [LuaDocsDescription("Scales and shifts this path so that it fits inside a sphere")]
+        [LuaDocsExample("myPath:FitInsideSphere(center, radius)")]
+        [LuaDocsParameter("center", "The sphere center")]
+        [LuaDocsParameter("radius", "The sphere radius")]
+        public void FitInsideSphere(Vector3 center, float radius)
+        {
+            if (_Path == null || _Path.Count == 0) return;
+            var source = bounds._Bounds;
+            var sourceRadius = _Path.Max(t => (t.translation - source.center).magnitude);
+            if (sourceRadius <= 0) return;
+            var scale = radius / sourceRadius;
+            for (var i = 0; i < _Path.Count; i++)
+            {
+                var tr = _Path[i];
+                tr.translation = (tr.translation - source.center) * scale + center;
+                _Path[i] = tr;
+            }
+        }
+
+        [MoonSharpHidden]
+        public static Vector3 CalculateFitScale(Vector3 sourceSize, Vector3 targetSize, bool keepAspect)
+        {
+            const float kMinSize = 0.0001f;
+            var scale = new Vector3(
+                targetSize.x / Mathf.Max(sourceSize.x, kMinSize),
+                targetSize.y / Mathf.Max(sourceSize.y, kMinSize),
+                targetSize.z / Mathf.Max(sourceSize.z, kMinSize)
+            );
+            if (!keepAspect) return scale;
+            var uniform = Mathf.Min(scale.x, Mathf.Min(scale.y, scale.z));
+            return Vector3.one * uniform;
         }
 
         [MoonSharpHidden]
