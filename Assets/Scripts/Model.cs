@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using System.Threading.Tasks;
 using TiltBrushToolkit;
 using Unity.Profiling;
@@ -37,7 +39,13 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                IcosaAssetId
+                IcosaAssetId,
+                Generated
+            }
+
+            public bool IsGenerated()
+            {
+                return type == Type.Generated;
             }
 
             private Type type;
@@ -75,6 +83,29 @@ namespace TiltBrush
                     id = assetId
                 };
             }
+
+            public static Location Generated(String id)
+            {
+                return new Location
+                {
+                    type = Type.Generated,
+                    id = id
+                };
+            }
+
+            // public static Location Generated(string guid)
+            // {
+            //     if (!EditableModelManager.m_Instance.EditableModels.ContainsKey(guid))
+            //     {
+            //         Debug.LogError($"Failed to generate editable model location for id: {guid}");
+            //         return new Location();
+            //     }
+            //     return new Location
+            //     {
+            //         type = Type.Generated,
+            //         id = guid
+            //     };
+            // }
 
             /// Can return null if this is a location for a fake Model (like the ones ModelWidget
             /// assigns itself while the real Model content is in progress of being loaded).
@@ -118,7 +149,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.IcosaAssetId) { return id; }
+                    if (type == Type.IcosaAssetId || type == Type.Generated) { return id; }
                     throw new Exception("Invalid Icosa asset id request");
                 }
             }
@@ -133,7 +164,7 @@ namespace TiltBrush
             public override string ToString()
             {
                 string str;
-                if (type == Type.IcosaAssetId)
+                if (type == Type.IcosaAssetId || type == Type.Generated)
                 {
                     str = $"{type}:{id}";
                 }
@@ -233,6 +264,11 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
+        private PolyMesh m_EditablePolyMesh;
+        private PolyRecipe m_EditablePolyRecipe;
+
+        public bool IsNativeBlocksModel => BlocksReader.IsSupportedExtension(m_Location.Extension);
+
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
         public string RelativePath
@@ -249,6 +285,7 @@ namespace TiltBrush
         {
             get
             {
+                if (GetLocation().GetLocationType() == Location.Type.Generated) { return "[Generated]"; }
                 if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
                 {
                     return AssetId;
@@ -296,6 +333,16 @@ namespace TiltBrush
         {
             m_Location = Location.File(relativePath);
             Init();
+        }
+
+        public Model(Location location)
+        {
+            m_Location = location;
+            Init();
+            if (location.GetLocationType() == Location.Type.Generated)
+            {
+                m_Valid = true;
+            }
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
@@ -596,7 +643,6 @@ namespace TiltBrush
 
         GameObject LoadPly(List<string> warningsOut)
         {
-
             try
             {
                 var reader = new PlyReader(m_Location.AbsolutePath);
@@ -613,7 +659,26 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
+        }
 
+        GameObject LoadOff(List<string> warningsOut)
+        {
+            try
+            {
+                var reader = new OffReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
         }
 
         GameObject LoadVox(List<string> warningsOut)
@@ -623,6 +688,49 @@ namespace TiltBrush
                 // Default to optimized mode with face culling
                 var reader = new VoxImporter(m_Location.AbsolutePath, VoxImporter.MeshMode.Optimized);
                 var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        GameObject LoadBlocks(List<string> warningsOut)
+        {
+            try
+            {
+                var reader = new BlocksReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector, poly, recipe) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_EditablePolyMesh = poly;
+                m_EditablePolyRecipe = recipe;
+                m_AllowExport = m_ImportMaterialCollector != null;
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        // New Obj loader for editable models
+        GameObject LoadObj(List<string> warningsOut, bool editable)
+        {
+            try
+            {
+                var reader = new ObjReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import(editable);
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
@@ -845,7 +953,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                StartCreatePrefab(go);
+                StartCreatePrefab(go, false);
             }
 
             AssignMaterialsToCollector(m_ImportMaterialCollector);
@@ -857,13 +965,52 @@ namespace TiltBrush
 
         public async Task LoadModelAsync()
         {
-            Task t = StartCreatePrefab(null);
+            Task t = StartCreatePrefab(null, false);
             await t;
         }
 
         public void LoadModel()
         {
-            StartCreatePrefab(null);
+            StartCreatePrefab(null, false);
+        }
+
+        public void LoadEditableModel(GameObject go = null)
+        {
+            StartCreatePrefab(go, true);
+        }
+
+        public EditableModelWidget CreateNativeBlocksWidget(
+            TrTransform spawnTransform, Quaternion? desiredEndForward = null,
+            bool forceTransform = true, float snapGrid = 0, float snapAngle = 0,
+            bool normalizeSize = false)
+        {
+            if (!IsNativeBlocksModel || m_EditablePolyMesh == null)
+            {
+                throw new InvalidOperationException(
+                    $"Native Blocks geometry has not been loaded for {m_Location}");
+            }
+
+            PolyMesh poly = m_EditablePolyMesh.Duplicate();
+            PolyRecipe recipe = m_EditablePolyRecipe.Clone();
+            recipe.Vertices = new List<Vector3>(m_EditablePolyRecipe.Vertices);
+            recipe.Faces = m_EditablePolyRecipe.Faces.Select(face => new List<int>(face)).ToList();
+            recipe.FaceRoles = new List<int>(m_EditablePolyRecipe.FaceRoles);
+            recipe.VertexRoles = new List<int>(m_EditablePolyRecipe.VertexRoles);
+            recipe.FaceTags = m_EditablePolyRecipe.FaceTags
+                .Select(tags => new HashSet<string>(tags)).ToList();
+            poly.FaceTags = recipe.FaceTags;
+
+            Debug.Log($"[BLOCKS_EDITABLE_IMPORT] Creating EditableModelWidget for {m_Location} " +
+                      $"with {poly.Vertices.Count} vertices and {poly.Faces.Count} faces.");
+
+            EditableModelWidget widget = EditableModelManager.m_Instance.GeneratePolyMesh(
+                poly, recipe, spawnTransform, desiredEndForward,
+                forceTransform, snapGrid, snapAngle);
+            if (normalizeSize)
+            {
+                widget.SetSignedWidgetSize(widget.InitSize_CS);
+            }
+            return widget;
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -875,15 +1022,31 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private async Task StartCreatePrefab(GameObject go)
+        private async Task StartCreatePrefab(GameObject go, bool editable)
         {
             if (m_Valid)
             {
                 // This case is handled properly but it seems wasteful.
-                Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                if (!m_Location.IsGenerated())
+                {
+                    Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
+                }
             }
 
             List<string> warnings = new List<string>();
+
+#if !FBX_SUPPORTED
+            bool nofbx = true;
+#else
+            bool nofbx = false;
+#endif
+
+            if (m_Location.GetLocationType() == Location.Type.Generated)
+            {
+                m_AllowExport = true;
+                m_ImportMaterialCollector = new ImportMaterialCollector("generated", "generated");
+                m_ImportMaterialCollector.AddAllEditableModelMaterials();
+            }
 
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
@@ -899,7 +1062,16 @@ namespace TiltBrush
                 // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
                 var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
                 int __icosaStartFrame = Time.frameCount;
-                if (isLocal && ext == ".usd")
+                if (BlocksReader.IsSupportedExtension(ext))
+                {
+                    go = LoadBlocks(warnings);
+                    if (go != null)
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
+                }
+                else if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
@@ -910,6 +1082,12 @@ namespace TiltBrush
                 {
                     Task t = LoadGltf(warnings);
                     await t;
+                }
+                else if (ext == ".obj" && (editable || nofbx))
+                {
+                    go = LoadObj(warnings, editable);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
 #if FBX_SUPPORTED
                 // Allow users to force the old OBJ loader.
@@ -943,6 +1121,12 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
+                else if (ext == ".off")
+                {
+                    go = LoadOff(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
                 else if (ext == ".svg")
                 {
                     go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
@@ -959,6 +1143,11 @@ namespace TiltBrush
                 Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
                     $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
                     $"(valid={m_Valid} error={m_LoadError.HasValue})");
+            }
+            else
+            {
+                CalcBoundsNonGltf(go);
+                EndCreatePrefab(go, warnings);
             }
 
         }

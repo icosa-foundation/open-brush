@@ -250,6 +250,9 @@ namespace TiltBrush
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
 
+        // Used for Polyhydra Symmetry
+        private TrTransform m_bestface_OS;
+
         // ---- events
 
         public event Action<TiltBrush.BrushDescriptor> OnMainPointerBrushChange
@@ -1447,6 +1450,7 @@ namespace TiltBrush
                 ResetScriptedPointerPaintData();
             }
 
+            PreviewPolyhedron vrPoly = null;
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -1470,6 +1474,10 @@ namespace TiltBrush
                     GenerateScriptedPointerTransforms();
                     active = m_ScriptedTransforms.Count;
                     break;
+                case SymmetryMode.CustomSymmetryMode:
+                    vrPoly = PreviewPolyhedron.m_Instance;
+                    active = vrPoly.m_PolyMesh.Faces.Count;
+                    break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
@@ -1489,6 +1497,13 @@ namespace TiltBrush
                     new SymmetryWidgetVisibleCommand(mode, previousMode));
             }
 
+            // Get a max face size to use as a scaling factor later.
+            // float faceMax = 1;
+            // if (vrPoly != null && vrPoly._conwayPoly!=null)
+            // {
+            //   var faceSizes = vrPoly._conwayPoly.Faces.Select(x => (x.Centroid - x.GetBestEdge().Midpoint).magnitude);
+            //   faceMax = Mathf.Max(faceSizes.ToArray());
+            // }
         }
 
         private void ChangeNumActivePointers(int num)
@@ -1510,7 +1525,33 @@ namespace TiltBrush
                 {
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
+                if (CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
+                {
+                    var vrPoly = PreviewPolyhedron.m_Instance;
+                    if (vrPoly != null && vrPoly.m_PolyMesh != null)
+                    {
+                        if (i < vrPoly.m_PolyMesh.Faces.Count)
+                        {
+                            var face = vrPoly.m_PolyMesh.Faces[i];
+                            // We could scale brushes by face size?
+                            // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
+                            if (vrPoly)
+                            {
+                                var color = vrPoly.GetFaceColorForStrokes(i);
+                                pointer.m_Script.SetColor(color);
+                            }
+                        }
+                    }
+                }
             }
+            // Custom symmetry mode overrides main pointer color as well
+            // TODO Disabled this because it overwrites the current main brush color.
+            // Need some way to "save and restore"
+            // if (mode == SymmetryMode.CustomSymmetryMode)
+            // {
+            //     var color = vrPoly.GetFaceColor(0);
+            //     m_Pointers[0].m_Script.SetColor(color);
+            // }
 
             App.Switchboard.TriggerMirrorVisibilityChanged();
         }

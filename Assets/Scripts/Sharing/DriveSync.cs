@@ -962,6 +962,7 @@ namespace TiltBrush
                 case ".fbx":
                 case ".gltf":
                 case ".glb":
+                case ".off":
                     metadata.MimeType = "application/octet-stream";
                     break;
                 case ".mp4":

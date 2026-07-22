@@ -1,0 +1,30 @@
+{
+  "Colors": [ [ 0.00454247, 0.004527623, 0.004453388, 1.0 ], [ 0.00180947781, 0.00172491535, 0.00172491535, 1.0 ], [ 1.14738941E-05, 1.13814931E-05, 1.14584964E-05, 1.0 ], [ 0.9140053, 0.9032856, 0.9354446, 1.0 ], [ 0.9597425, 0.961604953, 0.9634674, 1.0 ]
+  ],
+  "ColorMethod": 1,
+  "MaterialIndex": 5,
+  "GeneratorType": 8,
+  "GeneratorParameters": {
+    "type": 11
+  },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [
+    {
+      "operation": 19,
+      "param1": 0.6,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    }
+  ]
+}

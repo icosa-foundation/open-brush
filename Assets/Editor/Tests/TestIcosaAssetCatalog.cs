@@ -86,7 +86,11 @@ namespace TiltBrush
 
             try
             {
-                string[] extensions = { ".vox", ".ply", ".obj", ".gltf", ".gltf2", ".glb" };
+                string[] extensions =
+                {
+                    ".blocks", ".poly", ".peltzer", ".vox", ".ply", ".obj", ".gltf",
+                    ".gltf2", ".glb"
+                };
                 foreach (string extension in extensions)
                 {
                     Directory.CreateDirectory(tempDir);
@@ -118,7 +122,11 @@ namespace TiltBrush
             m_CatalogObject = new GameObject("IcosaAssetCatalog");
             var catalog = m_CatalogObject.AddComponent<IcosaAssetCatalog>();
 
-            string[] extensions = { ".vox", ".ply", ".obj", ".gltf", ".gltf2", ".glb" };
+            string[] extensions =
+            {
+                ".blocks", ".poly", ".peltzer", ".vox", ".ply", ".obj", ".gltf",
+                ".gltf2", ".glb"
+            };
             var assetIds = new List<string>();
             foreach (string extension in extensions)
             {
@@ -244,6 +252,20 @@ namespace TiltBrush
                 FormatJson("VOX", "https://web.archive.org/model.vox"),
                 FormatJson("GLTF2", "https://assets.example.com/model.gltf", true,
                     "https://assets.example.com/model.bin")));
+
+            Assert.IsTrue(catalog.CanAutoDownloadForPreview(assetId));
+        }
+
+        [Test]
+        public void CanAutoDownloadForPreview_PrefersNativeBlocksFormat()
+        {
+            var catalog = new GameObject("IcosaAssetCatalog").AddComponent<IcosaAssetCatalog>();
+            m_CatalogObject = catalog.gameObject;
+
+            const string assetId = "unit-test-native-blocks";
+            catalog.SetJsonForAsset(assetId, AssetJson(
+                FormatJson("GLTF2", "https://web.archive.org/model.gltf", true),
+                FormatJson("BLOCKS", "https://assets.example.com/model.blocks", true)));
 
             Assert.IsTrue(catalog.CanAutoDownloadForPreview(assetId));
         }

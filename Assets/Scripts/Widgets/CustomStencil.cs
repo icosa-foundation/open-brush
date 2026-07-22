@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -45,6 +46,7 @@ namespace TiltBrush
         {
             m_Type = StencilType.Custom;
             base.Awake();
+            EditableModelManager.SetCustomStencil(this, PreviewPolyhedron.m_Instance.m_PolyMesh);
         }
 
         public void SetCustomStencil(Mesh mesh = null)

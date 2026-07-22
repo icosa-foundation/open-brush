@@ -1,0 +1,82 @@
+{
+  "Colors": [ [ 0.121568628, 0.121568628, 0.160784319, 1.0 ], [ 0.6905583, 0.6510779, 0.6961984, 1.0 ], [ 0.701676369, 0.718222439, 0.7560421, 1.0 ], [ 0.5882353, 0.635294139, 0.7019608, 1.0 ], [ 0.917647064, 0.9411765, 0.847058833, 1.0 ]
+  ],
+  "ColorMethod": 1,
+  "MaterialIndex": 5,
+  "GeneratorType": 8,
+  "GeneratorParameters": {
+    "type": 9
+  },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [
+    {
+      "operation": 27,
+      "param1": 0.26,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 56,
+      "param1": 0.0,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 1,
+      "filterParamFloat": 3.0,
+      "filterParamInt": 3,
+      "filterNot": false
+    },
+    {
+      "operation": 86,
+      "param1": 0.581,
+      "param1Randomize": false,
+      "param2": 0.568,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 87,
+      "param1": 0.576,
+      "param1Randomize": false,
+      "param2": 0.305,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 88,
+      "param1": 0.774,
+      "param1Randomize": false,
+      "param2": 0.289,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    }
+  ]
+}

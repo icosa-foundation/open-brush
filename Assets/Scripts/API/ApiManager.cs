@@ -945,6 +945,16 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             else
             {
+                if (model.IsNativeBlocksModel)
+                {
+                    model.CreateNativeBlocksWidget(
+                        new TrTransform(), normalizeSize: true);
+                    WidgetManager.m_Instance.WidgetsDormant = false;
+                    SketchControlsScript.m_Instance.EatGazeObjectInput();
+                    SelectionManager.m_Instance.RemoveFromSelection(false);
+                    yield break;
+                }
+
                 var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 ModelWidget modelWidget = cmd.Widget as ModelWidget;
