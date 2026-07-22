@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -53,6 +54,9 @@ namespace TiltBrush
 
     public static class IcosaTiltDownloader
     {
+        private static readonly HashSet<string> s_InvalidTiltDownloadsThisSession =
+            new HashSet<string>();
+
         public static IEnumerator DownloadTiltCoroutine(
             IcosaSceneFileInfo info, string targetTiltPath, byte[] buffer,
             Func<bool> isCanceled, Action<UnityWebRequest> onRequestChanged,
@@ -85,6 +89,15 @@ namespace TiltBrush
                 Complete(IcosaTiltDownloadStatus.InvalidUrl,
                     $"The sketch download URL is invalid for {info.HumanName}.",
                     info.TiltFileUrl);
+                yield break;
+            }
+
+            string invalidDownloadKey = GetInvalidDownloadKey(info);
+            if (s_InvalidTiltDownloadsThisSession.Contains(invalidDownloadKey))
+            {
+                Complete(IcosaTiltDownloadStatus.InvalidTilt,
+                    $"Downloaded sketch file for {info.HumanName} was invalid.",
+                    $"{info.HumanName} {targetTiltPath}");
                 yield break;
             }
 
@@ -143,9 +156,10 @@ namespace TiltBrush
             }
             onRequestChanged?.Invoke(null);
 
-            if (!new TiltFile(tempTiltPath).IsHeaderValid())
+            if (!new TiltFile(tempTiltPath).IsLoadable())
             {
                 TryDeleteTempFile(tempTiltPath);
+                s_InvalidTiltDownloadsThisSession.Add(invalidDownloadKey);
                 Complete(IcosaTiltDownloadStatus.InvalidTilt,
                     $"Downloaded sketch file for {info.HumanName} was invalid.",
                     $"{info.HumanName} {targetTiltPath}");
@@ -164,6 +178,7 @@ namespace TiltBrush
                 }
                 info.TiltPath = targetTiltPath;
                 info.TiltDownloaded = true;
+                s_InvalidTiltDownloadsThisSession.Remove(invalidDownloadKey);
                 Complete(IcosaTiltDownloadStatus.Success, null);
             }
             catch (Exception ex)
@@ -173,6 +188,15 @@ namespace TiltBrush
                     $"Error downloading sketch file for {info.HumanName}.\nCould not update the cached file.",
                     $"{info.HumanName} {targetTiltPath}", ex);
             }
+        }
+
+        private static string GetInvalidDownloadKey(IcosaSceneFileInfo info)
+        {
+            if (!string.IsNullOrEmpty(info.AssetId))
+            {
+                return info.AssetId;
+            }
+            return info.TiltFileUrl;
         }
 
         private static void TryDeleteTempFile(string tempTiltPath)

@@ -25,6 +25,7 @@ Properties {
 }
 
 SubShader {
+  Tags { "RenderType"="Opaque" }
   Cull Back
   Pass{
     CGPROGRAM

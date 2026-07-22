@@ -25,16 +25,16 @@ namespace TiltBrush
     [Serializable]
     public enum StencilType
     {
-        Plane,
-        Cube,
-        Sphere,
-        Capsule,
-        Cone,
-        Cylinder,
-        InteriorDome,
-        Pyramid,
-        Ellipsoid,
-        Custom
+        Plane = 0,
+        Cube = 1,
+        Sphere = 2,
+        Capsule = 3,
+        Cone = 4,
+        Cylinder = 5,
+        InteriorDome = 6,
+        Pyramid = 7,
+        Ellipsoid = 8,
+        Custom = 9,
     }
 
     [Serializable]
@@ -108,6 +108,12 @@ namespace TiltBrush
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
         [SerializeField] TextWidget m_TextWidgetPrefab;
         [SerializeField] LightWidget m_LightWidgetPrefab;
+        [SerializeField] PortalSphereWidget m_PortalWidgetPrefab;
+        [SerializeField] PortalBoxWidget m_PortalBoxWidgetPrefab;
+        [SerializeField] GaussianCaptureSphereWidget m_GaussianCaptureSphereWidgetPrefab;
+        [SerializeField] GaussianCaptureEllipsoidWidget m_GaussianCaptureEllipsoidWidgetPrefab;
+        [SerializeField] GaussianCaptureHemisphereWidget m_GaussianCaptureHemisphereWidgetPrefab;
+        [SerializeField] GaussianCaptureBoxWidget m_GaussianCaptureBoxWidgetPrefab;
         [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
@@ -146,6 +152,8 @@ namespace TiltBrush
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
+        private List<TypedWidgetData<PortalWidgetBase>> m_PortalWidgets;
+        private List<TypedWidgetData<GaussianCaptureWidgetBase>> m_GaussianCaptureWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
         private List<TypedWidgetData<TextWidget>> m_TextWidgets;
@@ -305,6 +313,8 @@ namespace TiltBrush
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
+            m_PortalWidgets = new List<TypedWidgetData<PortalWidgetBase>>();
+            m_GaussianCaptureWidgets = new List<TypedWidgetData<GaussianCaptureWidgetBase>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
             m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
@@ -349,6 +359,12 @@ namespace TiltBrush
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
         public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
+        public PortalSphereWidget PortalWidgetPrefab { get { return m_PortalWidgetPrefab; } }
+        public PortalBoxWidget PortalBoxWidgetPrefab { get { return m_PortalBoxWidgetPrefab; } }
+        public GaussianCaptureSphereWidget GaussianCaptureSphereWidgetPrefab { get { return m_GaussianCaptureSphereWidgetPrefab; } }
+        public GaussianCaptureEllipsoidWidget GaussianCaptureEllipsoidWidgetPrefab { get { return m_GaussianCaptureEllipsoidWidgetPrefab; } }
+        public GaussianCaptureHemisphereWidget GaussianCaptureHemisphereWidgetPrefab { get { return m_GaussianCaptureHemisphereWidgetPrefab; } }
+        public GaussianCaptureBoxWidget GaussianCaptureBoxWidgetPrefab { get { return m_GaussianCaptureBoxWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
@@ -356,6 +372,32 @@ namespace TiltBrush
         public GameObject CameraPathSpeedKnotPrefab { get { return m_CameraPathSpeedKnotPrefab; } }
         public GameObject CameraPathFovKnotPrefab { get { return m_CameraPathFovKnotPrefab; } }
         public GameObject CameraPathKnotSegmentPrefab { get { return m_CameraPathKnotSegmentPrefab; } }
+
+        public PortalSphereWidget CreatePortalWidget(TrTransform spawnXf, string destination)
+        {
+            var createCommand = new CreateWidgetCommand(m_PortalWidgetPrefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var portalWidget = createCommand.Widget as PortalSphereWidget;
+            if (portalWidget != null)
+            {
+                portalWidget.Destination = destination;
+            }
+            return portalWidget;
+        }
+
+        public void CreateGaussianCaptureWidget(TrTransform spawnXf, StencilType stencilType)
+        {
+            GrabWidget prefab = stencilType switch
+            {
+                StencilType.Cube => m_GaussianCaptureBoxWidgetPrefab,
+                StencilType.InteriorDome => m_GaussianCaptureHemisphereWidgetPrefab,
+                StencilType.Sphere => m_GaussianCaptureSphereWidgetPrefab,
+                StencilType.Ellipsoid => m_GaussianCaptureEllipsoidWidgetPrefab,
+                _ => throw new ArgumentOutOfRangeException(nameof(stencilType), stencilType, null)
+            };
+            var createCommand = new CreateWidgetCommand(prefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+        }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
@@ -396,6 +438,20 @@ namespace TiltBrush
                 if (m_LightWidgets[i].m_WidgetObject.activeSelf)
                 {
                     yield return m_LightWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_PortalWidgets.Count; ++i)
+            {
+                if (m_PortalWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_PortalWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_GaussianCaptureWidgets.Count; ++i)
+            {
+                if (m_GaussianCaptureWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_GaussianCaptureWidgets[i];
                 }
             }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)
@@ -804,6 +860,40 @@ namespace TiltBrush
             }
         }
 
+        public void SetPortalDataFromTilt(TiltPortal[] tiltPortals)
+        {
+            for (int i = 0; i < tiltPortals.Length; ++i)
+            {
+                switch (tiltPortals[i].ShapeType)
+                {
+                    case StencilType.Sphere:
+                        PortalSphereWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    case StencilType.Cube:
+                        PortalBoxWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    default:
+                        Debug.LogWarning($"Unsupported portal shape '{tiltPortals[i].ShapeType}' while loading portal destination '{tiltPortals[i].Destination}'");
+                        break;
+                }
+            }
+        }
+
+        public void SetGaussianCaptureDataFromTilt(TiltGaussianCapture[] captures)
+        {
+            foreach (var capture in captures)
+            {
+                if (capture.ShapeType == StencilType.Sphere)
+                    GaussianCaptureSphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.Ellipsoid)
+                    GaussianCaptureEllipsoidWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.InteriorDome)
+                    GaussianCaptureHemisphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.Cube)
+                    GaussianCaptureBoxWidget.FromTiltGaussianCapture(capture);
+            }
+        }
+
 
         public void SetVideoDataFromTilt(TiltVideo[] value)
         {
@@ -928,6 +1018,7 @@ namespace TiltBrush
                 // If we don't have an active stencil, we're done here.
                 if (m_ActiveStencil == null)
                 {
+                    m_ActiveStencil = null;
                     return false;
                 }
 
@@ -952,7 +1043,8 @@ namespace TiltBrush
                 float fBestScore = 0;
                 int sIndex = 0;
 
-                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets.Select(w => w.WidgetScript);
+                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets
+                    .Select(w => w.WidgetScript);
                 if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
                 foreach (var sw in widgetsToCheck)
                 {
@@ -1142,6 +1234,8 @@ namespace TiltBrush
             if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
+            GetUnselectedActiveWidgetsInList(m_PortalWidgets);
+            GetUnselectedActiveWidgetsInList(m_GaussianCaptureWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
@@ -1174,6 +1268,8 @@ namespace TiltBrush
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
+                RefreshPinUnpinWidgetList(m_PortalWidgets);
+                RefreshPinUnpinWidgetList(m_GaussianCaptureWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
                 RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
@@ -1248,6 +1344,14 @@ namespace TiltBrush
             {
                 m_LightWidgets.Add(new TypedWidgetData<LightWidget>(light));
             }
+            else if (generic is PortalWidgetBase portal)
+            {
+                m_PortalWidgets.Add(new TypedWidgetData<PortalWidgetBase>(portal));
+            }
+            else if (generic is GaussianCaptureWidgetBase gcWidget)
+            {
+                m_GaussianCaptureWidgets.Add(new TypedWidgetData<GaussianCaptureWidgetBase>(gcWidget));
+            }
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
@@ -1312,6 +1416,8 @@ namespace TiltBrush
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_GaussianCaptureWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
@@ -1485,10 +1591,44 @@ namespace TiltBrush
             return fNearestWidget;
         }
 
+        public bool TryGetNearestPointableWidget(Ray ray, out GrabWidget widget, out RaycastHit hitInfo)
+        {
+            widget = null;
+            hitInfo = default;
+            float nearestDistance = float.MaxValue;
+
+            foreach (var elt in ActiveGrabWidgets)
+            {
+                GrabWidget candidate = elt.m_WidgetScript;
+                if (!(candidate is PortalWidgetBase))
+                {
+                    continue;
+                }
+
+                if (!candidate.DistanceToCollider(ray, out float distance) || distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = distance;
+                widget = candidate;
+                hitInfo = new RaycastHit
+                {
+                    distance = distance,
+                    point = ray.GetPoint(distance),
+                    normal = -ray.direction
+                };
+            }
+
+            return widget != null;
+        }
+
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
+            DestroyWidgetList(m_PortalWidgets);
+            DestroyWidgetList(m_GaussianCaptureWidgets);
             DestroyWidgetList(m_ImageWidgets);
             DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);
@@ -1677,6 +1817,10 @@ namespace TiltBrush
             m_TextWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
             m_LightWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<PortalWidgetBase>> ActivePortalWidgets =>
+            m_PortalWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+        public List<TypedWidgetData<GaussianCaptureWidgetBase>> ActiveGaussianCaptureWidgets =>
+            m_GaussianCaptureWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>

@@ -1147,9 +1147,10 @@ namespace TiltBrush
             return new AssetLister(uri, errorMessage);
         }
 
-        // Get a specific sketch and insert it into the listed sketches at the specified index.
-        public IEnumerator<object> InsertSketchInfo(
-            string assetId, int index, List<IcosaSceneFileInfo> infos)
+        public IEnumerator GetSketchInfo(
+            string assetId,
+            Action<IcosaSceneFileInfo> onSuccess,
+            Action onFailure = null)
         {
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
@@ -1165,6 +1166,7 @@ namespace TiltBrush
                     {
                         Debug.LogException(e);
                         Debug.LogError("Failed to fetch sketch " + assetId);
+                        onFailure?.Invoke();
                         yield break;
                     }
                     yield return cr.Current;
@@ -1173,14 +1175,20 @@ namespace TiltBrush
 
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
-            while (!f.TryGetResult(out json)) { yield return null; }
+            while (!f.TryGetResult(out json))
+            {
+                yield return null;
+            }
+
             var info = new IcosaSceneFileInfo(json.Root);
             if (!info.Valid)
             {
                 Debug.LogWarning($"ICOSATILT_LOAD Fetched sketch {assetId} has no valid tilt download");
+                onFailure?.Invoke();
                 yield break;
             }
-            infos.Insert(index, info);
+
+            onSuccess?.Invoke(info);
         }
 
         public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
@@ -1212,14 +1220,23 @@ namespace TiltBrush
         }
 
         // Download a tilt file to a temporary file and load it
-        public IEnumerator LoadTiltFile(string id)
+        public IEnumerator LoadTiltFile(string id, Action<float> onProgress = null)
         {
+            BeginLoadSketchOverlap();
+            onProgress?.Invoke(0.05f);
+
             string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
             WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+            double requestStartTime = Time.realtimeSinceStartupAsDouble;
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
                 {
+                    const float kMetadataProportion = 0.2f;
+                    const float kMetadataTime = 0.75f;
+                    float requestElapsed = (float)(Time.realtimeSinceStartupAsDouble - requestStartTime);
+                    float metadataProgress = Mathf.Clamp01(requestElapsed / kMetadataTime);
+                    onProgress?.Invoke(kMetadataProportion * metadataProgress);
                     try
                     {
                         cr.MoveNext();
@@ -1247,11 +1264,20 @@ namespace TiltBrush
             const int kDownloadBufferSize = 1024 * 1024;
             byte[] downloadBuffer = new byte[kDownloadBufferSize];
             IcosaTiltDownloadResult result = null;
-            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+            UnityWebRequest downloadRequest = null;
+            IEnumerator download = IcosaTiltDownloader.DownloadTiltCoroutine(
                 info, path, downloadBuffer,
                 isCanceled: null,
-                onRequestChanged: null,
+                onRequestChanged: r => downloadRequest = r,
                 onComplete: r => result = r);
+            while (download.MoveNext())
+            {
+                if (downloadRequest != null)
+                {
+                    onProgress?.Invoke(0.2f + 0.8f * downloadRequest.downloadProgress);
+                }
+                yield return download.Current;
+            }
 
             if (result == null || !result.Succeeded)
             {
@@ -1263,6 +1289,28 @@ namespace TiltBrush
 
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+            onProgress?.Invoke(1.0f);
+        }
+
+        private static void BeginLoadSketchOverlap()
+        {
+            if (OverlayManager.m_Instance == null)
+            {
+                return;
+            }
+
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (ViewpointScript.m_Instance != null)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
+            }
         }
 
         public bool IsValidDeviceCodeSecret(string secret)

@@ -3631,6 +3631,34 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
     m_Metadata:
       m_Items: []
+  - m_Id: 475814063085543424
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_PORTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Key: CAPTURE_TRAY_SPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Key: CAPTURE_TRAY_ELLIPSOID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Key: CAPTURE_TRAY_HEMISPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Key: CAPTURE_TRAY_BOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Key: LABS_PANEL_SPLAT_CAPTURE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
