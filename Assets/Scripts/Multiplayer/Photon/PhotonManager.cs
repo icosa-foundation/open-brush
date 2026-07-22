@@ -441,6 +441,12 @@ namespace OpenBrush.Multiplayer
                 case SwitchEnvironmentCommand:
                     success &= CommandSwitchEnvironment(command as SwitchEnvironmentCommand, playerRef);
                     break;
+                    }
+                    else
+                    {
+                        success = true;
+                    }
+                    break;
                 case BaseCommand:
                     success &= CommandBase(command);
                     break;
