@@ -47,6 +47,39 @@ namespace TiltBrush
             var clone = this;
             clone.Colors = (Color[])Colors?.Clone();
             clone.Operators = (Operators == null) ? null : new List<PreviewPolyhedron.OpDefinition>(Operators);
+            clone.Vertices = Vertices == null ? null : new List<Vector3>(Vertices);
+            clone.Faces = Faces?.Select(face => new List<int>(face)).ToList();
+            clone.FaceRoles = FaceRoles == null ? null : new List<int>(FaceRoles);
+            clone.VertexRoles = VertexRoles == null ? null : new List<int>(VertexRoles);
+            clone.FaceTags = FaceTags?
+                .Select(tags => new HashSet<string>(tags)).ToList();
+            return clone;
+        }
+
+        public PolyRecipe CloneWithUnitGeometryBounds()
+        {
+            var clone = Clone();
+            if (clone.GeneratorType != GeneratorTypes.GeometryData ||
+                clone.Vertices == null || clone.Vertices.Count == 0)
+            {
+                return clone;
+            }
+
+            var bounds = new Bounds(clone.Vertices[0], Vector3.zero);
+            for (int i = 1; i < clone.Vertices.Count; i++)
+            {
+                bounds.Encapsulate(clone.Vertices[i]);
+            }
+            float maxSide = Mathf.Max(
+                bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+            if (maxSide > Mathf.Epsilon)
+            {
+                float scale = 1f / maxSide;
+                for (int i = 0; i < clone.Vertices.Count; i++)
+                {
+                    clone.Vertices[i] *= scale;
+                }
+            }
             return clone;
         }
 

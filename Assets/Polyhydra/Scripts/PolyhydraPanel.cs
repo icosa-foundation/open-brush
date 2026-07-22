@@ -949,8 +949,8 @@ namespace TiltBrush
 
         public void LoadFromWidget(EditableModelWidget ewidget)
         {
-            // LoadFromRecipe(ewidget.m_PolyRecipe);
-            var edef = new EditableModelDefinition(ewidget.m_PolyRecipe);
+            var recipe = ewidget.m_PolyRecipe.CloneWithUnitGeometryBounds();
+            var edef = new EditableModelDefinition(recipe);
             LoadFromDefinition(edef);
         }
 

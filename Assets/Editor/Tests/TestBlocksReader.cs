@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Icosa.OpenBlocks.FileFormat;
 using NUnit.Framework;
@@ -84,6 +85,21 @@ namespace TiltBrush
             var (roundTrippedPoly, _) = PolyBuilder.BuildFromPolyDef(roundTrippedRecipe);
             Assert.That(roundTrippedPoly.Vertices, Has.Count.EqualTo(poly.Vertices.Count));
             Assert.That(roundTrippedPoly.Faces, Has.Count.EqualTo(poly.Faces.Count));
+            PolyRecipe oversizedRecipe = recipe.Clone();
+            oversizedRecipe.Vertices = oversizedRecipe.Vertices
+                .Select(vertex => vertex * 10).ToList();
+            PolyRecipe normalizedRecipe = oversizedRecipe.CloneWithUnitGeometryBounds();
+            var normalizedBounds = new Bounds(
+                normalizedRecipe.Vertices[0], Vector3.zero);
+            foreach (Vector3 vertex in normalizedRecipe.Vertices)
+            {
+                normalizedBounds.Encapsulate(vertex);
+            }
+            Assert.That(
+                Mathf.Max(normalizedBounds.size.x,
+                    Mathf.Max(normalizedBounds.size.y, normalizedBounds.size.z)),
+                Is.EqualTo(1).Within(0.0001f));
+            Assert.That(oversizedRecipe.Vertices, Is.Not.EqualTo(normalizedRecipe.Vertices));
             Assert.That(warnings, Is.Empty);
         }
 
