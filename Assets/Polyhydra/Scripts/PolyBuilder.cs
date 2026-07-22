@@ -65,6 +65,7 @@ namespace TiltBrush
                     recipe.Vertices = emd.Vertices.ToList();
                     recipe.Faces = emd.Faces.ToList();
                     recipe.FaceRoles = emd.FaceRoles.Select(r => (int)r).ToList();
+                    recipe.VertexRoles = emd.VertexRoles.Select(r => (int)r).ToList();
                     recipe.FaceTags = emd.FaceTags;
                     break;
                 // case GeneratorTypes.Johnson:
@@ -212,6 +213,26 @@ namespace TiltBrush
 
             switch (p.GeneratorType)
             {
+                case GeneratorTypes.GeometryData:
+                    if (p.Vertices == null || p.Faces == null)
+                    {
+                        throw new ArgumentException(
+                            "GeometryData recipes require vertices and faces.", nameof(p));
+                    }
+                    var faceRoles = p.FaceRoles != null && p.FaceRoles.Count == p.Faces.Count
+                        ? p.FaceRoles.Select(role => (Roles)role)
+                        : Enumerable.Repeat(Roles.New, p.Faces.Count);
+                    var vertexRoles = p.VertexRoles != null &&
+                                      p.VertexRoles.Count == p.Vertices.Count
+                        ? p.VertexRoles.Select(role => (Roles)role)
+                        : Enumerable.Repeat(Roles.New, p.Vertices.Count);
+                    var faceTags = p.FaceTags != null && p.FaceTags.Count == p.Faces.Count
+                        ? p.FaceTags
+                        : Enumerable.Range(0, p.Faces.Count)
+                            .Select(_ => new HashSet<string>()).ToList();
+                    poly = new PolyMesh(
+                        p.Vertices, p.Faces, faceRoles, vertexRoles, faceTags);
+                    break;
                 case GeneratorTypes.Uniform:
 
                     var wythoff = new WythoffPoly(p.UniformPolyType);
