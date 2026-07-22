@@ -85,7 +85,7 @@ namespace TiltBrush
             BaseCommand parent = null)
             : base(parent)
         {
-            var selectedGroups = new HashSet<SketchGroupTag>();
+            var selectedGroups = new Dictionary<SketchGroupTag, HashSet<CanvasScript>>();
 
             var strokesNotGrouped = new HashSet<Stroke>();
             if (strokes != null)
@@ -99,7 +99,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        selectedGroups.Add(stroke.Group);
+                        AddSelectedGroup(selectedGroups, stroke.Group, GetSelectionScopeCanvas(stroke, deselect));
                     }
                 }
             }
@@ -116,23 +116,31 @@ namespace TiltBrush
                     }
                     else
                     {
-                        selectedGroups.Add(widget.Group);
+                        AddSelectedGroup(selectedGroups, widget.Group, GetSelectionScopeCanvas(widget, deselect));
                     }
                 }
             }
 
             // Get the grouped strokes.
             var strokesGrouped = new HashSet<Stroke>();
-            foreach (var group in selectedGroups)
+            foreach (var groupCanvases in selectedGroups)
             {
-                strokesGrouped.UnionWith(SelectionManager.m_Instance.StrokesInGroup(group));
+                foreach (var canvas in groupCanvases.Value)
+                {
+                    strokesGrouped.UnionWith(
+                        GetStrokesInGroup(groupCanvases.Key, canvas, deselect));
+                }
             }
 
             // Get the grouped widgets.
             var widgetsGrouped = new HashSet<GrabWidget>();
-            foreach (var group in selectedGroups)
+            foreach (var groupCanvases in selectedGroups)
             {
-                widgetsGrouped.UnionWith(SelectionManager.m_Instance.WidgetsInGroup(group));
+                foreach (var canvas in groupCanvases.Value)
+                {
+                    widgetsGrouped.UnionWith(
+                        GetWidgetsInGroup(groupCanvases.Key, canvas, deselect));
+                }
             }
 
             m_Strokes = new List<Stroke>();
@@ -150,6 +158,43 @@ namespace TiltBrush
             m_IsGrabbingGroup = isGrabbingGroup;
             m_IsEndGrabbingGroup = isEndGrabbingGroup;
             m_TargetCanvas = targetCanvas;
+        }
+
+        private static void AddSelectedGroup(
+            Dictionary<SketchGroupTag, HashSet<CanvasScript>> selectedGroups,
+            SketchGroupTag group, CanvasScript canvas)
+        {
+            if (!selectedGroups.TryGetValue(group, out var canvases))
+            {
+                canvases = selectedGroups[group] = new HashSet<CanvasScript>();
+            }
+            canvases.Add(canvas);
+        }
+
+        private static CanvasScript GetSelectionScopeCanvas(Stroke stroke, bool deselect)
+        {
+            return deselect ? stroke.m_PreviousCanvas ?? stroke.Canvas : stroke.Canvas;
+        }
+
+        private static CanvasScript GetSelectionScopeCanvas(GrabWidget widget, bool deselect)
+        {
+            return deselect ? widget.m_PreviousCanvas ?? widget.Canvas : widget.Canvas;
+        }
+
+        private static IEnumerable<Stroke> GetStrokesInGroup(
+            SketchGroupTag group, CanvasScript canvas, bool deselect)
+        {
+            return deselect
+                ? SelectionManager.m_Instance.SelectedStrokesInGroup(group, canvas)
+                : SelectionManager.m_Instance.StrokesInGroup(group, canvas);
+        }
+
+        private static IEnumerable<GrabWidget> GetWidgetsInGroup(
+            SketchGroupTag group, CanvasScript canvas, bool deselect)
+        {
+            return deselect
+                ? SelectionManager.m_Instance.SelectedWidgetsInGroup(group, canvas)
+                : SelectionManager.m_Instance.WidgetsInGroup(group, canvas);
         }
 
         protected override void OnRedo()
