@@ -3799,6 +3799,10 @@ MonoBehaviour:
       Worlds.'
     m_Metadata:
       m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: 360
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

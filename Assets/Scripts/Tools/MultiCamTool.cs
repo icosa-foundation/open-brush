@@ -20,6 +20,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEngine;
 using TMPro;
+using ODS;
 
 namespace TiltBrush
 {
@@ -192,6 +193,7 @@ namespace TiltBrush
         private bool m_LockToController;
 
         private float m_ShotTimer;
+        private bool m_SnapshotCaptureInProgress;
         private bool m_EatPadInput = false;
 
         private State m_CurrentState;
@@ -507,7 +509,7 @@ namespace TiltBrush
                     break;
             }
 
-            return m_ShotTimer <= 0.0f && bStyleOK;
+            return !m_SnapshotCaptureInProgress && m_ShotTimer <= 0.0f && bStyleOK;
         }
 
         public void ExternalObjectNextCameraStyle()
@@ -534,6 +536,11 @@ namespace TiltBrush
 
         bool CanSwitchCameras()
         {
+            if (m_SnapshotCaptureInProgress)
+            {
+                return false;
+            }
+
             switch (CurrentCameraStyle)
             {
                 case MultiCamStyle.AutoGif: return m_AutoGifCreationState != GifCreationState.Capturing;
@@ -743,13 +750,19 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot));
                             }
                             break;
                         case MultiCamStyle.Depth:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName, true));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Depth));
+                            }
+                            break;
+                        case MultiCamStyle.Snapshot360:
+                            if (FileUtils.CheckDiskSpaceWithError(saveName))
+                            {
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot360));
                             }
                             break;
                         case MultiCamStyle.AutoGif:
@@ -875,6 +888,7 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                         case MultiCamStyle.Depth:
                         case MultiCamStyle.AutoGif:
+                        case MultiCamStyle.Snapshot360:
                             break;
                     }
 
@@ -1280,6 +1294,7 @@ namespace TiltBrush
                     break;
                 case MultiCamStyle.Snapshot:
                 case MultiCamStyle.Depth:
+                case MultiCamStyle.Snapshot360:
                     ext = ".png";
                     break;
                 case MultiCamStyle.TimeGif:
@@ -1831,7 +1846,59 @@ namespace TiltBrush
         // Snapshot
         //
 
-        public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
+        public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style)
+        {
+            if (m_SnapshotCaptureInProgress)
+            {
+                yield break;
+            }
+
+            m_SnapshotCaptureInProgress = true;
+            GameObject odsCaptureRoot = null;
+            try
+            {
+                HybridCamera odsCamera = null;
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    odsCamera = SketchControlsScript.m_Instance.MultiCamCaptureRig.OdsCameraFromStyle(style);
+                    if (odsCamera == null)
+                    {
+                        Debug.LogError("[Snapshot360Capture] Missing HybridCamera on the Snapshot360 capture object.");
+                        yield break;
+                    }
+
+                    odsCaptureRoot = new GameObject("Snapshot360 Frozen Capture Origin");
+                    odsCaptureRoot.hideFlags = HideFlags.HideAndDontSave;
+                    odsCaptureRoot.transform.SetPositionAndRotation(
+                        odsCamera.transform.position, odsCamera.transform.rotation);
+                    odsCaptureRoot.transform.localScale = odsCamera.transform.lossyScale;
+                }
+
+                IEnumerator capture = TakeScreenshotInternalAsync(
+                    saveName, style, odsCamera, odsCaptureRoot?.transform);
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    yield return OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.Export, capture, fadeDuration: 0.25f);
+                }
+                else
+                {
+                    yield return capture;
+                }
+            }
+            finally
+            {
+                if (odsCaptureRoot != null)
+                {
+                    Destroy(odsCaptureRoot);
+                }
+                m_SnapshotCaptureInProgress = false;
+            }
+        }
+
+        private IEnumerator TakeScreenshotInternalAsync(
+            string saveName, MultiCamStyle style, HybridCamera odsCamera,
+            Transform odsCaptureTransform)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1852,7 +1919,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            ScreenshotManager rMgr = GetScreenshotManager(renderDepth ? MultiCamStyle.Depth : MultiCamStyle.Snapshot);
+            ScreenshotManager rMgr = GetScreenshotManager(style);
             if (rMgr != null)
             {
                 // Default to the multicam values, and overwrite with user config values.
@@ -1862,6 +1929,12 @@ namespace TiltBrush
                 int snapshotHeight = (App.UserConfig.Flags.SnapshotHeight > 0) ?
                     App.UserConfig.Flags.SnapshotHeight :
                     m_ScreenshotHeight;
+
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    snapshotWidth = odsCamera.GetClampedImageWidth(snapshotWidth);
+                    snapshotHeight = snapshotWidth;
+                }
 
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);
@@ -1880,12 +1953,21 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false);
-                    if (renderDepth)
+                    if (odsCamera != null)
+                    {
+                        odsCamera.imageWidth = snapshotWidth;
+                        yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                        Graphics.Blit(odsCamera.FinalImage, tmp);
+                    }
+                    else
+                    {
+                        rMgr.RenderToTexture(tmp);
+                    }
+                    if (style == MultiCamStyle.Depth)
                     {
                         tmpDepth = rMgr.CreateTemporaryTargetForSave(
                             snapshotWidth, snapshotHeight);
-                        rMgr.RenderToTexture(tmpDepth, asDepth: true);
+                        rMgr.RenderDepthToTexture(tmpDepth);
                     }
                     wrapper.SuperSampling = ssaaRestore;
                     yield return null;
@@ -1900,12 +1982,13 @@ namespace TiltBrush
                         {
                             ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
                         }
-                        if (renderDepth)
+                        if (style == MultiCamStyle.Depth)
                         {
                             var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
+
                             using (var fs = new FileStream(fullDepthPath, FileMode.Create))
                             {
-                                ScreenshotManager.Save(fs, tmpDepth, bSaveAsPng: true);
+                                ScreenshotManager.SaveDepth(fs, tmpDepth);
                             }
                         }
                     }
@@ -1932,6 +2015,10 @@ namespace TiltBrush
                 {
                     // Do not put away the camera.
                     m_RequestExit = false;
+                    if (tmpDepth != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmpDepth);
+                    }
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }

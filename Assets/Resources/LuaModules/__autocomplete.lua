@@ -75,13 +75,14 @@ function App:Error(message) end
 function App:SetFont(fontData) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
----@param filename string The filename to use for the saved snapshot
+---@param filename string The filename for the color snapshot and base name for optional sidecars
 ---@param width number Image width
 ---@param height number Image height
 ---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
----@param renderDepth? boolean If true then render the depth buffer instead of the image
----@param removeBackground? boolean 
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground) end
+---@param renderDepth? boolean If true, also save a depth map with the suffix _depth.png
+---@param removeBackground? boolean If true then render with a transparent background
+---@param renderNormals? boolean If true, also save a normals map with the suffix _normals.png
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string The filename to use for the saved snapshot

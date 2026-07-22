@@ -27,6 +27,7 @@ Shader "Brush/LoftedHueShift" {
 	Category {
 		Cull Back
 		SubShader {
+			Tags { "RenderType"="Opaque" }
 			CGPROGRAM
 			#pragma multi_compile __ SHADER_SCRIPTING_ON
 			#pragma target 4.0

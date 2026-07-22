@@ -382,6 +382,42 @@ namespace TiltBrush
             bool bFullProgress = false,
             bool showSuccessText = false)
         {
+            var routine = RunInCompositorImpl(
+                overlayType, action, fadeDuration, bFullProgress, showSuccessText);
+            try
+            {
+                while (routine.MoveNext())
+                {
+                    Debug.Assert(routine.Current == null);
+                    yield return null;
+                }
+            }
+            finally
+            {
+                (routine as IDisposable)?.Dispose();
+            }
+        }
+
+        /// Runs a Unity-style coroutine in the compositor. Unlike the bare-coroutine overload,
+        /// this supports yield instructions and nested coroutines.
+        public System.Collections.IEnumerator RunInCompositor(
+            OverlayType overlayType,
+            System.Collections.IEnumerator action,
+            float fadeDuration,
+            bool bFullProgress = false,
+            bool showSuccessText = false)
+        {
+            return RunInCompositorImpl(
+                overlayType, action, fadeDuration, bFullProgress, showSuccessText);
+        }
+
+        private System.Collections.IEnumerator RunInCompositorImpl(
+            OverlayType overlayType,
+            System.Collections.IEnumerator action,
+            float fadeDuration,
+            bool bFullProgress,
+            bool showSuccessText)
+        {
             SetOverlayFromType(overlayType);
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
@@ -429,7 +465,7 @@ namespace TiltBrush
                 }
                 finally
                 {
-                    action.Dispose();
+                    (action as IDisposable)?.Dispose();
                 }
                 yield return null; // eat a frame
                 if (showSuccessText)

@@ -422,7 +422,7 @@ namespace TiltBrush
 
         /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
         /// with CreateTemporaryTargetForSave().
-        public void RenderToTexture(RenderTexture rTexture, bool asDepth = false, bool removeBackground = false)
+        public void RenderToTexture(RenderTexture rTexture, bool removeBackground = false)
         {
             RenderTextureFormat format = CameraFormat();
             int depth = 24;
@@ -439,14 +439,7 @@ namespace TiltBrush
                 var camera = LeftInfo.camera;
                 var prev = camera.targetTexture;
                 camera.targetTexture = targetA;
-                if (asDepth)
-                {
-                    var prevDepthTextureMode = camera.depthTextureMode;
-                    camera.depthTextureMode = DepthTextureMode.Depth;
-                    camera.RenderWithShader(Shader.Find("Hidden/Internal-DepthNormalsTexture"), "");
-                    camera.depthTextureMode = prevDepthTextureMode;
-                }
-                else if (removeBackground)
+                if (removeBackground)
                 {
                     var prevClearFlags = camera.clearFlags;
                     var prevBackgroundColor = camera.backgroundColor;
@@ -473,9 +466,80 @@ namespace TiltBrush
             }
         }
 
+        /// Renders depth-normal data to a texture for use with SaveNormals method.
+        /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
+        /// with CreateTemporaryTargetForSave().
+        public void RenderDepthNormalToTexture(RenderTexture rTexture)
+        {
+            RenderEncodedDepthNormalsToTexture(rTexture);
+        }
+
+        private void RenderEncodedDepthNormalsToTexture(RenderTexture rTexture)
+        {
+            RenderTextureFormat format = CameraFormat();
+            int depth = 24;
+
+            // Use a temporary rather than rendering to rTexture because we don't know
+            // what format rTexture is... it may not be the correct format.
+            RenderTexture targetA = RenderTexture.GetTemporary(
+                rTexture.width, rTexture.height, depthBuffer: depth, format: format);
+
+            {
+                var camera = LeftInfo.camera;
+                var prev = camera.targetTexture;
+                var prevDepthTextureMode = camera.depthTextureMode;
+                var prevClearFlags = camera.clearFlags;
+                var prevBackgroundColor = camera.backgroundColor;
+                try
+                {
+                    camera.targetTexture = targetA;
+                    camera.depthTextureMode = DepthTextureMode.Depth;
+                    camera.clearFlags = CameraClearFlags.SolidColor;
+                    // Neutral view-space normal and maximum encoded depth. This makes pixels
+                    // untouched by the replacement shader decode as far rather than near.
+                    camera.backgroundColor = new Color(0.5f, 0.5f, 1.0f, 0.0f);
+                    camera.RenderWithShader(
+                        Shader.Find("Hidden/Internal-DepthNormalsTexture"), "RenderType");
+                }
+                finally
+                {
+                    camera.backgroundColor = prevBackgroundColor;
+                    camera.clearFlags = prevClearFlags;
+                    camera.depthTextureMode = prevDepthTextureMode;
+                    camera.targetTexture = prev;
+                }
+            }
+
+            if (targetA != rTexture)
+            {
+                Graphics.Blit(targetA, rTexture);
+                RenderTexture.ReleaseTemporary(targetA);
+            }
+        }
+
+        /// Renders depth data to a texture for use with SaveDepth method.
+        /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
+        /// with CreateTemporaryTargetForSave().
+        public void RenderDepthToTexture(RenderTexture rTexture)
+        {
+            RenderEncodedDepthNormalsToTexture(rTexture);
+        }
+
         static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
         {
             var buffer = SaveToMemory(rTextureToSave, bSaveAsPng);
+            outf.Write(buffer, 0, buffer.Length);
+        }
+
+        static public void SaveDepth(Stream outf, RenderTexture depthNormalTexture)
+        {
+            var buffer = SaveDepthToMemory(depthNormalTexture);
+            outf.Write(buffer, 0, buffer.Length);
+        }
+
+        static public void SaveNormals(Stream outf, RenderTexture depthNormalTexture)
+        {
+            var buffer = SaveNormalsToMemory(depthNormalTexture);
             outf.Write(buffer, 0, buffer.Length);
         }
 
@@ -505,6 +569,181 @@ namespace TiltBrush
             Destroy(rNoAlphaTexture);
 
             return bytes;
+        }
+
+        static public byte[] SaveDepthToMemory(RenderTexture depthTexture)
+        {
+            Debug.Assert(depthTexture.format == RenderTextureFormat.ARGB32);
+
+            // Copy out of the RenderTexture
+            Texture2D texture;
+            {
+                RenderTexture prev = RenderTexture.active;
+                RenderTexture.active = depthTexture;
+                texture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.ARGB32, false);
+                texture.ReadPixels(new Rect(0, 0, depthTexture.width, depthTexture.height), 0, 0);
+                RenderTexture.active = prev;
+            }
+
+            // Unity's EncodeDepthNormal puts depth in blue/alpha channels using EncodeFloatRG
+            // Decode using: dot(enc, float2(1.0, 1/255.0))
+            Color[] pixels = texture.GetPixels();
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color pixel = pixels[i];
+
+                // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
+                // Blue=enc.x, Alpha=enc.y
+                float depth = 1.0f - (pixel.b * 1.0f + pixel.a * (1.0f / 255.0f));
+
+                // Export disparity-style grayscale: white is near and black is far.
+                pixels[i] = new Color(depth, depth, depth, 1.0f);
+            }
+
+            // Create new texture with grayscale depth values
+            Texture2D grayscaleDepthTexture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.RGB24, false);
+            grayscaleDepthTexture.SetPixels(pixels);
+            grayscaleDepthTexture.Apply();
+
+            byte[] bytes = grayscaleDepthTexture.EncodeToPNG();
+            Destroy(texture);
+            Destroy(grayscaleDepthTexture);
+
+            return bytes;
+        }
+
+        static public byte[] SaveNormalsToMemory(RenderTexture depthNormalTexture)
+        {
+            Debug.Assert(depthNormalTexture.format == RenderTextureFormat.ARGB32);
+
+            // Copy out of the RenderTexture
+            Texture2D normalTexture;
+            {
+                RenderTexture prev = RenderTexture.active;
+                RenderTexture.active = depthNormalTexture;
+                normalTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.ARGB32, false);
+                normalTexture.ReadPixels(new Rect(0, 0, depthNormalTexture.width, depthNormalTexture.height), 0, 0);
+                RenderTexture.active = prev;
+            }
+
+            // Decode the stereographically encoded view-space normals from red and green.
+            Color[] pixels = normalTexture.GetPixels();
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                const float kStereoScale = 1.7777f;
+                float encodedX = pixels[i].r * (2.0f * kStereoScale) - kStereoScale;
+                float encodedY = pixels[i].g * (2.0f * kStereoScale) - kStereoScale;
+                float scale = 2.0f / (encodedX * encodedX + encodedY * encodedY + 1.0f);
+                float nx = encodedX * scale;
+                float ny = encodedY * scale;
+                float nz = scale - 1.0f;
+
+                // Convert back to 0-1 range for storage
+                pixels[i] = new Color(nx * 0.5f + 0.5f, ny * 0.5f + 0.5f, nz * 0.5f + 0.5f, 1.0f);
+            }
+
+            // Create new texture with normal values
+            Texture2D normalOutputTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.RGB24, false);
+            normalOutputTexture.SetPixels(pixels);
+            normalOutputTexture.Apply();
+
+            byte[] bytes = normalOutputTexture.EncodeToPNG();
+            Destroy(normalTexture);
+            Destroy(normalOutputTexture);
+
+            return bytes;
+        }
+
+        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
+        {
+            bool saveAsPng;
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
+            {
+                saveAsPng = false;
+            }
+            else if (filename.ToLower().EndsWith(".png"))
+            {
+                saveAsPng = true;
+            }
+            else
+            {
+                saveAsPng = false;
+                filename += ".jpg";
+            }
+            string path = Path.Join(App.SnapshotPath(), filename);
+            MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+
+            if (cam != null)
+            {
+                var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+                App.Scene.AsScene[rig.gameObject.transform] = tr;
+                var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+                var initialState = rig.gameObject.activeSelf;
+                RenderTexture tmp = null;
+                RenderWrapper wrapper = null;
+                float ssaaRestore = 0;
+                try
+                {
+                    rig.gameObject.SetActive(true);
+                    tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                    wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                    ssaaRestore = wrapper.SuperSampling;
+                    wrapper.SuperSampling = superSampling;
+
+                    bool watermarkEnabled = CameraConfig.Watermark;
+                    bool postEffectsEnabled = CameraConfig.PostEffects;
+                    try
+                    {
+                        CameraConfig.Watermark = false;
+                        CameraConfig.PostEffects = false;
+
+                        if (renderDepth)
+                        {
+                            rMgr.RenderDepthToTexture(tmp);
+                            var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
+                            using (var fs = new FileStream(depthPath, FileMode.Create))
+                            {
+                                SaveDepth(fs, tmp);
+                            }
+                        }
+
+                        if (renderNormals)
+                        {
+                            rMgr.RenderDepthNormalToTexture(tmp);
+                            var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                            using (var fs = new FileStream(normalPath, FileMode.Create))
+                            {
+                                SaveNormals(fs, tmp);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        CameraConfig.Watermark = watermarkEnabled;
+                        CameraConfig.PostEffects = postEffectsEnabled;
+                    }
+
+                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                    using (var fs = new FileStream(path, FileMode.Create))
+                    {
+                        Save(fs, tmp, bSaveAsPng: saveAsPng);
+                    }
+
+                }
+                finally
+                {
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                    rig.gameObject.SetActive(initialState);
+                    if (tmp != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmp);
+                    }
+                }
+            }
         }
     }
 } // namespace TiltBrush
