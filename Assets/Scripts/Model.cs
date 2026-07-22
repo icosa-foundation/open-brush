@@ -338,6 +338,7 @@ namespace TiltBrush
         public Model(Location location)
         {
             m_Location = location;
+            Init();
             if (location.GetLocationType() == Location.Type.Generated)
             {
                 m_Valid = true;
