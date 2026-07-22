@@ -30,7 +30,7 @@ namespace TiltBrush
         private CameraPath m_Path;
 
         // Array of KnotDescriptors used for testing collision with the individual knots of
-        // the widget.  There is no concept of manipulating the entire CameraPathWidget with
+        // the widget.  There is no concept of manipulating the entire MovementPathWidget with
         // the controller-- only the knots.
         // Indexed by controller type.
         private KnotDescriptor[] m_LastValidCollisionResults;
@@ -97,6 +97,11 @@ namespace TiltBrush
             base.RestoreFromToss();
             WidgetManager.m_Instance.SetCurrentCameraPath(this);
             App.Switchboard.TriggerCameraPathCreated();
+        }
+
+        public void SetPathAnimation(bool animation)
+        {
+            m_Path.belongsToAnimation = animation;
         }
 
         void OnPoseChanged(TrTransform prev, TrTransform current)
@@ -438,6 +443,7 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            App.Scene.captureRig.SetActive(!m_Path.belongsToAnimation);
             GrabWidgetData data = WidgetManager.m_Instance.GetCurrentCameraPath();
             m_EatInteractingInput = (data == null) ? false : data.m_WidgetScript != this;
             WidgetManager.m_Instance.SetCurrentCameraPath(this);
@@ -749,6 +755,16 @@ namespace TiltBrush
             widget.m_Path.ValidatePathLooping();
             widget.m_Path.SetKnotsActive(false);
             App.Switchboard.TriggerCameraPathCreated();
+            widget.SetPathAnimation(cameraPath.belongsAnimation);
+            if (cameraPath.belongsAnimation && App.Scene.animationUI_manager != null)
+            {
+                (int, int) Loc = cameraPath.timelineLoc;
+                App.Scene.animationUI_manager.AddAnimationPath(widget, Loc.Item1, Loc.Item2);
+                foreach (Transform child in widget.gameObject.transform)
+                {
+                    child.gameObject.SetActive(true);
+                }
+            }
             return widget;
         }
 

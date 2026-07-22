@@ -20,6 +20,10 @@ namespace TiltBrush
 
     public abstract class GeometryBrush : BaseBrushScript
     {
+        protected virtual bool ForceAllKnots
+        {
+            get { return false; }
+        }
         // TODO: change to class?
         public struct Knot
         {
@@ -30,6 +34,9 @@ namespace TiltBrush
 
             /// Constant, associated with this knot
             public float smoothedPressure;
+
+            /// Color for this knot (from per-point colors or base color)
+            public Color32 color;
 
             /// Distance from previous knot to this knot, or 0 (if first).
             /// Mutated during geometry generation.
@@ -108,6 +115,10 @@ namespace TiltBrush
         protected bool m_bDoubleSided;
 
         protected readonly bool m_bSmoothPositions;
+        protected virtual bool SmoothPositions
+        {
+            get { return m_bSmoothPositions; }
+        }
 
         protected bool m_bM11Compatibility;
 
@@ -302,7 +313,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -347,7 +359,8 @@ namespace TiltBrush
                     m_Pressure = 1
                 },
                 length = 0,
-                smoothedPos = pos
+                smoothedPos = pos,
+                color = m_Color
             };
             m_knots.Add(knot);
             m_knots.Add(knot);
@@ -429,7 +442,7 @@ namespace TiltBrush
             rMeshScript.Init();
         }
 
-        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure)
+        override protected bool UpdatePositionImpl(Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
             Debug.Assert(m_knots.Count >= 2);
 
@@ -441,6 +454,12 @@ namespace TiltBrush
             updated.point.m_Pressure = pressure;
             updated.point.m_TimestampMs = (uint)(App.Instance.CurrentSketchTime * 1000);
             updated.smoothedPos = pos;
+
+            // Use passed color if available, otherwise fall back to stroke data or base color
+            if (color.HasValue)
+            {
+                updated.color = color.Value;
+            }
             if (iUpdate < 2)
             {
                 // Retroactively update the 0th knot with better pressure data.
@@ -450,7 +469,7 @@ namespace TiltBrush
                 initialKnot.smoothedPressure = initialPressure;
                 m_knots[0] = initialKnot;
             }
-            else if (m_bSmoothPositions)
+            else if (SmoothPositions)
             {
                 Knot middle = m_knots[iUpdate - 1];
                 Vector3 v0 = m_knots[iUpdate - 2].point.m_Pos;
@@ -459,7 +478,7 @@ namespace TiltBrush
                 middle.smoothedPos = (v0 + 2 * v1 + v2) / 4;
                 m_knots[iUpdate - 1] = middle;
             }
-            if (m_bSmoothPositions)
+            if (SmoothPositions)
             {
                 ApplySmoothing(m_knots[iUpdate - 1], ref updated);
             }
@@ -479,7 +498,7 @@ namespace TiltBrush
             }
 
             float lastLength = DistanceFromKnot(iUpdate - 1, updated.point.m_Pos);
-            bool keep = (lastLength > GetSpawnInterval(updated.smoothedPressure));
+            bool keep = ForceAllKnots || (lastLength > GetSpawnInterval(updated.smoothedPressure));
 
             // TODO: change this to the way PointerScript keeps control points
             if (keep)
@@ -489,6 +508,7 @@ namespace TiltBrush
                 dupe.nVert = 0;
                 dupe.iTri = updated.iTri + updated.nTri;
                 dupe.nTri = 0;
+                dupe.color = color ?? m_Color;
                 m_knots.Add(dupe);
             }
             return keep;

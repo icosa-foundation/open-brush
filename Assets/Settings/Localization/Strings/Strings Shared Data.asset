@@ -3255,6 +3255,14 @@ MonoBehaviour:
     m_Key: MULTICAM_TOOL_DEPTH_TEXT
     m_Metadata:
       m_Items: []
+  - m_Id: 144201565051027456
+    m_Key: PANEL_AUDIO_CLIP_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Key: PANEL_REFERENCE_AUDIO_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Key: LAYERS_PANEL_MOVELAYER_BUTTON_DESCRIPTION
     m_Metadata:
@@ -3629,6 +3637,90 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Key: BRUSH_QUILLCUBE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Key: BRUSH_QUILLCYLINDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Key: BRUSH_QUILLELLIPSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Key: BRUSH_QUILLRIBBON
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Key: LABS_PANEL_QUILL_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Key: QUILL_PANEL_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Key: QUILL_PANEL_NO_QUILL_FILES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Key: QUILL_PANEL_NO_IMM_FILES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000000
+    m_Key: ANIMATION_PANEL_MOVE_FRAME_LEFT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Key: ANIMATION_PANEL_EXTEND_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Key: ANIMATION_PANEL_SELECTION_TO_LAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Key: ANIMATION_PANEL_DUPLICATE_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Key: ANIMATION_PANEL_MOVE_FRAME_RIGHT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Key: ANIMATION_PANEL_ADD_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Key: ANIMATION_PANEL_REMOVE_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Key: ANIMATION_PANEL_SPLIT_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Key: ANIMATION_PANEL_REDUCE_FRAME_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Key: ANIMATION_PANEL_TOGGLE_PLAY_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Key: ANIMATION_PANEL_DELETE_LAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Key: ANIMATION_PANEL_SQUASH_LAYER_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Key: ANIMATION_PANEL_CLEAR_LAYER_CONTENTS_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
   m_Metadata:
