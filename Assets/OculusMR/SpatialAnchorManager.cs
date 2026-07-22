@@ -41,11 +41,16 @@ namespace TiltBrush
 
         public async Task<bool> CreateSpatialAnchor()
         {
+            float operationStartedAt = Time.realtimeSinceStartup;
             Debug.Log("[Colocation] Creating OVR spatial anchor component at the scene origin.");
             var anchorGO = new GameObject("Origin Anchor");
             m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
 
-            return await SaveAnchor();
+            bool success = await SaveAnchor();
+            Debug.Log(
+                $"[ColocationDiag] Spatial anchor create-and-save operation completed. Success: {success}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - operationStartedAt:F3}.");
+            return success;
         }
 
         async Task<bool> SaveAnchor()
@@ -58,7 +63,11 @@ namespace TiltBrush
 
             Debug.Log($"[Colocation] Spatial anchor creation wait completed. Created: {m_Anchor.Created}. Localized: {m_Anchor.Localized}. UUID: {m_Anchor.Uuid}.");
             //Local save, then cloud save.
+            float localSaveStartedAt = Time.realtimeSinceStartup;
             var success = await m_Anchor.SaveAsync();
+            Debug.Log(
+                $"[ColocationDiag] Local anchor save completed. Success: {success}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - localSaveStartedAt:F3}.");
 
             if (!success)
             {
@@ -70,7 +79,11 @@ namespace TiltBrush
             PlayerPrefs.SetString(kOriginSpatialAnchorPref, m_Anchor.Uuid.ToString());
 
             Debug.Log($"[Colocation] Saving spatial anchor {m_Anchor.Uuid} to Meta cloud storage.");
+            float cloudSaveStartedAt = Time.realtimeSinceStartup;
             success = await m_Anchor.SaveAsync(saveOptions: new OVRSpatialAnchor.SaveOptions { Storage = OVRSpace.StorageLocation.Cloud });
+            Debug.Log(
+                $"[ColocationDiag] Cloud anchor save completed. Success: {success}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - cloudSaveStartedAt:F3}.");
             if (!success)
             {
                 Debug.LogError($"[Colocation] Failed to save spatial anchor {m_Anchor.Uuid} to Meta cloud storage.");
@@ -124,6 +137,7 @@ namespace TiltBrush
 
         public async Task<bool> SyncToRemoteAnchor(string uuid, OVRSpace.StorageLocation defaultStorageLocation = OVRSpace.StorageLocation.Local)
         {
+            float operationStartedAt = Time.realtimeSinceStartup;
             Debug.Log($"[Colocation] Loading remote anchor UUID {uuid} from {defaultStorageLocation} storage.");
             if (!Guid.TryParse(uuid, out Guid guid))
             {
@@ -131,6 +145,7 @@ namespace TiltBrush
                 return false;
             }
 
+            float cloudLoadStartedAt = Time.realtimeSinceStartup;
             var data = await OVRSpatialAnchor.LoadUnboundAnchorsAsync(new OVRSpatialAnchor.LoadOptions()
             {
                 StorageLocation = defaultStorageLocation,
@@ -139,6 +154,9 @@ namespace TiltBrush
                 }
             );
 
+            Debug.Log(
+                $"[ColocationDiag] Remote anchor cloud load completed. UUID: {uuid}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - cloudLoadStartedAt:F3}.");
             Debug.Log($"[Colocation] Remote anchor load completed for UUID {uuid}. Returned anchor count: {data?.Length ?? 0}.");
             bool bindSuccess = await BindAnchors(data);
 
@@ -148,6 +166,9 @@ namespace TiltBrush
                 return SceneLocalizeToAnchor();
             }
             Debug.LogError($"[Colocation] Failed to bind remote anchor UUID {uuid}.");
+            Debug.Log(
+                $"[ColocationDiag] Remote anchor synchronization failed. UUID: {uuid}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - operationStartedAt:F3}.");
             return false;
         }
 
@@ -164,6 +185,7 @@ namespace TiltBrush
 
             var anchorGO = new GameObject("Origin Anchor");
             m_Anchor = anchorGO.AddComponent<OVRSpatialAnchor>();
+            float bindStartedAt = Time.realtimeSinceStartup;
             unboundAnchor.BindTo(m_Anchor);
 
             while (m_Anchor.PendingCreation)
@@ -172,19 +194,27 @@ namespace TiltBrush
             }
 
             Debug.Log($"[Colocation] Bound anchor creation completed. UUID: {m_Anchor.Uuid}. Localized: {m_Anchor.Localized}.");
+            Debug.Log(
+                $"[ColocationDiag] Bound anchor creation completed. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - bindStartedAt:F3}.");
 
             Debug.Log($"[Colocation] Waiting for bound anchor {m_Anchor.Uuid} to localize.");
+            float localizationStartedAt = Time.realtimeSinceStartup;
             while (!m_Anchor.Localized)
             {
                 await Task.Yield();
             }
 
             Debug.Log($"[Colocation] Bound anchor {m_Anchor.Uuid} localized.");
+            Debug.Log(
+                $"[ColocationDiag] Bound anchor localization completed. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - localizationStartedAt:F3}.");
             return true;
         }
 
         public async Task<bool> ShareAnchors(List<ulong> playerIds)
         {
+            float operationStartedAt = Time.realtimeSinceStartup;
             if (m_Anchor == null)
             {
                 Debug.LogError("[Colocation] Cannot share the anchor because no spatial anchor exists.");
@@ -200,6 +230,10 @@ namespace TiltBrush
 
             // TODO: Check anchor exists and is in cloud storage.
             var result = await m_Anchor.ShareAsync(spaceUserList);
+            Debug.Log(
+                $"[ColocationDiag] Meta anchor share API operation completed. Result: {result}. " +
+                $"RecipientCount: {playerIds.Count}. " +
+                $"DurationSeconds: {Time.realtimeSinceStartup - operationStartedAt:F3}.");
             Debug.Log($"[Colocation] Meta anchor share completed for {m_Anchor.Uuid}. Result: {result}.");
 
             if (result == OVRSpatialAnchor.OperationResult.Success)

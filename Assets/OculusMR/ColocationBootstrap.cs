@@ -14,6 +14,9 @@
 
 using UnityEngine;
 using OpenBrush.Multiplayer;
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+using OVRPlatform = Oculus.Platform;
+#endif
 
 namespace TiltBrush
 {
@@ -58,6 +61,14 @@ namespace TiltBrush
         public static bool TryStart(bool isHosting)
         {
 #if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+            string buildStamp = App.Config != null ? App.Config.m_BuildStamp : "unavailable";
+            Debug.Log(
+                $"[ColocationDiag] Start context. Role: {(isHosting ? "host" : "joiner")}. " +
+                $"Application version: {Application.version}. Build stamp: {buildStamp}. " +
+                $"Device: {SystemInfo.deviceModel}. OS: {SystemInfo.operatingSystem}. " +
+                $"Meta Platform initialized: {OVRPlatform.Core.IsInitialized()}. " +
+                $"Bootstrap: {m_Instance != null}. Controller: {OculusMRController.m_Instance != null}. " +
+                $"Multiplayer: {MultiplayerManager.m_Instance != null}.");
             Debug.Log($"[Colocation] Start requested. Role: {(isHosting ? "host" : "joiner")}. Bootstrap: {m_Instance != null}. Controller: {OculusMRController.m_Instance != null}. Multiplayer: {MultiplayerManager.m_Instance != null}. Multiplayer state: {(MultiplayerManager.m_Instance != null ? MultiplayerManager.m_Instance.State.ToString() : "unavailable")}.");
             if (!IsSupported || MultiplayerManager.m_Instance == null)
             {

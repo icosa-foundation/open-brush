@@ -62,6 +62,11 @@ namespace OpenBrush.Multiplayer
         private double? m_NetworkOffsetTimestamp = null;
 
         ulong myOculusUserId;
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+        private bool m_LoggedFirstColocationRigTransmission;
+        private bool m_LoggedFirstColocationRigTransmissionWithMetaUserId;
+        private int m_ColocationAnchorShareOperationsInFlight;
+#endif
 
         List<ulong> oculusPlayerIds;
         internal string UserId;
@@ -76,7 +81,16 @@ namespace OpenBrush.Multiplayer
             {
                 if (_state != value)
                 {
+                    ConnectionState previousState = _state;
                     _state = value;
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+                    if (OculusMRController.m_Instance != null && OculusMRController.m_Instance.IsStarted)
+                    {
+                        Debug.Log(
+                            $"[ColocationDiag] Multiplayer state transition during colocation. " +
+                            $"Previous: {previousState}. Current: {_state}.");
+                    }
+#endif
                     StateUpdated?.Invoke(_state);
                 }
             }
@@ -143,6 +157,10 @@ namespace OpenBrush.Multiplayer
                 {
                     myOculusUserId = msg.GetUser().ID;
                     Debug.Log($"[Colocation] Logged-in Meta user ID received: {myOculusUserId}.");
+                    Debug.Log(
+                        $"[ColocationDiag] Meta user ID callback timing. Nonzero: {myOculusUserId != 0}. " +
+                        $"Local player exists: {m_LocalPlayer != null}. " +
+                        $"First rig transmission already sent: {m_LoggedFirstColocationRigTransmission}.");
                 }
                 else
                 {
@@ -453,6 +471,22 @@ namespace OpenBrush.Multiplayer
 
             if (m_LocalPlayer != null)
             {
+#if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
+                if (!m_LoggedFirstColocationRigTransmission)
+                {
+                    Debug.Log(
+                        $"[ColocationDiag] First local rig transmission. " +
+                        $"Meta user ID available: {myOculusUserId != 0}. Player ID: {m_LocalPlayer.PlayerId}.");
+                    m_LoggedFirstColocationRigTransmission = true;
+                }
+                if (myOculusUserId != 0 && !m_LoggedFirstColocationRigTransmissionWithMetaUserId)
+                {
+                    Debug.Log(
+                        $"[ColocationDiag] First local rig transmission with a nonzero Meta user ID. " +
+                        $"Player ID: {m_LocalPlayer.PlayerId}.");
+                    m_LoggedFirstColocationRigTransmissionWithMetaUserId = true;
+                }
+#endif
                 m_LocalPlayer.TransmitData(data);
             }
 
@@ -684,30 +718,55 @@ namespace OpenBrush.Multiplayer
         async void ShareAnchors()
         {
 #if OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
-            if (OculusMRController.m_Instance == null ||
-                !OculusMRController.m_Instance.IsHosting)
+            int operationsAlreadyInFlight = m_ColocationAnchorShareOperationsInFlight;
+            m_ColocationAnchorShareOperationsInFlight++;
+            float operationStartedAt = Time.realtimeSinceStartup;
+            Debug.Log(
+                $"[ColocationDiag] Anchor share attempt entered. " +
+                $"Operations already in flight: {operationsAlreadyInFlight}. " +
+                $"Tracked Meta users: {oculusPlayerIds.Count}.");
+            try
             {
-                Debug.LogWarning($"[Colocation] Anchor sharing skipped. Controller available: {OculusMRController.m_Instance != null}. Hosting: {OculusMRController.m_Instance != null && OculusMRController.m_Instance.IsHosting}.");
-                return;
+                if (OculusMRController.m_Instance == null ||
+                    !OculusMRController.m_Instance.IsHosting)
+                {
+                    Debug.LogWarning($"[Colocation] Anchor sharing skipped. Controller available: {OculusMRController.m_Instance != null}. Hosting: {OculusMRController.m_Instance != null && OculusMRController.m_Instance.IsHosting}.");
+                    return;
+                }
+
+                Debug.Log($"[Colocation] Sharing host anchor with {oculusPlayerIds.Count} tracked Meta users.");
+                var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
+                Debug.Log($"[Colocation] Host anchor share operation returned success: {success}.");
+
+                if (success)
+                {
+                    if (!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
+                    {
+                        string anchorUuid = OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid;
+                        Debug.Log($"[Colocation] Queueing shared anchor UUID RPC for anchor {anchorUuid}.");
+                        bool rpcQueued = await m_Manager.RpcSyncToSharedAnchor(anchorUuid);
+                        Debug.Log($"[Colocation] Shared anchor UUID RPC queue result: {rpcQueued}.");
+                    }
+                    else
+                    {
+                        Debug.LogError("[Colocation] Anchor sharing succeeded but the host anchor UUID is empty.");
+                    }
+                }
             }
-
-            Debug.Log($"[Colocation] Sharing host anchor with {oculusPlayerIds.Count} tracked Meta users.");
-            var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
-            Debug.Log($"[Colocation] Host anchor share operation returned success: {success}.");
-
-            if (success)
+            catch (Exception exception)
             {
-                if (!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
-                {
-                    string anchorUuid = OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid;
-                    Debug.Log($"[Colocation] Queueing shared anchor UUID RPC for anchor {anchorUuid}.");
-                    bool rpcQueued = await m_Manager.RpcSyncToSharedAnchor(anchorUuid);
-                    Debug.Log($"[Colocation] Shared anchor UUID RPC queue result: {rpcQueued}.");
-                }
-                else
-                {
-                    Debug.LogError("[Colocation] Anchor sharing succeeded but the host anchor UUID is empty.");
-                }
+                Debug.LogError(
+                    $"[ColocationDiag] Unhandled exception at the anchor share entry boundary. " +
+                    $"DurationSeconds: {Time.realtimeSinceStartup - operationStartedAt:F3}. " +
+                    $"Exception: {exception}");
+            }
+            finally
+            {
+                m_ColocationAnchorShareOperationsInFlight--;
+                Debug.Log(
+                    $"[ColocationDiag] Anchor share attempt exited. " +
+                    $"DurationSeconds: {Time.realtimeSinceStartup - operationStartedAt:F3}. " +
+                    $"Operations remaining in flight: {m_ColocationAnchorShareOperationsInFlight}.");
             }
 #endif // OCULUS_COLOCATION_SUPPORTED && UNITY_ANDROID
         }

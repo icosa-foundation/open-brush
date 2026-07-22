@@ -102,6 +102,35 @@ anchor sharing, and Photon RPC send/receive path. Phase 0 is not complete until 
 has produced and correlated both device traces. Remaining instrumentation work should fill observed
 gaps rather than adding speculative per-frame logging.
 
+Pre-test instrumentation status as of 2026-07-22:
+
+- [x] Existing `[Colocation]` transition and result logging is present from `0ed8df58a`.
+- [x] New pre-test diagnostics use the distinct `[ColocationDiag]` prefix so this test pass can be
+  isolated from older entries.
+- [x] The start trace records role, application version, build stamp, headset model, OS, Meta
+  Platform initialization, bootstrap availability, controller availability, and multiplayer
+  availability.
+- [x] Scene-permission, host anchor create/save, Photon join, remote-anchor synchronization, local
+  and cloud saves, cloud load, bind, localization, and share operations record elapsed time without
+  adding timeouts or changing their sequence.
+- [x] The `StartMRExperience`, remote-anchor synchronization, and anchor-sharing `async void`
+  boundaries catch and log exceptions with their active operation context.
+- [x] Multiplayer state transitions are logged while a colocation operation is active.
+- [x] The first local rig transmission records whether the Meta user ID was available, the Meta
+  user callback records whether transmission had already begun, and the first packet carrying a
+  nonzero Meta user ID is recorded.
+- [x] Every anchor-share entry records how many share operations were already in flight; this pass
+  observes overlap but deliberately does not prevent it.
+- [ ] Capture complete `[Colocation]` and `[ColocationDiag]` traces from both headsets using the CI
+  build.
+- [ ] Add further instrumentation only for a transition that the first trace shows is ambiguous.
+- [ ] Add a scene-model completion/failure callback trace if the first run reaches scene-model load
+  but does not provide enough evidence to classify its result.
+
+The instrumentation changes in this pass deliberately do not add the state machine, timeouts,
+cancellation, session codes, role enforcement, overlap prevention, or UI changes. Those would alter
+the execution being diagnosed.
+
 ### 0.1 Add a single diagnostic identity
 
 Use `[Colocation]` as the prefix for all logs produced by this feature. Instrument:
@@ -133,6 +162,35 @@ For both headsets, record:
 - Complete `[Colocation]` log sequences from both devices.
 
 Run the host command first and wait until cloud anchor save and Photon room join are logged. Then run join on the second headset. Classify the first missing transition rather than inferring the failure from the final visual result.
+
+For the CI test build:
+
+1. Record both serials with `adb devices` and assign the stable labels `host` and `joiner` in the
+   test notes.
+2. Clear each device log immediately before launching the test with
+   `adb -s <serial> logcat -c`.
+3. Start timestamped `threadtime` log capture for each serial before invoking either colocation
+   command. Retain the complete device log, not only the filtered view.
+4. During triage, search each complete log for both `[Colocation]` and `[ColocationDiag]` and align
+   the two traces by timestamp.
+5. Preserve the CI run/build identifier with the logs. Do not put Meta account IDs in filenames or
+   test-note labels.
+
+The expected first-test checkpoints are:
+
+- Both devices print a `[ColocationDiag] Start context` line with the intended role and CI build
+  stamp.
+- Both devices report Meta Platform initialized and later report a nonzero logged-in Meta user ID.
+- The host completes local save, cloud save, local scene localization, and Photon room join.
+- The joiner completes Photon room join without silently becoming a host in a separate room.
+- Each device creates its local multiplayer player and transmits a nonzero Meta user ID.
+- The host detects the joiner's Meta user ID, enters exactly one anchor-share operation, completes
+  the Meta share, and queues the UUID RPC.
+- The joiner receives the UUID RPC, loads one cloud anchor, binds it, localizes it, and requests the
+  Meta scene model.
+
+Stop classification at the first missing or failed checkpoint on each device. Later failures may
+be consequences of that first divergence.
 
 ### 0.3 Validate external prerequisites independently
 
