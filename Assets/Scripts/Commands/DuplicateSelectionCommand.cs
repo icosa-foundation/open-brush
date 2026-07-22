@@ -160,27 +160,7 @@ namespace TiltBrush
             // Place duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes)
             {
-                switch (stroke.m_Type)
-                {
-                    case Stroke.Type.BrushStroke:
-                        {
-                            BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                            if (brushScript)
-                            {
-                                brushScript.HideBrush(false);
-                            }
-                        }
-                        break;
-                    case Stroke.Type.BatchedBrushStroke:
-                        {
-                            stroke.m_BatchSubset.m_ParentBatch.EnableSubset(stroke.m_BatchSubset);
-                        }
-                        break;
-                    default:
-                        Debug.LogError("Unexpected: redo NotCreated duplicate stroke");
-                        break;
-                }
-                TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
+                stroke.Hide(false);
             }
 
             // Place duplicated widgets.
@@ -215,27 +195,7 @@ namespace TiltBrush
             // Remove duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes)
             {
-                switch (stroke.m_Type)
-                {
-                    case Stroke.Type.BrushStroke:
-                        {
-                            BaseBrushScript brushScript = stroke.m_Object.GetComponent<BaseBrushScript>();
-                            if (brushScript)
-                            {
-                                brushScript.HideBrush(true);
-                            }
-                        }
-                        break;
-                    case Stroke.Type.BatchedBrushStroke:
-                        {
-                            stroke.m_BatchSubset.m_ParentBatch.DisableSubset(stroke.m_BatchSubset);
-                        }
-                        break;
-                    default:
-                        Debug.LogError("Unexpected: undo NotCreated duplicate stroke");
-                        break;
-                }
-                TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
+                stroke.Hide(true);
             }
 
             // Remove duplicated widgets.
