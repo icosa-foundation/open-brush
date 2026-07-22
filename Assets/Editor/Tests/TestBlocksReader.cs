@@ -68,6 +68,16 @@ namespace TiltBrush
             Assert.That(poly.Faces, Has.Count.EqualTo(1));
             Assert.That(recipe.GeneratorType, Is.EqualTo(GeneratorTypes.GeometryData));
             Assert.That(recipe.FaceTags[0], Does.Contain("#F44336"));
+            Assert.That(
+                (Color32)PreviewPolyhedron.GetFaceColorForStrokes(poly, recipe, 0),
+                Is.EqualTo(new Color32(244, 67, 54, 255)));
+            var (rebuiltPoly, _) = PolyBuilder.BuildFromPolyDef(recipe);
+            Assert.That(rebuiltPoly.Vertices, Has.Count.EqualTo(poly.Vertices.Count));
+            Assert.That(rebuiltPoly.Faces, Has.Count.EqualTo(poly.Faces.Count));
+            Assert.That(
+                (Color32)PreviewPolyhedron.GetFaceColorForStrokes(
+                    rebuiltPoly, recipe, 0),
+                Is.EqualTo(new Color32(244, 67, 54, 255)));
             Assert.That(warnings, Is.Empty);
         }
 
@@ -93,6 +103,15 @@ namespace TiltBrush
                 null, new object[] { files });
 
             Assert.That(selected, Is.EqualTo(@"C:\Blocks\example\model.blocks"));
+        }
+
+        [Test]
+        public void GeneratedModelInitializesMeshSplitCollections()
+        {
+            var model = new Model(Model.Location.Generated("test"));
+
+            Assert.That(model.m_SplitMeshPaths, Is.Not.Null);
+            Assert.That(model.m_NotSplittableMeshPaths, Is.Not.Null);
         }
     }
 }

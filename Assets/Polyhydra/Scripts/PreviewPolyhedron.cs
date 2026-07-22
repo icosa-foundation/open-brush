@@ -206,11 +206,16 @@ public class PreviewPolyhedron : MonoBehaviour
 
     public Color GetFaceColorForStrokes(int faceIndex)
     {
-        return m_PolyMesh.CalcFaceColor(
-            m_PolyRecipe.Colors,
-            m_PolyRecipe.ColorMethod,
-            faceIndex
-        );
+        return GetFaceColorForStrokes(m_PolyMesh, m_PolyRecipe, faceIndex);
+    }
+
+    public static Color GetFaceColorForStrokes(
+        PolyMesh polyMesh, PolyRecipe polyRecipe, int faceIndex)
+    {
+        return polyMesh.CalcFaceColor(
+            polyRecipe.Colors,
+            polyRecipe.ColorMethod,
+            faceIndex);
     }
 
     // This is a helper coroutine
@@ -384,4 +389,3 @@ public class PreviewPolyhedron : MonoBehaviour
         .Select(w => w as EditableModelWidget)
         .ToList();
 }
-

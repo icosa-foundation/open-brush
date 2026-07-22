@@ -176,58 +176,57 @@ namespace TiltBrush
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
             if (m_ValidWidgetFoundThisFrame &&
+                LastIntersectedEditableModelWidget != null &&
                 !m_WidgetsModifiedThisClick.Contains(LastIntersectedEditableModelWidget) && // Don't modify widgets more than once per interaction
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
             {
                 EditableModelWidget ewidget = LastIntersectedEditableModelWidget;
                 m_WidgetsModifiedThisClick.Add(ewidget);
-                if (ewidget != null)
+                switch (m_CurrentModifyMode)
                 {
-                    PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                    if (polyhydraPanel != null)
-                    {
-                        switch (m_CurrentModifyMode)
+                    case ModifyModes.ApplySettings:
+                        var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
+                        EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe.Clone());
+                        break;
+
+                    case ModifyModes.GrabSettings:
+                        var polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
+                        if (polyhydraPanel != null)
                         {
-                            case ModifyModes.ApplySettings:
-                                var newPoly = PreviewPolyhedron.m_Instance.m_PolyMesh;
-                                EditableModelManager.UpdateWidgetFromPolyMesh(ewidget, newPoly, PreviewPolyhedron.m_Instance.m_PolyRecipe.Clone());
-                                break;
-
-                            case ModifyModes.GrabSettings:
-                                polyhydraPanel.LoadFromWidget(ewidget);
-                                break;
-
-                            case ModifyModes.ApplyColor:
-
-                                Color color = PointerManager.m_Instance.CalculateJitteredColor(
-                                    PointerManager.m_Instance.PointerColor
-                                );
-                                Color[] colors = Enumerable.Repeat(color, PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors.Length).ToArray();
-
-                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                                    new RecolorPolyCommand(ewidget, colors)
-                                );
-                                break;
-
-                            case ModifyModes.ApplyBrushStrokesToFaces:
-                                CreateBrushStrokesForPoly(
-                                    ewidget.m_PolyMesh,
-                                    Coords.AsCanvas[ewidget.transform]
-                                );
-                                break;
-
-                            case ModifyModes.ApplyBrushStrokesToEdges:
-                                CreateBrushStrokesForPolyEdges(
-                                    ewidget.m_PolyMesh,
-                                    Coords.AsCanvas[ewidget.transform]
-                                );
-                                break;
+                            polyhydraPanel.LoadFromWidget(ewidget);
                         }
-                        AudioManager.m_Instance.PlayDuplicateSound(
-                            InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                        break;
+
+                    case ModifyModes.ApplyColor:
+                        Color color = PointerManager.m_Instance.CalculateJitteredColor(
+                            PointerManager.m_Instance.PointerColor
                         );
-                    }
+                        Color[] colors = Enumerable.Repeat(color, PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors.Length).ToArray();
+
+                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                            new RecolorPolyCommand(ewidget, colors)
+                        );
+                        break;
+
+                    case ModifyModes.ApplyBrushStrokesToFaces:
+                        CreateBrushStrokesForPoly(
+                            ewidget.m_PolyMesh,
+                            Coords.AsCanvas[ewidget.transform],
+                            ewidget.m_PolyRecipe
+                        );
+                        break;
+
+                    case ModifyModes.ApplyBrushStrokesToEdges:
+                        CreateBrushStrokesForPolyEdges(
+                            ewidget.m_PolyMesh,
+                            Coords.AsCanvas[ewidget.transform],
+                            ewidget.m_PolyRecipe
+                        );
+                        break;
                 }
+                AudioManager.m_Instance.PlayDuplicateSound(
+                    InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush)
+                );
             }
 
             // Clear the list of widgets modified this time
@@ -318,10 +317,12 @@ namespace TiltBrush
                     EditableModelManager.m_Instance.GeneratePolyMesh(poly, PreviewPolyhedron.m_Instance.m_PolyRecipe, tr);
                     break;
                 case CreateModes.BrushStrokesFromFaces:
-                    CreateBrushStrokesForPoly(poly, tr);
+                    CreateBrushStrokesForPoly(
+                        poly, tr, PreviewPolyhedron.m_Instance.m_PolyRecipe);
                     break;
                 case CreateModes.BrushStrokesFromEdges:
-                    CreateBrushStrokesForPolyEdges(poly, tr);
+                    CreateBrushStrokesForPolyEdges(
+                        poly, tr, PreviewPolyhedron.m_Instance.m_PolyRecipe);
                     break;
                 case CreateModes.Guide:
                     EditableModelManager.AddCustomGuide(PreviewPolyhedron.m_Instance.m_PolyMesh, tr);
@@ -334,7 +335,8 @@ namespace TiltBrush
         }
 
         // TODO Unify this with similar code elsewhere (API?)
-        private static void CreateBrushStrokesForPoly(PolyMesh poly, TrTransform tr)
+        private static void CreateBrushStrokesForPoly(
+            PolyMesh poly, TrTransform tr, PolyRecipe polyRecipe)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
@@ -402,7 +404,8 @@ namespace TiltBrush
                     brushSize = PointerManager.m_Instance.GenerateJitteredSize(desc, brushSize);
                 }
 
-                Color strokeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex);
+                Color strokeColor = PreviewPolyhedron.GetFaceColorForStrokes(
+                    poly, polyRecipe, faceIndex);
                 if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
                 {
                     float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
@@ -432,7 +435,8 @@ namespace TiltBrush
             }
         }
 
-        private static void CreateBrushStrokesForPolyEdges(PolyMesh poly, TrTransform tr)
+        private static void CreateBrushStrokesForPolyEdges(
+            PolyMesh poly, TrTransform tr, PolyRecipe polyRecipe)
         {
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             float minPressure = PointerManager.m_Instance.MainPointer.CurrentBrush.PressureSizeMin(false);
@@ -458,7 +462,8 @@ namespace TiltBrush
                 // IndexOf is slow. However we need the index for ByIndex ColorMethod.
                 // Maybe iterate by faces and keep a list of edges we've already drawn?
                 int faceIndex = poly.Faces.IndexOf(edge.Face);
-                Color edgeColor = PreviewPolyhedron.m_Instance.GetFaceColorForStrokes(faceIndex);
+                Color edgeColor = PreviewPolyhedron.GetFaceColorForStrokes(
+                    poly, polyRecipe, faceIndex);
 
                 if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
                 {
@@ -563,10 +568,13 @@ namespace TiltBrush
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             // Only intersect with EditableModelWidget instances
-            var editableModelWidget = widget as EditableModelWidget;
+            if (widget is not EditableModelWidget editableModelWidget)
+            {
+                return false;
+            }
             LastIntersectedEditableModelWidget = editableModelWidget;
-            m_ValidWidgetFoundThisFrame = widget != null;
-            return m_ValidWidgetFoundThisFrame;
+            m_ValidWidgetFoundThisFrame = true;
+            return true;
         }
 
         public override float GetSize()
