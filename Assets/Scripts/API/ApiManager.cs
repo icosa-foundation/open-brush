@@ -126,9 +126,10 @@ namespace TiltBrush
         private string DeviceLoginCallback(HttpListenerRequest request)
         {
             // TODO Use AddRawHttpHandler and return appropriate status codes
-            var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
-            host = host.Replace("127.0.0.1", "localhost");
-            if (host != $"localhost:{HttpServer.HTTP_PORT}") return "Please login from the local browser";
+            if (!HttpServer.IsTrustedLocalBrowserRequest(request))
+            {
+                return "Please login from the local browser";
+            }
             string formdata = null;
             if (request.HasEntityBody)
             {

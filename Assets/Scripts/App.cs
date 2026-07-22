@@ -418,6 +418,40 @@ namespace TiltBrush
         public bool RamLoggingActive = false;
         private InitNoHeadsetMode m_NoHeadsetInitScript;
 
+        private enum BrowserMode
+        {
+            SystemBrowser,
+            SteamOverlay,
+        }
+
+        private static BrowserMode CurrentBrowserMode
+        {
+            get
+            {
+                if (Config != null && Config.ForceSteamOverlayBrowser)
+                {
+                    return BrowserMode.SteamOverlay;
+                }
+#if UNITY_EDITOR
+                if (Config != null)
+                {
+                    switch (Config.m_BrowserModeOverrideInEditor)
+                    {
+                        case Config.BrowserModeOverride.SystemBrowser:
+                            return BrowserMode.SystemBrowser;
+                        case Config.BrowserModeOverride.SteamOverlay:
+                            return BrowserMode.SteamOverlay;
+                    }
+                }
+#endif
+                return Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam
+                    ? BrowserMode.SteamOverlay
+                    : BrowserMode.SystemBrowser;
+            }
+        }
+
+        public static bool DeviceCanOpenSystemBrowser => CurrentBrowserMode == BrowserMode.SystemBrowser;
+
         public void ToggleAudioReactiveModeRequest()
         {
             m_RequestingAudioReactiveMode ^= true;
@@ -2375,13 +2409,23 @@ namespace TiltBrush
         // By executing the URL directly windows will open it without making the browser a child
         // process of Tilt Brush.  If this fails or throws an exception we fall back to Unity's
         // OpenURL().
-        public static void OpenURL(string url)
+        public static bool OpenURL(string url)
         {
             var isPolyUrl = (url.Contains("poly.google.com/") || url.Contains("vr.google.com"));
             if (isPolyUrl && GoogleIdentity.LoggedIn)
             {
                 var email = GoogleIdentity.Profile.email;
                 url = $"https://accounts.google.com/AccountChooser?Email={email}&continue={url}";
+            }
+
+            if (CurrentBrowserMode == BrowserMode.SteamOverlay)
+            {
+                if (!SteamManager.TryOpenOverlayUrl(url))
+                {
+                    Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
+                    return false;
+                }
+                return true;
             }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);
@@ -2405,6 +2449,7 @@ namespace TiltBrush
                     break;
             }
 #endif
+            return true;
         }
 
         /// This copies the support files from inside the Streaming Assets folder to the support folder.

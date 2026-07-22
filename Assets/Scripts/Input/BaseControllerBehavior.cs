@@ -46,6 +46,7 @@ namespace TiltBrush
         private Color m_Tint;
         private float m_BaseIntensity;
         private float m_GlowIntensity;
+        private bool m_TransformVisualsActive;
 
         private GripState m_CurrentGripState;
         private ControllerGeometry m_ControllerGeometry;
@@ -54,8 +55,6 @@ namespace TiltBrush
         // Public Properties
         // -------------------------------------------------------------------------------------------- //
         public InputManager.ControllerName ControllerName => m_ControllerName;
-
-        private GameObject TransformVisuals => ControllerGeometry.TransformVisualsRenderer.gameObject;
 
         public ControllerGeometry ControllerGeometry
         {
@@ -169,29 +168,10 @@ namespace TiltBrush
             // (b) modify the highlight queue to a dynamic list that retains state across frames in which
             //     case this logic can be moved into EnableTransformVisuals().
             //
-            if (TransformVisuals.activeSelf
+            if (m_TransformVisualsActive
                 && SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget())
             {
-                App.Instance.SelectionEffect.RegisterMesh(TransformVisuals.GetComponent<MeshFilter>());
-
-                switch (ControllerGeometry.Style)
-                {
-                    case ControllerStyle.OculusTouch:
-                    case ControllerStyle.Knuckles:
-                    case ControllerStyle.Phoenix:
-                    case ControllerStyle.Neo3:
-                    case ControllerStyle.Zapbox:
-                        App.Instance.SelectionEffect.RegisterMesh(
-                            ControllerGeometry.JoystickPad.GetComponent<MeshFilter>());
-                        break;
-                    case ControllerStyle.Vive:
-                        App.Instance.SelectionEffect.RegisterMesh(
-                            ControllerGeometry.PadMesh.GetComponent<MeshFilter>());
-                        break;
-                    case ControllerStyle.Wmr:
-                        // TODO What should be here?  Joystick or pad?
-                        break;
-                }
+                ControllerGeometry.RegisterTransformVisualMeshes(App.Instance.SelectionEffect);
             }
 
             OnUpdate();
@@ -328,13 +308,8 @@ namespace TiltBrush
             m_GlowIntensity = fGlowIntensity;
 
             Color rTintedColor = GetTintColor();
-            ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", rTintedColor);
-            ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", rTintedColor);
-            for (int i = 0; i < ControllerGeometry.OtherMeshes.Length; ++i)
-            {
-                ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", rTintedColor);
-            }
-            ControllerGeometry.TransformVisualsRenderer.material.SetColor("_Color", rTintColor);
+            ControllerGeometry.SetControllerEmission(rTintedColor);
+            ControllerGeometry.SetTransformVisualsTint(rTintColor);
 
             if (ControllerGeometry.GuideLine)
             {
@@ -349,64 +324,15 @@ namespace TiltBrush
 
         public void EnableTransformVisuals(bool bEnable, float fIntensity)
         {
-            TransformVisuals.SetActive(bEnable && App.Instance.ShowControllers);
-            ControllerGeometry.TransformVisualsRenderer.material.SetFloat("_Intensity", fIntensity);
+            m_TransformVisualsActive = bEnable && App.Instance.ShowControllers;
+            ControllerGeometry.SetTransformVisualsActive(m_TransformVisualsActive, fIntensity);
         }
 
         public void SetGripState(GripState state)
         {
             if (m_CurrentGripState != state)
             {
-                ControllerStyle style = ControllerGeometry.Style;
-                if (style != ControllerStyle.InitializingUnityXR &&
-                    style != ControllerStyle.None &&
-                    style != ControllerStyle.Unset)
-                {
-
-                    bool manuallyAnimateGrips = (style == ControllerStyle.Vive ||
-                        style == ControllerStyle.Wmr);
-
-                    switch (state)
-                    {
-                        case GripState.Standard:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition = Vector3.zero;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = Vector3.zero;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = ControllerGeometry.BaseGrippedMaterial;
-                            ControllerGeometry.RightGripMesh.material = ControllerGeometry.BaseGrippedMaterial;
-                            break;
-                        case GripState.ReadyToGrip:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition =
-                                    m_ControllerGeometry.LeftGripPopOutVector;
-                                Vector3 vRightPopOut = m_ControllerGeometry.LeftGripPopOutVector;
-                                vRightPopOut.x *= -1.0f;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = vRightPopOut;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = m_ControllerGeometry.GripReadyMaterial;
-                            ControllerGeometry.RightGripMesh.material = m_ControllerGeometry.GripReadyMaterial;
-                            ControllerGeometry.LeftGripMesh.material.SetColor("_Color", m_Tint);
-                            ControllerGeometry.RightGripMesh.material.SetColor("_Color", m_Tint);
-                            break;
-                        case GripState.Gripped:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition =
-                                    m_ControllerGeometry.LeftGripPopInVector;
-                                Vector3 vRightPopIn = m_ControllerGeometry.LeftGripPopInVector;
-                                vRightPopIn.x *= -1.0f;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = vRightPopIn;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = m_ControllerGeometry.GrippedMaterial;
-                            ControllerGeometry.RightGripMesh.material = m_ControllerGeometry.GrippedMaterial;
-                            ControllerGeometry.LeftGripMesh.material.SetColor("_Color", m_Tint);
-                            ControllerGeometry.RightGripMesh.material.SetColor("_Color", m_Tint);
-                            break;
-                    }
-                }
+                ControllerGeometry.SetGripVisualState(state, m_Tint);
             }
             m_CurrentGripState = state;
         }
