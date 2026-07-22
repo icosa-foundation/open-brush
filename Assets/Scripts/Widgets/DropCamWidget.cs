@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using LIV.SDK.Unity;
 using TMPro;
 using UnityEngine;
 
@@ -73,15 +72,7 @@ namespace TiltBrush
 
         private Vector3 m_SlowFollowMoveVel;
         private Vector3 m_SlowFollowRotVel;
-        private Camera m_DropCamera;
-        private bool m_DriveLivCamera;
         public bool isVisible => m_CurrentState == State.Visible;
-
-        public bool DriveLivCamera
-        {
-            get => m_DriveLivCamera;
-            set => m_DriveLivCamera = value;
-        }
 
         override protected void Awake()
         {
@@ -101,8 +92,8 @@ namespace TiltBrush
             ResetCam();
 
             // Register the drop camera with scene settings
-            m_DropCamera = GetComponentInChildren<Camera>();
-            SceneSettings.m_Instance.RegisterCamera(m_DropCamera);
+            Camera camera = GetComponentInChildren<Camera>();
+            SceneSettings.m_Instance.RegisterCamera(camera);
 
             InitSnapGhost(m_GhostMesh, transform);
         }
@@ -352,27 +343,6 @@ namespace TiltBrush
                         break;
                 }
             }
-
-            UpdateLivCameraPose();
-        }
-
-        private void UpdateLivCameraPose()
-        {
-            if (!m_DriveLivCamera)
-            {
-                return;
-            }
-
-            LivCaptureService service = LivCaptureService.Service;
-            if (service == null || !service.isActive || service.render == null)
-            {
-                return;
-            }
-
-            service.render.SetPose(
-                m_DropCamera.transform.position,
-                m_DropCamera.transform.rotation,
-                m_DropCamera.fieldOfView);
         }
 
         private void FollowCameraPath()

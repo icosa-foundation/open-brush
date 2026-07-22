@@ -307,19 +307,6 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.GetDropCampWidget().ShowInstantly(false);
         }
 
-        [ApiEndpoint("spectator.liv", "Sets whether the spectator camera controls the LIV camera", "true")]
-        public static void SetSpectatorLivCamera(bool enabled)
-        {
-            SketchControlsScript.m_Instance.GetDropCampWidget().DriveLivCamera = enabled;
-        }
-
-        [ApiEndpoint("spectator.liv.toggle", "Toggles whether the spectator camera controls the LIV camera")]
-        public static void ToggleSpectatorLivCamera()
-        {
-            DropCamWidget spectator = SketchControlsScript.m_Instance.GetDropCampWidget();
-            spectator.DriveLivCamera = !spectator.DriveLivCamera;
-        }
-
         [ApiEndpoint("autosimplify.toggle", "Toggles 'auto-simplify' mode on or off")]
         public static void ToggleAutosimplification()
         {
@@ -688,3 +675,4 @@ namespace TiltBrush
         }
     }
 }
+
