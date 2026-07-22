@@ -15,14 +15,15 @@ The release target is deliberately narrow:
 - One designated host and one designated joiner.
 - Both users are physically present in the same mapped space.
 - Both users have network access and valid Meta accounts entitled to run the application.
-- Session creation and joining remain API/command driven.
-- A user-supplied session code identifies the pair.
+- Session creation and joining are exposed through the existing in-headset VR multiplayer panel.
+- The API commands remain available as a development and diagnostic path.
+- The existing multiplayer room-name field supplies the user-entered session code.
 - Spatial alignment is temporary and lasts for the current application session.
 - Existing Open Brush multiplayer transports sketch changes after alignment.
 
 The following are not part of the MVP:
 
-- A dedicated colocation settings panel.
+- A separate colocation settings panel; the MVP extends the existing multiplayer panel instead.
 - QR codes or nearby-headset discovery.
 - More than two supported users.
 - Persistent anchors reused across application launches.
@@ -56,7 +57,50 @@ Known release blockers in that implementation include:
 - The fixed `started` guard makes a second command appear to do nothing.
 - Meta account, application entitlement, scene permission, cloud-anchor, and Photon failures are not differentiated for users.
 
+## Existing VR multiplayer UI reuse
+
+The MVP should extend `Assets/Prefabs/Panels/MultiplayerPanel.prefab` and
+`Assets/Scripts/GUI/MultiplayerPanel.cs`, not introduce a second VR panel or a separate input
+system. The existing multiplayer panel already provides most of the required interaction and
+presentation infrastructure:
+
+- `RoomName`, `MultiplayerPanelButton`, and `KeyboardPopUpWindow` provide controller-driven room
+  name entry, initial-value prefill, accepted-value dispatch, and persistence through
+  `PlayerPrefsDataStore`. Colocation uses this value as the session code and applies colocation
+  normalization and validation before constructing the internal Photon room name.
+- `m_State` and the existing `StateUpdated` subscription provide the status area. While a
+  colocation operation is active, this area displays the more specific colocation state rather
+  than only the underlying Photon connection state.
+- `m_AlertsErrors` and `Alerts()` provide the error/warning area. Structured colocation failures
+  feed into this list so permission, Meta Platform, anchor, timeout, and Photon failures appear in
+  the same place as existing multiplayer errors.
+- The existing nickname entry remains the multiplayer identity entry. The max-player control is
+  not used for colocation because a colocation room always has a maximum of two users.
+- Existing room ownership UI can represent the host role after the explicit protocol has recorded
+  it. Ownership alone must not be used as the protocol's source of truth.
+- Existing panel open/close behavior, localization, hover states, buttons, and popup interaction
+  remain unchanged unless a colocation state requires a control to be disabled.
+
+Add explicit `Host Colocation` and `Join Colocation` actions to the existing panel. Both actions
+read the same room-name/session-code field. Do not overload the existing normal multiplayer Join
+button with role-dependent behavior that is invisible to the user. While an operation is running,
+disable conflicting multiplayer and colocation actions; leave/cancel remains available when it can
+safely stop the current state.
+
+The panel already connects to the multiplayer service when opened. Colocation actions should use
+that lifecycle, wait for the required initialized/lobby state, and avoid starting a second
+connection attempt. The current `CheckIfRoomExist()` warning must become operation-aware: an
+existing room is an error for Host but expected for Join, while a missing room is an error for Join.
+This UI check is advisory only; the Photon create/join operation must enforce the same rule
+atomically because lobby room lists can be stale or may omit private rooms.
+
 ## Phase 0: instrument and reproduce
+
+Status: the initial `[Colocation]` instrumentation was added in commit `0ed8df58a` across the API
+entry points, bootstrap, Meta user lookup, spatial-anchor operations, multiplayer player discovery,
+anchor sharing, and Photon RPC send/receive path. Phase 0 is not complete until a two-headset run
+has produced and correlated both device traces. Remaining instrumentation work should fill observed
+gaps rather than adding speculative per-frame logging.
 
 ### 0.1 Add a single diagnostic identity
 
@@ -126,7 +170,10 @@ Add a state owned by the colocation controller or a dedicated session coordinato
 - `Leaving`
 - `Failed`
 
-Every transition records a prefixed log and updates user-visible status. Store a structured failure reason rather than only a boolean. Reject commands that conflict with the current state and explain the current operation.
+Every transition records a prefixed log and updates `MultiplayerPanel.m_State`. Store a structured
+failure reason rather than only a boolean. Expose that reason to the panel's existing alert list.
+Reject commands that conflict with the current state, keep the current state visible, and explain
+why the requested action is unavailable.
 
 ### 1.2 Make operations awaitable and bounded
 
@@ -167,6 +214,12 @@ Requirements:
 - Set the maximum player count to two.
 - Use a sufficiently hard-to-guess code for release instructions; short codes are suitable only for controlled testing.
 - Display the normalized code back to the user.
+- Read and edit the code through the existing multiplayer room-name display, edit button, and
+  keyboard popup.
+- Persist the last entered code through the existing multiplayer `PlayerPrefsDataStore`; do not
+  add a second colocation-specific keyboard or raw `PlayerPrefs` path.
+- Keep the normal multiplayer room name unchanged until the user confirms the keyboard popup, then
+  show the normalized value so the exact shared code is visible on both headsets.
 
 ### 2.2 Enforce roles
 
@@ -212,7 +265,9 @@ Determine whether sketch synchronization should occur before or after spatial lo
 
 ### 4.1 In-headset feedback
 
-Use existing Open Brush info cards and controller output. Minimum messages:
+Use the existing multiplayer panel state and alert fields as the primary feedback surface. Info
+cards or controller output may mirror terminal failures when the panel is closed, but they are not
+the primary state UI. Minimum status messages:
 
 - `Creating colocation session <code>`
 - `Waiting for second headset`
@@ -222,9 +277,25 @@ Use existing Open Brush info cards and controller output. Minimum messages:
 - `Colocation active`
 - A specific, actionable error message for every terminal failure state
 
-Permission denial should explain how to grant the permission. A timeout should identify which operation timed out.
+Permission denial should explain how to grant the permission. A timeout should identify which
+operation timed out. When the panel is reopened, it must reconstruct the current status and failure
+from the coordinator rather than relying only on events emitted while the panel was visible.
 
-### 4.2 Leave and retry
+### 4.2 Existing multiplayer panel behavior
+
+- Show the stored/generated session code before Host or Join is pressed.
+- Disable the room-name edit action after session startup begins and re-enable it after leave or a
+  recoverable failure.
+- Show Host and Join only in states where starting that role is valid.
+- Replace the panel's generic Photon state text with the colocation state while hosting, joining,
+  sharing, or localizing; retain the underlying Photon state in diagnostic logs.
+- Route structured terminal failures through `Alerts()` and keep them visible until retry, leave,
+  or a new successful start clears them.
+- Fix room-availability messaging so it reflects the selected Host or Join operation rather than
+  always treating an existing room as an alert.
+- Keep normal multiplayer behavior intact when no colocation operation is active.
+
+### 4.3 Leave and retry
 
 Add `colocation.leave`. It must:
 
@@ -237,7 +308,7 @@ Add `colocation.leave`. It must:
 
 Define and test host departure. The MVP may end the colocation session for both users instead of supporting host migration.
 
-### 4.3 Make voice non-blocking
+### 4.4 Make voice non-blocking
 
 Colocated users do not require network voice. Either skip joining the voice room for colocation or ensure voice connection failure does not fail the data/anchor session. Default colocation rooms to silent.
 
@@ -254,6 +325,10 @@ Add tests where practical for:
 - Duplicate peer and UUID messages.
 - Host and joiner role enforcement.
 - Failure classification and user-facing messages.
+- Projection of coordinator state and structured failures into the existing multiplayer panel.
+- Host/join action availability and operation-aware room-existence messaging.
+- Session-code editing through the existing room-name value without changing normal multiplayer
+  behavior.
 
 Abstract Meta anchor operations and multiplayer signalling behind small interfaces so protocol tests do not require a headset.
 
@@ -306,11 +381,13 @@ The MVP is releasable only when:
 
 1. Complete Phase 0 instrumentation and reproduce on the same two headsets that failed.
 2. Fix the first confirmed platform/configuration failure before restructuring unrelated code.
-3. Add state, error propagation, timeouts, and cancellation.
-4. Add session codes and explicit roles.
-5. Implement the acknowledged anchor protocol.
-6. Add feedback, leave, cleanup, and retry.
-7. Decouple voice.
-8. Add automated protocol tests and run the physical-device matrix.
-9. Complete release configuration, documentation, privacy review, and release gates.
-
+3. Add state, structured error propagation, timeouts, and cancellation in a coordinator that the
+   existing multiplayer panel can query at any time.
+4. Wire coordinator state and failures into the existing panel's state and alert fields.
+5. Add Host Colocation and Join Colocation actions that reuse the existing room-name keyboard flow.
+6. Add session-code isolation and explicit, atomic host/join role enforcement.
+7. Implement the acknowledged anchor protocol.
+8. Add leave, cleanup, and retry through the existing panel and API command path.
+9. Decouple voice.
+10. Add automated protocol/UI-state tests and run the physical-device matrix.
+11. Complete release configuration, documentation, privacy review, and release gates.
