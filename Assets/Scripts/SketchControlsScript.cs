@@ -5239,27 +5239,6 @@ namespace TiltBrush
             }
         }
 
-        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
-        {
-            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
-        }
-
-        public void EnsureViewOnlyNavigationTool()
-        {
-            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
-            {
-                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            }
-        }
-
-        public void DisableViewOnlyNavigationTool()
-        {
-            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
-            {
-                m_SketchSurfacePanel.EnableDefaultTool();
-            }
-        }
-
         private void LoadNamed(string path, bool quickload, bool additive)
         {
             var fileInfo = new DiskSceneFileInfo(path);
