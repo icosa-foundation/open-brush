@@ -273,9 +273,59 @@ namespace TiltBrush
                 WebClient wc = new WebClient();
                 wc.Headers.Add("user-agent", ApiManager.WEBREQUEST_USER_AGENT);
                 wc.DownloadFile(url, fullDestinationPath);
+                _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath);
                 return uniqueFilename;
             }
             return null;
+        }
+
+        internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
+        {
+            _PublishApiPathToSharedStorage(
+                localPath,
+                "generated file",
+                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
+        }
+
+        internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
+        {
+            _PublishApiPathToSharedStorage(
+                localPath,
+                "media file",
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync);
+        }
+
+        private static void _PublishApiPathToSharedStorage(
+            string localPath,
+            string label,
+            Action<string, string, Action<bool, string>> publish)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
+
+            void Publish()
+            {
+                publish(localPath, label, (success, error) =>
+                {
+                    if (!success)
+                    {
+                        string message = string.IsNullOrEmpty(error)
+                            ? $"Failed to copy API {label} to shared storage."
+                            : $"Failed to copy API {label} to shared storage: {error}";
+                        ControllerConsoleScript.m_Instance?.AddNewLine(message);
+                    }
+                });
+            }
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                Publish();
+                return;
+            }
+
+            AndroidStorageManager.RequireSharedFolderFor(label, Publish);
         }
 
         public static bool _GetSpectatorLayerState(string friendlyName)

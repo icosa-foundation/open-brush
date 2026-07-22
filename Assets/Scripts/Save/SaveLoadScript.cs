@@ -441,6 +441,18 @@ namespace TiltBrush
         private IEnumerator<Timeslice> SaveLow(
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            string sharedRelativePath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedSketchRelativePath(info.FullPath, out sharedRelativePath) &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    selectedOnly ? "saving saved strokes" : "saving sketches",
+                    () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly))))
+            {
+                return new List<Timeslice>().GetEnumerator();
+            }
+#endif
+
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {
@@ -517,6 +529,28 @@ namespace TiltBrush
                 yield return null;
             }
 
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (error == null)
+            {
+                bool publishDone = false;
+                bool publishSucceeded = false;
+                string publishError = null;
+                PublishSavedSceneToSharedStorage(fileInfo, (success, asyncError) =>
+                {
+                    publishSucceeded = success;
+                    publishError = asyncError;
+                    publishDone = true;
+                });
+                while (!publishDone)
+                {
+                    yield return null;
+                }
+                if (!publishSucceeded)
+                {
+                    error = publishError;
+                }
+            }
+#endif
             m_LastWriteSnapshotError = error;
             m_LastThumbnailBytes = snapshot.Thumbnail;
             SketchMemoryScript.m_Instance.SetLastOperationStackCount();
@@ -540,6 +574,31 @@ namespace TiltBrush
             App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
             m_SuppressNotify = false;
         }
+
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private void PublishSavedSceneToSharedStorage(
+            SceneFileInfo fileInfo, Action<bool, string> onComplete)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode ||
+                !OpenBrushStorage.TryGetSharedSketchRelativePath(
+                    fileInfo.FullPath, out string relativePath))
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+
+            OpenBrushStorage.PublishSketchToSharedStorageAsync(
+                fileInfo.FullPath,
+                "sketch",
+                (success, error) =>
+                {
+                    onComplete?.Invoke(
+                        success,
+                        success ? null : "Failed to copy sketch to shared storage. The local cache copy was kept at " +
+                            fileInfo.FullPath + (string.IsNullOrEmpty(error) ? "" : "\n" + error));
+                });
+        }
+#endif
 
         /// If success, error should be null
         private void NotifySaveFinished(SceneFileInfo info, string error, bool newFile)

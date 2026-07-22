@@ -78,7 +78,10 @@ static class BuildTiltBrush
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
+        public bool GooglePlay;
     }
+
+    public static bool IsGooglePlayBuildActive { get; private set; }
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -828,6 +831,10 @@ static class BuildTiltBrush
                 {
                     tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                 }
+                else if (args[i] == "-btb-google-play")
+                {
+                    tiltOptions.GooglePlay = true;
+                }
                 else if (args[i] == "-androidExportType")
                 {
                     string androidExportType = args[++i];
@@ -933,6 +940,37 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetGooglePlayAndroidSettings : IDisposable
+    {
+        private readonly bool m_IsActive;
+        private readonly bool m_PreviousForceSDCardPermission;
+        private readonly bool m_PreviousGooglePlayBuildActive;
+
+        public TempSetGooglePlayAndroidSettings(TiltBuildOptions tiltOptions)
+        {
+            m_IsActive = tiltOptions.Target == BuildTarget.Android && tiltOptions.GooglePlay;
+            m_PreviousGooglePlayBuildActive = IsGooglePlayBuildActive;
+            m_PreviousForceSDCardPermission = PlayerSettings.Android.forceSDCardPermission;
+            IsGooglePlayBuildActive = m_IsActive;
+
+            if (!m_IsActive)
+            {
+                return;
+            }
+
+            PlayerSettings.Android.forceSDCardPermission = false;
+        }
+
+        public void Dispose()
+        {
+            if (m_IsActive)
+            {
+                PlayerSettings.Android.forceSDCardPermission = m_PreviousForceSDCardPermission;
+            }
+
+            IsGooglePlayBuildActive = m_PreviousGooglePlayBuildActive;
+        }
+    }
     class TempSetPlayerSettings : IDisposable
     {
         private BuildTarget m_Target;
@@ -1566,7 +1604,9 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_AUDIO_CAPTURE" : null,
-            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
+            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
+            target == BuildTarget.Android && tiltOptions.GooglePlay ? "OPEN_BRUSH_GOOGLE_PLAY" : null))
+        using (var unused16 = new TempSetGooglePlayAndroidSettings(tiltOptions))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))

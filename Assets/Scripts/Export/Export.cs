@@ -127,6 +127,14 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                !AndroidStorageManager.RequireSharedFolderFor("export", ExportScene))
+            {
+                return;
+            }
+#endif
+
             var current = SaveLoadScript.m_Instance.SceneFile;
             string validHumanName = FileUtils.GetValidFilename(current.HumanName);
             if (string.IsNullOrEmpty(validHumanName))
@@ -307,13 +315,52 @@ URL=" + kExportDocumentationUrl;
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, basename +
                 $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
-            ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);
             if (!File.Exists(readmeFilename) && !Directory.Exists(readmeFilename))
             {
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
+
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                OpenBrushStorage.PublishExportToSharedStorageAsync(parent, readmeFilename, (success, error) =>
+                {
+                    if (success)
+                    {
+                        try
+                        {
+                            Directory.Delete(parent, true);
+                        }
+                        catch (IOException e)
+                        {
+                            Debug.LogWarning($"Failed to delete export staging folder '{parent}': {e.Message}");
+                        }
+                        catch (UnauthorizedAccessException e)
+                        {
+                            Debug.LogWarning($"Failed to delete export staging folder '{parent}': {e.Message}");
+                        }
+                        ControllerConsoleScript.m_Instance.AddNewLine(
+                            "Located in " + OpenBrushStorage.SharedExportDisplayPath);
+                    }
+                    else
+                    {
+                        OutputWindowScript.Error(
+                            InputManager.ControllerName.Wand,
+                            "Failed to copy export to shared storage",
+                            "The local staging copy was kept at " + parent);
+                        ControllerConsoleScript.m_Instance.AddNewLine("Export staging copy kept at " + parent);
+                    }
+                });
+            }
+            else
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
+            }
+#else
+            ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
+#endif
         }
 
         public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)

@@ -4076,6 +4076,15 @@ namespace TiltBrush
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(directoryName, out _) &&
+                !AndroidStorageManager.RequireSharedFolderFor("saving models", SaveModel))
+            {
+                return;
+            }
+#endif
+
             string usdname = Path.Combine(directoryName, basename + ".usd");
             // TODO: export selection only, though this is still only experimental. The blocking
             // issue to implement this is that the export collector needs to expose this as an option.
@@ -4084,6 +4093,26 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
+                    directoryName,
+                    "model",
+                    (success, publishError) =>
+                    {
+                        if (!success)
+                        {
+                            OutputWindowScript.Error("Failed to save model", publishError);
+                            return;
+                        }
+
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush, "Model created!");
+                    });
+                return;
+            }
+#endif
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif

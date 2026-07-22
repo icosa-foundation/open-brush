@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using MoonSharp.Interpreter;
 using ODS;
 using UnityAsyncAwaitUtil;
@@ -220,6 +221,7 @@ namespace TiltBrush
                     ScreenshotManager.Save(fs, tmp, bSaveAsPng: saveAsPng);
                 }
                 rig.gameObject.SetActive(initialState);
+                ApiMethods._PublishApiGeneratedFileToSharedStorage(path);
             }
         }
 
@@ -240,7 +242,14 @@ namespace TiltBrush
             odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
-            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndPublish(odsDriver, filename));
+        }
+
+        private static IEnumerator Render360SnapshotAndPublish(OdsDriver odsDriver, string filename)
+        {
+            yield return odsDriver.OdsCamera.Render(odsDriver.transform);
+            string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
+            ApiMethods._PublishApiGeneratedFileToSharedStorage(path);
         }
 
         private static bool _IsSubdirectory(string path, string basePath)
