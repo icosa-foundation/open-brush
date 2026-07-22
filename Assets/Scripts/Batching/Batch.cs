@@ -29,7 +29,7 @@ namespace TiltBrush
         private MeshFilter m_MeshFilter;
         private bool m_bVertexDataDirty;
         private bool m_bTopologyDirty;
-        private GeometryPool m_Geometry;
+        public GeometryPool m_Geometry; // This used to be private. However, the scultping toolkit needs access to this.
         private Material m_InstantiatedMaterial;
         private int m_LastMeshUpdate; // BatchManager timestamp of the most-recent write to the Mesh
 

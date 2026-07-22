@@ -87,6 +87,7 @@ namespace TiltBrush
             Share,
             Fly,
             ScriptedTool = 6000,
+            ToggleSculpt = 11100
         }
 
         /// WARNING: do not arbitrarily rename these enum values.
@@ -718,6 +719,7 @@ namespace TiltBrush
                 case SketchCommands.ToggleDefaultTool:
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
+                case SketchCommands.ToggleSculpt:
                     return Brush.GetCommandDown(rCommand);
 
                 // Misc
