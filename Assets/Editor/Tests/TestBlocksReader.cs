@@ -67,6 +67,7 @@ namespace TiltBrush
             Assert.That(bounds.center, Is.EqualTo(Vector3.zero));
             Assert.That(poly.Faces, Has.Count.EqualTo(1));
             Assert.That(recipe.GeneratorType, Is.EqualTo(GeneratorTypes.GeometryData));
+            CollectionAssert.AreEqual(new[] { 2, 1, 0 }, recipe.Faces[0]);
             Assert.That(recipe.FaceTags[0], Does.Contain("#F44336"));
             Assert.That(
                 (Color32)PreviewPolyhedron.GetFaceColorForStrokes(poly, recipe, 0),

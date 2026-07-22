@@ -118,6 +118,8 @@ namespace TiltBrush
                         continue;
                     }
 
+                    // Native Blocks stores faces clockwise; PolyMesh expects the opposite winding.
+                    indices.Reverse();
                     faces.Add(indices);
                     faceTags.Add(new HashSet<string>
                     {
