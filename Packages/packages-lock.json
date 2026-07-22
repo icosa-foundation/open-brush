@@ -24,11 +24,11 @@
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
     "com.meta.xr.sdk.core": {
-      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix.1",
+      "version": "https://github.com/icosa-mirror/com.meta.xr.sdk.core.git#68.0.2-openbrush-hotfix.2",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "6dc4f5904c9f8c24cfb0917ba9b3a285a6dfd1c2"
+      "hash": "76b391f8800a2adb40ef9d3854d870ae26c04a85"
     },
     "com.meta.xr.sdk.platform": {
       "version": "60.0.0",
