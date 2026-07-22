@@ -46,6 +46,7 @@ jobs:
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
       googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
+      googleplayhasproduction: ${{ steps.version.outputs.googleplayhasproduction }}
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
       flavors: ${{ steps.flavors.outputs.flavors }}
@@ -66,8 +67,10 @@ jobs:
       - name: Calculate version and stamp
         id: version
         env:
-          # Switch GOOGLE_PLAY_PRERELEASE_TRACK to "beta" once external testing is approved.
-          # If Google Play blocks automatic completion, set GOOGLE_PLAY_PRERELEASE_STATUS to "draft".
+          # Google Play uploads default to completed internal-track releases so testers receive them.
+          # Override either release type independently with repository variables.
+          GOOGLE_PLAY_RELEASE_TRACK: ${{ vars.GOOGLE_PLAY_RELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_RELEASE_STATUS: ${{ vars.GOOGLE_PLAY_RELEASE_STATUS || 'completed' }}
           GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
           GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
@@ -102,8 +105,8 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=production" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=completed" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_RELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_RELEASE_STATUS"
 
           else
             # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
@@ -111,9 +114,19 @@ jobs:
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "googleplaytrack=$GOOGLE_PLAY_PRERELEASE_TRACK" >> $GITHUB_OUTPUT
-            echo "googleplaystatus=$GOOGLE_PLAY_PRERELEASE_STATUS" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
+          # upload-google-play accepts a comma-separated track list. Remove
+          # whitespace before exporting it, then match the exact production token.
+          NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
+          echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
+          echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
+
+          case ",$NORMALIZED_GOOGLE_PLAY_TRACKS," in
+            *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
+            *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
+          esac
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
@@ -1195,9 +1208,116 @@ jobs:
           CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
 
+  google_play_review_state:
+    name: Determine Google Play review state
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    outputs:
+      openbrush_changes_not_sent_for_review: ${{ steps.review_state.outputs.openbrush_changes_not_sent_for_review }}
+      viewer_changes_not_sent_for_review: ${{ steps.review_state.outputs.viewer_changes_not_sent_for_review }}
+
+    steps:
+      # google-github-actions/auth writes its temporary credentials beneath the
+      # workspace, so checkout must run first even though this job reads no files.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Authenticate with Google
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Determine required review behavior
+        id: review_state
+        shell: bash
+        run: |
+          # Google Play does not expose the app-level review mode as readable
+          # state. Instead, edits.validate rejects an otherwise empty edit with
+          # one of two contradictory instructions depending on the package's
+          # review history. In particular, an app with a rejected release must
+          # set changesNotSentForReview=true, while an app in the normal state
+          # rejects that same parameter.
+          #
+          # Probe each package with a disposable, empty edit before uploading a
+          # several-hundred-megabyte bundle. A successful validation means the
+          # normal false value is required. Only Google's exact manual-review
+          # error selects true; every other response fails the job rather than
+          # guessing and potentially changing review behavior.
+          ACCESS_TOKEN="$(gcloud auth application-default print-access-token \
+            --scopes=https://www.googleapis.com/auth/androidpublisher)"
+          API_ROOT="https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
+          MANUAL_REVIEW_MESSAGE="Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true."
+
+          determine_review_state() {
+            local package_name="$1"
+            local output_name="$2"
+            local edit_response edit_id response_file http_status curl_status
+
+            edit_response="$(curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data '{}' \
+              "$API_ROOT/$package_name/edits")"
+            edit_id="$(jq --exit-status --raw-output '.id' <<< "$edit_response")"
+            response_file="$(mktemp)"
+
+            curl_status=0
+            http_status="$(curl --silent --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data '{}' \
+              "$API_ROOT/$package_name/edits/$edit_id:validate")" || curl_status=$?
+
+            # The probe edit contains no changes, but delete it explicitly so
+            # it cannot linger until Google's edit-expiry timeout.
+            curl --fail-with-body --silent --show-error \
+              --request DELETE \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              "$API_ROOT/$package_name/edits/$edit_id"
+
+            if [ "$curl_status" -ne 0 ]; then
+              cat "$response_file" >&2
+              rm -f "$response_file"
+              return "$curl_status"
+            fi
+
+            if [ "$http_status" = "200" ]; then
+              echo "$output_name=false" >> "$GITHUB_OUTPUT"
+            elif [ "$http_status" = "400" ] &&
+              jq --exit-status --arg expected "$MANUAL_REVIEW_MESSAGE" \
+                '.error.message | startswith($expected)' "$response_file" > /dev/null; then
+              echo "$output_name=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Unexpected Google Play validation response for $package_name (HTTP $http_status):" >&2
+              cat "$response_file" >&2
+              rm -f "$response_file"
+              return 1
+            fi
+
+            rm -f "$response_file"
+          }
+
+          determine_review_state \
+            "foundation.icosa.openbrush" \
+            "openbrush_changes_not_sent_for_review"
+          determine_review_state \
+            "foundation.icosa.openbrushviewer" \
+            "viewer_changes_not_sent_for_review"
+
   publish_google_play:
     name: Publish Google Play Android XR Release
-    needs: [configuration, build]
+    needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
@@ -1241,10 +1361,15 @@ jobs:
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          # Testing-track releases must reach testers without submitting reviewable changes.
+          # The probe above supplies the package-specific API spelling required
+          # to express that intent. Production-track releases retain the action
+          # default so they cannot silently remain waiting for manual review.
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
     name: Publish Google Play Viewer Release
-    needs: [configuration, build]
+    needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
@@ -1288,6 +1413,10 @@ jobs:
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
           debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          # See google_play_review_state. Viewer currently requires true because
+          # of its retained rejected beta release; the probe keeps this adaptive
+          # if Google later changes either package's hidden review state.
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
 
   publish_oculus_quest:
     name: Publish Oculus Quest 2+ Release
