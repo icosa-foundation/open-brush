@@ -26,6 +26,7 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
@@ -43,6 +44,30 @@ namespace TiltBrush
         // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
         private Dictionary<(GLTFMaterial, string), int> _atlasMaterialCache;
 
+        private const string kTimestampAttribute = "_TB_TIMESTAMP";
+
+        private readonly struct TimestampSource
+        {
+            public Batch Batch { get; }
+            public Stroke Stroke { get; }
+
+            private TimestampSource(Batch batch, Stroke stroke)
+            {
+                Batch = batch;
+                Stroke = stroke;
+            }
+
+            public static TimestampSource ForBatch(Batch batch)
+            {
+                return new TimestampSource(batch, null);
+            }
+
+            public static TimestampSource ForStroke(Stroke stroke)
+            {
+                return new TimestampSource(null, stroke);
+            }
+        }
+
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             DestroyAtlasTextures();
@@ -58,6 +83,7 @@ namespace TiltBrush
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
+            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
@@ -78,7 +104,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
-                cam.enabled = false;
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
             }
         }
 
@@ -114,10 +140,10 @@ namespace TiltBrush
                     var knot = rotKnots[j];
                     var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
                 }
-                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
 
                 var fovKnots = widget.WidgetScript.Path.FovKnots;
                 var fovTimes = new float[fovKnots.Count];
@@ -125,16 +151,27 @@ namespace TiltBrush
                 for (var j = 0; j < fovKnots.Count; j++)
                 {
                     var knot = fovKnots[j];
-                    var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
                 }
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
                 exporter.GetRoot().Animations.Add(anim);
-                GameObject.Destroy(cam);
             }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -191,6 +228,10 @@ namespace TiltBrush
                             mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                            if (App.UserConfig.Export.ExportStrokeTimestamp)
+                            {
+                                m_TimestampSources[mesh] = TimestampSource.ForStroke(stroke);
+                            }
                         }
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
                         if (App.UserConfig.Export.KeepGroups)
@@ -228,6 +269,10 @@ namespace TiltBrush
                         // so UnityGLTF sees the same Material object reference across all batches
                         // of the same brush and can deduplicate correctly.
                         batch.gameObject.GetComponent<Renderer>().sharedMaterial = brush.Material;
+                        if (App.UserConfig.Export.ExportStrokeTimestamp)
+                        {
+                            m_TimestampSources[mesh] = TimestampSource.ForBatch(batch);
+                        }
                     }
                 }
             }
@@ -263,9 +308,19 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
+            if (App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeTimestamp)
+            {
+                var brush = transform.GetComponent<BaseBrushScript>();
+                var mesh = transform.GetComponent<MeshFilter>()?.sharedMesh;
+                if (brush?.Stroke != null && mesh != null && mesh.vertexCount > 0)
+                {
+                    m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                }
+            }
             if (!App.UserConfig.Export.KeepStrokes)
             {
-                // Register all batches so AfterPrimitiveExport can look up stroke data
+                // Register all batches so metadata and additive-material export can look up stroke data.
                 var batch = transform.GetComponent<Batch>();
                 var mf = transform.GetComponent<MeshFilter>();
                 if (batch != null && mf != null)
@@ -386,10 +441,10 @@ namespace TiltBrush
         {
             if (!Application.isPlaying) return;
 
-            if (App.UserConfig.Export.ExportStrokeMetadata && App.UserConfig.Export.KeepStrokes)
+            if (App.UserConfig.Export.ExportStrokeMetadata &&
+                !App.UserConfig.Export.KeepStrokes)
             {
-                Batch batch;
-                if (_meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch))
+                if (_meshesToBatches.TryGetValue(mesh.GetHashCode(), out Batch batch))
                 {
                     var batchInfo = new List<Dictionary<string, string>>();
                     foreach (var subset in batch.m_Groups)
@@ -562,6 +617,117 @@ namespace TiltBrush
                 mat.Extensions = new Dictionary<string, IExtension>();
             mat.Extensions[KHR_materials_emissive_strength_Factory.EXTENSION_NAME] =
                 new KHR_materials_emissive_strength { emissiveStrength = strength };
+        }
+
+        public override void AfterMeshExport(
+            GLTFSceneExporter exporter, Mesh mesh, GLTFMesh gltfMesh, int index)
+        {
+            if (!Application.isPlaying ||
+                !App.UserConfig.Export.ExportStrokeTimestamp ||
+                !m_TimestampSources.TryGetValue(mesh, out TimestampSource source))
+            {
+                return;
+            }
+
+            byte[] timestampData = source.Stroke != null
+                ? CreateTimestampData(source.Stroke, mesh.vertexCount)
+                : CreateTimestampData(source.Batch, mesh.vertexCount);
+            if (timestampData == null)
+            {
+                return;
+            }
+
+            AccessorId timestampAccessor = exporter.ExportAccessor(
+                timestampData,
+                (uint)mesh.vertexCount,
+                GLTFAccessorAttributeType.VEC3,
+                GLTFComponentType.Float,
+                null,
+                null);
+            timestampAccessor.Value.BufferView.Value.Target = BufferViewTarget.ArrayBuffer;
+
+            foreach (MeshPrimitive primitive in gltfMesh.Primitives)
+            {
+                primitive.Attributes[kTimestampAttribute] = timestampAccessor;
+            }
+        }
+
+        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        {
+            if (batch == null || vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            foreach (BatchSubset subset in batch.m_Groups)
+            {
+                if (subset.m_StartVertIndex < 0 || subset.m_VertLength < 0 ||
+                    subset.m_StartVertIndex + subset.m_VertLength > vertexCount)
+                {
+                    Debug.LogWarning($"Cannot export timestamps for an invalid batch subset in {batch.name}");
+                    return null;
+                }
+
+                if (!WriteStrokeTimestamps(
+                    data, subset.m_StartVertIndex, subset.m_VertLength, subset.m_Stroke))
+                {
+                    return null;
+                }
+            }
+            return data;
+        }
+
+        private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)
+        {
+            if (vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            return WriteStrokeTimestamps(data, 0, vertexCount, stroke) ? data : null;
+        }
+
+        // Matches the legacy exporter: x/y are the stroke endpoints in seconds and z is a
+        // linear resampling of the control-point timestamps over the stroke's vertices.
+        private static unsafe bool WriteStrokeTimestamps(
+            byte[] data, int startVertex, int vertexCount, Stroke stroke)
+        {
+            PointerManager.ControlPoint[] controlPoints = stroke?.m_ControlPoints;
+            if (controlPoints == null || controlPoints.Length == 0)
+            {
+                Debug.LogWarning("Cannot export timestamps for a stroke without control points");
+                return false;
+            }
+
+            float startTime = controlPoints[0].m_TimestampMs * .001f;
+            float endTime = controlPoints[controlPoints.Length - 1].m_TimestampMs * .001f;
+            double controlPointFromVertex = vertexCount > 1
+                ? (controlPoints.Length - 1) / ((double)vertexCount - 1)
+                : 0;
+
+            fixed (byte* dataBytes = data)
+            {
+                float* timestamps = (float*)dataBytes;
+                for (int vertex = 0; vertex < vertexCount; ++vertex)
+                {
+                    double controlPointIndex = controlPointFromVertex * vertex;
+                    int lowerIndex = (int)Math.Floor(controlPointIndex);
+                    int upperIndex = Mathf.Min(lowerIndex + 1, controlPoints.Length - 1);
+                    float t = (float)(controlPointIndex - lowerIndex);
+                    float interpolatedTime = Mathf.LerpUnclamped(
+                        controlPoints[lowerIndex].m_TimestampMs * .001f,
+                        controlPoints[upperIndex].m_TimestampMs * .001f,
+                        t);
+
+                    int timestamp = (startVertex + vertex) * 3;
+                    timestamps[timestamp] = startTime;
+                    timestamps[timestamp + 1] = endTime;
+                    timestamps[timestamp + 2] = interpolatedTime;
+                }
+            }
+            return true;
         }
 
         void AddExtension(GLTFMaterial materialNode, IExtension ext, string name = null)
@@ -798,6 +964,10 @@ namespace TiltBrush
             catch (Exception e)
             {
                 Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
             }
 
             if (App.UserConfig.Export.ExportCustomSkybox)
