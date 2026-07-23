@@ -56,7 +56,7 @@ class Error(Exception):
 
 def make_tag_name(full_version, store):
     """Converts a version number to a tag name, and does some sanity checking."""
-    (major_version, _) = full_version.split(".", 1)
+    major_version, _ = full_version.split(".", 1)
     if full_version.endswith("b"):
         raise Error("Do you really want to tag a beta version %s?" % full_version)
     if major_version == "19" and store != "oculus-quest":

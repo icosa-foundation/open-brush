@@ -165,6 +165,9 @@ namespace TiltBrush
 
         public TrTransform? LastThumbnail_SS { get; set; }
 
+        // Temporary storage for main sketch's camera state during SaveSelected
+        public SaveIconTool.CameraRigState? SavedThumbnailStateForRestore { get; set; }
+
         public TrTransform ReasonableThumbnail_SS
         {
             get
@@ -482,7 +485,20 @@ namespace TiltBrush
                     yield return timeslicedConstructor.Current;
                 }
             }
-            LastThumbnail_SS = snapshot.LastThumbnail_SS;
+
+            // Restore main sketch's camera state after SaveSelected snapshot is created
+            if (selectedOnly && SavedThumbnailStateForRestore.HasValue)
+            {
+                SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState =
+                    SavedThumbnailStateForRestore.Value;
+                SavedThumbnailStateForRestore = null;
+            }
+
+            // Don't update main sketch's thumbnail metadata when saving selected strokes
+            if (!selectedOnly)
+            {
+                LastThumbnail_SS = snapshot.LastThumbnail_SS;
+            }
             App.Instance.SetDesiredState(App.AppState.Standard);
             m_LastWriteSnapshotError = null;
 
