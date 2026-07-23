@@ -55,6 +55,12 @@ namespace TiltBrush
             }
         }
 
+        public void SetCameraSpeed(float cameraSpeed)
+        {
+            float speedT = Mathf.InverseLerp(kMinSpeed, m_MaxSpeed, cameraSpeed);
+            SpeedValue = Mathf.Clamp(speedT * m_SpeedMaxVisualLength, 0.0f, m_SpeedMaxVisualLength);
+        }
+
         override public Transform GetGrabTransform(int control)
         {
             if (control == (int)ControlType.SpeedControl)

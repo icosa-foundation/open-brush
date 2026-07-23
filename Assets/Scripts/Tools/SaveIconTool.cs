@@ -148,6 +148,7 @@ namespace TiltBrush
             {
                 return m_LastSaveCameraRigState;
             }
+            set => m_LastSaveCameraRigState = value;
         }
 
         /// Save and restore the position of the camera rig.

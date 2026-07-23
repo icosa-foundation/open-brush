@@ -730,6 +730,10 @@ MonoBehaviour:
     m_Localized: Featured Models
     m_Metadata:
       m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: All Models
+    m_Metadata:
+      m_Items: []
   - m_Id: 7930550461112320
     m_Localized: Liked Models
     m_Metadata:
@@ -747,15 +751,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7931977472385024
-    m_Localized: Your Models
+    m_Localized: Your Uploaded Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932160536977408
     m_Localized: Featured Models
     m_Metadata:
       m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: All Models
+    m_Metadata:
+      m_Items: []
   - m_Id: 7932251041669120
-    m_Localized: Liked Models
+    m_Localized: Your Liked Models
     m_Metadata:
       m_Items: []
   - m_Id: 7932559960547328
@@ -3504,11 +3512,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: No VR hardware found
+    m_Localized: Open Brush Sketch Viewer
     m_Metadata:
       m_Items: []
   - m_Id: 218558579745579008
-    m_Localized: More info on using Open Brush without VR
+    m_Localized: XR not enabled or found. More info on using Open Brush without VR
     m_Metadata:
       m_Items: []
   - m_Id: 176764812224364544
@@ -3528,7 +3536,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: Switch off passthrough environment mode to use Multiplayer
+    m_Localized: Some users may be using headsets that do not support passthrough
     m_Metadata:
       m_Items: []
   - m_Id: 234808679492837376
@@ -3628,9 +3636,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: "<b>PC Controls:</b>\r\nMouse: view direction (press I to invert
-      up/down) \r\nW,A,S,D: move forward/back/left/right\r\nQ,E: move up/down\r\nShift:
-      move faster"
+    m_Localized: 'Mouse: Look around, W,A,S,D: forward/sideways Q,E: up/down (Hold
+      Shift to speed up)'
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104
@@ -3638,11 +3645,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: Search
+    m_Localized: Search by title
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: Filter/Sorting
+    m_Localized: Filter and sort
     m_Metadata:
       m_Items: []
   - m_Id: 326532953040941056
