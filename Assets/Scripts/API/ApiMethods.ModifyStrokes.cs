@@ -44,6 +44,54 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [ApiEndpoint(
+            "debug.selection.highlight-stroke",
+            "Queues a selected stroke batch mesh through the URP selection highlight path for diagnosis.",
+            "0,30,true"
+        )]
+        public static string DebugHighlightStrokeSelection(
+            int index,
+            int frames = 30,
+            bool useStrokePostEffect = true)
+        {
+            const string logPrefix = "[OB_URP_SELECTION_DIAG]";
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
+            if (stroke == null ||
+                stroke.m_BatchSubset == null ||
+                stroke.m_BatchSubset.m_ParentBatch == null)
+            {
+                string message = $"{logPrefix} Cannot queue highlight for stroke={index}; batch missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            Batch parentBatch = stroke.m_BatchSubset.m_ParentBatch;
+            parentBatch.RegisterHighlight();
+            MeshFilter meshFilter = parentBatch.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                string message =
+                    $"{logPrefix} Cannot queue highlight for stroke={index}; mesh filter missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            int safeFrames = Mathf.Clamp(frames, 1, 120);
+            App.Instance.SelectionEffect.QueueUrpDiagnosticHighlight(
+                meshFilter,
+                safeFrames,
+                useStrokePostEffect);
+
+            string result =
+                $"{logPrefix} Queued diagnostic highlight stroke={index} " +
+                $"batch={parentBatch.name} frames={safeFrames} " +
+                $"strokePost={useStrokePostEffect}.";
+            Debug.Log(result);
+            return result;
+        }
+#endif
+
         [ApiEndpoint(
             "strokes.select",
             "Select multiple strokes by index.",

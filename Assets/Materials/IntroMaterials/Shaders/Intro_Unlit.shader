@@ -21,8 +21,9 @@ Properties {
 }
 
 SubShader {
+    Tags {"RenderPipeline"="UniversalPipeline"}
     Pass {
-        Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+        Tags {"LightMode"="UniversalForward" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
         Lighting Off
         Cull Off
 

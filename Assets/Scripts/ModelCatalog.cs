@@ -349,7 +349,7 @@ namespace TiltBrush
                 if (!isBlocksRoot)
                 {
                     // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
                     extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });

@@ -33,8 +33,6 @@ CGPROGRAM
 #pragma surface surf Lambert vertex:vert addshadow
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #pragma multi_compile __ SELECTION_ON
-// Faster compiles
-#pragma skip_variants INSTANCING_ON
 #include "Assets/Shaders/Include/Brush.cginc"
 #include "Assets/Shaders/Include/MobileSelection.cginc"
 #pragma target 4.0

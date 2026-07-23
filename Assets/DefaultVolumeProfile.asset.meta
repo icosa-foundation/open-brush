@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/DefaultVolumeProfile.asset.meta
+guid: 61d50a8a487698b47b339d7c85f0604b
+========
+guid: d8b1abdfad766cd448e1ea238af5f38d
+>>>>>>>> feature/quill-import:Assets/Materials/SoundClipWidget.mat.meta
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

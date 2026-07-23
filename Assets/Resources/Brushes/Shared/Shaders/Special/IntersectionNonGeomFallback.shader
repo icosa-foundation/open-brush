@@ -70,12 +70,13 @@ Shader "Brush/Special/Intersection" {
       half4 frag(v2f i) : COLOR
       {
         uint triangleIndex = uint(i.triangleids.x);
-        return PackUint16x2ToRgba8(uint2(_BatchID, triangleIndex));
+        return PackUint16x2ToRgba8(uint2((uint)_BatchID, triangleIndex));
       }
         ENDCG
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: see Intersection.shader for rationale. Failing visibly
+  // (empty RT, zero hits) is preferable to failing silently with garbage IDs.
 
 }

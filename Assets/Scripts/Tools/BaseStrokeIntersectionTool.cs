@@ -171,6 +171,11 @@ namespace TiltBrush
             return 0;
         }
 
+        virtual protected bool HandleNonGpuWidgetIntersections(Vector3 vDetectionCenter_GS, float size_GS)
+        {
+            return false;
+        }
+
         // Helper for UpdateBatchedBrushDetection
         private void DoIntersectionResets()
         {
@@ -370,6 +375,14 @@ namespace TiltBrush
             {
                 // Run GPU intersection if enabled; will update m_TimesUp.
                 if (UpdateGpuIntersection(vDetectionCenter_GS, GetSize()))
+                {
+                    IntersectionHappenedThisFrame();
+                    m_DetectionStopwatch.Stop();
+                    DoIntersectionResets();
+                    return;
+                }
+
+                if (HandleNonGpuWidgetIntersections(vDetectionCenter_GS, GetSize()))
                 {
                     IntersectionHappenedThisFrame();
                     m_DetectionStopwatch.Stop();

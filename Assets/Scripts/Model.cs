@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Gsplat;
 using TiltBrushToolkit;
 using Unity.Profiling;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -232,6 +233,8 @@ namespace TiltBrush
 
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
+        public bool IsGsplatModel { get; private set; }
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -616,6 +619,109 @@ namespace TiltBrush
 
         }
 
+        static bool IsGsplatPly(string path)
+        {
+            bool hasColor = false;
+            bool hasOpacity = false;
+            bool hasScale = false;
+            bool hasRotation = false;
+
+            using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new StreamReader(stream))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line == "end_header")
+                    {
+                        break;
+                    }
+
+                    string[] tokens = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length != 3 || tokens[0] != "property")
+                    {
+                        continue;
+                    }
+
+                    switch (tokens[2])
+                    {
+                        case "f_dc_0":
+                            hasColor = true;
+                            break;
+                        case "opacity":
+                            hasOpacity = true;
+                            break;
+                        case "scale_0":
+                            hasScale = true;
+                            break;
+                        case "rot_0":
+                            hasRotation = true;
+                            break;
+                    }
+                }
+            }
+
+            return hasColor && hasOpacity && hasScale && hasRotation;
+        }
+
+        GameObject LoadGsplat(List<string> warningsOut)
+        {
+            try
+            {
+                string path = m_Location.AbsolutePath;
+                string ext = m_Location.Extension;
+                GsplatAsset asset;
+                if (ext == ".spz")
+                {
+                    var spzAsset = ScriptableObject.CreateInstance<GsplatAssetSpz>();
+                    spzAsset.LoadFromSpz(path, SourceCoordinates.RUB);
+                    asset = spzAsset;
+                }
+                else if (ext == ".sog")
+                {
+                    var sogAsset = ScriptableObject.CreateInstance<GsplatAssetSog>();
+                    sogAsset.LoadFromSog(path, SourceCoordinates.RDB);
+                    asset = sogAsset;
+                }
+                else
+                {
+                    var plyAsset = ScriptableObject.CreateInstance<GsplatAssetSpark>();
+                    plyAsset.LoadFromPly(path, sourceCoordinates: SourceCoordinates.RUB);
+                    asset = plyAsset;
+                }
+
+                asset.name = Path.GetFileNameWithoutExtension(path);
+
+                GameObject root = new GameObject("ImportedGsplatRoot");
+                GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
+                rendererObject.transform.SetParent(root.transform, false);
+
+                var gsplatRenderer = rendererObject.AddComponent<GsplatRenderer>();
+                gsplatRenderer.GsplatAsset = asset;
+                gsplatRenderer.SHDegree = asset.SHBands;
+                gsplatRenderer.AsyncUpload = true;
+                gsplatRenderer.RenderBeforeUploadComplete = false;
+                gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+
+                var collider = rendererObject.AddComponent<BoxCollider>();
+                collider.center = asset.Bounds.center;
+                collider.size = asset.Bounds.size;
+
+                warningsOut.Add(
+                    "Gaussian splat models are viewable in Open Brush, but are not exportable as mesh geometry.");
+                IsGsplatModel = true;
+                m_AllowExport = false;
+                return root;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
         GameObject LoadVox(List<string> warningsOut)
         {
             try
@@ -892,6 +998,7 @@ namespace TiltBrush
                 // TODO: if it's not already null, why did we get here? Probably want to check for error
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
+                IsGsplatModel = false;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
@@ -933,7 +1040,13 @@ namespace TiltBrush
                 }
                 else if (ext == ".ply")
                 {
-                    go = LoadPly(warnings);
+                    go = IsGsplatPly(m_Location.AbsolutePath) ? LoadGsplat(warnings) : LoadPly(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".spz" || ext == ".sog")
+                {
+                    go = LoadGsplat(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
