@@ -27,12 +27,37 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
         private List<(Node node, SoundClipWidget widget)> m_SoundClipNodes;
+
+        private const string kTimestampAttribute = "_TB_TIMESTAMP";
+
+        private readonly struct TimestampSource
+        {
+            public Batch Batch { get; }
+            public Stroke Stroke { get; }
+
+            private TimestampSource(Batch batch, Stroke stroke)
+            {
+                Batch = batch;
+                Stroke = stroke;
+            }
+
+            public static TimestampSource ForBatch(Batch batch)
+            {
+                return new TimestampSource(batch, null);
+            }
+
+            public static TimestampSource ForStroke(Stroke stroke)
+            {
+                return new TimestampSource(null, stroke);
+            }
+        }
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -42,6 +67,7 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             m_TemporaryBatchMeshes = new List<Mesh>();
             m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
@@ -187,6 +213,10 @@ namespace TiltBrush
                             mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                            if (App.UserConfig.Export.ExportStrokeTimestamp)
+                            {
+                                m_TimestampSources[mesh] = TimestampSource.ForStroke(stroke);
+                            }
                         }
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
                         if (App.UserConfig.Export.KeepGroups)
@@ -220,6 +250,10 @@ namespace TiltBrush
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
+                        if (App.UserConfig.Export.ExportStrokeTimestamp)
+                        {
+                            m_TimestampSources[mesh] = TimestampSource.ForBatch(batch);
+                        }
                     }
                 }
             }
@@ -264,6 +298,16 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
+            if (App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeTimestamp)
+            {
+                var brush = transform.GetComponent<BaseBrushScript>();
+                var mesh = transform.GetComponent<MeshFilter>()?.sharedMesh;
+                if (brush?.Stroke != null && mesh != null && mesh.vertexCount > 0)
+                {
+                    m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                }
+            }
             if (!App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeMetadata)
             {
@@ -399,7 +443,7 @@ namespace TiltBrush
             if (!Application.isPlaying) return;
             if (App.UserConfig.Export.ExportStrokeMetadata)
             {
-                if (App.UserConfig.Export.KeepStrokes)
+                if (!App.UserConfig.Export.KeepStrokes)
                 {
                     Batch batch;
                     var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
@@ -426,6 +470,117 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        public override void AfterMeshExport(
+            GLTFSceneExporter exporter, Mesh mesh, GLTFMesh gltfMesh, int index)
+        {
+            if (!Application.isPlaying ||
+                !App.UserConfig.Export.ExportStrokeTimestamp ||
+                !m_TimestampSources.TryGetValue(mesh, out TimestampSource source))
+            {
+                return;
+            }
+
+            byte[] timestampData = source.Stroke != null
+                ? CreateTimestampData(source.Stroke, mesh.vertexCount)
+                : CreateTimestampData(source.Batch, mesh.vertexCount);
+            if (timestampData == null)
+            {
+                return;
+            }
+
+            AccessorId timestampAccessor = exporter.ExportAccessor(
+                timestampData,
+                (uint)mesh.vertexCount,
+                GLTFAccessorAttributeType.VEC3,
+                GLTFComponentType.Float,
+                null,
+                null);
+            timestampAccessor.Value.BufferView.Value.Target = BufferViewTarget.ArrayBuffer;
+
+            foreach (MeshPrimitive primitive in gltfMesh.Primitives)
+            {
+                primitive.Attributes[kTimestampAttribute] = timestampAccessor;
+            }
+        }
+
+        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        {
+            if (batch == null || vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            foreach (BatchSubset subset in batch.m_Groups)
+            {
+                if (subset.m_StartVertIndex < 0 || subset.m_VertLength < 0 ||
+                    subset.m_StartVertIndex + subset.m_VertLength > vertexCount)
+                {
+                    Debug.LogWarning($"Cannot export timestamps for an invalid batch subset in {batch.name}");
+                    return null;
+                }
+
+                if (!WriteStrokeTimestamps(
+                    data, subset.m_StartVertIndex, subset.m_VertLength, subset.m_Stroke))
+                {
+                    return null;
+                }
+            }
+            return data;
+        }
+
+        private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)
+        {
+            if (vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            return WriteStrokeTimestamps(data, 0, vertexCount, stroke) ? data : null;
+        }
+
+        // Matches the legacy exporter: x/y are the stroke endpoints in seconds and z is a
+        // linear resampling of the control-point timestamps over the stroke's vertices.
+        private static unsafe bool WriteStrokeTimestamps(
+            byte[] data, int startVertex, int vertexCount, Stroke stroke)
+        {
+            PointerManager.ControlPoint[] controlPoints = stroke?.m_ControlPoints;
+            if (controlPoints == null || controlPoints.Length == 0)
+            {
+                Debug.LogWarning("Cannot export timestamps for a stroke without control points");
+                return false;
+            }
+
+            float startTime = controlPoints[0].m_TimestampMs * .001f;
+            float endTime = controlPoints[controlPoints.Length - 1].m_TimestampMs * .001f;
+            double controlPointFromVertex = vertexCount > 1
+                ? (controlPoints.Length - 1) / ((double)vertexCount - 1)
+                : 0;
+
+            fixed (byte* dataBytes = data)
+            {
+                float* timestamps = (float*)dataBytes;
+                for (int vertex = 0; vertex < vertexCount; ++vertex)
+                {
+                    double controlPointIndex = controlPointFromVertex * vertex;
+                    int lowerIndex = (int)Math.Floor(controlPointIndex);
+                    int upperIndex = Mathf.Min(lowerIndex + 1, controlPoints.Length - 1);
+                    float t = (float)(controlPointIndex - lowerIndex);
+                    float interpolatedTime = Mathf.LerpUnclamped(
+                        controlPoints[lowerIndex].m_TimestampMs * .001f,
+                        controlPoints[upperIndex].m_TimestampMs * .001f,
+                        t);
+
+                    int timestamp = (startVertex + vertex) * 3;
+                    timestamps[timestamp] = startTime;
+                    timestamps[timestamp + 1] = endTime;
+                    timestamps[timestamp + 2] = interpolatedTime;
+                }
+            }
+            return true;
         }
 
         void AddExtension(GLTFMaterial materialNode, IExtension blend)
