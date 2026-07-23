@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenBrush.Multiplayer;
 using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -897,6 +898,10 @@ namespace TiltBrush
             {
                 Debug.Log("null environment");
             }
+            else if (ShouldBlockLeavingPassthroughInMultiplayer(env))
+            {
+                return;
+            }
             else if (env == m_DesiredEnvironment && !bEnvironmentModified &&
                      !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
             {
@@ -948,6 +953,18 @@ namespace TiltBrush
                 RenderSettings.ambientMode = AmbientMode.Skybox;
                 BackdropModeChanged?.Invoke();
             }
+        }
+
+        private bool ShouldBlockLeavingPassthroughInMultiplayer(Environment env)
+        {
+            if (MultiplayerManager.m_Instance == null || !MultiplayerManager.m_Instance.HasRemotePlayersInRoom())
+            {
+                return false;
+            }
+
+            Environment currentEnvironment = GetDesiredPreset();
+            return currentEnvironment != null && currentEnvironment.isPassthrough &&
+                env != null && !env.isPassthrough;
         }
 
         public Environment GetDesiredPreset()
