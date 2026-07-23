@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_monoscopic_short">2D Debug Mode</string>
+    <string name="shortcut_monoscopic_long">Launch in 2D Debug (Monoscopic) Mode</string>
+    <string name="shortcut_noxr_short">Force 2D Viewer Mode</string>
+    <string name="shortcut_noxr_long">Launch Viewer mode (VR/XR forced off)</string>
+    <string name="alias_monoscopic_label">Open Brush (2D Debug)</string>
+    <string name="alias_noxr_label">Open Brush (2D Viewer)</string>
+</resources>

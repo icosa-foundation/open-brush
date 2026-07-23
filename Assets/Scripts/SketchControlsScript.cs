@@ -572,6 +572,7 @@ namespace TiltBrush
         private CameraPathCaptureRig m_CameraPathCaptureRig;
 
         private bool m_ViewOnly = false;
+        public bool IsViewOnly => m_ViewOnly;
 
         private InputState m_CurrentInputState;
         private InputStateConfig[] m_InputStateConfigs;
@@ -1004,6 +1005,12 @@ namespace TiltBrush
 
             m_PanelManager.HidePanelsForStartup();
             RequestPanelsVisibility(false);
+
+            if (App.UserConfig.Flags.ForceViewOnly)
+            {
+                m_ViewOnly = true;
+                ViewOnly(true);
+            }
         }
 
         void Update()
@@ -1274,6 +1281,7 @@ namespace TiltBrush
         bool CanUsePinCushion()
         {
             return (m_ControlsType == ControlsType.SixDofControllers) &&
+                !m_ViewOnly &&
                 m_PanelManager.AdvancedModeActive() &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 !InputManager.Brush.GetControllerGrip() &&
@@ -1563,7 +1571,8 @@ namespace TiltBrush
             var mouse = Mouse.current;
 
             // Toggle default tool.
-            if (!m_PanelManager.AdvancedModeActive() &&
+            if (!m_ViewOnly &&
+                !m_PanelManager.AdvancedModeActive() &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleDefaultTool) &&
                 !m_SketchSurfacePanel.IsDefaultToolEnabled() &&
                 m_SketchSurfacePanel.ActiveTool.AllowDefaultToolToggle() && m_CurrentGazeObject == -1)// don't allow tool to change while pointing at panel because there is no visual indication
@@ -2432,9 +2441,7 @@ namespace TiltBrush
                 var candidate = candidates[i];
                 if (!candidate.m_NearController) continue;
 
-                // For media widgets - only select from the active layer
-                if (candidate.m_WidgetScript is MediaWidget
-                    && candidate.m_WidgetScript.Canvas != App.Scene.ActiveCanvas) continue;
+                if (LayerScopedWidgetIsOnInactiveLayer(candidate.m_WidgetScript)) continue;
 
                 if (best == null || candidate.m_ControllerScore > best.m_ControllerScore)
                 {
@@ -2442,6 +2449,28 @@ namespace TiltBrush
                 }
             }
             return best;
+        }
+
+        private bool LayerScopedWidgetIsOnInactiveLayer(GrabWidget widget)
+        {
+            if (!WidgetGrabShouldBeScopedToActiveLayer(widget))
+            {
+                return false;
+            }
+
+            var parent = widget.transform.parent;
+            if (parent == null)
+            {
+                return false;
+            }
+
+            var canvas = parent.GetComponent<CanvasScript>();
+            return canvas != null && canvas != App.Scene.ActiveCanvas;
+        }
+
+        private bool WidgetGrabShouldBeScopedToActiveLayer(GrabWidget widget)
+        {
+            return widget is MediaWidget;
         }
 
         void InitializeGrabWidgetControllerInfo(GrabWidgetControllerInfo info)
@@ -3781,8 +3810,6 @@ namespace TiltBrush
 
         public void RequestPanelsVisibility(bool bVisible)
         {
-            // Always false in viewonly mode
-            bVisible = m_ViewOnly ? false : bVisible;
             m_PanelsVisibilityRequested = bVisible;
         }
 
@@ -4144,14 +4171,14 @@ namespace TiltBrush
         }
 
 
-        public void GenerateBoundingBoxSaveIcon(bool selectionOnly = false)
+        public void GenerateBoundingBoxSaveIcon(bool saveSelectedStrokes = false)
         {
             Vector3 vNewCamPos;
             List<CanvasScript> canvases = new List<CanvasScript> { App.Scene.SelectionCanvas };
             List<bool> canvasVisibility = new List<bool>();
 
             var layerCanvases = App.Scene.LayerCanvases;
-            if (selectionOnly)
+            if (saveSelectedStrokes)
             {
                 // Hide the other canvases and store their visibility
                 foreach (var canvas in layerCanvases)
@@ -4166,9 +4193,9 @@ namespace TiltBrush
             }
 
             Bounds rCanvasBounds;
-            if (selectionOnly)
+            if (saveSelectedStrokes)
             {
-                // For selection only, we need to transform the bounds to world space
+                // When saving selected strokes, we need to transform the bounds to world space
                 Bounds selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
                 TrTransform selectionPose = App.Scene.SelectionCanvas.Pose;
                 Vector3 worldCenter = selectionPose.MultiplyPoint(selectionBounds.center);
@@ -4186,28 +4213,63 @@ namespace TiltBrush
                     });
             }
 
-            //position the camera at the center of the canvas bounds
-            vNewCamPos = rCanvasBounds.center;
+            Quaternion vNewCamRot;
 
-            //back the camera up, along -z until we can see the extent of the bounds
-            float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
-            float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
-            float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+            if (saveSelectedStrokes)
+            {
+                // For saved strokes, use direction from user's eye to selection, but position to frame properly
+                Vector3 eyePosition = ViewpointScript.Head.position;
+                Vector3 lookDirection = (rCanvasBounds.center - eyePosition).normalized;
 
-            //half fov for camera
-            float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+                // Calculate the distance needed to frame the bounding box properly using same formula as original
+                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+                float fMagicNumber = 1.375f;
 
-            //TODO: find the real reason this isn't working as it should
-            float fMagicNumber = 1.375f;
+                // Use same distance formula as original code (multiply by tan, not divide)
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
 
-            //set new cam position and zero out orientation
-            float fBackupDistance = (fLargerExtent * 0.5f)
-                * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
-            vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                // Add proportional padding so selection doesn't fill entire frame
+                float fPaddingMultiplier = 1.3f;
+                fBackupDistance *= fPaddingMultiplier;
 
-            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, Quaternion.identity);
+                // Position camera at backup distance from bounding box center, along the look direction
+                vNewCamPos = rCanvasBounds.center - lookDirection * fBackupDistance;
+                vNewCamRot = Quaternion.LookRotation(lookDirection);
+            }
+            else
+            {
+                // Position the camera at the center of the canvas bounds
+                vNewCamPos = rCanvasBounds.center;
 
-            if (selectionOnly)
+                // Back the camera up, along -z until we can see the extent of the bounds
+                float fCanvasWidth = rCanvasBounds.max.x - rCanvasBounds.min.x;
+                float fCanvasHeight = rCanvasBounds.max.y - rCanvasBounds.min.y;
+                float fLargerExtent = Mathf.Max(fCanvasHeight, fCanvasWidth);
+
+                // Half fov for camera
+                float fHalfFOV = m_SaveIconTool.ScreenshotManager.LeftEye.fieldOfView * 0.5f;
+
+                // TODO: find the real reason this isn't working as it should
+                float fMagicNumber = 1.375f;
+
+                // Set new cam position and zero out orientation
+                float fBackupDistance = (fLargerExtent * 0.5f) * Mathf.Tan(Mathf.Deg2Rad * fHalfFOV) * fMagicNumber;
+                vNewCamPos.z = rCanvasBounds.min.z - fBackupDistance;
+                vNewCamRot = Quaternion.identity;
+            }
+
+            // Save the current camera state before SaveSelected - will be restored after snapshot creation
+            if (saveSelectedStrokes)
+            {
+                SaveLoadScript.m_Instance.SavedThumbnailStateForRestore = m_SaveIconTool.LastSaveCameraRigState;
+            }
+
+            m_SaveIconTool.ProgrammaticCaptureSaveIcon(vNewCamPos, vNewCamRot);
+
+            if (saveSelectedStrokes)
             {
                 int i = 0;
                 foreach (var canvas in layerCanvases)
@@ -4226,13 +4288,14 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             var newLayer = App.Scene.AddLayerNow();
             int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
-            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> _))
+            if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> loadedStrokes))
             {
                 // A new layer will have been created for the merged strokes.
                 // Rename it accordingly
                 App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
-                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true, false, false);
+                // Only render the newly loaded strokes, not all existing strokes in the scene
+                SketchMemoryScript.m_Instance.BeginDrawingFromMemory(loadedStrokes, bDrawFromStart: true, false, false);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
                 // state. App script's ShouldTintControllers allow the controller to be tinted only
@@ -4350,7 +4413,7 @@ namespace TiltBrush
                         {
                             return;
                         }
-                        GenerateBoundingBoxSaveIcon(selectionOnly: true);
+                        GenerateBoundingBoxSaveIcon(saveSelectedStrokes: true);
                         StartCoroutine(SaveLoadScript.m_Instance.SaveSelected());
                         EatGazeObjectInput();
                         break;
@@ -5107,22 +5170,60 @@ namespace TiltBrush
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
                 case GlobalCommands.OpenIcosaPanelFilterPopup:
                 case GlobalCommands.OpenSketchbookPanelFilterPopup:
+                case GlobalCommands.OpenScriptParametersPopup:
                 case GlobalCommands.Null:
                     break; // Intentionally blank.
                 default:
-                    Debug.LogError($"Unrecognized command {rEnum}");
+                    Debug.LogWarning($"Unrecognized command {rEnum}");
                     break;
             }
         }
         public void ViewOnly(bool active)
         {
-            RequestPanelsVisibility(!active);
+            m_ViewOnly = active;
+            if (active)
+            {
+                EnsureViewOnlyNavigationTool();
+                m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
+                RequestPanelsVisibility(true);
+            }
+            else
+            {
+                DisableViewOnlyNavigationTool();
+                m_PanelManager.RestoreEditingPanelAvailabilityMode();
+                RequestPanelsVisibility(true);
+            }
             PointerManager.m_Instance.RequestPointerRendering(!active);
             // TODO - decide if this is a permanent change
             // With this line, you can't set a tool such as fly or teleport
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+            if (InitNoHeadsetMode.m_Instance != null)
+            {
+                InitNoHeadsetMode.m_Instance.RefreshViewOnlyUi();
+            }
+        }
+
+        public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)
+        {
+            return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
+        }
+
+        public void EnsureViewOnlyNavigationTool()
+        {
+            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
+            }
+        }
+
+        public void DisableViewOnlyNavigationTool()
+        {
+            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            {
+                m_SketchSurfacePanel.EnableDefaultTool();
+            }
         }
 
         private void LoadNamed(string path, bool quickload, bool additive)
@@ -5364,7 +5465,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                     return MultiplayerManager.m_Instance.IsDisconnectable();
                 case GlobalCommands.MultiplayerJoinRoom:
-                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom() && !SceneSettings.m_Instance.GetDesiredPreset().isPassthrough;
+                    return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
 
