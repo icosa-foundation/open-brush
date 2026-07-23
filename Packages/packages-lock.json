@@ -606,14 +606,14 @@
       "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
     },
     "wu.yize.gsplat": {
-      "version": "https://github.com/icosa-mirror/gsplat-unity.git#open-brush-unity6-runtime-editor-guards",
+      "version": "https://github.com/icosa-mirror/gsplat-unity.git#integration/jul-2026",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.netpyoung.webp": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
+        "com.netpyoung.webp": "0.3.22",
         "com.unity.mathematics": "1.3.2"
       },
-      "hash": "8ad7ddfd74d5a234307a5361724f8157c66511f2"
+      "hash": "cd2b5c58661b9e2b439cec21a5956d84915ef98c"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
