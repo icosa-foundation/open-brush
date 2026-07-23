@@ -2435,9 +2435,7 @@ namespace TiltBrush
                 var candidate = candidates[i];
                 if (!candidate.m_NearController) continue;
 
-                // For media widgets - only select from the active layer
-                if (candidate.m_WidgetScript is MediaWidget
-                    && candidate.m_WidgetScript.Canvas != App.Scene.ActiveCanvas) continue;
+                if (LayerScopedWidgetIsOnInactiveLayer(candidate.m_WidgetScript)) continue;
 
                 if (best == null || candidate.m_ControllerScore > best.m_ControllerScore)
                 {
@@ -2445,6 +2443,28 @@ namespace TiltBrush
                 }
             }
             return best;
+        }
+
+        private bool LayerScopedWidgetIsOnInactiveLayer(GrabWidget widget)
+        {
+            if (!WidgetGrabShouldBeScopedToActiveLayer(widget))
+            {
+                return false;
+            }
+
+            var parent = widget.transform.parent;
+            if (parent == null)
+            {
+                return false;
+            }
+
+            var canvas = parent.GetComponent<CanvasScript>();
+            return canvas != null && canvas != App.Scene.ActiveCanvas;
+        }
+
+        private bool WidgetGrabShouldBeScopedToActiveLayer(GrabWidget widget)
+        {
+            return widget is MediaWidget;
         }
 
         void InitializeGrabWidgetControllerInfo(GrabWidgetControllerInfo info)
@@ -5225,6 +5245,7 @@ namespace TiltBrush
         }
         public void ViewOnly(bool active)
         {
+            m_ViewOnly = active;
             if (active)
             {
                 EnsureViewOnlyNavigationTool();
@@ -5243,6 +5264,10 @@ namespace TiltBrush
             // and switch to View Only mode as the mode change disables all tools
             //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
+            if (InitNoHeadsetMode.m_Instance != null)
+            {
+                InitNoHeadsetMode.m_Instance.RefreshViewOnlyUi();
+            }
         }
 
         public bool IsViewOnlyNavigationTool(BaseTool.ToolType tool)

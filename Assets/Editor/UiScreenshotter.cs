@@ -65,6 +65,38 @@ namespace TiltBrush
             }
         }
 
+        private enum BrushScreenshotRenderMode
+        {
+            Material,
+            Wireframe
+        }
+
+        private static readonly string[] kWireframeWhiteColorProperties =
+        {
+            "_Color",
+            "_MainColor",
+            "_BaseColor",
+            "_TintColor",
+            "_SpecColor",
+            "__SpecColor",
+            "_Specular_Color",
+            "_EmissionColor"
+        };
+
+        private struct MaterialColorOverride
+        {
+            public Material Material;
+            public string PropertyName;
+            public Color Color;
+
+            public MaterialColorOverride(Material material, string propertyName, Color color)
+            {
+                Material = material;
+                PropertyName = propertyName;
+                Color = color;
+            }
+        }
+
         private static bool IsPlaying()
         {
             if (!Application.isPlaying)
@@ -196,9 +228,13 @@ namespace TiltBrush
                     }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
+                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
+                        ? new List<Color> { Color.white }
+                        : null;
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
-                        TrTransform.T(origin));
+                        TrTransform.T(origin),
+                        colors);
                     SetFixedShaderTime(strokes, kBrushScreenshotTime);
                     batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;
@@ -434,6 +470,61 @@ namespace TiltBrush
             }
         }
 
+        private static readonly Type[] kBuiltInPostEffectComponents =
+        {
+            typeof(RenderWrapper),
+            typeof(MobileBloom),
+            typeof(SENaturalBloomAndDirtyLens),
+            typeof(TiltShift),
+            typeof(Kino.Vignette)
+        };
+
+        private static List<KeyValuePair<Behaviour, bool>> SetBuiltInPostEffectsEnabled(
+            Camera cameraToCapture, bool enabled)
+        {
+            var previousStates = new List<KeyValuePair<Behaviour, bool>>();
+            if (cameraToCapture == null)
+            {
+                return previousStates;
+            }
+
+            foreach (Type componentType in kBuiltInPostEffectComponents)
+            {
+                var component = cameraToCapture.GetComponent(componentType) as Behaviour;
+                if (component == null)
+                {
+                    continue;
+                }
+                previousStates.Add(new KeyValuePair<Behaviour, bool>(component, component.enabled));
+                component.enabled = enabled;
+            }
+            return previousStates;
+        }
+
+        private static void RestoreBuiltInPostEffects(
+            IEnumerable<KeyValuePair<Behaviour, bool>> previousStates)
+        {
+            foreach (var previousState in previousStates)
+            {
+                if (previousState.Key != null)
+                {
+                    previousState.Key.enabled = previousState.Value;
+                }
+            }
+        }
+
+        private static void SetKeyword(string keyword, bool enabled)
+        {
+            if (enabled)
+            {
+                Shader.EnableKeyword(keyword);
+            }
+            else
+            {
+                Shader.DisableKeyword(keyword);
+            }
+        }
+
         static void SaveCurrentView(
             Camera cameraToCapture,
             string fileName,
@@ -467,6 +558,9 @@ namespace TiltBrush
             bool previousRenderPostProcessing = false;
             Transform previousVolumeTrigger = null;
             LayerMask previousVolumeLayerMask = default;
+            bool previousHdrSimple = Shader.IsKeywordEnabled("HDR_SIMPLE");
+            bool previousHdrEmulated = Shader.IsKeywordEnabled("HDR_EMULATED");
+            List<KeyValuePair<Behaviour, bool>> previousPostEffectStates = null;
             try
             {
                 if (enablePostProcessing == true && cameraData == null)
@@ -486,6 +580,17 @@ namespace TiltBrush
                     {
                         cameraData.volumeTrigger = cameraToCapture.transform;
                         cameraData.volumeLayerMask = ~0;
+                    }
+                }
+
+                if (enablePostProcessing.HasValue)
+                {
+                    previousPostEffectStates = SetBuiltInPostEffectsEnabled(
+                        cameraToCapture, enablePostProcessing.Value);
+                    if (!enablePostProcessing.Value)
+                    {
+                        Shader.DisableKeyword("HDR_SIMPLE");
+                        Shader.DisableKeyword("HDR_EMULATED");
                     }
                 }
 
@@ -520,6 +625,12 @@ namespace TiltBrush
                         Destroy(cameraData);
                     }
                 }
+                if (previousPostEffectStates != null)
+                {
+                    RestoreBuiltInPostEffects(previousPostEffectStates);
+                }
+                SetKeyword("HDR_SIMPLE", previousHdrSimple);
+                SetKeyword("HDR_EMULATED", previousHdrEmulated);
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {

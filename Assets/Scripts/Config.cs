@@ -487,6 +487,10 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
                 }
+                else if (args[i] == "--ForceViewOnly")
+                {
+                    ParseUserSetting("--Flags.ForceViewOnly", "true");
+                }
                 else if (args[i].Contains("."))
                 {
                     if (i == args.Length - 1)
@@ -597,28 +601,29 @@ namespace TiltBrush
                     UnityEngine.XR.XRSettings.enabled = false;
                 }
 
+                // TODO Re-enable launch extra shortcuts. They will be useful but need a bit more thought and testing
                 // Register dynamic shortcuts on a background thread — setDynamicShortcuts() is a
                 // Binder IPC call that can block for minutes on Quest's launcher service.
-                var thread = new System.Threading.Thread(() =>
-                {
-                    try
-                    {
-                        AndroidJNI.AttachCurrentThread();
-                        using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-                        using var act = player.GetStatic<AndroidJavaObject>("currentActivity");
-                        RegisterDynamicShortcuts(act);
-                    }
-                    catch (Exception e)
-                    {
-                        UnityEngine.Debug.LogWarning($"[OB-Shortcuts] background registration failed: {e.Message}");
-                    }
-                    finally
-                    {
-                        AndroidJNI.DetachCurrentThread();
-                    }
-                });
-                thread.IsBackground = true;
-                thread.Start();
+                // var thread = new System.Threading.Thread(() =>
+                // {
+                //     try
+                //     {
+                //         AndroidJNI.AttachCurrentThread();
+                //         using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                //         using var act = player.GetStatic<AndroidJavaObject>("currentActivity");
+                //         RegisterDynamicShortcuts(act);
+                //     }
+                //     catch (Exception e)
+                //     {
+                //         UnityEngine.Debug.LogWarning($"[OB-Shortcuts] background registration failed: {e.Message}");
+                //     }
+                //     finally
+                //     {
+                //         AndroidJNI.DetachCurrentThread();
+                //     }
+                // });
+                // thread.IsBackground = true;
+                // thread.Start();
             }
             catch (Exception e)
             {
