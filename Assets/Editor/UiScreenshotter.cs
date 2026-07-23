@@ -1,4 +1,4 @@
-﻿// Copyright 2023 The Tilt Brush Authors
+// Copyright 2023 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -29,6 +30,8 @@ namespace TiltBrush
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
+        private const string kLogPrefix = "_ui_screenshotter_20260520_";
+        private const string kUrpPostLogPrefix = "[OB_URP_POST]";
 
         private enum BrushScreenshotRenderMode
         {
@@ -187,6 +190,10 @@ namespace TiltBrush
             {
                 foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
                 {
+                    if (!CanGenerateBrushScreenshot(brush))
+                    {
+                        continue;
+                    }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
                     List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
@@ -229,6 +236,36 @@ namespace TiltBrush
                 }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
+        }
+
+        private static bool CanGenerateBrushScreenshot(BrushDescriptor brush)
+        {
+            if (brush == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Skipping null brush descriptor.");
+                return false;
+            }
+
+            try
+            {
+                Material material = brush.Material;
+                if (material == null || !material)
+                {
+                    Debug.LogWarning(
+                        $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                        "because its material is missing.");
+                    return false;
+                }
+            }
+            catch (MissingReferenceException exception)
+            {
+                Debug.LogWarning(
+                    $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                    $"because its material reference is invalid: {exception.Message}");
+                return false;
+            }
+
+            return true;
         }
 
         private static string GetBrushScreenshotFileName(
@@ -371,6 +408,7 @@ namespace TiltBrush
                 try
                 {
                     var material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
+                    material.EnableKeyword("SHADER_SCRIPTING_ON");
                     if (!material.HasFloat("_TimeBlend") ||
                         !material.HasVector("_TimeOverrideValue"))
                     {
@@ -400,61 +438,6 @@ namespace TiltBrush
             }
         }
 
-        private static readonly Type[] kBuiltInPostEffectComponents =
-        {
-            typeof(RenderWrapper),
-            typeof(MobileBloom),
-            typeof(SENaturalBloomAndDirtyLens),
-            typeof(TiltShift),
-            typeof(Kino.Vignette)
-        };
-
-        private static List<KeyValuePair<Behaviour, bool>> SetBuiltInPostEffectsEnabled(
-            Camera cameraToCapture, bool enabled)
-        {
-            var previousStates = new List<KeyValuePair<Behaviour, bool>>();
-            if (cameraToCapture == null)
-            {
-                return previousStates;
-            }
-
-            foreach (Type componentType in kBuiltInPostEffectComponents)
-            {
-                var component = cameraToCapture.GetComponent(componentType) as Behaviour;
-                if (component == null)
-                {
-                    continue;
-                }
-                previousStates.Add(new KeyValuePair<Behaviour, bool>(component, component.enabled));
-                component.enabled = enabled;
-            }
-            return previousStates;
-        }
-
-        private static void RestoreBuiltInPostEffects(
-            IEnumerable<KeyValuePair<Behaviour, bool>> previousStates)
-        {
-            foreach (var previousState in previousStates)
-            {
-                if (previousState.Key != null)
-                {
-                    previousState.Key.enabled = previousState.Value;
-                }
-            }
-        }
-
-        private static void SetKeyword(string keyword, bool enabled)
-        {
-            if (enabled)
-            {
-                Shader.EnableKeyword(keyword);
-            }
-            else
-            {
-                Shader.DisableKeyword(keyword);
-            }
-        }
-
         static void SaveCurrentView(
             Camera cameraToCapture,
             string fileName,
@@ -465,7 +448,10 @@ namespace TiltBrush
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
-            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
+            RenderTextureFormat sourceFormat = enablePostProcessing == true
+                ? RenderTextureFormat.DefaultHDR
+                : RenderTextureFormat.ARGB32;
+            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, sourceFormat)
             {
                 antiAliasing = kScreenshotMsaaSamples,
                 filterMode = FilterMode.Bilinear
@@ -478,23 +464,37 @@ namespace TiltBrush
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
             bool previousAllowMsaa = cameraToCapture.allowMSAA;
-            bool previousHdrSimple = Shader.IsKeywordEnabled("HDR_SIMPLE");
-            bool previousHdrEmulated = Shader.IsKeywordEnabled("HDR_EMULATED");
-            List<KeyValuePair<Behaviour, bool>> previousPostEffectStates = null;
+            bool previousAllowHdr = cameraToCapture.allowHDR;
+            UniversalAdditionalCameraData cameraData =
+                cameraToCapture.GetComponent<UniversalAdditionalCameraData>();
+            bool hadCameraData = cameraData != null;
+            bool previousRenderPostProcessing = false;
+            Transform previousVolumeTrigger = null;
+            LayerMask previousVolumeLayerMask = default;
             try
             {
-                if (enablePostProcessing.HasValue)
+                if (enablePostProcessing == true && cameraData == null)
                 {
-                    previousPostEffectStates = SetBuiltInPostEffectsEnabled(
-                        cameraToCapture, enablePostProcessing.Value);
-                    if (!enablePostProcessing.Value)
+                    cameraData = cameraToCapture.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    Debug.Log(
+                        $"{kUrpPostLogPrefix} Added UniversalAdditionalCameraData to brush screenshot camera.");
+                }
+
+                if (cameraData != null && enablePostProcessing.HasValue)
+                {
+                    previousRenderPostProcessing = cameraData.renderPostProcessing;
+                    previousVolumeTrigger = cameraData.volumeTrigger;
+                    previousVolumeLayerMask = cameraData.volumeLayerMask;
+                    cameraData.renderPostProcessing = enablePostProcessing.Value;
+                    if (enablePostProcessing.Value)
                     {
-                        Shader.DisableKeyword("HDR_SIMPLE");
-                        Shader.DisableKeyword("HDR_EMULATED");
+                        cameraData.volumeTrigger = cameraToCapture.transform;
+                        cameraData.volumeLayerMask = ~0;
                     }
                 }
 
                 cameraToCapture.allowMSAA = true;
+                cameraToCapture.allowHDR = enablePostProcessing == true || previousAllowHdr;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
                 RenderScreenshotCamera(cameraToCapture, renderWidth, renderHeight, renderWireframe);
@@ -513,12 +513,17 @@ namespace TiltBrush
             {
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
-                if (previousPostEffectStates != null)
+                cameraToCapture.allowHDR = previousAllowHdr;
+                if (cameraData != null && enablePostProcessing.HasValue)
                 {
-                    RestoreBuiltInPostEffects(previousPostEffectStates);
+                    cameraData.renderPostProcessing = previousRenderPostProcessing;
+                    cameraData.volumeTrigger = previousVolumeTrigger;
+                    cameraData.volumeLayerMask = previousVolumeLayerMask;
+                    if (!hadCameraData)
+                    {
+                        Destroy(cameraData);
+                    }
                 }
-                SetKeyword("HDR_SIMPLE", previousHdrSimple);
-                SetKeyword("HDR_EMULATED", previousHdrEmulated);
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {

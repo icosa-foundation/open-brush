@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 using UnityEngine;
 
 namespace TiltBrush
@@ -27,6 +27,7 @@ namespace TiltBrush
             IEnumerable<IEnumerable<TrTransform>> pathEnumerable,
             TrTransform tr,
             List<Color> colors = null,
+            List<List<Color32?>> controlPointColors = null,
             float brushScale = 1f,
             float smoothing = 0,
             uint group = GroupManager.kIdSketchGroupTagNone)
@@ -104,6 +105,7 @@ namespace TiltBrush
                     m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
+                    m_OverrideColors = controlPointColors?[pathIndex]?.ToList()
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                 stroke.Group = new SketchGroupTag(group);

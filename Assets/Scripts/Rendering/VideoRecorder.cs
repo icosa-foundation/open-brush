@@ -15,6 +15,7 @@
 #undef ENABLE_AUDIO_DEBUG
 
 using UnityEngine;
+using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -992,6 +993,12 @@ namespace TiltBrush
 
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
+
             // Loop playback. We intentionally don't buffer the entire video, which means we have to run
             // FFMPEG in a loop until we're done previewing.
             if (m_isPlayingBack && m_ffmpegVideoReader.DidExit)
