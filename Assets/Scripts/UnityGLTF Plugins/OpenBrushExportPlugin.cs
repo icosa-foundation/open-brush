@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -25,7 +26,36 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Mesh, TimestampSource> m_TimestampSources;
+        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
+        private List<Mesh> m_TemporaryBatchMeshes;
         private List<Camera> m_CameraPathsCameras;
+        private GameObject m_ThumbnailCamera;
+        private bool m_WasUsingBatchedBrushes;
+
+        private const string kTimestampAttribute = "_TB_TIMESTAMP";
+
+        private readonly struct TimestampSource
+        {
+            public Batch Batch { get; }
+            public Stroke Stroke { get; }
+
+            private TimestampSource(Batch batch, Stroke stroke)
+            {
+                Batch = batch;
+                Stroke = stroke;
+            }
+
+            public static TimestampSource ForBatch(Batch batch)
+            {
+                return new TimestampSource(batch, null);
+            }
+
+            public static TimestampSource ForStroke(Stroke stroke)
+            {
+                return new TimestampSource(null, stroke);
+            }
+        }
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
@@ -35,7 +65,12 @@ namespace TiltBrush
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
+            m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
+            m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
         }
 
         private void GenerateCameraPathsCameras()
@@ -51,6 +86,7 @@ namespace TiltBrush
                 go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
             }
         }
 
@@ -86,10 +122,10 @@ namespace TiltBrush
                     var knot = rotKnots[j];
                     var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
                 }
-                exporter.AddAnimationData(cam.gameObject, "rotation", anim, posTimes, posValues);
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
 
                 var fovKnots = widget.WidgetScript.Path.FovKnots;
                 var fovTimes = new float[fovKnots.Count];
@@ -97,16 +133,27 @@ namespace TiltBrush
                 for (var j = 0; j < fovKnots.Count; j++)
                 {
                     var knot = fovKnots[j];
-                    var xf = knot.KnotXf;
                     var t = knot.PathT.T;
-                    posTimes[j] = t;
-                    posValues[j] = xf.rotation;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
                 }
                 exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
 
                 exporter.GetRoot().Animations.Add(anim);
-                GameObject.Destroy(cam);
             }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
         }
 
         private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
@@ -144,6 +191,7 @@ namespace TiltBrush
 
             if (App.UserConfig.Export.KeepStrokes)
             {
+                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
                 App.Config.m_UseBatchedBrushes = false;
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
@@ -157,9 +205,16 @@ namespace TiltBrush
                         stroke.Uncreate();
                         stroke.Recreate(null, canvas);
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
-                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
-                        stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
-                        stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                        if (mesh.vertexCount > 0)
+                        {
+                            mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                            stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
+                            stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                            if (App.UserConfig.Export.ExportStrokeTimestamp)
+                            {
+                                m_TimestampSources[mesh] = TimestampSource.ForStroke(stroke);
+                            }
+                        }
                         stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
                         if (App.UserConfig.Export.KeepGroups)
                         {
@@ -172,10 +227,47 @@ namespace TiltBrush
                 }
                 canvas.BatchManager.FlushMeshUpdates();
             }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var brush = batch.Brush;
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    Mesh mesh = new Mesh();
+                    batch.Geometry.CopyToMesh(mesh);
+                    if (mesh == null)
+                    {
+                        Debug.LogError($"No mesh found for brush {brush.name}");
+                        continue;
+                    }
+                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
+                    if (mesh.vertexCount > 0)
+                    {
+                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        m_TemporaryBatchMeshes.Add(mesh);
+                        mf.sharedMesh = mesh;
+                        mf.mesh = mesh;
+                        if (App.UserConfig.Export.ExportStrokeTimestamp)
+                        {
+                            m_TimestampSources[mesh] = TimestampSource.ForBatch(batch);
+                        }
+                    }
+                }
+            }
         }
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
         {
+            var batch = transform.GetComponent<Batch>();
+            if (batch != null)
+            {
+                var mesh = transform.GetComponent<MeshFilter>().sharedMesh;
+                if (mesh.vertexCount == 0)
+                {
+                    return false;
+                }
+            }
+
             Type[] excludedTypes =
             {
                 typeof(SnapGrid3D),
@@ -194,6 +286,16 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
+            if (App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeTimestamp)
+            {
+                var brush = transform.GetComponent<BaseBrushScript>();
+                var mesh = transform.GetComponent<MeshFilter>()?.sharedMesh;
+                if (brush?.Stroke != null && mesh != null && mesh.vertexCount > 0)
+                {
+                    m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                }
+            }
             if (!App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeMetadata)
             {
@@ -211,9 +313,9 @@ namespace TiltBrush
         public void AfterLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            App.Config.m_UseBatchedBrushes = true;
             if (App.UserConfig.Export.KeepStrokes)
             {
+                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
                 foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
                 {
                     var stroke = brushScript.Stroke;
@@ -240,6 +342,23 @@ namespace TiltBrush
                         }
                     }
                 }
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
+                    {
+                        mf.sharedMesh = originalMesh;
+                    }
+                }
+
+                foreach (var mesh in m_TemporaryBatchMeshes)
+                {
+                    SafeDestroy(mesh);
+                }
+                m_TemporaryBatchMeshes.Clear();
             }
         }
 
@@ -303,7 +422,7 @@ namespace TiltBrush
             if (!Application.isPlaying) return;
             if (App.UserConfig.Export.ExportStrokeMetadata)
             {
-                if (App.UserConfig.Export.KeepStrokes)
+                if (!App.UserConfig.Export.KeepStrokes)
                 {
                     Batch batch;
                     var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
@@ -330,6 +449,117 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        public override void AfterMeshExport(
+            GLTFSceneExporter exporter, Mesh mesh, GLTFMesh gltfMesh, int index)
+        {
+            if (!Application.isPlaying ||
+                !App.UserConfig.Export.ExportStrokeTimestamp ||
+                !m_TimestampSources.TryGetValue(mesh, out TimestampSource source))
+            {
+                return;
+            }
+
+            byte[] timestampData = source.Stroke != null
+                ? CreateTimestampData(source.Stroke, mesh.vertexCount)
+                : CreateTimestampData(source.Batch, mesh.vertexCount);
+            if (timestampData == null)
+            {
+                return;
+            }
+
+            AccessorId timestampAccessor = exporter.ExportAccessor(
+                timestampData,
+                (uint)mesh.vertexCount,
+                GLTFAccessorAttributeType.VEC3,
+                GLTFComponentType.Float,
+                null,
+                null);
+            timestampAccessor.Value.BufferView.Value.Target = BufferViewTarget.ArrayBuffer;
+
+            foreach (MeshPrimitive primitive in gltfMesh.Primitives)
+            {
+                primitive.Attributes[kTimestampAttribute] = timestampAccessor;
+            }
+        }
+
+        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        {
+            if (batch == null || vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            foreach (BatchSubset subset in batch.m_Groups)
+            {
+                if (subset.m_StartVertIndex < 0 || subset.m_VertLength < 0 ||
+                    subset.m_StartVertIndex + subset.m_VertLength > vertexCount)
+                {
+                    Debug.LogWarning($"Cannot export timestamps for an invalid batch subset in {batch.name}");
+                    return null;
+                }
+
+                if (!WriteStrokeTimestamps(
+                    data, subset.m_StartVertIndex, subset.m_VertLength, subset.m_Stroke))
+                {
+                    return null;
+                }
+            }
+            return data;
+        }
+
+        private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)
+        {
+            if (vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            return WriteStrokeTimestamps(data, 0, vertexCount, stroke) ? data : null;
+        }
+
+        // Matches the legacy exporter: x/y are the stroke endpoints in seconds and z is a
+        // linear resampling of the control-point timestamps over the stroke's vertices.
+        private static unsafe bool WriteStrokeTimestamps(
+            byte[] data, int startVertex, int vertexCount, Stroke stroke)
+        {
+            PointerManager.ControlPoint[] controlPoints = stroke?.m_ControlPoints;
+            if (controlPoints == null || controlPoints.Length == 0)
+            {
+                Debug.LogWarning("Cannot export timestamps for a stroke without control points");
+                return false;
+            }
+
+            float startTime = controlPoints[0].m_TimestampMs * .001f;
+            float endTime = controlPoints[controlPoints.Length - 1].m_TimestampMs * .001f;
+            double controlPointFromVertex = vertexCount > 1
+                ? (controlPoints.Length - 1) / ((double)vertexCount - 1)
+                : 0;
+
+            fixed (byte* dataBytes = data)
+            {
+                float* timestamps = (float*)dataBytes;
+                for (int vertex = 0; vertex < vertexCount; ++vertex)
+                {
+                    double controlPointIndex = controlPointFromVertex * vertex;
+                    int lowerIndex = (int)Math.Floor(controlPointIndex);
+                    int upperIndex = Mathf.Min(lowerIndex + 1, controlPoints.Length - 1);
+                    float t = (float)(controlPointIndex - lowerIndex);
+                    float interpolatedTime = Mathf.LerpUnclamped(
+                        controlPoints[lowerIndex].m_TimestampMs * .001f,
+                        controlPoints[upperIndex].m_TimestampMs * .001f,
+                        t);
+
+                    int timestamp = (startVertex + vertex) * 3;
+                    timestamps[timestamp] = startTime;
+                    timestamps[timestamp + 1] = endTime;
+                    timestamps[timestamp + 2] = interpolatedTime;
+                }
+            }
+            return true;
         }
 
         void AddExtension(GLTFMaterial materialNode, IExtension blend)
@@ -414,7 +644,19 @@ namespace TiltBrush
         {
             if (!Application.isPlaying) return;
 
-            ExportCameraPaths(exporter);
+            try
+            {
+                ExportCameraPaths(exporter);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
+            }
+
             if (App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
@@ -422,14 +664,16 @@ namespace TiltBrush
 
             gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
 
-            JToken ColorToJString(Color c) => $"{c.r}, {c.g}, {c.b}, {c.a}";
-            JToken Vector3ToJString(Vector3 c) => $"{c.x}, {c.y}, {c.z}";
+            JToken ColorToJString(Color c, bool includeAlpha = false) =>
+                string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
+            JToken Vector3ToJString(Vector3 c) => string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.x, c.y, c.z);
 
             var metadata = new SketchSnapshot().GetSketchMetadata();
 
             var settings = SceneSettings.m_Instance;
             Environment env = settings.GetDesiredPreset();
             var extras = new JObject();
+
 
             var pose = metadata.SceneTransformInRoomSpace;
             extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
@@ -441,10 +685,24 @@ namespace TiltBrush
             extras["TB_SkyGradientDirection"] = Vector3ToJString(
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
-            extras["TB_FogDensity"] = settings.FogDensity;
+            extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
+            extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
+            for (int i = 0; i < App.Scene.GetNumLights(); i++)
+            {
+                var transform = App.Scene.GetLight(i).transform;
+                Light unityLight = transform.GetComponent<Light>();
+                Debug.Assert(unityLight != null);
+                Color lightColor = unityLight.color * unityLight.intensity;
+                lightColor.a = 1.0f;
+                extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
+                Vector3 rot = transform.localEulerAngles;
+                rot.y = 360 - rot.y; // Backwards compatibility
+                rot.z = 0; // Roll is irrelevant for directional lights
+                extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
+            }
             extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
-            extras["TB_PoseScale"] = pose.scale;
+            extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
@@ -458,6 +716,10 @@ namespace TiltBrush
             // Experimental
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
+
+            Object.Destroy(m_ThumbnailCamera);
+            m_OriginalBatchMeshes?.Clear();
+            m_TemporaryBatchMeshes?.Clear();
         }
 
         private static void SafeDestroy(Object o)

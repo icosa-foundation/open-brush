@@ -330,6 +330,18 @@ namespace TiltBrush
 
             FollowingPath = false;
             m_CameraPathsVisible = false;
+
+            App.Scene.ActiveCanvasChanged += OnActiveCanvasChanged;
+        }
+
+        private void OnDestroy()
+        {
+            App.Scene.ActiveCanvasChanged -= OnActiveCanvasChanged;
+        }
+
+        private void OnActiveCanvasChanged(CanvasScript previous, CanvasScript current)
+        {
+            RefreshPinAndUnpinLists();
         }
 
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
@@ -1176,7 +1188,9 @@ namespace TiltBrush
                 foreach (var widgetData in widgetList)
                 {
                     var widget = widgetData.WidgetScript;
-                    if (widget.gameObject.activeSelf && widget.AllowPinning)
+                    if (widget.gameObject.activeSelf &&
+                        widget.AllowPinning &&
+                        widget.Canvas == App.ActiveCanvas)
                     {
                         if (widget.Pinned)
                         {

@@ -65,7 +65,6 @@ namespace TiltBrush
                     // }
 
                     // TODO: Rift prefabs are completely missing. just using quest now.
-                    break;
                     ActivateControllers(m_QuestControllers, true);
                     break;
             }
