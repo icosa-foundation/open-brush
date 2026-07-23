@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
 using System.Text;
 using UnityEngine;
 
@@ -24,7 +25,10 @@ namespace TiltBrush
         {
 
             float scale = 100f;
-            ExportUtils.SceneStatePayload payload = ExportCollector.GetExportPayload(AxisConvention.kStl);
+            ExportUtils.SceneStatePayload payload = ExportCollector.GetExportPayload(
+            AxisConvention.kStl,
+                outputDirectory: Path.GetDirectoryName(outputFile)
+            );
 
             var buffer = new StringBuilder();
             foreach (var group in payload.groups)
