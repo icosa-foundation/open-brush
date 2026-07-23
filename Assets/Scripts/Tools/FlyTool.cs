@@ -26,8 +26,15 @@ namespace TiltBrush
 
         public GameObject m_NonVRFlyingUi;
 
+        [Header("Touchscreen controls")]
+        [SerializeField] private TouchJoystick m_MoveJoystick;
+        [SerializeField] private TouchscreenVirtualKey m_UpButton;
+        [SerializeField] private TouchscreenVirtualKey m_DownButton;
+
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
+
+        private FlyPathRecorder m_PathRecorder;
         [SerializeField]
         [Range(0f, 2f)]
         private float m_MaxSpeed = 1f;
@@ -56,6 +63,15 @@ namespace TiltBrush
         {
             base.Init();
             _toolDirectionIndicator = transform.Find("DirectionIndicator").gameObject;
+
+            // Find or create the FlyPathRecorder
+            m_PathRecorder = FindObjectOfType<FlyPathRecorder>();
+            if (m_PathRecorder == null)
+            {
+                GameObject recorderGo = new GameObject("FlyPathRecorder");
+                recorderGo.transform.SetParent(App.Instance.transform);
+                m_PathRecorder = recorderGo.AddComponent<FlyPathRecorder>();
+            }
         }
 
         override public void EnableTool(bool bEnable)
@@ -88,6 +104,11 @@ namespace TiltBrush
         public override bool InputBlocked()
         {
             return !m_Armed;
+        }
+
+        public override bool AvailableDuringLoading()
+        {
+            return true;
         }
 
         public override void HideTool(bool bHide)
@@ -126,7 +147,34 @@ namespace TiltBrush
 
                 Gamepad gamepad = Gamepad.current;
                 Vector2 mv = Vector2.zero;
-                if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                Vector3 touchTranslation = Vector3.zero;
+
+                // Read the on-screen touch controls first. While one is held it takes
+                // priority, so a drag on it doesn't also get treated as a look-drag
+                // (this also keeps mouse-look from fighting the joystick when testing
+                // the touch UI in the editor).
+                bool uiControlTouched = false;
+                if (m_IsTouchScreen)
+                {
+                    if (m_MoveJoystick != null && m_MoveJoystick.IsPressed)
+                    {
+                        Vector2 j = m_MoveJoystick.Value;
+                        touchTranslation += new Vector3(j.x, 0f, j.y);
+                        uiControlTouched = true;
+                    }
+                    if (m_UpButton != null && m_UpButton.m_IsPressed)
+                    {
+                        touchTranslation += Vector3.up;
+                        uiControlTouched = true;
+                    }
+                    if (m_DownButton != null && m_DownButton.m_IsPressed)
+                    {
+                        touchTranslation += Vector3.down;
+                        uiControlTouched = true;
+                    }
+                }
+
+                if (!uiControlTouched && Mouse.current != null && Mouse.current.leftButton.isPressed)
                 {
                     mv += InputManager.m_Instance.GetMouseMoveDelta();
                 }
@@ -141,34 +189,19 @@ namespace TiltBrush
                     }
                 }
 
-                var virtualButtons = new Dictionary<char, bool> { { 'W', false }, { 'A', false }, { 'S', false }, { 'D', false } };
-
-                if (m_IsTouchScreen)
+                if (m_IsTouchScreen && !uiControlTouched
+                    && EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0)
                 {
-                    TouchscreenVirtualKey[] btns = m_NonVRFlyingUi.GetComponentsInChildren<TouchscreenVirtualKey>();
-                    bool virtualButtonPressed = false;
-                    foreach (var btn in btns)
-                    {
-                        if (btn.m_IsPressed)
-                        {
-                            virtualButtons[btn.m_Key] = true;
-                            virtualButtonPressed = true;
-                        }
-                    }
+                    var t = Touch.activeTouches[0];
+                    Vector2 delta = t.delta;
 
-                    if (EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0 && !virtualButtonPressed)
-                    {
-                        var t = Touch.activeTouches[0];
-                        Vector2 delta = t.delta;
+                    // Normalize to screen size
+                    delta.x /= Screen.width;
+                    delta.y /= Screen.height;
 
-                        // Normalize to screen size
-                        delta.x /= Screen.width;
-                        delta.y /= Screen.height;
-
-                        // Sensitivity tuning
-                        float touchLookSensitivity = 300f; // tweak as needed
-                        mv = delta * touchLookSensitivity;
-                    }
+                    // Sensitivity tuning
+                    float touchLookSensitivity = 300f; // tweak as needed
+                    mv = delta * touchLookSensitivity;
                 }
 
                 if (mv != Vector2.zero)
@@ -196,7 +229,7 @@ namespace TiltBrush
                     App.VrSdk.GetVrCamera().transform.localEulerAngles = cameraRotation;
                 }
 
-                Vector3 cameraTranslation = Vector3.zero;
+                Vector3 cameraTranslation = touchTranslation;
 
                 bool isSprinting = InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.SprintMode) ||
                                    (gamepad != null && gamepad.leftStickButton.isPressed);
@@ -210,11 +243,11 @@ namespace TiltBrush
                     cameraTranslation += Vector3.up * upDown;
                 }
 
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward) || virtualButtons['W'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveForward))
                 {
                     cameraTranslation += Vector3.forward;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards) || virtualButtons['S'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveBackwards))
                 {
                     cameraTranslation += Vector3.back;
                 }
@@ -226,11 +259,11 @@ namespace TiltBrush
                 {
                     cameraTranslation += Vector3.down;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft) || virtualButtons['A'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveLeft))
                 {
                     cameraTranslation += Vector3.left;
                 }
-                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight) || virtualButtons['D'])
+                if (InputManager.m_Instance.GetKeyboardShortcut(InputManager.KeyboardShortcut.CameraMoveRight))
                 {
                     cameraTranslation += Vector3.right;
                 }
@@ -335,6 +368,62 @@ namespace TiltBrush
             {
                 transform.position = SketchSurfacePanel.m_Instance.transform.position;
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+            }
+        }
+
+        /// <summary>
+        /// Start recording camera path while flying
+        /// </summary>
+        public bool StartPathRecording()
+        {
+            if (m_PathRecorder == null)
+            {
+                Debug.LogError("FlyTool: PathRecorder not initialized");
+                return false;
+            }
+
+            return m_PathRecorder.StartRecording();
+        }
+
+        /// <summary>
+        /// Stop recording and get the recorded frames
+        /// </summary>
+        public List<FlyPathRecorder.RecordedFrame> StopPathRecording()
+        {
+            if (m_PathRecorder == null)
+            {
+                Debug.LogError("FlyTool: PathRecorder not initialized");
+                return null;
+            }
+
+            return m_PathRecorder.StopRecording();
+        }
+
+        /// <summary>
+        /// Check if currently recording a camera path
+        /// </summary>
+        public bool IsRecordingPath()
+        {
+            return m_PathRecorder != null && m_PathRecorder.IsRecording;
+        }
+
+        /// <summary>
+        /// Get recording statistics
+        /// </summary>
+        public string GetRecordingStats()
+        {
+            if (m_PathRecorder == null) return "PathRecorder not initialized";
+            return m_PathRecorder.GetRecordingStats();
+        }
+
+        /// <summary>
+        /// Clear recorded frames
+        /// </summary>
+        public void ClearRecording()
+        {
+            if (m_PathRecorder != null)
+            {
+                m_PathRecorder.ClearRecording();
             }
         }
     }
