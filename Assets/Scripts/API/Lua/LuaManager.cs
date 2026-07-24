@@ -368,13 +368,17 @@ namespace TiltBrush
             {
                 var nextNode = node.Next;
                 var req = node.Value;
-                if (!req.script.Globals.Get("_scriptHasEnded").Boolean)
+                bool scriptHasEnded = req.script.Globals.Get("_scriptHasEnded").Boolean;
+                if (!scriptHasEnded && !req.request.isDone)
                 {
-                    if (!req.request.isDone)
-                    {
-                        node = nextNode;
-                        continue; // The only case where we don't remove the item from the queue
-                    }
+                    node = nextNode;
+                    continue; // The only case where we don't remove the item from the queue
+                }
+                // Callbacks can invoke native APIs that throw. Remove completed requests before
+                // invoking them so an exception cannot cause the callback to run again next frame.
+                m_WebRequests.Remove(node);
+                if (!scriptHasEnded)
+                {
                     switch (req.request.result)
                     {
                         case UnityWebRequest.Result.ConnectionError:
@@ -384,12 +388,28 @@ namespace TiltBrush
                             catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onError.ToString(), e); }
                             break;
                         case UnityWebRequest.Result.Success:
+                            string contentType = req.request.GetResponseHeader("Content-Type");
+                            if (!WebRequestApiWrapper.IsContentTypeAllowed(
+                                contentType, req.allowedResponseFileTypes))
+                            {
+                                string error =
+                                    $"[LuaNetworkPolicy] Response from '{req.request.url}' has disallowed Content-Type '{contentType ?? "<missing>"}'.";
+                                if (req.onError != null)
+                                {
+                                    try { req.onError.Call(error, req.context); }
+                                    catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onError.ToString(), e); }
+                                }
+                                else
+                                {
+                                    LogLuaError(new UnauthorizedAccessException(error));
+                                }
+                                break;
+                            }
                             try { req.onSuccess?.Call(req.request.downloadHandler.text, req.context); }
                             catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onSuccess.ToString(), e); }
                             break;
                     }
                 }
-                m_WebRequests.Remove(node);
                 node = nextNode;
             }
 
@@ -499,7 +519,7 @@ namespace TiltBrush
 
         private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript = false)
         {
-            Script script = new Script();
+            Script script = CreatePluginScript();
             InitScriptOnce(script); // Needs to be done early so Parameters can reference API classes
             string scriptName = null;
 
@@ -542,6 +562,18 @@ namespace TiltBrush
                 }
             }
             return scriptName;
+        }
+
+        internal static Script CreatePluginScript()
+        {
+            Script script = new Script(CoreModules.Preset_SoftSandbox | CoreModules.LoadMethods);
+            script.Globals["io"] = DynValue.Nil;
+            script.Globals["load"] = DynValue.Nil;
+            script.Globals["loadsafe"] = DynValue.Nil;
+            script.Globals["loadfile"] = DynValue.Nil;
+            script.Globals["loadfilesafe"] = DynValue.Nil;
+            script.Globals["dofile"] = DynValue.Nil;
+            return script;
         }
 
         public Vector3 GetPastBrushPos(int back)
@@ -1208,7 +1240,12 @@ namespace TiltBrush
             return m_ActiveBackgroundScripts.ContainsKey(scriptName);
         }
 
-        public void QueueWebRequest(UnityWebRequest request, Closure onSuccess, Closure onError, DynValue context)
+        public void QueueWebRequest(
+            UnityWebRequest request,
+            Closure onSuccess,
+            Closure onError,
+            DynValue context,
+            string[] allowedResponseFileTypes)
         {
             var req = new LuaWebRequest
             {
@@ -1216,7 +1253,8 @@ namespace TiltBrush
                 request = request,
                 onSuccess = onSuccess,
                 onError = onError,
-                context = context
+                context = context,
+                allowedResponseFileTypes = allowedResponseFileTypes
             };
             m_WebRequests.AddLast(req);
         }
@@ -1228,6 +1266,7 @@ namespace TiltBrush
             public Closure onSuccess;
             public Closure onError;
             public DynValue context;
+            public string[] allowedResponseFileTypes;
         }
 
         public void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
