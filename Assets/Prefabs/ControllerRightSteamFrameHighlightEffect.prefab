@@ -4820,7 +4820,7 @@ GameObject:
   - component: {fileID: 33550352262830770}
   - component: {fileID: 114459733794502100}
   m_Layer: 0
-  m_Name: ControllerRighSteamFrameHighlightEffect
+  m_Name: ControllerRightSteamFrameHighlightEffect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
