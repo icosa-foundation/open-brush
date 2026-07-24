@@ -1114,7 +1114,7 @@ MonoBehaviour:
   m_TransformVisualsRenderer: {fileID: 23000012659756648}
   m_ActivateEffectPrefab: {fileID: 1946532704157676, guid: 754120143b4e83d4baf32e52603ffa84,
     type: 3}
-  m_HighlightEffectPrefab: {fileID: 1946532704157676, guid: ab1a5b010aa4f504eadbd622c6fdc424,
+  m_HighlightEffectPrefab: {fileID: 1946532704157676, guid: d3f5d4e655758bc4691ffab8d83436e1,
     type: 3}
   m_XRayVisuals: {fileID: 1000013600148666}
   m_TriggerRotation: {x: 0, y: 10}
