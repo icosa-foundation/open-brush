@@ -1,3 +1,8 @@
+-- Requires the following host allowlist entry, or EnablePluginWebRequests:
+-- "PluginWebRequestRules": [
+--   {"Host":"avatars.openbrush.app", "Methods":["GET"], "FileTypes":["image"]}
+-- ]
+
 Settings = {
     description="Calls an API to generate a random SVG icon using the Multiavatar library",
     previewType="quad"
@@ -19,12 +24,7 @@ function Main()
 end
 
 function requestNewAvatar()
-    randomString = ""
-    for i = 1, 8 do
-        randomString = randomString .. string.char(Random:Range(97, 122))
-    end
-    -- url = "https://api.multiavatar.com/" .. randomString .. ".svg"
-    url = "https://bit.ly/multiavatar"
+    url = "https://avatars.openbrush.app/avatar.svg"
     WebRequest:Get(url, onGetAvatar)
 end
 

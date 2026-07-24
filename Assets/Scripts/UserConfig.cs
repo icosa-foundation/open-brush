@@ -27,6 +27,16 @@ namespace TiltBrush
     public class UserConfig
     {
         [Serializable]
+        public struct PluginWebRequestRule
+        {
+            // Exact host, HTTP methods, and response categories documented in
+            // Support/PluginWebRequestRules.md.
+            public string Host;
+            public string[] Methods;
+            public string[] FileTypes;
+        }
+
+        [Serializable]
         public struct YouTubeConfig
         {
             public string ChannelID;
@@ -75,6 +85,10 @@ namespace TiltBrush
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
+            public bool WebScriptsCanControlPlugins;
+            public bool EnablePluginWebRequests;
+            public PluginWebRequestRule[] PluginWebRequestRules;
+            public bool EnablePluginClipboardAccess;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts

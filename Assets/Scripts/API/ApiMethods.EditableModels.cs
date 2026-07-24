@@ -70,7 +70,13 @@ namespace TiltBrush
                 {
                     var newUri = new Uri(baseUri, externalFile);
                     var subdir = Path.GetDirectoryName(externalFile);
-                    _DownloadMediaFileFromUrl(newUri, Path.Combine(fullLocalPath, subdir));
+                    string dependencyDirectory = string.IsNullOrEmpty(subdir)
+                        ? fullLocalPath
+                        : GetSafeRelativePathInDirectory(
+                            fullLocalPath, subdir, "model dependency directory",
+                            allowBaseDirectory: true);
+                    _DownloadMediaFileFromUrlToDirectory(
+                        newUri, dependencyDirectory, allowRedirects: true);
                 }
             }
             ImportModel(Path.Combine(uri.Host, filename));
@@ -134,6 +140,8 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = parts[0];
+            GetSafeRelativePathInDirectory(
+                App.ModelLibraryPath(), relativePath, "model path");
             string subtree = null;
             if (parts.Length > 1)
             {

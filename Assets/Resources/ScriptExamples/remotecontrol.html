@@ -67,6 +67,13 @@
         <label>Force painting Off: <button onclick="sendCommand('brush.force.painting.off=1');">On</button><button onclick="sendCommand('brush.force.painting.off=0');">Off</button></label>
 
         <h4>Scripts:</h4>
+        <div class="alert alert-warning" role="alert">
+            Plugin script controls are disabled by default because they allow HTTP API clients to activate and
+            deactivate installed Lua plugins without confirmation in Open Brush. Enable this only when you trust
+            the pages or tools using your Open Brush HTTP API. To use these controls, set
+            <code>Flags.WebScriptsCanControlPlugins</code> to <code>true</code> in your user config.
+            Take additional care if remote API access or CORS is also enabled.
+        </div>
         <Label>Tool Script: <select id="toolScripts" name="toolScripts"></select></Label>
         <button onclick='activateToolScript()'>Activate</button>
         <button onclick='deactivateToolScript()'>Deactivate</button>

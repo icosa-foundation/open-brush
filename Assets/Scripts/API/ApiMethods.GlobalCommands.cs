@@ -37,7 +37,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "save.as",
-            "Saves the current scene under a new name. (No need to include the .tilt suffix)",
+            "Saves the current scene under a new filename in the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
             "newSketch"
 
         )]
@@ -48,6 +48,7 @@ namespace TiltBrush
             {
                 filename = filename.Substring(0, filename.Length - suffix.Length);
             }
+            ValidateSafeFilename(filename, "sketch filename");
             var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: filename);
         }
@@ -163,7 +164,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "load.named",
-            "Loads the sketch with the given name from the user's sketch folder",
+            "Loads a sketch filename from the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
             "Untitled_1"
         )]
         public static void LoadNamedFile(string filename)
@@ -172,31 +173,33 @@ namespace TiltBrush
             {
                 filename += SaveLoadScript.TILT_SUFFIX;
             }
-            // TODO do we want to allow arbitrary directories?
-            // Does this even check for directory traversal?;
+            string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile,
                 (int)SketchControlsScript.LoadSpeed.Quick,
                 -1,
-                Path.Combine(App.UserSketchPath(), filename)
+                path
             );
             PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 
         [ApiEndpoint(
             "merge.named",
-            "Loads the sketch with the given name from the user's sketch folder",
+            "Merges a sketch filename from the user's Sketches folder into the current sketch. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
             "Untitled_1"
         )]
         public static void MergeNamedFile(string filename)
         {
-            // TODO do we want to allow arbitrary directories?
-            // Does this even check for directory traversal?;
+            if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            {
+                filename += SaveLoadScript.TILT_SUFFIX;
+            }
+            string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile,
                 (int)SketchControlsScript.LoadSpeed.Quick,
                 1,
-                Path.Combine(App.UserSketchPath(), filename)
+                path
             );
         }
 
@@ -675,4 +678,3 @@ namespace TiltBrush
         }
     }
 }
-

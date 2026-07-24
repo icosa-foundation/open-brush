@@ -8,7 +8,7 @@
 ---@field physics boolean Whether physics simulation is active (defaults is off)
 ---@field currentScale number The current scale of the scene
 ---@field environment string Get or set the current environment by name
----@field clipboardText string Get or set the clipboard text
+---@field clipboardText string Get or set the clipboard text. Disabled by default; requires Flags.EnablePluginClipboardAccess to be enabled in the user config
 App = {}
 
 function App:Undo() end
@@ -16,7 +16,7 @@ function App:Undo() end
 
 function App:Redo() end
 
----@param url string The url to send the stroke data to
+---@param url string The URL that receives completed stroke data
 function App:AddListener(url) end
 
 
@@ -64,7 +64,7 @@ function App:DraftingHidden() end
 ---@param active boolean True means activate, false means deactivate
 function App:Watermark(active) end
 
----@param path string The file path to read from. It must be relative to and contined within the Scripts folder
+---@param path string A relative path contained within the Plugins folder. Rooted paths and paths that traverse outside that folder are rejected
 ---@return string # The contents of the file as a string
 function App:ReadFile(path) end
 
@@ -75,16 +75,16 @@ function App:Error(message) end
 function App:SetFont(fontData) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
----@param filename string The filename to use for the saved snapshot
+---@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
 ---@param width number Image width
 ---@param height number Image height
 ---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
 ---@param renderDepth? boolean If true then render the depth buffer instead of the image
----@param removeBackground? boolean 
+---@param removeBackground? boolean If true then render the image with a transparent background
 function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
----@param filename string The filename to use for the saved snapshot
+---@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
 ---@param width? number The width of the image
 function App:Take360Snapshot(tr, filename, width) end
 
@@ -674,9 +674,9 @@ Image = {}
 ---@return Color # The pixel color
 function Image:GetPixel(x, y) end
 
----@param filename string The filename of the image
+---@param location string A filename in MediaLibrary/Images, or an HTTP(S) URL permitted by the Lua network configuration
 ---@return Image # The imported image widget
-function Image:Import(filename) end
+function Image:Import(location) end
 
 
 function Image:Select() end
@@ -1623,13 +1623,13 @@ function Selection:Trim(count) end
 ---@field mainLightRotation Rotation | number[] The main light's rotation
 ---@field secondaryLightRotation Rotation | number[] The secondary light's rotation
 Sketch = {}
----@param name string The filename of the sketch
+---@param name string A filename in the Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected
 function Sketch:Open(name) end
 
 ---@param overwrite boolean If set to true, overwrite the existing file. If false, the method will not overwrite the file
 function Sketch:Save(overwrite) end
 
----@param name string The new name for the sketch
+---@param name string A filename in the Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected
 function Sketch:SaveAs(name) end
 
 
@@ -1638,8 +1638,8 @@ function Sketch:Export() end
 
 function Sketch:NewSketch() end
 
----@param filename string The filename of the image
-function Sketch:ImportSkybox(filename) end
+---@param location string A filename in MediaLibrary/BackgroundImages, or an HTTP(S) URL permitted by the Lua network configuration
+function Sketch:ImportSkybox(location) end
 
 
 
@@ -2483,7 +2483,7 @@ function Vector4:NotEquals(x, y, z) end
 ---@field rotation Rotation | number[] The 3D orientation of the Video Widget
 ---@field scale number The scale of the Video Widget
 Video = {}
----@param location string The filename of the video file to import from the user's MediaLibrary/Videos folder
+---@param location string A filename in MediaLibrary/Videos, or an HTTP(S) URL permitted by the Lua network configuration
 ---@return Video # 
 function Video:Import(location) end
 
@@ -2756,14 +2756,14 @@ function Waveform:BlueNoise(duration, sampleRate, amplitude) end
 
 ---@class WebRequest
 WebRequest = {}
----@param url string The URL to send the request to
+---@param url string An HTTP(S) URL allowed by Flags.PluginWebRequestRules or the unrestricted Flags.EnablePluginWebRequests option
 ---@param onSuccess function A function to call when the request succeeds
 ---@param onError? function A function to call when the request fails
 ---@param headers? table A table of key-value pairs to send as headers
 ---@param context? table A value to pass to the onSuccess and onError functions
 function WebRequest:Get(url, onSuccess, onError, headers, context) end
 
----@param url string The URL to send the request to
+---@param url string An HTTP(S) URL allowed by Flags.PluginWebRequestRules or the unrestricted Flags.EnablePluginWebRequests option
 ---@param postData table A table of key-value pairs to send as POST data
 ---@param onSuccess function A function to call when the request succeeds
 ---@param onError function A function to call when the request fails

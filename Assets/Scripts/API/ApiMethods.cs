@@ -23,6 +23,15 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private static readonly HashSet<string> kSupportedReferenceImageExtensions =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".hdr",
+                ".svg"
+            };
 
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
@@ -481,7 +490,8 @@ namespace TiltBrush
 
         private static ReferenceImage _LoadReferenceImage(string location)
         {
-            location = Path.Combine(App.ReferenceImagePath(), location);
+            location = GetSafeRelativePathInDirectory(
+                App.ReferenceImagePath(), location, "reference image path");
             var image = new ReferenceImage(location);
             image.SynchronousLoad();
             return image;
@@ -528,11 +538,21 @@ namespace TiltBrush
         )]
         public static VideoWidget ImportVideo(string location)
         {
-            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            return ImportVideo(location, allowRedirects: true);
+        }
+
+        internal static VideoWidget ImportVideo(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
             {
-                location = _DownloadMediaFileFromUrl(location, "Videos");
+                location = _DownloadMediaFileFromUrl(
+                    location, "Videos", allowRedirects, requiredContentTypePrefix);
             }
-            location = Path.Combine(App.VideoLibraryPath(), location);
+            location = GetSafeRelativePathInDirectory(
+                App.VideoLibraryPath(), location, "video path");
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -563,9 +583,18 @@ namespace TiltBrush
         )]
         public static void ImportSkybox(string location)
         {
-            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            ImportSkybox(location, allowRedirects: true);
+        }
+
+        internal static void ImportSkybox(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
             {
-                location = _DownloadMediaFileFromUrl(location, "BackgroundImages");
+                location = _DownloadMediaFileFromUrl(
+                    location, "BackgroundImages", allowRedirects, requiredContentTypePrefix);
             }
             SceneSettings.m_Instance.LoadCustomSkybox(location);
         }
@@ -577,9 +606,18 @@ namespace TiltBrush
         )]
         public static ImageWidget ImportImage(string location)
         {
-            if (location.StartsWith("http://") || location.StartsWith("https://"))
+            return ImportImage(location, allowRedirects: true);
+        }
+
+        internal static ImageWidget ImportImage(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
             {
-                location = _DownloadMediaFileFromUrl(location, "Images");
+                location = _DownloadMediaFileFromUrl(
+                    location, "Images", allowRedirects, requiredContentTypePrefix);
             }
 
             ReferenceImage image = _LoadReferenceImage(location);
@@ -603,6 +641,13 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             return imageWidget;
+        }
+
+        internal static bool IsHttpLocation(string location)
+        {
+            return location != null &&
+                (location.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    location.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
         }
 
         // TODO - currently the polygon collider isn't using the imported SVG sprite
@@ -1021,33 +1066,156 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.base64Decode",
-            "Saves an image based on a base64 encoded string"
+            "Saves base64-encoded PNG, JPEG, HDR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
         )]
         public static string SaveBase64(string base64, string filename)
         {
             var bytes = Convert.FromBase64String(base64);
-            if (bytes.Length > 4 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+            string imageExtension = GetReferenceImageExtension(bytes);
+            if (imageExtension == null)
             {
-                if (!filename.ToLower().EndsWith(".png"))
-                {
-                    filename += ".png";
-                }
+                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, and SVG image data.");
             }
-            else if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+
+            string extension = Path.GetExtension(filename);
+            if (string.IsNullOrEmpty(extension))
             {
-                if (!filename.ToLower().EndsWith(".jpg") && !filename.ToLower().EndsWith(".jpeg"))
-                {
-                    filename += ".jpg";
-                }
+                filename += imageExtension;
             }
-            var path = Path.Combine(App.ReferenceImagePath(), filename);
+            else if (!kSupportedReferenceImageExtensions.Contains(extension))
+            {
+                throw new ArgumentException($"Unsupported image filename extension: {extension}");
+            }
+            else if (!ReferenceImageExtensionMatchesData(extension, imageExtension))
+            {
+                throw new ArgumentException($"{imageExtension} image data cannot be saved with the {extension} extension.");
+            }
+
+            var path = GetSafeReferenceImageWritePath(filename);
             File.WriteAllBytes(path, bytes);
             return path;
         }
 
+        private static string GetReferenceImageExtension(byte[] bytes)
+        {
+            if (bytes.Length > 4 && bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+            {
+                return ".png";
+            }
+            if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            {
+                return ".jpg";
+            }
+            if (bytes.Length > 10 &&
+                bytes[0] == (byte)'#' &&
+                bytes[1] == (byte)'?' &&
+                (StartsWithAscii(bytes, "#?RADIANCE") || StartsWithAscii(bytes, "#?RGBE")))
+            {
+                return ".hdr";
+            }
+            string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
+            if (text.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) ||
+                (text.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase) &&
+                    text.IndexOf("<svg", StringComparison.OrdinalIgnoreCase) != -1))
+            {
+                return ".svg";
+            }
+            return null;
+        }
+
+        private static bool ReferenceImageExtensionMatchesData(string extension, string imageExtension)
+        {
+            if (imageExtension == ".jpg")
+            {
+                return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+            }
+            return extension.Equals(imageExtension, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool StartsWithAscii(byte[] bytes, string value)
+        {
+            if (bytes.Length < value.Length) return false;
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (bytes[i] != (byte)value[i]) return false;
+            }
+            return true;
+        }
+
+        private static string GetSafeReferenceImageWritePath(string filename)
+        {
+            return GetSafePathInDirectory(App.ReferenceImagePath(), filename, "image filename");
+        }
+
+        internal static void ValidateSafeFilename(string filename, string description)
+        {
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"{description} cannot be empty.");
+            }
+            if (filename.IndexOfAny(Path.GetInvalidFileNameChars()) != -1 ||
+                filename.Contains("/") ||
+                filename.Contains("\\") ||
+                filename == "." ||
+                filename == ".." ||
+                Path.GetFileName(filename) != filename ||
+                Path.IsPathRooted(filename))
+            {
+                throw new ArgumentException($"Invalid {description}: {filename}");
+            }
+        }
+
+        internal static string GetSafePathInDirectory(string directory, string filename, string description)
+        {
+            ValidateSafeFilename(filename, description);
+
+            string basePath = Path.GetFullPath(directory);
+            string path = Path.GetFullPath(Path.Combine(basePath, filename));
+            string basePathWithSeparator = basePath.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!path.StartsWith(basePathWithSeparator, FileSystemPathComparison))
+            {
+                throw new ArgumentException($"Invalid {description}: {filename}");
+            }
+            return path;
+        }
+
+        internal static string GetSafeRelativePathInDirectory(
+            string directory, string relativePath, string description,
+            bool allowBaseDirectory = false)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+            {
+                throw new ArgumentException($"Invalid {description}: {relativePath}");
+            }
+
+            string normalizedRelativePath = relativePath
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar);
+            string basePath = Path.GetFullPath(directory);
+            string path = Path.GetFullPath(Path.Combine(basePath, normalizedRelativePath));
+            string basePathWithSeparator = basePath.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            bool isBaseDirectory = path.Equals(basePath, FileSystemPathComparison);
+            if ((!allowBaseDirectory && isBaseDirectory) ||
+                (!isBaseDirectory && !path.StartsWith(basePathWithSeparator, FileSystemPathComparison)))
+            {
+                throw new ArgumentException($"Invalid {description}: {relativePath}");
+            }
+            return path;
+        }
+
+        private static StringComparison FileSystemPathComparison =>
+            Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
         [ApiEndpoint(
             "scripts.initPluginScripting",
-            "Call this before using any HTTP endpoint that accesses plugins (including html pages that list plugins)",
+            "Initializes plugin scripting for headless or HTTP automation. Disabled by default; requires Flags.WebScriptsCanControlPlugins to be enabled in the user config. Call this before using HTTP endpoints or pages that access plugins",
             ""
         )]
         public static void InitPluginScripting()
