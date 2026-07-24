@@ -123,9 +123,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_MeshMaterialInactive: {fileID: 2100000, guid: bb3f8d356727b7b49bb54cefa40cce26,
     type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: bb3f8d356727b7b49bb54cefa40cce26,
     type: 2}
 --- !u!114 &5733822967690520026
 MonoBehaviour:
@@ -210,9 +210,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 3f09cd6f651dda44788316392fffbefd,
     type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: c3c67c655fefce843a4094dbcf752549,
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 3f09cd6f651dda44788316392fffbefd,
     type: 2}
 --- !u!114 &1658141134665010823
 MonoBehaviour:
