@@ -6,6 +6,36 @@
   "Video": {
   },
   "Flags": {
+    "WebScriptsCanControlPlugins": false,
+    "EnablePluginWebRequests": false,
+    "PluginWebRequestRules": [
+      {
+        "Host": "api.openverse.org",
+        "Methods": ["GET"],
+        "FileTypes": ["json"]
+      },
+      {
+        "Host": "upload.wikimedia.org",
+        "Methods": ["GET"],
+        "FileTypes": ["image"]
+      },
+      {
+        "Host": "avatars.openbrush.app",
+        "Methods": ["GET"],
+        "FileTypes": ["image"]
+      },
+      {
+        "Host": "icosa.gallery",
+        "Methods": ["GET"],
+        "FileTypes": ["any"]
+      },
+      {
+        "Host": "openbrush.app",
+        "Methods": ["GET"],
+        "FileTypes": ["any"]
+      }
+    ],
+    "EnablePluginClipboardAccess": false,
   },
   "Export": {
   },
