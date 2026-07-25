@@ -32,7 +32,8 @@ namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
-        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
+        public static string WebRequestUserAgent =>
+            $"OpenBrush/{Application.version} (https://openbrush.app/)";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -437,6 +438,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
         {
             if (endpoints.ContainsKey(command.Command))
             {
+                if (IsWebPluginControlEndpoint(command.Command))
+                {
+                    EnsureWebPluginControlAllowed(
+                        command.Command, App.UserConfig.Flags.WebScriptsCanControlPlugins);
+                }
                 var endpoint = endpoints[command.Command];
                 var parameters = endpoint.DecodeParams(command.Parameters);
                 return endpoint.Invoke(parameters)?.ToString();
@@ -447,6 +453,19 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             return null;
         }
+
+        internal static void EnsureWebPluginControlAllowed(
+            string command, bool webScriptsCanControlPlugins)
+        {
+            if (!webScriptsCanControlPlugins && IsWebPluginControlEndpoint(command))
+            {
+                throw new UnauthorizedAccessException(
+                    $"{command} requires Flags.WebScriptsCanControlPlugins to be enabled in the user config.");
+            }
+        }
+
+        private static bool IsWebPluginControlEndpoint(string command) =>
+            command.StartsWith("scripts.", StringComparison.Ordinal);
 
         [ContextMenu("Log Api Commands")]
         public void LogCommandsList()
@@ -811,9 +830,26 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 return false;
             }
-            var result = Instance.InvokeEndpoint(command);
+            string result = InvokeEndpointForStatus(() => Instance.InvokeEndpoint(command));
             m_CommandStatuses[command.Handle.ToString()] = result;
             return true;
+        }
+
+        internal static string InvokeEndpointForStatus(Func<string> invokeEndpoint)
+        {
+            try
+            {
+                return invokeEndpoint();
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (TargetInvocationException e)
+                when (e.InnerException is UnauthorizedAccessException authorizationError)
+            {
+                return $"error: {authorizationError.Message}";
+            }
         }
 
         private void Update()

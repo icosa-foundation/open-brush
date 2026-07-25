@@ -33,6 +33,8 @@ namespace TiltBrush
 
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
+
+        private FlyPathRecorder m_PathRecorder;
         [SerializeField]
         [Range(0f, 2f)]
         private float m_MaxSpeed = 1f;
@@ -61,6 +63,15 @@ namespace TiltBrush
         {
             base.Init();
             _toolDirectionIndicator = transform.Find("DirectionIndicator").gameObject;
+
+            // Find or create the FlyPathRecorder
+            m_PathRecorder = FindObjectOfType<FlyPathRecorder>();
+            if (m_PathRecorder == null)
+            {
+                GameObject recorderGo = new GameObject("FlyPathRecorder");
+                recorderGo.transform.SetParent(App.Instance.transform);
+                m_PathRecorder = recorderGo.AddComponent<FlyPathRecorder>();
+            }
         }
 
         override public void EnableTool(bool bEnable)
@@ -357,6 +368,62 @@ namespace TiltBrush
             {
                 transform.position = SketchSurfacePanel.m_Instance.transform.position;
                 transform.rotation = SketchSurfacePanel.m_Instance.transform.rotation;
+            }
+        }
+
+        /// <summary>
+        /// Start recording camera path while flying
+        /// </summary>
+        public bool StartPathRecording()
+        {
+            if (m_PathRecorder == null)
+            {
+                Debug.LogError("FlyTool: PathRecorder not initialized");
+                return false;
+            }
+
+            return m_PathRecorder.StartRecording();
+        }
+
+        /// <summary>
+        /// Stop recording and get the recorded frames
+        /// </summary>
+        public List<FlyPathRecorder.RecordedFrame> StopPathRecording()
+        {
+            if (m_PathRecorder == null)
+            {
+                Debug.LogError("FlyTool: PathRecorder not initialized");
+                return null;
+            }
+
+            return m_PathRecorder.StopRecording();
+        }
+
+        /// <summary>
+        /// Check if currently recording a camera path
+        /// </summary>
+        public bool IsRecordingPath()
+        {
+            return m_PathRecorder != null && m_PathRecorder.IsRecording;
+        }
+
+        /// <summary>
+        /// Get recording statistics
+        /// </summary>
+        public string GetRecordingStats()
+        {
+            if (m_PathRecorder == null) return "PathRecorder not initialized";
+            return m_PathRecorder.GetRecordingStats();
+        }
+
+        /// <summary>
+        /// Clear recorded frames
+        /// </summary>
+        public void ClearRecording()
+        {
+            if (m_PathRecorder != null)
+            {
+                m_PathRecorder.ClearRecording();
             }
         }
     }

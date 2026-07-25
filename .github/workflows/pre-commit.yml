@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v5.4.0
+      - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: '8.0.x'
-      - uses: actions/setup-go@v6  # One of our hooks (gitleaks) needs a newer Go version than we get from the runner
+      - uses: actions/setup-go@v7  # One of our hooks (gitleaks) needs a newer Go version than we get from the runner
         with:
           go-version: '>=1.25.4'
           cache: false
