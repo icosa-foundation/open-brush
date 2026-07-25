@@ -8,9 +8,9 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SketchApiWrapper
     {
-        [LuaDocsDescription("Opens a sketch with the specified name in the User's Sketches folder")]
+        [LuaDocsDescription("Opens a sketch with the specified filename in the user's Sketches folder")]
         [LuaDocsExample(@"Sketch:Open(""MySketch.tilt"")")]
-        [LuaDocsParameter("name", "The filename of the sketch")]
+        [LuaDocsParameter("name", "A filename in the Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         public static void Open(string name) => ApiMethods.LoadNamedFile(name);
 
         [LuaDocsDescription("Saves the current sketch, possibly overwriting an existing one")]
@@ -18,9 +18,9 @@ namespace TiltBrush
         [LuaDocsParameter("overwrite", "If set to true, overwrite the existing file. If false, the method will not overwrite the file")]
         public static void Save(bool overwrite) => LuaApiMethods.Save(overwrite);
 
-        [LuaDocsDescription("Saves the current sketch with a new name")]
+        [LuaDocsDescription("Saves the current sketch with a new filename in the user's Sketches folder")]
         [LuaDocsExample(@"Sketch:SaveAs(""NewName.tilt"")")]
-        [LuaDocsParameter("name", "The new name for the sketch")]
+        [LuaDocsParameter("name", "A filename in the Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         public static void SaveAs(string name) => LuaApiMethods.SaveAs(name);
 
         [LuaDocsDescription("Exports the sketch in all supported export formats")]
@@ -96,12 +96,16 @@ namespace TiltBrush
             EnvironmentCatalog.m_Instance.AllEnvironments.ToList()
         );
 
-        [LuaDocsDescription("Imports a image with the specified name from the MediaLibrary/BackgroundImages folder and assigns it as a custom skybox")]
-        [LuaDocsExample(@"App:ImportSkybox(""landscape.hdr"")")]
-        [LuaDocsParameter("filename", "The filename of the image")]
-        public static void ImportSkybox(string filename)
+        [LuaDocsDescription("Imports an image from MediaLibrary/BackgroundImages or a URL permitted for image responses by Flags.PluginWebRequestRules and assigns it as a custom skybox; Flags.EnablePluginWebRequests permits any HTTP(S) host")]
+        [LuaDocsExample(@"Sketch:ImportSkybox(""landscape.hdr"")")]
+        [LuaDocsParameter("location", "A filename in MediaLibrary/BackgroundImages, or an HTTP(S) URL permitted by the Lua network configuration")]
+        public static void ImportSkybox(string location)
         {
-            ApiMethods.ImportSkybox(filename);
+            WebRequestApiWrapper.EnsureLuaNetworkAccessForLocation(location, "image");
+            ApiMethods.ImportSkybox(
+                location,
+                allowRedirects: WebRequestApiWrapper.AllowsLuaNetworkRedirects,
+                requiredContentTypePrefix: "image/");
         }
 
         private static CustomLights _CustomLights => LightsControlScript.m_Instance.CustomLightsFromScene;

@@ -68,10 +68,17 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
-        [LuaDocsDescription("Imports a video file from the user's MediaLibrary/Videos folder")]
+        [LuaDocsDescription("Imports a video from MediaLibrary/Videos or a URL permitted for video responses by Flags.PluginWebRequestRules; Flags.EnablePluginWebRequests permits any HTTP(S) host")]
         [LuaDocsExample(@"myVideo = Video.Import(""myVideo.mp4"")")]
-        [LuaDocsParameter("location", "The filename of the video file to import from the user's MediaLibrary/Videos folder")]
-        public static VideoApiWrapper Import(string location) => new(ApiMethods.ImportVideo(location));
+        [LuaDocsParameter("location", "A filename in MediaLibrary/Videos, or an HTTP(S) URL permitted by the Lua network configuration")]
+        public static VideoApiWrapper Import(string location)
+        {
+            WebRequestApiWrapper.EnsureLuaNetworkAccessForLocation(location, "video");
+            return new VideoApiWrapper(ApiMethods.ImportVideo(
+                location,
+                allowRedirects: WebRequestApiWrapper.AllowsLuaNetworkRedirects,
+                requiredContentTypePrefix: "video/"));
+        }
 
         [LuaDocsDescription("Adds this Video Widget to the current selection")]
         [LuaDocsExample("myVideo:Select()")]
