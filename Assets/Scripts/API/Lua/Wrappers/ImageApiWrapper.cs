@@ -95,11 +95,18 @@ namespace TiltBrush
             return new ColorApiWrapper(_ImageWidget.ReferenceImage.FullSize.GetPixel(x, y));
         }
 
-        [LuaDocsDescription("Imports an image widget based on the specified filename")]
+        [LuaDocsDescription("Imports an image widget from MediaLibrary/Images or a URL permitted for image responses by Flags.PluginWebRequestRules; Flags.EnablePluginWebRequests permits any HTTP(S) host")]
         [LuaDocsExample(@"Image:Import(""test.png"")")]
-        [LuaDocsParameter("filename", "The filename of the image")]
+        [LuaDocsParameter("location", "A filename in MediaLibrary/Images, or an HTTP(S) URL permitted by the Lua network configuration")]
         [LuaDocsReturnValue("The imported image widget")]
-        public static ImageApiWrapper Import(string filename) => new(ApiMethods.ImportImage(filename));
+        public static ImageApiWrapper Import(string location)
+        {
+            WebRequestApiWrapper.EnsureLuaNetworkAccessForLocation(location, "image");
+            return new ImageApiWrapper(ApiMethods.ImportImage(
+                location,
+                allowRedirects: WebRequestApiWrapper.AllowsLuaNetworkRedirects,
+                requiredContentTypePrefix: "image/"));
+        }
 
         [LuaDocsDescription("Selects the image widget")]
         [LuaDocsExample(@"myImage:Select()")]

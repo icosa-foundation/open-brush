@@ -14,22 +14,77 @@
 
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
+using System;
 using System.IO;
-using UnityEngine;
 
 namespace TiltBrush
 {
     public class OpenBrushScriptLoader : ScriptLoaderBase
     {
+        private readonly string m_ModuleRootOverride;
+
+        public OpenBrushScriptLoader()
+        {
+        }
+
+        internal OpenBrushScriptLoader(string moduleRootOverride)
+        {
+            m_ModuleRootOverride = moduleRootOverride;
+        }
+
         public override bool ScriptFileExists(string name)
         {
-            return File.Exists(name);
+            if (!TryGetSafeModulePath(name, out string path))
+            {
+                return false;
+            }
+            return File.Exists(path);
         }
 
         public override object LoadFile(string file, Table globalContext)
         {
-            FileStream result = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            if (!TryGetSafeModulePath(file, out string path))
+            {
+                throw new ArgumentException($"Invalid Lua module path: {file}");
+            }
+            FileStream result = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             return result;
+        }
+
+        private bool TryGetSafeModulePath(string path, out string fullPath)
+        {
+            return TryGetSafeModulePath(
+                path,
+                m_ModuleRootOverride ?? LuaManager.Instance.LuaModulesPath,
+                out fullPath);
+        }
+
+        internal static bool TryGetSafeModulePath(string path, string moduleRoot, out string fullPath)
+        {
+            fullPath = null;
+            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(moduleRoot))
+            {
+                return false;
+            }
+
+            string fullModuleRoot = Path.GetFullPath(moduleRoot);
+            string resolvedPath = Path.GetFullPath(
+                Path.IsPathRooted(path)
+                    ? path
+                    : Path.Combine(fullModuleRoot, path));
+            string moduleRootWithSeparator = fullModuleRoot.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            StringComparison pathComparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (!resolvedPath.StartsWith(moduleRootWithSeparator, pathComparison))
+            {
+                return false;
+            }
+
+            fullPath = resolvedPath;
+            return true;
         }
     }
 }
