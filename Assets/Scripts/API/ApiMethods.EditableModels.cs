@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -69,7 +70,13 @@ namespace TiltBrush
                 {
                     var newUri = new Uri(baseUri, externalFile);
                     var subdir = Path.GetDirectoryName(externalFile);
-                    _DownloadMediaFileFromUrl(newUri, Path.Combine(fullLocalPath, subdir));
+                    string dependencyDirectory = string.IsNullOrEmpty(subdir)
+                        ? fullLocalPath
+                        : GetSafeRelativePathInDirectory(
+                            fullLocalPath, subdir, "model dependency directory",
+                            allowBaseDirectory: true);
+                    _DownloadMediaFileFromUrlToDirectory(
+                        newUri, dependencyDirectory, allowRedirects: true);
                 }
             }
             ImportModel(Path.Combine(uri.Host, filename));
@@ -83,6 +90,38 @@ namespace TiltBrush
         public static void ImportIcosaModel(string modelId)
         {
             ApiManager.Instance.LoadPolyModel(modelId);
+        }
+
+        private static async Task SetupWidgetAfterLoadAsync(Model model, ModelWidget widget, string subtree, CreateWidgetCommand cmd)
+        {
+            await model.LoadModelAsync();
+            model.EnsureCollectorExists();
+
+            // Now assign the model, which triggers LoadModel() in the widget
+            // This must happen after the model is loaded (m_ModelParent is set)
+            widget.Model = model;
+
+            // Calculate proper size based on model bounds (same as normal model loading)
+            float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+            float consistentSize;
+            if (maxExtent == 0.0f)
+            {
+                consistentSize = 1.0f;
+            }
+            else
+            {
+                consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+            }
+
+            widget.SetSignedWidgetSize(consistentSize);
+
+            // Now enable preservation to prevent async overrides
+            widget.SetPreserveCustomSize(true);
+            widget.Subtree = subtree;
+            widget.SyncHierarchyToSubtree();
+            widget.AddSceneLightGizmos();
+            cmd.SetWidgetCost(widget.GetTiltMeterCost());
         }
 
         [ApiEndpoint(
@@ -101,29 +140,25 @@ namespace TiltBrush
 
             // At this point we've got a relative path to a file in Models
             string relativePath = parts[0];
+            GetSafeRelativePathInDirectory(
+                App.ModelLibraryPath(), relativePath, "model path");
             string subtree = null;
             if (parts.Length > 1)
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var tr = _CurrentTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
 
-            AsyncHelpers.RunSync(() => model.LoadModelAsync());
-            model.EnsureCollectorExists();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
-            );
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            ModelWidget widget = createCommand.Widget as ModelWidget;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget widget = cmd.Widget as ModelWidget;
             if (widget != null)
             {
-                widget.Model = model;
-                widget.Subtree = subtree;
-                widget.SyncHierarchyToSubtree();
+                // Start async load and setup widget when complete (fire-and-forget)
+                // Model assignment happens in SetupWidgetAfterLoadAsync after loading completes
+                _ = SetupWidgetAfterLoadAsync(model, widget, subtree, cmd);
+
                 widget.Show(true);
-                widget.AddSceneLightGizmos();
-                createCommand.SetWidgetCost(widget.GetTiltMeterCost());
             }
             else
             {

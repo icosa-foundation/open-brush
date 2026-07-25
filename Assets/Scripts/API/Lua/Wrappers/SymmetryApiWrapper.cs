@@ -57,6 +57,14 @@ namespace TiltBrush
         cmm = SymmetryGroup.R.cmm,
     }
 
+    [LuaDocsDescription("The list of scripted pointer painting overrides")]
+    public enum SymmetryPointerPaintMode
+    {
+        Inherit = PointerManager.PointerPaintingOverride.Inherit,
+        ForcedOn = PointerManager.PointerPaintingOverride.ForcedOn,
+        ForcedOff = PointerManager.PointerPaintingOverride.ForcedOff,
+    }
+
     [LuaDocsDescription("Functions for controlling the mirror symmetry mode")]
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
@@ -273,7 +281,7 @@ namespace TiltBrush
             ).ToList();
         }
 
-        [LuaDocsDescription("Converts a path to a format suitable for using as a symmetry path")]
+        [LuaDocsDescription("Converts a path to a format suitable for using as a symmetry path in polar mode")]
         [LuaDocsParameter("path", "The path to convert")]
         [LuaDocsExample("pointers = Symmetry:PathToPolar(myPath):OnY()")]
         public static PathApiWrapper PathToPolar(PathApiWrapper path)
@@ -283,6 +291,58 @@ namespace TiltBrush
                 var vector3 = x.translation;
                 return new Vector2(vector3.x, vector3.y);
             }).ToList()));
+        }
+
+        [LuaDocsDescription("Sets the painting override for a scripted pointer.")]
+        [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
+        [LuaDocsParameter("mode", "The override to apply to the pointer.")]
+        [LuaDocsExample("Symmetry:SetPointerPaintMode(0, SymmetryPointerPaintMode.ForcedOn)")]
+        public static void SetPointerPaintMode(int pointerIndex, SymmetryPointerPaintMode mode)
+        {
+            PointerManager.m_Instance.SetScriptedPointerPaintOverride(
+                pointerIndex, (PointerManager.PointerPaintingOverride)mode);
+        }
+
+        [LuaDocsDescription("Gets the current painting override for a scripted pointer.")]
+        [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
+        [LuaDocsExample("local mode = Symmetry:GetPointerPaintMode(0)")]
+        public static SymmetryPointerPaintMode GetPointerPaintMode(int pointerIndex)
+        {
+            return (SymmetryPointerPaintMode)PointerManager.m_Instance.GetScriptedPointerPaintOverride(pointerIndex);
+        }
+
+        [LuaDocsDescription("Returns the painting overrides for all active scripted pointers.")]
+        [LuaDocsExample("for i, mode in ipairs(Symmetry:GetPointerPaintModes()) do\n  print(i, mode)\nend")]
+        public static List<SymmetryPointerPaintMode> GetPointerPaintModes()
+        {
+            return PointerManager.m_Instance
+                .GetScriptedPointerPaintOverridesSnapshot()
+                .Select(mode => (SymmetryPointerPaintMode)mode)
+                .ToList();
+        }
+
+        [LuaDocsDescription("Convenience helper that forces a scripted pointer to start painting.")]
+        [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
+        [LuaDocsExample("Symmetry:StartPointer(1)")]
+        public static void StartPointer(int pointerIndex)
+        {
+            SetPointerPaintMode(pointerIndex, SymmetryPointerPaintMode.ForcedOn);
+        }
+
+        [LuaDocsDescription("Convenience helper that forces a scripted pointer to stop painting.")]
+        [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
+        [LuaDocsExample("Symmetry:StopPointer(1)")]
+        public static void StopPointer(int pointerIndex)
+        {
+            SetPointerPaintMode(pointerIndex, SymmetryPointerPaintMode.ForcedOff);
+        }
+
+        [LuaDocsDescription("Detaches the current stroke for a scripted pointer and immediately begins a new one if the pointer remains enabled.")]
+        [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
+        [LuaDocsExample("Symmetry:ForcePointerNewStroke(0)")]
+        public static void ForcePointerNewStroke(int pointerIndex)
+        {
+            PointerManager.m_Instance.ForceScriptedPointerNewStroke(pointerIndex);
         }
 
         // Converts an array of points centered on the origin to a list of TrTransforms
@@ -312,6 +372,49 @@ namespace TiltBrush
                 );
             }
             return polarCoordinates;
+        }
+
+        [LuaDocsDescription("Creates multiple copies of a path based on the current symmetry settings")]
+        [LuaDocsParameter("path", "The path to duplicate")]
+        [LuaDocsExample("pathList = Symmetry:ApplyToPath(myPath)")]
+        public static PathListApiWrapper ApplyToPath(PathApiWrapper path)
+        {
+            var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+            if (xfSymmetriesGS.Count == 0)
+            {
+                return new PathListApiWrapper(path);
+            }
+            // Pre-calculate left transforms for canvas space.
+            var xfSymmetriesCS = new List<TrTransform>();
+            var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
+            var xfGSfromCS = App.ActiveCanvas.Pose;
+            foreach (var sym in xfSymmetriesGS)
+            {
+                xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+            }
+
+            var newTransforms = new List<List<TrTransform>>();
+            foreach (var sym in xfSymmetriesCS)
+            {
+                var newTrList = path._Path.Select(x =>
+                {
+                    var symmetrifiedTransform = sym * x;
+
+                    // Check if symmetry transform has negative scale (reflection)
+                    // If so, remove it by applying a compensating reflection
+                    if (sym.scale < 0)
+                    {
+                        // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
+                        var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+                        symmetrifiedTransform *= kReflectX;
+                    }
+
+                    return symmetrifiedTransform;
+                }).ToList();
+                newTransforms.Add(newTrList);
+            }
+            var pathList = new PathListApiWrapper(newTransforms);
+            return pathList;
         }
     }
 }

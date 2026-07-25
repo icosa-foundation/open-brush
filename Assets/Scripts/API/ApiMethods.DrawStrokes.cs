@@ -80,6 +80,18 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "brush.pathsmoothing",
+            "Sets the amount of smoothing applied to brush paths at corners. Default is 0.1" +
+            "0 turns off smoothing and you'll have to ensure you create enough points or else the path may end up smoothed to nothing.",
+            "0.1"
+        )]
+        public static void SetPathSmoothing(float amount)
+        {
+            ApiManager.Instance.PathSmoothing = Mathf.Lerp(0.1f, 0.5f, Mathf.Clamp01(amount));
+        }
+
+
+        [ApiEndpoint(
             "draw.path",
             "Draws a path at the current brush position [x1,y1,z1],[x2,y2,z2], etc.... Does not move the brush position",
             "[0,0,0],[1,0,0],[1,1,0],[0,1,0]"

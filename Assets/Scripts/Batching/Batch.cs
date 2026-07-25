@@ -38,9 +38,9 @@ namespace TiltBrush
         public List<BatchSubset> m_Groups;
 #if UNITY_EDITOR
         public bool m_EditorDebug;
-        public Mesh m_EditorDebugMesh;
         public Vector3 m_EditorDebugMeshScale;
 #endif
+        public Mesh m_EditorDebugMesh;  // Also used as temporary storage during Unity GLTF export
         public BrushDescriptor Brush => BrushCatalog.m_Instance.GetBrush(m_ParentPool.m_BrushGuid);
 
         /// Returns the BatchManager timestamp of the last time the Batch's mesh was written to.

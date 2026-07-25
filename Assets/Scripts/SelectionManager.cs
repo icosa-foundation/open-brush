@@ -94,6 +94,9 @@ namespace TiltBrush
         [NonSerialized] public bool m_EnableSnapTranslationX = true;
         [NonSerialized] public bool m_EnableSnapTranslationY = true;
         [NonSerialized] public bool m_EnableSnapTranslationZ = true;
+        [NonSerialized] public bool m_EnableSnapRotationX = true;
+        [NonSerialized] public bool m_EnableSnapRotationY = true;
+        [NonSerialized] public bool m_EnableSnapRotationZ = true;
 
         /// Returns true when SelectedStrokes is not empty.
         public bool HasSelection
@@ -165,6 +168,11 @@ namespace TiltBrush
                 GrabWidget widget = m_SelectedWidgets.First();
                 if (widget is ModelWidget modelWidget)
                 {
+                    string ext = modelWidget.Model.GetLocation().Extension;
+                    if (ext == ".svg")
+                    {
+                        return false;
+                    }
                     return modelWidget.MeshSplitPossible();
                 }
 
@@ -406,6 +414,31 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group, CanvasScript canvas)
+        {
+            foreach (var stroke in StrokesInGroup(group))
+            {
+                if (stroke.Canvas == canvas)
+                {
+                    yield return stroke;
+                }
+            }
+        }
+
+        public IEnumerable<Stroke> SelectedStrokesInGroup(SketchGroupTag group, CanvasScript canvas)
+        {
+            if (m_GroupToSelectedStrokes.ContainsKey(group))
+            {
+                foreach (var stroke in m_GroupToSelectedStrokes[group])
+                {
+                    if (stroke.m_PreviousCanvas == canvas)
+                    {
+                        yield return stroke;
+                    }
+                }
+            }
+        }
+
         public IEnumerable<GrabWidget> WidgetsInGroup(SketchGroupTag group)
         {
             if (m_GroupToWidgets.ContainsKey(group))
@@ -413,6 +446,31 @@ namespace TiltBrush
                 foreach (var widget in m_GroupToWidgets[group])
                 {
                     if (widget.IsAvailable())
+                    {
+                        yield return widget;
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<GrabWidget> WidgetsInGroup(SketchGroupTag group, CanvasScript canvas)
+        {
+            foreach (var widget in WidgetsInGroup(group))
+            {
+                if (widget.Canvas == canvas)
+                {
+                    yield return widget;
+                }
+            }
+        }
+
+        public IEnumerable<GrabWidget> SelectedWidgetsInGroup(SketchGroupTag group, CanvasScript canvas)
+        {
+            if (m_GroupToSelectedWidgets.ContainsKey(group))
+            {
+                foreach (var widget in m_GroupToSelectedWidgets[group])
+                {
+                    if (widget.m_PreviousCanvas == canvas)
                     {
                         yield return widget;
                     }
@@ -949,10 +1007,15 @@ namespace TiltBrush
             List<GrabWidget> unselectedWidgets =
                 WidgetManager.m_Instance.GetAllUnselectedActiveWidgets(canvas);
 
+            List<Stroke> selectedStrokesOnCanvas =
+                m_SelectedStrokes.Where(stroke => stroke.m_PreviousCanvas == canvas).ToList();
+            List<GrabWidget> selectedWidgetsOnCanvas =
+                m_SelectedWidgets.Where(widget => widget.m_PreviousCanvas == canvas).ToList();
+
             // Select everything that was in the active canvas.
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new InvertSelectionCommand(unselectedStrokes, m_SelectedStrokes,
-                    unselectedWidgets, m_SelectedWidgets));
+                new InvertSelectionCommand(unselectedStrokes, selectedStrokesOnCanvas,
+                    unselectedWidgets, selectedWidgetsOnCanvas));
         }
 
         public void FlipSelection()
@@ -1209,7 +1272,11 @@ namespace TiltBrush
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
 
             Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
+            euler = new Vector3(
+                m_EnableSnapRotationX ? round(euler.x) : euler.x,
+                m_EnableSnapRotationY ? round(euler.y) : euler.y,
+                m_EnableSnapRotationZ ? round(euler.z) : euler.z
+            );
             return Quaternion.Euler(euler);
         }
 
@@ -1232,4 +1299,3 @@ namespace TiltBrush
     }
 
 } // namespace TiltBrush
-

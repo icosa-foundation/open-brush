@@ -30,6 +30,7 @@ namespace TiltBrush
 
         private ReferenceVideo m_Video;
         private VideoState m_InitialState;
+        private bool m_PreserveCustomSize;
 
         public ReferenceVideo Video
         {
@@ -43,14 +44,18 @@ namespace TiltBrush
             m_Video = video;
             ImageTexture = m_NoImageTexture;
 
-            var size = GetWidgetSizeRange();
-            if (m_Video.Aspect > 1)
+            // Only recalculate size if we're not preserving a custom size
+            if (!m_PreserveCustomSize)
             {
-                m_Size = Mathf.Clamp(2 / m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
-            }
-            else
-            {
-                m_Size = Mathf.Clamp(2 * m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                var size = GetWidgetSizeRange();
+                if (m_Video.Aspect > 1)
+                {
+                    m_Size = Mathf.Clamp(2 / m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                }
+                else
+                {
+                    m_Size = Mathf.Clamp(2 * m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                }
             }
 
             // Create in the main canvas.
@@ -62,6 +67,34 @@ namespace TiltBrush
         }
 
         public override float? AspectRatio => m_Video?.Aspect;
+
+        /// Prevents automatic size recalculation when video is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
+        }
 
         protected override void OnShow()
         {

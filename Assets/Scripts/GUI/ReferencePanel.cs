@@ -234,11 +234,65 @@ namespace TiltBrush
                 ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
             };
 
-            var truncatedPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            string displayPath;
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+            {
+                // Show "Models" for the root directory
+                if (currentDir.Equals(App.ModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Models";
+                }
+                else if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
+                         currentDir.Equals(App.BlocksModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Open Blocks";
+                }
+                else if (currentDir.StartsWith(App.MediaLibraryPath()))
+                {
+                    displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                }
+                else
+                {
+                    displayPath = new DirectoryInfo(currentDir).Name;
+                }
+            }
+            else
+            {
+                displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+            }
+
             if (m_DirectoryChooserPopupButton != null)
             {
-                m_DirectoryChooserPopupButton.ButtonLabel = $"{truncatedPath}";
+                m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
                 m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+                {
+                    var mainModelsPath = App.ModelLibraryPath();
+                    var blocksPath = App.BlocksModelLibraryPath();
+                    bool isMainRoot = currentDir.Equals(mainModelsPath, System.StringComparison.OrdinalIgnoreCase);
+                    bool isBlocksRoot = !string.IsNullOrEmpty(blocksPath) &&
+                                       currentDir.Equals(blocksPath, System.StringComparison.OrdinalIgnoreCase);
+
+                    // At main root: show real subdirectories + Open Blocks as virtual subdirectory
+                    if (isMainRoot)
+                    {
+                        var subdirList = new System.Collections.Generic.List<string>(m_CurrentSubdirectories);
+
+                        // Add Open Blocks as a virtual subdirectory
+                        if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
+                        {
+                            subdirList.Add(blocksPath);
+                        }
+
+                        m_CurrentSubdirectories = subdirList.ToArray();
+                    }
+                    // At Blocks root: hide subdirectories (flat hierarchy)
+                    else if (isBlocksRoot)
+                    {
+                        m_CurrentSubdirectories = new string[0];
+                    }
+                }
             }
 
             base.RefreshPage();
@@ -358,7 +412,35 @@ namespace TiltBrush
             if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
                 var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
-                ChangeDirectoryForCurrentTab(currentDir.Parent.FullName);
+                var currentPath = m_CurrentTab.Catalog.GetCurrentDirectory();
+                var parentPath = currentDir.Parent?.FullName;
+
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models && parentPath != null)
+                {
+                    var homeDir = m_CurrentTab.Catalog.HomeDirectory;
+                    var blocksRoot = App.BlocksModelLibraryPath();
+
+                    // If we're at the Blocks root, go back to home
+                    if (!string.IsNullOrEmpty(blocksRoot) &&
+                        currentPath.Equals(blocksRoot, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        ChangeDirectoryForCurrentTab(homeDir);
+                    }
+                    // If parent is within home directory, navigate to it
+                    else if (parentPath.StartsWith(homeDir, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        ChangeDirectoryForCurrentTab(parentPath);
+                    }
+                    // Otherwise go to home
+                    else
+                    {
+                        ChangeDirectoryForCurrentTab(homeDir);
+                    }
+                }
+                else if (parentPath != null)
+                {
+                    ChangeDirectoryForCurrentTab(parentPath);
+                }
             }
         }
     }

@@ -16,7 +16,6 @@
 
 """Helpers for getting credentials, either from the command line or saved in keyrings."""
 
-
 import argparse
 import sys
 import getpass

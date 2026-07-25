@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +21,7 @@ using Unity.VectorGraphics;
 using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Localization;
+using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
@@ -59,6 +61,7 @@ namespace TiltBrush
 
 
         // public bool IsComposite => _SvgSceneInfo.Scene.Root.getsh
+        public SVGParser.SceneInfo SvgSceneInfo => _SvgSceneInfo;
 
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
@@ -624,8 +627,17 @@ namespace TiltBrush
 
         private bool ValidateFileSize()
         {
-            FileInfo info = new FileInfo(m_Path);
-            return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+            try
+            {
+                FileInfo info = new FileInfo(m_Path);
+                return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+            }
+            catch (Exception e)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine($"Could not access file size of {FileName}: {e.Message}", true);
+                return false;
+            }
+
         }
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)

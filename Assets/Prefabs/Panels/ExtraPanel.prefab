@@ -515,6 +515,9 @@ MonoBehaviour:
   m_Collider: {fileID: 65686315866890560}
   m_Mesh: {fileID: 1129504163572690}
   m_Border: {fileID: 23528343814881480}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 65772034241514116}
   m_ParticleBounds: {x: 1.2, y: 0.8, z: 0}
   m_PanelPopUpMap:

@@ -126,10 +126,8 @@ namespace TiltBrush
                     var imageIcon = m_Icons[i] as SavedStrokesIcon;
                     if (!imageIcon.TextureAssigned && imageIcon.Button.gameObject.activeSelf)
                     {
-                        int catalogIndex = m_IndexOffset + i;
-
-                        var savedSketchFile = SavedStrokesCatalog.Instance.GetSavedStrokeFileAtIndex(catalogIndex);
-                        if (savedSketchFile != null)
+                        var savedSketchFile = imageIcon.SavedStrokesButton.SavedStrokeFile;
+                        if (savedSketchFile != null && savedSketchFile.Thumbnail != null)
                         {
                             imageIcon.Button.SetButtonTexture(savedSketchFile.Thumbnail);
                             imageIcon.TextureAssigned = true;

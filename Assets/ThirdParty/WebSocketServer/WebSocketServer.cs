@@ -75,7 +75,6 @@ namespace WebSocketServer {
                 // Create listener on <address>:<port>.
                 tcpListener = new TcpListener(port);
                 tcpListener.Start();
-                Debug.Log("WebSocket server is listening for incoming connections.");
                 while (true) {
                     // Accept a new client, then open a stream for reading and writing.
                     connectedTcpClient = tcpListener.AcceptTcpClient();

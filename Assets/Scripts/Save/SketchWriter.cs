@@ -383,6 +383,20 @@ namespace TiltBrush
 
             isLegacy = false;
             SketchMemoryScript.m_Instance.ClearRedo();
+            uint timestampOffset = 0;
+            if (bAdditive)
+            {
+                // Get the current front brushstroke timestamp and use it as an offset
+                try
+                {
+                    timestampOffset = (uint)(SketchMemoryScript.m_Instance.GetApproximateLatestTimestamp() * 1000);
+                }
+                catch (InvalidOperationException)
+                {
+                    timestampOffset = 0;
+                }
+            }
+
             if (!bAdditive)
             {
                 //clean up old draw'ring
@@ -398,7 +412,7 @@ namespace TiltBrush
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
-            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset: 0);
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.

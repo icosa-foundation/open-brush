@@ -20,11 +20,11 @@ MonoBehaviour:
   m_BrushPrefab: {fileID: 100000, guid: 02c4483733486ec489655bc38e0aa393, type: 3}
   m_Tags:
   - experimental
+  - audioreactive
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 17d833e2715afa6469d4db1c72ddc186, type: 3}
-  m_Description: BRUSH_TUBEHIGHLIGHTER
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -42,7 +42,7 @@ MonoBehaviour:
   m_BrushVolumeUpSpeed: 4
   m_BrushVolumeDownSpeed: 4
   m_VolumeVelocityRangeMultiplier: 1
-  m_AudioReactive: 0
+  m_AudioReactive: 1
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 74f4a47fc3b034e2d963491f4e514174, type: 2}
   m_TextureAtlasV: 1

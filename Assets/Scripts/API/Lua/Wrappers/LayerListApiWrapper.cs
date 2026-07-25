@@ -11,7 +11,7 @@ namespace TiltBrush
         public List<CanvasScript> _Layers;
 
         [LuaDocsDescription("Returns the last layer")]
-        public LayerApiWrapper last => new LayerApiWrapper(_Layers[^1]);
+        public LayerApiWrapper last => new(_Layers[^1]);
 
         public LayerListApiWrapper()
         {
@@ -24,13 +24,13 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the layer at the given index")]
-        public LayerApiWrapper this[int index] => new LayerApiWrapper(_Layers[index]);
+        public LayerApiWrapper this[int index] => new(Utils.WrappedIndexerGet(() => _Layers[index]));
 
         [LuaDocsDescription("Returns the layer with the given name")]
-        public LayerApiWrapper this[string name] => new LayerApiWrapper(_Layers.First(x => x.name == name));
+        public LayerApiWrapper this[string name] => new(_Layers.First(x => x.name == name));
 
         [LuaDocsDescription("Returns the main layer")]
-        public LayerApiWrapper main => new LayerApiWrapper(_Layers[0]);
+        public LayerApiWrapper main => new(Utils.WrappedIndexerGet(() => _Layers[0]));
 
         [LuaDocsDescription("The number of layers")]
         public int count => _Layers?.Count ?? 0;
@@ -38,7 +38,7 @@ namespace TiltBrush
         [LuaDocsDescription("Returns the active layer")]
         public LayerApiWrapper active
         {
-            get => new LayerApiWrapper(App.Scene.ActiveCanvas);
+            get => new(App.Scene.ActiveCanvas);
             set => App.Scene.ActiveCanvas = value._CanvasScript;
         }
 

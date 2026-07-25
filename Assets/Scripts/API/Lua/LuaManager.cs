@@ -170,9 +170,27 @@ namespace TiltBrush
             m_ScriptPathsToUpdate.Add(e.FullPath);
         }
 
-        public void Init()
+        public void Init(bool immediate = false)
         {
             if (m_IsInitialized) return;
+            if (immediate)
+            {
+                _InitImpl();
+            }
+            else
+            {
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.LoadGeneric,
+                        _InitImpl,
+                        0.25f
+                    )
+                );
+            }
+        }
+
+        private void _InitImpl()
+        {
             m_WebRequests = new LinkedList<LuaWebRequest>();
             m_TransformBuffers = new TransformBuffers(128);
             m_ScriptPathsToUpdate = new List<string>();
@@ -350,13 +368,17 @@ namespace TiltBrush
             {
                 var nextNode = node.Next;
                 var req = node.Value;
-                if (!req.script.Globals.Get("_scriptHasEnded").Boolean)
+                bool scriptHasEnded = req.script.Globals.Get("_scriptHasEnded").Boolean;
+                if (!scriptHasEnded && !req.request.isDone)
                 {
-                    if (!req.request.isDone)
-                    {
-                        node = nextNode;
-                        continue; // The only case where we don't remove the item from the queue
-                    }
+                    node = nextNode;
+                    continue; // The only case where we don't remove the item from the queue
+                }
+                // Callbacks can invoke native APIs that throw. Remove completed requests before
+                // invoking them so an exception cannot cause the callback to run again next frame.
+                m_WebRequests.Remove(node);
+                if (!scriptHasEnded)
+                {
                     switch (req.request.result)
                     {
                         case UnityWebRequest.Result.ConnectionError:
@@ -366,12 +388,28 @@ namespace TiltBrush
                             catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onError.ToString(), e); }
                             break;
                         case UnityWebRequest.Result.Success:
+                            string contentType = req.request.GetResponseHeader("Content-Type");
+                            if (!WebRequestApiWrapper.IsContentTypeAllowed(
+                                contentType, req.allowedResponseFileTypes))
+                            {
+                                string error =
+                                    $"[LuaNetworkPolicy] Response from '{req.request.url}' has disallowed Content-Type '{contentType ?? "<missing>"}'.";
+                                if (req.onError != null)
+                                {
+                                    try { req.onError.Call(error, req.context); }
+                                    catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onError.ToString(), e); }
+                                }
+                                else
+                                {
+                                    LogLuaError(new UnauthorizedAccessException(error));
+                                }
+                                break;
+                            }
                             try { req.onSuccess?.Call(req.request.downloadHandler.text, req.context); }
                             catch (InterpreterException e) { LogLuaInterpreterError(req.script, req.onSuccess.ToString(), e); }
                             break;
                     }
                 }
-                m_WebRequests.Remove(node);
                 node = nextNode;
             }
 
@@ -481,7 +519,7 @@ namespace TiltBrush
 
         private string LoadScriptFromString(string scriptFilename, string contents, bool isExampleScript = false)
         {
-            Script script = new Script();
+            Script script = CreatePluginScript();
             InitScriptOnce(script); // Needs to be done early so Parameters can reference API classes
             string scriptName = null;
 
@@ -524,6 +562,18 @@ namespace TiltBrush
                 }
             }
             return scriptName;
+        }
+
+        internal static Script CreatePluginScript()
+        {
+            Script script = new Script(CoreModules.Preset_SoftSandbox | CoreModules.LoadMethods);
+            script.Globals["io"] = DynValue.Nil;
+            script.Globals["load"] = DynValue.Nil;
+            script.Globals["loadsafe"] = DynValue.Nil;
+            script.Globals["loadfile"] = DynValue.Nil;
+            script.Globals["loadfilesafe"] = DynValue.Nil;
+            script.Globals["dofile"] = DynValue.Nil;
+            return script;
         }
 
         public Vector3 GetPastBrushPos(int back)
@@ -727,11 +777,11 @@ namespace TiltBrush
                 }
                 else // It's hopefully an IPathApiWrapper instance
                 {
-                    if (result.UserData.Descriptor.Type == typeof(MatrixListApiWrapper))
+                    if (result.UserData?.Descriptor?.Type == typeof(MatrixListApiWrapper))
                     {
                         wrapper = result.ToObject<MatrixListApiWrapper>();
                     }
-                    else if (result.UserData.Descriptor.Type == typeof(PathApiWrapper))
+                    else if (result.UserData?.Descriptor?.Type == typeof(PathApiWrapper))
                     {
                         wrapper = result.ToObject<PathApiWrapper>();
                     }
@@ -1190,7 +1240,12 @@ namespace TiltBrush
             return m_ActiveBackgroundScripts.ContainsKey(scriptName);
         }
 
-        public void QueueWebRequest(UnityWebRequest request, Closure onSuccess, Closure onError, DynValue context)
+        public void QueueWebRequest(
+            UnityWebRequest request,
+            Closure onSuccess,
+            Closure onError,
+            DynValue context,
+            string[] allowedResponseFileTypes)
         {
             var req = new LuaWebRequest
             {
@@ -1198,7 +1253,8 @@ namespace TiltBrush
                 request = request,
                 onSuccess = onSuccess,
                 onError = onError,
-                context = context
+                context = context,
+                allowedResponseFileTypes = allowedResponseFileTypes
             };
             m_WebRequests.AddLast(req);
         }
@@ -1210,6 +1266,7 @@ namespace TiltBrush
             public Closure onSuccess;
             public Closure onError;
             public DynValue context;
+            public string[] allowedResponseFileTypes;
         }
 
         public void DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
@@ -1249,7 +1306,53 @@ namespace TiltBrush
 
             tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
 
-            if (transforms != null) DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+            if (transforms != null)
+            {
+                var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+                if (xfSymmetriesGS.Count == 0)
+                {
+                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, result._Colors, brushScale);
+                }
+                else
+                {
+                    // Pre-calculate left transforms for canvas space.
+                    var xfSymmetriesCS = new List<TrTransform>();
+                    var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
+                    var xfGSfromCS = App.ActiveCanvas.Pose;
+                    foreach (var sym in xfSymmetriesGS)
+                    {
+                        xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+                    }
+
+                    var newTransforms = new List<List<TrTransform>>();
+                    foreach (var trList in transforms)
+                    {
+                        foreach (var sym in xfSymmetriesCS)
+                        {
+                            var newTrList = trList.Select(x =>
+                            {
+                                // Apply full tr_CS transform to the original transform, then apply symmetry
+                                var transformedByTrCS = tr_CS * x;
+                                var symmetriedTransform = sym * transformedByTrCS;
+
+                                // Check if symmetry transform has negative scale (reflection)
+                                // If so, remove it by applying a compensating reflection
+                                if (sym.scale < 0)
+                                {
+                                    // Apply the same fix as TrFromMatrixWithFixedReflections - X-axis reflection
+                                    var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
+                                    symmetriedTransform = symmetriedTransform * kReflectX;
+                                }
+
+                                return symmetriedTransform;
+                            }).ToList();
+                            newTransforms.Add(newTrList);
+                        }
+                    }
+                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, result._Colors, brushScale);
+                }
+            }
+
             if (result._Colors == null)
             {
                 // If our script doesn't generate colors

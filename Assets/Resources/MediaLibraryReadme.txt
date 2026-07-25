@@ -1,7 +1,7 @@
 Media Library Notes
 
-Import images and models into your Tilt Brush sketches by dropping your files into the "Models" and "Images" folders here.
-Images and models are accessed in Tilt Brush through the Media Library panel.  Currently on the Labs Panel.
+Import images and models into your Open Brush sketches by dropping your files into the "Models" and "Images" folders here.
+Images and models are accessed in Open Brush through the Media Library panel.  Currently on the Labs Panel.
 
 Supported image formats: PNG, JPEG
 Supported model formats: OBJ, FBX

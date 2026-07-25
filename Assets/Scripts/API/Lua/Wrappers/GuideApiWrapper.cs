@@ -136,10 +136,9 @@ namespace TiltBrush
 
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(type), tr, forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-            var widget = createCommand.Widget as StencilWidget;
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(type), tr, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var widget = cmd.Widget as StencilWidget;
             return new GuideApiWrapper(widget);
         }
     }

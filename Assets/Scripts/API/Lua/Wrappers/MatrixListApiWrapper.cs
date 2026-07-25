@@ -54,8 +54,8 @@ namespace TiltBrush
         [LuaDocsDescription("Returns the matrix at the specified index")]
         public MatrixApiWrapper this[int index]
         {
-            get => new(_Matrices[index]);
-            set => _Matrices[index] = value._Matrix;
+            get => new(Utils.WrappedIndexerGet(() => _Matrices[index]));
+            set => Utils.WrappedIndexerSet(() => _Matrices[index] = value._Matrix);
         }
 
         [LuaDocsDescription("The number of matrices")]

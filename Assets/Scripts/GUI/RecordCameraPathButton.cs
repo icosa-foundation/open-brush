@@ -24,23 +24,7 @@ namespace TiltBrush
         public GameObject m_CameraRecordUnsupportedPopup;
         override protected void OnButtonPressed()
         {
-#if UNITY_ANDROID || UNITY_IOS
-            if (m_Manager)
-            {
-                BasePanel panel = m_Manager.GetPanelForPopUps();
-                if (panel != null)
-                {
-                    panel.CreatePopUp(
-                        m_CameraRecordUnsupportedPopup,
-                        transform.position + Vector3.back * 0.2f,
-                        true, true
-                    );
-                    ResetState();
-                }
-            }
-#else
             base.OnButtonPressed();
-#endif
         }
     }
 } // namespace TiltBrush

@@ -25,6 +25,7 @@ namespace TiltBrush
     {
         private bool m_InPinningMode;
         private bool m_IntersectionThisFrame;
+        private bool m_RefreshPinStateRequested;
 
         public bool InPinMode
         {
@@ -67,6 +68,7 @@ namespace TiltBrush
                     m_InPinningMode = false;
                 }
                 RefreshPinState();
+                m_RefreshPinStateRequested = false;
 
                 // This is done in base.EnableTool(), but has to be done again here because our pin
                 // state may have been updated by the code above.
@@ -75,10 +77,14 @@ namespace TiltBrush
             else
             {
                 WidgetManager.m_Instance.RefreshPinAndUnpinAction -= PinToolCallback;
+                m_RefreshPinStateRequested = false;
             }
         }
 
-        public void PinToolCallback() { }
+        public void PinToolCallback()
+        {
+            m_RefreshPinStateRequested = true;
+        }
 
         public void RefreshPinState()
         {
@@ -110,6 +116,12 @@ namespace TiltBrush
 
         override public void OnUpdateDetection()
         {
+            if (m_RefreshPinStateRequested && !m_CurrentlyHot)
+            {
+                m_RefreshPinStateRequested = false;
+                RefreshPinState();
+            }
+
             // Check actions if we're not hot.
             if (!m_CurrentlyHot)
             {

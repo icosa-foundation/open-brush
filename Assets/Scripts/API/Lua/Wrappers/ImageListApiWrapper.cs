@@ -11,7 +11,7 @@ namespace TiltBrush
         public List<ImageWidget> _Images;
 
         [LuaDocsDescription("Returns the last image that was selected")]
-        public ImageApiWrapper lastSelected => new ImageApiWrapper(SelectionManager.m_Instance.LastSelectedImage);
+        public ImageApiWrapper lastSelected => new(SelectionManager.m_Instance.LastSelectedImage);
 
         [LuaDocsDescription("Returns the last Image")]
         public ImageApiWrapper last => (_Images == null || _Images.Count == 0) ? null : new ImageApiWrapper(_Images[^1]);
@@ -27,7 +27,7 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Returns the image at the specified index")]
-        public ImageApiWrapper this[int index] => new ImageApiWrapper(_Images[index]);
+        public ImageApiWrapper this[int index] => new(Utils.WrappedIndexerGet(() => _Images[index]));
 
         [LuaDocsDescription("The number of images")]
         public int count => _Images?.Count ?? 0;

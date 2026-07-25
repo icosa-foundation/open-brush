@@ -32,7 +32,8 @@ namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
-        public const string WEBREQUEST_USER_AGENT = "Open Brush API Web Request";
+        public static string WebRequestUserAgent =>
+            $"OpenBrush/{Application.version} (https://openbrush.app/)";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -66,7 +67,7 @@ namespace TiltBrush
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
-        [NonSerialized] public float PathSmoothing = 0.1f;
+        [NonSerialized] public float PathSmoothing = 0.25f;
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
         [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
@@ -152,7 +153,15 @@ namespace TiltBrush
             {
                 VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
             }
-            return "You can now return to Open Brush";
+            var successPageUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device-login-success";
+            var redirectHtml = $@"<!doctype html><html lang='en'><head><meta charset='UTF-8'>
+<meta http-equiv='refresh' content='0; url={successPageUrl}' />
+<title>Login Successful</title>
+</head>
+<body>
+Success. If you are not automatically redirected, please visit <a href='{successPageUrl}'>{successPageUrl}</a>
+</body></html>";
+            return redirectHtml;
         }
 
         void Start()
@@ -429,6 +438,11 @@ namespace TiltBrush
         {
             if (endpoints.ContainsKey(command.Command))
             {
+                if (IsWebPluginControlEndpoint(command.Command))
+                {
+                    EnsureWebPluginControlAllowed(
+                        command.Command, App.UserConfig.Flags.WebScriptsCanControlPlugins);
+                }
                 var endpoint = endpoints[command.Command];
                 var parameters = endpoint.DecodeParams(command.Parameters);
                 return endpoint.Invoke(parameters)?.ToString();
@@ -439,6 +453,19 @@ namespace TiltBrush
             }
             return null;
         }
+
+        internal static void EnsureWebPluginControlAllowed(
+            string command, bool webScriptsCanControlPlugins)
+        {
+            if (!webScriptsCanControlPlugins && IsWebPluginControlEndpoint(command))
+            {
+                throw new UnauthorizedAccessException(
+                    $"{command} requires Flags.WebScriptsCanControlPlugins to be enabled in the user config.");
+            }
+        }
+
+        private static bool IsWebPluginControlEndpoint(string command) =>
+            command.StartsWith("scripts.", StringComparison.Ordinal);
 
         [ContextMenu("Log Api Commands")]
         public void LogCommandsList()
@@ -775,6 +802,9 @@ namespace TiltBrush
 
         IEnumerator GetRequest(string uri)
         {
+#if  UNITY_EDITOR
+            Debug.Log($"GetRequest: {uri}");
+#endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
                 yield return webRequest.SendWebRequest();
@@ -800,9 +830,26 @@ namespace TiltBrush
             {
                 return false;
             }
-            var result = Instance.InvokeEndpoint(command);
+            string result = InvokeEndpointForStatus(() => Instance.InvokeEndpoint(command));
             m_CommandStatuses[command.Handle.ToString()] = result;
             return true;
+        }
+
+        internal static string InvokeEndpointForStatus(Func<string> invokeEndpoint)
+        {
+            try
+            {
+                return invokeEndpoint();
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (TargetInvocationException e)
+                when (e.InnerException is UnauthorizedAccessException authorizationError)
+            {
+                return $"error: {authorizationError.Message}";
+            }
         }
 
         private void Update()
@@ -934,15 +981,12 @@ namespace TiltBrush
             }
             else
             {
-                TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, Quaternion.identity, true
-                );
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+                var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                ModelWidget modelWidget = cmd.Widget as ModelWidget;
                 modelWidget.Model = model;
                 modelWidget.Show(true);
-                createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                cmd.SetWidgetCost(modelWidget.GetTiltMeterCost());
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();

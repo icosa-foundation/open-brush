@@ -19,6 +19,7 @@ float4 _RightEyeSelectionColor;
 float4x4 _InverseLimitedScaleSceneMatrix;
 float _PatternSpeed;
 float4 _BrushColor;
+float _DisableSelectionEffect;
 
 // Gets the appropriate selection color depending on the eye being rendered.
 float4 GetSelectionColor() {
@@ -28,6 +29,10 @@ float4 GetSelectionColor() {
 
 // Given the current material color, override with selection noise if necessary.
 float4 AddSelectColor(float4 inColor) {
+  // Skip selection effect if disabled (e.g., during thumbnail capture)
+  if (_DisableSelectionEffect > 0.5) {
+    return inColor;
+  }
 #if SELECTION_ON
   float4 color = GetSelectionColor();
 #else
