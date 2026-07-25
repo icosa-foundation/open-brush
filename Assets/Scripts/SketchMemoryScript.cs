@@ -426,12 +426,12 @@ namespace TiltBrush
                 discardCommand = false;  // We're still merging
                 command = top;
             }
-            if (discardCommand) // Something was merged
+            if (discardCommand) // Nothing merged and the caller asked us to discard in that case
             {
                 command.Dispose();
                 return;
             }
-            // Nothing was merged so execute the command
+            // Either something merged, or the caller wants this recorded regardless
             delta.Redo();
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
