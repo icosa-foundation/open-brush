@@ -1089,18 +1089,27 @@ namespace TiltBrush
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
         public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
+            BeginDrawingFromMemory(m_MemoryList, bDrawFromStart, forEdit, playAudio);
+        }
+
+        /// <summary>
+        /// Overload that allows specifying exactly which strokes to render during playback.
+        /// Use this for additive loading to avoid re-rendering existing strokes.
+        /// </summary>
+        public void BeginDrawingFromMemory(IEnumerable<Stroke> strokesToRender, bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
+        {
             if (bDrawFromStart)
             {
                 switch (m_PlaybackMode)
                 {
                     case PlaybackMode.Distance:
                     default:
-                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(strokesToRender);
                         if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = GetEarliestTimestamp();
-                        m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
                         break;
                 }
                 m_IsInitialPlay = true;

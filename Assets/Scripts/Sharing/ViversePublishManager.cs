@@ -298,7 +298,7 @@ namespace TiltBrush
 
             var metaPayload = new MetaDataPayload
             {
-                source = "studio",
+                source = "openBrush",
                 iframe_settings = new IframeSettings
                 {
                     sandbox = DefaultSandboxPermissions,

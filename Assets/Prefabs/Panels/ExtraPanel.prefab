@@ -515,6 +515,9 @@ MonoBehaviour:
   m_Collider: {fileID: 65686315866890560}
   m_Mesh: {fileID: 1129504163572690}
   m_Border: {fileID: 23528343814881480}
+  m_BorderIsSplit: 0
+  m_BorderTop: {fileID: 0}
+  m_BorderBottom: {fileID: 0}
   m_MeshCollider: {fileID: 65772034241514116}
   m_ParticleBounds: {x: 1.2, y: 0.8, z: 0}
   m_PanelPopUpMap:
@@ -1368,7 +1371,7 @@ Transform:
   m_GameObject: {fileID: 1250366089417740067}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.648, z: 0.049999237}
+  m_LocalPosition: {x: 0.21, y: -0.648, z: 0.049999237}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1829,7 +1832,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &689087006347697308
 Transform:
   m_ObjectHideFlags: 0

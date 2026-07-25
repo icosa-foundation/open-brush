@@ -302,6 +302,9 @@ namespace TiltBrush
         public WebRequest(string uri, string loginToken = null,
                           string method = UnityWebRequest.kHttpVerbGET, bool compress = false)
         {
+#if UNITY_EDITOR
+            Debug.Log($"WebRequest: {uri}");
+#endif
             if (string.IsNullOrEmpty(uri))
             {
                 throw new ArgumentException("uri");

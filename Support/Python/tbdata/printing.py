@@ -649,7 +649,7 @@ def split_json_into_obj(json_filename):
         mesh.collapse_verts(ignore=("uv0", "uv1", "c", "t", "n"))
         mesh.remove_degenerate()
 
-        (r, g, b, a) = struct.unpack("4B", struct.pack("I", mesh.c[0]))
+        r, g, b, a = struct.unpack("4B", struct.pack("I", mesh.c[0]))
         assert a == 255, (r, g, b, a)
         hex_color = "%02x%02x%02x" % (r, g, b)
         outf_name = "%s %02d %s.obj" % (output_base, i, hex_color)
@@ -708,8 +708,7 @@ def process_tilt(filename, args):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        usage="""%(prog)s [ files ]
+    parser = argparse.ArgumentParser(usage="""%(prog)s [ files ]
 
 Process .tilt files to get them ready for 3D printing.
 
@@ -722,8 +721,7 @@ You should generally do the steps in this order:
 3. Use --convert-brushes and --pos-error-tolerance.
 4. Load .tilt files in Tilt Brush, and export to .json
 5. Convert from .json -> multiple .obj files
-"""
-    )
+""")
 
     def hex_color(arg):
         arg = arg.lower()
