@@ -216,7 +216,8 @@ namespace TiltBrush
         {
             m_CustomSkyboxTextureName = filename;
             Texture2D tex = null;
-            var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
+            var path = ApiMethods.GetSafeRelativePathInDirectory(
+                App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
