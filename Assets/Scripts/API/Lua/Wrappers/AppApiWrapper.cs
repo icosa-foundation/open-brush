@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System;
 using MoonSharp.Interpreter;
 using ODS;
 using UnityAsyncAwaitUtil;
@@ -34,10 +35,13 @@ namespace TiltBrush
         [LuaDocsExample("App:Redo()")]
         public static void Redo() => ApiMethods.Redo();
 
-        [LuaDocsDescription("Adds a url that should be sent the data for each stroke as soon as the user finishes drawing it")]
+        [LuaDocsDescription("Adds a URL that receives data for each completed stroke. Stroke forwarding is independent of the Lua web-request configuration")]
         [LuaDocsExample(@"App:AddListener(""http://example.com"")")]
-        [LuaDocsParameter("url", "The url to send the stroke data to")]
-        public static void AddListener(string url) => ApiMethods.AddListener(url);
+        [LuaDocsParameter("url", "The URL that receives completed stroke data")]
+        public static void AddListener(string url)
+        {
+            ApiMethods.AddListener(url);
+        }
 
         [LuaDocsDescription("Reset all panels")]
         [LuaDocsExample("App:ResetPanels()")]
@@ -121,12 +125,28 @@ namespace TiltBrush
         // public static void SettingsPanel(bool active) => )LuaApiMethods.SettingsPanel)(active);
         // public static void SketchOrigin(bool active) => )LuaApiMethods.SketchOrigin)(active);
 
-        [LuaDocsDescription("Get or set the clipboard text")]
-        // [LuaDocsExample("App.clipboardText = ""Hello, World!"")]
+        [LuaDocsDescription("Get or set the clipboard text. Disabled by default; requires Flags.EnablePluginClipboardAccess to be enabled in the user config")]
         public static string clipboardText
         {
-            get => SystemClipboard.GetClipboardText();
-            set => SystemClipboard.SetClipboardText(value);
+            get
+            {
+                EnsureLuaClipboardAccessEnabled();
+                return SystemClipboard.GetClipboardText();
+            }
+            set
+            {
+                EnsureLuaClipboardAccessEnabled();
+                SystemClipboard.SetClipboardText(value);
+            }
+        }
+
+        private static void EnsureLuaClipboardAccessEnabled()
+        {
+            if (!App.UserConfig.Flags.EnablePluginClipboardAccess)
+            {
+                throw new UnauthorizedAccessException(
+                    "Lua clipboard access requires Flags.EnablePluginClipboardAccess to be enabled in the user config.");
+            }
         }
 
         // [LuaDocsDescription("Gets the current image in the clipboard")]
@@ -135,29 +155,24 @@ namespace TiltBrush
         //     // set => SystemClipboard.SetClipboardImage(value);
         // }
 
-        [LuaDocsDescription("Read the contents of a file")]
-        [LuaDocsExample(@"App:ReadFile(""path/to/file.txt"")")]
-        [LuaDocsParameter("path", "The file path to read from. It must be relative to and contined within the Scripts folder")]
+        [LuaDocsDescription("Reads a text file contained within the user's Plugins folder")]
+        [LuaDocsExample(@"App:ReadFile(""data/file.txt"")")]
+        [LuaDocsParameter("path", "A relative path contained within the Plugins folder. Rooted paths and paths that traverse outside that folder are rejected")]
         [LuaDocsReturnValue("The contents of the file as a string")]
         public static string ReadFile(string path)
         {
-            bool valid = false;
-            // Disallow absolute paths
-            valid = !Path.IsPathRooted(path);
-            if (valid)
+            if (Path.IsPathRooted(path))
             {
-                path = Path.Join(LuaManager.Instance.UserPluginsPath(), path);
-                // Check path is a subdirectory of User folder
-                valid = _IsSubdirectory(path, App.UserPath());
-            }
-            if (!valid)
-            {
-                // TODO think long and hard about security
-                Debug.LogWarning($"Path is not a subdirectory of User folder: {path}");
-                return null;
+                throw new ArgumentException($"Invalid plugin file path: {path}");
             }
 
-            Stream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            string fullPath = Path.GetFullPath(Path.Join(LuaManager.Instance.UserPluginsPath(), path));
+            if (!_IsSubdirectory(fullPath, LuaManager.Instance.UserPluginsPath()))
+            {
+                throw new ArgumentException($"Invalid plugin file path: {path}");
+            }
+
+            Stream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             string contents;
             using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
             fileStream.Close();
@@ -176,13 +191,14 @@ namespace TiltBrush
         public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
         [LuaDocsDescription("Take a snapshot of your scene and save it to your Snapshots folder")]
-        [LuaDocsExample(@"App:TakeSnapshop(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, true)")]
+        [LuaDocsExample(@"App:TakeSnapshot(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, true)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
-        [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
+        [LuaDocsParameter("filename", "A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         [LuaDocsParameter("width", "Image width")]
         [LuaDocsParameter("height", "Image height")]
         [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
         [LuaDocsParameter("renderDepth", "If true then render the depth buffer instead of the image")]
+        [LuaDocsParameter("removeBackground", "If true then render the image with a transparent background")]
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false)
         {
             bool saveAsPng;
@@ -199,7 +215,7 @@ namespace TiltBrush
                 saveAsPng = false;
                 filename += ".jpg";
             }
-            string path = Path.Join(App.SnapshotPath(), filename);
+            string path = ApiMethods.GetSafePathInDirectory(App.SnapshotPath(), filename, "snapshot filename");
             MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
 
             if (cam != null)
@@ -226,10 +242,11 @@ namespace TiltBrush
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
         [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
-        [LuaDocsParameter("filename", "The filename to use for the saved snapshot")]
+        [LuaDocsParameter("filename", "A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         [LuaDocsParameter("width", "The width of the image")]
         public static void Take360Snapshot(TrTransform tr, string filename, int width = 4096)
         {
+            ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
             var odsDriver = App.Instance.InitOds();
             App.Scene.AsScene[odsDriver.gameObject.transform] = tr;
             odsDriver.FramesToCapture = 1;
