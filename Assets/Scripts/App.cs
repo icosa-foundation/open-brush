@@ -1784,6 +1784,22 @@ namespace TiltBrush
             }
         }
 
+        internal static UserConfig DeserializeUserConfigWithDefaults(
+            string defaultConfigText, string userConfigText, out string warning)
+        {
+            UserConfig defaults = DeserializeObjectWithWarning<UserConfig>(
+                defaultConfigText, out _);
+            UserConfig config = DeserializeObjectWithWarning<UserConfig>(
+                userConfigText, out warning);
+
+            // Treat an explicit null like a missing value. An explicit [] remains an empty list.
+            if (config.Flags.PluginWebRequestRules == null)
+            {
+                config.Flags.PluginWebRequestRules = defaults.Flags.PluginWebRequestRules;
+            }
+            return config;
+        }
+
         void CreateDefaultConfig()
         {
             // If we don't have a .cfg in our Tilt Brush directory, drop a default one.
@@ -1802,6 +1818,8 @@ namespace TiltBrush
 
         public void RefreshUserConfig()
         {
+            TextAsset defaultConfigAsset = Resources.Load<TextAsset>(kDefaultConfigPath);
+            string defaultConfigText = defaultConfigAsset != null ? defaultConfigAsset.text : "{}";
             m_UserConfig = new UserConfig();
 
             try
@@ -1827,7 +1845,8 @@ namespace TiltBrush
                 try
                 {
                     string warning;
-                    m_UserConfig = DeserializeObjectWithWarning<UserConfig>(text, out warning);
+                    m_UserConfig = DeserializeUserConfigWithDefaults(
+                        defaultConfigText, text, out warning);
                     if (warning != null)
                     {
                         OutputWindowScript.Error($"Warning reading {kConfigFileName}", warning);
