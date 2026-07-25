@@ -117,7 +117,12 @@ namespace TiltBrush
 
         public static void SaveAs(string name)
         {
-            // TODO enforce legal filenames and handle overwriting
+            string suffix = SaveLoadScript.TILT_SUFFIX;
+            if (name.EndsWith(suffix))
+            {
+                name = name.Substring(0, name.Length - suffix.Length);
+            }
+            ApiMethods.ValidateSafeFilename(name, "sketch filename");
             var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: name);
         }
