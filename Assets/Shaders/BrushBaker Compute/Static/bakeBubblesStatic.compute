@@ -1,6 +1,6 @@
 #pragma kernel CSMain
 
-#include "../../ThirdParty/Shaders/Noise.cginc"
+#include "../../../ThirdParty/Shaders/Noise.cginc"
 
 uniform float4x4 TransformObjectToWorld;
 
