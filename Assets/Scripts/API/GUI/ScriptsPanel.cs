@@ -60,6 +60,7 @@ namespace TiltBrush
                 LuaApiCategory.PointerScript => PointerScriptButton,
                 LuaApiCategory.ToolScript => ToolScriptButton,
                 LuaApiCategory.SymmetryScript => SymmetryScriptButton,
+                LuaApiCategory.JitterScript => null,
                 _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
             };
             if (btn)

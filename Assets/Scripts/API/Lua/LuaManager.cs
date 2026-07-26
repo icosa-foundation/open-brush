@@ -884,6 +884,8 @@ namespace TiltBrush
                     return BackgroundScriptsEnabled;
                 case LuaApiCategory.PointerScript:
                     return PointerScriptsEnabled;
+                case LuaApiCategory.JitterScript:
+                    return JitterScriptsEnabled;
                 case LuaApiCategory.SymmetryScript:
                     return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case LuaApiCategory.ToolScript:
@@ -1009,6 +1011,20 @@ namespace TiltBrush
             else
             {
                 EndActiveScript(LuaApiCategory.PointerScript);
+            }
+        }
+
+        public void EnableJitterScript(bool enable)
+        {
+            JitterScriptsEnabled =
+                enable && GetScriptNames(LuaApiCategory.JitterScript).Count > 0;
+            if (JitterScriptsEnabled)
+            {
+                InitScript(GetActiveScript(LuaApiCategory.JitterScript));
+            }
+            else if (GetScriptNames(LuaApiCategory.JitterScript).Count > 0)
+            {
+                EndActiveScript(LuaApiCategory.JitterScript);
             }
         }
 

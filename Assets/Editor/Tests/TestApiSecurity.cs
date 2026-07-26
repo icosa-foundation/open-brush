@@ -412,6 +412,8 @@ namespace TiltBrush
         [TestCase("scripts.symmetryscript.deactivate")]
         [TestCase("scripts.pointerscript.activate")]
         [TestCase("scripts.pointerscript.deactivate")]
+        [TestCase("scripts.jitterscript.activate")]
+        [TestCase("scripts.jitterscript.deactivate")]
         [TestCase("scripts.backgroundscript.activate")]
         [TestCase("scripts.backgroundscript.deactivate")]
         [TestCase("scripts.backgroundscript.activateall")]
