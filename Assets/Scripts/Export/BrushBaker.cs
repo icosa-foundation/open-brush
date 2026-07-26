@@ -159,12 +159,14 @@ public class BrushBaker : MonoBehaviour
         {
             Debug.Log(
                 $"[OB_STATIC_MESH] Applying static override {staticMapping.name} to brush {brushGuid}");
-            mesh = ProcessMesh(mesh, staticMapping);
+            mesh = ProcessMesh(
+                mesh, staticMapping, localToWorldMatrix, localToWorldMatrix.inverse);
             foundMapping = true;
         }
         else if (TryGetMapping(brushGuid, out var commonMapping))
         {
-            mesh = ProcessMesh(mesh, commonMapping);
+            mesh = ProcessMesh(
+                mesh, commonMapping, localToWorldMatrix, localToWorldMatrix.inverse);
             foundMapping = true;
         }
 
@@ -355,6 +357,14 @@ public class BrushBaker : MonoBehaviour
 
     private Mesh ProcessMesh(Mesh mesh, ComputeShaderMapping mapping)
     {
+        return ProcessMesh(
+            mesh, mapping, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+    }
+
+    private Mesh ProcessMesh(
+        Mesh mesh, ComputeShaderMapping mapping,
+        Matrix4x4 localToWorldMatrix, Matrix4x4 worldToLocalMatrix)
+    {
 
         ComputeShader computeShader = mapping.computeShader;
         if (computeShader == null) return mesh;
@@ -399,8 +409,8 @@ public class BrushBaker : MonoBehaviour
 
         try
         {
-            computeShader.SetMatrix("TransformObjectToWorld", transform.localToWorldMatrix);
-            computeShader.SetMatrix("TransformWorldToObject", transform.worldToLocalMatrix);
+            computeShader.SetMatrix("TransformObjectToWorld", localToWorldMatrix);
+            computeShader.SetMatrix("TransformWorldToObject", worldToLocalMatrix);
 
             vertexBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             vertexBuffer.SetData(verticesArray);

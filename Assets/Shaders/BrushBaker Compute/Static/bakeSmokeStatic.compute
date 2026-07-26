@@ -3,6 +3,7 @@
 #include "../../../ThirdParty/Shaders/Noise.cginc"
 
 uniform float4x4 TransformObjectToWorld;
+uniform float4x4 TransformWorldToObject;
 
 RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
@@ -65,7 +66,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     disp += float3(0, 0, 1) * curlZ(originWS.xyz * freq + kSmokeExportTime, d);
     originWS.xyz += disp * kSmokeCurlScale * kDecimetersToWorldUnits;
 
-    vertex = originWS.xyz + preBillboard;
+    vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
     vertexBuffer[id.x] = vertex;
 
     uv1.x = uv0.z;
