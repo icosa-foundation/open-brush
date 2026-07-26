@@ -727,6 +727,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 case "query.outgoing.poll":
                     if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1])) return "";
                     string clientId = UnityWebRequest.UnEscapeURL(commandPair[1]);
+                    if (string.IsNullOrWhiteSpace(clientId)) return "";
+                    List<KeyValuePair<string, string>> commands;
                     lock (m_PollingQueueLock)
                     {
                         if (m_PollingListenerQueues == null ||
@@ -734,10 +736,10 @@ Success. If you are not automatically redirected, please visit <a href='{success
                         {
                             return "";
                         }
-                        var commands = new List<KeyValuePair<string, string>>(queue);
+                        commands = new List<KeyValuePair<string, string>>(queue);
                         queue.Clear();
-                        return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
                     }
+                    return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
             }
             return "unknown query";
         }
@@ -788,6 +790,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void AddPollingCommandListener(string clientId)
         {
+            if (string.IsNullOrWhiteSpace(clientId)) return;
             lock (m_PollingQueueLock)
             {
                 if (m_PollingListenerQueues == null)
