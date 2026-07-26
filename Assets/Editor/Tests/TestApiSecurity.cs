@@ -548,5 +548,22 @@ namespace TiltBrush
             Assert.IsTrue(queue.TryDequeue(out first));
             Assert.AreEqual("second", first.Key);
         }
+
+        [Test]
+        public void TestPollingListenersReceiveOnlyCommandsGeneratedWhileRegistered()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("first-client"));
+            listeners.Enqueue(new KeyValuePair<string, string>("old", "command"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsEmpty(listeners.Drain("second-client"));
+
+            listeners.Enqueue(new KeyValuePair<string, string>("new", "command"));
+            var commands = listeners.Drain("second-client");
+            Assert.AreEqual(1, commands.Count);
+            Assert.AreEqual("new", commands[0].Key);
+        }
     }
 }

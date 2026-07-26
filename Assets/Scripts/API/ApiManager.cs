@@ -766,10 +766,13 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
-            if (!HasOutgoingListeners && !HasPollingListeners) return;
+            bool hasOutgoingListeners = HasOutgoingListeners;
+            bool hasPollingListeners = HasPollingListeners;
+            if (!hasOutgoingListeners && !hasPollingListeners) return;
             foreach (var command in commands)
             {
-                m_OutgoingCommandQueue.Enqueue(command);
+                if (hasPollingListeners) m_PollingListeners.Enqueue(command);
+                if (hasOutgoingListeners) m_OutgoingCommandQueue.Enqueue(command);
             }
         }
 
@@ -792,15 +795,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void OutgoingApiCommand()
         {
-            if (!HasOutgoingListeners && !HasPollingListeners) return;
+            if (!HasOutgoingListeners) return;
 
             KeyValuePair<string, string> command;
             if (!m_OutgoingCommandQueue.TryDequeue(out command)) return;
 
-
-            m_PollingListeners.Enqueue(command);
-
-            if (m_OutgoingApiListeners == null) return;
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
