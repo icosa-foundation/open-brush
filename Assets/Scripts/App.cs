@@ -2240,69 +2240,73 @@ namespace TiltBrush
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
         }
 
-        // Additional root directories for media imports
-        // These lists allow multiple root directories to be searched when importing media
-        // The default Media Library paths are always checked first for backwards compatibility
-        private static List<string> s_AdditionalMediaRoots = new List<string>();
-        private static List<string> s_AdditionalModelRoots = new List<string>();
-        private static List<string> s_AdditionalImageRoots = new List<string>();
-        private static List<string> s_AdditionalVideoRoots = new List<string>();
-        private static List<string> s_AdditionalBackgroundImageRoots = new List<string>();
+        // Media root directories. The Media Library is always searched first, so the roots
+        // configured in Tilt Brush.cfg under MediaRoots only ever add search locations.
+        private const string kModelsSubdirectory = "Models";
+        private const string kImagesSubdirectory = "Images";
+        private const string kVideosSubdirectory = "Videos";
+        private const string kBackgroundImagesSubdirectory = "BackgroundImages";
+
+        private static StringComparison MediaRootPathComparison =>
+            Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
+        private static UserConfig.MediaRootsConfig ConfiguredMediaRoots =>
+            m_Instance != null && m_Instance.m_UserConfig != null
+                ? m_Instance.m_UserConfig.MediaRoots
+                : default;
 
         /// <summary>
-        /// Adds an additional root directory to search for all media types.
-        /// Relative paths will be checked in this directory when importing media.
+        /// Builds the ordered root list for one media type: the Media Library directory, then the
+        /// directories configured for that type, then the per-type subdirectory of each general
+        /// media root. Unusable and duplicate entries are dropped.
         /// </summary>
-        public static void AddMediaRoot(string path)
+        private static List<string> BuildMediaRootList(
+            string defaultRoot, string[] typeSpecificRoots, string subdirectory)
         {
-            if (!string.IsNullOrEmpty(path) && !s_AdditionalMediaRoots.Contains(path))
+            var roots = new List<string>();
+            _AddMediaRoot(roots, defaultRoot);
+            if (typeSpecificRoots != null)
             {
-                s_AdditionalMediaRoots.Add(path);
+                // A type-specific root is the media directory itself, so it gets no suffix.
+                foreach (var root in typeSpecificRoots)
+                {
+                    _AddMediaRoot(roots, root);
+                }
             }
+            var generalRoots = ConfiguredMediaRoots.General;
+            if (generalRoots != null)
+            {
+                // A general root is a Media Library-shaped parent, so it does.
+                foreach (var root in generalRoots)
+                {
+                    _AddMediaRoot(roots, root, subdirectory);
+                }
+            }
+            return roots;
         }
 
-        /// <summary>
-        /// Adds an additional root directory to search for models.
-        /// </summary>
-        public static void AddModelRoot(string path)
+        private static void _AddMediaRoot(List<string> roots, string root, string subdirectory = null)
         {
-            if (!string.IsNullOrEmpty(path) && !s_AdditionalModelRoots.Contains(path))
+            if (string.IsNullOrWhiteSpace(root)) { return; }
+            string normalized;
+            try
             {
-                s_AdditionalModelRoots.Add(path);
+                normalized = Path.GetFullPath(
+                    subdirectory == null ? root : Path.Combine(root, subdirectory));
             }
-        }
-
-        /// <summary>
-        /// Adds an additional root directory to search for images.
-        /// </summary>
-        public static void AddImageRoot(string path)
-        {
-            if (!string.IsNullOrEmpty(path) && !s_AdditionalImageRoots.Contains(path))
+            catch (Exception e)
             {
-                s_AdditionalImageRoots.Add(path);
+                // ArgumentException, NotSupportedException, PathTooLongException, SecurityException
+                Debug.LogWarning($"[MediaRoots] Ignoring unusable media root '{root}': {e.Message}");
+                return;
             }
-        }
-
-        /// <summary>
-        /// Adds an additional root directory to search for videos.
-        /// </summary>
-        public static void AddVideoRoot(string path)
-        {
-            if (!string.IsNullOrEmpty(path) && !s_AdditionalVideoRoots.Contains(path))
+            foreach (var existing in roots)
             {
-                s_AdditionalVideoRoots.Add(path);
+                if (string.Equals(existing, normalized, MediaRootPathComparison)) { return; }
             }
-        }
-
-        /// <summary>
-        /// Adds an additional root directory to search for background images.
-        /// </summary>
-        public static void AddBackgroundImageRoot(string path)
-        {
-            if (!string.IsNullOrEmpty(path) && !s_AdditionalBackgroundImageRoots.Contains(path))
-            {
-                s_AdditionalBackgroundImageRoots.Add(path);
-            }
+            roots.Add(normalized);
         }
 
         /// <summary>
@@ -2311,21 +2315,8 @@ namespace TiltBrush
         /// </summary>
         public static List<string> GetAllModelRoots()
         {
-            var roots = new List<string> { ModelLibraryPath() };
-
-            // Add media-specific roots
-            foreach (var root in s_AdditionalModelRoots)
-            {
-                roots.Add(Path.Combine(root, "Models"));
-            }
-
-            // Add general media roots
-            foreach (var root in s_AdditionalMediaRoots)
-            {
-                roots.Add(Path.Combine(root, "Models"));
-            }
-
-            return roots;
+            return BuildMediaRootList(
+                ModelLibraryPath(), ConfiguredMediaRoots.Models, kModelsSubdirectory);
         }
 
         /// <summary>
@@ -2333,19 +2324,8 @@ namespace TiltBrush
         /// </summary>
         public static List<string> GetAllImageRoots()
         {
-            var roots = new List<string> { ReferenceImagePath() };
-
-            foreach (var root in s_AdditionalImageRoots)
-            {
-                roots.Add(Path.Combine(root, "Images"));
-            }
-
-            foreach (var root in s_AdditionalMediaRoots)
-            {
-                roots.Add(Path.Combine(root, "Images"));
-            }
-
-            return roots;
+            return BuildMediaRootList(
+                ReferenceImagePath(), ConfiguredMediaRoots.Images, kImagesSubdirectory);
         }
 
         /// <summary>
@@ -2353,19 +2333,8 @@ namespace TiltBrush
         /// </summary>
         public static List<string> GetAllVideoRoots()
         {
-            var roots = new List<string> { VideoLibraryPath() };
-
-            foreach (var root in s_AdditionalVideoRoots)
-            {
-                roots.Add(Path.Combine(root, "Videos"));
-            }
-
-            foreach (var root in s_AdditionalMediaRoots)
-            {
-                roots.Add(Path.Combine(root, "Videos"));
-            }
-
-            return roots;
+            return BuildMediaRootList(
+                VideoLibraryPath(), ConfiguredMediaRoots.Videos, kVideosSubdirectory);
         }
 
         /// <summary>
@@ -2373,26 +2342,21 @@ namespace TiltBrush
         /// </summary>
         public static List<string> GetAllBackgroundImageRoots()
         {
-            var roots = new List<string> { BackgroundImagesLibraryPath() };
-
-            foreach (var root in s_AdditionalBackgroundImageRoots)
-            {
-                roots.Add(Path.Combine(root, "BackgroundImages"));
-            }
-
-            foreach (var root in s_AdditionalMediaRoots)
-            {
-                roots.Add(Path.Combine(root, "BackgroundImages"));
-            }
-
-            return roots;
+            return BuildMediaRootList(
+                BackgroundImagesLibraryPath(), ConfiguredMediaRoots.BackgroundImages,
+                kBackgroundImagesSubdirectory);
         }
 
         /// <summary>
-        /// Resolves a media path by checking multiple potential root directories.
+        /// Resolves a media path for reading by checking multiple potential root directories.
         /// If the path is absolute (rooted), returns it as-is.
         /// If the path is relative, tries each root directory in order and returns the first
         /// path where the file exists. Falls back to the first root if file not found anywhere.
+        ///
+        /// This searches for existing files and is only appropriate for imports. Somewhere to
+        /// write a new file should be chosen with ApiMethods.GetSafePathInDirectory against a
+        /// single explicit output directory, so that an incoming relative name can never select
+        /// and overwrite a file in a configured root.
         /// </summary>
         /// <param name="potentialRoots">List of root directories to check, in priority order</param>
         /// <param name="relativePath">The relative path to resolve</param>

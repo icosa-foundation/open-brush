@@ -368,6 +368,23 @@ namespace TiltBrush
         public ImportConfig Import;
         public ExportConfig Export;
 
+        /// Extra directories searched when a sketch or the API asks for media by relative path.
+        /// The Media Library is always searched first, so these only ever add locations.
+        ///
+        /// Entries in General are Media Library-shaped parents: the per-type subdirectory
+        /// (Models, Images, Videos, BackgroundImages) is appended to each one. Entries in the
+        /// type-specific arrays are the media directories themselves and get no suffix.
+        [Serializable]
+        public struct MediaRootsConfig
+        {
+            public string[] General;
+            public string[] Models;
+            public string[] Images;
+            public string[] Videos;
+            public string[] BackgroundImages;
+        }
+        public MediaRootsConfig MediaRoots;
+
         [Serializable]
         public struct SharingConfig
         {

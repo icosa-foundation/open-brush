@@ -39,4 +39,11 @@
   },
   "Export": {
   },
+  "MediaRoots": {
+    "General": [],
+    "Models": [],
+    "Images": [],
+    "Videos": [],
+    "BackgroundImages": []
+  },
 }
