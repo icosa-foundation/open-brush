@@ -19,6 +19,15 @@ Texture baking policies and future extensions to mesh baking apply only to `stat
 
 `static-glb` is enabled through the `Export.Formats["static-glb"]` setting in `OpenBrush.cfg` and is written to a sibling `static-glb` directory.
 
+Both outputs identify their contract additively in root extras:
+
+- `TB_ExportProfile` is `openbrush` or `static`.
+- `TB_ExporterContractVersion` is versioned independently for each profile.
+
+Adding these fields does not change the existing `newglb` contract. A major `newglb` version
+change is reserved for a future change that requires Open Brush-aware consumers to interpret
+existing data differently.
+
 For each brush GUID in `static-glb`:
 
 1. Bake supported vertex-stage deformation into the mesh.
@@ -62,10 +71,16 @@ This table is a starting point, not a complete brush inventory. Every exportable
 
 ## Static mesh audit
 
-The established common mesh baker already covers the significant non-audio deformation for Double Tapered Flat, Double Tapered Marker, Dots, Embers, Bubbles, Snow, Stars, Smoke, Rising Bubbles, LightWire, Disco, Electricity, HyperGrid, Sparks, BubbleWand, DanceFloor, KeijiroTube, WaveformParticles, Rain, and Mylar.
+The established common mesh baker retains the pre-existing `newglb` deformation for Double
+Tapered Flat, Double Tapered Marker, Dots, Embers, Bubbles, Snow, Stars, Smoke, Rising Bubbles,
+LightWire, Disco, Electricity, HyperGrid, Sparks, BubbleWand, DanceFloor, KeijiroTube,
+WaveformParticles, Rain, and Mylar.
 
 Static-only mesh work currently adds:
 
+- Fixed-time animated centre displacement for Bubbles, Embers, Rising Bubbles, Smoke, Snow,
+  and BubbleWand. These use static compute-shader overrides so `newglb` does not double-bake
+  deformation that Open Brush-aware shaders reproduce at runtime.
 - FacetedTube: split vertices per triangle and bake world-orientation face colors into `COLOR_0`; export the material as unlit to avoid lighting those colors twice.
 - Toon: bake its world-normal body shading into `COLOR_0`, export it as unlit, and omit its camera-dependent outline pass.
 

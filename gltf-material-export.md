@@ -2,22 +2,23 @@
 
 ## Compatibility contract
 
-Open Brush exports use a layered material representation:
+Open Brush has two UnityGLTF export profiles with deliberately different material contracts:
 
-1. Core glTF material fields provide the best static approximation available to clients that
-   know nothing about Open Brush. This includes base colour and texture, vertex colours,
-   metallic/roughness values, alpha mode and cutoff, normal and occlusion maps, and emissive
-   colour and textures.
-2. Standard optional extensions such as `KHR_materials_unlit` and
-   `KHR_materials_emissive_strength` improve that approximation when a client supports them.
-   They are used but not required, so clients may ignore them.
-3. Open Brush identity is stored in material extras (`TB_BrushGuid`, `TB_BrushName`, and
-   `TB_BlendMode`). Open Brush-aware clients use this identity to restore the original brush
-   shader and may also honor `EXT_blend_operations`.
+1. `newglb` is for Open Brush-aware consumers. It preserves the existing mesh and material
+   semantics and adds stable brush identity in material extras (`TB_BrushGuid`, `TB_BrushName`,
+   and `TB_BlendMode`). Consumers use that identity and the exported brush parameters to restore
+   the original shader.
+2. `static-glb` is for generic glTF consumers. It adds core glTF material approximations,
+   fixed-time geometry and texture baking, and optional standards such as
+   `KHR_materials_unlit` and `KHR_materials_emissive_strength`.
 
-Open Brush metadata and extensions must not replace the core material approximation. A client
-that ignores every extra and optional extension should still render recognizable geometry,
-colour, opacity, and texture.
+Both outputs declare `TB_ExportProfile` and an independently versioned
+`TB_ExporterContractVersion` in root extras. Generic appearance work must not silently alter
+`newglb`; it belongs behind the static profile.
+
+For `static-glb`, Open Brush metadata and extensions must not replace the core material
+approximation. A client that ignores every extra and optional extension should still render
+recognizable geometry, colour, opacity, and texture.
 
 ## Complete shader reference
 
