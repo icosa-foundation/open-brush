@@ -28,7 +28,7 @@ namespace TiltBrush
         private const int kOpenBrushExporterContractVersion = 1;
         private const int kStaticExporterContractVersion = 1;
 
-        private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<int, List<BatchSubset>> m_MeshBatchSubsets;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
@@ -71,23 +71,27 @@ namespace TiltBrush
 
         private readonly struct TimestampSource
         {
-            public Batch Batch { get; }
+            public List<BatchSubset> BatchSubsets { get; }
+            public string BatchName { get; }
             public Stroke Stroke { get; }
 
-            private TimestampSource(Batch batch, Stroke stroke)
+            private TimestampSource(
+                List<BatchSubset> batchSubsets, string batchName, Stroke stroke)
             {
-                Batch = batch;
+                BatchSubsets = batchSubsets;
+                BatchName = batchName;
                 Stroke = stroke;
             }
 
-            public static TimestampSource ForBatch(Batch batch)
+            public static TimestampSource ForBatch(
+                List<BatchSubset> batchSubsets, string batchName)
             {
-                return new TimestampSource(batch, null);
+                return new TimestampSource(batchSubsets, batchName, null);
             }
 
             public static TimestampSource ForStroke(Stroke stroke)
             {
-                return new TimestampSource(null, stroke);
+                return new TimestampSource(null, null, stroke);
             }
         }
 
@@ -115,7 +119,7 @@ namespace TiltBrush
                 _atlasTextureCache = null;
                 _atlasMaterialCache = null;
             }
-            _meshesToBatches = new Dictionary<int, Batch>();
+            m_MeshBatchSubsets = new Dictionary<int, List<BatchSubset>>();
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
@@ -266,7 +270,7 @@ namespace TiltBrush
                             var renderer = stroke.m_Object.GetComponent<Renderer>();
                             mesh = ProcessBrushMesh(
                                 mesh, stroke.m_BrushGuid.ToString(), renderer?.sharedMaterial,
-                                stroke.m_Object.transform.localToWorldMatrix);
+                                stroke.m_Object.transform.localToWorldMatrix, out _);
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
                             if (App.UserConfig.Export.ExportStrokeTimestamp)
@@ -302,9 +306,13 @@ namespace TiltBrush
                     m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
+                        int[] sourceVertexIndices;
                         mesh = ProcessBrushMesh(
                             mesh, brush.m_Guid.ToString(), brush.Material,
-                            mf.transform.localToWorldMatrix);
+                            mf.transform.localToWorldMatrix, out sourceVertexIndices);
+                        var exportSubsets = RemapBatchSubsets(
+                            batch.m_Groups, sourceVertexIndices);
+                        m_MeshBatchSubsets[mesh.GetHashCode()] = exportSubsets;
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
@@ -316,7 +324,8 @@ namespace TiltBrush
                         }
                         if (App.UserConfig.Export.ExportStrokeTimestamp)
                         {
-                            m_TimestampSources[mesh] = TimestampSource.ForBatch(batch);
+                            m_TimestampSources[mesh] =
+                                TimestampSource.ForBatch(exportSubsets, batch.name);
                         }
                     }
                 }
@@ -324,12 +333,63 @@ namespace TiltBrush
         }
 
         private Mesh ProcessBrushMesh(
-            Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix)
+            Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix,
+            out int[] sourceVertexIndices)
         {
-            return IsStaticExport
-                ? BrushBaker.m_Instance.ProcessMeshForStaticExport(
-                    mesh, brushGuid, material, localToWorldMatrix)
-                : BrushBaker.m_Instance.ProcessMesh(mesh, brushGuid);
+            sourceVertexIndices = null;
+            if (IsStaticExport)
+            {
+                return BrushBaker.m_Instance.ProcessMeshForStaticExport(
+                    mesh, brushGuid, material, localToWorldMatrix,
+                    out sourceVertexIndices);
+            }
+            return BrushBaker.m_Instance.ProcessMesh(mesh, brushGuid);
+        }
+
+        private static List<BatchSubset> RemapBatchSubsets(
+            IEnumerable<BatchSubset> subsets, int[] sourceVertexIndices)
+        {
+            if (sourceVertexIndices == null)
+            {
+                return subsets.ToList();
+            }
+
+            var remapped = new List<BatchSubset>();
+            foreach (BatchSubset subset in subsets)
+            {
+                int sourceEnd = subset.m_StartVertIndex + subset.m_VertLength;
+                int destinationStart = -1;
+                int destinationLength = 0;
+                for (int destination = 0; destination < sourceVertexIndices.Length; destination++)
+                {
+                    int source = sourceVertexIndices[destination];
+                    if (source < subset.m_StartVertIndex || source >= sourceEnd)
+                    {
+                        continue;
+                    }
+                    if (destinationStart < 0)
+                    {
+                        destinationStart = destination;
+                    }
+                    else if (destination != destinationStart + destinationLength)
+                    {
+                        throw new InvalidOperationException(
+                            "Faceted mesh vertices for a batch subset are not contiguous");
+                    }
+                    destinationLength++;
+                }
+
+                remapped.Add(new BatchSubset
+                {
+                    m_Stroke = subset.m_Stroke,
+                    m_ParentBatch = subset.m_ParentBatch,
+                    m_StartVertIndex =
+                        destinationStart >= 0 ? destinationStart : sourceVertexIndices.Length,
+                    m_VertLength = destinationLength,
+                    m_Active = subset.m_Active,
+                });
+            }
+            return remapped;
         }
 
         public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
@@ -384,8 +444,12 @@ namespace TiltBrush
                 // Register all batches so metadata and additive-material export can look up stroke data.
                 var batch = transform.GetComponent<Batch>();
                 var mf = transform.GetComponent<MeshFilter>();
-                if (batch != null && mf != null)
-                    _meshesToBatches[mf.sharedMesh.GetHashCode()] = batch;
+                if (batch != null && mf != null &&
+                    !m_MeshBatchSubsets.ContainsKey(mf.sharedMesh.GetHashCode()))
+                {
+                    m_MeshBatchSubsets[mf.sharedMesh.GetHashCode()] =
+                        batch.m_Groups.ToList();
+                }
             }
         }
 
@@ -509,10 +573,11 @@ namespace TiltBrush
             if (App.UserConfig.Export.ExportStrokeMetadata &&
                 !App.UserConfig.Export.KeepStrokes)
             {
-                if (_meshesToBatches.TryGetValue(mesh.GetHashCode(), out Batch batch))
+                if (m_MeshBatchSubsets.TryGetValue(
+                    mesh.GetHashCode(), out List<BatchSubset> subsets))
                 {
                     var batchInfo = new List<Dictionary<string, string>>();
-                    foreach (var subset in batch.m_Groups)
+                    foreach (var subset in subsets)
                     {
                         var subsetInfo = new Dictionary<string, string>();
                         subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
@@ -545,8 +610,10 @@ namespace TiltBrush
             {
                 // Batch may contain strokes of different colours. Build a 1×N colour atlas and
                 // inject it as TEXCOORD_7 so the emissive texture is sampled per-vertex.
-                if (!_meshesToBatches.TryGetValue(mesh.GetHashCode(), out Batch batchForAtlas)) return;
-                int cloneIdx = GetOrCreateAtlasMaterial(mat, batchForAtlas, mesh, primitive, gain, exporter);
+                if (!m_MeshBatchSubsets.TryGetValue(
+                    mesh.GetHashCode(), out List<BatchSubset> subsetsForAtlas)) return;
+                int cloneIdx = GetOrCreateAtlasMaterial(
+                    mat, subsetsForAtlas, mesh, primitive, gain, exporter);
                 primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
             }
         }
@@ -576,11 +643,12 @@ namespace TiltBrush
         }
 
         // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
-        private int GetOrCreateAtlasMaterial(GLTFMaterial source, Batch batch, Mesh mesh, MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
+        private int GetOrCreateAtlasMaterial(
+            GLTFMaterial source, List<BatchSubset> subsets, Mesh mesh,
+            MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
         {
             // Build a tinted copy of the source brush texture for each stroke colour. glTF has
             // only one emissive texture slot, so the colour and source mask must be combined.
-            var subsets = batch.m_Groups;
             var uniqueColors = subsets.Select(s => (Color32)s.m_Stroke.m_Color).Distinct().ToList();
             if (uniqueColors.Count == 0) return primitive.Material.Id;
             int N = uniqueColors.Count;
@@ -809,7 +877,8 @@ namespace TiltBrush
 
             byte[] timestampData = source.Stroke != null
                 ? CreateTimestampData(source.Stroke, mesh.vertexCount)
-                : CreateTimestampData(source.Batch, mesh.vertexCount);
+                : CreateTimestampData(
+                    source.BatchSubsets, source.BatchName, mesh.vertexCount);
             if (timestampData == null)
             {
                 return;
@@ -830,20 +899,22 @@ namespace TiltBrush
             }
         }
 
-        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        private static byte[] CreateTimestampData(
+            IEnumerable<BatchSubset> subsets, string batchName, int vertexCount)
         {
-            if (batch == null || vertexCount == 0)
+            if (subsets == null || vertexCount == 0)
             {
                 return null;
             }
 
             byte[] data = new byte[vertexCount * sizeof(float) * 3];
-            foreach (BatchSubset subset in batch.m_Groups)
+            foreach (BatchSubset subset in subsets)
             {
                 if (subset.m_StartVertIndex < 0 || subset.m_VertLength < 0 ||
                     subset.m_StartVertIndex + subset.m_VertLength > vertexCount)
                 {
-                    Debug.LogWarning($"Cannot export timestamps for an invalid batch subset in {batch.name}");
+                    Debug.LogWarning(
+                        $"Cannot export timestamps for an invalid batch subset in {batchName}");
                     return null;
                 }
 
@@ -854,6 +925,13 @@ namespace TiltBrush
                 }
             }
             return data;
+        }
+
+        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        {
+            return batch == null
+                ? null
+                : CreateTimestampData(batch.m_Groups, batch.name, vertexCount);
         }
 
         private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)

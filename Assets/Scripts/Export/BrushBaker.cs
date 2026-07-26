@@ -154,6 +154,16 @@ public class BrushBaker : MonoBehaviour
     public Mesh ProcessMeshForStaticExport(
         Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix)
     {
+        int[] ignoredSourceVertexIndices;
+        return ProcessMeshForStaticExport(
+            mesh, brushGuid, material, localToWorldMatrix, out ignoredSourceVertexIndices);
+    }
+
+    public Mesh ProcessMeshForStaticExport(
+        Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix,
+        out int[] sourceVertexIndices)
+    {
+        sourceVertexIndices = null;
         bool foundMapping = false;
         if (TryGetStaticMapping(brushGuid, out var staticMapping))
         {
@@ -173,7 +183,9 @@ public class BrushBaker : MonoBehaviour
         if (TryGetStaticMeshPolicy(brushGuid, out var staticPolicy))
         {
             Debug.Log($"[OB_STATIC_MESH] Applying {staticPolicy.name} to brush {brushGuid}");
-            mesh = ApplyStaticMeshPolicy(mesh, material, localToWorldMatrix, staticPolicy.Mode);
+            mesh = ApplyStaticMeshPolicy(
+                mesh, material, localToWorldMatrix, staticPolicy.Mode,
+                out sourceVertexIndices);
             foundMapping = true;
         }
 
@@ -186,12 +198,14 @@ public class BrushBaker : MonoBehaviour
 
     private static Mesh ApplyStaticMeshPolicy(
         Mesh mesh, Material material, Matrix4x4 localToWorldMatrix,
-        StaticMeshBakeMode mode)
+        StaticMeshBakeMode mode, out int[] sourceVertexIndices)
     {
+        sourceVertexIndices = null;
         switch (mode)
         {
             case StaticMeshBakeMode.FacetedFaceColors:
-                return BakeFacetedFaceColors(mesh, material, localToWorldMatrix);
+                return BakeFacetedFaceColors(
+                    mesh, material, localToWorldMatrix, out sourceVertexIndices);
             case StaticMeshBakeMode.ToonVertexShading:
                 return BakeToonVertexShading(mesh, localToWorldMatrix);
             default:
@@ -230,8 +244,10 @@ public class BrushBaker : MonoBehaviour
     }
 
     private static Mesh BakeFacetedFaceColors(
-        Mesh mesh, Material material, Matrix4x4 localToWorldMatrix)
+        Mesh mesh, Material material, Matrix4x4 localToWorldMatrix,
+        out int[] sourceVertexIndices)
     {
+        sourceVertexIndices = null;
         if (material == null || !material.HasProperty("_ColorX") ||
             !material.HasProperty("_ColorY") || !material.HasProperty("_ColorZ"))
         {
@@ -257,6 +273,7 @@ public class BrushBaker : MonoBehaviour
         var colors = new List<Color>();
         var uvs = Enumerable.Range(0, 8).Select(_ => new List<Vector4>()).ToArray();
         var submeshTriangles = new List<int>[mesh.subMeshCount];
+        var destinationSources = new List<int>();
 
         Color colorX = material.GetColor("_ColorX");
         Color colorY = material.GetColor("_ColorY");
@@ -324,6 +341,7 @@ public class BrushBaker : MonoBehaviour
             mesh.SetTriangles(submeshTriangles[submesh], submesh, false);
         }
         mesh.RecalculateBounds();
+        sourceVertexIndices = destinationSources.ToArray();
         Debug.Log($"[OB_STATIC_MESH] Baked faceted colors: {sourceVertices.Length} source vertices, {vertices.Count} split vertices");
         return mesh;
 
@@ -332,6 +350,7 @@ public class BrushBaker : MonoBehaviour
         {
             int destinationIndex = vertices.Count;
             vertices.Add(sourceVertices[sourceIndex]);
+            destinationSources.Add(sourceIndex);
             destinationTriangles.Add(destinationIndex);
             if (sourceNormals.Length == sourceVertices.Length)
             {
