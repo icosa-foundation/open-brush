@@ -460,93 +460,17 @@ namespace TiltBrush
         }
 
         [Test]
-        public void TestPollingListenersExpireAndCanBeUnregistered()
+        public void TestPollingListenersCanBeUnregistered()
         {
-            DateTime now = DateTime.UtcNow;
-            var listeners = new ApiManager.PollingListenerRegistry(() => now);
+            var listeners = new ApiManager.PollingListenerRegistry();
 
             Assert.IsTrue(listeners.Register("first-client"));
             Assert.IsTrue(listeners.Register("second-client"));
             Assert.IsTrue(listeners.Unregister("first-client"));
             Assert.IsTrue(listeners.HasListeners);
-
-            now += ApiManager.PollingListenerRegistry.LISTENER_TIMEOUT +
-                TimeSpan.FromSeconds(1);
-
+            Assert.IsFalse(listeners.Unregister("missing-client"));
+            Assert.IsTrue(listeners.Unregister("second-client"));
             Assert.IsFalse(listeners.HasListeners);
-        }
-
-        [Test]
-        public void TestPollingListenerCountIsBounded()
-        {
-            var listeners = new ApiManager.PollingListenerRegistry();
-            for (int i = 0;
-                 i < ApiManager.PollingListenerRegistry.MAX_LISTENER_COUNT;
-                 ++i)
-            {
-                Assert.IsTrue(listeners.Register($"client-{i}"));
-            }
-
-            Assert.IsFalse(listeners.Register("one-client-too-many"));
-        }
-
-        [Test]
-        public void TestPollingPayloadSizeIsBounded()
-        {
-            var listeners = new ApiManager.PollingListenerRegistry();
-            Assert.IsTrue(listeners.Register("client"));
-
-            int halfLimit =
-                ApiManager.PollingListenerRegistry.MAX_QUEUED_CHARACTER_COUNT / 2;
-            var first = new KeyValuePair<string, string>(
-                "first", new string('a', halfLimit));
-            var second = new KeyValuePair<string, string>(
-                "second", new string('b', halfLimit));
-            listeners.Enqueue(first);
-            listeners.Enqueue(second);
-
-            var commands = listeners.Drain("client");
-            Assert.AreEqual(1, commands.Count);
-            Assert.AreEqual("second", commands[0].Key);
-
-            var oversized = new KeyValuePair<string, string>(
-                "oversized",
-                new string(
-                    'x',
-                    ApiManager.PollingListenerRegistry.MAX_QUEUED_CHARACTER_COUNT));
-            listeners.Enqueue(oversized);
-
-            Assert.IsEmpty(listeners.Drain("client"));
-        }
-
-        [Test]
-        public void TestSharedOutgoingQueueIsBounded()
-        {
-            var queue = new ApiManager.BoundedCommandQueue();
-            for (int i = 0;
-                 i <= ApiManager.BoundedCommandQueue.MAX_COMMAND_COUNT;
-                 ++i)
-            {
-                queue.Enqueue(new KeyValuePair<string, string>("command", i.ToString()));
-            }
-
-            Assert.AreEqual(
-                ApiManager.BoundedCommandQueue.MAX_COMMAND_COUNT,
-                queue.Count);
-            Assert.IsTrue(queue.TryDequeue(out KeyValuePair<string, string> first));
-            Assert.AreEqual("1", first.Value);
-
-            queue = new ApiManager.BoundedCommandQueue();
-            int halfLimit =
-                ApiManager.BoundedCommandQueue.MAX_QUEUED_CHARACTER_COUNT / 2;
-            queue.Enqueue(new KeyValuePair<string, string>(
-                "first", new string('a', halfLimit)));
-            queue.Enqueue(new KeyValuePair<string, string>(
-                "second", new string('b', halfLimit)));
-
-            Assert.AreEqual(1, queue.Count);
-            Assert.IsTrue(queue.TryDequeue(out first));
-            Assert.AreEqual("second", first.Key);
         }
 
         [Test]

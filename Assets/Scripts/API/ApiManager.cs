@@ -46,8 +46,7 @@ namespace TiltBrush
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
         private Dictionary<string, string> m_CommandStatuses;
-        private readonly BoundedCommandQueue m_OutgoingCommandQueue =
-            new BoundedCommandQueue();
+        private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
         private readonly PollingListenerRegistry m_PollingListeners =
             new PollingListenerRegistry();
@@ -798,7 +797,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (!HasOutgoingListeners) return;
 
             KeyValuePair<string, string> command;
-            if (!m_OutgoingCommandQueue.TryDequeue(out command)) return;
+            try
+            {
+                command = (KeyValuePair<string, string>)m_OutgoingCommandQueue.Dequeue();
+            }
+            catch (InvalidOperationException)
+            {
+                return;
+            }
 
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
@@ -1035,28 +1041,15 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         internal sealed class PollingListenerRegistry
         {
-            internal const int MAX_LISTENER_COUNT = 32;
-            internal const int MAX_QUEUE_SIZE = 1024;
-            internal const int MAX_QUEUED_CHARACTER_COUNT = 1024 * 1024;
-            internal static readonly TimeSpan LISTENER_TIMEOUT = TimeSpan.FromMinutes(5);
-
             private sealed class Listener
             {
                 internal readonly Queue<KeyValuePair<string, string>> Commands =
                     new Queue<KeyValuePair<string, string>>();
-                internal int QueuedCharacterCount;
-                internal DateTime LastActivityUtc;
             }
 
             private readonly Dictionary<string, Listener> m_Listeners =
                 new Dictionary<string, Listener>();
-            private readonly Func<DateTime> m_UtcNow;
             private readonly object m_Lock = new object();
-
-            internal PollingListenerRegistry(Func<DateTime> utcNow = null)
-            {
-                m_UtcNow = utcNow ?? (() => DateTime.UtcNow);
-            }
 
             internal bool HasListeners
             {
@@ -1064,7 +1057,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     lock (m_Lock)
                     {
-                        RemoveExpiredListeners(m_UtcNow());
                         return m_Listeners.Count > 0;
                     }
                 }
@@ -1075,15 +1067,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 if (string.IsNullOrWhiteSpace(clientId)) return false;
                 lock (m_Lock)
                 {
-                    DateTime now = m_UtcNow();
-                    RemoveExpiredListeners(now);
-                    if (m_Listeners.TryGetValue(clientId, out Listener listener))
-                    {
-                        listener.LastActivityUtc = now;
-                        return true;
-                    }
-                    if (m_Listeners.Count >= MAX_LISTENER_COUNT) return false;
-                    m_Listeners.Add(clientId, new Listener { LastActivityUtc = now });
+                    if (m_Listeners.ContainsKey(clientId)) return true;
+                    m_Listeners.Add(clientId, new Listener());
                     return true;
                 }
             }
@@ -1101,132 +1086,26 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 lock (m_Lock)
                 {
-                    DateTime now = m_UtcNow();
-                    RemoveExpiredListeners(now);
                     if (!m_Listeners.TryGetValue(clientId, out Listener listener))
                     {
                         return null;
                     }
-                    listener.LastActivityUtc = now;
                     var commands =
                         new List<KeyValuePair<string, string>>(listener.Commands);
                     listener.Commands.Clear();
-                    listener.QueuedCharacterCount = 0;
                     return commands;
                 }
             }
 
             internal void Enqueue(KeyValuePair<string, string> command)
             {
-                int commandCharacterCount = GetCommandCharacterCount(command);
-                if (commandCharacterCount > MAX_QUEUED_CHARACTER_COUNT) return;
                 lock (m_Lock)
                 {
-                    RemoveExpiredListeners(m_UtcNow());
                     foreach (Listener listener in m_Listeners.Values)
                     {
-                        while (listener.Commands.Count >= MAX_QUEUE_SIZE ||
-                               listener.QueuedCharacterCount + commandCharacterCount >
-                               MAX_QUEUED_CHARACTER_COUNT)
-                        {
-                            KeyValuePair<string, string> removedCommand =
-                                listener.Commands.Dequeue();
-                            listener.QueuedCharacterCount -=
-                                GetCommandCharacterCount(removedCommand);
-                        }
                         listener.Commands.Enqueue(command);
-                        listener.QueuedCharacterCount += commandCharacterCount;
                     }
                 }
-            }
-
-            private static int GetCommandCharacterCount(
-                KeyValuePair<string, string> command)
-            {
-                return (command.Key?.Length ?? 0) +
-                    (command.Value?.Length ?? 0) +
-                    2; // '=' plus a conservative trailing newline.
-            }
-
-            private void RemoveExpiredListeners(DateTime now)
-            {
-                List<string> expiredClientIds = null;
-                foreach (KeyValuePair<string, Listener> entry in m_Listeners)
-                {
-                    if (now - entry.Value.LastActivityUtc <= LISTENER_TIMEOUT) continue;
-                    if (expiredClientIds == null) expiredClientIds = new List<string>();
-                    expiredClientIds.Add(entry.Key);
-                }
-                if (expiredClientIds == null) return;
-                foreach (string clientId in expiredClientIds)
-                {
-                    m_Listeners.Remove(clientId);
-                }
-            }
-        }
-
-        internal sealed class BoundedCommandQueue
-        {
-            internal const int MAX_COMMAND_COUNT = 1024;
-            internal const int MAX_QUEUED_CHARACTER_COUNT = 1024 * 1024;
-
-            private readonly Queue<KeyValuePair<string, string>> m_Commands =
-                new Queue<KeyValuePair<string, string>>();
-            private readonly object m_Lock = new object();
-            private int m_QueuedCharacterCount;
-
-            internal int Count
-            {
-                get
-                {
-                    lock (m_Lock)
-                    {
-                        return m_Commands.Count;
-                    }
-                }
-            }
-
-            internal void Enqueue(KeyValuePair<string, string> command)
-            {
-                int commandCharacterCount = GetCommandCharacterCount(command);
-                if (commandCharacterCount > MAX_QUEUED_CHARACTER_COUNT) return;
-                lock (m_Lock)
-                {
-                    while (m_Commands.Count >= MAX_COMMAND_COUNT ||
-                           m_QueuedCharacterCount + commandCharacterCount >
-                           MAX_QUEUED_CHARACTER_COUNT)
-                    {
-                        KeyValuePair<string, string> removedCommand =
-                            m_Commands.Dequeue();
-                        m_QueuedCharacterCount -=
-                            GetCommandCharacterCount(removedCommand);
-                    }
-                    m_Commands.Enqueue(command);
-                    m_QueuedCharacterCount += commandCharacterCount;
-                }
-            }
-
-            internal bool TryDequeue(out KeyValuePair<string, string> command)
-            {
-                lock (m_Lock)
-                {
-                    if (m_Commands.Count == 0)
-                    {
-                        command = default;
-                        return false;
-                    }
-                    command = m_Commands.Dequeue();
-                    m_QueuedCharacterCount -= GetCommandCharacterCount(command);
-                    return true;
-                }
-            }
-
-            private static int GetCommandCharacterCount(
-                KeyValuePair<string, string> command)
-            {
-                return (command.Key?.Length ?? 0) +
-                    (command.Value?.Length ?? 0) +
-                    2; // '=' plus a conservative trailing newline.
             }
         }
 
