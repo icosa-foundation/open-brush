@@ -36,13 +36,24 @@ namespace TiltBrush
 
     public class OpenBrushMaterialImportContext : GLTFImportPluginContext
     {
+        private bool _restoreOpenBrushMaterials = true;
+
         // Maps material name → brush GUID so we can also fix the vertex-color variant later.
         // The vertex-color clone is created before OnAfterImportMaterial fires, so we can't
         // fix it there — we fix it in OnAfterImportScene by name-matching instead.
         private readonly Dictionary<string, Guid> _nameToGuid = new Dictionary<string, Guid>();
 
+        public override void OnAfterImportRoot(GLTFRoot gltfRoot)
+        {
+            string profile = gltfRoot.Extras?.Value<string>("TB_ExportProfile");
+            _restoreOpenBrushMaterials =
+                string.IsNullOrEmpty(profile) ||
+                string.Equals(profile, "openbrush", StringComparison.OrdinalIgnoreCase);
+        }
+
         public override void OnAfterImportMaterial(GLTFMaterial gltfMaterial, int materialIndex, Material materialObject)
         {
+            if (!_restoreOpenBrushMaterials) return;
             if (BrushCatalog.m_Instance == null) return;
 
             var guidStr = gltfMaterial.Extras?.Value<string>("TB_BrushGuid");

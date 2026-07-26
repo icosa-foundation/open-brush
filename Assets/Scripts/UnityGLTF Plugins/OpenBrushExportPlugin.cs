@@ -825,7 +825,12 @@ namespace TiltBrush
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
                 var extras = materialNode.Extras as JObject ?? new JObject();
-                extras["TB_BrushGuid"] = manifest.m_Guid.ToString("D");
+                if (!IsStaticExport)
+                {
+                    // TB_BrushGuid is an instruction to Open Brush-aware importers to restore
+                    // the live brush shader. Static geometry must not trigger that behavior.
+                    extras["TB_BrushGuid"] = manifest.m_Guid.ToString("D");
+                }
                 extras["TB_BrushName"] = manifest.DurableName;
                 extras["TB_BlendMode"] = manifest.m_BlendMode.ToString();
                 materialNode.Extras = extras;
