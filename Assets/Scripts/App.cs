@@ -2247,7 +2247,8 @@ namespace TiltBrush
         private const string kVideosSubdirectory = "Videos";
         private const string kBackgroundImagesSubdirectory = "BackgroundImages";
 
-        private static StringComparison MediaRootPathComparison =>
+        /// How to compare two media paths for equality on this platform.
+        public static StringComparison MediaPathComparison =>
             Path.DirectorySeparatorChar == '\\'
                 ? StringComparison.OrdinalIgnoreCase
                 : StringComparison.Ordinal;
@@ -2304,7 +2305,7 @@ namespace TiltBrush
             }
             foreach (var existing in roots)
             {
-                if (string.Equals(existing, normalized, MediaRootPathComparison)) { return; }
+                if (string.Equals(existing, normalized, MediaPathComparison)) { return; }
             }
             roots.Add(normalized);
         }
