@@ -30,18 +30,13 @@ namespace TiltBrush
             float radius = App.Scene.Pose.inverse.scale * radius_ws;
 
             var strokesInsideSphere = new HashSet<Stroke>();
-            int boundsTestsPassed = 0;
-            int boundsTestsFailed = 0;
 
             // Process all strokes on all canvases
-            var allStrokes = SketchMemoryScript.AllStrokes().ToArray();
+            var allStrokes = SketchMemoryScript.AllStrokes()
+                .Where(stroke => stroke != null && stroke.IsGeometryEnabled)
+                .ToArray();
             foreach (var stroke in allStrokes)
             {
-                if (stroke == null)
-                {
-                    continue;
-                }
-
                 var canvas = stroke.Canvas;
                 if (canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length == 0)
                 {
@@ -59,10 +54,8 @@ namespace TiltBrush
                     Bounds bounds = stroke.m_BatchSubset.m_Bounds;
                     if (!BoundsIntersectsSphere(bounds, sphereCenterCs, sphereRadiusCs))
                     {
-                        boundsTestsFailed++;
                         continue;
                     }
-                    boundsTestsPassed++;
                 }
 
                 var clippedSegments = ClipStrokeToSphere(stroke.m_ControlPoints, sphereCenterCs, sphereRadiusCs);
@@ -80,10 +73,11 @@ namespace TiltBrush
                 }
 
                 // Stroke crosses sphere boundary multiple times - split into multiple strokes
+                bool wasSelected = DeregisterSelectedStroke(stroke);
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
-                stroke.Uncreate();
                 stroke.DestroyStroke();
 
+                var newStrokes = wasSelected ? new List<Stroke>() : null;
                 for (int i = 0; i < clippedSegments.Count; i++)
                 {
                     var newStroke = new Stroke(stroke)
@@ -96,24 +90,43 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance.MemoryListAdd(newStroke);
                     newStroke.Recreate(null, newStroke.Canvas);
                     strokesInsideSphere.Add(newStroke);
+                    newStrokes?.Add(newStroke);
+                }
+
+                if (wasSelected)
+                {
+                    SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(newStrokes);
                 }
             }
 
             // Now delete all strokes that aren't in strokesInsideSphere
-            var allStrokesAfterClipping = SketchMemoryScript.AllStrokes().ToArray();
-            int deletedCount = 0;
+            var allStrokesAfterClipping = SketchMemoryScript.AllStrokes()
+                .Where(stroke => stroke != null && stroke.IsGeometryEnabled)
+                .ToArray();
             for (int i = 0; i < allStrokesAfterClipping.Length; i++)
             {
                 var stroke = allStrokesAfterClipping[i];
-                if (stroke == null || strokesInsideSphere.Contains(stroke))
+                if (strokesInsideSphere.Contains(stroke))
                 {
                     continue;
                 }
 
+                DeregisterSelectedStroke(stroke);
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
                 stroke.DestroyStroke();
-                deletedCount++;
             }
+        }
+
+        private static bool DeregisterSelectedStroke(Stroke stroke)
+        {
+            var selectionManager = SelectionManager.m_Instance;
+            if (selectionManager == null || !selectionManager.IsStrokeSelected(stroke))
+            {
+                return false;
+            }
+
+            selectionManager.DeregisterStrokesInSelectionCanvas(new[] { stroke });
+            return true;
         }
 
         private static bool BoundsIntersectsSphere(Bounds bounds, Vector3 sphereCenter, float sphereRadius)
@@ -233,7 +246,8 @@ namespace TiltBrush
                 m_Pos = Vector3.Lerp(a.m_Pos, b.m_Pos, t),
                 m_Orient = Quaternion.Slerp(a.m_Orient, b.m_Orient, t),
                 m_Pressure = Mathf.Lerp(a.m_Pressure, b.m_Pressure, t),
-                m_TimestampMs = (uint)Mathf.Lerp(a.m_TimestampMs, b.m_TimestampMs, t)
+                m_TimestampMs = (uint)(a.m_TimestampMs +
+                    ((double)b.m_TimestampMs - a.m_TimestampMs) * t)
             };
         }
 
