@@ -27,6 +27,16 @@ namespace TiltBrush
     public class UserConfig
     {
         [Serializable]
+        public struct PluginWebRequestRule
+        {
+            // Exact host, HTTP methods, and response categories documented in
+            // Support/PluginWebRequestRules.md.
+            public string Host;
+            public string[] Methods;
+            public string[] FileTypes;
+        }
+
+        [Serializable]
         public struct YouTubeConfig
         {
             public string ChannelID;
@@ -45,6 +55,19 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            private bool m_ForceViewOnly;
+            public bool ForceViewOnly
+            {
+                get
+                {
+#if OPEN_BRUSH_VIEWER
+                    return true;
+#else
+                    return m_ForceViewOnly;
+#endif
+                }
+                set { m_ForceViewOnly = value; }
+            }
 
             private bool? m_DisableXrMode;
             public bool DisableXrMode
@@ -54,7 +77,7 @@ namespace TiltBrush
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
                     return true;
 #else
-                    return m_DisableXrMode ?? false;
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
 #endif
                 }
                 set { m_DisableXrMode = value; }
@@ -62,6 +85,10 @@ namespace TiltBrush
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
+            public bool WebScriptsCanControlPlugins;
+            public bool EnablePluginWebRequests;
+            public PluginWebRequestRule[] PluginWebRequestRules;
+            public bool EnablePluginClipboardAccess;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
@@ -180,6 +207,16 @@ namespace TiltBrush
                     return m_IcosaModelPreload ?? App.PlatformConfig.EnableIcosaPreload;
                 }
                 set { m_IcosaModelPreload = value; }
+            }
+
+            // Models whose reported triangle count exceeds this are not auto-preloaded or previewed in
+            // the Icosa panel (they still load when explicitly selected). 0 or negative disables the
+            // limit. Triangle count is the only size signal the Icosa API exposes before download.
+            private int? m_IcosaMaxPreviewTriangleCount;
+            public int IcosaMaxPreviewTriangleCount
+            {
+                get { return m_IcosaMaxPreviewTriangleCount ?? 200000; }
+                set { m_IcosaMaxPreviewTriangleCount = value; }
             }
         }
 
@@ -464,6 +501,7 @@ namespace TiltBrush
             }
 
             int? m_OfflineResolution;
+            public bool OfflineResolutionValid { get { return m_OfflineResolution != null; } }
             public int OfflineResolution
             {
                 get { return m_OfflineResolution ?? kDefaultOfflineRes; }

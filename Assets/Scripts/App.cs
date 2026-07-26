@@ -479,8 +479,6 @@ namespace TiltBrush
             {
                 Debug.LogErrorFormat("Couldn't set dir to {0}: {1}", appDir, e);
             }
-            string curDir = Directory.GetCurrentDirectory();
-            Debug.LogFormat("Dir {0} -> {1}", oldDir, curDir);
 #endif
         }
 
@@ -1278,6 +1276,11 @@ namespace TiltBrush
             {
                 OverlayManager.m_Instance.PauseRendering(false);
                 OverlayManager.m_Instance.FadeFromCompositor(0);
+                if (SketchControlsScript.m_Instance.IsViewOnly)
+                {
+                    OverlayManager.m_Instance.SetOverlayTransitionRatio(0);
+                }
+                m_QuickLoadInputWasValid = false;
             }
 
             m_DesiredAppState = AppState.Standard;
@@ -1328,6 +1331,11 @@ namespace TiltBrush
             }
 
             Scene.BroadcastCanvasUpdate();
+
+            if (SketchControlsScript.m_Instance.IsViewOnly)
+            {
+                SketchControlsScript.m_Instance.ViewOnly(true);
+            }
         }
 
         private IEnumerator<Timeslice> DelayedSketchLoadedCard(float delay)
@@ -1630,6 +1638,40 @@ namespace TiltBrush
             }
         }
 
+        // Finish the current sketch playback immediately, as if the user had held the Panic input.
+        // Unlike UpdateQuickLoadLogic this is not gated on controller input or AppAllowsCreation, so
+        // it can be driven by an on-screen button (e.g. the non-VR "Skip" button) on any platform.
+        public void RequestQuickLoad()
+        {
+            if (CurrentState != AppState.Loading)
+            {
+                return;
+            }
+
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (!m_QuickLoadInputWasValid)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
+                OverlayManager.m_Instance.PauseRendering(true);
+            }
+
+            m_QuickLoadInputWasValid = true;
+            if (m_CurrentAppState != AppState.QuickLoad)
+            {
+                OverlayManager.m_Instance.SetOverlayTransitionRatio(1.0f);
+                m_QuickloadStallFrames = 1;
+                m_DesiredAppState = AppState.QuickLoad;
+                m_SketchSurfacePanel.EnableRenderer(false);
+            }
+        }
+
         void OnIntroComplete()
         {
             SaveLoadScript.m_Instance.NewAutosaveFile();
@@ -1742,6 +1784,22 @@ namespace TiltBrush
             }
         }
 
+        internal static UserConfig DeserializeUserConfigWithDefaults(
+            string defaultConfigText, string userConfigText, out string warning)
+        {
+            UserConfig defaults = DeserializeObjectWithWarning<UserConfig>(
+                defaultConfigText, out _);
+            UserConfig config = DeserializeObjectWithWarning<UserConfig>(
+                userConfigText, out warning);
+
+            // Treat an explicit null like a missing value. An explicit [] remains an empty list.
+            if (config.Flags.PluginWebRequestRules == null)
+            {
+                config.Flags.PluginWebRequestRules = defaults.Flags.PluginWebRequestRules;
+            }
+            return config;
+        }
+
         void CreateDefaultConfig()
         {
             // If we don't have a .cfg in our Tilt Brush directory, drop a default one.
@@ -1760,6 +1818,8 @@ namespace TiltBrush
 
         public void RefreshUserConfig()
         {
+            TextAsset defaultConfigAsset = Resources.Load<TextAsset>(kDefaultConfigPath);
+            string defaultConfigText = defaultConfigAsset != null ? defaultConfigAsset.text : "{}";
             m_UserConfig = new UserConfig();
 
             try
@@ -1785,7 +1845,8 @@ namespace TiltBrush
                 try
                 {
                     string warning;
-                    m_UserConfig = DeserializeObjectWithWarning<UserConfig>(text, out warning);
+                    m_UserConfig = DeserializeUserConfigWithDefaults(
+                        defaultConfigText, text, out warning);
                     if (warning != null)
                     {
                         OutputWindowScript.Error($"Warning reading {kConfigFileName}", warning);
@@ -2462,7 +2523,15 @@ namespace TiltBrush
 
             ODS.HybridCamera cam = driver.OdsCamera;
             cam.CollapseIpd = Config.m_OdsCollapseIpd;
-            cam.imageWidth /= Config.m_OdsPreview ? 4 : 1;
+            if (Config.m_OdsPreview)
+            {
+                // Keep --preview tied to the default ODS width so offline 8k renders do not create 2k previews.
+                cam.imageWidth /= 4;
+            }
+            else if (App.UserConfig.Video.OfflineResolutionValid)
+            {
+                cam.imageWidth = App.UserConfig.Video.OfflineResolution;
+            }
             if (Config.m_SdkMode == SdkMode.Ods)
             {
                 Debug.LogFormat("Configuring ODS:{0}" +

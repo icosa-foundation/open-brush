@@ -30,6 +30,7 @@ namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IDataConnectionHandler, INetworkRunnerCallbacks
     {
+        private const bool k_UseDefaultPhotonCloudPorts = true;
 
         private NetworkRunner m_Runner;
         private MultiplayerManager m_Manager;
@@ -114,7 +115,10 @@ namespace OpenBrush.Multiplayer
 
             await Task.Yield();
 
-            var result = await m_Runner.JoinSessionLobby(SessionLobby.Shared, customAppSettings: m_PhotonAppSettings);
+            var result = await m_Runner.JoinSessionLobby(
+                SessionLobby.Shared,
+                customAppSettings: m_PhotonAppSettings,
+                useDefaultCloudPorts: k_UseDefaultPhotonCloudPorts);
 
             if (result.Ok)
             {
@@ -151,6 +155,7 @@ namespace OpenBrush.Multiplayer
                 PlayerCount = roomCreateData.maxPlayers != 0 ? roomCreateData.maxPlayers : null,
                 SceneManager = m_Runner.gameObject.GetComponent<NetworkSceneManagerDefault>(),
                 Scene = sceneInfo, // Pass the configured NetworkSceneInfo
+                UseDefaultPhotonCloudPorts = k_UseDefaultPhotonCloudPorts,
             };
 
             var result = await m_Runner.StartGame(args);
@@ -435,6 +440,22 @@ namespace OpenBrush.Multiplayer
                     break;
                 case SwitchEnvironmentCommand:
                     success &= CommandSwitchEnvironment(command as SwitchEnvironmentCommand, playerRef);
+                    break;
+                case MoveWidgetCommand moveCommand:
+                    // Widget manipulation generates a MoveWidgetCommand every frame. Send_BaseCommand
+                    // carries no transform data, so each one only adds an empty, unmergeable command
+                    // to every remote peer's undo stack - broadcasting them per frame buries a remote
+                    // user's own undo history. Send just the settled one.
+                    // NOTE: this does not make widget movement replicate; it never has. See the
+                    // payload of CommandBase / PhotonRPC.BaseCommand.
+                    if (moveCommand.IsFinal)
+                    {
+                        success &= CommandBase(command);
+                    }
+                    else
+                    {
+                        success = true;
+                    }
                     break;
                 case BaseCommand:
                     success &= CommandBase(command);

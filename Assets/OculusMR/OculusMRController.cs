@@ -14,6 +14,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using OpenBrush.Multiplayer;
 using UnityEngine;
 
@@ -39,18 +40,35 @@ namespace TiltBrush
             m_SpatialAnchorManager = GetComponent<SpatialAnchorManager>();
         }
 
-        void RequestScenePermission()
+        Task<bool> RequestScenePermissionAsync()
         {
+#if UNITY_ANDROID && !UNITY_EDITOR
             const string permissionString = "com.oculus.permission.USE_SCENE";
-            bool hasUserAuthorizedPermission = UnityEngine.Android.Permission.HasUserAuthorizedPermission(permissionString);
-            if (!hasUserAuthorizedPermission)
+            if (UnityEngine.Android.Permission.HasUserAuthorizedPermission(permissionString))
             {
-                UnityEngine.Android.Permission.RequestUserPermission(permissionString);
+                return Task.FromResult(true);
             }
+
+            var completion = new TaskCompletionSource<bool>();
+            var callbacks = new UnityEngine.Android.PermissionCallbacks();
+            callbacks.PermissionGranted += _ => completion.TrySetResult(true);
+            callbacks.PermissionDenied += _ => completion.TrySetResult(false);
+            callbacks.PermissionDeniedAndDontAskAgain += _ => completion.TrySetResult(false);
+            UnityEngine.Android.Permission.RequestUserPermission(permissionString, callbacks);
+            return completion.Task;
+#else
+            return Task.FromResult(true);
+#endif
         }
 
         public async void StartMRExperience(bool isHosting)
         {
+            if (!await RequestScenePermissionAsync())
+            {
+                Debug.LogWarning("Oculus scene permission is required to start MR experience.");
+                return;
+            }
+
             host = isHosting;
 
             if (host)
@@ -86,4 +104,3 @@ namespace TiltBrush
 #endif // OCULUS_SUPPORTED
     }
 }
-

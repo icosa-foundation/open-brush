@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using OpenBrush.Multiplayer;
 using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -215,7 +216,8 @@ namespace TiltBrush
         {
             m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            var path = Path.Combine(App.BackgroundImagesLibraryPath(), filename);
+            var path = ApiMethods.GetSafeRelativePathInDirectory(
+                App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
@@ -804,6 +806,10 @@ namespace TiltBrush
             {
                 Debug.Log("null environment");
             }
+            else if (ShouldBlockLeavingPassthroughInMultiplayer(env))
+            {
+                return;
+            }
             else if (env == m_DesiredEnvironment && !bEnvironmentModified &&
                 !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
             {
@@ -844,6 +850,18 @@ namespace TiltBrush
                     FadingToDesiredEnvironment();
                 }
             }
+        }
+
+        private bool ShouldBlockLeavingPassthroughInMultiplayer(Environment env)
+        {
+            if (MultiplayerManager.m_Instance == null || !MultiplayerManager.m_Instance.HasRemotePlayersInRoom())
+            {
+                return false;
+            }
+
+            Environment currentEnvironment = GetDesiredPreset();
+            return currentEnvironment != null && currentEnvironment.isPassthrough &&
+                env != null && !env.isPassthrough;
         }
 
         public Environment GetDesiredPreset()

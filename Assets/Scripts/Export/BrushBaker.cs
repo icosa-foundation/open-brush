@@ -6,6 +6,8 @@ using Unity.Collections;
 
 public class BrushBaker : MonoBehaviour
 {
+    private static readonly bool kDropUnusedWideUvComponentsForGltf = false;
+
     public List<ComputeShaderMapping> computeShaders;
     public float squeezeAmount = 1.0f; // Set this to your desired squeeze amount
     public static BrushBaker m_Instance;
@@ -21,6 +23,7 @@ public class BrushBaker : MonoBehaviour
         public bool ModifyNormal;
         public bool ModifyUv0;
         public bool ModifyUv1;
+        public bool ModifyUv2;
     }
 
     void Start()
@@ -28,20 +31,36 @@ public class BrushBaker : MonoBehaviour
         m_Instance = this;
     }
 
+    public bool TryGetMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        mapping = default;
+        if (computeShaders == null) return false;
+        foreach (ComputeShaderMapping candidate in computeShaders)
+        {
+            if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                mapping = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public IEnumerable<ComputeShaderMapping> Mappings
+    {
+        get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
+    }
+
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
         ComputeShaderMapping mapping;
-        ComputeShader computeShader;
-        try
+        if (!TryGetMapping(brushGuid, out mapping))
         {
-            mapping = computeShaders.First(x => x.brushGuid == brushGuid);
-            computeShader = mapping.computeShader;
-        }
-        catch (InvalidOperationException e)
-        {
-            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}: {e.Message}");
+            Debug.LogWarning($"No mapping found for brushGuid {brushGuid}");
             return mesh;
         }
+
+        ComputeShader computeShader = mapping.computeShader;
         if (computeShader == null) return mesh;
 
         // Get the transformation matrix from the GameObject's transform
@@ -76,16 +95,36 @@ public class BrushBaker : MonoBehaviour
         computeShader.SetBuffer(0, "colorBuffer", colorBuffer);
         computeShader.SetBuffer(0, "uvBuffer", uvBuffer);
         computeShader.SetFloat("_SqueezeAmount", squeezeAmount);
+        computeShader.SetInt("_VertexCount", mesh.vertexCount);
 
         ComputeBuffer uv1Buffer = null;
-        // if we need texcoord1
-        if (mesh.uv2.Length > 0)
+        bool needsUv1Buffer = mapping.ModifyUv1 || mesh.uv2.Length > 0;
+        if (needsUv1Buffer)
         {
             List<Vector4> uv1s = new List<Vector4>();
             mesh.GetUVs(1, uv1s);
+            if (uv1s.Count != mesh.vertexCount)
+            {
+                uv1s = Enumerable.Repeat(Vector4.zero, mesh.vertexCount).ToList();
+            }
             uv1Buffer = new ComputeBuffer(uv1s.Count, sizeof(float) * 4);
             uv1Buffer.SetData(uv1s);
             computeShader.SetBuffer(0, "uv1Buffer", uv1Buffer);
+        }
+
+        ComputeBuffer uv2Buffer = null;
+        bool needsUv2Buffer = mapping.ModifyUv2 || mesh.uv3.Length > 0;
+        if (needsUv2Buffer)
+        {
+            List<Vector2> uv2s = new List<Vector2>();
+            mesh.GetUVs(2, uv2s);
+            if (uv2s.Count != mesh.vertexCount)
+            {
+                uv2s = Enumerable.Repeat(Vector2.zero, mesh.vertexCount).ToList();
+            }
+            uv2Buffer = new ComputeBuffer(uv2s.Count, sizeof(float) * 2);
+            uv2Buffer.SetData(uv2s);
+            computeShader.SetBuffer(0, "uv2Buffer", uv2Buffer);
         }
 
         int threadGroups = Mathf.CeilToInt(mesh.vertices.Length / 8f);
@@ -116,23 +155,60 @@ public class BrushBaker : MonoBehaviour
             mesh.SetUVs(0, newUvs);
         }
 
-        if (mapping.ModifyUv1)
+        if (mapping.ModifyUv1 && uv1Buffer != null)
         {
             var newUv1s = new Vector4[mesh.vertexCount];
             uv1Buffer.GetData(newUv1s);
             mesh.SetUVs(1, newUv1s);
         }
 
+        if (mapping.ModifyUv2 && uv2Buffer != null)
+        {
+            var newUv2s = new Vector2[mesh.vertexCount];
+            uv2Buffer.GetData(newUv2s);
+            mesh.SetUVs(2, newUv2s);
+        }
+
+        if (kDropUnusedWideUvComponentsForGltf)
+        {
+            DropWideUvComponents(mesh);
+        }
+
         vertexBuffer.Release();
         normalBuffer.Release();
+        colorBuffer.Release();
         uvBuffer.Release();
-        if (mesh.uv2.Length > 0)
+        if (uv1Buffer != null)
         {
             uv1Buffer.Release();
+        }
+        if (uv2Buffer != null)
+        {
+            uv2Buffer.Release();
         }
         vertices.Dispose();
         normals.Dispose();
 
         return mesh;
+    }
+
+    private static void DropWideUvComponents(Mesh mesh)
+    {
+        // Disabled by default. UnityGLTF already exports uv0/uv1 through Vector2[] accessors,
+        // so this full mesh rewrite is only worth enabling for a proven uv2+ wide-texcoord export issue.
+        for (int channel = 0; channel < 8; channel++)
+        {
+            var source = new List<Vector4>();
+            mesh.GetUVs(channel, source);
+            if (source.Count == 0) continue;
+
+            var truncated = new List<Vector2>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                Vector4 uv = source[i];
+                truncated.Add(new Vector2(uv.x, uv.y));
+            }
+            mesh.SetUVs(channel, truncated);
+        }
     }
 }

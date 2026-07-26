@@ -415,22 +415,23 @@ namespace TiltBrush
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
             ClearRedo();
-            while (m_OperationStack.Any())
+            while (m_OperationStack.Any())  // Are there any commands on the undo stack?
             {
                 BaseCommand top = m_OperationStack.Pop();
-                if (!top.Merge(command))
+                if (!top.Merge(command))  // Have we hit a command we can't merge?
                 {
                     m_OperationStack.Push(top);
                     break;
                 }
-                discardCommand = false;
+                discardCommand = false;  // We're still merging
                 command = top;
             }
-            if (discardCommand)
+            if (discardCommand) // Nothing merged and the caller asked us to discard in that case
             {
                 command.Dispose();
                 return;
             }
+            // Either something merged, or the caller wants this recorded regardless
             delta.Redo();
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
@@ -1089,18 +1090,27 @@ namespace TiltBrush
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
         public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
+            BeginDrawingFromMemory(m_MemoryList, bDrawFromStart, forEdit, playAudio);
+        }
+
+        /// <summary>
+        /// Overload that allows specifying exactly which strokes to render during playback.
+        /// Use this for additive loading to avoid re-rendering existing strokes.
+        /// </summary>
+        public void BeginDrawingFromMemory(IEnumerable<Stroke> strokesToRender, bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
+        {
             if (bDrawFromStart)
             {
                 switch (m_PlaybackMode)
                 {
                     case PlaybackMode.Distance:
                     default:
-                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByStrokeDistance(strokesToRender);
                         if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = GetEarliestTimestamp();
-                        m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
+                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
                         break;
                 }
                 m_IsInitialPlay = true;

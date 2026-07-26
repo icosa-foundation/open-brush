@@ -139,63 +139,11 @@ namespace TiltBrush
                     yield break;
                 }
 
-                // Find the asset by looking through the format list for the specified type.
-                List<string> desiredTypes = m_Asset.DesiredTypes.Select(x => x.ToString()).ToList();
-
-                JToken GetBestFormat(IEnumerable<JToken> formats, List<string> types)
+                if (!IcosaAssetCatalog.TryGetDownloadFormat(
+                    json, m_Asset.DesiredTypes, out JToken format,
+                    out VrAssetFormat selectedType, out string formatType))
                 {
-                    bool found = false;
-                    JToken bestFormat = null;
-                    foreach (var typeByPreference in types)
-                    {
-                        foreach (var x in formats)
-                        {
-                            var formatType = x["formatType"]?.ToString();
-                            if (formatType == typeByPreference)
-                            {
-                                bestFormat = x;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (found) break;
-                    }
-                    return bestFormat;
-                }
-
-                JToken format = null;
-                string formatType = null;
-                var formatsToken = json["formats"];
-                VrAssetFormat selectedType = VrAssetFormat.Unknown;
-
-                if (formatsToken != null && formatsToken.HasValues)
-                {
-                    var allFormats = formatsToken.ToList();
-                    if (allFormats.Count > 0)
-                    {
-                        // This assumes that desiredTypes are ordered by preference (best to worst).
-                        // Try the preferred formats first, then all formats.
-                        var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
-                        format = GetBestFormat(preferredFormats, desiredTypes) ?? GetBestFormat(allFormats, desiredTypes);
-
-                        if (format != null)
-                        {
-                            formatType = format["formatType"]?.ToString();
-                            if (!string.IsNullOrEmpty(formatType))
-                            {
-                                if (!Enum.TryParse<VrAssetFormat>(formatType, out selectedType))
-                                {
-                                    Debug.LogWarning($"Unknown format type '{formatType}' for asset {m_Asset.Id}");
-                                    format = null;
-                                }
-                            }
-                            else
-                            {
-                                Debug.LogWarning($"Format has no formatType for asset {m_Asset.Id}");
-                                format = null;
-                            }
-                        }
-                    }
+                    format = null;
                 }
 
                 if (format != null)
