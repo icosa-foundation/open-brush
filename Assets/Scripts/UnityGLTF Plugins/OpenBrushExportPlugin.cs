@@ -40,14 +40,30 @@ namespace TiltBrush
 
         private bool IsStaticExport => m_ExportMode == Export.GlbExportMode.Static;
 
+        private readonly struct AdditiveTextureSource
+        {
+            public Texture Texture { get; }
+            public Vector2 Scale { get; }
+            public Vector2 Offset { get; }
+
+            public AdditiveTextureSource(Texture texture, Vector2 scale, Vector2 offset)
+            {
+                Texture = texture;
+                Scale = scale;
+                Offset = offset;
+            }
+        }
+
         // Per-export state for additive brush emissive color modulation
         private GLTFRoot _gltfRoot;
         // Template additive material → emission gain
         private Dictionary<GLTFMaterial, float> _additiveBrushGains;
+        // Template additive material → source texture and its Unity UV transform
+        private Dictionary<GLTFMaterial, AdditiveTextureSource> _additiveBrushTextures;
         // (template material, stroke Color32) → index of per-colour clone in gltfRoot.Materials
         private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
-        // colorKey → cached atlas texture (colorKey = comma-separated sorted RRGGBB hex)
-        private Dictionary<string, Texture2D> _atlasTextureCache;
+        // (source texture, colorKey) → cached atlas texture
+        private Dictionary<(Texture, string), Texture2D> _atlasTextureCache;
         // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
         private Dictionary<(GLTFMaterial, string), int> _atlasMaterialCache;
 
@@ -84,14 +100,17 @@ namespace TiltBrush
             {
                 _gltfRoot = gltfRoot;
                 _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
+                _additiveBrushTextures =
+                    new Dictionary<GLTFMaterial, AdditiveTextureSource>();
                 _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
-                _atlasTextureCache = new Dictionary<string, Texture2D>();
+                _atlasTextureCache = new Dictionary<(Texture, string), Texture2D>();
                 _atlasMaterialCache = new Dictionary<(GLTFMaterial, string), int>();
             }
             else
             {
                 _gltfRoot = null;
                 _additiveBrushGains = null;
+                _additiveBrushTextures = null;
                 _colorModulatedMaterials = null;
                 _atlasTextureCache = null;
                 _atlasMaterialCache = null;
@@ -559,38 +578,56 @@ namespace TiltBrush
         // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
         private int GetOrCreateAtlasMaterial(GLTFMaterial source, Batch batch, Mesh mesh, MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
         {
-            // Build colour atlas and per-vertex UV data
+            // Build a tinted copy of the source brush texture for each stroke colour. glTF has
+            // only one emissive texture slot, so the colour and source mask must be combined.
             var subsets = batch.m_Groups;
             var uniqueColors = subsets.Select(s => (Color32)s.m_Stroke.m_Color).Distinct().ToList();
+            if (uniqueColors.Count == 0) return primitive.Material.Id;
             int N = uniqueColors.Count;
             string colorKey = ColorKey(uniqueColors);
+            _additiveBrushTextures.TryGetValue(source, out var textureSource);
 
             // Reuse cached material clone if this (source, colorSet) was seen before —
             // but we still need to inject the per-primitive TEXCOORD accessor below.
             bool materialCached = _atlasMaterialCache.TryGetValue((source, colorKey), out int cachedIdx);
 
-            // Get or create the atlas texture
-            if (!_atlasTextureCache.TryGetValue(colorKey, out Texture2D atlas))
+            // Get or create the atlas texture. A missing source texture naturally becomes a
+            // one-pixel colour tile, preserving the previous solid-colour behaviour.
+            var textureKey = (textureSource.Texture, colorKey);
+            if (!_atlasTextureCache.TryGetValue(textureKey, out Texture2D atlas))
             {
-                atlas = new Texture2D(N, 1, TextureFormat.RGBA32, mipChain: false, linear: false);
-                atlas.filterMode = FilterMode.Point;
-                atlas.wrapMode = TextureWrapMode.Clamp;
-                for (int i = 0; i < N; i++) atlas.SetPixel(i, 0, uniqueColors[i]);
-                atlas.Apply();
-                _atlasTextureCache[colorKey] = atlas;
+                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors);
+                _atlasTextureCache[textureKey] = atlas;
             }
 
-            // Per-vertex UV: U = texel centre for this stroke's colour, V = 0.5
+            int columns = Mathf.CeilToInt(Mathf.Sqrt(N));
+            int rows = Mathf.CeilToInt(N / (float)columns);
+            var colorIndices = uniqueColors
+                .Select((color, colorIndex) => (color, colorIndex))
+                .ToDictionary(pair => pair.color, pair => pair.colorIndex);
+            Vector2[] sourceUvs = mesh.uv;
+
+            // Remap the source UV into the tile for this stroke colour.
             int vertCount = mesh.vertexCount;
             var uv = new Vector2[vertCount];
             foreach (var subset in subsets)
             {
-                int colorIdx = uniqueColors.IndexOf((Color32)subset.m_Stroke.m_Color);
-                float u = (colorIdx + 0.5f) / N;
-                // GLTF UV origin is bottom-left; flip V (0.5 stays 0.5 for a 1-row atlas)
+                int colorIdx = colorIndices[(Color32)subset.m_Stroke.m_Color];
+                int tileX = colorIdx % columns;
+                int tileY = colorIdx / columns;
                 int end = Mathf.Min(subset.m_StartVertIndex + subset.m_VertLength, vertCount);
                 for (int v = subset.m_StartVertIndex; v < end; v++)
-                    uv[v] = new Vector2(u, 0.5f);
+                {
+                    Vector2 sourceUv = sourceUvs.Length == vertCount
+                        ? Vector2.Scale(sourceUvs[v], textureSource.Scale) + textureSource.Offset
+                        : new Vector2(0.5f, 0.5f);
+                    sourceUv.x = ApplyTextureWrap(sourceUv.x, textureSource.Texture);
+                    sourceUv.y = ApplyTextureWrap(sourceUv.y, textureSource.Texture);
+                    float atlasU = (tileX + sourceUv.x) / columns;
+                    float atlasV = (tileY + sourceUv.y) / rows;
+                    // UnityGLTF flips mesh UV V during export; match it for this custom accessor.
+                    uv[v] = new Vector2(atlasU, 1f - atlasV);
+                }
             }
 
             // Build GLTF accessor for the UV data
@@ -638,6 +675,101 @@ namespace TiltBrush
             }
 
             return materialIdx;
+        }
+
+        private static Texture2D CreateTintedTextureAtlas(
+            Texture sourceTexture, IReadOnlyList<Color32> colors)
+        {
+            int columns = Mathf.CeilToInt(Mathf.Sqrt(colors.Count));
+            int rows = Mathf.CeilToInt(colors.Count / (float)columns);
+            int maxAtlasSize = Mathf.Min(Mathf.Max(SystemInfo.maxTextureSize, 1), 4096);
+            int sourceWidth = sourceTexture != null ? sourceTexture.width : 1;
+            int sourceHeight = sourceTexture != null ? sourceTexture.height : 1;
+            int tileWidth = Mathf.Max(1, Mathf.Min(sourceWidth, maxAtlasSize / columns));
+            int tileHeight = Mathf.Max(1, Mathf.Min(sourceHeight, maxAtlasSize / rows));
+
+            Texture2D readableSource = ReadTexture(sourceTexture, tileWidth, tileHeight);
+            Color32[] sourcePixels = readableSource != null
+                ? readableSource.GetPixels32()
+                : new[] { new Color32(255, 255, 255, 255) };
+            var atlas = new Texture2D(
+                tileWidth * columns, tileHeight * rows, TextureFormat.RGBA32,
+                mipChain: false, linear: false)
+            {
+                name = (sourceTexture != null ? sourceTexture.name : "Solid") +
+                    "_StrokeColorAtlas",
+                filterMode = sourceTexture != null ? sourceTexture.filterMode : FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            var atlasPixels = new Color32[atlas.width * atlas.height];
+            for (int colorIndex = 0; colorIndex < colors.Count; colorIndex++)
+            {
+                int tileX = colorIndex % columns;
+                int tileY = colorIndex / columns;
+                Color32 tint = colors[colorIndex];
+                for (int y = 0; y < tileHeight; y++)
+                {
+                    int sourceRow = y * tileWidth;
+                    int atlasRow = (tileY * tileHeight + y) * atlas.width +
+                        tileX * tileWidth;
+                    for (int x = 0; x < tileWidth; x++)
+                    {
+                        Color32 pixel = sourcePixels[sourceRow + x];
+                        atlasPixels[atlasRow + x] = new Color32(
+                            (byte)(pixel.r * tint.r / 255),
+                            (byte)(pixel.g * tint.g / 255),
+                            (byte)(pixel.b * tint.b / 255),
+                            pixel.a);
+                    }
+                }
+            }
+            atlas.SetPixels32(atlasPixels);
+            atlas.Apply();
+            SafeDestroy(readableSource);
+            return atlas;
+        }
+
+        private static Texture2D ReadTexture(Texture source, int width, int height)
+        {
+            if (source == null) return null;
+
+            RenderTexture temporary = null;
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                temporary = RenderTexture.GetTemporary(
+                    width, height, 0, RenderTextureFormat.ARGB32,
+                    RenderTextureReadWrite.Default);
+                Graphics.Blit(source, temporary);
+                RenderTexture.active = temporary;
+                var readable = new Texture2D(
+                    width, height, TextureFormat.RGBA32, false, false);
+                readable.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                readable.Apply();
+                return readable;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                if (temporary != null)
+                    RenderTexture.ReleaseTemporary(temporary);
+            }
+        }
+
+        private static float ApplyTextureWrap(float coordinate, Texture texture)
+        {
+            if (texture == null) return 0.5f;
+            switch (texture.wrapMode)
+            {
+                case TextureWrapMode.Clamp:
+                    return Mathf.Clamp01(coordinate);
+                case TextureWrapMode.Mirror:
+                    return Mathf.PingPong(coordinate, 1f);
+                case TextureWrapMode.MirrorOnce:
+                    return Mathf.PingPong(Mathf.Clamp(coordinate, -1f, 2f), 1f);
+                default:
+                    return Mathf.Repeat(coordinate, 1f);
+            }
         }
 
         private static GLTFMaterial CloneGltfMaterial(GLTFMaterial src) => new GLTFMaterial
@@ -876,8 +1008,13 @@ namespace TiltBrush
                     {
                         var emTex = material.GetTexture("_MainTex");
                         if (emTex != null)
+                        {
                             materialNode.EmissiveTexture = exporter.ExportTextureInfo(
                                 emTex, GLTFSceneExporter.TextureMapType.Emissive);
+                            _additiveBrushTextures[materialNode] = new AdditiveTextureSource(
+                                emTex, material.GetTextureScale("_MainTex"),
+                                material.GetTextureOffset("_MainTex"));
+                        }
                     }
                 }
                 else if (IsStaticExport)
