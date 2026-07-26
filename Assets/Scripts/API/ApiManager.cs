@@ -1044,12 +1044,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
         {
             internal const int MAX_LISTENER_COUNT = 32;
             internal const int MAX_QUEUE_SIZE = 1024;
+            internal const int MAX_QUEUED_CHARACTER_COUNT = 1024 * 1024;
             internal static readonly TimeSpan LISTENER_TIMEOUT = TimeSpan.FromMinutes(5);
 
             private sealed class Listener
             {
                 internal readonly Queue<KeyValuePair<string, string>> Commands =
                     new Queue<KeyValuePair<string, string>>();
+                internal int QueuedCharacterCount;
                 internal DateTime LastActivityUtc;
             }
 
@@ -1116,24 +1118,41 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     var commands =
                         new List<KeyValuePair<string, string>>(listener.Commands);
                     listener.Commands.Clear();
+                    listener.QueuedCharacterCount = 0;
                     return commands;
                 }
             }
 
             internal void Enqueue(KeyValuePair<string, string> command)
             {
+                int commandCharacterCount = GetCommandCharacterCount(command);
+                if (commandCharacterCount > MAX_QUEUED_CHARACTER_COUNT) return;
                 lock (m_Lock)
                 {
                     RemoveExpiredListeners(m_UtcNow());
                     foreach (Listener listener in m_Listeners.Values)
                     {
-                        if (listener.Commands.Count >= MAX_QUEUE_SIZE)
+                        while (listener.Commands.Count >= MAX_QUEUE_SIZE ||
+                               listener.QueuedCharacterCount + commandCharacterCount >
+                               MAX_QUEUED_CHARACTER_COUNT)
                         {
-                            listener.Commands.Dequeue();
+                            KeyValuePair<string, string> removedCommand =
+                                listener.Commands.Dequeue();
+                            listener.QueuedCharacterCount -=
+                                GetCommandCharacterCount(removedCommand);
                         }
                         listener.Commands.Enqueue(command);
+                        listener.QueuedCharacterCount += commandCharacterCount;
                     }
                 }
+            }
+
+            private static int GetCommandCharacterCount(
+                KeyValuePair<string, string> command)
+            {
+                return (command.Key?.Length ?? 0) +
+                    (command.Value?.Length ?? 0) +
+                    2; // '=' plus a conservative trailing newline.
             }
 
             private void RemoveExpiredListeners(DateTime now)

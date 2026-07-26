@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -487,6 +488,35 @@ namespace TiltBrush
             }
 
             Assert.IsFalse(listeners.Register("one-client-too-many"));
+        }
+
+        [Test]
+        public void TestPollingPayloadSizeIsBounded()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("client"));
+
+            int halfLimit =
+                ApiManager.PollingListenerRegistry.MAX_QUEUED_CHARACTER_COUNT / 2;
+            var first = new KeyValuePair<string, string>(
+                "first", new string('a', halfLimit));
+            var second = new KeyValuePair<string, string>(
+                "second", new string('b', halfLimit));
+            listeners.Enqueue(first);
+            listeners.Enqueue(second);
+
+            var commands = listeners.Drain("client");
+            Assert.AreEqual(1, commands.Count);
+            Assert.AreEqual("second", commands[0].Key);
+
+            var oversized = new KeyValuePair<string, string>(
+                "oversized",
+                new string(
+                    'x',
+                    ApiManager.PollingListenerRegistry.MAX_QUEUED_CHARACTER_COUNT));
+            listeners.Enqueue(oversized);
+
+            Assert.IsEmpty(listeners.Drain("client"));
         }
     }
 }
