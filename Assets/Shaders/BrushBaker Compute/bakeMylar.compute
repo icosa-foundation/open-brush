@@ -7,10 +7,14 @@ StructuredBuffer<float3> normalBuffer;
 StructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 
+uint _VertexCount;
+
 float _SqueezeAmount;
 
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _VertexCount) return;
+
     float3 vertex = vertexBuffer[id.x];
     float3 uv = uvBuffer[id.x];
     const float radius = uv.z;

@@ -11,6 +11,8 @@ StructuredBuffer<float3> uvBuffer;
 RWStructuredBuffer<float4> uv1Buffer;
 RWStructuredBuffer<float2> uv2Buffer;
 
+uint _VertexCount;
+
 float _SqueezeAmount;
 
 static const float kElectricityMod = 1.0;
@@ -37,6 +39,8 @@ float3 ComputeDisplacement(float3 pos, float mod)
 
 [numthreads(8, 1, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _VertexCount) return;
+
     float3 vertex = vertexBuffer[id.x];
     float3 uv0 = uvBuffer[id.x];
     float4 uv1 = uv1Buffer[id.x];

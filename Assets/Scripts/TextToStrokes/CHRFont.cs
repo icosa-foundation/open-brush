@@ -41,6 +41,9 @@ namespace TiltBrush
 
         public void Initialize()
         {
+            // OnEnable runs at construction (before the importer assigns DataRaw) and again after
+            // deserialization (when DataRaw is populated). Skip the empty first pass to avoid an NRE.
+            if (string.IsNullOrEmpty(DataRaw)) return;
             var fontDataLines = DataRaw.Split('\n');
             _outlines = new Dictionary<int, List<List<Vector2>>>();
             _widths = new Dictionary<int, float>();
