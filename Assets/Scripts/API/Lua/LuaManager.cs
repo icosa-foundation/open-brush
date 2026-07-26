@@ -807,10 +807,37 @@ namespace TiltBrush
 
         public Color CallActiveJitterScript(string fnName, Color currentColor)
         {
+            var scriptNames = GetScriptNames(LuaApiCategory.JitterScript);
+            if (scriptNames.Count == 0)
+            {
+                return currentColor;
+            }
+
+            int activeScriptIndex = ActiveScripts[LuaApiCategory.JitterScript];
+            if (activeScriptIndex < 0 || activeScriptIndex >= scriptNames.Count)
+            {
+                return currentColor;
+            }
+
             var script = GetActiveScript(LuaApiCategory.JitterScript);
+            InitScript(script);
             script.Globals.Set("_currentColor", DynValue.FromObject(script, currentColor));
             DynValue result = _CallScript(script, fnName);
-            return result.ToObject<Color>();
+            if (result.Equals(DynValue.Nil))
+            {
+                return currentColor;
+            }
+
+            try
+            {
+                return result.ToObject<Color>();
+            }
+            catch (Exception e) when (
+                e is InvalidCastException || e is ScriptRuntimeException)
+            {
+                LogGenericLuaError(script, fnName, e);
+                return currentColor;
+            }
         }
 
         public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)
