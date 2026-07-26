@@ -48,9 +48,8 @@ namespace TiltBrush
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
-        private Dictionary<string, Queue<KeyValuePair<string, string>>> m_PollingListenerQueues;
-        private readonly object m_PollingQueueLock = new object();
-        private const int MAX_POLLING_QUEUE_SIZE = 1024;
+        private readonly PollingListenerRegistry m_PollingListeners =
+            new PollingListenerRegistry();
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -728,24 +727,16 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1])) return "";
                     string clientId = UnityWebRequest.UnEscapeURL(commandPair[1]);
                     if (string.IsNullOrWhiteSpace(clientId)) return "";
-                    List<KeyValuePair<string, string>> commands;
-                    lock (m_PollingQueueLock)
-                    {
-                        if (m_PollingListenerQueues == null ||
-                            !m_PollingListenerQueues.TryGetValue(clientId, out var queue))
-                        {
-                            return "";
-                        }
-                        commands = new List<KeyValuePair<string, string>>(queue);
-                        queue.Clear();
-                    }
+                    List<KeyValuePair<string, string>> commands =
+                        m_PollingListeners.Drain(clientId);
+                    if (commands == null) return "";
                     return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
             }
             return "unknown query";
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
-        public bool HasPollingListeners => m_PollingListenerQueues != null && m_PollingListenerQueues.Count > 0;
+        public bool HasPollingListeners => m_PollingListeners.HasListeners;
 
         // TODO Find a better home for this. It won't always be API specific
         public CHRFont TextFont
@@ -788,16 +779,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             m_OutgoingApiListeners.Add(uri);
         }
 
-        public void AddPollingCommandListener(string clientId)
+        public bool AddPollingCommandListener(string clientId)
         {
-            if (string.IsNullOrWhiteSpace(clientId)) return;
-            lock (m_PollingQueueLock)
-            {
-                if (m_PollingListenerQueues == null)
-                    m_PollingListenerQueues = new Dictionary<string, Queue<KeyValuePair<string, string>>>();
-                if (!m_PollingListenerQueues.ContainsKey(clientId))
-                    m_PollingListenerQueues[clientId] = new Queue<KeyValuePair<string, string>>();
-            }
+            return m_PollingListeners.Register(clientId);
+        }
+
+        public bool RemovePollingCommandListener(string clientId)
+        {
+            return m_PollingListeners.Unregister(clientId);
         }
 
         private void OutgoingApiCommand()
@@ -815,20 +804,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
 
 
-            if (HasPollingListeners)
-            {
-                lock (m_PollingQueueLock)
-                {
-                    foreach (var kvp in m_PollingListenerQueues)
-                    {
-                        if (kvp.Value.Count >= MAX_POLLING_QUEUE_SIZE)
-                        {
-                            kvp.Value.Dequeue();
-                        }
-                        kvp.Value.Enqueue(command);
-                    }
-                }
-            }
+            m_PollingListeners.Enqueue(command);
 
             if (m_OutgoingApiListeners == null) return;
             foreach (var listenerUrl in m_OutgoingApiListeners)
@@ -1062,6 +1038,119 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        internal sealed class PollingListenerRegistry
+        {
+            internal const int MAX_LISTENER_COUNT = 32;
+            internal const int MAX_QUEUE_SIZE = 1024;
+            internal static readonly TimeSpan LISTENER_TIMEOUT = TimeSpan.FromMinutes(5);
+
+            private sealed class Listener
+            {
+                internal readonly Queue<KeyValuePair<string, string>> Commands =
+                    new Queue<KeyValuePair<string, string>>();
+                internal DateTime LastActivityUtc;
+            }
+
+            private readonly Dictionary<string, Listener> m_Listeners =
+                new Dictionary<string, Listener>();
+            private readonly Func<DateTime> m_UtcNow;
+            private readonly object m_Lock = new object();
+
+            internal PollingListenerRegistry(Func<DateTime> utcNow = null)
+            {
+                m_UtcNow = utcNow ?? (() => DateTime.UtcNow);
+            }
+
+            internal bool HasListeners
+            {
+                get
+                {
+                    lock (m_Lock)
+                    {
+                        RemoveExpiredListeners(m_UtcNow());
+                        return m_Listeners.Count > 0;
+                    }
+                }
+            }
+
+            internal bool Register(string clientId)
+            {
+                if (string.IsNullOrWhiteSpace(clientId)) return false;
+                lock (m_Lock)
+                {
+                    DateTime now = m_UtcNow();
+                    RemoveExpiredListeners(now);
+                    if (m_Listeners.TryGetValue(clientId, out Listener listener))
+                    {
+                        listener.LastActivityUtc = now;
+                        return true;
+                    }
+                    if (m_Listeners.Count >= MAX_LISTENER_COUNT) return false;
+                    m_Listeners.Add(clientId, new Listener { LastActivityUtc = now });
+                    return true;
+                }
+            }
+
+            internal bool Unregister(string clientId)
+            {
+                if (string.IsNullOrWhiteSpace(clientId)) return false;
+                lock (m_Lock)
+                {
+                    return m_Listeners.Remove(clientId);
+                }
+            }
+
+            internal List<KeyValuePair<string, string>> Drain(string clientId)
+            {
+                lock (m_Lock)
+                {
+                    DateTime now = m_UtcNow();
+                    RemoveExpiredListeners(now);
+                    if (!m_Listeners.TryGetValue(clientId, out Listener listener))
+                    {
+                        return null;
+                    }
+                    listener.LastActivityUtc = now;
+                    var commands =
+                        new List<KeyValuePair<string, string>>(listener.Commands);
+                    listener.Commands.Clear();
+                    return commands;
+                }
+            }
+
+            internal void Enqueue(KeyValuePair<string, string> command)
+            {
+                lock (m_Lock)
+                {
+                    RemoveExpiredListeners(m_UtcNow());
+                    foreach (Listener listener in m_Listeners.Values)
+                    {
+                        if (listener.Commands.Count >= MAX_QUEUE_SIZE)
+                        {
+                            listener.Commands.Dequeue();
+                        }
+                        listener.Commands.Enqueue(command);
+                    }
+                }
+            }
+
+            private void RemoveExpiredListeners(DateTime now)
+            {
+                List<string> expiredClientIds = null;
+                foreach (KeyValuePair<string, Listener> entry in m_Listeners)
+                {
+                    if (now - entry.Value.LastActivityUtc <= LISTENER_TIMEOUT) continue;
+                    if (expiredClientIds == null) expiredClientIds = new List<string>();
+                    expiredClientIds.Add(entry.Key);
+                }
+                if (expiredClientIds == null) return;
+                foreach (string clientId in expiredClientIds)
+                {
+                    m_Listeners.Remove(clientId);
+                }
+            }
         }
 
         // Undo currently only affects stroke creation

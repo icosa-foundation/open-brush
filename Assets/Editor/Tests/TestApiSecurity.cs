@@ -457,5 +457,36 @@ namespace TiltBrush
                 ApiManager.InvokeEndpointForStatus(() =>
                     throw new InvalidOperationException("unexpected failure")));
         }
+
+        [Test]
+        public void TestPollingListenersExpireAndCanBeUnregistered()
+        {
+            DateTime now = DateTime.UtcNow;
+            var listeners = new ApiManager.PollingListenerRegistry(() => now);
+
+            Assert.IsTrue(listeners.Register("first-client"));
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+            Assert.IsTrue(listeners.HasListeners);
+
+            now += ApiManager.PollingListenerRegistry.LISTENER_TIMEOUT +
+                TimeSpan.FromSeconds(1);
+
+            Assert.IsFalse(listeners.HasListeners);
+        }
+
+        [Test]
+        public void TestPollingListenerCountIsBounded()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            for (int i = 0;
+                 i < ApiManager.PollingListenerRegistry.MAX_LISTENER_COUNT;
+                 ++i)
+            {
+                Assert.IsTrue(listeners.Register($"client-{i}"));
+            }
+
+            Assert.IsFalse(listeners.Register("one-client-too-many"));
+        }
     }
 }
