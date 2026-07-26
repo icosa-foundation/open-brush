@@ -50,6 +50,7 @@ namespace TiltBrush
         private List<Uri> m_OutgoingApiListeners;
         private Dictionary<string, Queue<KeyValuePair<string, string>>> m_PollingListenerQueues;
         private readonly object m_PollingQueueLock = new object();
+        private const int MAX_POLLING_QUEUE_SIZE = 1024;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -725,9 +726,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
                 case "query.outgoing.poll":
                     if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1])) return "";
+                    string clientId = UnityWebRequest.UnEscapeURL(commandPair[1]);
                     lock (m_PollingQueueLock)
                     {
-                        if (m_PollingListenerQueues == null || !m_PollingListenerQueues.TryGetValue(commandPair[1], out var queue))
+                        if (m_PollingListenerQueues == null ||
+                            !m_PollingListenerQueues.TryGetValue(clientId, out var queue))
                         {
                             return "";
                         }
@@ -815,12 +818,17 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     foreach (var kvp in m_PollingListenerQueues)
                     {
+                        if (kvp.Value.Count >= MAX_POLLING_QUEUE_SIZE)
+                        {
+                            kvp.Value.Dequeue();
+                        }
                         kvp.Value.Enqueue(command);
                     }
                 }
             }
 
-            foreach (var listenerUrl in m_OutgoingApiListeners ?? new List<Uri>())
+            if (m_OutgoingApiListeners == null) return;
+            foreach (var listenerUrl in m_OutgoingApiListeners)
             {
                 string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
                 if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative

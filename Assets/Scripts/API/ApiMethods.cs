@@ -43,15 +43,22 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "listenfor.strokes",
-            "Registers a listener for stroke data. Pass a URL for push delivery, or a client ID with poll=true to use polling via GET /outgoing/poll?client=<id>",
+            "Adds the URL of an app that wants to receive the data for a stroke as each one is finished",
             "http://localhost:8000/"
         )]
-        public static void AddListener(string urlOrClientId, bool poll = false)
+        public static void AddListener(string url)
         {
-            if (poll)
-                ApiManager.Instance.AddPollingCommandListener(urlOrClientId);
-            else
-                ApiManager.Instance.AddOutgoingCommandListener(new Uri(urlOrClientId));
+            ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
+        }
+
+        [ApiEndpoint(
+            "listenfor.strokes.poll",
+            "Registers a client ID for polling stroke data via GET /api/v1?query.outgoing.poll=<url-encoded-client-id>",
+            "my-client"
+        )]
+        public static void AddPollingListener(string clientId)
+        {
+            ApiManager.Instance.AddPollingCommandListener(clientId);
         }
 
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
