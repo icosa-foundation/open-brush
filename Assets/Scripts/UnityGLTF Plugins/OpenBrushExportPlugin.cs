@@ -25,6 +25,9 @@ namespace TiltBrush
 
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
+        private const int kOpenBrushExporterContractVersion = 1;
+        private const int kStaticExporterContractVersion = 1;
+
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
@@ -758,6 +761,10 @@ namespace TiltBrush
             extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
             extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
             extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+            extras["TB_ExportProfile"] = IsStaticExport ? "static" : "openbrush";
+            extras["TB_ExporterContractVersion"] = IsStaticExport
+                ? kStaticExporterContractVersion
+                : kOpenBrushExporterContractVersion;
 
             TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
             extras["TB_CameraTranslation"] = Vector3ToJString(cameraPose.translation);

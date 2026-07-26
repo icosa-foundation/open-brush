@@ -206,7 +206,61 @@ MonoBehaviour:
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 0
-  staticComputeShaders: []
+  staticComputeShaders:
+  - name: Embers fixed-time snapshot
+    shader: {fileID: 4800000, guid: f62b84c7d6bc5f24487edcd3a458ce88, type: 3}
+    brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
+    computeShader: {fileID: 7200000, guid: c3f2ea0214c94ca9b5e1c708394a5162, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 0
+    ModifyUv0: 0
+    ModifyUv1: 0
+    ModifyUv2: 0
+  - name: Bubbles fixed-time snapshot
+    shader: {fileID: 4800000, guid: ecfbf36005cdcc94d881047728719bd8, type: 3}
+    brushGuid: 89d104cd-d012-426b-b5b3-bbaee63ac43c
+    computeShader: {fileID: 7200000, guid: b2e1d9f103b84b98a4d0b6f728394051, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 0
+    ModifyUv0: 0
+    ModifyUv1: 0
+    ModifyUv2: 0
+  - name: Snow fixed-time snapshot
+    shader: {fileID: 4800000, guid: 731f18bedecafd24f8a663a28a1e1b42, type: 3}
+    brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
+    computeShader: {fileID: 7200000, guid: f6251d3547fc4fdca814fa3b6c7d8495, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 0
+    ModifyUv0: 0
+    ModifyUv1: 0
+    ModifyUv2: 0
+  - name: Smoke fixed-time snapshot
+    shader: {fileID: 4800000, guid: b00f8a3e2356b6144b32fe4a62905a7b, type: 3}
+    brushGuid: 70d79cca-b159-4f35-990c-f02193947fe8
+    computeShader: {fileID: 7200000, guid: e5140c2436eb4ecb9703e92a5b6c7384, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 0
+    ModifyUv0: 0
+    ModifyUv1: 1
+    ModifyUv2: 0
+  - name: Rising Bubbles fixed-time snapshot
+    shader: {fileID: 4800000, guid: c4285dcf87bf5b84d8d4bbec752f1883, type: 3}
+    brushGuid: a8147ce1-005e-abe4-88e8-09a1eaadcc89
+    computeShader: {fileID: 7200000, guid: d403fb1325da4dba86f2d8194a5b6273, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 0
+    ModifyUv0: 0
+    ModifyUv1: 0
+    ModifyUv2: 0
+  - name: BubbleWand fixed-time snapshot
+    shader: {fileID: 4800000, guid: 0291fdb46401c4826bc02d7ec6d76cbb, type: 3}
+    brushGuid: EBA3F993-F9A1-4D35-B84E-BB08F48981A4
+    computeShader: {fileID: 7200000, guid: a1d0c8e0f2a74a87b3c9a5e617283940, type: 3}
+    ModifyColor: 0
+    ModifyNormal: 1
+    ModifyUv0: 0
+    ModifyUv1: 1
+    ModifyUv2: 0
   staticMeshPolicies:
   - name: Faceted Tube face colors
     brushGuid: 4391ffaa-df73-4396-9e33-31e4e4930b27

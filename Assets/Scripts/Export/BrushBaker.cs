@@ -154,16 +154,16 @@ public class BrushBaker : MonoBehaviour
         Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix)
     {
         bool foundMapping = false;
-        if (TryGetMapping(brushGuid, out var commonMapping))
-        {
-            mesh = ProcessMesh(mesh, commonMapping);
-            foundMapping = true;
-        }
-
         if (TryGetStaticMapping(brushGuid, out var staticMapping))
         {
-            Debug.Log($"[OB_STATIC_MESH] Applying {staticMapping.name} to brush {brushGuid}");
+            Debug.Log(
+                $"[OB_STATIC_MESH] Applying static override {staticMapping.name} to brush {brushGuid}");
             mesh = ProcessMesh(mesh, staticMapping);
+            foundMapping = true;
+        }
+        else if (TryGetMapping(brushGuid, out var commonMapping))
+        {
+            mesh = ProcessMesh(mesh, commonMapping);
             foundMapping = true;
         }
 
