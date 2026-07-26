@@ -518,5 +518,35 @@ namespace TiltBrush
 
             Assert.IsEmpty(listeners.Drain("client"));
         }
+
+        [Test]
+        public void TestSharedOutgoingQueueIsBounded()
+        {
+            var queue = new ApiManager.BoundedCommandQueue();
+            for (int i = 0;
+                 i <= ApiManager.BoundedCommandQueue.MAX_COMMAND_COUNT;
+                 ++i)
+            {
+                queue.Enqueue(new KeyValuePair<string, string>("command", i.ToString()));
+            }
+
+            Assert.AreEqual(
+                ApiManager.BoundedCommandQueue.MAX_COMMAND_COUNT,
+                queue.Count);
+            Assert.IsTrue(queue.TryDequeue(out KeyValuePair<string, string> first));
+            Assert.AreEqual("1", first.Value);
+
+            queue = new ApiManager.BoundedCommandQueue();
+            int halfLimit =
+                ApiManager.BoundedCommandQueue.MAX_QUEUED_CHARACTER_COUNT / 2;
+            queue.Enqueue(new KeyValuePair<string, string>(
+                "first", new string('a', halfLimit)));
+            queue.Enqueue(new KeyValuePair<string, string>(
+                "second", new string('b', halfLimit)));
+
+            Assert.AreEqual(1, queue.Count);
+            Assert.IsTrue(queue.TryDequeue(out first));
+            Assert.AreEqual("second", first.Key);
+        }
     }
 }

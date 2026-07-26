@@ -46,7 +46,8 @@ namespace TiltBrush
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
         private Dictionary<string, string> m_CommandStatuses;
-        private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
+        private readonly BoundedCommandQueue m_OutgoingCommandQueue =
+            new BoundedCommandQueue();
         private List<Uri> m_OutgoingApiListeners;
         private readonly PollingListenerRegistry m_PollingListeners =
             new PollingListenerRegistry();
@@ -794,14 +795,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (!HasOutgoingListeners && !HasPollingListeners) return;
 
             KeyValuePair<string, string> command;
-            try
-            {
-                command = (KeyValuePair<string, string>)m_OutgoingCommandQueue.Dequeue();
-            }
-            catch (InvalidOperationException)
-            {
-                return;
-            }
+            if (!m_OutgoingCommandQueue.TryDequeue(out command)) return;
 
 
             m_PollingListeners.Enqueue(command);
@@ -1169,6 +1163,71 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     m_Listeners.Remove(clientId);
                 }
+            }
+        }
+
+        internal sealed class BoundedCommandQueue
+        {
+            internal const int MAX_COMMAND_COUNT = 1024;
+            internal const int MAX_QUEUED_CHARACTER_COUNT = 1024 * 1024;
+
+            private readonly Queue<KeyValuePair<string, string>> m_Commands =
+                new Queue<KeyValuePair<string, string>>();
+            private readonly object m_Lock = new object();
+            private int m_QueuedCharacterCount;
+
+            internal int Count
+            {
+                get
+                {
+                    lock (m_Lock)
+                    {
+                        return m_Commands.Count;
+                    }
+                }
+            }
+
+            internal void Enqueue(KeyValuePair<string, string> command)
+            {
+                int commandCharacterCount = GetCommandCharacterCount(command);
+                if (commandCharacterCount > MAX_QUEUED_CHARACTER_COUNT) return;
+                lock (m_Lock)
+                {
+                    while (m_Commands.Count >= MAX_COMMAND_COUNT ||
+                           m_QueuedCharacterCount + commandCharacterCount >
+                           MAX_QUEUED_CHARACTER_COUNT)
+                    {
+                        KeyValuePair<string, string> removedCommand =
+                            m_Commands.Dequeue();
+                        m_QueuedCharacterCount -=
+                            GetCommandCharacterCount(removedCommand);
+                    }
+                    m_Commands.Enqueue(command);
+                    m_QueuedCharacterCount += commandCharacterCount;
+                }
+            }
+
+            internal bool TryDequeue(out KeyValuePair<string, string> command)
+            {
+                lock (m_Lock)
+                {
+                    if (m_Commands.Count == 0)
+                    {
+                        command = default;
+                        return false;
+                    }
+                    command = m_Commands.Dequeue();
+                    m_QueuedCharacterCount -= GetCommandCharacterCount(command);
+                    return true;
+                }
+            }
+
+            private static int GetCommandCharacterCount(
+                KeyValuePair<string, string> command)
+            {
+                return (command.Key?.Length ?? 0) +
+                    (command.Value?.Length ?? 0) +
+                    2; // '=' plus a conservative trailing newline.
             }
         }
 
