@@ -667,6 +667,10 @@ namespace TiltBrush
                             break;
                         case StrokeExtension.Frame:
                             thisFrame = reader.UInt32();
+                            if (targetLayer != -1)
+                            {
+                                thisFrame = 0;
+                            }
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
