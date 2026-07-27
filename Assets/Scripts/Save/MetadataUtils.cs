@@ -488,6 +488,7 @@ namespace TiltBrush
         {
             Debug.Assert(data.SchemaVersion == 2);
             data.FallbackBrushIndex = data.BrushIndex.ToArray();
+            data.SchemaVersion = 3;
         }
     }
 } // namespace TiltBrush
