@@ -67,8 +67,7 @@ namespace TiltBrush
                 m_OriginalWidget = m_Widget.Clone();
             }
             m_OriginalWidget.gameObject.SetActive(false);
-            m_OriginalWidget = m_Widget.Clone();
-            m_OriginalWidget.gameObject.SetActive(false);
+            m_Widget.gameObject.SetActive(true);
 
             if (m_Initialized) return;
 
