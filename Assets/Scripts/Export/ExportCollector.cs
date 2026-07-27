@@ -138,11 +138,22 @@ namespace TiltBrush
                 {
                     var tw = (TextWidget)widget;
                     var textMesh = tw.m_TextMeshPro;
+                    float renderedWidth = textMesh.renderedWidth;
+                    float renderedHeight = textMesh.renderedHeight;
+                    if (string.IsNullOrEmpty(tw.Text) ||
+                        renderedWidth <= 0 || float.IsNaN(renderedWidth) ||
+                        float.IsInfinity(renderedWidth) ||
+                        renderedHeight <= 0 || float.IsNaN(renderedHeight) ||
+                        float.IsInfinity(renderedHeight))
+                    {
+                        continue;
+                    }
+
                     var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, idx);
                     string texturePath = Path.Combine(textOutputDirectory, $"{guid}.png");
 
-                    int width = Mathf.RoundToInt(textMesh.renderedWidth * 256);
-                    int height = Mathf.RoundToInt(textMesh.renderedHeight * 256);
+                    int width = Mathf.Max(1, Mathf.RoundToInt(renderedWidth * 256));
+                    int height = Mathf.Max(1, Mathf.RoundToInt(renderedHeight * 256));
 
                     Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
                     RenderTexture renderTexture = new RenderTexture(
