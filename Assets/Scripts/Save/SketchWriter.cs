@@ -100,8 +100,8 @@ namespace TiltBrush
         private const int REQUIRED_SKETCH_VERSION_MAX = 6;
         private static readonly uint SKETCH_SENTINEL = 0xc576a5cd; // introduced at v5
         // 5: added sketch sentinel, explicit version
-        // 6: reserved for when we add a length-prefixed stroke extension, or more header data
-        private static readonly int SKETCH_VERSION = 5;
+        // 6: added sculpted geometry after each stroke
+        private static readonly int SKETCH_VERSION = 6;
 
         static public void RuntimeSelfCheck()
         {
@@ -675,10 +675,8 @@ namespace TiltBrush
                     }
                 }
 
-                // If any sculpting modifications were made, read geometry.
-                // Causes issues with save files that did not have any sculpting.
-                // The version guard should be adjusted in the future to prevent crashing.
-                if (geometryData != null)
+                // Sculpted geometry was added in sketch version 6.
+                if (version >= 6 && geometryData != null)
                 {
                     int modifiedVertLength = reader.Int32();
 
