@@ -617,9 +617,19 @@ namespace TiltBrush
                 {
                     return;
                 }
-                m_Stream.Flush();
-                m_Stream.Dispose();
-                m_Stream = null;
+                try
+                {
+                    m_Stream.Flush();
+                    m_Stream.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // The caller already closed and flushed the transaction stream.
+                }
+                finally
+                {
+                    m_Stream = null;
+                }
             }
         }
     }

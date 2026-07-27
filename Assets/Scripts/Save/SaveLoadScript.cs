@@ -442,16 +442,19 @@ namespace TiltBrush
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false,
             bool saveToLocalCacheOnly = false)
         {
+            bool directSafSave = false;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            string sharedRelativePath;
+            directSafSave =
+                !saveToLocalCacheOnly &&
+                !selectedOnly &&
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
             if (!saveToLocalCacheOnly &&
                 OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedSketchRelativePath(info.FullPath, out sharedRelativePath) &&
+                directSafSave &&
                 !AndroidStorageManager.RequireSharedFolderFor(
-                    selectedOnly ? "saving saved strokes" : "saving sketches",
+                    "saving sketches",
                     () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly)),
-                    () => StartCoroutine(SaveLow(
-                        info, bNotify, snapshot, selectedOnly, saveToLocalCacheOnly: true))))
+                    null))
             {
                 return new List<Timeslice>().GetEnumerator();
             }
@@ -476,16 +479,32 @@ namespace TiltBrush
             AbortAutosave();
 
             m_SaveCoroutine = ThreadedSave(
-                info, selectedOnly, bNotify, snapshot, publishToSharedStorage: !saveToLocalCacheOnly);
+                info,
+                selectedOnly,
+                bNotify,
+                snapshot,
+                publishToSharedStorage: !saveToLocalCacheOnly,
+                directSafWrite: directSafSave);
             return m_SaveCoroutine;
+        }
+
+        private sealed class StorageWriteOutcome
+        {
+            public string Error;
+            public SceneFileInfo FileInfo;
         }
 
         private IEnumerator<Timeslice> ThreadedSave(
             SceneFileInfo fileInfo, bool selectedOnly,
-            bool bNotify = true, SketchSnapshot snapshot = null, bool publishToSharedStorage = true)
+            bool bNotify = true,
+            SketchSnapshot snapshot = null,
+            bool publishToSharedStorage = true,
+            bool directSafWrite = false)
         {
             // Cancel any pending transfers of this file.
-            var cancelTask = App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
+            Task cancelTask = string.IsNullOrEmpty(fileInfo.FullPath)
+                ? Task.CompletedTask
+                : App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
 
             bool newFile = !fileInfo.Exists;
 
@@ -525,17 +544,38 @@ namespace TiltBrush
                 yield return null;
             }
 
-            string error = null;
-            var writeFuture = new Future<string>(
-                () => snapshot.WriteSnapshotToFile(fileInfo.FullPath),
-                null, true);
-            while (!writeFuture.TryGetResult(out error))
+            StorageWriteOutcome outcome;
+            if (directSafWrite)
             {
-                yield return null;
+                var writeFuture = new Future<StorageWriteOutcome>(
+                    () => WriteSnapshotToSaf(fileInfo, snapshot), null, true);
+                while (!writeFuture.TryGetResult(out outcome))
+                {
+                    yield return null;
+                }
             }
+            else
+            {
+                var writeFuture = new Future<string>(
+                    () => snapshot.WriteSnapshotToFile(fileInfo.FullPath),
+                    null, true);
+                string localError;
+                while (!writeFuture.TryGetResult(out localError))
+                {
+                    yield return null;
+                }
+                outcome = new StorageWriteOutcome
+                {
+                    Error = localError,
+                    FileInfo = fileInfo,
+                };
+            }
+            string error = outcome.Error;
+            fileInfo = outcome.FileInfo ?? fileInfo;
+            m_LastSceneFile = fileInfo;
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            if (error == null && publishToSharedStorage)
+            if (!directSafWrite && error == null && publishToSharedStorage)
             {
                 bool publishDone = false;
                 bool publishSucceeded = false;
@@ -569,19 +609,113 @@ namespace TiltBrush
             {
                 if (newFile)
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.FullPath);
+                    SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.StorageId);
                 }
                 else
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.FullPath);
+                    SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.StorageId);
                 }
             }
             if (bNotify && !m_SuppressNotify)
             {
                 NotifySaveFinished(m_LastSceneFile, error, newFile);
             }
-            App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+            if (!directSafWrite)
+            {
+                App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+            }
             m_SuppressNotify = false;
+        }
+
+        private StorageWriteOutcome WriteSnapshotToSaf(
+            SceneFileInfo fileInfo, SketchSnapshot snapshot)
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string displayName = GetSafDestinationDisplayName(
+                backend, StorageArea.Sketches, fileInfo);
+            try
+            {
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    StorageArea.Sketches,
+                    displayName,
+                    TiltFile.TILT_MIME_TYPE,
+                    default))
+                {
+                    string writeError;
+                    using (Stream stream = transaction.OpenWrite())
+                    {
+                        writeError = snapshot.WriteSnapshotToStream(stream);
+                    }
+                    if (writeError != null)
+                    {
+                        transaction.Rollback();
+                        return new StorageWriteOutcome { Error = writeError };
+                    }
+
+                    StorageMutationResult commit = transaction.Commit();
+                    if (!commit.Success)
+                    {
+                        return new StorageWriteOutcome { Error = commit.Error };
+                    }
+
+                    var document = new StorageDocument(
+                        commit.DocumentId,
+                        default,
+                        displayName,
+                        TiltFile.TILT_MIME_TYPE,
+                        false,
+                        null,
+                        DateTime.Now,
+                        1L << 1,
+                        displayName);
+                    return new StorageWriteOutcome
+                    {
+                        FileInfo = new SafSceneFileInfo(backend, document),
+                    };
+                }
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException ||
+                e is InvalidOperationException)
+            {
+                return new StorageWriteOutcome { Error = e.Message };
+            }
+        }
+
+        private static string GetSafDestinationDisplayName(
+            IUserStorageBackend backend, StorageArea area, SceneFileInfo fileInfo)
+        {
+            if (fileInfo is SafSceneFileInfo safFileInfo)
+            {
+                return safFileInfo.Document.DisplayName;
+            }
+
+            string desiredName = Path.GetFileName(fileInfo.FullPath);
+            StorageDirectoryResult listing = backend.List(area, "", default);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException(listing.Error);
+            }
+            var existingNames = new HashSet<string>(
+                listing.Documents.Select(document => document.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
+            if (!existingNames.Contains(desiredName))
+            {
+                return desiredName;
+            }
+
+            string stem = Path.GetFileNameWithoutExtension(desiredName);
+            string extension = Path.GetExtension(desiredName);
+            for (int suffix = 1; suffix < 10000; ++suffix)
+            {
+                string candidate = $"{stem}{suffix}{extension}";
+                if (!existingNames.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+            throw new IOException("Could not generate a unique shared sketch name.");
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
@@ -627,6 +761,7 @@ namespace TiltBrush
         /// If success, error should be null
         private void NotifySaveFinished(SceneFileInfo info, string error, bool newFile)
         {
+            string displayLocation = info.FullPath ?? info.HumanName;
             if (error == null)
             {
                 // TODO: More long term something should be done in OutputWindowScript itself to handle such
@@ -634,12 +769,12 @@ namespace TiltBrush
                 // is tracked.
                 if (newFile)
                 {
-                    OutputWindowScript.ReportFileSaved("Added to Sketchbook!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("Added to Sketchbook!", displayLocation,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
                 }
                 else
                 {
-                    OutputWindowScript.ReportFileSaved("Saved!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("Saved!", displayLocation,
                         OutputWindowScript.InfoCardSpawnPos.UIReticle);
                     AudioManager.m_Instance.PlaySaveSound(
                         InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));

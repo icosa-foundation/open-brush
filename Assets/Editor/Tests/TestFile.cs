@@ -274,6 +274,50 @@ namespace TiltBrush
                 Directory.Delete(root, true);
             }
         }
+
+        [Test]
+        public void SafTransactionJournal_IsVersionedAndAtomicallyUpdated()
+        {
+            string rootId = $"test-root-{Guid.NewGuid():N}";
+            var record = new SafTransactionRecord
+            {
+                TransactionId = Guid.NewGuid().ToString("N"),
+                RootId = rootId,
+                Area = StorageArea.Sketches.ToString(),
+                RelativePath = "Journal Test.tilt",
+                TargetDisplayName = "Journal Test.tilt",
+                State = SafTransactionState.CreatingTemporary.ToString(),
+                CreatedUtc = DateTime.UtcNow.ToString("o"),
+            };
+            string journalDirectory = SafTransactionJournal.GetJournalDirectory(rootId);
+            string recoveryRoot = Directory.GetParent(journalDirectory).FullName;
+            try
+            {
+                SafTransactionJournal.Persist(record);
+                record.State = SafTransactionState.TemporaryComplete.ToString();
+                SafTransactionJournal.Persist(record);
+
+                var loaded = SafTransactionJournal.Load(rootId, out var errors);
+                Assert.AreEqual(0, errors.Count);
+                Assert.AreEqual(1, loaded.Count);
+                Assert.AreEqual(
+                    SafTransactionState.TemporaryComplete.ToString(), loaded[0].State);
+
+                record.Version = SafTransactionJournal.Version + 1;
+                SafTransactionJournal.Persist(record);
+                loaded = SafTransactionJournal.Load(rootId, out errors);
+                Assert.AreEqual(0, loaded.Count);
+                Assert.AreEqual(1, errors.Count);
+                Assert.IsTrue(File.Exists(SafTransactionJournal.GetJournalPath(record)));
+            }
+            finally
+            {
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
     }
 
 }

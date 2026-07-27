@@ -64,6 +64,16 @@ namespace TiltBrush
 #endif
         }
 
+        public static string GetSelectedRootIdentity()
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            return bridge.CallStatic<string>("getSelectedRootIdentity", GetActivity());
+#else
+            return "";
+#endif
+        }
+
         public static void ClearOpenBrushFolder()
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
@@ -225,6 +235,64 @@ namespace TiltBrush
 #else
             error = "SAF file descriptors are unavailable on this platform.";
             return false;
+#endif
+        }
+
+        public static bool TryCreateNamedFileStream(
+            string relativeDirectory,
+            string displayName,
+            string mimeType,
+            out FileStream stream,
+            out StorageDocumentId documentId,
+            out string error)
+        {
+            stream = null;
+            documentId = default;
+            error = null;
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "createNamedFileDescriptor",
+                GetActivity(),
+                relativeDirectory,
+                displayName,
+                mimeType);
+            bool success = TryCreateFileStream(
+                result, FileAccess.ReadWrite, out stream, out string documentUri, out error);
+            documentId = new StorageDocumentId(documentUri);
+            return success;
+#else
+            error = "SAF file descriptors are unavailable on this platform.";
+            return false;
+#endif
+        }
+
+        public static StorageMutationResult RenameDocument(
+            StorageDocumentId documentId, string newDisplayName)
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "renameDocumentUri", GetActivity(), documentId.Value, newDisplayName);
+            return ReadMutationResult(result, documentId);
+#else
+            return new StorageMutationResult(
+                StorageResultCode.NotReady, documentId,
+                "SAF mutations are unavailable on this platform.");
+#endif
+        }
+
+        public static StorageMutationResult DeleteDocument(StorageDocumentId documentId)
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "deleteDocumentByUri", GetActivity(), documentId.Value);
+            return ReadMutationResult(result, documentId);
+#else
+            return new StorageMutationResult(
+                StorageResultCode.NotReady, documentId,
+                "SAF mutations are unavailable on this platform.");
 #endif
         }
 
@@ -481,6 +549,27 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private static StorageMutationResult ReadMutationResult(
+            AndroidJavaObject result, StorageDocumentId fallbackDocumentId)
+        {
+            if (result == null)
+            {
+                return new StorageMutationResult(
+                    StorageResultCode.ProviderUnavailable,
+                    fallbackDocumentId,
+                    "Provider returned no mutation result.");
+            }
+            var code = (StorageResultCode)result.Get<int>("code");
+            string documentUri = result.Get<string>("documentUri");
+            string error = result.Get<string>("error");
+            return new StorageMutationResult(
+                code,
+                string.IsNullOrEmpty(documentUri)
+                    ? fallbackDocumentId
+                    : new StorageDocumentId(documentUri),
+                error);
+        }
+
         private static bool HaveLength(int expected, params Array[] arrays)
         {
             foreach (Array array in arrays)

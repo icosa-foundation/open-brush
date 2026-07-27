@@ -107,6 +107,18 @@ public class OpenBrushStorageBridge {
         }
     }
 
+    public static final class DocumentMutationResult {
+        public final int code;
+        public final String documentUri;
+        public final String error;
+
+        DocumentMutationResult(int code, Uri documentUri, String error) {
+            this.code = code;
+            this.documentUri = documentUri == null ? "" : documentUri.toString();
+            this.error = error == null ? "" : error;
+        }
+    }
+
     private static final class DocumentRow {
         String documentUri;
         String parentDocumentUri;
@@ -177,6 +189,10 @@ public class OpenBrushStorageBridge {
     public static void clearOpenBrushFolder(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().remove(OPEN_BRUSH_FOLDER_URI).apply();
+    }
+
+    public static String getSelectedRootIdentity(Context context) {
+        return emptyIfNull(getOpenBrushFolderUri(context));
     }
 
     public static boolean ensureDirectory(Context context, String relativePath) {
@@ -338,6 +354,90 @@ public class OpenBrushStorageBridge {
             deleteDocumentQuietly(context.getContentResolver(), temporary);
         }
         return result;
+    }
+
+    public static DescriptorOpenResult createNamedFileDescriptor(
+            Context context, String relativeDirectory, String displayName, String mimeType) {
+        String normalizedDirectory = normalize(relativeDirectory);
+        if (!isSafeRelativePath(normalizedDirectory)
+                || displayName == null
+                || displayName.length() == 0
+                || displayName.contains("/")
+                || displayName.contains("\\")) {
+            return new DescriptorOpenResult(-1, null, "Invalid document path");
+        }
+
+        Uri parent = ensureDirectoryUri(context, normalizedDirectory);
+        if (parent == null) {
+            return new DescriptorOpenResult(-1, null, "Failed to open document directory");
+        }
+        try {
+            Uri document = DocumentsContract.createDocument(
+                    context.getContentResolver(),
+                    parent,
+                    mimeType == null || mimeType.length() == 0
+                            ? "application/octet-stream"
+                            : mimeType,
+                    displayName);
+            if (document == null) {
+                return new DescriptorOpenResult(-1, null, "Provider returned no document");
+            }
+            DescriptorOpenResult result = detachFileDescriptor(context, document, "rwt");
+            if (result.fd < 0) {
+                deleteDocumentQuietly(context.getContentResolver(), document);
+            }
+            return result;
+        } catch (Exception e) {
+            return new DescriptorOpenResult(-1, null, formatProviderError(
+                    "Failed to create document", e));
+        }
+    }
+
+    public static DocumentMutationResult renameDocumentUri(
+            Context context, String documentUri, String newDisplayName) {
+        if (documentUri == null
+                || documentUri.length() == 0
+                || newDisplayName == null
+                || newDisplayName.length() == 0
+                || newDisplayName.contains("/")
+                || newDisplayName.contains("\\")) {
+            return new DocumentMutationResult(6, null, "Invalid rename request");
+        }
+        try {
+            Uri renamed = DocumentsContract.renameDocument(
+                    context.getContentResolver(), Uri.parse(documentUri), newDisplayName);
+            if (renamed == null) {
+                return new DocumentMutationResult(
+                        7, null, "Provider returned no renamed document");
+            }
+            return new DocumentMutationResult(0, renamed, null);
+        } catch (SecurityException e) {
+            return new DocumentMutationResult(3, null, formatProviderError(
+                    "Permission denied while renaming document", e));
+        } catch (Exception e) {
+            return new DocumentMutationResult(7, null, formatProviderError(
+                    "Failed to rename document", e));
+        }
+    }
+
+    public static DocumentMutationResult deleteDocumentByUri(
+            Context context, String documentUri) {
+        if (documentUri == null || documentUri.length() == 0) {
+            return new DocumentMutationResult(6, null, "Invalid delete request");
+        }
+        try {
+            boolean deleted = DocumentsContract.deleteDocument(
+                    context.getContentResolver(), Uri.parse(documentUri));
+            return deleted
+                    ? new DocumentMutationResult(0, Uri.parse(documentUri), null)
+                    : new DocumentMutationResult(7, null, "Provider did not delete document");
+        } catch (SecurityException e) {
+            return new DocumentMutationResult(3, null, formatProviderError(
+                    "Permission denied while deleting document", e));
+        } catch (Exception e) {
+            return new DocumentMutationResult(7, null, formatProviderError(
+                    "Failed to delete document", e));
+        }
     }
 
     public static boolean deleteDocumentUri(Context context, String documentUri) {

@@ -77,7 +77,13 @@ namespace TiltBrush
             string mimeType,
             CancellationToken cancellationToken)
         {
-            throw new NotSupportedException("SAF write transactions are not initialized.");
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!IsReady)
+            {
+                throw new IOException("Open Brush shared folder is unavailable.");
+            }
+            return new SafFileWriteTransaction(
+                area, relativePath, mimeType, cancellationToken);
         }
 
         public StorageMutationResult Rename(
@@ -85,19 +91,39 @@ namespace TiltBrush
             string newDisplayName,
             CancellationToken cancellationToken)
         {
-            return new StorageMutationResult(
-                StorageResultCode.Failed,
-                documentId,
-                "SAF rename is not initialized.");
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!IsReady)
+            {
+                return new StorageMutationResult(
+                    StorageResultCode.NotReady,
+                    documentId,
+                    "Open Brush shared folder is unavailable.");
+            }
+            using (SafDestinationLocks.Acquire(
+                $"{AndroidSafStorage.GetSelectedRootIdentity()}\nrename\n{documentId}",
+                cancellationToken))
+            {
+                return AndroidSafStorage.RenameDocument(documentId, newDisplayName);
+            }
         }
 
         public StorageMutationResult Delete(
             StorageDocumentId documentId, CancellationToken cancellationToken)
         {
-            return new StorageMutationResult(
-                StorageResultCode.Failed,
-                documentId,
-                "SAF delete is not initialized.");
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!IsReady)
+            {
+                return new StorageMutationResult(
+                    StorageResultCode.NotReady,
+                    documentId,
+                    "Open Brush shared folder is unavailable.");
+            }
+            using (SafDestinationLocks.Acquire(
+                $"{AndroidSafStorage.GetSelectedRootIdentity()}\ndelete\n{documentId}",
+                cancellationToken))
+            {
+                return AndroidSafStorage.DeleteDocument(documentId);
+            }
         }
 
         public string Materialize(
