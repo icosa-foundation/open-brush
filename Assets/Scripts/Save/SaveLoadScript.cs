@@ -839,7 +839,8 @@ namespace TiltBrush
                             {
                                 var tr = model.RawTransforms[i];
                                 var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
-                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr, meshData);
+                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(
+                                    poly, recipe, tr, meshData, recordCommand: false);
                                 bool pin = model.PinStates == null || i >= model.PinStates.Length ||
                                     model.PinStates[i];
                                 if (pin)
