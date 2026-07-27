@@ -555,6 +555,10 @@ namespace TiltBrush
                     error = publishError;
                 }
             }
+            else if (error == null && !publishToSharedStorage)
+            {
+                RegisterSavedSceneForSharedStorage(fileInfo, selectedOnly);
+            }
 #endif
             m_LastWriteSnapshotError = error;
             m_LastThumbnailBytes = snapshot.Thumbnail;
@@ -581,6 +585,15 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private void RegisterSavedSceneForSharedStorage(SceneFileInfo fileInfo, bool selectedOnly)
+        {
+            string label = selectedOnly ? "saved strokes" : "sketch";
+            AndroidStorageManager.RegisterPendingTransfer(
+                label,
+                fileInfo.FullPath,
+                () => PublishSavedSceneToSharedStorage(fileInfo, (success, error) => { }));
+        }
+
         private void PublishSavedSceneToSharedStorage(
             SceneFileInfo fileInfo, Action<bool, string> onComplete)
         {

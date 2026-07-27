@@ -43,6 +43,7 @@ namespace TiltBrush
         private class PendingTransferRetry
         {
             public string Label;
+            public string LocalPath;
             public Action RetryAction;
         }
 
@@ -307,15 +308,7 @@ namespace TiltBrush
         {
             if (retryAction != null)
             {
-                if (!string.IsNullOrEmpty(localPath))
-                {
-                    m_PendingLocalPaths.Add(Path.GetFullPath(localPath));
-                }
-                m_PendingTransferRetries.Add(new PendingTransferRetry
-                {
-                    Label = label,
-                    RetryAction = retryAction
-                });
+                RegisterPendingTransfer(label, localPath, retryAction);
                 AndroidSafStorage.ClearOpenBrushFolder();
             }
 
@@ -327,6 +320,26 @@ namespace TiltBrush
                 InputManager.ControllerName.Brush,
                 message + " Choose the Open Brush folder again to retry pending copies.",
                 fPopScalar: 0.5f);
+        }
+
+        public static void RegisterPendingTransfer(
+            string label, string localPath, Action retryAction)
+        {
+            string fullPath = string.IsNullOrEmpty(localPath)
+                ? null
+                : Path.GetFullPath(localPath);
+            if (fullPath != null)
+            {
+                m_PendingLocalPaths.Add(fullPath);
+                m_PendingTransferRetries.RemoveAll(retry =>
+                    string.Equals(retry.LocalPath, fullPath, StringComparison.OrdinalIgnoreCase));
+            }
+            m_PendingTransferRetries.Add(new PendingTransferRetry
+            {
+                Label = label,
+                LocalPath = fullPath,
+                RetryAction = retryAction
+            });
         }
 
         public static string[] GetPendingLocalPaths(string localDirectory)
