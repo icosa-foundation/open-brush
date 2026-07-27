@@ -50,6 +50,22 @@ namespace TiltBrush
             }
         }
 
+        public static string LocalMaterializedMediaLibraryPath
+        {
+            get
+            {
+                string rootId = UserStorage.Backend.Kind ==
+                    StorageBackendKind.StorageAccessFramework
+                    ? UserStorage.Backend.RootIdentity
+                    : "";
+                return Path.Combine(
+                    Application.persistentDataPath,
+                    "OpenBrushSafMaterialized",
+                    SafTransactionJournal.GetRootNamespaceId(rootId),
+                    "Media Library");
+            }
+        }
+
         public static string SharedExportDisplayPath
         {
             get { return "Open Brush/Exports"; }

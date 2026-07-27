@@ -2248,6 +2248,12 @@ namespace TiltBrush
 
         public static string MediaLibraryPath()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalMaterializedMediaLibraryPath;
+            }
+#endif
             return Path.Combine(UserPath(), "Media Library");
         }
 

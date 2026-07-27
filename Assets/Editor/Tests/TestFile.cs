@@ -206,6 +206,11 @@ namespace TiltBrush
             {
                 throw new NotSupportedException();
             }
+
+            public string GetMaterializationPath(StorageDocumentId documentId)
+            {
+                throw new NotSupportedException();
+            }
         }
 
         private Stream GetReadStream(string zipfile, string subfile, bool useSharpZipLib)

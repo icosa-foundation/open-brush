@@ -206,6 +206,7 @@ namespace TiltBrush
             StorageDocumentId documentId,
             MaterializationScope scope,
             CancellationToken cancellationToken);
+        string GetMaterializationPath(StorageDocumentId documentId);
     }
 
     public static class UserStorage
@@ -421,6 +422,12 @@ namespace TiltBrush
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            EnsureValidDocumentId(documentId);
+            return documentId.Value;
+        }
+
+        public string GetMaterializationPath(StorageDocumentId documentId)
+        {
             EnsureValidDocumentId(documentId);
             return documentId.Value;
         }

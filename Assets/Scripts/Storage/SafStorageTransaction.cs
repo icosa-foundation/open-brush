@@ -73,7 +73,22 @@ namespace TiltBrush
             return Path.Combine(
                 Application.persistentDataPath,
                 "OpenBrushSafRecovery",
-                HashRootId(rootId));
+                GetRootNamespaceId(rootId));
+        }
+
+        public static string GetRootNamespaceId(string rootId)
+        {
+            using (SHA256 hash = SHA256.Create())
+            {
+                byte[] bytes = hash.ComputeHash(
+                    Encoding.UTF8.GetBytes(rootId ?? ""));
+                var result = new StringBuilder(bytes.Length * 2);
+                foreach (byte value in bytes)
+                {
+                    result.Append(value.ToString("x2"));
+                }
+                return result.ToString();
+            }
         }
 
         public static string GetJournalPath(SafTransactionRecord record)
@@ -150,20 +165,6 @@ namespace TiltBrush
             return records;
         }
 
-        private static string HashRootId(string rootId)
-        {
-            using (SHA256 hash = SHA256.Create())
-            {
-                byte[] bytes = hash.ComputeHash(
-                    Encoding.UTF8.GetBytes(rootId ?? ""));
-                var result = new StringBuilder(bytes.Length * 2);
-                foreach (byte value in bytes)
-                {
-                    result.Append(value.ToString("x2"));
-                }
-                return result.ToString();
-            }
-        }
     }
 
     internal static class SafDestinationLocks
