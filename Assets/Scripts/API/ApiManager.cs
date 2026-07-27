@@ -37,6 +37,8 @@ namespace TiltBrush
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
+        internal const string POLLING_LISTENER_NOT_REGISTERED_ERROR =
+            "error: polling listener not registered";
         private const string BASE_HTML = @"<!doctype html><html lang='en'>
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
@@ -724,15 +726,27 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
                 case "query.outgoing.poll":
-                    if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1])) return "";
+                    if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1]))
+                    {
+                        return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+                    }
                     string clientId = UnityWebRequest.UnEscapeURL(commandPair[1]);
-                    if (string.IsNullOrWhiteSpace(clientId)) return "";
+                    if (string.IsNullOrWhiteSpace(clientId))
+                    {
+                        return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+                    }
                     List<KeyValuePair<string, string>> commands =
                         m_PollingListeners.Drain(clientId);
-                    if (commands == null) return "";
-                    return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
+                    return FormatPollingResponse(commands);
             }
             return "unknown query";
+        }
+
+        internal static string FormatPollingResponse(
+            List<KeyValuePair<string, string>> commands)
+        {
+            if (commands == null) return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+            return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;

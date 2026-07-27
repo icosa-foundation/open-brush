@@ -474,6 +474,20 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestPollingResponseDistinguishesUnknownClientFromEmptyQueue()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("registered-client"));
+
+            Assert.AreEqual(
+                "",
+                ApiManager.FormatPollingResponse(listeners.Drain("registered-client")));
+            Assert.AreEqual(
+                ApiManager.POLLING_LISTENER_NOT_REGISTERED_ERROR,
+                ApiManager.FormatPollingResponse(listeners.Drain("unknown-client")));
+        }
+
+        [Test]
         public void TestPollingListenersReceiveOnlyCommandsGeneratedWhileRegistered()
         {
             var listeners = new ApiManager.PollingListenerRegistry();
