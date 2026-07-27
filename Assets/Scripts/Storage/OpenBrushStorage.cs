@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -174,29 +175,7 @@ namespace TiltBrush
                 return true;
             }
 
-            if (File.Exists(localPath))
-            {
-                if (AndroidSafStorage.WriteFileFromPath(
-                    relativePath, localPath, GuessMimeType(localPath)))
-                {
-                    return true;
-                }
-            }
-            else if (Directory.Exists(localPath))
-            {
-                if (AndroidSafStorage.CopyDirectoryFromPath(relativePath, localPath))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                error = "Local file does not exist: " + localPath;
-                return false;
-            }
-
-            error = "Failed to copy file to shared storage: " + relativePath;
-            return false;
+            return PublishPathToSharedStorage(relativePath, localPath, out error);
         }
 
         public static void PublishGeneratedFileToSharedStorageAsync(
@@ -212,6 +191,78 @@ namespace TiltBrush
             PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete);
         }
 
+        public static void PublishGeneratedFilesToSharedStorageAsync(
+            IReadOnlyList<string> localPaths,
+            string label,
+            Action<bool, string> onComplete)
+        {
+            if (!IsGooglePlayStorageMode || localPaths == null || localPaths.Count == 0)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                StorageArea? bundleArea = null;
+                var stagedPaths = new List<SafStagedPath>();
+                foreach (string localPath in localPaths)
+                {
+                    if (!TryGetSharedGeneratedFileRelativePath(
+                            localPath, out string sharedRelativePath) ||
+                        !TryResolveStorageDestination(
+                            sharedRelativePath, out StorageArea area, out string areaRelativePath))
+                    {
+                        onComplete?.Invoke(
+                            false, $"Unsupported generated output path: {localPath}");
+                        return;
+                    }
+                    if (bundleArea.HasValue && bundleArea.Value != area)
+                    {
+                        onComplete?.Invoke(
+                            false, "Generated output bundle spans multiple storage areas.");
+                        return;
+                    }
+                    bundleArea = area;
+                    stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
+                }
+                AndroidStorageManager.StartStorageOperation(
+                    label,
+                    () => SafStagedOutputPublisher.PublishBundle(
+                        UserStorage.Backend,
+                        bundleArea.Value,
+                        stagedPaths,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None),
+                    onComplete);
+                return;
+            }
+
+            int index = 0;
+            void PublishNext()
+            {
+                if (index >= localPaths.Count)
+                {
+                    onComplete?.Invoke(true, null);
+                    return;
+                }
+                PublishGeneratedFileToSharedStorageAsync(
+                    localPaths[index++],
+                    label,
+                    (success, error) =>
+                    {
+                        if (success)
+                        {
+                            PublishNext();
+                        }
+                        else
+                        {
+                            onComplete?.Invoke(false, error);
+                        }
+                    });
+            }
+            PublishNext();
+        }
+
         public static bool PublishMediaLibraryPathToSharedStorage(
             string localPath, out string error)
         {
@@ -223,29 +274,7 @@ namespace TiltBrush
                 return true;
             }
 
-            if (File.Exists(localPath))
-            {
-                if (AndroidSafStorage.WriteFileFromPath(
-                    relativePath, localPath, GuessMimeType(localPath)))
-                {
-                    return true;
-                }
-            }
-            else if (Directory.Exists(localPath))
-            {
-                if (AndroidSafStorage.CopyDirectoryFromPath(relativePath, localPath))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                error = "Local media library path does not exist: " + localPath;
-                return false;
-            }
-
-            error = "Failed to copy media library path to shared storage: " + relativePath;
-            return false;
+            return PublishPathToSharedStorage(relativePath, localPath, out error);
         }
 
         public static void PublishMediaLibraryPathToSharedStorageAsync(
@@ -286,6 +315,31 @@ namespace TiltBrush
             {
                 error = "Local video capture output does not exist: " + localVideoPath;
                 return false;
+            }
+
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                var stagedPaths = new List<SafStagedPath>
+                {
+                    new SafStagedPath(frameDirectory, Path.GetFileName(frameDirectory)),
+                };
+                if (File.Exists(metadataPath))
+                {
+                    stagedPaths.Add(new SafStagedPath(
+                        metadataPath, Path.GetFileName(metadataPath)));
+                }
+                StorageArea area = localVideoPath.StartsWith(
+                    App.VrVideosPath(), StringComparison.OrdinalIgnoreCase)
+                    ? StorageArea.VrVideos
+                    : StorageArea.Videos;
+                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
+                    UserStorage.Backend,
+                    area,
+                    stagedPaths,
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+                error = result.Error;
+                return result.Success;
             }
 
             if (!PublishGeneratedFileToSharedStorage(frameDirectory, out error))
@@ -329,6 +383,33 @@ namespace TiltBrush
                 return;
             }
 
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                var stagedPaths = new List<SafStagedPath>
+                {
+                    new SafStagedPath(frameDirectory, Path.GetFileName(frameDirectory)),
+                };
+                if (File.Exists(metadataPath))
+                {
+                    stagedPaths.Add(new SafStagedPath(
+                        metadataPath, Path.GetFileName(metadataPath)));
+                }
+                StorageArea area = localVideoPath.StartsWith(
+                    App.VrVideosPath(), StringComparison.OrdinalIgnoreCase)
+                    ? StorageArea.VrVideos
+                    : StorageArea.Videos;
+                AndroidStorageManager.StartStorageOperation(
+                    label,
+                    () => SafStagedOutputPublisher.PublishBundle(
+                        UserStorage.Backend,
+                        area,
+                        stagedPaths,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None),
+                    onComplete);
+                return;
+            }
+
             PublishGeneratedFileToSharedStorageAsync(frameDirectory, label, (framesCopied, frameError) =>
             {
                 if (!framesCopied)
@@ -360,6 +441,25 @@ namespace TiltBrush
             }
 
             string exportName = Path.GetFileName(localExportDirectory);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                var stagedPaths = new List<SafStagedPath>
+                {
+                    new SafStagedPath(localExportDirectory, exportName),
+                    new SafStagedPath(localReadmePath, "README.txt"),
+                };
+                AndroidStorageManager.StartStorageOperation(
+                    $"export {exportName}",
+                    () => SafStagedOutputPublisher.PublishBundle(
+                        UserStorage.Backend,
+                        StorageArea.Exports,
+                        stagedPaths,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None),
+                    onComplete);
+                return;
+            }
+
             string relativeExportPath = Path.Combine("Exports", exportName);
             PublishPathToSharedStorageAsync(
                 relativeExportPath,
@@ -409,6 +509,28 @@ namespace TiltBrush
             string label,
             Action<bool, string> onComplete)
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                if (!TryResolveStorageDestination(
+                        relativePath, out StorageArea area, out string areaRelativePath))
+                {
+                    onComplete?.Invoke(
+                        false, $"Unsupported shared-storage destination: {relativePath}");
+                    return;
+                }
+                AndroidStorageManager.StartStorageOperation(
+                    label,
+                    () => SafStagedOutputPublisher.Publish(
+                        UserStorage.Backend,
+                        area,
+                        areaRelativePath,
+                        localPath,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None),
+                    onComplete);
+                return;
+            }
+
             if (File.Exists(localPath))
             {
                 AndroidStorageManager.StartTransfer(
@@ -435,6 +557,95 @@ namespace TiltBrush
             }
 
             onComplete?.Invoke(false, "Local path does not exist: " + localPath);
+        }
+
+        private static bool PublishPathToSharedStorage(
+            string relativePath, string localPath, out string error)
+        {
+            error = null;
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                if (!TryResolveStorageDestination(
+                        relativePath, out StorageArea area, out string areaRelativePath))
+                {
+                    error = $"Unsupported shared-storage destination: {relativePath}";
+                    return false;
+                }
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    UserStorage.Backend,
+                    area,
+                    areaRelativePath,
+                    localPath,
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+                error = result.Error;
+                return result.Success;
+            }
+
+            if (File.Exists(localPath))
+            {
+                if (AndroidSafStorage.WriteFileFromPath(
+                    relativePath, localPath, GuessMimeType(localPath)))
+                {
+                    return true;
+                }
+            }
+            else if (Directory.Exists(localPath))
+            {
+                if (AndroidSafStorage.CopyDirectoryFromPath(relativePath, localPath))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                error = $"Local path does not exist: {localPath}";
+                return false;
+            }
+
+            error = $"Failed to copy to shared storage: {relativePath}";
+            return false;
+        }
+
+        private static bool TryResolveStorageDestination(
+            string sharedRelativePath,
+            out StorageArea area,
+            out string areaRelativePath)
+        {
+            string normalized = (sharedRelativePath ?? "").Replace('\\', '/').Trim('/');
+            (string prefix, StorageArea area)[] mappings =
+            {
+                ("Media Library/BackgroundImages", StorageArea.MediaLibraryBackgroundImages),
+                ("Media Library/Images", StorageArea.MediaLibraryImages),
+                ("Media Library/Models", StorageArea.MediaLibraryModels),
+                ("Media Library/Videos", StorageArea.MediaLibraryVideos),
+                ("Saved Strokes", StorageArea.SavedStrokes),
+                ("Sketches", StorageArea.Sketches),
+                ("Snapshots", StorageArea.Snapshots),
+                ("VRVideos", StorageArea.VrVideos),
+                ("Videos", StorageArea.Videos),
+                ("Exports", StorageArea.Exports),
+            };
+            foreach ((string prefix, StorageArea mappedArea) in mappings)
+            {
+                if (normalized == prefix)
+                {
+                    area = mappedArea;
+                    areaRelativePath = "";
+                    return true;
+                }
+                string prefixWithSeparator = $"{prefix}/";
+                if (normalized.StartsWith(
+                        prefixWithSeparator, StringComparison.OrdinalIgnoreCase))
+                {
+                    area = mappedArea;
+                    areaRelativePath = normalized.Substring(prefixWithSeparator.Length);
+                    return true;
+                }
+            }
+            area = default;
+            areaRelativePath = null;
+            return false;
         }
 
         private static string FormatCopyError(string error, string relativePath)

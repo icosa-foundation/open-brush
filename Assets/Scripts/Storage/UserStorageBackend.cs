@@ -183,6 +183,7 @@ namespace TiltBrush
     {
         StorageBackendKind Kind { get; }
         bool IsReady { get; }
+        string RootIdentity { get; }
 
         StorageDirectoryResult List(
             StorageArea area, string relativeDirectory, CancellationToken cancellationToken);
@@ -247,6 +248,7 @@ namespace TiltBrush
 
         public StorageBackendKind Kind => StorageBackendKind.Local;
         public bool IsReady => true;
+        public string RootIdentity => "";
 
         public LocalUserStorageBackend()
             : this(GetAreaRoot)

@@ -35,6 +35,7 @@ namespace TiltBrush
 
         public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
         public bool IsReady => AndroidSafStorage.HasOpenBrushFolder();
+        public string RootIdentity => AndroidSafStorage.GetSelectedRootIdentity();
 
         public StorageDirectoryResult List(
             StorageArea area, string relativeDirectory, CancellationToken cancellationToken)
@@ -116,7 +117,7 @@ namespace TiltBrush
                     "Open Brush shared folder is unavailable.");
             }
             DocumentLocation location = GetLocation(documentId);
-            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            string rootId = RootIdentity;
             string oldKey = location == null
                 ? $"{rootId}\nunknown\n{documentId}"
                 : SafDestinationLocks.GetDestinationKey(
@@ -158,7 +159,7 @@ namespace TiltBrush
                     "Open Brush shared folder is unavailable.");
             }
             DocumentLocation location = GetLocation(documentId);
-            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            string rootId = RootIdentity;
             string key = location == null
                 ? $"{rootId}\nunknown\n{documentId}"
                 : SafDestinationLocks.GetDestinationKey(
@@ -220,7 +221,7 @@ namespace TiltBrush
             string relativeDirectory,
             IReadOnlyList<StorageDocument> documents)
         {
-            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            string rootId = RootIdentity;
             lock (m_LocationGate)
             {
                 if (m_MappedRootId != rootId)

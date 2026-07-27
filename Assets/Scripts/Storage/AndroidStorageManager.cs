@@ -237,8 +237,19 @@ namespace TiltBrush
             }
 
             var future = new Future<SafRecoveryReport>(
-                () => SafTransactionRecovery.RecoverAll(
-                    UserStorage.Backend, default),
+                () =>
+                {
+                    SafRecoveryReport transactionReport =
+                        SafTransactionRecovery.RecoverAll(
+                            UserStorage.Backend, default);
+                    SafRecoveryReport publicationReport =
+                        SafStagedOutputPublisher.RecoverAll(
+                            UserStorage.Backend, default);
+                    transactionReport.Recovered += publicationReport.Recovered;
+                    transactionReport.Pending += publicationReport.Pending;
+                    transactionReport.Errors.AddRange(publicationReport.Errors);
+                    return transactionReport;
+                },
                 longRunning: true);
             SafRecoveryReport report;
             while (!future.TryGetResult(out report))
@@ -259,6 +270,40 @@ namespace TiltBrush
             SketchCatalog.m_Instance?.GetSet(SketchSetType.User)?.RequestRefresh();
             SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes)?.RequestRefresh();
             onComplete?.Invoke();
+        }
+
+        public static void StartStorageOperation(
+            string label,
+            Func<SafPublicationResult> operation,
+            Action<bool, string> onComplete)
+        {
+            if (m_Instance == null)
+            {
+                onComplete?.Invoke(false, "Android storage manager is not ready.");
+                return;
+            }
+            m_Instance.StartCoroutine(
+                m_Instance.RunStorageOperation(label, operation, onComplete));
+        }
+
+        private IEnumerator RunStorageOperation(
+            string label,
+            Func<SafPublicationResult> operation,
+            Action<bool, string> onComplete)
+        {
+            var future = new Future<SafPublicationResult>(operation, longRunning: true);
+            SafPublicationResult result;
+            while (!future.TryGetResult(out result))
+            {
+                yield return null;
+            }
+            future.Close();
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE {label} publication failed: {result.Error}");
+            }
+            onComplete?.Invoke(result.Success, result.Error);
         }
 
         public static void StartTransfer(

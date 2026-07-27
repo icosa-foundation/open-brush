@@ -1961,8 +1961,14 @@ namespace TiltBrush
                         bool publishDone = false;
                         bool publishSucceeded = false;
                         string publishError = null;
-                        OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
-                            fullPath,
+                        var generatedPaths = new List<string> { fullPath };
+                        if (renderDepth)
+                        {
+                            generatedPaths.Add(
+                                Path.GetFullPath(saveName.Replace(".png", "_depth.png")));
+                        }
+                        OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
+                            generatedPaths,
                             "snapshot",
                             (success, error) =>
                             {
@@ -1975,28 +1981,6 @@ namespace TiltBrush
                             yield return null;
                         }
                         if (!publishSucceeded) { err = publishError; }
-
-                        if (err == null && renderDepth)
-                        {
-                            string fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
-                            publishDone = false;
-                            publishSucceeded = false;
-                            publishError = null;
-                            OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
-                                fullDepthPath,
-                                "depth snapshot",
-                                (success, error) =>
-                                {
-                                    publishSucceeded = success;
-                                    publishError = error;
-                                    publishDone = true;
-                                });
-                            while (!publishDone)
-                            {
-                                yield return null;
-                            }
-                            if (!publishSucceeded) { err = publishError; }
-                        }
                     }
 #endif
 

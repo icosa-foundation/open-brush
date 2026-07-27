@@ -40,7 +40,7 @@ namespace TiltBrush
     {
         public int Version = 1;
         public string TransactionId;
-        public string Kind = "sketch-replacement";
+        public string Kind = "tilt-replacement";
         public string RootId;
         public string Area;
         public string RelativePath;
@@ -64,10 +64,16 @@ namespace TiltBrush
         public static string GetJournalDirectory(string rootId)
         {
             return Path.Combine(
+                GetRecoveryRootDirectory(rootId),
+                "journals");
+        }
+
+        public static string GetRecoveryRootDirectory(string rootId)
+        {
+            return Path.Combine(
                 Application.persistentDataPath,
                 "OpenBrushSafRecovery",
-                HashRootId(rootId),
-                "journals");
+                HashRootId(rootId));
         }
 
         public static string GetJournalPath(SafTransactionRecord record)
@@ -288,6 +294,9 @@ namespace TiltBrush
             m_Record = new SafTransactionRecord
             {
                 TransactionId = transactionId,
+                Kind = m_MimeType == TiltFile.TILT_MIME_TYPE
+                    ? "tilt-replacement"
+                    : "file-replacement",
                 RootId = rootId,
                 Area = area.ToString(),
                 RelativePath = relativePath.Replace('\\', '/'),
@@ -359,10 +368,9 @@ namespace TiltBrush
                 }
                 using (Stream validationStream = OpenTemporaryRead())
                 {
-                    if (!TiltFile.IsHeaderValid(
-                            validationStream, m_Record.TemporaryDisplayName))
+                    if (!ValidatePayload(validationStream))
                     {
-                        throw new IOException("Completed temporary .tilt archive is invalid.");
+                        throw new IOException("Completed temporary document is invalid.");
                     }
                 }
 
@@ -494,6 +502,24 @@ namespace TiltBrush
                 throw new IOException(error);
             }
             return stream;
+        }
+
+        private bool ValidatePayload(Stream stream)
+        {
+            if (m_Record.Kind == "tilt-replacement")
+            {
+                return TiltFile.IsHeaderValid(stream, m_Record.TemporaryDisplayName);
+            }
+            if (!stream.CanRead)
+            {
+                return false;
+            }
+            if (stream.CanSeek)
+            {
+                stream.Seek(0, SeekOrigin.End);
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+            return true;
         }
 
         private string CombineProviderDirectory()

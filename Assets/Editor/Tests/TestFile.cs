@@ -51,8 +51,54 @@ namespace TiltBrush
             private readonly Dictionary<StorageDocumentId, Entry> m_Entries =
                 new Dictionary<StorageDocumentId, Entry>();
 
+            private sealed class WriteTransaction : IStorageWriteTransaction
+            {
+                private readonly FakeSafBackend m_Backend;
+                private readonly string m_Name;
+                private readonly MemoryStream m_Stream = new MemoryStream();
+                private bool m_Finished;
+
+                public StorageDocumentId TargetDocumentId { get; private set; }
+                public StorageDocumentId TemporaryDocumentId { get; } =
+                    new StorageDocumentId(Guid.NewGuid().ToString("N"));
+
+                public WriteTransaction(FakeSafBackend backend, string relativePath)
+                {
+                    m_Backend = backend;
+                    m_Name = Path.GetFileName(relativePath);
+                }
+
+                public Stream OpenWrite()
+                {
+                    return m_Stream;
+                }
+
+                public StorageMutationResult Commit()
+                {
+                    TargetDocumentId = m_Backend.AddOrReplace(m_Name, m_Stream.ToArray());
+                    m_Finished = true;
+                    return new StorageMutationResult(
+                        StorageResultCode.Success, TargetDocumentId);
+                }
+
+                public void Rollback()
+                {
+                    m_Finished = true;
+                }
+
+                public void Dispose()
+                {
+                    if (!m_Finished)
+                    {
+                        Rollback();
+                    }
+                    m_Stream.Dispose();
+                }
+            }
+
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
+            public string RootIdentity { get; set; } = $"fake-root-{Guid.NewGuid():N}";
 
             public StorageDocumentId Add(string name, byte[] data)
             {
@@ -64,6 +110,19 @@ namespace TiltBrush
                 };
                 m_Entries.Add(entry.Id, entry);
                 return entry.Id;
+            }
+
+            private StorageDocumentId AddOrReplace(string name, byte[] data)
+            {
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    if (entry.Name == name)
+                    {
+                        entry.Data = data;
+                        return entry.Id;
+                    }
+                }
+                return Add(name, data);
             }
 
             public bool Contains(string name)
@@ -112,7 +171,7 @@ namespace TiltBrush
                 string mimeType,
                 CancellationToken cancellationToken)
             {
-                throw new NotSupportedException();
+                return new WriteTransaction(this, relativePath);
             }
 
             public StorageMutationResult Rename(
@@ -466,6 +525,46 @@ namespace TiltBrush
             }
             finally
             {
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_CommitsWholeDirectory()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path.Combine(stagingRoot, "nested"));
+            File.WriteAllText(Path.Combine(stagingRoot, "one.txt"), "one");
+            File.WriteAllBytes(Path.Combine(stagingRoot, "nested", "two.bin"), new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Exports,
+                    "Test Export",
+                    stagingRoot,
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsTrue(backend.Contains("one.txt"));
+                Assert.IsTrue(backend.Contains("two.bin"));
+                string publicationDirectory = Path.Combine(recoveryRoot, "publications");
+                Assert.IsFalse(Directory.Exists(publicationDirectory) &&
+                    Directory.GetFiles(publicationDirectory, "*.json").Length > 0);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
                 if (Directory.Exists(recoveryRoot))
                 {
                     Directory.Delete(recoveryRoot, true);

@@ -44,7 +44,7 @@ namespace TiltBrush
                 return report;
             }
 
-            string rootId = rootIdOverride ?? AndroidSafStorage.GetSelectedRootIdentity();
+            string rootId = rootIdOverride ?? backend.RootIdentity;
             List<SafTransactionRecord> records =
                 SafTransactionJournal.Load(rootId, out List<string> journalErrors);
             report.Errors.AddRange(journalErrors);
@@ -98,21 +98,21 @@ namespace TiltBrush
             StorageDocument backup = Find(listing, record.BackupDisplayName);
             StorageDocument invalid = Find(listing, invalidName);
 
-            if (IsValidTilt(backend, canonical, cancellationToken))
+            if (IsValidDocument(backend, canonical, record.Kind, cancellationToken))
             {
                 return CompleteWithCanonical(
                     backend, record, canonical, temporary, backup, invalid, report,
                     cancellationToken);
             }
 
-            if (IsValidTilt(backend, backup, cancellationToken))
+            if (IsValidDocument(backend, backup, record.Kind, cancellationToken))
             {
                 return RestoreDocument(
                     backend, record, canonical, backup, temporary, invalid, invalidName,
                     report, cancellationToken);
             }
 
-            if (IsValidTilt(backend, temporary, cancellationToken))
+            if (IsValidDocument(backend, temporary, record.Kind, cancellationToken))
             {
                 return RestoreDocument(
                     backend, record, canonical, temporary, backup, invalid, invalidName,
@@ -121,7 +121,7 @@ namespace TiltBrush
 
             MarkPending(
                 record,
-                "No validated canonical, backup, or temporary .tilt document was found.",
+                "No validated canonical, backup, or temporary document was found.",
                 report);
             return false;
         }
@@ -216,7 +216,7 @@ namespace TiltBrush
                 DateTime.Now,
                 source.ProviderFlags,
                 record.RelativePath);
-            if (!IsValidTilt(backend, restored, cancellationToken))
+            if (!IsValidDocument(backend, restored, record.Kind, cancellationToken))
             {
                 MarkPending(record, "Restored SAF document failed validation.", report);
                 return false;
@@ -227,9 +227,10 @@ namespace TiltBrush
                 cancellationToken);
         }
 
-        private static bool IsValidTilt(
+        private static bool IsValidDocument(
             IUserStorageBackend backend,
             StorageDocument document,
+            string transactionKind,
             CancellationToken cancellationToken)
         {
             if (document == null || document.IsDirectory)
@@ -241,7 +242,12 @@ namespace TiltBrush
                 using (Stream stream = backend.OpenRead(
                     document.DocumentId, requireSeekable: true, cancellationToken))
                 {
-                    return TiltFile.IsHeaderValid(stream, document.DisplayName);
+                    if (transactionKind == "tilt-replacement" ||
+                        transactionKind == "sketch-replacement")
+                    {
+                        return TiltFile.IsHeaderValid(stream, document.DisplayName);
+                    }
+                    return stream.CanRead;
                 }
             }
             catch (Exception e) when (
