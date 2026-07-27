@@ -307,7 +307,8 @@ namespace TiltBrush
                 _ => throw new ArgumentOutOfRangeException(nameof(path), $"Unsupported audio type: {path}.")
             };
 
-            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, audioType))
+            string url = new Uri(path).AbsoluteUri;
+            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
                 uwr.SendWebRequest();
 
