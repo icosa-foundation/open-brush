@@ -224,6 +224,8 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
+        private readonly Func<string> m_Materialize;
+        internal string CatalogIdentity { get; }
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -295,6 +297,16 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            CatalogIdentity = relativePath;
+            Init();
+        }
+
+        public Model(
+            string relativePath, string catalogIdentity, Func<string> materialize)
+        {
+            m_Location = Location.File(relativePath);
+            CatalogIdentity = catalogIdentity;
+            m_Materialize = materialize;
             Init();
         }
 
@@ -302,6 +314,7 @@ namespace TiltBrush
         public Model(string assetId, string path)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            CatalogIdentity = $"IcosaAsset:{assetId}:{path}";
             Init();
         }
 
@@ -893,6 +906,29 @@ namespace TiltBrush
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
+
+                if (isLocal && m_Materialize != null)
+                {
+                    try
+                    {
+                        string materializedPath = await Task.Run(m_Materialize);
+                        if (!string.Equals(
+                                materializedPath,
+                                m_Location.AbsolutePath,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new IOException(
+                                $"Materialized model path did not match its catalog path: " +
+                                $"{RelativePath}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"SAF_MATERIALIZE Could not materialize {RelativePath}: {e}");
+                        m_LoadError = new LoadError("Storage error", e.Message);
+                        return;
+                    }
+                }
 
                 string ext = m_Location.Extension;
                 // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time

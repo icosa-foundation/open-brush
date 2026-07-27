@@ -37,7 +37,8 @@ namespace TiltBrush
         public override void ChangeDirectory(string newPath)
         {
             m_CurrentBackgroundImagesDirectory = newPath;
-            if (Directory.Exists(m_CurrentBackgroundImagesDirectory))
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                Directory.Exists(m_CurrentBackgroundImagesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentBackgroundImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -51,6 +52,8 @@ namespace TiltBrush
         }
 
         public override string HomeDirectory => App.BackgroundImagesLibraryPath();
+        protected override StorageArea StorageAreaKind =>
+            StorageArea.MediaLibraryBackgroundImages;
         public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == HomeDirectory;
 
         public override bool IsSubDirectoryOfHome()

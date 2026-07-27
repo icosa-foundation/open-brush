@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -44,11 +45,12 @@ namespace TiltBrush
         private int m_InCompositorLoad;
         private bool m_RunningImageCacheCoroutine;
         private bool m_ResetImageEnumeration;
+        private bool m_SafQueryInProgress;
 
         [SerializeField] private Texture2D m_ErrorImage;
         [SerializeField] protected string[] m_DefaultImages;
 
-        public bool IsScanning => m_RunningImageCacheCoroutine;
+        public bool IsScanning => m_RunningImageCacheCoroutine || m_SafQueryInProgress;
 
         public Texture2D ErrorImage { get { return m_ErrorImage; } }
         public int TexturesCreatedThisFrame
@@ -77,7 +79,8 @@ namespace TiltBrush
         {
             m_CurrentImagesDirectory = newPath;
 
-            if (Directory.Exists(m_CurrentImagesDirectory))
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                Directory.Exists(m_CurrentImagesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -92,6 +95,7 @@ namespace TiltBrush
         }
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
+        protected virtual StorageArea StorageAreaKind => StorageArea.MediaLibraryImages;
 
         public virtual bool IsHomeDirectory()
         {
@@ -375,8 +379,14 @@ namespace TiltBrush
         // Preserves items if they're still in the directory.
         protected void _ProcessReferenceDirectory_Impl(string imageDir, bool userOverlay = true)
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                ProcessSafReferenceDirectory(imageDir, userOverlay);
+                return;
+            }
+
             m_DirNeedsProcessing = false;
-            var oldImagesByPath = m_Images.ToDictionary(image => image.FilePath);
+            var oldImagesByPath = m_Images.ToDictionary(image => image.CatalogIdentity);
 
             // If we changed a file, pretend like we don't have it.
             if (m_ChangedFile != null)
@@ -447,6 +457,159 @@ namespace TiltBrush
             {
                 CatalogChanged();
             }
+        }
+
+        private void ProcessSafReferenceDirectory(string imageDir, bool userOverlay)
+        {
+            if (m_SafQueryInProgress)
+            {
+                m_DirNeedsProcessing = true;
+                return;
+            }
+            m_DirNeedsProcessing = false;
+            StartCoroutine(QuerySafReferenceDirectory(imageDir, userOverlay));
+        }
+
+        private IEnumerator<object> QuerySafReferenceDirectory(
+            string imageDir, bool userOverlay)
+        {
+            m_SafQueryInProgress = true;
+            string relativeDirectory;
+            if (!TryGetRelativeDirectory(HomeDirectory, imageDir, out relativeDirectory))
+            {
+                Debug.LogError($"SAF_CATALOG Image directory is outside its storage area: {imageDir}");
+                m_SafQueryInProgress = false;
+                yield break;
+            }
+
+            IUserStorageBackend backend = UserStorage.Backend;
+            var query = new Future<StorageDirectoryResult>(
+                () => backend.List(
+                    StorageAreaKind, relativeDirectory, CancellationToken.None),
+                cleanupFunction: null,
+                longRunning: true);
+            StorageDirectoryResult listing = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = query.TryGetResult(out listing);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_CATALOG Image query failed; retaining the previous catalog: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SafQueryInProgress = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!listing.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_CATALOG Image query failed; retaining the previous catalog: " +
+                    $"{listing.Code} {listing.Error}");
+                m_SafQueryInProgress = false;
+                yield break;
+            }
+
+            var oldImages = m_Images.ToDictionary(image => image.CatalogIdentity);
+            var nextImages = new List<ReferenceImage>();
+            foreach (StorageDocument document in listing.Documents)
+            {
+                if (document.IsDirectory ||
+                    !ValidExtension(Path.GetExtension(document.DisplayName).ToLowerInvariant()))
+                {
+                    continue;
+                }
+
+                string catalogIdentity =
+                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                if (oldImages.TryGetValue(catalogIdentity, out ReferenceImage existing))
+                {
+                    nextImages.Add(existing);
+                    oldImages.Remove(catalogIdentity);
+                    continue;
+                }
+
+                StorageDocumentId documentId = document.DocumentId;
+                string displayPath = backend.GetMaterializationPath(documentId);
+                nextImages.Add(new ReferenceImage(
+                    displayPath,
+                    catalogIdentity,
+                    () => backend.OpenRead(
+                        documentId, requireSeekable: false, CancellationToken.None),
+                    () => backend.Materialize(
+                        documentId, MaterializationScope.File, CancellationToken.None),
+                    document.Size));
+            }
+
+            foreach (ReferenceImage removed in oldImages.Values)
+            {
+                removed.Unload();
+            }
+            if (oldImages.Count > 0)
+            {
+                Resources.UnloadUnusedAssets();
+            }
+
+            m_Images = nextImages;
+            m_RequestedLoads.Clear();
+            m_SafQueryInProgress = false;
+            StartImageCacheLoading(userOverlay);
+            CatalogChanged?.Invoke();
+        }
+
+        private void StartImageCacheLoading(bool userOverlay)
+        {
+            if (m_RunningImageCacheCoroutine)
+            {
+                m_ResetImageEnumeration = true;
+                return;
+            }
+
+            m_RunningImageCacheCoroutine = true;
+            if (userOverlay)
+            {
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.LoadImages,
+                        LoadAvailableImageCaches(),
+                        fadeDuration: 0.25f));
+            }
+            else
+            {
+                StartCoroutine(LoadAvailableImageCaches());
+            }
+        }
+
+        private static bool TryGetRelativeDirectory(
+            string root, string directory, out string relativeDirectory)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullRoot, fullDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = "";
+                return true;
+            }
+
+            string prefix = fullRoot + Path.DirectorySeparatorChar;
+            if (!fullDirectory.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = null;
+                return false;
+            }
+            relativeDirectory = fullDirectory.Substring(prefix.Length).Replace('\\', '/');
+            return true;
         }
 
         protected virtual bool ValidExtension(string ext)

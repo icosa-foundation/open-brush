@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -57,7 +58,8 @@ namespace TiltBrush
 
             StartCoroutine(ScanReferenceDirectory());
 
-            if (Directory.Exists(m_CurrentVideoDirectory))
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                Directory.Exists(m_CurrentVideoDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -93,7 +95,10 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
-            m_FileWatcher.EnableRaisingEvents = false;
+            if (m_FileWatcher != null)
+            {
+                m_FileWatcher.EnableRaisingEvents = false;
+            }
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)
@@ -144,6 +149,15 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory()
         {
             m_ScanningDirectory = true;
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                foreach (object item in ScanSafReferenceDirectory())
+                {
+                    yield return item;
+                }
+                yield break;
+            }
+
             HashSet<string> changedSet = null;
             // We do a switcheroo on the changed list here so that there isn't a conflict with it
             // if a filewatch callback happens.
@@ -191,6 +205,151 @@ namespace TiltBrush
             {
                 DebugListVideos();
             }
+        }
+
+        private IEnumerable<object> ScanSafReferenceDirectory()
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string relativeDirectory;
+            if (!TryGetRelativeDirectory(
+                    HomeDirectory, m_CurrentVideoDirectory, out relativeDirectory))
+            {
+                Debug.LogError(
+                    $"SAF_CATALOG Video directory is outside its storage area: " +
+                    $"{m_CurrentVideoDirectory}");
+                m_ScanningDirectory = false;
+                yield break;
+            }
+
+            var listingFuture = new Future<List<StorageDocument>>(
+                () => ListSafFilesRecursively(
+                    backend, StorageArea.MediaLibraryVideos, relativeDirectory),
+                cleanupFunction: null,
+                longRunning: true);
+            List<StorageDocument> documents = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out documents);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_CATALOG Video query failed; retaining the previous catalog: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_ScanningDirectory = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+
+            var oldVideos = m_Videos.ToDictionary(video => video.CatalogIdentity);
+            var nextVideos = new List<ReferenceVideo>();
+            var newVideos = new List<ReferenceVideo>();
+            foreach (StorageDocument document in documents)
+            {
+                if (!m_supportedVideoExtensions.Contains(
+                        Path.GetExtension(document.DisplayName)))
+                {
+                    continue;
+                }
+
+                string identity =
+                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                if (oldVideos.TryGetValue(identity, out ReferenceVideo existing))
+                {
+                    nextVideos.Add(existing);
+                    oldVideos.Remove(identity);
+                    continue;
+                }
+
+                StorageDocumentId documentId = document.DocumentId;
+                string path = backend.GetMaterializationPath(documentId);
+                var video = new ReferenceVideo(
+                    path,
+                    identity,
+                    () => backend.Materialize(
+                        documentId, MaterializationScope.File, CancellationToken.None));
+                nextVideos.Add(video);
+                newVideos.Add(video);
+            }
+
+            foreach (ReferenceVideo removed in oldVideos.Values)
+            {
+                removed.Dispose();
+            }
+            m_Videos = nextVideos;
+
+            TimeSpan interval = TimeSpan.FromSeconds(4);
+            DateTime nextRefresh = DateTime.Now + interval;
+            foreach (ReferenceVideo video in newVideos)
+            {
+                if (DateTime.Now > nextRefresh)
+                {
+                    CatalogChanged?.Invoke();
+                    nextRefresh = DateTime.Now + interval;
+                }
+                yield return video.Initialize();
+            }
+
+            m_ScanningDirectory = false;
+            CatalogChanged?.Invoke();
+        }
+
+        private static List<StorageDocument> ListSafFilesRecursively(
+            IUserStorageBackend backend, StorageArea area, string relativeDirectory)
+        {
+            var files = new List<StorageDocument>();
+            StorageDirectoryResult listing = backend.List(
+                area, relativeDirectory, CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException($"{listing.Code}: {listing.Error}");
+            }
+            foreach (StorageDocument document in listing.Documents)
+            {
+                if (document.IsDirectory)
+                {
+                    string childDirectory = string.IsNullOrEmpty(relativeDirectory)
+                        ? document.DisplayName
+                        : $"{relativeDirectory}/{document.DisplayName}";
+                    files.AddRange(ListSafFilesRecursively(
+                        backend, area, childDirectory));
+                }
+                else
+                {
+                    files.Add(document);
+                }
+            }
+            return files;
+        }
+
+        private static bool TryGetRelativeDirectory(
+            string root, string directory, out string relativeDirectory)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullRoot, fullDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = "";
+                return true;
+            }
+            string prefix = fullRoot + Path.DirectorySeparatorChar;
+            if (!fullDirectory.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = null;
+                return false;
+            }
+            relativeDirectory = fullDirectory.Substring(prefix.Length).Replace('\\', '/');
+            return true;
         }
 
         /// Gets a video form the catalog, given its filename. Returns null if no such video is found.

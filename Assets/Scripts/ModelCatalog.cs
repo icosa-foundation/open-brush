@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -49,15 +50,22 @@ namespace TiltBrush
         private string m_ChangedFile;
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
+        private bool m_SafScanInProgress;
 
         public bool IsScanning
         {
-            get { return false; } // ModelCatalog has no background processing.
+            get { return m_SafScanInProgress; }
         }
 
         public int ItemCount
         {
-            get { return m_OrderedModelNames[m_CurrentModelsDirectory].Count; }
+            get
+            {
+                return m_OrderedModelNames.TryGetValue(
+                    m_CurrentModelsDirectory, out List<string> models)
+                    ? models.Count
+                    : 0;
+            }
         }
 
         public IEnumerable<TiltModels75> MissingModels
@@ -129,7 +137,12 @@ namespace TiltBrush
             }
 
             m_FileWatchers = new List<FileWatcher>();
-            foreach (var directory in GetModelDirectories())
+            IEnumerable<string> watchedDirectories =
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework
+                    ? new[] { App.BlocksModelLibraryPath() }
+                    : GetModelDirectories();
+            foreach (var directory in watchedDirectories.Where(
+                         path => !string.IsNullOrEmpty(path)))
             {
                 Directory.CreateDirectory(directory);
                 var watcher = new FileWatcher(directory)
@@ -216,7 +229,8 @@ namespace TiltBrush
 
         public Model GetModelAtIndex(int i)
         {
-            return m_ModelsByRelativePath[m_OrderedModelNames[m_CurrentModelsDirectory][i]];
+            return m_ModelsByRelativePath[
+                m_OrderedModelNames[m_CurrentModelsDirectory][i]];
         }
 
         public void LoadModels()
@@ -266,6 +280,15 @@ namespace TiltBrush
 
         public void LoadModelsForNewDirectory(string path)
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                if (!m_SafScanInProgress)
+                {
+                    StartCoroutine(LoadSafModelsForNewDirectory(path));
+                }
+                return;
+            }
+
             LoadModels();
             // Get the root directory that 'path' belongs to
             var pathRoot = GetModelRoot(path) ?? HomeDirectory;
@@ -324,7 +347,10 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
-            LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            if (!m_SafScanInProgress)
+            {
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            }
         }
 
         void Update()
@@ -403,6 +429,172 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        private sealed class SafModelRecord
+        {
+            public StorageDocument Document;
+            public string RelativePath;
+        }
+
+        private IEnumerator<object> LoadSafModelsForNewDirectory(string path)
+        {
+            m_SafScanInProgress = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            var scan = new Future<List<SafModelRecord>>(
+                () => ListSafModelsRecursively(backend, ""),
+                cleanupFunction: null,
+                longRunning: true);
+            List<SafModelRecord> records = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = scan.TryGetResult(out records);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_CATALOG Model query failed; retaining the previous catalog: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SafScanInProgress = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+
+            Dictionary<string, Model> previous = m_ModelsByRelativePath;
+            var previousByIdentity = previous.Values
+                .GroupBy(model => model.CatalogIdentity)
+                .ToDictionary(group => group.Key, group => group.First());
+            m_ModelsByRelativePath = new Dictionary<string, Model>();
+            m_ModelRootsByRelativePath.Clear();
+
+            string blocksRoot = App.BlocksModelLibraryPath();
+            var oldBlocks = new Dictionary<string, Model>(previous);
+            ProcessDirectory(blocksRoot, oldBlocks, recurse: true);
+
+            HashSet<string> supportedExtensions = GetSupportedExtensions();
+            foreach (SafModelRecord record in records)
+            {
+                string extension = Path.GetExtension(record.RelativePath).ToLowerInvariant();
+                if (!supportedExtensions.Contains(extension))
+                {
+                    continue;
+                }
+
+                string identity =
+                    $"{record.Document.DocumentId.Value}|" +
+                    $"{record.Document.LastModified:o}|{record.Document.Size}";
+                if (!previousByIdentity.TryGetValue(identity, out Model model))
+                {
+                    StorageDocumentId documentId = record.Document.DocumentId;
+                    model = new Model(
+                        record.RelativePath,
+                        identity,
+                        () => backend.Materialize(
+                            documentId,
+                            MaterializationScope.DependencyTree,
+                            CancellationToken.None));
+                }
+                m_ModelsByRelativePath.TryAdd(model.RelativePath, model);
+                m_ModelRootsByRelativePath[model.RelativePath] = HomeDirectory;
+            }
+
+            var retained = new HashSet<Model>(m_ModelsByRelativePath.Values);
+            foreach (Model oldModel in previous.Values.Distinct())
+            {
+                if (!retained.Contains(oldModel) && oldModel.m_ModelParent != null)
+                {
+                    Destroy(oldModel.m_ModelParent.gameObject);
+                }
+            }
+            if (previous.Values.Any(model => !retained.Contains(model)))
+            {
+                Resources.UnloadUnusedAssets();
+            }
+
+            PopulateOrderedModels(m_CurrentModelsDirectory);
+            m_FolderChanged = false;
+            m_SafScanInProgress = false;
+            CatalogChanged?.Invoke();
+        }
+
+        private static List<SafModelRecord> ListSafModelsRecursively(
+            IUserStorageBackend backend, string relativeDirectory)
+        {
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.MediaLibraryModels,
+                relativeDirectory,
+                CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException($"{listing.Code}: {listing.Error}");
+            }
+
+            var records = new List<SafModelRecord>();
+            foreach (StorageDocument document in listing.Documents)
+            {
+                string relativePath = string.IsNullOrEmpty(relativeDirectory)
+                    ? document.DisplayName
+                    : Path.Combine(relativeDirectory, document.DisplayName);
+                if (document.IsDirectory)
+                {
+                    records.AddRange(ListSafModelsRecursively(
+                        backend, relativePath.Replace('\\', '/')));
+                }
+                else
+                {
+                    records.Add(new SafModelRecord
+                    {
+                        Document = document,
+                        RelativePath = relativePath,
+                    });
+                }
+            }
+            return records;
+        }
+
+        private void PopulateOrderedModels(string path)
+        {
+            string pathRoot = GetModelRoot(path) ?? HomeDirectory;
+            string blocksRoot = App.BlocksModelLibraryPath();
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                path.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+            List<string> modelsInDirectory = m_ModelsByRelativePath.Keys.Where(relativePath =>
+            {
+                if (!m_ModelRootsByRelativePath.TryGetValue(
+                        relativePath, out string modelRoot) ||
+                    modelRoot != pathRoot)
+                {
+                    return false;
+                }
+                if (isBlocksRoot && modelRoot == blocksRoot)
+                {
+                    return true;
+                }
+                return Path.GetDirectoryName(Path.Join(modelRoot, relativePath)) == path;
+            }).ToList();
+            modelsInDirectory.Sort();
+            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
+        }
+
+        private static HashSet<string> GetSupportedExtensions()
+        {
+            var extensions = new HashSet<string>
+                { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+#if USD_SUPPORTED
+            extensions.UnionWith(new[] { ".usda", ".usdc", ".usd" });
+#endif
+#if FBX_SUPPORTED
+            extensions.Add(".fbx");
+#endif
+            return extensions;
         }
 
         /// GetModel, for .tilt files written by TB 7.5 and up
