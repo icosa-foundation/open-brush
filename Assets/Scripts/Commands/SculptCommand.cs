@@ -77,7 +77,6 @@ namespace TiltBrush
                 return false;
             }
 
-            m_Children.Add(other);
             return true;
         }
     }
