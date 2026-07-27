@@ -238,8 +238,8 @@ namespace TiltBrush
             return m_Geometry.NumVerts + nVert <= max_verts;
         }
 
-        static Bounds GetBoundsFor(List<Vector3> aVert, int iVert, int nVert,
-                                   TrTransform? leftTransform = null)
+        internal static Bounds GetBoundsFor(List<Vector3> aVert, int iVert, int nVert,
+                                            TrTransform? leftTransform = null)
         {
             return GetBoundsFor(aVert.GetBackingArray(), iVert, nVert, leftTransform);
         }

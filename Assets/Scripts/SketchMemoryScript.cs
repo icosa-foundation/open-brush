@@ -1243,6 +1243,7 @@ namespace TiltBrush
                 stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
             }
 
+            stroke.m_BatchSubset.RecalculateBounds();
             stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
         }
         //

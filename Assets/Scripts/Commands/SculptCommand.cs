@@ -22,6 +22,7 @@ namespace TiltBrush
     {
 
         private Batch m_TargetBatch;
+        private BatchSubset m_TargetSubset;
         private List<Vector3> m_OldVerts;
         private List<Vector3> m_NewVerts;
         private int m_StartIndex;
@@ -32,6 +33,7 @@ namespace TiltBrush
             BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent)
         {
             m_TargetBatch = batchSubset.m_ParentBatch;
+            m_TargetSubset = batchSubset;
             m_NewVerts = newVerts;
             m_VertLength = newVerts.Count;
             m_OldVerts = m_TargetBatch.m_Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
@@ -49,6 +51,7 @@ namespace TiltBrush
                 m_TargetBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
             }
 
+            m_TargetSubset.RecalculateBounds();
             m_TargetBatch.DelayedUpdateMesh();
         }
 
