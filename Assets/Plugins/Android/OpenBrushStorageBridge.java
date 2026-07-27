@@ -60,6 +60,67 @@ public class OpenBrushStorageBridge {
         }
     }
 
+    public static final class DirectoryQueryResult {
+        public final int code;
+        public final String error;
+        public final String[] documentUris;
+        public final String[] parentDocumentUris;
+        public final String[] displayNames;
+        public final String[] mimeTypes;
+        public final boolean[] directories;
+        public final long[] sizes;
+        public final boolean[] hasSizes;
+        public final long[] lastModified;
+        public final boolean[] hasLastModified;
+        public final long[] flags;
+        public final String[] relativeDisplayPaths;
+
+        DirectoryQueryResult(int code, String error, ArrayList<DocumentRow> rows) {
+            this.code = code;
+            this.error = error == null ? "" : error;
+            int count = rows == null ? 0 : rows.size();
+            documentUris = new String[count];
+            parentDocumentUris = new String[count];
+            displayNames = new String[count];
+            mimeTypes = new String[count];
+            directories = new boolean[count];
+            sizes = new long[count];
+            hasSizes = new boolean[count];
+            lastModified = new long[count];
+            hasLastModified = new boolean[count];
+            flags = new long[count];
+            relativeDisplayPaths = new String[count];
+            for (int i = 0; i < count; ++i) {
+                DocumentRow row = rows.get(i);
+                documentUris[i] = row.documentUri;
+                parentDocumentUris[i] = row.parentDocumentUri;
+                displayNames[i] = row.displayName;
+                mimeTypes[i] = row.mimeType;
+                directories[i] = row.directory;
+                sizes[i] = row.size;
+                hasSizes[i] = row.hasSize;
+                lastModified[i] = row.lastModified;
+                hasLastModified[i] = row.hasLastModified;
+                flags[i] = row.flags;
+                relativeDisplayPaths[i] = row.relativeDisplayPath;
+            }
+        }
+    }
+
+    private static final class DocumentRow {
+        String documentUri;
+        String parentDocumentUri;
+        String displayName;
+        String mimeType;
+        boolean directory;
+        long size;
+        boolean hasSize;
+        long lastModified;
+        boolean hasLastModified;
+        long flags;
+        String relativeDisplayPath;
+    }
+
     public static void requestOpenBrushFolder(Activity activity) {
         Intent intent = new Intent(activity, OpenBrushStorageActivity.class);
         activity.startActivity(intent);
@@ -120,6 +181,86 @@ public class OpenBrushStorageBridge {
 
     public static boolean ensureDirectory(Context context, String relativePath) {
         return ensureDirectoryUri(context, relativePath) != null;
+    }
+
+    public static DirectoryQueryResult queryDirectory(Context context, String relativePath) {
+        final int success = 0;
+        final int notFound = 1;
+        final int notReady = 2;
+        final int permissionDenied = 3;
+        final int providerUnavailable = 5;
+        final int invalidPath = 6;
+        final int failed = 7;
+
+        String normalized = normalize(relativePath);
+        if (!isSafeRelativePath(normalized)) {
+            return new DirectoryQueryResult(
+                    invalidPath, "Invalid shared-storage path", null);
+        }
+
+        Uri treeUri = getTreeUri(context);
+        if (treeUri == null) {
+            return new DirectoryQueryResult(
+                    notReady, "Open Brush folder is unavailable", null);
+        }
+
+        DocumentLookupResult lookup = findDocumentUriResult(context, normalized);
+        if (lookup.error != null) {
+            int code = lookup.error.toLowerCase().contains("permission")
+                    ? permissionDenied
+                    : providerUnavailable;
+            return new DirectoryQueryResult(code, lookup.error, null);
+        }
+        if (lookup.uri == null) {
+            return new DirectoryQueryResult(
+                    notFound, "Shared-storage directory does not exist", null);
+        }
+
+        ContentResolver resolver = context.getContentResolver();
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                treeUri, DocumentsContract.getDocumentId(lookup.uri));
+        ArrayList<DocumentRow> rows = new ArrayList<>();
+        String[] projection = new String[]{
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_SIZE,
+                DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                DocumentsContract.Document.COLUMN_FLAGS
+        };
+
+        try (Cursor cursor = resolver.query(childrenUri, projection, null, null, null)) {
+            if (cursor == null) {
+                return new DirectoryQueryResult(
+                        providerUnavailable, "Shared-storage query returned no result", null);
+            }
+            while (cursor.moveToNext()) {
+                DocumentRow row = new DocumentRow();
+                String documentId = cursor.getString(0);
+                row.documentUri = DocumentsContract.buildDocumentUriUsingTree(
+                        treeUri, documentId).toString();
+                row.parentDocumentUri = lookup.uri.toString();
+                row.displayName = emptyIfNull(cursor.getString(1));
+                row.mimeType = emptyIfNull(cursor.getString(2));
+                row.directory = DocumentsContract.Document.MIME_TYPE_DIR.equals(row.mimeType);
+                row.hasSize = !cursor.isNull(3);
+                row.size = row.hasSize ? cursor.getLong(3) : 0;
+                row.hasLastModified = !cursor.isNull(4);
+                row.lastModified = row.hasLastModified ? cursor.getLong(4) : 0;
+                row.flags = cursor.isNull(5) ? 0 : cursor.getLong(5);
+                row.relativeDisplayPath = normalized.length() == 0
+                        ? row.displayName
+                        : normalized + "/" + row.displayName;
+                rows.add(row);
+            }
+            return new DirectoryQueryResult(success, null, rows);
+        } catch (SecurityException e) {
+            return new DirectoryQueryResult(permissionDenied, formatProviderError(
+                    "Permission denied while querying shared storage", e), null);
+        } catch (Exception e) {
+            return new DirectoryQueryResult(failed, formatProviderError(
+                    "Failed to query shared storage", e), null);
+        }
     }
 
     public static DescriptorOpenResult openFileDescriptor(
@@ -650,6 +791,10 @@ public class OpenBrushStorageBridge {
         return detail == null || detail.length() == 0
                 ? prefix
                 : prefix + ": " + detail;
+    }
+
+    private static String emptyIfNull(String value) {
+        return value == null ? "" : value;
     }
 
     private static DocumentLookupResult findDocumentUriResult(

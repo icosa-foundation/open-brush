@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Win32.SafeHandles;
 using UnityEngine;
@@ -78,6 +79,91 @@ namespace TiltBrush
             return bridge.CallStatic<bool>("ensureDirectory", GetActivity(), relativePath);
 #else
             return true;
+#endif
+        }
+
+        public static StorageDirectoryResult QueryDirectory(string relativePath)
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            try
+            {
+                using var bridge = new AndroidJavaClass(kBridgeClass);
+                using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                    "queryDirectory", GetActivity(), relativePath);
+                if (result == null)
+                {
+                    return StorageDirectoryResult.Failed(
+                        StorageResultCode.ProviderUnavailable,
+                        "Provider returned no directory-query result.");
+                }
+
+                var code = (StorageResultCode)result.Get<int>("code");
+                string error = result.Get<string>("error");
+                if (code != StorageResultCode.Success)
+                {
+                    return StorageDirectoryResult.Failed(code, error);
+                }
+
+                string[] documentUris = result.Get<string[]>("documentUris");
+                string[] parentDocumentUris = result.Get<string[]>("parentDocumentUris");
+                string[] displayNames = result.Get<string[]>("displayNames");
+                string[] mimeTypes = result.Get<string[]>("mimeTypes");
+                bool[] directories = result.Get<bool[]>("directories");
+                long[] sizes = result.Get<long[]>("sizes");
+                bool[] hasSizes = result.Get<bool[]>("hasSizes");
+                long[] lastModified = result.Get<long[]>("lastModified");
+                bool[] hasLastModified = result.Get<bool[]>("hasLastModified");
+                long[] flags = result.Get<long[]>("flags");
+                string[] relativeDisplayPaths = result.Get<string[]>("relativeDisplayPaths");
+
+                int count = documentUris?.Length ?? 0;
+                if (!HaveLength(
+                        count,
+                        parentDocumentUris,
+                        displayNames,
+                        mimeTypes,
+                        directories,
+                        sizes,
+                        hasSizes,
+                        lastModified,
+                        hasLastModified,
+                        flags,
+                        relativeDisplayPaths))
+                {
+                    return StorageDirectoryResult.Failed(
+                        StorageResultCode.ProviderUnavailable,
+                        "Provider returned inconsistent directory-query columns.");
+                }
+
+                var documents = new List<StorageDocument>(count);
+                for (int i = 0; i < count; ++i)
+                {
+                    DateTime? modified = hasLastModified[i]
+                        ? UnixMillisecondsToLocalDateTime(lastModified[i])
+                        : (DateTime?)null;
+                    documents.Add(new StorageDocument(
+                        new StorageDocumentId(documentUris[i]),
+                        new StorageDocumentId(parentDocumentUris[i]),
+                        displayNames[i],
+                        mimeTypes[i],
+                        directories[i],
+                        hasSizes[i] ? sizes[i] : (long?)null,
+                        modified,
+                        flags[i],
+                        relativeDisplayPaths[i]));
+                }
+                return StorageDirectoryResult.Succeeded(documents);
+            }
+            catch (Exception e)
+            {
+                return StorageDirectoryResult.Failed(
+                    StorageResultCode.ProviderUnavailable,
+                    $"Directory query failed: {e.Message}");
+            }
+#else
+            return StorageDirectoryResult.Failed(
+                StorageResultCode.NotReady,
+                "SAF directory queries are unavailable on this platform.");
 #endif
         }
 
@@ -378,6 +464,25 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private static bool HaveLength(int expected, params Array[] arrays)
+        {
+            foreach (Array array in arrays)
+            {
+                if (array == null || array.Length != expected)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static DateTime UnixMillisecondsToLocalDateTime(long milliseconds)
+        {
+            return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                .AddMilliseconds(milliseconds)
+                .ToLocalTime();
+        }
+
         private static bool TryCreateFileStream(
             AndroidJavaObject result,
             FileAccess access,
