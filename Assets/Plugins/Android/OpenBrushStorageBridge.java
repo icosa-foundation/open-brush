@@ -612,7 +612,11 @@ public class OpenBrushStorageBridge {
                 null,
                 null,
                 null)) {
-            while (cursor != null && cursor.moveToNext()) {
+            if (cursor == null) {
+                setJobError(job, "Shared-storage query returned no result");
+                return false;
+            }
+            while (cursor.moveToNext()) {
                 Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, cursor.getString(0));
                 String childName = cursor.getString(1);
                 String mimeType = cursor.getString(2);
