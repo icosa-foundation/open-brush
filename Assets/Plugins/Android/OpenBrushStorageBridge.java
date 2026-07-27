@@ -332,12 +332,17 @@ public class OpenBrushStorageBridge {
     }
 
     public static boolean deleteTreeChild(Context context, String relativePath) {
-        Uri target = findDocumentUri(context, normalize(relativePath));
-        if (target == null) {
+        DocumentLookupResult targetLookup = findDocumentUriResult(
+                context, normalize(relativePath));
+        if (targetLookup.error != null) {
+            return false;
+        }
+        if (targetLookup.uri == null) {
             return true;
         }
         try {
-            return DocumentsContract.deleteDocument(context.getContentResolver(), target);
+            return DocumentsContract.deleteDocument(
+                    context.getContentResolver(), targetLookup.uri);
         } catch (Exception e) {
             return false;
         }
