@@ -476,7 +476,8 @@ namespace TiltBrush
             GeometryPool pool = new GeometryPool();
             pool.Layout = material.VertexLayout;
             Mesh mesh;
-            if (false) // TODO (widget is TextWidget)
+            bool ownsMesh = widget is TextWidget;
+            if (ownsMesh)
             {
                 mesh = CreateQuad(((TextWidget)widget).AspectRatio.Value);
             }
@@ -484,7 +485,17 @@ namespace TiltBrush
             {
                 mesh = widgetChild.GetComponent<MeshFilter>().sharedMesh;
             }
-            pool.Append(mesh, fallbackColor: Color.white);
+            try
+            {
+                pool.Append(mesh, fallbackColor: Color.white);
+            }
+            finally
+            {
+                if (ownsMesh)
+                {
+                    UnityEngine.Object.DestroyImmediate(mesh);
+                }
+            }
             pool.ApplyTransform(
                 Matrix4x4.Scale(localScale), Matrix4x4.identity, 1f,
                 0, pool.NumVerts);
@@ -529,10 +540,17 @@ namespace TiltBrush
                 0, 1, 3,
                 1, 2, 3
             };
+            mesh.uv = new[]
+            {
+                new Vector2(0, 1),
+                new Vector2(1, 1),
+                new Vector2(1, 0),
+                new Vector2(0, 0)
+            };
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
             mesh.RecalculateTangents();
-            return new Mesh();
+            return mesh;
         }
 
         // -------------------------------------------------------------------------------------------- //
