@@ -97,8 +97,8 @@ namespace TiltBrush
                 case GeneratorTypes.GeometryData:
                     recipe.Vertices = emd.Vertices.ToList();
                     recipe.Faces = emd.Faces.ToList();
-                    recipe.FaceRoles = emd.FaceRoles.Select(r => (int)r).ToList();
-                    recipe.VertexRoles = emd.VertexRoles.Select(r => (int)r).ToList();
+                    recipe.FaceRoles = emd.FaceRoles?.Select(r => (int)r).ToList();
+                    recipe.VertexRoles = emd.VertexRoles?.Select(r => (int)r).ToList();
                     recipe.FaceTags = emd.FaceTags;
                     break;
                 // case GeneratorTypes.Johnson:
