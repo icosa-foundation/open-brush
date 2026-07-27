@@ -168,10 +168,9 @@ namespace TiltBrush
                 {
                     passthrough.hidden = true;
                     m_PassthroughEnabled = false;
-                    RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
-
                     if (CurrentEnvironment != null)
                     {
+                        RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
                         for (int i = 0; i < m_Cameras.Count; ++i)
                         {
                             if (m_Cameras[i].gameObject.activeSelf)
