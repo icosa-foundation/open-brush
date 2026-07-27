@@ -674,7 +674,10 @@ public class OpenBrushStorageBridge {
         String path = file.getAbsolutePath();
         String directoryPrefix = path + File.separator;
         for (String preservedPath : preservedPaths) {
-            if (preservedPath.equals(path) || preservedPath.startsWith(directoryPrefix)) {
+            String preservedDirectoryPrefix = preservedPath + File.separator;
+            if (preservedPath.equals(path) ||
+                    preservedPath.startsWith(directoryPrefix) ||
+                    path.startsWith(preservedDirectoryPrefix)) {
                 return true;
             }
         }
