@@ -157,6 +157,27 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
+                if (stroke.IsGeometryEnabled && stroke.m_MeshIsEdited)
+                {
+                    int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
+                    int vertCount = stroke.m_BatchSubset.m_VertLength;
+
+                    try
+                    {
+                        stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+                        List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                            .m_Vertices.GetRange(vertStartIndex, vertCount);
+                        List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                            .m_Normals.GetRange(vertStartIndex, vertCount);
+                        snapshot.sculptedGeometryData =
+                            new SculptedGeometryData(vertices, normals);
+                    }
+                    catch
+                    {
+                        // Shouldn't happen anymore
+                        Debug.LogWarning("Orphan batchsubset, skipping");
+                    }
+                }
                 if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
                 {
                     if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
@@ -174,28 +195,6 @@ namespace TiltBrush
                 {
                     // Don't use the method in SceneScript as they count deleted layers
                     snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
-
-                    // Save any sculpting modifications.
-                    if (stroke.m_MeshIsEdited)
-                    {
-                        int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
-                        int vertCount = stroke.m_BatchSubset.m_VertLength;
-
-                        try
-                        {
-                            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
-                            List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices.GetRange(vertStartIndex, vertCount);
-                            List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals.GetRange(vertStartIndex, vertCount);
-                            snapshot.sculptedGeometryData = new SculptedGeometryData(vertices, normals);
-                        }
-                        catch
-                        {
-                            // Shouldn't happen anymore
-                            Debug.LogWarning("Orphan batchsubset, skipping");
-                        }
-
-
-                    }
                     yield return snapshot;
                 }
                 else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
