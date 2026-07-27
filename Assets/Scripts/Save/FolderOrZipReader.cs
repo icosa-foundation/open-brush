@@ -55,7 +55,7 @@ namespace TiltBrush
 
         public void SetRootFolder(string subfolder)
         {
-            if (!m_Exists || !m_IsFile)
+            if (!m_Exists)
             {
                 return;
             }
@@ -63,6 +63,11 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(m_subfolder) && !m_subfolder.EndsWith("/"))
             {
                 m_subfolder += '/';
+            }
+
+            if (!m_IsFile)
+            {
+                return;
             }
 
             m_ZipEntryMap.Clear();
@@ -88,7 +93,7 @@ namespace TiltBrush
                 string filenameLower = filename.ToLowerInvariant();
                 return m_Exists && m_ZipEntryMap.ContainsKey(filenameLower);
             }
-            string path = Path.Combine(m_RootPath, filename);
+            string path = Path.Combine(m_RootPath, m_subfolder, filename);
             return File.Exists(path);
         }
 
@@ -97,6 +102,18 @@ namespace TiltBrush
             if (!m_Exists)
             {
                 return null;
+            }
+            if (!m_IsFile)
+            {
+                string rootPath = Path.Combine(m_RootPath, m_subfolder);
+                if (!Directory.Exists(rootPath))
+                {
+                    return null;
+                }
+                string match = Directory.GetFiles(rootPath, filename, SearchOption.AllDirectories)
+                    .FirstOrDefault();
+                return match?.Substring(m_RootPath.Length)
+                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             }
             string key = m_ZipEntryMap.Keys.FirstOrDefault(x => x.EndsWith(filename.ToLowerInvariant()));
             if (key != null)
@@ -123,7 +140,7 @@ namespace TiltBrush
             }
             else
             {
-                string path = Path.Combine(m_RootPath, filename);
+                string path = Path.Combine(m_RootPath, m_subfolder, filename);
                 if (File.Exists(path))
                 {
                     return new FileStream(path, FileMode.Open, FileAccess.Read);
