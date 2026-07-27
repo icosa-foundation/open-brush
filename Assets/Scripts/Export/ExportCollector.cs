@@ -138,7 +138,7 @@ namespace TiltBrush
                 {
                     var tw = (TextWidget)widget;
                     var textMesh = tw.m_TextMeshPro;
-                    var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, 0);
+                    var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, idx);
                     string texturePath = Path.Combine(textOutputDirectory, $"{guid}.png");
 
                     int width = Mathf.RoundToInt(textMesh.renderedWidth * 256);
