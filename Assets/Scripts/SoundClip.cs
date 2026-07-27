@@ -116,17 +116,19 @@ namespace TiltBrush
 
             public float Time
             {
-                get => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.time : 0f;
+                get => (m_SoundClipInitialized && m_SoundClipAudioSource.clip != null)
+                    ? (float)m_SoundClipAudioSource.time : 0f;
                 set
                 {
-                    if (m_SoundClipInitialized)
+                    if (m_SoundClipInitialized && m_SoundClipAudioSource.clip != null)
                     {
                         m_SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)m_SoundClipAudioSource.clip.length);
                     }
                 }
             }
 
-            public float Length => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.clip.length : 0f;
+            public float Length => (m_SoundClipInitialized && m_SoundClipAudioSource.clip != null)
+                ? (float)m_SoundClipAudioSource.clip.length : 0f;
 
             public bool Loop
             {
@@ -324,12 +326,24 @@ namespace TiltBrush
         {
             Error = null;
             m_Controller.m_SoundClipAudioSource.playOnAwake = false;
-            var audioClipTask = LoadClip(AbsolutePath);
-            while (!audioClipTask.IsCompleted)
+            AudioClip audioClip = null;
+            if (!string.IsNullOrEmpty(AbsolutePath))
             {
-                yield return null;
+                var audioClipTask = LoadClip(AbsolutePath);
+                while (!audioClipTask.IsCompleted)
+                {
+                    yield return null;
+                }
+                if (audioClipTask.IsFaulted)
+                {
+                    Error = audioClipTask.Exception?.GetBaseException().Message;
+                }
+                else if (!audioClipTask.IsCanceled)
+                {
+                    audioClip = audioClipTask.Result;
+                }
             }
-            m_Controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
+            m_Controller.m_SoundClipAudioSource.clip = audioClip;
             m_Controller.m_SoundClipAudioSource.loop = true;
 
             Width = 128;
@@ -337,7 +351,10 @@ namespace TiltBrush
             Aspect = 1;
 
             m_Controller.m_SoundClipAudioSource.mute = false;
-            m_Controller.m_SoundClipAudioSource.Play();
+            if (audioClip != null)
+            {
+                m_Controller.m_SoundClipAudioSource.Play();
+            }
 
             if (onCompletion != null)
             {
