@@ -273,11 +273,11 @@ namespace TiltBrush
 
         private void OnControllerDisposed(SoundClipController soundClipController)
         {
-            if (m_Controller != null && m_Controller.m_SoundClipAudioSource != null)
+            if (soundClipController.m_SoundClipAudioSource != null)
             {
-                m_Controller.m_SoundClipAudioSource.Stop();
-                UnityEngine.Object.Destroy(m_Controller.m_SoundClipAudioSource.gameObject);
-                m_Controller.m_SoundClipAudioSource = null;
+                soundClipController.m_SoundClipAudioSource.Stop();
+                soundClipController.m_SoundClipAudioSource.clip = null;
+                soundClipController.m_SoundClipAudioSource = null;
             }
         }
 
