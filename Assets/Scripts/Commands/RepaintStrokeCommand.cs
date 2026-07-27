@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -61,16 +60,9 @@ namespace TiltBrush
 
         private void ApplyColorAndBrushToObject(Stroke stroke, Color color, Guid brushGuid, float brushSize)
         {
-            stroke.m_Color = ColorPickerUtils.ClampLuminance(
-                color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
-            stroke.m_BrushGuid = brushGuid;
-            stroke.m_BrushSize = brushSize;
-            stroke.InvalidateCopy();
-            stroke.Uncreate();
-            stroke.Recreate();
-
-            // Preserve sculpting modifications when creating new stroke.
-            SculptedGeometryData sculptedGeometryData = new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
+            // Capture sculpting modifications before recreating the stroke discards its subset.
+            SculptedGeometryData sculptedGeometryData =
+                new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
             if (stroke.m_MeshIsEdited)
             {
                 var batchSubset = stroke.m_BatchSubset;
@@ -80,11 +72,16 @@ namespace TiltBrush
                 int vertLength = batchSubset.m_VertLength;
 
                 sculptedGeometryData.vertices = batchSubset.m_ParentBatch.m_Geometry
-                                                  .m_Vertices.GetRange(startIndex, vertLength);
+                    .m_Vertices.GetRange(startIndex, vertLength);
                 sculptedGeometryData.normals = batchSubset.m_ParentBatch.m_Geometry
-                                                  .m_Normals.GetRange(startIndex, vertLength);
+                    .m_Normals.GetRange(startIndex, vertLength);
             }
 
+            stroke.m_Color = ColorPickerUtils.ClampLuminance(
+                color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
+            stroke.m_BrushGuid = brushGuid;
+            stroke.m_BrushSize = brushSize;
+            stroke.InvalidateCopy();
             stroke.Uncreate();
             stroke.Recreate();
 
