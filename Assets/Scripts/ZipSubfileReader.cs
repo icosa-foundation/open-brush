@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using ICSharpCode.SharpZipLib.Zip;
+using System.IO;
 
 namespace TiltBrush
 {
@@ -31,10 +32,19 @@ namespace TiltBrush
         ZipFile m_file;
 
         public ZipSubfileReader_SharpZipLib(string zipPath, string subPath)
+            : this(File.OpenRead(zipPath), subPath)
         {
-            ZipFile zipfile = new ZipFile(zipPath);
+        }
+
+        public ZipSubfileReader_SharpZipLib(Stream zipStream, string subPath)
+        {
+            ZipFile zipfile = null;
             try
             {
+                zipfile = new ZipFile(zipStream)
+                {
+                    IsStreamOwner = true
+                };
                 ZipEntry entry = zipfile.GetEntry(subPath);
                 if (entry == null)
                 {
@@ -44,6 +54,7 @@ namespace TiltBrush
                 SetWrapped(zipfile.GetInputStream(entry), true);
                 m_file = zipfile;
                 zipfile = null;
+                zipStream = null;
             }
             finally
             {
@@ -51,6 +62,7 @@ namespace TiltBrush
                 {
                     zipfile.Close();
                 }
+                zipStream?.Dispose();
             }
         }
 
@@ -68,11 +80,19 @@ namespace TiltBrush
     public sealed class ZipSubfileReader_DotNetZip : WrappedStream
     {
         Ionic.Zip.ZipFile m_file;
+        Stream m_archiveStream;
+
         public ZipSubfileReader_DotNetZip(string zipPath, string subPath)
+            : this(File.OpenRead(zipPath), subPath)
         {
-            var zipfile = new Ionic.Zip.ZipFile(zipPath);
+        }
+
+        public ZipSubfileReader_DotNetZip(Stream zipStream, string subPath)
+        {
+            Ionic.Zip.ZipFile zipfile = null;
             try
             {
+                zipfile = Ionic.Zip.ZipFile.Read(zipStream);
                 Ionic.Zip.ZipEntry entry = zipfile[subPath];
                 if (entry == null)
                 {
@@ -81,7 +101,9 @@ namespace TiltBrush
 
                 SetWrapped(entry.OpenReader(), true);
                 m_file = zipfile;
+                m_archiveStream = zipStream;
                 zipfile = null;
+                zipStream = null;
             }
             finally
             {
@@ -89,6 +111,7 @@ namespace TiltBrush
                 {
                     zipfile.Dispose();
                 }
+                zipStream?.Dispose();
             }
         }
 
@@ -99,6 +122,11 @@ namespace TiltBrush
             {
                 m_file.Dispose();
                 m_file = null;
+            }
+            if (m_archiveStream != null)
+            {
+                m_archiveStream.Dispose();
+                m_archiveStream = null;
             }
         }
     }

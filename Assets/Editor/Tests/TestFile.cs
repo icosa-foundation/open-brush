@@ -22,6 +22,21 @@ namespace TiltBrush
 
     internal class TestFile
     {
+        private sealed class MemoryReadStreamSource : IReopenableReadStream
+        {
+            private readonly byte[] m_Data;
+
+            public MemoryReadStreamSource(byte[] data)
+            {
+                m_Data = data;
+            }
+
+            public Stream Open()
+            {
+                return new MemoryStream(m_Data, writable: false);
+            }
+        }
+
         private Stream GetReadStream(string zipfile, string subfile, bool useSharpZipLib)
         {
             if (useSharpZipLib)
@@ -126,6 +141,68 @@ namespace TiltBrush
                 WriteBuf(bw, b5000);
 
                 Assert.AreEqual(astr.ToArray(), bstr.ToArray());
+            }
+        }
+
+        [Test]
+        public void TiltArchiveWriter_WritesReadableStreamArchive()
+        {
+            byte[] expected = { 1, 2, 3, 4, 5 };
+            byte[] archive;
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                {
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
+                    {
+                        entry.Write(expected, 0, expected.Length);
+                    }
+                    writer.Complete();
+                }
+
+                Assert.IsTrue(output.CanWrite);
+                archive = output.ToArray();
+            }
+
+            using (var archiveStream = new MemoryStream(archive, writable: false))
+            {
+                Assert.IsTrue(TiltFile.IsHeaderValid(archiveStream));
+            }
+
+            using (var reader = new ZipSubfileReader_SharpZipLib(
+                new MemoryStream(archive, writable: false), TiltFile.FN_SKETCH))
+            using (var copy = new MemoryStream())
+            {
+                reader.CopyTo(copy);
+                Assert.AreEqual(expected, copy.ToArray());
+            }
+        }
+
+        [Test]
+        public void TiltFile_ReadsEntriesFromReopenableStream()
+        {
+            byte[] expected = { 9, 8, 7 };
+            byte[] archive;
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                using (Stream entry = writer.GetWriteStream(TiltFile.FN_THUMBNAIL))
+                {
+                    entry.Write(expected, 0, expected.Length);
+                }
+                archive = output.ToArray();
+            }
+
+            var tiltFile = new TiltFile(new MemoryReadStreamSource(archive), "memory.tilt");
+            Assert.IsTrue(tiltFile.IsHeaderValid());
+            using (Stream reader = tiltFile.GetReadStream(TiltFile.FN_THUMBNAIL))
+            using (var copy = new MemoryStream())
+            {
+                Assert.IsNotNull(reader);
+                reader.CopyTo(copy);
+                Assert.AreEqual(expected, copy.ToArray());
             }
         }
     }
