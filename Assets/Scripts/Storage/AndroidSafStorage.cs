@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.IO;
+using Microsoft.Win32.SafeHandles;
 using UnityEngine;
 
 namespace TiltBrush
@@ -75,6 +78,139 @@ namespace TiltBrush
             return bridge.CallStatic<bool>("ensureDirectory", GetActivity(), relativePath);
 #else
             return true;
+#endif
+        }
+
+        public static bool TryOpenSeekableReadStream(
+            string relativePath, out FileStream stream, out string error)
+        {
+            stream = null;
+            error = null;
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "openFileDescriptor", GetActivity(), relativePath, "rw");
+            return TryCreateFileStream(
+                result, FileAccess.Read, out stream, out _, out error);
+#else
+            error = "SAF file descriptors are unavailable on this platform.";
+            return false;
+#endif
+        }
+
+        public static bool TryCreateTemporaryFileStream(
+            string relativeDirectory,
+            string targetFileName,
+            string mimeType,
+            out FileStream stream,
+            out string documentUri,
+            out string error)
+        {
+            stream = null;
+            documentUri = null;
+            error = null;
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "createTemporaryFileDescriptor",
+                GetActivity(),
+                relativeDirectory,
+                targetFileName,
+                mimeType);
+            return TryCreateFileStream(
+                result, FileAccess.ReadWrite, out stream, out documentUri, out error);
+#else
+            error = "SAF file descriptors are unavailable on this platform.";
+            return false;
+#endif
+        }
+
+        public static bool DeleteDocumentUri(string documentUri)
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            return bridge.CallStatic<bool>("deleteDocumentUri", GetActivity(), documentUri);
+#else
+            return false;
+#endif
+        }
+
+        public static bool RunFileDescriptorProbe(out string report)
+        {
+            report = null;
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            FileStream stream = null;
+            string documentUri = null;
+            try
+            {
+                if (!TryCreateTemporaryFileStream(
+                        "",
+                        "openbrush-fd-probe.bin",
+                        "application/octet-stream",
+                        out stream,
+                        out documentUri,
+                        out string error))
+                {
+                    report = error;
+                    return false;
+                }
+
+                byte[] expected = { 0x4f, 0x42, 0x46, 0x44, 0x01, 0x23, 0x45, 0x67 };
+                stream.Write(expected, 0, expected.Length);
+                stream.Flush();
+                long endPosition = stream.Seek(0, SeekOrigin.End);
+                if (!stream.CanSeek || endPosition != expected.Length)
+                {
+                    report = $"Descriptor is not seekable or has unexpected length {endPosition}.";
+                    return false;
+                }
+
+                stream.Seek(0, SeekOrigin.Begin);
+                byte[] actual = new byte[expected.Length];
+                int totalRead = 0;
+                while (totalRead < actual.Length)
+                {
+                    int read = stream.Read(actual, totalRead, actual.Length - totalRead);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+                    totalRead += read;
+                }
+
+                if (totalRead != expected.Length)
+                {
+                    report = $"Descriptor returned {totalRead} of {expected.Length} probe bytes.";
+                    return false;
+                }
+                for (int i = 0; i < expected.Length; ++i)
+                {
+                    if (actual[i] != expected[i])
+                    {
+                        report = $"Descriptor probe data mismatch at byte {i}.";
+                        return false;
+                    }
+                }
+
+                report = $"Seekable detached descriptor read/write passed ({expected.Length} bytes).";
+                return true;
+            }
+            catch (Exception e)
+            {
+                report = $"{e.GetType().Name}: {e.Message}";
+                return false;
+            }
+            finally
+            {
+                stream?.Dispose();
+                if (!string.IsNullOrEmpty(documentUri) && !DeleteDocumentUri(documentUri))
+                {
+                    Debug.LogWarning("SAF_FD Failed to delete descriptor probe document.");
+                }
+            }
+#else
+            report = "SAF file descriptors are unavailable on this platform.";
+            return false;
 #endif
         }
 
@@ -242,6 +378,55 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private static bool TryCreateFileStream(
+            AndroidJavaObject result,
+            FileAccess access,
+            out FileStream stream,
+            out string documentUri,
+            out string error)
+        {
+            stream = null;
+            documentUri = null;
+            error = null;
+            if (result == null)
+            {
+                error = "Provider returned no descriptor result.";
+                return false;
+            }
+
+            int fd = result.Get<int>("fd");
+            documentUri = result.Get<string>("documentUri");
+            error = result.Get<string>("error");
+            if (fd < 0)
+            {
+                if (string.IsNullOrEmpty(error))
+                {
+                    error = "Provider returned an invalid file descriptor.";
+                }
+                return false;
+            }
+
+            var handle = new SafeFileHandle(new IntPtr(fd), ownsHandle: true);
+            try
+            {
+                stream = new FileStream(handle, access);
+            }
+            catch
+            {
+                handle.Dispose();
+                throw;
+            }
+
+            if (!stream.CanSeek)
+            {
+                stream.Dispose();
+                stream = null;
+                error = "Provider returned a non-seekable file descriptor.";
+                return false;
+            }
+            return true;
+        }
+
         private static AndroidJavaObject GetActivity()
         {
             using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");

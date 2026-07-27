@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 
 import java.io.File;
@@ -44,6 +45,18 @@ public class OpenBrushStorageBridge {
         DocumentLookupResult(Uri uri, String error) {
             this.uri = uri;
             this.error = error;
+        }
+    }
+
+    public static final class DescriptorOpenResult {
+        public final int fd;
+        public final String documentUri;
+        public final String error;
+
+        DescriptorOpenResult(int fd, Uri documentUri, String error) {
+            this.fd = fd;
+            this.documentUri = documentUri == null ? "" : documentUri.toString();
+            this.error = error == null ? "" : error;
         }
     }
 
@@ -107,6 +120,79 @@ public class OpenBrushStorageBridge {
 
     public static boolean ensureDirectory(Context context, String relativePath) {
         return ensureDirectoryUri(context, relativePath) != null;
+    }
+
+    public static DescriptorOpenResult openFileDescriptor(
+            Context context, String relativePath, String mode) {
+        if (!isSupportedDescriptorMode(mode)) {
+            return new DescriptorOpenResult(-1, null, "Unsupported file descriptor mode");
+        }
+
+        DocumentLookupResult lookup = findDocumentUriResult(
+                context, normalize(relativePath));
+        if (lookup.error != null) {
+            return new DescriptorOpenResult(-1, null, lookup.error);
+        }
+        if (lookup.uri == null) {
+            return new DescriptorOpenResult(-1, null, "Shared document does not exist");
+        }
+
+        return detachFileDescriptor(context, lookup.uri, mode);
+    }
+
+    public static DescriptorOpenResult createTemporaryFileDescriptor(
+            Context context, String relativeDirectory, String targetFileName, String mimeType) {
+        String normalizedDirectory = normalize(relativeDirectory);
+        if (!isSafeRelativePath(normalizedDirectory)
+                || targetFileName == null
+                || targetFileName.length() == 0
+                || targetFileName.contains("/")
+                || targetFileName.contains("\\")) {
+            return new DescriptorOpenResult(-1, null, "Invalid temporary document path");
+        }
+
+        Uri parent = ensureDirectoryUri(context, normalizedDirectory);
+        if (parent == null) {
+            return new DescriptorOpenResult(-1, null, "Failed to open temporary document directory");
+        }
+
+        String temporaryName = "." + targetFileName + ".openbrush-fd-"
+                + NEXT_TEMP_FILE_ID.getAndIncrement() + ".tmp";
+        Uri temporary;
+        try {
+            temporary = DocumentsContract.createDocument(
+                    context.getContentResolver(),
+                    parent,
+                    mimeType == null || mimeType.length() == 0
+                            ? "application/octet-stream"
+                            : mimeType,
+                    temporaryName);
+        } catch (Exception e) {
+            return new DescriptorOpenResult(-1, null, formatProviderError(
+                    "Failed to create temporary document", e));
+        }
+        if (temporary == null) {
+            return new DescriptorOpenResult(
+                    -1, null, "Provider returned no temporary document");
+        }
+
+        DescriptorOpenResult result = detachFileDescriptor(context, temporary, "rwt");
+        if (result.fd < 0) {
+            deleteDocumentQuietly(context.getContentResolver(), temporary);
+        }
+        return result;
+    }
+
+    public static boolean deleteDocumentUri(Context context, String documentUri) {
+        if (documentUri == null || documentUri.length() == 0) {
+            return false;
+        }
+        try {
+            return DocumentsContract.deleteDocument(
+                    context.getContentResolver(), Uri.parse(documentUri));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean writeFileFromPath(
@@ -525,6 +611,45 @@ public class OpenBrushStorageBridge {
 
     private static Uri findDocumentUri(Context context, String relativePath) {
         return findDocumentUriResult(context, relativePath).uri;
+    }
+
+    private static DescriptorOpenResult detachFileDescriptor(
+            Context context, Uri documentUri, String mode) {
+        ParcelFileDescriptor descriptor = null;
+        try {
+            descriptor = context.getContentResolver().openFileDescriptor(documentUri, mode);
+            if (descriptor == null) {
+                return new DescriptorOpenResult(
+                        -1, documentUri, "Provider returned no file descriptor");
+            }
+            int fd = descriptor.detachFd();
+            return new DescriptorOpenResult(fd, documentUri, null);
+        } catch (Exception e) {
+            return new DescriptorOpenResult(-1, documentUri, formatProviderError(
+                    "Failed to open file descriptor", e));
+        } finally {
+            if (descriptor != null) {
+                try {
+                    descriptor.close();
+                } catch (Exception ignored) {
+                    // After detachFd(), closing the ParcelFileDescriptor object does not close
+                    // the detached descriptor now owned by C#.
+                }
+            }
+        }
+    }
+
+    private static boolean isSupportedDescriptorMode(String mode) {
+        return "r".equals(mode)
+                || "rw".equals(mode)
+                || "rwt".equals(mode);
+    }
+
+    private static String formatProviderError(String prefix, Exception exception) {
+        String detail = exception.getMessage();
+        return detail == null || detail.length() == 0
+                ? prefix
+                : prefix + ": " + detail;
     }
 
     private static DocumentLookupResult findDocumentUriResult(

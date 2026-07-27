@@ -36,6 +36,7 @@ namespace TiltBrush
         private static bool m_RequestIsStartupPrompt;
         private static bool m_StartupPromptShown;
         private static bool m_PendingTransfersLoaded;
+        private static bool m_FileDescriptorProbeRun;
         private static AndroidStorageManager m_Instance;
         private static readonly List<PendingTransferRetry> m_PendingTransferRetries =
             new List<PendingTransferRetry>();
@@ -107,6 +108,7 @@ namespace TiltBrush
 
             if (AndroidSafStorage.HasOpenBrushFolder())
             {
+                RunFileDescriptorProbeOnce();
                 OpenBrushStorage.SyncSharedUserContentToLocalCache(RetryPendingTransfers);
                 yield break;
             }
@@ -170,6 +172,7 @@ namespace TiltBrush
             m_RequestIsStartupPrompt = false;
             PlayerPrefs.DeleteKey(kStartupPromptDismissedKey);
 
+            RunFileDescriptorProbeOnce();
             OpenBrushStorage.SyncSharedUserContentToLocalCache(() =>
             {
                 RetryPendingTransfers();
@@ -199,6 +202,25 @@ namespace TiltBrush
             OutputWindowScript.m_Instance?.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
             pendingCanceledAction?.Invoke();
+        }
+
+        private static void RunFileDescriptorProbeOnce()
+        {
+            if (!Debug.isDebugBuild || m_FileDescriptorProbeRun)
+            {
+                return;
+            }
+
+            m_FileDescriptorProbeRun = true;
+            bool success = AndroidSafStorage.RunFileDescriptorProbe(out string report);
+            if (success)
+            {
+                Debug.Log($"SAF_FD {report}");
+            }
+            else
+            {
+                Debug.LogError($"SAF_FD {report}");
+            }
         }
 
         public static void StartTransfer(
