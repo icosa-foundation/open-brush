@@ -65,6 +65,7 @@ namespace TiltBrush
                 m_subfolder += '/';
             }
 
+            m_ZipEntryMap.Clear();
             using (var zipFile = new ZipLibrary.ZipFile(m_RootPath))
             {
                 foreach (ZipLibrary.ZipEntry entry in zipFile)
@@ -113,7 +114,7 @@ namespace TiltBrush
             }
             if (m_IsFile)
             {
-                string filenameLower = Path.Combine(m_subfolder, filename).ToLowerInvariant();
+                string filenameLower = filename.Replace('\\', '/').ToLowerInvariant();
                 if (!m_ZipEntryMap.ContainsKey(filenameLower))
                 {
                     return null;
