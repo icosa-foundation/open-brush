@@ -36,6 +36,16 @@ public class OpenBrushStorageBridge {
         volatile String error = "";
     }
 
+    private static class DocumentLookupResult {
+        final Uri uri;
+        final String error;
+
+        DocumentLookupResult(Uri uri, String error) {
+            this.uri = uri;
+            this.error = error;
+        }
+    }
+
     public static void requestOpenBrushFolder(Activity activity) {
         Intent intent = new Intent(activity, OpenBrushStorageActivity.class);
         activity.startActivity(intent);
@@ -307,10 +317,16 @@ public class OpenBrushStorageBridge {
     private static boolean copyDirectoryToPath(
             Context context, String relativePath, String destinationDirectoryPath,
             TransferJob job, Set<String> preservedPaths) {
-        Uri source = findDocumentUri(context, normalize(relativePath));
         Uri treeUri = getTreeUri(context);
         if (treeUri == null) {
             setJobError(job, "Open Brush folder is unavailable");
+            return false;
+        }
+
+        DocumentLookupResult sourceLookup = findDocumentUriResult(
+                context, normalize(relativePath));
+        if (sourceLookup.error != null) {
+            setJobError(job, sourceLookup.error);
             return false;
         }
 
@@ -319,12 +335,12 @@ public class OpenBrushStorageBridge {
             setJobError(job, "Failed to create local cache directory");
             return false;
         }
-        if (source == null) {
+        if (sourceLookup.uri == null) {
             return reconcileLocalDirectory(destination, new HashSet<>(), preservedPaths);
         }
 
         return copyDocumentTreeToPath(
-                context, treeUri, source, destination, job, preservedPaths);
+                context, treeUri, sourceLookup.uri, destination, job, preservedPaths);
     }
     static void saveOpenBrushFolderUri(Context context, String uriString) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -440,30 +456,43 @@ public class OpenBrushStorageBridge {
     }
 
     private static Uri findDocumentUri(Context context, String relativePath) {
+        return findDocumentUriResult(context, relativePath).uri;
+    }
+
+    private static DocumentLookupResult findDocumentUriResult(
+            Context context, String relativePath) {
         Uri treeUri = getTreeUri(context);
         Uri current = getRootDocumentUri(context);
         if (treeUri == null || current == null) {
-            return null;
+            return new DocumentLookupResult(null, "Open Brush folder is unavailable");
         }
 
         String normalized = normalize(relativePath);
         if (!isSafeRelativePath(normalized)) {
-            return null;
+            return new DocumentLookupResult(null, "Invalid shared-storage path");
         }
         if (normalized.length() == 0) {
-            return current;
+            return new DocumentLookupResult(current, null);
         }
 
         for (String segment : normalized.split("/")) {
-            current = findChildDocumentUri(context, treeUri, current, segment);
-            if (current == null) {
-                return null;
+            DocumentLookupResult child = findChildDocumentUriResult(
+                    context, treeUri, current, segment);
+            if (child.uri == null) {
+                return child;
             }
+            current = child.uri;
         }
-        return current;
+        return new DocumentLookupResult(current, null);
     }
 
     private static Uri findChildDocumentUri(
+            Context context, Uri treeUri, Uri parentDocumentUri, String displayName) {
+        return findChildDocumentUriResult(
+                context, treeUri, parentDocumentUri, displayName).uri;
+    }
+
+    private static DocumentLookupResult findChildDocumentUriResult(
             Context context, Uri treeUri, Uri parentDocumentUri, String displayName) {
         ContentResolver resolver = context.getContentResolver();
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
@@ -479,16 +508,26 @@ public class OpenBrushStorageBridge {
                 null,
                 null,
                 null)) {
-            while (cursor != null && cursor.moveToNext()) {
+            if (cursor == null) {
+                return new DocumentLookupResult(null, "Shared-storage query returned no result");
+            }
+            while (cursor.moveToNext()) {
                 String childName = cursor.getString(1);
                 if (displayName.equals(childName)) {
-                    return DocumentsContract.buildDocumentUriUsingTree(treeUri, cursor.getString(0));
+                    return new DocumentLookupResult(
+                            DocumentsContract.buildDocumentUriUsingTree(
+                                    treeUri, cursor.getString(0)),
+                            null);
                 }
             }
         } catch (Exception e) {
-            return null;
+            String detail = e.getMessage();
+            String error = detail == null || detail.length() == 0
+                    ? "Failed to query shared storage"
+                    : "Failed to query shared storage: " + detail;
+            return new DocumentLookupResult(null, error);
         }
-        return null;
+        return new DocumentLookupResult(null, null);
     }
 
     private static boolean copyDocumentTreeToPath(
