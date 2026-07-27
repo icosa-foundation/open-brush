@@ -34,8 +34,15 @@ namespace TiltBrush
             base.Awake();
             m_KeyboardUI = GetComponentInChildren<KeyboardUI>();
             m_KeyboardUI.KeyPressed += KeyPressed;
-            m_KeyboardUI.AddConsoleContent(m_InitialText);
-            m_LastInput = m_InitialText;
+            BeginSession(m_InitialText);
+        }
+
+        public void BeginSession(string initialText)
+        {
+            m_KeyboardUI.Clear();
+            m_KeyboardUI.AddConsoleContent(initialText);
+            m_LastInput = initialText ?? string.Empty;
+            m_OnClose = null;
         }
 
         private void OnDestroy()
