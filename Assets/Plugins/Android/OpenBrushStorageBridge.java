@@ -26,6 +26,7 @@ public class OpenBrushStorageBridge {
     private static final String OPEN_BRUSH_FOLDER_URI = "openBrushFolderUri";
     private static final String OPEN_BRUSH_FOLDER_NAME = "Open Brush";
     private static final AtomicInteger NEXT_TRANSFER_JOB_ID = new AtomicInteger(1);
+    private static final AtomicInteger NEXT_TEMP_FILE_ID = new AtomicInteger(1);
     private static final Map<Integer, TransferJob> TRANSFER_JOBS = new HashMap<>();
 
     private static class TransferJob {
@@ -207,24 +208,112 @@ public class OpenBrushStorageBridge {
 
     private static boolean writeFileFromPath(
             Context context, String relativePath, String sourcePath, String mimeType, TransferJob job) {
-        Uri target = createFileUri(context, relativePath, mimeType);
-        if (target == null) {
-            setJobError(job, "Failed to create " + relativePath);
+        String normalized = normalize(relativePath);
+        if (!isSafeRelativePath(normalized)) {
+            setJobError(job, "Invalid shared-storage path");
             return false;
         }
 
-        try (InputStream input = new FileInputStream(sourcePath);
-             OutputStream output = context.getContentResolver().openOutputStream(target, "wt")) {
-            if (output == null) {
-                setJobError(job, "Failed to open " + relativePath);
-                return false;
-            }
-            copyStream(input, output, job);
-            return true;
+        int slash = normalized.lastIndexOf('/');
+        String directory = slash >= 0 ? normalized.substring(0, slash) : "";
+        String fileName = slash >= 0 ? normalized.substring(slash + 1) : normalized;
+        if (fileName.length() == 0) {
+            setJobError(job, "Invalid shared-storage file name");
+            return false;
+        }
+
+        Uri parent = ensureDirectoryUri(context, directory);
+        Uri treeUri = getTreeUri(context);
+        if (parent == null || treeUri == null) {
+            setJobError(job, "Failed to open destination directory for " + relativePath);
+            return false;
+        }
+
+        DocumentLookupResult existing = findChildDocumentUriResult(
+                context, treeUri, parent, fileName);
+        if (existing.error != null) {
+            setJobError(job, existing.error);
+            return false;
+        }
+
+        ContentResolver resolver = context.getContentResolver();
+        String temporaryName = "." + fileName + ".openbrush-"
+                + NEXT_TEMP_FILE_ID.getAndIncrement() + ".tmp";
+        Uri temporary;
+        try {
+            temporary = DocumentsContract.createDocument(
+                    resolver,
+                    parent,
+                    mimeType == null || mimeType.length() == 0
+                            ? "application/octet-stream"
+                            : mimeType,
+                    temporaryName);
         } catch (Exception e) {
             setJobError(job, e.getMessage());
             return false;
         }
+        if (temporary == null) {
+            setJobError(job, "Failed to create temporary file for " + relativePath);
+            return false;
+        }
+
+        try (InputStream input = new FileInputStream(sourcePath);
+             OutputStream output = resolver.openOutputStream(temporary, "wt")) {
+            if (output == null) {
+                setJobError(job, "Failed to open " + relativePath);
+                deleteDocumentQuietly(resolver, temporary);
+                return false;
+            }
+            copyStream(input, output, job);
+        } catch (Exception e) {
+            setJobError(job, e.getMessage());
+            deleteDocumentQuietly(resolver, temporary);
+            return false;
+        }
+
+        Uri backup = null;
+        if (existing.uri != null) {
+            String backupName = "." + fileName + ".openbrush-backup-"
+                    + NEXT_TEMP_FILE_ID.getAndIncrement();
+            try {
+                backup = DocumentsContract.renameDocument(resolver, existing.uri, backupName);
+            } catch (Exception e) {
+                setJobError(job, e.getMessage());
+            }
+            if (backup == null) {
+                deleteDocumentQuietly(resolver, temporary);
+                if (job == null || job.error.length() == 0) {
+                    setJobError(job, "Failed to prepare existing file for replacement: " + relativePath);
+                }
+                return false;
+            }
+        }
+
+        Uri replacement = null;
+        try {
+            replacement = DocumentsContract.renameDocument(resolver, temporary, fileName);
+        } catch (Exception e) {
+            setJobError(job, e.getMessage());
+        }
+        if (replacement == null) {
+            if (backup != null) {
+                try {
+                    DocumentsContract.renameDocument(resolver, backup, fileName);
+                } catch (Exception ignored) {
+                    // The intact backup is retained if restoring its display name fails.
+                }
+            }
+            deleteDocumentQuietly(resolver, temporary);
+            if (job == null || job.error.length() == 0) {
+                setJobError(job, "Failed to replace " + relativePath);
+            }
+            return false;
+        }
+
+        if (backup != null) {
+            deleteDocumentQuietly(resolver, backup);
+        }
+        return true;
     }
 
     public static boolean copyDirectoryFromPath(
@@ -421,37 +510,11 @@ public class OpenBrushStorageBridge {
         return current;
     }
 
-    private static Uri createFileUri(Context context, String relativePath, String mimeType) {
-        String normalized = normalize(relativePath);
-        if (!isSafeRelativePath(normalized)) {
-            return null;
-        }
-        int slash = normalized.lastIndexOf('/');
-        String directory = slash >= 0 ? normalized.substring(0, slash) : "";
-        String fileName = slash >= 0 ? normalized.substring(slash + 1) : normalized;
-        if (fileName.length() == 0) {
-            return null;
-        }
-
-        Uri parent = ensureDirectoryUri(context, directory);
-        Uri treeUri = getTreeUri(context);
-        if (parent == null || treeUri == null) {
-            return null;
-        }
-
-        Uri existing = findChildDocumentUri(context, treeUri, parent, fileName);
-        if (existing != null) {
-            return existing;
-        }
-
+    private static void deleteDocumentQuietly(ContentResolver resolver, Uri document) {
         try {
-            return DocumentsContract.createDocument(
-                    context.getContentResolver(),
-                    parent,
-                    mimeType == null || mimeType.length() == 0 ? "application/octet-stream" : mimeType,
-                    fileName);
-        } catch (Exception e) {
-            return null;
+            DocumentsContract.deleteDocument(resolver, document);
+        } catch (Exception ignored) {
+            // Best effort cleanup for temporary and backup documents.
         }
     }
 
