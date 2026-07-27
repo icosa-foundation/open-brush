@@ -84,13 +84,28 @@ namespace TiltBrush
                     SelectionManager.m_Instance.RemoveFromSelection(false);
                     AudioManager.m_Instance.ShowHideWidget(true, transform.position);
                     m_CurrentWidget = textWidget;
-                    var panel = (KeyboardPanel)PanelManager.m_Instance.OpenPanel(BasePanel.PanelType.Keyboard, tr);
-                    panel.m_OnClose = _ => textWidget.Text = KeyboardPanel.m_LastInput;
                 }
-            }
-            if (m_CurrentWidget != null)
-            {
-                m_CurrentWidget.Text = KeyboardPanel.m_LastInput;
+
+                if (m_CurrentWidget != null)
+                {
+                    TextWidget widget = m_CurrentWidget;
+                    string initialText = widget.Text;
+                    var panel = (KeyboardPanel)PanelManager.m_Instance.OpenPanel(
+                        BasePanel.PanelType.Keyboard, TrTransform.FromTransform(widget.transform));
+                    if (panel != null)
+                    {
+                        panel.BeginSession(initialText);
+                        panel.m_OnClose = _ =>
+                        {
+                            string editedText = KeyboardPanel.m_LastInput;
+                            if (editedText != initialText)
+                            {
+                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                                    new ModifyTextCommand(widget, editedText));
+                            }
+                        };
+                    }
+                }
             }
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
         }

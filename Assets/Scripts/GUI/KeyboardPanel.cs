@@ -47,8 +47,15 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            m_OnClose?.Invoke(this);
+            CloseSession();
             m_KeyboardUI.KeyPressed -= KeyPressed;
+        }
+
+        private void CloseSession()
+        {
+            Action<KeyboardPanel> onClose = m_OnClose;
+            m_OnClose = null;
+            onClose?.Invoke(this);
         }
 
         private void KeyPressed(object sender, KeyboardKeyEventArgs e)
@@ -58,6 +65,7 @@ namespace TiltBrush
                 case KeyboardKeyType.Enter:
                     // Logic will been to be updated if we ever have a multi-line keyboard
                     m_LastInput = m_KeyboardUI.ConsoleContent;
+                    CloseSession();
                     PanelManager.m_Instance.DismissNonCorePanel(PanelType.Keyboard);
                     SketchControlsScript.m_Instance.EatGazeObjectInput();
                     break;
