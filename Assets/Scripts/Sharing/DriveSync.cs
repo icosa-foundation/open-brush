@@ -208,6 +208,7 @@ namespace TiltBrush
         private long m_PreviousTotalBytesToTransfer;
         private long m_BytesTransferred;
         private bool m_IsCancelling;
+        private bool m_StorageBackendWarningShown;
 
         public event Action SyncEnabledChanged;
 
@@ -240,9 +241,23 @@ namespace TiltBrush
         /// initialized. Its value cannot be changed while the service is being cancelled / shut down.
         public bool SyncEnabled
         {
-            get => m_SyncEnabled?.Value ?? false;
+            get => StorageBackendSupportsDriveSync &&
+                (m_SyncEnabled?.Value ?? false);
             set
             {
+                if (!StorageBackendSupportsDriveSync)
+                {
+                    if (m_SyncEnabled != null && m_SyncEnabled.Value)
+                    {
+                        m_SyncEnabled.Value = false;
+                        SyncEnabledChanged?.Invoke();
+                    }
+                    if (value)
+                    {
+                        ReportUnsupportedStorageBackend();
+                    }
+                    return;
+                }
                 if (m_Uninitializing)
                 {
                     return;
@@ -306,6 +321,12 @@ namespace TiltBrush
                 SyncedFolderType folderType = (SyncedFolderType)i;
                 m_SyncedFolderFlags[i] = new UserSyncFlag(userId, $"GoogleDriveSyncFlag_{folderType}");
             }
+            if (!StorageBackendSupportsDriveSync && m_SyncEnabled.Value)
+            {
+                m_SyncEnabled.Value = false;
+                SyncEnabledChanged?.Invoke();
+                ReportUnsupportedStorageBackend();
+            }
         }
 
         public void UninitUserSyncOptions()
@@ -316,6 +337,11 @@ namespace TiltBrush
 
         public void ToggleSyncOnFolderOfType(SyncedFolderType type)
         {
+            if (!StorageBackendSupportsDriveSync)
+            {
+                ReportUnsupportedStorageBackend();
+                return;
+            }
             if (m_SyncedFolderFlags == null)
             {
                 return;
@@ -330,6 +356,10 @@ namespace TiltBrush
 
         public bool IsFolderOfTypeSynced(SyncedFolderType type)
         {
+            if (!StorageBackendSupportsDriveSync)
+            {
+                return false;
+            }
             if (m_SyncedFolderFlags == null)
             {
                 return false;
@@ -372,6 +402,12 @@ namespace TiltBrush
         /// kick off a process to sync them.
         public async void InitializeDriveSyncAsync()
         {
+            if (!StorageBackendSupportsDriveSync)
+            {
+                ReportUnsupportedStorageBackend();
+                return;
+            }
+
             async Task InitializeAsync(CancellationToken token)
             {
                 // Make sure we have a root folder
@@ -616,7 +652,33 @@ namespace TiltBrush
             m_Transfers.Clear();
         }
 
-        public bool SyncPossible() => m_GoogleIdentity.LoggedIn && SyncEnabled && !DriveIsLowOnSpace && !m_IsCancelling;
+        public bool SyncPossible() =>
+            StorageBackendSupportsDriveSync &&
+            m_GoogleIdentity.LoggedIn &&
+            SyncEnabled &&
+            !DriveIsLowOnSpace &&
+            !m_IsCancelling;
+
+        private static bool StorageBackendSupportsDriveSync =>
+            UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework;
+
+        private void ReportUnsupportedStorageBackend()
+        {
+            if (m_StorageBackendWarningShown)
+            {
+                return;
+            }
+            m_StorageBackendWarningShown = true;
+            const string message =
+                "Google Drive folder sync is unavailable while the Google Play " +
+                "shared-storage folder is in use.";
+            Debug.LogWarning($"SAF_STORAGE {message}");
+            ControllerConsoleScript.m_Instance?.AddNewLine(message, bNotify: true);
+            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                message,
+                fPopScalar: 0.5f);
+        }
 
         /// Syncs the local files with the device's Google Drive folder. If a sync is already in progress
         /// it will be cancelled before a new sync is performed. The sync prepares the transfers required
