@@ -381,9 +381,12 @@ namespace TiltBrush
                 return;
             }
 
-            AndroidStorageManager.RegisterPendingTransfer(
-                label, localPath, relativePath, Publish);
-            AndroidStorageManager.RequireSharedFolderFor(label, null);
+            AndroidStorageManager.RequireSharedFolderFor(
+                label,
+                Publish,
+                () => ControllerConsoleScript.m_Instance?.AddNewLine(
+                    $"SAF_OUTPUT API {label} remains staged locally because folder " +
+                    "selection was canceled."));
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)
