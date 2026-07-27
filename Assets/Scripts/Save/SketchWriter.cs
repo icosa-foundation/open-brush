@@ -633,6 +633,7 @@ namespace TiltBrush
                 //    clear lowest set bit: x & (x-1)
 
                 UInt32 thisTrack = 0;
+                UInt32 thisFrame = 0;
                 int MaxTrack = 0, MaxFrame = 0;
 
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
@@ -665,10 +666,7 @@ namespace TiltBrush
                             thisTrack = layerIndex;
                             break;
                         case StrokeExtension.Frame:
-                            UInt32 frameIndex = reader.UInt32();
-                            // For Loading Animation
-                            var canvas = App.Scene.animationUI_manager.GetOrCreateContentCanvas((int)thisTrack, (int)frameIndex);
-                            stroke.m_IntendedCanvas = canvas;
+                            thisFrame = reader.UInt32();
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
@@ -725,6 +723,8 @@ namespace TiltBrush
                             }
                     }
                 }
+                stroke.m_IntendedCanvas = App.Scene.animationUI_manager.GetOrCreateContentCanvas(
+                    (int)thisTrack, (int)thisFrame);
 
                 // control points
                 int nControlPoints = reader.Int32();
