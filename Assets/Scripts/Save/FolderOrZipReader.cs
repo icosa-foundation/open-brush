@@ -162,7 +162,7 @@ namespace TiltBrush
             else
             {
                 string folderPath = Path.Combine(m_RootPath, path);
-                return Directory.GetFiles(folderPath);
+                return Directory.GetDirectories(folderPath).Select(Path.GetFileName);
             }
         }
     }
