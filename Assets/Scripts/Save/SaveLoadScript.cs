@@ -446,13 +446,12 @@ namespace TiltBrush
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             directSafSave =
                 !saveToLocalCacheOnly &&
-                !selectedOnly &&
                 UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
             if (!saveToLocalCacheOnly &&
                 OpenBrushStorage.IsGooglePlayStorageMode &&
                 directSafSave &&
                 !AndroidStorageManager.RequireSharedFolderFor(
-                    "saving sketches",
+                    selectedOnly ? "saving saved strokes" : "saving sketches",
                     () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly)),
                     null))
             {
@@ -475,7 +474,10 @@ namespace TiltBrush
                 return new List<Timeslice>().GetEnumerator();
             }
 
-            m_LastSceneFile = info;
+            if (!directSafSave || !selectedOnly)
+            {
+                m_LastSceneFile = info;
+            }
             AbortAutosave();
 
             m_SaveCoroutine = ThreadedSave(
@@ -548,7 +550,7 @@ namespace TiltBrush
             if (directSafWrite)
             {
                 var writeFuture = new Future<StorageWriteOutcome>(
-                    () => WriteSnapshotToSaf(fileInfo, snapshot), null, true);
+                    () => WriteSnapshotToSaf(fileInfo, snapshot, selectedOnly), null, true);
                 while (!writeFuture.TryGetResult(out outcome))
                 {
                     yield return null;
@@ -572,7 +574,10 @@ namespace TiltBrush
             }
             string error = outcome.Error;
             fileInfo = outcome.FileInfo ?? fileInfo;
-            m_LastSceneFile = fileInfo;
+            if (!directSafWrite || !selectedOnly)
+            {
+                m_LastSceneFile = fileInfo;
+            }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (!directSafWrite && error == null && publishToSharedStorage)
@@ -607,18 +612,40 @@ namespace TiltBrush
             m_SaveCoroutine = null;
             if (error == null)
             {
-                if (newFile)
+                if (directSafWrite)
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.StorageId);
+                    SketchSetType setType = selectedOnly
+                        ? SketchSetType.SavedStrokes
+                        : SketchSetType.User;
+                    SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
+                    if (newFile)
+                    {
+                        set.NotifySketchCreated(fileInfo.StorageId);
+                    }
+                    else
+                    {
+                        set.NotifySketchChanged(fileInfo.StorageId);
+                    }
+                    if (selectedOnly)
+                    {
+                        SavedStrokesCatalog.Instance?.NotifyStorageChanged();
+                    }
                 }
                 else
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.StorageId);
+                    if (newFile)
+                    {
+                        SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.FullPath);
+                    }
+                    else
+                    {
+                        SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.FullPath);
+                    }
                 }
             }
             if (bNotify && !m_SuppressNotify)
             {
-                NotifySaveFinished(m_LastSceneFile, error, newFile);
+                NotifySaveFinished(fileInfo, error, newFile);
             }
             if (!directSafWrite)
             {
@@ -628,15 +655,18 @@ namespace TiltBrush
         }
 
         private StorageWriteOutcome WriteSnapshotToSaf(
-            SceneFileInfo fileInfo, SketchSnapshot snapshot)
+            SceneFileInfo fileInfo, SketchSnapshot snapshot, bool selectedOnly)
         {
             IUserStorageBackend backend = UserStorage.Backend;
+            StorageArea area = selectedOnly
+                ? StorageArea.SavedStrokes
+                : StorageArea.Sketches;
             string displayName = GetSafDestinationDisplayName(
-                backend, StorageArea.Sketches, fileInfo);
+                backend, area, fileInfo);
             try
             {
                 using (IStorageWriteTransaction transaction = backend.BeginWrite(
-                    StorageArea.Sketches,
+                    area,
                     displayName,
                     TiltFile.TILT_MIME_TYPE,
                     default))

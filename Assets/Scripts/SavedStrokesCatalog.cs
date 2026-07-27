@@ -31,6 +31,11 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
         private bool m_WaitingForSketchSetUpdate;
+        private bool m_SafSubscribed;
+        private bool m_SeedingSafDefaults;
+
+        private bool IsSafStorage =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -42,20 +47,28 @@ namespace TiltBrush
 
         private void Init()
         {
-            App.InitMediaLibraryPath();
-            App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
+            if (!IsSafStorage)
+            {
+                App.InitMediaLibraryPath();
+                App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
+            }
             ChangeDirectory(HomeDirectory);
         }
 
         public void ChangeDirectory(string newPath)
         {
-            m_CurrentSavedStrokesDirectory = newPath;
+            if (m_FileWatcher != null)
+            {
+                m_FileWatcher.EnableRaisingEvents = false;
+                m_FileWatcher = null;
+            }
+            m_CurrentSavedStrokesDirectory = IsSafStorage ? HomeDirectory : newPath;
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
             StartCoroutine(ScanReferenceDirectory());
 
-            if (Directory.Exists(m_CurrentSavedStrokesDirectory))
+            if (!IsSafStorage && Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSavedStrokesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -66,7 +79,7 @@ namespace TiltBrush
             }
         }
 
-        public string HomeDirectory => App.SavedStrokesPath();
+        public string HomeDirectory => IsSafStorage ? "Saved Strokes" : App.SavedStrokesPath();
         public bool IsHomeDirectory() => m_CurrentSavedStrokesDirectory == HomeDirectory;
 
         public bool IsSubDirectoryOfHome()
@@ -87,10 +100,13 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            m_FileWatcher.EnableRaisingEvents = false;
+            if (m_FileWatcher != null)
+            {
+                m_FileWatcher.EnableRaisingEvents = false;
+            }
 
             // Clean up event subscription if still active
-            if (m_WaitingForSketchSetUpdate)
+            if (m_WaitingForSketchSetUpdate || m_SafSubscribed)
             {
                 var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
                 if (sketchSet != null)
@@ -118,6 +134,16 @@ namespace TiltBrush
         // has already scanned.
         private void Update()
         {
+            if (IsSafStorage)
+            {
+                EnsureSafSubscription();
+                if (!m_SeedingSafDefaults &&
+                    UserStorage.Backend.IsReady &&
+                    PlayerPrefs.GetInt(App.kPlayerPrefSeededDefaultSavedStrokes, 0) == 0)
+                {
+                    StartCoroutine(SeedSafDefaults());
+                }
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
@@ -140,6 +166,11 @@ namespace TiltBrush
 
         public void NotifyFileCreated(string fullpath)
         {
+            if (IsSafStorage)
+            {
+                NotifyStorageChanged();
+                return;
+            }
             if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
             {
                 // Don't scan immediately - wait for FileSketchSet to process the file
@@ -167,12 +198,24 @@ namespace TiltBrush
             NotifyFileCreated(fullpath);
         }
 
+        public void NotifyStorageChanged()
+        {
+            SketchSet sketchSet =
+                SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            sketchSet?.RequestRefresh();
+            EnsureSafSubscription();
+        }
+
         private void OnFileSketchSetChanged()
         {
-            // FileSketchSet has processed files, now safe to scan
             m_DirectoryScanRequired = true;
 
-            // Unsubscribe - we only need this once per notification
+            if (IsSafStorage)
+            {
+                return;
+            }
+
+            // FileSketchSet has processed files, so the path catalog is safe to scan.
             var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
             if (sketchSet != null)
             {
@@ -197,7 +240,11 @@ namespace TiltBrush
             for (int i = 0; i < catalog.NumSketches; i++)
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);
-                if (!sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory)) continue;
+                if (!IsSafStorage &&
+                    !sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory))
+                {
+                    continue;
+                }
                 catalog.GetSketchIcon(i, out var icon, out _, out _);
                 var savedStrokeFile = new SavedStrokeFile(i, sketchFileInfo, icon);
                 m_SavedStrokeFiles.Add(savedStrokeFile);
@@ -205,6 +252,81 @@ namespace TiltBrush
 
             m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
+        }
+
+        private void EnsureSafSubscription()
+        {
+            if (!IsSafStorage || m_SafSubscribed || SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+            SketchSet sketchSet =
+                SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet != null)
+            {
+                sketchSet.OnChanged += OnFileSketchSetChanged;
+                m_SafSubscribed = true;
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            StorageDirectoryResult listing = UserStorage.Backend.List(
+                StorageArea.SavedStrokes, "", default);
+            if (!listing.Success)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            if (listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultSavedStrokes)
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default saved stroke: {resourcePath}");
+                        continue;
+                    }
+
+                    string displayName = Path.GetFileName(resourcePath);
+                    try
+                    {
+                        using (IStorageWriteTransaction transaction =
+                            UserStorage.Backend.BeginWrite(
+                                StorageArea.SavedStrokes,
+                                displayName,
+                                TiltFile.TILT_MIME_TYPE,
+                                default))
+                        {
+                            using (Stream stream = transaction.OpenWrite())
+                            {
+                                stream.Write(resource.bytes, 0, resource.bytes.Length);
+                            }
+                            StorageMutationResult commit = transaction.Commit();
+                            if (!commit.Success)
+                            {
+                                Debug.LogWarning(
+                                    $"SAF_STORAGE Failed to seed {displayName}: {commit.Error}");
+                                m_SeedingSafDefaults = false;
+                                yield break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        Resources.UnloadAsset(resource);
+                    }
+                    yield return null;
+                }
+            }
+
+            PlayerPrefs.SetInt(App.kPlayerPrefSeededDefaultSavedStrokes, 1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            NotifyStorageChanged();
         }
     }
 }

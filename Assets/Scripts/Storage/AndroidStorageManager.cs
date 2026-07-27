@@ -257,6 +257,7 @@ namespace TiltBrush
                     $"SAF_STORAGE {report.Pending} storage transaction(s) require recovery.");
             }
             SketchCatalog.m_Instance?.GetSet(SketchSetType.User)?.RequestRefresh();
+            SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes)?.RequestRefresh();
             onComplete?.Invoke();
         }
 
