@@ -324,22 +324,35 @@ namespace TiltBrush
 
         internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
         {
+            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
             _PublishApiPathToSharedStorage(
                 localPath,
+                relativePath,
                 "generated file",
                 OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
         }
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
         {
+            if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
             _PublishApiPathToSharedStorage(
                 localPath,
+                relativePath,
                 "media file",
                 OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync);
         }
 
         private static void _PublishApiPathToSharedStorage(
             string localPath,
+            string relativePath,
             string label,
             Action<string, string, Action<bool, string>> publish)
         {
@@ -368,7 +381,8 @@ namespace TiltBrush
                 return;
             }
 
-            AndroidStorageManager.RegisterPendingTransfer(label, localPath, Publish);
+            AndroidStorageManager.RegisterPendingTransfer(
+                label, localPath, relativePath, Publish);
             AndroidStorageManager.RequireSharedFolderFor(label, null);
         }
 

@@ -24,6 +24,7 @@ namespace TiltBrush
     public class AndroidStorageManager : MonoBehaviour
     {
         private const string kStartupPromptDismissedKey = "GooglePlayStorage.StartupPromptDismissed";
+        private const string kPendingTransfersKey = "GooglePlayStorage.PendingTransfers";
 
         // The Android SAF picker is modal: while it has focus, users cannot initiate another
         // storage operation through the Open Brush UI. Keep at most one continuation (normally the
@@ -34,11 +35,28 @@ namespace TiltBrush
         private static bool m_RequestInProgress;
         private static bool m_RequestIsStartupPrompt;
         private static bool m_StartupPromptShown;
+        private static bool m_PendingTransfersLoaded;
         private static AndroidStorageManager m_Instance;
         private static readonly List<PendingTransferRetry> m_PendingTransferRetries =
             new List<PendingTransferRetry>();
+        private static readonly List<PersistentPendingTransfer> m_PersistentPendingTransfers =
+            new List<PersistentPendingTransfer>();
         private static readonly HashSet<string> m_PendingLocalPaths =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        [Serializable]
+        private class PendingTransferStore
+        {
+            public List<PersistentPendingTransfer> Transfers = new List<PersistentPendingTransfer>();
+        }
+
+        [Serializable]
+        private class PersistentPendingTransfer
+        {
+            public string Label;
+            public string LocalPath;
+            public string RelativePath;
+        }
 
         private class PendingTransferRetry
         {
@@ -54,6 +72,8 @@ namespace TiltBrush
             {
                 return;
             }
+
+            LoadPendingTransfers();
 
             var existing = GameObject.Find(nameof(AndroidStorageManager));
             if (existing != null)
@@ -87,7 +107,7 @@ namespace TiltBrush
 
             if (AndroidSafStorage.HasOpenBrushFolder())
             {
-                OpenBrushStorage.SyncSharedUserContentToLocalCache();
+                OpenBrushStorage.SyncSharedUserContentToLocalCache(RetryPendingTransfers);
                 yield break;
             }
 
@@ -185,6 +205,7 @@ namespace TiltBrush
             string label,
             Func<int> startJob,
             string localPath,
+            string relativePath,
             Action<bool, string> onComplete,
             Action retryAction)
         {
@@ -194,6 +215,8 @@ namespace TiltBrush
                 return;
             }
 
+            AddPersistentPendingTransfer(label, localPath, relativePath);
+
             if (m_Instance == null)
             {
                 onComplete?.Invoke(false, "Android storage manager is not ready.");
@@ -201,7 +224,13 @@ namespace TiltBrush
             }
 
             m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
-                label, "shared storage", startJob, localPath, onComplete, retryAction));
+                label,
+                "shared storage",
+                startJob,
+                localPath,
+                relativePath,
+                onComplete,
+                retryAction));
         }
 
         public static void StartInboundTransfer(
@@ -222,7 +251,7 @@ namespace TiltBrush
             }
 
             m_Instance.StartCoroutine(m_Instance.TransferCoroutine(
-                label, "local cache", startJob, null, onComplete, null));
+                label, "local cache", startJob, null, null, onComplete, null));
         }
 
         private IEnumerator TransferCoroutine(
@@ -230,6 +259,7 @@ namespace TiltBrush
             string destination,
             Func<int> startJob,
             string localPath,
+            string relativePath,
             Action<bool, string> onComplete,
             Action retryAction)
         {
@@ -241,7 +271,7 @@ namespace TiltBrush
             catch (Exception e)
             {
                 string error = $"Failed to start {label}: {e.Message}";
-                RegisterFailedTransfer(label, localPath, retryAction, error);
+                RegisterFailedTransfer(label, localPath, relativePath, retryAction, error);
                 onComplete?.Invoke(false, error);
                 yield break;
             }
@@ -268,7 +298,7 @@ namespace TiltBrush
             {
                 if (!string.IsNullOrEmpty(localPath))
                 {
-                    m_PendingLocalPaths.Remove(Path.GetFullPath(localPath));
+                    RemovePersistentPendingTransfer(localPath, relativePath);
                 }
                 ControllerConsoleScript.m_Instance?.AddNewLine($"Finished copying {label}.");
             }
@@ -279,7 +309,7 @@ namespace TiltBrush
                     : errorMessage;
                 if (retryAction != null)
                 {
-                    RegisterFailedTransfer(label, localPath, retryAction, error);
+                    RegisterFailedTransfer(label, localPath, relativePath, retryAction, error);
                 }
                 else
                 {
@@ -304,11 +334,15 @@ namespace TiltBrush
         }
 
         private static void RegisterFailedTransfer(
-            string label, string localPath, Action retryAction, string error)
+            string label,
+            string localPath,
+            string relativePath,
+            Action retryAction,
+            string error)
         {
             if (retryAction != null)
             {
-                RegisterPendingTransfer(label, localPath, retryAction);
+                RegisterPendingTransfer(label, localPath, relativePath, retryAction);
                 AndroidSafStorage.ClearOpenBrushFolder();
             }
 
@@ -323,14 +357,14 @@ namespace TiltBrush
         }
 
         public static void RegisterPendingTransfer(
-            string label, string localPath, Action retryAction)
+            string label, string localPath, string relativePath, Action retryAction)
         {
             string fullPath = string.IsNullOrEmpty(localPath)
                 ? null
                 : Path.GetFullPath(localPath);
             if (fullPath != null)
             {
-                m_PendingLocalPaths.Add(fullPath);
+                AddPersistentPendingTransfer(label, fullPath, relativePath);
                 m_PendingTransferRetries.RemoveAll(retry =>
                     string.Equals(retry.LocalPath, fullPath, StringComparison.OrdinalIgnoreCase));
             }
@@ -344,6 +378,7 @@ namespace TiltBrush
 
         public static string[] GetPendingLocalPaths(string localDirectory)
         {
+            LoadPendingTransfers();
             string fullDirectory = Path.GetFullPath(localDirectory)
                 .TrimEnd(Path.DirectorySeparatorChar);
             string directoryPrefix = fullDirectory + Path.DirectorySeparatorChar;
@@ -355,19 +390,183 @@ namespace TiltBrush
 
         private static void RetryPendingTransfers()
         {
-            if (m_PendingTransferRetries.Count == 0)
+            LoadPendingTransfers();
+            if (m_PendingTransferRetries.Count == 0 && m_PersistentPendingTransfers.Count == 0)
             {
                 return;
             }
 
             var retries = new List<PendingTransferRetry>(m_PendingTransferRetries);
             m_PendingTransferRetries.Clear();
+            var retriedPaths = new HashSet<string>(
+                retries.Where(retry => !string.IsNullOrEmpty(retry.LocalPath))
+                    .Select(retry => retry.LocalPath),
+                StringComparer.OrdinalIgnoreCase);
+            var persistentRetries = m_PersistentPendingTransfers
+                .Where(transfer => !retriedPaths.Contains(transfer.LocalPath))
+                .Select(transfer => new PersistentPendingTransfer
+                {
+                    Label = transfer.Label,
+                    LocalPath = transfer.LocalPath,
+                    RelativePath = transfer.RelativePath
+                })
+                .ToList();
             ControllerConsoleScript.m_Instance?.AddNewLine(
-                $"Retrying {retries.Count} pending shared-storage copy operation(s).");
+                $"Retrying {retries.Count + persistentRetries.Count} pending shared-storage copy operation(s).");
             foreach (var retry in retries)
             {
                 retry.RetryAction?.Invoke();
             }
+            foreach (var retry in persistentRetries)
+            {
+                RetryPersistentTransfer(retry);
+            }
+        }
+
+        private static void RetryPersistentTransfer(PersistentPendingTransfer transfer)
+        {
+            if (!File.Exists(transfer.LocalPath) && !Directory.Exists(transfer.LocalPath))
+            {
+                RemovePersistentPendingTransfer(transfer.LocalPath, transfer.RelativePath);
+                return;
+            }
+
+            OpenBrushStorage.PublishLocalPathToSharedStorageAsync(
+                transfer.RelativePath,
+                transfer.LocalPath,
+                transfer.Label,
+                (success, error) =>
+                {
+                    if (!success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_PENDING Failed to retry '{transfer.RelativePath}': {error}");
+                    }
+                });
+        }
+
+        private static void LoadPendingTransfers()
+        {
+            if (m_PendingTransfersLoaded)
+            {
+                return;
+            }
+
+            m_PendingTransfersLoaded = true;
+            string json = PlayerPrefs.GetString(kPendingTransfersKey, "");
+            if (string.IsNullOrEmpty(json))
+            {
+                return;
+            }
+
+            try
+            {
+                PendingTransferStore store = JsonUtility.FromJson<PendingTransferStore>(json);
+                if (store?.Transfers == null)
+                {
+                    return;
+                }
+
+                foreach (PersistentPendingTransfer transfer in store.Transfers)
+                {
+                    if (string.IsNullOrEmpty(transfer.LocalPath) ||
+                        string.IsNullOrEmpty(transfer.RelativePath))
+                    {
+                        continue;
+                    }
+
+                    transfer.LocalPath = Path.GetFullPath(transfer.LocalPath);
+                    if (m_PersistentPendingTransfers.Any(existing =>
+                            PendingTransferMatches(
+                                existing, transfer.LocalPath, transfer.RelativePath)))
+                    {
+                        continue;
+                    }
+
+                    m_PersistentPendingTransfers.Add(transfer);
+                    m_PendingLocalPaths.Add(transfer.LocalPath);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"SAF_PENDING Failed to load pending transfers: {e.Message}");
+            }
+        }
+
+        private static void AddPersistentPendingTransfer(
+            string label, string localPath, string relativePath)
+        {
+            if (string.IsNullOrEmpty(localPath) || string.IsNullOrEmpty(relativePath))
+            {
+                return;
+            }
+
+            LoadPendingTransfers();
+            string fullPath = Path.GetFullPath(localPath);
+            PersistentPendingTransfer existing = m_PersistentPendingTransfers.FirstOrDefault(
+                transfer => PendingTransferMatches(transfer, fullPath, relativePath));
+            if (existing != null)
+            {
+                existing.Label = label;
+            }
+            else
+            {
+                m_PersistentPendingTransfers.Add(new PersistentPendingTransfer
+                {
+                    Label = label,
+                    LocalPath = fullPath,
+                    RelativePath = relativePath
+                });
+            }
+            m_PendingLocalPaths.Add(fullPath);
+            SavePendingTransfers();
+        }
+
+        private static void RemovePersistentPendingTransfer(
+            string localPath, string relativePath)
+        {
+            if (string.IsNullOrEmpty(localPath))
+            {
+                return;
+            }
+
+            LoadPendingTransfers();
+            string fullPath = Path.GetFullPath(localPath);
+            m_PersistentPendingTransfers.RemoveAll(transfer =>
+                PendingTransferMatches(transfer, fullPath, relativePath));
+            if (!m_PersistentPendingTransfers.Any(transfer =>
+                    string.Equals(
+                        transfer.LocalPath, fullPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                m_PendingLocalPaths.Remove(fullPath);
+            }
+            SavePendingTransfers();
+        }
+
+        private static bool PendingTransferMatches(
+            PersistentPendingTransfer transfer, string localPath, string relativePath)
+        {
+            return string.Equals(
+                    transfer.LocalPath, localPath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    transfer.RelativePath, relativePath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void SavePendingTransfers()
+        {
+            if (m_PersistentPendingTransfers.Count == 0)
+            {
+                PlayerPrefs.DeleteKey(kPendingTransfersKey);
+            }
+            else
+            {
+                var store = new PendingTransferStore
+                {
+                    Transfers = m_PersistentPendingTransfers
+                };
+                PlayerPrefs.SetString(kPendingTransfersKey, JsonUtility.ToJson(store));
+            }
+            PlayerPrefs.Save();
         }
     }
 }

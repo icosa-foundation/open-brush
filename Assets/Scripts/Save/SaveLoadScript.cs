@@ -588,9 +588,15 @@ namespace TiltBrush
         private void RegisterSavedSceneForSharedStorage(SceneFileInfo fileInfo, bool selectedOnly)
         {
             string label = selectedOnly ? "saved strokes" : "sketch";
+            if (!OpenBrushStorage.TryGetSharedSketchRelativePath(
+                    fileInfo.FullPath, out string relativePath))
+            {
+                return;
+            }
             AndroidStorageManager.RegisterPendingTransfer(
                 label,
                 fileInfo.FullPath,
+                relativePath,
                 () => PublishSavedSceneToSharedStorage(fileInfo, (success, error) => { }));
         }
 
