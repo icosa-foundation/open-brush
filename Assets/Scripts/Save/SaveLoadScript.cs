@@ -762,6 +762,10 @@ namespace TiltBrush
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
+                if (!bAdditive)
+                {
+                    BrushCatalog.m_Instance.ClearSceneBrushes();
+                }
                 foreach (var brushName in m_LastSceneFile.GetContentsAt("Brushes"))
                 {
                     Debug.Log($"Brush found at {brushName}");
