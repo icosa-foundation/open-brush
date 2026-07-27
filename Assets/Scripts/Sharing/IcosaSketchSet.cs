@@ -31,6 +31,8 @@ namespace TiltBrush
         const int kDownloadBufferSize = 1024 * 1024; // 1MB
         private const string kSharedIcosaCacheFolder = "Icosa Sketches";
         private static readonly object s_SharedCachePruneLock = new object();
+        private static readonly HashSet<string> s_InFlightTiltPaths =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // Downloading is handled by IcosaSketchSet which will set the local paths
 
@@ -874,21 +876,36 @@ namespace TiltBrush
                 IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
                 if (!sceneFileInfo.TiltDownloaded)
                 {
-                    if (IsCachedTiltValid(sceneFileInfo))
+                    string protectedTiltPath = Path.GetFullPath(sceneFileInfo.TiltPath);
+                    lock (s_SharedCachePruneLock)
                     {
-                        sceneFileInfo.TiltDownloaded = true;
+                        s_InFlightTiltPaths.Add(protectedTiltPath);
                     }
-                    else
+                    try
                     {
-                        IcosaTiltDownloadResult result = null;
-                        yield return IcosaTiltDownloader.DownloadTiltCoroutine(
-                            sceneFileInfo, sceneFileInfo.TiltPath, downloadBuffer,
-                            isCanceled: null,
-                            onRequestChanged: null,
-                            onComplete: r => result = r);
-                        if (result != null && !result.Succeeded)
+                        if (IsCachedTiltValid(sceneFileInfo))
                         {
-                            NotifyDownloadResult(sceneFileInfo, result);
+                            sceneFileInfo.TiltDownloaded = true;
+                        }
+                        else
+                        {
+                            IcosaTiltDownloadResult result = null;
+                            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                                sceneFileInfo, sceneFileInfo.TiltPath, downloadBuffer,
+                                isCanceled: null,
+                                onRequestChanged: null,
+                                onComplete: r => result = r);
+                            if (result != null && !result.Succeeded)
+                            {
+                                NotifyDownloadResult(sceneFileInfo, result);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        lock (s_SharedCachePruneLock)
+                        {
+                            s_InFlightTiltPaths.Remove(protectedTiltPath);
                         }
                     }
                     onDownload?.Invoke();
@@ -908,11 +925,13 @@ namespace TiltBrush
             if (m_CacheDir == null) yield break;
 
             long maxSize = App.PlatformConfig.SketchSetMaxCacheSize;
+            var protectedTiltPaths = GetLiveTiltPaths();
 
             var task = new Future<(int, long)>(() =>
             {
                 lock (s_SharedCachePruneLock)
                 {
+                    protectedTiltPaths.UnionWith(s_InFlightTiltPaths);
                     var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
                     var pruneCandidates = new List<FileInfo>();
 
@@ -925,7 +944,10 @@ namespace TiltBrush
                         // paired icon at the same time.
                         if (string.Equals(file.Extension, ".tilt", StringComparison.OrdinalIgnoreCase))
                         {
-                            pruneCandidates.Add(file);
+                            if (!protectedTiltPaths.Contains(file.FullName))
+                            {
+                                pruneCandidates.Add(file);
+                            }
                         }
                     }
 
@@ -995,6 +1017,50 @@ namespace TiltBrush
             static int CompareLastAccessTimeAscending(FileInfo a, FileInfo b)
             {
                 return (int)(a.LastAccessTimeUtc.Ticks - b.LastAccessTimeUtc.Ticks);
+            }
+        }
+
+        private HashSet<string> GetLiveTiltPaths()
+        {
+            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            AddLiveTiltPaths(paths);
+
+            if (SketchCatalog.m_Instance == null)
+            {
+                return paths;
+            }
+
+            foreach (SketchSetType setType in new[]
+                     {
+                         SketchSetType.Curated,
+                         SketchSetType.Liked,
+                         SketchSetType.User,
+                     })
+            {
+                if (SketchCatalog.m_Instance.GetSet(setType) is IcosaSketchSet icosaSet &&
+                    !ReferenceEquals(icosaSet, this))
+                {
+                    icosaSet.AddLiveTiltPaths(paths);
+                }
+            }
+
+            return paths;
+        }
+
+        private void AddLiveTiltPaths(HashSet<string> paths)
+        {
+            foreach (IcosaSketch sketch in m_Sketches)
+            {
+                string tiltPath = sketch.IcosaSceneFileInfo.TiltPath;
+                if (!string.IsNullOrWhiteSpace(tiltPath))
+                {
+                    paths.Add(Path.GetFullPath(tiltPath));
+                }
+            }
+
+            foreach (string assetId in m_PreloadingTiltsByAssetId.Keys)
+            {
+                paths.Add(Path.GetFullPath(Path.Combine(m_CacheDir, $"{assetId}.tilt")));
             }
         }
 
