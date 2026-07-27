@@ -30,6 +30,7 @@ namespace TiltBrush
         // action that opened the picker). API or background callers are deliberately not queued once
         // that slot is occupied.
         private static Action m_PendingAction;
+        private static Action m_PendingCanceledAction;
         private static bool m_RequestInProgress;
         private static bool m_RequestIsStartupPrompt;
         private static bool m_StartupPromptShown;
@@ -94,17 +95,23 @@ namespace TiltBrush
                 !AndroidSafStorage.HasOpenBrushFolder())
             {
                 m_StartupPromptShown = true;
-                RequireSharedFolderFor("shared storage", null, true);
+                RequireSharedFolderFor("shared storage", null, null, true);
             }
         }
 
         public static bool RequireSharedFolderFor(string featureName, Action onReady)
         {
-            return RequireSharedFolderFor(featureName, onReady, false);
+            return RequireSharedFolderFor(featureName, onReady, null);
+        }
+
+        public static bool RequireSharedFolderFor(
+            string featureName, Action onReady, Action onCanceled)
+        {
+            return RequireSharedFolderFor(featureName, onReady, onCanceled, false);
         }
 
         private static bool RequireSharedFolderFor(
-            string featureName, Action onReady, bool isStartupPrompt)
+            string featureName, Action onReady, Action onCanceled, bool isStartupPrompt)
         {
             if (!OpenBrushStorage.IsGooglePlayStorageMode || AndroidSafStorage.HasOpenBrushFolder())
             {
@@ -116,6 +123,7 @@ namespace TiltBrush
                 if (m_PendingAction == null && onReady != null)
                 {
                     m_PendingAction = onReady;
+                    m_PendingCanceledAction = onCanceled;
                 }
                 ControllerConsoleScript.m_Instance?.AddNewLine(
                     $"Waiting for Open Brush folder selection before {featureName}.");
@@ -123,6 +131,7 @@ namespace TiltBrush
             }
 
             m_PendingAction = onReady;
+            m_PendingCanceledAction = onCanceled;
             m_RequestInProgress = true;
             m_RequestIsStartupPrompt = isStartupPrompt;
             string message =
@@ -146,6 +155,7 @@ namespace TiltBrush
 
                 Action pendingAction = m_PendingAction;
                 m_PendingAction = null;
+                m_PendingCanceledAction = null;
                 pendingAction?.Invoke();
             });
         }
@@ -159,12 +169,15 @@ namespace TiltBrush
                 PlayerPrefs.Save();
             }
             m_RequestIsStartupPrompt = false;
+            Action pendingCanceledAction = m_PendingCanceledAction;
             m_PendingAction = null;
+            m_PendingCanceledAction = null;
             string message =
                 "Open Brush folder selection canceled. Shared-storage features remain unavailable.";
             ControllerConsoleScript.m_Instance?.AddNewLine(message);
             OutputWindowScript.m_Instance?.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
+            pendingCanceledAction?.Invoke();
         }
 
         public static void StartTransfer(

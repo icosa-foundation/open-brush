@@ -439,15 +439,19 @@ namespace TiltBrush
         /// - SaveIconTool.LastSaveCameraRigState must be good
         /// SaveIconTool.ProgrammaticCaptureSaveIcon() does both of these things
         private IEnumerator<Timeslice> SaveLow(
-            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
+            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false,
+            bool saveToLocalCacheOnly = false)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             string sharedRelativePath;
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+            if (!saveToLocalCacheOnly &&
+                OpenBrushStorage.IsGooglePlayStorageMode &&
                 OpenBrushStorage.TryGetSharedSketchRelativePath(info.FullPath, out sharedRelativePath) &&
                 !AndroidStorageManager.RequireSharedFolderFor(
                     selectedOnly ? "saving saved strokes" : "saving sketches",
-                    () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly))))
+                    () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly)),
+                    () => StartCoroutine(SaveLow(
+                        info, bNotify, snapshot, selectedOnly, saveToLocalCacheOnly: true))))
             {
                 return new List<Timeslice>().GetEnumerator();
             }
@@ -471,13 +475,14 @@ namespace TiltBrush
             m_LastSceneFile = info;
             AbortAutosave();
 
-            m_SaveCoroutine = ThreadedSave(info, selectedOnly, bNotify, snapshot);
+            m_SaveCoroutine = ThreadedSave(
+                info, selectedOnly, bNotify, snapshot, publishToSharedStorage: !saveToLocalCacheOnly);
             return m_SaveCoroutine;
         }
 
         private IEnumerator<Timeslice> ThreadedSave(
             SceneFileInfo fileInfo, bool selectedOnly,
-            bool bNotify = true, SketchSnapshot snapshot = null)
+            bool bNotify = true, SketchSnapshot snapshot = null, bool publishToSharedStorage = true)
         {
             // Cancel any pending transfers of this file.
             var cancelTask = App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
@@ -530,7 +535,7 @@ namespace TiltBrush
             }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            if (error == null)
+            if (error == null && publishToSharedStorage)
             {
                 bool publishDone = false;
                 bool publishSucceeded = false;
