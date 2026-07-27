@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 using NUnit.Framework;
 
@@ -203,6 +204,74 @@ namespace TiltBrush
                 Assert.IsNotNull(reader);
                 reader.CopyTo(copy);
                 Assert.AreEqual(expected, copy.ToArray());
+            }
+        }
+
+        [Test]
+        public void LocalStorageBackend_ListsAndMutatesByDocumentIdentity()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => root);
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    StorageArea.Sketches,
+                    "one.tilt",
+                    TiltFile.TILT_MIME_TYPE,
+                    CancellationToken.None))
+                {
+                    using (Stream stream = transaction.OpenWrite())
+                    {
+                        stream.WriteByte(42);
+                    }
+                    Assert.IsTrue(transaction.Commit().Success);
+                }
+
+                StorageDirectoryResult listing = backend.List(
+                    StorageArea.Sketches, "", CancellationToken.None);
+                Assert.IsTrue(listing.Success);
+                Assert.AreEqual(1, listing.Documents.Count);
+                StorageDocument document = listing.Documents[0];
+                Assert.AreEqual("one.tilt", document.DisplayName);
+                using (Stream stream = backend.OpenRead(
+                    document.DocumentId, requireSeekable: true, CancellationToken.None))
+                {
+                    Assert.AreEqual(42, stream.ReadByte());
+                }
+
+                StorageMutationResult renamed = backend.Rename(
+                    document.DocumentId, "two.tilt", CancellationToken.None);
+                Assert.IsTrue(renamed.Success);
+                Assert.IsTrue(backend.Delete(renamed.DocumentId, CancellationToken.None).Success);
+                Assert.AreEqual(0, backend.List(
+                    StorageArea.Sketches, "", CancellationToken.None).Documents.Count);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [Test]
+        public void LocalStorageBackend_RejectsPathsOutsideLogicalArea()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => root);
+                Assert.Throws<ArgumentException>(() => backend.BeginWrite(
+                    StorageArea.Sketches,
+                    Path.Combine("..", "outside.tilt"),
+                    TiltFile.TILT_MIME_TYPE,
+                    CancellationToken.None));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
             }
         }
     }
