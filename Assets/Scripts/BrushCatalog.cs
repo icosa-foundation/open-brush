@@ -367,14 +367,21 @@ namespace TiltBrush
                 m_ChangedBrushes.Clear();
             }
 
+            List<string> brushesToRepaint = null;
             if (changedBrushes.Count > 0)
             {
+                var changedBrushGuids = new HashSet<string>();
                 for (var i = 0; i < changedBrushes.Count; i++)
                 {
                     var path = changedBrushes[i];
-                    LoadUserLibraryBrush(path);
+                    Guid? changedGuid = LoadUserLibraryBrush(path);
+                    if (changedGuid.HasValue)
+                    {
+                        changedBrushGuids.Add(changedGuid.Value.ToString());
+                    }
                 }
                 m_CatalogChanged = true;
+                brushesToRepaint = changedBrushGuids.ToList();
             }
             if (m_CatalogChanged)
             {
@@ -388,7 +395,7 @@ namespace TiltBrush
                 StartCoroutine(
                     OverlayManager.m_Instance.RunInCompositorWithProgress(
                         OverlayType.LoadGeneric,
-                        SketchMemoryScript.m_Instance.RepaintCoroutine(changedBrushes, true),
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(brushesToRepaint, true),
                         0.25f)
                 );
             }
@@ -438,7 +445,7 @@ namespace TiltBrush
             }
         }
 
-        private void LoadUserLibraryBrush(string path)
+        private Guid? LoadUserLibraryBrush(string path)
         {
             string brushObject = Path.GetFileName(path);
             BrushDescriptor existingBrush =
@@ -454,28 +461,27 @@ namespace TiltBrush
                         BrushController.m_Instance.SetBrushToDefault();
                     }
                     m_CatalogChanged = true;
+                    return existingBrush.m_Guid;
                 }
-                return;
+                return null;
             }
             if (m_LibraryBrushes.ContainsKey(userBrush.Descriptor.m_Guid) && existingBrush == null)
             {
                 Debug.LogError(
                   $"New brush at {path} has a guid already used.");
-                return;
+                return null;
             }
-            if (userBrush != null)
+            m_LibraryBrushes[userBrush.Descriptor.m_Guid] = userBrush.Descriptor;
+            if (existingBrush != null)
             {
-                m_LibraryBrushes[userBrush.Descriptor.m_Guid] = userBrush.Descriptor;
-                if (existingBrush != null)
+                if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
                 {
-                    if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
-                    {
-                        BrushController.m_Instance.SetBrushToDefault();
-                        BrushController.m_Instance.SetActiveBrush(userBrush.Descriptor);
-                    }
+                    BrushController.m_Instance.SetBrushToDefault();
+                    BrushController.m_Instance.SetActiveBrush(userBrush.Descriptor);
                 }
-                m_CatalogChanged = true;
             }
+            m_CatalogChanged = true;
+            return userBrush.Descriptor.m_Guid;
         }
 
         public void AddSceneBrush(BrushDescriptor brush)
