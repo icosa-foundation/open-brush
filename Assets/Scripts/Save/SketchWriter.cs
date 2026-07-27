@@ -185,14 +185,14 @@ namespace TiltBrush
 
                         yield return snapshot;
                     }
-                }
-                else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
-                {
-                    // This shouldn't happen
-                    Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
-                    snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
-                    snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
-                    yield return snapshot;
+                    else
+                    {
+                        // This shouldn't happen
+                        Debug.Log($"Saving layerless stroke {stroke.m_BrushGuid} on the main canvas");
+                        snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
+                        snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
+                        yield return snapshot;
+                    }
                 }
                 else
                 {
