@@ -146,7 +146,7 @@ MonoBehaviour:
   width: 1920
   height: 1080
   raysPerView: 1000
-  outputFolder: C:\Users\andyb\Documents\Open Brush\SplatPoses
+  outputFolder:
   captureMsaaSamples: 4
   runtimeSequence: 0
   fbs: 25
