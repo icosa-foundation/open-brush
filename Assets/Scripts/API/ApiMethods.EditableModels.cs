@@ -216,22 +216,6 @@ namespace TiltBrush
                 return blocksWidget;
             }
 
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            ModelWidget modelWidget = cmd.Widget as ModelWidget;
-            if (modelWidget != null)
-            {
-                // Start async load and setup widget when complete (fire-and-forget)
-                // Model assignment happens in SetupWidgetAfterLoadAsync after loading completes
-                _ = SetupWidgetAfterLoadAsync(model, modelWidget, subtree, cmd);
-
-                modelWidget.Show(true);
-            }
-            else
-            {
-                Debug.LogWarning("Failed to create EditableModelWidget");
-                return null;
-            }
             if (editable)
             {
                 model.LoadEditableModel();
@@ -256,36 +240,29 @@ namespace TiltBrush
                 SelectionManager.m_Instance.RemoveFromSelection(false);
                 return emodelWidget;
             }
+
+            var cmd = new CreateWidgetCommand(
+                WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(),
+                forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            ModelWidget modelWidget = cmd.Widget as ModelWidget;
+            if (modelWidget != null)
+            {
+                // Start async load and setup widget when complete (fire-and-forget).
+                // Model assignment happens in SetupWidgetAfterLoadAsync after loading completes.
+                _ = SetupWidgetAfterLoadAsync(model, modelWidget, subtree, cmd);
+                modelWidget.Show(true);
+            }
             else
             {
-                AsyncHelpers.RunSync(() => model.LoadModelAsync());
-                model.EnsureCollectorExists();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab, tr, null, forceTransform: true
-                );
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget widget = createCommand.Widget as ModelWidget;
-                if (widget != null)
-                {
-                    widget.Model = model;
-                    widget.Subtree = subtree;
-                    widget.SyncHierarchyToSubtree();
-                    widget.Show(true);
-                    widget.AddSceneLightGizmos();
-                    createCommand.SetWidgetCost(widget.GetTiltMeterCost());
-                }
-                else
-                {
-                    Debug.LogWarning("Failed to create EditableModelWidget");
-                    return null;
-                }
-
-                WidgetManager.m_Instance.WidgetsDormant = false;
-                SketchControlsScript.m_Instance.EatGazeObjectInput();
-                SelectionManager.m_Instance.RemoveFromSelection(false);
-
-                return widget;
+                Debug.LogWarning("Failed to create ModelWidget");
+                return null;
             }
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+            return modelWidget;
         }
 
         private static EditableModelWidget GetActiveEditableModel(int index)
