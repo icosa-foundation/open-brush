@@ -1223,73 +1223,85 @@ namespace TiltBrush
         public IEnumerator LoadTiltFile(string id, Action<float> onProgress = null)
         {
             BeginLoadSketchOverlap();
-            onProgress?.Invoke(0.05f);
-
-            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
-            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
-            double requestStartTime = Time.realtimeSinceStartupAsDouble;
-            using (var cr = request.SendAsync().AsIeNull())
+            bool loadIssued = false;
+            try
             {
-                while (!request.Done)
+                onProgress?.Invoke(0.05f);
+
+                string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
+                WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+                double requestStartTime = Time.realtimeSinceStartupAsDouble;
+                using (var cr = request.SendAsync().AsIeNull())
                 {
-                    const float kMetadataProportion = 0.2f;
-                    const float kMetadataTime = 0.75f;
-                    float requestElapsed = (float)(Time.realtimeSinceStartupAsDouble - requestStartTime);
-                    float metadataProgress = Mathf.Clamp01(requestElapsed / kMetadataTime);
-                    onProgress?.Invoke(kMetadataProportion * metadataProgress);
-                    try
+                    while (!request.Done)
                     {
-                        cr.MoveNext();
+                        const float kMetadataProportion = 0.2f;
+                        const float kMetadataTime = 0.75f;
+                        float requestElapsed = (float)(Time.realtimeSinceStartupAsDouble - requestStartTime);
+                        float metadataProgress = Mathf.Clamp01(requestElapsed / kMetadataTime);
+                        onProgress?.Invoke(kMetadataProportion * metadataProgress);
+                        try
+                        {
+                            cr.MoveNext();
+                        }
+                        catch (VrAssetServiceException e)
+                        {
+                            ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                            Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
+                            yield break;
+                        }
+                        yield return cr.Current;
                     }
-                    catch (VrAssetServiceException e)
+                }
+                JObject json = JObject.Parse(request.Result);
+                var info = new IcosaSceneFileInfo(json);
+                if (!info.Valid)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
+                    Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
+                    yield break;
+                }
+
+                string path = FileUtils.GenerateNonexistentFilename(
+                    Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
+                const int kDownloadBufferSize = 1024 * 1024;
+                byte[] downloadBuffer = new byte[kDownloadBufferSize];
+                IcosaTiltDownloadResult result = null;
+                UnityWebRequest downloadRequest = null;
+                IEnumerator download = IcosaTiltDownloader.DownloadTiltCoroutine(
+                    info, path, downloadBuffer,
+                    isCanceled: null,
+                    onRequestChanged: r => downloadRequest = r,
+                    onComplete: r => result = r);
+                while (download.MoveNext())
+                {
+                    if (downloadRequest != null)
                     {
-                        ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
-                        Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
-                        yield break;
+                        onProgress?.Invoke(0.2f + 0.8f * downloadRequest.downloadProgress);
                     }
-                    yield return cr.Current;
+                    yield return download.Current;
+                }
+
+                if (result == null || !result.Succeeded)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                        result?.UserMessage ?? "Could not load sketch from Icosa.");
+                    Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
+                    yield break;
+                }
+
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                loadIssued = true;
+                onProgress?.Invoke(1.0f);
+            }
+            finally
+            {
+                if (!loadIssued)
+                {
+                    EndLoadSketchOverlap();
                 }
             }
-            JObject json = JObject.Parse(request.Result);
-            var info = new IcosaSceneFileInfo(json);
-            if (!info.Valid)
-            {
-                ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
-                Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
-                yield break;
-            }
-
-            string path = FileUtils.GenerateNonexistentFilename(
-                Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
-            const int kDownloadBufferSize = 1024 * 1024;
-            byte[] downloadBuffer = new byte[kDownloadBufferSize];
-            IcosaTiltDownloadResult result = null;
-            UnityWebRequest downloadRequest = null;
-            IEnumerator download = IcosaTiltDownloader.DownloadTiltCoroutine(
-                info, path, downloadBuffer,
-                isCanceled: null,
-                onRequestChanged: r => downloadRequest = r,
-                onComplete: r => result = r);
-            while (download.MoveNext())
-            {
-                if (downloadRequest != null)
-                {
-                    onProgress?.Invoke(0.2f + 0.8f * downloadRequest.downloadProgress);
-                }
-                yield return download.Current;
-            }
-
-            if (result == null || !result.Succeeded)
-            {
-                ControllerConsoleScript.m_Instance.AddNewLine(
-                    result?.UserMessage ?? "Could not load sketch from Icosa.");
-                Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
-                yield break;
-            }
-
-            SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
-            onProgress?.Invoke(1.0f);
         }
 
         private static void BeginLoadSketchOverlap()
@@ -1310,6 +1322,21 @@ namespace TiltBrush
                 {
                     ViewpointScript.m_Instance.SetOverlayToBlack();
                 }
+            }
+        }
+
+        private static void EndLoadSketchOverlap()
+        {
+            if (OverlayManager.m_Instance != null)
+            {
+                OverlayManager.m_Instance.PauseRendering(false);
+                OverlayManager.m_Instance.FadeFromCompositor(0);
+                OverlayManager.m_Instance.SetOverlayTransitionRatio(0);
+            }
+
+            if (ViewpointScript.m_Instance != null)
+            {
+                ViewpointScript.m_Instance.FadeToScene(float.MaxValue);
             }
         }
 
