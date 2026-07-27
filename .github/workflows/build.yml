@@ -798,9 +798,9 @@ jobs:
           path: build_android_openxr
 
       - name: Download Build Artifacts (Android Quest)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Oculus Quest (1)
           path: build_android_quest
 
       - name: Download Build Artifacts (Linux)
