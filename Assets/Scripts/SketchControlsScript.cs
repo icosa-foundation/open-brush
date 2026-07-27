@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Es.InkPainter;
 using OpenBrush.Multiplayer;
 using System;
 using System.Collections;
@@ -5309,7 +5310,9 @@ namespace TiltBrush
                     return App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType)iParam);
                 case GlobalCommands.GoogleDriveSync: return App.DriveSync.SyncEnabled;
                 case GlobalCommands.RecordCameraPath: return VideoRecorderUtils.ActiveVideoRecording != null;
-                case GlobalCommands.EnableTexturePainting: return !IsCommandAvailable(rEnum, iParam);
+                case GlobalCommands.EnableTexturePainting:
+                    return LastGrabWidget != null &&
+                        LastGrabWidget.GetComponentInChildren<InkCanvas>() != null;
             }
             return false;
         }
