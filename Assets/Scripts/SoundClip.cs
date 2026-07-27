@@ -279,8 +279,14 @@ namespace TiltBrush
             m_Controllers.Remove(soundClipController);
             if (soundClipController != null && soundClipController.m_SoundClipAudioSource != null)
             {
-                soundClipController.m_SoundClipAudioSource.Stop();
-                UnityEngine.Object.Destroy(soundClipController.m_SoundClipAudioSource.gameObject);
+                AudioSource audioSource = soundClipController.m_SoundClipAudioSource;
+                AudioClip audioClip = audioSource.clip;
+                audioSource.Stop();
+                audioSource.clip = null;
+                if (audioClip != null)
+                {
+                    UnityEngine.Object.Destroy(audioClip);
+                }
                 soundClipController.m_SoundClipAudioSource = null;
             }
         }
