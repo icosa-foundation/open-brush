@@ -125,8 +125,7 @@ namespace TiltBrush
             Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
             Vector3 pos = rAttachPoint.position;
             Vector3 vec = -rAttachPoint.forward;
-            PointerManager.m_Instance.SetMainPointerPosition(pos);
-            PointerManager.m_Instance.SetMainPointerForward(vec);
+            PointerManager.m_Instance.SetMainPointerPositionAndForward(pos, vec);
         }
 
         private void OnDrawGizmos()
