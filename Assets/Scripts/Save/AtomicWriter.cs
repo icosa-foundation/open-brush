@@ -87,6 +87,7 @@ namespace TiltBrush
             {
                 Directory.CreateDirectory(m_temporaryPath);
                 string fullPath = Path.Combine(m_temporaryPath, subfileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
                 return new FileStream(fullPath, FileMode.Create, FileAccess.Write);
             }
         }
