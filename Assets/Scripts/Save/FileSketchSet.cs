@@ -346,26 +346,6 @@ namespace TiltBrush
             }
 
             SceneFileInfo sceneFileInfo = m_Sketches[toDelete].SceneFileInfo;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedSketchRelativePath(sceneFileInfo.FullPath, out string relativePath))
-            {
-                if (!AndroidStorageManager.RequireSharedFolderFor(
-                    "deleting sketches", () => DeleteSketch(toDelete)))
-                {
-                    return;
-                }
-
-                if (!AndroidSafStorage.DeleteTreeChild(relativePath))
-                {
-                    OutputWindowScript.Error(
-                        "Failed to delete sketch",
-                        "The shared storage copy could not be deleted.");
-                    return;
-                }
-            }
-#endif
-
             // Notify our file watcher to make sure it got the memo this sketch was deleted.
             m_FileWatcher.NotifyDelete(sceneFileInfo.FullPath);
 
@@ -382,48 +362,6 @@ namespace TiltBrush
         public virtual void RenameSketch(int toRename, string newName)
         {
             SceneFileInfo sceneFileInfo = m_Sketches[toRename].SceneFileInfo;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedSketchRelativePath(sceneFileInfo.FullPath, out string oldRelativePath))
-            {
-                if (!AndroidStorageManager.RequireSharedFolderFor(
-                    "renaming sketches", () => RenameSketch(toRename, newName)))
-                {
-                    return;
-                }
-
-                string newLocalPath = Path.Combine(
-                    Path.GetDirectoryName(sceneFileInfo.FullPath),
-                    $"{newName}{SaveLoadScript.TILT_SUFFIX}");
-                if (!OpenBrushStorage.TryGetSharedSketchRelativePath(
-                        newLocalPath, out string newRelativePath))
-                {
-                    OutputWindowScript.Error(
-                        "Failed to rename sketch",
-                        "The shared storage copy could not be renamed.");
-                    return;
-                }
-
-                OpenBrushStorage.PublishLocalPathToSharedStorageAsync(
-                    newRelativePath,
-                    sceneFileInfo.FullPath,
-                    "renamed sketch",
-                    (success, error) =>
-                    {
-                        if (!success || !AndroidSafStorage.DeleteTreeChild(oldRelativePath))
-                        {
-                            OutputWindowScript.Error(
-                                "Failed to rename sketch",
-                                "The shared storage copy could not be renamed.");
-                            return;
-                        }
-
-                        RenameLocalSketch(sceneFileInfo, newName);
-                    });
-                return;
-            }
-#endif
-
             RenameLocalSketch(sceneFileInfo, newName);
         }
 

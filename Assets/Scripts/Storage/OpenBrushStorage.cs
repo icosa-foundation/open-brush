@@ -71,40 +71,6 @@ namespace TiltBrush
             get { return "Open Brush/Exports"; }
         }
 
-        public static void SyncSharedUserContentToLocalCache(Action onComplete = null)
-        {
-            if (!IsGooglePlayStorageMode || !AndroidSafStorage.HasOpenBrushFolder())
-            {
-                onComplete?.Invoke();
-                return;
-            }
-
-            int remainingTransfers = 3;
-            Action transferComplete = () =>
-            {
-                remainingTransfers--;
-                if (remainingTransfers == 0)
-                {
-                    onComplete?.Invoke();
-                }
-            };
-
-            SyncSharedDirectoryAsync(
-                "Sketches",
-                App.UserSketchPath(),
-                notifySketches: true,
-                transferComplete,
-                App.AutosavePath());
-            SyncSharedDirectoryAsync(
-                "Saved Strokes", App.SavedStrokesPath(), notifySketches: true, transferComplete);
-            SyncSharedDirectoryAsync(
-                "Media Library",
-                App.MediaLibraryPath(),
-                notifySketches: false,
-                transferComplete,
-                App.SavedStrokesPath());
-        }
-
         public static bool TryGetSharedSketchRelativePath(string localPath, out string relativePath)
         {
             relativePath = null;
@@ -497,130 +463,60 @@ namespace TiltBrush
                 });
         }
 
-        public static void PublishSketchToSharedStorageAsync(
-            string localPath, string label, Action<bool, string> onComplete)
-        {
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedSketchRelativePath(localPath, out string relativePath))
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-
-            PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete);
-        }
-
-        public static void PublishLocalPathToSharedStorageAsync(
-            string relativePath,
-            string localPath,
-            string label,
-            Action<bool, string> onComplete)
-        {
-            PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete);
-        }
-
         private static void PublishPathToSharedStorageAsync(
             string relativePath,
             string localPath,
             string label,
             Action<bool, string> onComplete)
         {
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                if (!TryResolveStorageDestination(
-                        relativePath, out StorageArea area, out string areaRelativePath))
-                {
-                    onComplete?.Invoke(
-                        false, $"Unsupported shared-storage destination: {relativePath}");
-                    return;
-                }
-                AndroidStorageManager.StartStorageOperation(
-                    label,
-                    () => SafStagedOutputPublisher.Publish(
-                        UserStorage.Backend,
-                        area,
-                        areaRelativePath,
-                        localPath,
-                        transactionOwnsPayload: false,
-                        CancellationToken.None),
-                    onComplete);
+                onComplete?.Invoke(false, "SAF storage backend is unavailable.");
                 return;
             }
-
-            if (File.Exists(localPath))
+            if (!TryResolveStorageDestination(
+                    relativePath, out StorageArea area, out string areaRelativePath))
             {
-                AndroidStorageManager.StartTransfer(
-                    label,
-                    () => AndroidSafStorage.StartWriteFileFromPath(
-                        relativePath, localPath, GuessMimeType(localPath)),
+                onComplete?.Invoke(
+                    false, $"Unsupported shared-storage destination: {relativePath}");
+                return;
+            }
+            AndroidStorageManager.StartStorageOperation(
+                label,
+                () => SafStagedOutputPublisher.Publish(
+                    UserStorage.Backend,
+                    area,
+                    areaRelativePath,
                     localPath,
-                    relativePath,
-                    (success, error) => onComplete?.Invoke(success, success ? null : FormatCopyError(error, relativePath)),
-                    () => PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete));
-                return;
-            }
-
-            if (Directory.Exists(localPath))
-            {
-                AndroidStorageManager.StartTransfer(
-                    label,
-                    () => AndroidSafStorage.StartCopyDirectoryFromPath(relativePath, localPath),
-                    localPath,
-                    relativePath,
-                    (success, error) => onComplete?.Invoke(success, success ? null : FormatCopyError(error, relativePath)),
-                    () => PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete));
-                return;
-            }
-
-            onComplete?.Invoke(false, "Local path does not exist: " + localPath);
+                    transactionOwnsPayload: false,
+                    CancellationToken.None),
+                onComplete);
         }
 
         private static bool PublishPathToSharedStorage(
             string relativePath, string localPath, out string error)
         {
             error = null;
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                if (!TryResolveStorageDestination(
-                        relativePath, out StorageArea area, out string areaRelativePath))
-                {
-                    error = $"Unsupported shared-storage destination: {relativePath}";
-                    return false;
-                }
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(
-                    UserStorage.Backend,
-                    area,
-                    areaRelativePath,
-                    localPath,
-                    transactionOwnsPayload: false,
-                    CancellationToken.None);
-                error = result.Error;
-                return result.Success;
-            }
-
-            if (File.Exists(localPath))
-            {
-                if (AndroidSafStorage.WriteFileFromPath(
-                    relativePath, localPath, GuessMimeType(localPath)))
-                {
-                    return true;
-                }
-            }
-            else if (Directory.Exists(localPath))
-            {
-                if (AndroidSafStorage.CopyDirectoryFromPath(relativePath, localPath))
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                error = $"Local path does not exist: {localPath}";
+                error = "SAF storage backend is unavailable.";
                 return false;
             }
-
-            error = $"Failed to copy to shared storage: {relativePath}";
-            return false;
+            if (!TryResolveStorageDestination(
+                    relativePath, out StorageArea area, out string areaRelativePath))
+            {
+                error = $"Unsupported shared-storage destination: {relativePath}";
+                return false;
+            }
+            SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                UserStorage.Backend,
+                area,
+                areaRelativePath,
+                localPath,
+                transactionOwnsPayload: false,
+                CancellationToken.None);
+            error = result.Error;
+            return result.Success;
         }
 
         private static bool TryResolveStorageDestination(
@@ -664,124 +560,6 @@ namespace TiltBrush
             return false;
         }
 
-        private static string FormatCopyError(string error, string relativePath)
-        {
-            return string.IsNullOrEmpty(error)
-                ? "Failed to copy to shared storage: " + relativePath
-                : error;
-        }
-
-        private static void SyncSharedDirectoryAsync(
-            string relativeDirectory,
-            string localDirectory,
-            bool notifySketches,
-            Action onComplete,
-            params string[] preservedLocalPaths)
-        {
-            Directory.CreateDirectory(localDirectory);
-            HashSet<string> existingSketches = notifySketches
-                ? new HashSet<string>(Directory.GetFiles(
-                    localDirectory, $"*{SaveLoadScript.TILT_SUFFIX}", SearchOption.TopDirectoryOnly))
-                : null;
-
-            AndroidStorageManager.StartInboundTransfer(
-                relativeDirectory,
-                () =>
-                {
-                    var preservedPaths = new HashSet<string>(
-                        AndroidStorageManager.GetPendingLocalPaths(localDirectory));
-                    preservedPaths.UnionWith(preservedLocalPaths);
-                    return AndroidSafStorage.StartCopyDirectoryToPath(
-                        relativeDirectory,
-                        localDirectory,
-                        new List<string>(preservedPaths).ToArray());
-                },
-                (success, error) =>
-                {
-                    if (success && notifySketches)
-                    {
-                        var syncedSketches = new HashSet<string>(Directory.GetFiles(
-                            localDirectory,
-                            $"*{SaveLoadScript.TILT_SUFFIX}",
-                            SearchOption.TopDirectoryOnly));
-                        foreach (string localPath in syncedSketches)
-                        {
-                            NotifySyncedLocalSketch(
-                                relativeDirectory, localPath, existingSketches.Contains(localPath));
-                        }
-                        existingSketches.ExceptWith(syncedSketches);
-                        foreach (string localPath in existingSketches)
-                        {
-                            NotifyDeletedLocalSketch(relativeDirectory, localPath);
-                        }
-                    }
-                    else if (!success)
-                    {
-                        Debug.LogWarning(
-                            $"SAF_CACHE_SYNC Failed to sync '{relativeDirectory}': {error}");
-                    }
-                    onComplete?.Invoke();
-                });
-        }
-
-        private static void NotifySyncedLocalSketch(
-            string relativeDirectory, string localPath, bool existed)
-        {
-            if (SketchCatalog.m_Instance == null)
-            {
-                return;
-            }
-
-            SketchSetType setType = relativeDirectory == "Saved Strokes"
-                ? SketchSetType.SavedStrokes
-                : SketchSetType.User;
-            SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
-            if (set == null)
-            {
-                return;
-            }
-
-            if (existed)
-            {
-                set.NotifySketchChanged(localPath);
-                if (setType == SketchSetType.SavedStrokes && SavedStrokesCatalog.Instance != null)
-                {
-                    SavedStrokesCatalog.Instance.NotifyFileChanged(localPath);
-                }
-            }
-            else
-            {
-                set.NotifySketchCreated(localPath);
-                if (setType == SketchSetType.SavedStrokes && SavedStrokesCatalog.Instance != null)
-                {
-                    SavedStrokesCatalog.Instance.NotifyFileCreated(localPath);
-                }
-            }
-        }
-
-        private static void NotifyDeletedLocalSketch(string relativeDirectory, string localPath)
-        {
-            if (SketchCatalog.m_Instance == null)
-            {
-                return;
-            }
-
-            SketchSetType setType = relativeDirectory == "Saved Strokes"
-                ? SketchSetType.SavedStrokes
-                : SketchSetType.User;
-            SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
-            if (set == null)
-            {
-                return;
-            }
-
-            set.NotifySketchDeleted(localPath);
-            if (setType == SketchSetType.SavedStrokes && SavedStrokesCatalog.Instance != null)
-            {
-                SavedStrokesCatalog.Instance.NotifyFileDeleted(localPath);
-            }
-        }
-
         private static bool TryGetRelativePath(string root, string path, out string relativePath)
         {
             relativePath = null;
@@ -804,25 +582,5 @@ namespace TiltBrush
             return true;
         }
 
-        private static string GuessMimeType(string path)
-        {
-            string extension = Path.GetExtension(path).ToLowerInvariant();
-            switch (extension)
-            {
-                case ".png":
-                    return "image/png";
-                case ".jpg":
-                case ".jpeg":
-                    return "image/jpeg";
-                case ".gif":
-                    return "image/gif";
-                case ".mp4":
-                    return "video/mp4";
-                case ".webm":
-                    return "video/webm";
-                default:
-                    return "application/octet-stream";
-            }
-        }
     }
 }

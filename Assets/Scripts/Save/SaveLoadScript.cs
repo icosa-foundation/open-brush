@@ -442,9 +442,7 @@ namespace TiltBrush
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false,
             bool saveToLocalCacheOnly = false)
         {
-            bool directSafSave = false;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            directSafSave =
+            bool directSafSave =
                 !saveToLocalCacheOnly &&
                 UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
             if (!saveToLocalCacheOnly &&
@@ -457,7 +455,6 @@ namespace TiltBrush
             {
                 return new List<Timeslice>().GetEnumerator();
             }
-#endif
 
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
@@ -485,7 +482,6 @@ namespace TiltBrush
                 selectedOnly,
                 bNotify,
                 snapshot,
-                publishToSharedStorage: !saveToLocalCacheOnly,
                 directSafWrite: directSafSave);
             return m_SaveCoroutine;
         }
@@ -500,7 +496,6 @@ namespace TiltBrush
             SceneFileInfo fileInfo, bool selectedOnly,
             bool bNotify = true,
             SketchSnapshot snapshot = null,
-            bool publishToSharedStorage = true,
             bool directSafWrite = false)
         {
             // Cancel any pending transfers of this file.
@@ -579,32 +574,6 @@ namespace TiltBrush
                 m_LastSceneFile = fileInfo;
             }
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            if (!directSafWrite && error == null && publishToSharedStorage)
-            {
-                bool publishDone = false;
-                bool publishSucceeded = false;
-                string publishError = null;
-                PublishSavedSceneToSharedStorage(fileInfo, (success, asyncError) =>
-                {
-                    publishSucceeded = success;
-                    publishError = asyncError;
-                    publishDone = true;
-                });
-                while (!publishDone)
-                {
-                    yield return null;
-                }
-                if (!publishSucceeded)
-                {
-                    error = publishError;
-                }
-            }
-            else if (error == null && !publishToSharedStorage)
-            {
-                RegisterSavedSceneForSharedStorage(fileInfo, selectedOnly);
-            }
-#endif
             m_LastWriteSnapshotError = error;
             m_LastThumbnailBytes = snapshot.Thumbnail;
             SketchMemoryScript.m_Instance.SetLastOperationStackCount();
@@ -747,46 +716,6 @@ namespace TiltBrush
             }
             throw new IOException("Could not generate a unique shared sketch name.");
         }
-
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-        private void RegisterSavedSceneForSharedStorage(SceneFileInfo fileInfo, bool selectedOnly)
-        {
-            string label = selectedOnly ? "saved strokes" : "sketch";
-            if (!OpenBrushStorage.TryGetSharedSketchRelativePath(
-                    fileInfo.FullPath, out string relativePath))
-            {
-                return;
-            }
-            AndroidStorageManager.RegisterPendingTransfer(
-                label,
-                fileInfo.FullPath,
-                relativePath,
-                () => PublishSavedSceneToSharedStorage(fileInfo, (success, error) => { }));
-        }
-
-        private void PublishSavedSceneToSharedStorage(
-            SceneFileInfo fileInfo, Action<bool, string> onComplete)
-        {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode ||
-                !OpenBrushStorage.TryGetSharedSketchRelativePath(
-                    fileInfo.FullPath, out string relativePath))
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-
-            OpenBrushStorage.PublishSketchToSharedStorageAsync(
-                fileInfo.FullPath,
-                "sketch",
-                (success, error) =>
-                {
-                    onComplete?.Invoke(
-                        success,
-                        success ? null : "Failed to copy sketch to shared storage. The local cache copy was kept at " +
-                            fileInfo.FullPath + (string.IsNullOrEmpty(error) ? "" : "\n" + error));
-                });
-        }
-#endif
 
         /// If success, error should be null
         private void NotifySaveFinished(SceneFileInfo info, string error, bool newFile)
