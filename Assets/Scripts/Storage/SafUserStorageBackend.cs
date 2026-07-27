@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
@@ -21,6 +22,17 @@ namespace TiltBrush
     /// Direct access to the user-selected Open Brush document tree.
     public sealed class SafUserStorageBackend : IUserStorageBackend
     {
+        private sealed class DocumentLocation
+        {
+            public StorageArea Area;
+            public string RelativePath;
+        }
+
+        private readonly object m_LocationGate = new object();
+        private readonly Dictionary<StorageDocumentId, DocumentLocation> m_Locations =
+            new Dictionary<StorageDocumentId, DocumentLocation>();
+        private string m_MappedRootId;
+
         public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
         public bool IsReady => AndroidSafStorage.HasOpenBrushFolder();
 
@@ -44,6 +56,10 @@ namespace TiltBrush
             {
                 return StorageDirectoryResult.Failed(
                     StorageResultCode.Cancelled, "Directory listing was cancelled.");
+            }
+            if (result.Success)
+            {
+                RecordLocations(area, relativeDirectory, result.Documents);
             }
             return result;
         }
@@ -99,11 +115,34 @@ namespace TiltBrush
                     documentId,
                     "Open Brush shared folder is unavailable.");
             }
-            using (SafDestinationLocks.Acquire(
-                $"{AndroidSafStorage.GetSelectedRootIdentity()}\nrename\n{documentId}",
-                cancellationToken))
+            DocumentLocation location = GetLocation(documentId);
+            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            string oldKey = location == null
+                ? $"{rootId}\nunknown\n{documentId}"
+                : SafDestinationLocks.GetDestinationKey(
+                    rootId, location.Area, location.RelativePath);
+            string newRelativePath = location == null
+                ? newDisplayName
+                : CombineLogicalPath(
+                    GetLogicalDirectory(location.RelativePath), newDisplayName);
+            string newKey = location == null
+                ? $"{rootId}\nunknown-name\n{newDisplayName}"
+                : SafDestinationLocks.GetDestinationKey(
+                    rootId, location.Area, newRelativePath);
+            using (SafDestinationLocks.AcquireMany(
+                new[] { oldKey, newKey }, cancellationToken))
             {
-                return AndroidSafStorage.RenameDocument(documentId, newDisplayName);
+                StorageMutationResult result = RenameWithoutLock(documentId, newDisplayName);
+                if (result.Success && location != null)
+                {
+                    lock (m_LocationGate)
+                    {
+                        m_Locations.Remove(documentId);
+                        location.RelativePath = newRelativePath;
+                        m_Locations[result.DocumentId] = location;
+                    }
+                }
+                return result;
             }
         }
 
@@ -118,11 +157,23 @@ namespace TiltBrush
                     documentId,
                     "Open Brush shared folder is unavailable.");
             }
-            using (SafDestinationLocks.Acquire(
-                $"{AndroidSafStorage.GetSelectedRootIdentity()}\ndelete\n{documentId}",
-                cancellationToken))
+            DocumentLocation location = GetLocation(documentId);
+            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            string key = location == null
+                ? $"{rootId}\nunknown\n{documentId}"
+                : SafDestinationLocks.GetDestinationKey(
+                    rootId, location.Area, location.RelativePath);
+            using (SafDestinationLocks.Acquire(key, cancellationToken))
             {
-                return AndroidSafStorage.DeleteDocument(documentId);
+                StorageMutationResult result = DeleteWithoutLock(documentId);
+                if (result.Success || result.Code == StorageResultCode.NotFound)
+                {
+                    lock (m_LocationGate)
+                    {
+                        m_Locations.Remove(documentId);
+                    }
+                }
+                return result;
             }
         }
 
@@ -151,6 +202,64 @@ namespace TiltBrush
                 case StorageArea.Exports: return "Exports";
                 default: throw new ArgumentOutOfRangeException(nameof(area), area, null);
             }
+        }
+
+        internal StorageMutationResult RenameWithoutLock(
+            StorageDocumentId documentId, string newDisplayName)
+        {
+            return AndroidSafStorage.RenameDocument(documentId, newDisplayName);
+        }
+
+        internal StorageMutationResult DeleteWithoutLock(StorageDocumentId documentId)
+        {
+            return AndroidSafStorage.DeleteDocument(documentId);
+        }
+
+        private void RecordLocations(
+            StorageArea area,
+            string relativeDirectory,
+            IReadOnlyList<StorageDocument> documents)
+        {
+            string rootId = AndroidSafStorage.GetSelectedRootIdentity();
+            lock (m_LocationGate)
+            {
+                if (m_MappedRootId != rootId)
+                {
+                    m_Locations.Clear();
+                    m_MappedRootId = rootId;
+                }
+                foreach (StorageDocument document in documents)
+                {
+                    m_Locations[document.DocumentId] = new DocumentLocation
+                    {
+                        Area = area,
+                        RelativePath = CombineLogicalPath(
+                            relativeDirectory, document.DisplayName),
+                    };
+                }
+            }
+        }
+
+        private DocumentLocation GetLocation(StorageDocumentId documentId)
+        {
+            lock (m_LocationGate)
+            {
+                m_Locations.TryGetValue(documentId, out DocumentLocation location);
+                return location;
+            }
+        }
+
+        private static string GetLogicalDirectory(string relativePath)
+        {
+            int separator = relativePath?.LastIndexOf('/') ?? -1;
+            return separator < 0 ? "" : relativePath.Substring(0, separator);
+        }
+
+        private static string CombineLogicalPath(string directory, string name)
+        {
+            return string.IsNullOrEmpty(directory)
+                ? name
+                : $"{directory.TrimEnd('/', '\\')}/{name}";
         }
 
         private static string CombinePath(string root, string relativePath)

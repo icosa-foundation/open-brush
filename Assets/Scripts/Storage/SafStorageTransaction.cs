@@ -178,6 +178,29 @@ namespace TiltBrush
             }
         }
 
+        private sealed class CompositeLease : IDisposable
+        {
+            private List<IDisposable> m_Leases;
+
+            public CompositeLease(List<IDisposable> leases)
+            {
+                m_Leases = leases;
+            }
+
+            public void Dispose()
+            {
+                List<IDisposable> leases = Interlocked.Exchange(ref m_Leases, null);
+                if (leases == null)
+                {
+                    return;
+                }
+                for (int i = leases.Count - 1; i >= 0; --i)
+                {
+                    leases[i].Dispose();
+                }
+            }
+        }
+
         private static readonly object sm_Gate = new object();
         private static readonly Dictionary<string, SemaphoreSlim> sm_Locks =
             new Dictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
@@ -201,6 +224,30 @@ namespace TiltBrush
             string rootId, StorageArea area, string relativePath)
         {
             return $"{rootId}\n{area}\n{relativePath}".ToLowerInvariant();
+        }
+
+        public static IDisposable AcquireMany(
+            IEnumerable<string> keys, CancellationToken cancellationToken)
+        {
+            var orderedKeys = new SortedSet<string>(
+                keys, StringComparer.OrdinalIgnoreCase);
+            var leases = new List<IDisposable>(orderedKeys.Count);
+            try
+            {
+                foreach (string key in orderedKeys)
+                {
+                    leases.Add(Acquire(key, cancellationToken));
+                }
+                return new CompositeLease(leases);
+            }
+            catch
+            {
+                for (int i = leases.Count - 1; i >= 0; --i)
+                {
+                    leases[i].Dispose();
+                }
+                throw;
+            }
         }
     }
 

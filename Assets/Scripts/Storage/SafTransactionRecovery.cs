@@ -170,8 +170,8 @@ namespace TiltBrush
             {
                 if (invalid != null)
                 {
-                    StorageMutationResult removeOldQuarantine = backend.Delete(
-                        invalid.DocumentId, cancellationToken);
+                    StorageMutationResult removeOldQuarantine = Delete(
+                        backend, invalid.DocumentId, cancellationToken);
                     if (!removeOldQuarantine.Success &&
                         removeOldQuarantine.Code != StorageResultCode.NotFound)
                     {
@@ -180,8 +180,8 @@ namespace TiltBrush
                     }
                     invalid = null;
                 }
-                StorageMutationResult quarantine = backend.Rename(
-                    canonical.DocumentId, invalidName, cancellationToken);
+                StorageMutationResult quarantine = Rename(
+                    backend, canonical.DocumentId, invalidName, cancellationToken);
                 if (!quarantine.Success)
                 {
                     MarkPending(record, quarantine.Error, report);
@@ -199,8 +199,8 @@ namespace TiltBrush
                     invalidName);
             }
 
-            StorageMutationResult restore = backend.Rename(
-                source.DocumentId, record.TargetDisplayName, cancellationToken);
+            StorageMutationResult restore = Rename(
+                backend, source.DocumentId, record.TargetDisplayName, cancellationToken);
             if (!restore.Success)
             {
                 MarkPending(record, restore.Error, report);
@@ -264,8 +264,8 @@ namespace TiltBrush
             {
                 return true;
             }
-            StorageMutationResult result = backend.Delete(
-                document.DocumentId, cancellationToken);
+            StorageMutationResult result = Delete(
+                backend, document.DocumentId, cancellationToken);
             error = result.Error;
             return result.Success || result.Code == StorageResultCode.NotFound;
         }
@@ -280,6 +280,29 @@ namespace TiltBrush
             return listing.Documents.FirstOrDefault(document =>
                 string.Equals(
                     document.DisplayName, displayName, StringComparison.Ordinal));
+        }
+
+        private static StorageMutationResult Rename(
+            IUserStorageBackend backend,
+            StorageDocumentId documentId,
+            string newDisplayName,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return backend is SafUserStorageBackend safBackend
+                ? safBackend.RenameWithoutLock(documentId, newDisplayName)
+                : backend.Rename(documentId, newDisplayName, cancellationToken);
+        }
+
+        private static StorageMutationResult Delete(
+            IUserStorageBackend backend,
+            StorageDocumentId documentId,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return backend is SafUserStorageBackend safBackend
+                ? safBackend.DeleteWithoutLock(documentId)
+                : backend.Delete(documentId, cancellationToken);
         }
 
         private static void MarkPending(
