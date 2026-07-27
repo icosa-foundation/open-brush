@@ -368,7 +368,8 @@ namespace TiltBrush
                 return;
             }
 
-            AndroidStorageManager.RequireSharedFolderFor(label, Publish);
+            AndroidStorageManager.RegisterPendingTransfer(label, localPath, Publish);
+            AndroidStorageManager.RequireSharedFolderFor(label, null);
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)
