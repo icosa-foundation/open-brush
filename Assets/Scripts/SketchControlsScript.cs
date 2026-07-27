@@ -3076,6 +3076,7 @@ namespace TiltBrush
             bool bGazeDeactivationOverrideWithInput = false;
             List<PanelManager.PanelData> aAllPanels = m_PanelManager.GetAllPanels();
             float fNearestWidget = 99999.0f;
+            float fNearestPointableWidget = 99999.0f;
 
             bool hasController = m_ControlsType == ControlsType.SixDofControllers;
 
@@ -3104,6 +3105,7 @@ namespace TiltBrush
                         m_GazeControllerRay, out GrabWidget pointableWidget, out RaycastHit pointableHitInfo))
                     {
                         m_CurrentPointableWidget = pointableWidget;
+                        fNearestPointableWidget = pointableHitInfo.distance;
                         m_CurrentPointableHitPoint =
                             pointableHitInfo.point -
                             m_GazeControllerRay.direction * kPointableReticleSurfaceOffset;
@@ -3232,12 +3234,14 @@ namespace TiltBrush
                 }
 
                 //if we found something near our controller, take it
-                if (m_CurrentPointableWidget != null)
+                if (m_CurrentPointableWidget != null &&
+                    (iControllerIndex == -1 || fNearestPointableWidget <= fControllerDist))
                 {
                     m_CurrentGazeObject = -1;
                 }
                 else if (iControllerIndex != -1)
                 {
+                    m_CurrentPointableWidget = null;
                     m_CurrentGazeObject = iControllerIndex;
                     m_CurrentGazeHitPoint = m_GazeResults[iControllerIndex].m_ControllerPosition;
 
