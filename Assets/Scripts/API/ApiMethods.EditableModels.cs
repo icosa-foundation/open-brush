@@ -292,6 +292,7 @@ namespace TiltBrush
                     var vert = faceVerts[i];
                     trs.Add(TrTransform.TR(vert, orientation));
                 }
+                alltrs.Add(trs);
             }
             DrawStrokes.DrawNestedTrList(alltrs, tr);
         }
@@ -320,6 +321,7 @@ namespace TiltBrush
                     var vert = faceVerts[i];
                     trs.Add(TrTransform.TR(tr.rotation * vert.Position, orientation));
                 }
+                alltrs.Add(trs);
             }
             DrawStrokes.DrawNestedTrList(alltrs, tr);
         }
