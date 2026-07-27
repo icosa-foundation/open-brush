@@ -109,7 +109,8 @@ namespace TiltBrush
             if (AndroidSafStorage.HasOpenBrushFolder())
             {
                 RunFileDescriptorProbeOnce();
-                OpenBrushStorage.SyncSharedUserContentToLocalCache(RetryPendingTransfers);
+                yield return RecoverTransactions(() =>
+                    OpenBrushStorage.SyncSharedUserContentToLocalCache(RetryPendingTransfers));
                 yield break;
             }
 
@@ -173,15 +174,18 @@ namespace TiltBrush
             PlayerPrefs.DeleteKey(kStartupPromptDismissedKey);
 
             RunFileDescriptorProbeOnce();
-            OpenBrushStorage.SyncSharedUserContentToLocalCache(() =>
+            StartCoroutine(RecoverTransactions(() =>
             {
-                RetryPendingTransfers();
+                OpenBrushStorage.SyncSharedUserContentToLocalCache(() =>
+                {
+                    RetryPendingTransfers();
 
-                Action pendingAction = m_PendingAction;
-                m_PendingAction = null;
-                m_PendingCanceledAction = null;
-                pendingAction?.Invoke();
-            });
+                    Action pendingAction = m_PendingAction;
+                    m_PendingAction = null;
+                    m_PendingCanceledAction = null;
+                    pendingAction?.Invoke();
+                });
+            }));
         }
 
         public void OnOpenBrushFolderCanceled(string unused)
@@ -221,6 +225,39 @@ namespace TiltBrush
             {
                 Debug.LogError($"SAF_FD {report}");
             }
+        }
+
+        private IEnumerator RecoverTransactions(Action onComplete)
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework ||
+                !UserStorage.Backend.IsReady)
+            {
+                onComplete?.Invoke();
+                yield break;
+            }
+
+            var future = new Future<SafRecoveryReport>(
+                () => SafTransactionRecovery.RecoverAll(
+                    UserStorage.Backend, default),
+                longRunning: true);
+            SafRecoveryReport report;
+            while (!future.TryGetResult(out report))
+            {
+                yield return null;
+            }
+            future.Close();
+
+            if (report.Recovered > 0)
+            {
+                Debug.Log($"SAF_STORAGE Recovered {report.Recovered} storage transaction(s).");
+            }
+            if (report.Pending > 0)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE {report.Pending} storage transaction(s) require recovery.");
+            }
+            SketchCatalog.m_Instance?.GetSet(SketchSetType.User)?.RequestRefresh();
+            onComplete?.Invoke();
         }
 
         public static void StartTransfer(

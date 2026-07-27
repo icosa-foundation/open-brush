@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
@@ -35,6 +36,116 @@ namespace TiltBrush
             public Stream Open()
             {
                 return new MemoryStream(m_Data, writable: false);
+            }
+        }
+
+        private sealed class FakeSafBackend : IUserStorageBackend
+        {
+            private sealed class Entry
+            {
+                public StorageDocumentId Id;
+                public string Name;
+                public byte[] Data;
+            }
+
+            private readonly Dictionary<StorageDocumentId, Entry> m_Entries =
+                new Dictionary<StorageDocumentId, Entry>();
+
+            public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
+            public bool IsReady => true;
+
+            public StorageDocumentId Add(string name, byte[] data)
+            {
+                var entry = new Entry
+                {
+                    Id = new StorageDocumentId(Guid.NewGuid().ToString("N")),
+                    Name = name,
+                    Data = data,
+                };
+                m_Entries.Add(entry.Id, entry);
+                return entry.Id;
+            }
+
+            public bool Contains(string name)
+            {
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    if (entry.Name == name)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public StorageDirectoryResult List(
+                StorageArea area, string relativeDirectory, CancellationToken cancellationToken)
+            {
+                var documents = new List<StorageDocument>();
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    documents.Add(new StorageDocument(
+                        entry.Id,
+                        default,
+                        entry.Name,
+                        TiltFile.TILT_MIME_TYPE,
+                        false,
+                        entry.Data.Length,
+                        DateTime.Now,
+                        0,
+                        entry.Name));
+                }
+                return StorageDirectoryResult.Succeeded(documents);
+            }
+
+            public Stream OpenRead(
+                StorageDocumentId documentId,
+                bool requireSeekable,
+                CancellationToken cancellationToken)
+            {
+                return new MemoryStream(m_Entries[documentId].Data, writable: false);
+            }
+
+            public IStorageWriteTransaction BeginWrite(
+                StorageArea area,
+                string relativePath,
+                string mimeType,
+                CancellationToken cancellationToken)
+            {
+                throw new NotSupportedException();
+            }
+
+            public StorageMutationResult Rename(
+                StorageDocumentId documentId,
+                string newDisplayName,
+                CancellationToken cancellationToken)
+            {
+                foreach (Entry candidate in m_Entries.Values)
+                {
+                    if (candidate.Name == newDisplayName)
+                    {
+                        return new StorageMutationResult(
+                            StorageResultCode.Failed, documentId, "Name already exists.");
+                    }
+                }
+                m_Entries[documentId].Name = newDisplayName;
+                return new StorageMutationResult(StorageResultCode.Success, documentId);
+            }
+
+            public StorageMutationResult Delete(
+                StorageDocumentId documentId, CancellationToken cancellationToken)
+            {
+                return m_Entries.Remove(documentId)
+                    ? new StorageMutationResult(StorageResultCode.Success, documentId)
+                    : new StorageMutationResult(StorageResultCode.NotFound, documentId);
+            }
+
+            public string Materialize(
+                StorageDocumentId documentId,
+                MaterializationScope scope,
+                CancellationToken cancellationToken)
+            {
+                throw new NotSupportedException();
             }
         }
 
@@ -316,6 +427,63 @@ namespace TiltBrush
                 {
                     Directory.Delete(recoveryRoot, true);
                 }
+            }
+        }
+
+        [Test]
+        public void SafTransactionRecovery_RestoresValidatedBackup()
+        {
+            string rootId = $"test-root-{Guid.NewGuid():N}";
+            string transactionId = Guid.NewGuid().ToString("N");
+            string backupName = $".ob-{transactionId}.bak";
+            var backend = new FakeSafBackend();
+            backend.Add("Recovery Test.tilt", new byte[] { 1, 2, 3 });
+            backend.Add(backupName, CreateMinimalTiltArchive());
+            var record = new SafTransactionRecord
+            {
+                TransactionId = transactionId,
+                RootId = rootId,
+                Area = StorageArea.Sketches.ToString(),
+                RelativePath = "Recovery Test.tilt",
+                TargetDisplayName = "Recovery Test.tilt",
+                BackupDisplayName = backupName,
+                InvalidDisplayName = $".ob-{transactionId}.invalid",
+                State = SafTransactionState.RollbackRequired.ToString(),
+                CreatedUtc = DateTime.UtcNow.ToString("o"),
+            };
+            string journalDirectory = SafTransactionJournal.GetJournalDirectory(rootId);
+            string recoveryRoot = Directory.GetParent(journalDirectory).FullName;
+            try
+            {
+                SafTransactionJournal.Persist(record);
+                SafRecoveryReport report = SafTransactionRecovery.RecoverAll(
+                    backend, CancellationToken.None, rootId);
+                Assert.AreEqual(1, report.Recovered);
+                Assert.AreEqual(0, report.Pending);
+                Assert.IsTrue(backend.Contains("Recovery Test.tilt"));
+                Assert.IsFalse(backend.Contains(backupName));
+                Assert.IsFalse(File.Exists(SafTransactionJournal.GetJournalPath(record)));
+            }
+            finally
+            {
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        private static byte[] CreateMinimalTiltArchive()
+        {
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
+                {
+                    entry.WriteByte(1);
+                }
+                return output.ToArray();
             }
         }
     }

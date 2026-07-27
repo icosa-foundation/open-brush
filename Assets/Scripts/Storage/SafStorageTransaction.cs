@@ -50,6 +50,7 @@ namespace TiltBrush
         public string TemporaryDocumentId;
         public string BackupDisplayName;
         public string BackupDocumentId;
+        public string InvalidDisplayName;
         public string State;
         public string CreatedUtc;
         public int AttemptCount;
@@ -195,6 +196,12 @@ namespace TiltBrush
             semaphore.Wait(cancellationToken);
             return new Lease(semaphore);
         }
+
+        public static string GetDestinationKey(
+            string rootId, StorageArea area, string relativePath)
+        {
+            return $"{rootId}\n{area}\n{relativePath}".ToLowerInvariant();
+        }
     }
 
     internal sealed class SafFileWriteTransaction : IStorageWriteTransaction
@@ -240,11 +247,12 @@ namespace TiltBrush
                 TargetDisplayName = targetName,
                 TemporaryDisplayName = $".ob-{transactionId}.tmp",
                 BackupDisplayName = $".ob-{transactionId}.bak",
+                InvalidDisplayName = $".ob-{transactionId}.invalid",
                 State = SafTransactionState.CreatingTemporary.ToString(),
                 CreatedUtc = DateTime.UtcNow.ToString("o"),
             };
-            string destinationKey =
-                $"{rootId}\n{area}\n{m_Record.RelativePath}".ToLowerInvariant();
+            string destinationKey = SafDestinationLocks.GetDestinationKey(
+                rootId, area, m_Record.RelativePath);
             m_DestinationLock = SafDestinationLocks.Acquire(
                 destinationKey, cancellationToken);
             try
