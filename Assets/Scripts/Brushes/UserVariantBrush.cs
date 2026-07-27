@@ -251,7 +251,8 @@ public class UserVariantBrush
     public static UserVariantBrush Create(SceneFileInfo fileInfo, string subfolder)
     {
         var brush = new UserVariantBrush();
-        brush.m_Location = fileInfo.FullPath;
+        brush.m_Location = Path.GetFileName(
+            subfolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         FolderOrZipReader brushFile = new FolderOrZipReader(fileInfo.FullPath);
         brushFile.SetRootFolder(subfolder);
         string configDir = brushFile.Find(kConfigFile);
