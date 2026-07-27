@@ -126,12 +126,20 @@ namespace TiltBrush
 
                 // Text Widgets
                 var (textWidgets, notTextOrImage) = notImages.Partition(w => w is TextWidget);
+                string textOutputDirectory = outputDirectory;
+                if (string.IsNullOrEmpty(textOutputDirectory))
+                {
+                    textOutputDirectory = string.IsNullOrEmpty(temporaryDirectory)
+                        ? Application.temporaryCachePath
+                        : temporaryDirectory;
+                }
+                Directory.CreateDirectory(textOutputDirectory);
                 foreach (var (widget, idx) in textWidgets.WithIndex())
                 {
                     var tw = (TextWidget)widget;
                     var textMesh = tw.m_TextMeshPro;
                     var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, 0);
-                    string texturePath = $"{outputDirectory}/{guid}.png";
+                    string texturePath = Path.Combine(textOutputDirectory, $"{guid}.png");
 
                     int width = Mathf.RoundToInt(textMesh.renderedWidth * 256);
                     int height = Mathf.RoundToInt(textMesh.renderedHeight * 256);
