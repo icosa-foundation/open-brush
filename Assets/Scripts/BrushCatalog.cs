@@ -78,6 +78,7 @@ namespace TiltBrush
         private Dictionary<Guid, Brush> m_SceneBrushes;
 
         private List<string> m_ChangedBrushes;
+        private readonly object m_ChangedBrushesLock = new object();
 
         [SerializeField] public BlocksMaterial[] m_BlocksMaterials;
         private Dictionary<Material, Brush> m_MaterialToBrush;
@@ -359,11 +360,18 @@ namespace TiltBrush
 
         public void HandleChangedBrushes()
         {
-            if (m_ChangedBrushes.Count > 0)
+            List<string> changedBrushes;
+            lock (m_ChangedBrushesLock)
             {
-                for (var i = 0; i < m_ChangedBrushes.Count; i++)
+                changedBrushes = new List<string>(m_ChangedBrushes);
+                m_ChangedBrushes.Clear();
+            }
+
+            if (changedBrushes.Count > 0)
+            {
+                for (var i = 0; i < changedBrushes.Count; i++)
                 {
-                    var path = m_ChangedBrushes[i];
+                    var path = changedBrushes[i];
                     LoadUserLibraryBrush(path);
                 }
                 m_CatalogChanged = true;
@@ -380,11 +388,10 @@ namespace TiltBrush
                 StartCoroutine(
                     OverlayManager.m_Instance.RunInCompositorWithProgress(
                         OverlayType.LoadGeneric,
-                        SketchMemoryScript.m_Instance.RepaintCoroutine(m_ChangedBrushes, true),
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(changedBrushes, true),
                         0.25f)
                 );
             }
-            m_ChangedBrushes.Clear();
 
         }
 
@@ -522,7 +529,10 @@ namespace TiltBrush
             {
                 return;
             }
-            m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
+            lock (m_ChangedBrushesLock)
+            {
+                m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
+            }
         }
 
     }
