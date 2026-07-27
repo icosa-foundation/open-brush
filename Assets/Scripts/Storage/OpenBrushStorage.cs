@@ -73,11 +73,19 @@ namespace TiltBrush
             };
 
             SyncSharedDirectoryAsync(
-                "Sketches", App.UserSketchPath(), notifySketches: true, transferComplete);
+                "Sketches",
+                App.UserSketchPath(),
+                notifySketches: true,
+                transferComplete,
+                App.AutosavePath());
             SyncSharedDirectoryAsync(
                 "Saved Strokes", App.SavedStrokesPath(), notifySketches: true, transferComplete);
             SyncSharedDirectoryAsync(
-                "Media Library", App.MediaLibraryPath(), notifySketches: false, transferComplete);
+                "Media Library",
+                App.MediaLibraryPath(),
+                notifySketches: false,
+                transferComplete,
+                App.SavedStrokesPath());
         }
 
         public static bool TryGetSharedSketchRelativePath(string localPath, out string relativePath)
@@ -438,7 +446,8 @@ namespace TiltBrush
             string relativeDirectory,
             string localDirectory,
             bool notifySketches,
-            Action onComplete)
+            Action onComplete,
+            params string[] preservedLocalPaths)
         {
             Directory.CreateDirectory(localDirectory);
             HashSet<string> existingSketches = notifySketches
@@ -448,10 +457,16 @@ namespace TiltBrush
 
             AndroidStorageManager.StartInboundTransfer(
                 relativeDirectory,
-                () => AndroidSafStorage.StartCopyDirectoryToPath(
-                    relativeDirectory,
-                    localDirectory,
-                    AndroidStorageManager.GetPendingLocalPaths(localDirectory)),
+                () =>
+                {
+                    var preservedPaths = new HashSet<string>(
+                        AndroidStorageManager.GetPendingLocalPaths(localDirectory));
+                    preservedPaths.UnionWith(preservedLocalPaths);
+                    return AndroidSafStorage.StartCopyDirectoryToPath(
+                        relativeDirectory,
+                        localDirectory,
+                        new List<string>(preservedPaths).ToArray());
+                },
                 (success, error) =>
                 {
                     if (success && notifySketches)
