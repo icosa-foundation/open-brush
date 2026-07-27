@@ -172,7 +172,7 @@ namespace TiltBrush
             }
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
 
-            if (Directory.Exists(App.UserBrushesPath()))
+            if (FileUtils.InitializeDirectoryWithUserError(App.UserBrushesPath()))
             {
                 m_FileWatcher = new FileWatcher(App.UserBrushesPath(), includeSubdirectories: true);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -185,7 +185,8 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
         }
 
         private static IEnumerable<Brush> KeepOrderDistinct(IEnumerable<Brush> brushes)
