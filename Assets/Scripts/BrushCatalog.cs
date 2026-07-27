@@ -438,6 +438,15 @@ namespace TiltBrush
             var userBrush = UserVariantBrush.Create(path);
             if (userBrush == null)
             {
+                if (existingBrush != null && !File.Exists(path) && !Directory.Exists(path))
+                {
+                    m_LibraryBrushes.Remove(existingBrush.m_Guid);
+                    if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
+                    {
+                        BrushController.m_Instance.SetBrushToDefault();
+                    }
+                    m_CatalogChanged = true;
+                }
                 return;
             }
             if (m_LibraryBrushes.ContainsKey(userBrush.Descriptor.m_Guid) && existingBrush == null)
@@ -517,4 +526,3 @@ namespace TiltBrush
 
     }
 }  // namespace TiltBrush
-
