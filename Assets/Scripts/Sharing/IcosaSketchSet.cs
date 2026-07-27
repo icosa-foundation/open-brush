@@ -1073,6 +1073,8 @@ namespace TiltBrush
             get { return m_localTiltFile; }
         }
 
+        public string StorageId => m_AssetId;
+
         public bool Exists => Valid;
 
         public bool ReadOnly

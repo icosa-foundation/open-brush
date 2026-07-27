@@ -230,6 +230,12 @@ namespace TiltBrush
 
         private static IUserStorageBackend CreateBackend()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return new SafUserStorageBackend();
+            }
+#endif
             return new LocalUserStorageBackend();
         }
     }

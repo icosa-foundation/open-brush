@@ -54,6 +54,7 @@ namespace TiltBrush
             public bool Available => m_TiltFile != null;
 
             public string FullPath => Path.Combine(App.UserSketchPath(), HumanName);
+            public string StorageId => m_File?.Id;
 
             public bool Exists => true;
 

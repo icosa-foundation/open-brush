@@ -281,6 +281,22 @@ public class OpenBrushStorageBridge {
         return detachFileDescriptor(context, lookup.uri, mode);
     }
 
+    public static DescriptorOpenResult openDocumentFileDescriptor(
+            Context context, String documentUri, String mode) {
+        if (!isSupportedDescriptorMode(mode)) {
+            return new DescriptorOpenResult(-1, null, "Unsupported file descriptor mode");
+        }
+        if (documentUri == null || documentUri.length() == 0) {
+            return new DescriptorOpenResult(-1, null, "Document identity is empty");
+        }
+        try {
+            return detachFileDescriptor(context, Uri.parse(documentUri), mode);
+        } catch (Exception e) {
+            return new DescriptorOpenResult(-1, null, formatProviderError(
+                    "Invalid document identity", e));
+        }
+    }
+
     public static DescriptorOpenResult createTemporaryFileDescriptor(
             Context context, String relativeDirectory, String targetFileName, String mimeType) {
         String normalizedDirectory = normalize(relativeDirectory);

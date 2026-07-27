@@ -184,6 +184,23 @@ namespace TiltBrush
 #endif
         }
 
+        public static bool TryOpenSeekableReadStream(
+            StorageDocumentId documentId, out FileStream stream, out string error)
+        {
+            stream = null;
+            error = null;
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            using var bridge = new AndroidJavaClass(kBridgeClass);
+            using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
+                "openDocumentFileDescriptor", GetActivity(), documentId.Value, "r");
+            return TryCreateFileStream(
+                result, FileAccess.Read, out stream, out _, out error);
+#else
+            error = "SAF file descriptors are unavailable on this platform.";
+            return false;
+#endif
+        }
+
         public static bool TryCreateTemporaryFileStream(
             string relativeDirectory,
             string targetFileName,
