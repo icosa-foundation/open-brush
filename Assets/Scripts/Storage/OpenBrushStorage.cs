@@ -473,13 +473,19 @@ namespace TiltBrush
                 {
                     if (success && notifySketches)
                     {
-                        foreach (string localPath in Directory.GetFiles(
+                        var syncedSketches = new HashSet<string>(Directory.GetFiles(
                             localDirectory,
                             $"*{SaveLoadScript.TILT_SUFFIX}",
-                            SearchOption.TopDirectoryOnly))
+                            SearchOption.TopDirectoryOnly));
+                        foreach (string localPath in syncedSketches)
                         {
                             NotifySyncedLocalSketch(
                                 relativeDirectory, localPath, existingSketches.Contains(localPath));
+                        }
+                        existingSketches.ExceptWith(syncedSketches);
+                        foreach (string localPath in existingSketches)
+                        {
+                            NotifyDeletedLocalSketch(relativeDirectory, localPath);
                         }
                     }
                     else if (!success)
@@ -523,6 +529,29 @@ namespace TiltBrush
                 {
                     SavedStrokesCatalog.Instance.NotifyFileCreated(localPath);
                 }
+            }
+        }
+
+        private static void NotifyDeletedLocalSketch(string relativeDirectory, string localPath)
+        {
+            if (SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+
+            SketchSetType setType = relativeDirectory == "Saved Strokes"
+                ? SketchSetType.SavedStrokes
+                : SketchSetType.User;
+            SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
+            if (set == null)
+            {
+                return;
+            }
+
+            set.NotifySketchDeleted(localPath);
+            if (setType == SketchSetType.SavedStrokes && SavedStrokesCatalog.Instance != null)
+            {
+                SavedStrokesCatalog.Instance.NotifyFileDeleted(localPath);
             }
         }
 

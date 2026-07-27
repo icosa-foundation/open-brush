@@ -534,6 +534,11 @@ namespace TiltBrush
             m_FileWatcher.NotifyChanged(fullpath);
         }
 
+        public void NotifySketchDeleted(string fullpath)
+        {
+            m_FileWatcher.NotifyDelete(fullpath);
+        }
+
         public void RequestRefresh()
         {
         }

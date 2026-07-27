@@ -161,6 +161,12 @@ namespace TiltBrush
             NotifyFileCreated(fullpath);
         }
 
+        public void NotifyFileDeleted(string fullpath)
+        {
+            // Same logic as NotifyFileCreated
+            NotifyFileCreated(fullpath);
+        }
+
         private void OnFileSketchSetChanged()
         {
             // FileSketchSet has processed files, now safe to scan

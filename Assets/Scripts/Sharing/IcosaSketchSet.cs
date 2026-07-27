@@ -198,6 +198,8 @@ namespace TiltBrush
 
         public void NotifySketchChanged(string fullpath) { }
 
+        public void NotifySketchDeleted(string fullpath) { }
+
 
         public void RequestForcedRefresh()
         {

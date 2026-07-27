@@ -73,6 +73,8 @@ namespace TiltBrush
 
         void NotifySketchChanged(string fullpath);
 
+        void NotifySketchDeleted(string fullpath);
+
         void RequestRefresh();
 
         // Called by SketchCatalog for async loading

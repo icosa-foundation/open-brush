@@ -284,6 +284,11 @@ namespace TiltBrush
             m_Changed = true;
         }
 
+        public void NotifySketchDeleted(string fullpath)
+        {
+            m_Changed = true;
+        }
+
         public void RequestRefresh()
         {
             // nothing
