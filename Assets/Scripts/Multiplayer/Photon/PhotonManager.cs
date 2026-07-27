@@ -441,6 +441,22 @@ namespace OpenBrush.Multiplayer
                 case SwitchEnvironmentCommand:
                     success &= CommandSwitchEnvironment(command as SwitchEnvironmentCommand, playerRef);
                     break;
+                case MoveWidgetCommand moveCommand:
+                    // Widget manipulation generates a MoveWidgetCommand every frame. Send_BaseCommand
+                    // carries no transform data, so each one only adds an empty, unmergeable command
+                    // to every remote peer's undo stack - broadcasting them per frame buries a remote
+                    // user's own undo history. Send just the settled one.
+                    // NOTE: this does not make widget movement replicate; it never has. See the
+                    // payload of CommandBase / PhotonRPC.BaseCommand.
+                    if (moveCommand.IsFinal)
+                    {
+                        success &= CommandBase(command);
+                    }
+                    else
+                    {
+                        success = true;
+                    }
+                    break;
                 case BaseCommand:
                     success &= CommandBase(command);
                     break;
