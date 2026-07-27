@@ -195,7 +195,11 @@ namespace TiltBrush
             var dict = new Dictionary<string, EditableModelDefinition>();
             foreach (var em in WidgetManager.m_Instance.ActiveEditableModelWidgets)
             {
-                dict[em.WidgetScript.Model.AssetId] = new EditableModelDefinition(em.WidgetScript.m_PolyRecipe);
+                var widget = em.WidgetScript;
+                if (widget.Model.GetLocation().IsGenerated())
+                {
+                    dict[widget.Model.AssetId] = new EditableModelDefinition(widget.m_PolyRecipe);
+                }
             }
             return dict;
         }
