@@ -155,21 +155,6 @@ namespace TiltBrush
                     int width = Mathf.Max(1, Mathf.RoundToInt(renderedWidth * 256));
                     int height = Mathf.Max(1, Mathf.RoundToInt(renderedHeight * 256));
 
-                    Camera tempCamera = new GameObject("TempCamera").AddComponent<Camera>();
-                    RenderTexture renderTexture = new RenderTexture(
-                        width, height, 24, RenderTextureFormat.ARGB32);
-                    tempCamera.targetTexture = renderTexture;
-                    tempCamera.clearFlags = CameraClearFlags.SolidColor;
-                    tempCamera.backgroundColor = Color.clear;
-
-                    // Adjust camera's position and rotation to capture the text mesh
-                    tempCamera.orthographic = true;
-                    tempCamera.orthographicSize = textMesh.renderedHeight;
-                    tempCamera.aspect = tw.AspectRatio.Value;
-                    tempCamera.transform.position = textMesh.transform.position + textMesh.transform.forward * -1;
-                    tempCamera.transform.forward = textMesh.transform.forward;
-
-                    // Set the camera's culling mask to only render the temp layer
                     int tmpLayer = LayerMask.NameToLayer("TempRenderTex");
                     if (tmpLayer < 0)
                     {
@@ -177,30 +162,69 @@ namespace TiltBrush
                     }
                     Transform[] textTransforms = textMesh.GetComponentsInChildren<Transform>(true);
                     int[] previousLayers = textTransforms.Select(transform => transform.gameObject.layer).ToArray();
-                    foreach (Transform textTransform in textTransforms)
+                    RenderTexture previousActiveRenderTexture = RenderTexture.active;
+                    GameObject tempCameraObject = null;
+                    Camera tempCamera = null;
+                    RenderTexture renderTexture = null;
+                    Texture2D tex = null;
+                    try
                     {
-                        textTransform.gameObject.layer = tmpLayer;
+                        tempCameraObject = new GameObject("TempCamera");
+                        tempCamera = tempCameraObject.AddComponent<Camera>();
+                        renderTexture = new RenderTexture(
+                            width, height, 24, RenderTextureFormat.ARGB32);
+                        tempCamera.targetTexture = renderTexture;
+                        tempCamera.clearFlags = CameraClearFlags.SolidColor;
+                        tempCamera.backgroundColor = Color.clear;
+
+                        // Adjust camera's position and rotation to capture the text mesh
+                        tempCamera.orthographic = true;
+                        tempCamera.orthographicSize = textMesh.renderedHeight;
+                        tempCamera.aspect = tw.AspectRatio.Value;
+                        tempCamera.transform.position =
+                            textMesh.transform.position + textMesh.transform.forward * -1;
+                        tempCamera.transform.forward = textMesh.transform.forward;
+
+                        foreach (Transform textTransform in textTransforms)
+                        {
+                            textTransform.gameObject.layer = tmpLayer;
+                        }
+                        tempCamera.cullingMask = 1 << tmpLayer;
+                        tempCamera.Render();
+
+                        RenderTexture.active = renderTexture;
+                        tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                        tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                        tex.Apply();
+
+                        byte[] bytes = tex.EncodeToPNG();
+                        File.WriteAllBytes(texturePath, bytes);
                     }
-                    tempCamera.cullingMask = 1 << tmpLayer;
-
-                    // Capture the image
-                    tempCamera.Render();
-
-                    RenderTexture.active = renderTexture;
-                    Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-                    tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-                    tex.Apply();
-
-                    byte[] bytes = tex.EncodeToPNG();
-                    File.WriteAllBytes(texturePath, bytes);
-
-                    // Cleanup
-                    for (int i = 0; i < textTransforms.Length; ++i)
+                    finally
                     {
-                        textTransforms[i].gameObject.layer = previousLayers[i];
+                        for (int i = 0; i < textTransforms.Length; ++i)
+                        {
+                            textTransforms[i].gameObject.layer = previousLayers[i];
+                        }
+                        RenderTexture.active = previousActiveRenderTexture;
+                        if (tempCamera != null)
+                        {
+                            tempCamera.targetTexture = null;
+                        }
+                        if (tex != null)
+                        {
+                            UnityEngine.Object.DestroyImmediate(tex);
+                        }
+                        if (renderTexture != null)
+                        {
+                            renderTexture.Release();
+                            UnityEngine.Object.DestroyImmediate(renderTexture);
+                        }
+                        if (tempCameraObject != null)
+                        {
+                            UnityEngine.Object.DestroyImmediate(tempCameraObject);
+                        }
                     }
-                    UnityEngine.Object.DestroyImmediate(tex);
-                    UnityEngine.Object.DestroyImmediate(tempCamera);
 
                     var material = CreateImageQuadMaterial(tw, texturePath, guid);
                     payload.imageQuads.Add(BuildImageQuadPayload(payload, widget, material, idx));
