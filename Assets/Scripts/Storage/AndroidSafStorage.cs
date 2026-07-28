@@ -330,8 +330,8 @@ namespace TiltBrush
             {
                 if (!TryCreateTemporaryFileStream(
                         "",
-                        "openbrush-fd-probe.bin",
-                        "application/octet-stream",
+                        "openbrush-fd-probe.tilt",
+                        TiltFile.TILT_MIME_TYPE,
                         out stream,
                         out documentUri,
                         out string error))
@@ -340,44 +340,46 @@ namespace TiltBrush
                     return false;
                 }
 
-                byte[] expected = { 0x4f, 0x42, 0x46, 0x44, 0x01, 0x23, 0x45, 0x67 };
-                stream.Write(expected, 0, expected.Length);
+                byte[] sketch = { 0x4f, 0x42, 0x46, 0x44, 0x01, 0x23, 0x45, 0x67 };
+                byte[] metadata = System.Text.Encoding.UTF8.GetBytes("{}");
+                byte[] thumbnail = { 0x89, 0x50, 0x4e, 0x47 };
+                using (var writer = new TiltFile.ArchiveWriter(
+                    stream, ownsOutputStream: false))
+                {
+                    WriteProbeEntry(writer, TiltFile.FN_SKETCH, sketch);
+                    WriteProbeEntry(writer, TiltFile.FN_METADATA, metadata);
+                    WriteProbeEntry(writer, TiltFile.FN_THUMBNAIL, thumbnail);
+                    writer.Complete();
+                }
                 stream.Flush();
                 long endPosition = stream.Seek(0, SeekOrigin.End);
-                if (!stream.CanSeek || endPosition != expected.Length)
+                if (!stream.CanSeek || endPosition <= TiltFile.HEADER_SIZE)
                 {
                     report = $"Descriptor is not seekable or has unexpected length {endPosition}.";
                     return false;
                 }
-
-                stream.Seek(0, SeekOrigin.Begin);
-                byte[] actual = new byte[expected.Length];
-                int totalRead = 0;
-                while (totalRead < actual.Length)
+                if (!TiltFile.IsArchiveValid(
+                        stream, "SAF descriptor probe", testData: true))
                 {
-                    int read = stream.Read(actual, totalRead, actual.Length - totalRead);
-                    if (read == 0)
-                    {
-                        break;
-                    }
-                    totalRead += read;
-                }
-
-                if (totalRead != expected.Length)
-                {
-                    report = $"Descriptor returned {totalRead} of {expected.Length} probe bytes.";
+                    report = "Tilt archive validation failed on the original descriptor.";
                     return false;
                 }
-                for (int i = 0; i < expected.Length; ++i)
-                {
-                    if (actual[i] != expected[i])
-                    {
-                        report = $"Descriptor probe data mismatch at byte {i}.";
-                        return false;
-                    }
-                }
 
-                report = $"Seekable detached descriptor read/write passed ({expected.Length} bytes).";
+                stream.Dispose();
+                stream = null;
+                var probeDocumentId = new StorageDocumentId(documentUri);
+                if (!ProbeArchiveEntry(
+                        probeDocumentId, TiltFile.FN_SKETCH, sketch, out error) ||
+                    !ProbeArchiveEntry(
+                        probeDocumentId, TiltFile.FN_METADATA, metadata, out error) ||
+                    !ProbeArchiveEntry(
+                        probeDocumentId, TiltFile.FN_THUMBNAIL, thumbnail, out error))
+                {
+                    report = error;
+                    return false;
+                }
+                report =
+                    $"Seekable detached descriptor Tilt archive passed ({endPosition} bytes).";
                 return true;
             }
             catch (Exception e)
@@ -400,6 +402,65 @@ namespace TiltBrush
         }
 
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+        private static void WriteProbeEntry(
+            TiltFile.ArchiveWriter writer, string entryName, byte[] bytes)
+        {
+            using (Stream entry = writer.GetWriteStream(entryName))
+            {
+                entry.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        private static bool ProbeArchiveEntry(
+            StorageDocumentId documentId,
+            string entryName,
+            byte[] expected,
+            out string error)
+        {
+            error = null;
+            if (!TryOpenSeekableReadStream(
+                    documentId, out FileStream archiveStream, out error))
+            {
+                return false;
+            }
+            try
+            {
+                using (var entry = new ZipSubfileReader_SharpZipLib(
+                    archiveStream, entryName))
+                using (var copy = new MemoryStream())
+                {
+                    archiveStream = null;
+                    entry.CopyTo(copy);
+                    byte[] actual = copy.ToArray();
+                    if (actual.Length != expected.Length)
+                    {
+                        error =
+                            $"Descriptor probe entry {entryName} had length {actual.Length}.";
+                        return false;
+                    }
+                    for (int i = 0; i < expected.Length; ++i)
+                    {
+                        if (actual[i] != expected[i])
+                        {
+                            error =
+                                $"Descriptor probe entry {entryName} differed at byte {i}.";
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                error = $"Failed to read descriptor probe entry {entryName}: {e.Message}";
+                return false;
+            }
+            finally
+            {
+                archiveStream?.Dispose();
+            }
+        }
+
         private static StorageMutationResult ReadMutationResult(
             AndroidJavaObject result, StorageDocumentId fallbackDocumentId)
         {
