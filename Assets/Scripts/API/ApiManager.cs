@@ -773,7 +773,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
         public void AddOutgoingWebsocketListener(Uri uri)
         {
             if (m_OutgoingWebsocketListeners == null) m_OutgoingWebsocketListeners = new Dictionary<Uri, WebSocket>();
-            if (m_OutgoingWebsocketListeners.ContainsKey(uri)) return;
+            if (m_OutgoingWebsocketListeners.TryGetValue(uri, out var existing) &&
+                existing.State != WebSocketState.Closed)
+            {
+                return;
+            }
             var ws = new WebSocket(uri.ToString());
             ws.Connect();
             m_OutgoingWebsocketListeners[uri] = ws;
