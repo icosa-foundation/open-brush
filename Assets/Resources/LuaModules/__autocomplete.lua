@@ -313,7 +313,7 @@ function CameraPath:RecordActivePath() end
 
 ---@param time number The time at which to sample the camera path
 ---@param loop? boolean Determines whether the camera path should loop
----@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop
+---@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop)
 ---@return Transform # The sampled transform of the camera at the specified time
 function CameraPath:Sample(time, loop, pingpong) end
 
