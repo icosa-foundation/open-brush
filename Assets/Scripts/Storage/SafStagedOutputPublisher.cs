@@ -234,6 +234,16 @@ namespace TiltBrush
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (!string.Equals(
+                        record.RootId,
+                        backend.RootIdentity,
+                        StringComparison.Ordinal))
+                {
+                    return Fail(
+                        record,
+                        StorageResultCode.NotReady,
+                        "The staged output belongs to a different Open Brush folder.");
+                }
                 EnsureItems(record);
                 foreach (SafPublicationItem item in record.Items)
                 {
@@ -249,6 +259,16 @@ namespace TiltBrush
                     record.CompletedFiles, StringComparer.Ordinal);
                 for (int itemIndex = 0; itemIndex < record.Items.Count; ++itemIndex)
                 {
+                    if (!string.Equals(
+                            record.RootId,
+                            backend.RootIdentity,
+                            StringComparison.Ordinal))
+                    {
+                        return Fail(
+                            record,
+                            StorageResultCode.NotReady,
+                            "The selected Open Brush folder changed during publication.");
+                    }
                     SafPublicationItem item = record.Items[itemIndex];
                     if (item.IsDirectory)
                     {
@@ -268,6 +288,16 @@ namespace TiltBrush
                     foreach ((string sourcePath, string relativeFile) in EnumerateFiles(item))
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (!string.Equals(
+                                record.RootId,
+                                backend.RootIdentity,
+                                StringComparison.Ordinal))
+                        {
+                            return Fail(
+                                record,
+                                StorageResultCode.NotReady,
+                                "The selected Open Brush folder changed during publication.");
+                        }
                         string completedKey = $"{itemIndex}:{relativeFile}";
                         string destination = item.IsDirectory
                             ? CombineProviderPath(item.DestinationRelativePath, relativeFile)

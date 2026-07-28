@@ -45,6 +45,12 @@ namespace TiltBrush
             }
 
             string rootId = rootIdOverride ?? backend.RootIdentity;
+            if (!string.Equals(rootId, backend.RootIdentity, StringComparison.Ordinal))
+            {
+                report.Errors.Add(
+                    "SAF recovery records cannot be applied to a different selected root.");
+                return report;
+            }
             List<SafTransactionRecord> records =
                 SafTransactionJournal.Load(rootId, out List<string> journalErrors);
             report.Errors.AddRange(journalErrors);

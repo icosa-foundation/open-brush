@@ -54,6 +54,7 @@ namespace TiltBrush
                 return StorageDirectoryResult.Failed(
                     StorageResultCode.NotReady, "Open Brush shared folder is unavailable.");
             }
+            string rootId = RootIdentity;
 
             StorageDirectoryResult result = AndroidSafStorage.QueryDirectory(
                 CombinePath(GetAreaPath(area), relativeDirectory));
@@ -62,9 +63,15 @@ namespace TiltBrush
                 return StorageDirectoryResult.Failed(
                     StorageResultCode.Cancelled, "Directory listing was cancelled.");
             }
+            if (!string.Equals(rootId, RootIdentity, StringComparison.Ordinal))
+            {
+                return StorageDirectoryResult.Failed(
+                    StorageResultCode.Cancelled,
+                    "The selected Open Brush folder changed during the directory query.");
+            }
             if (result.Success)
             {
-                RecordLocations(area, relativeDirectory, result.Documents);
+                RecordLocations(rootId, area, relativeDirectory, result.Documents);
             }
             return result;
         }
@@ -247,11 +254,11 @@ namespace TiltBrush
         }
 
         private void RecordLocations(
+            string rootId,
             StorageArea area,
             string relativeDirectory,
             IReadOnlyList<StorageDocument> documents)
         {
-            string rootId = RootIdentity;
             lock (m_LocationGate)
             {
                 if (m_MappedRootId != rootId)
@@ -274,8 +281,10 @@ namespace TiltBrush
 
         private DocumentLocation GetLocation(StorageDocumentId documentId)
         {
+            string rootId = RootIdentity;
             lock (m_LocationGate)
             {
+                ResetLocationsForRootLocked(rootId);
                 m_Locations.TryGetValue(documentId, out DocumentLocation location);
                 return location;
             }
@@ -371,8 +380,10 @@ namespace TiltBrush
 
         private DocumentLocation FindLocationByPath(StorageArea area, string relativePath)
         {
+            string rootId = RootIdentity;
             lock (m_LocationGate)
             {
+                ResetLocationsForRootLocked(rootId);
                 return m_Locations.Values.FirstOrDefault(location =>
                     location.Area == area &&
                     string.Equals(
@@ -380,6 +391,16 @@ namespace TiltBrush
                         relativePath,
                         StringComparison.OrdinalIgnoreCase));
             }
+        }
+
+        private void ResetLocationsForRootLocked(string rootId)
+        {
+            if (m_MappedRootId == rootId)
+            {
+                return;
+            }
+            m_Locations.Clear();
+            m_MappedRootId = rootId;
         }
 
         private void MaterializeModelDependencies(
