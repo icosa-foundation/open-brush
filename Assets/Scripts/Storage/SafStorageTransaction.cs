@@ -537,6 +537,16 @@ namespace TiltBrush
                     throw new IOException(
                         "The SAF document selected for overwrite was renamed externally.");
                 }
+                if (listing.Documents.Any(document =>
+                        !document.DocumentId.Equals(TargetDocumentId) &&
+                        string.Equals(
+                            document.DisplayName,
+                            m_Record.TargetDisplayName,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new IOException(
+                        "Multiple SAF documents share the overwrite destination name.");
+                }
                 return;
             }
 
