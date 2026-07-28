@@ -34,7 +34,7 @@ namespace TiltBrush
         private static bool m_RequestInProgress;
         private static bool m_RequestIsStartupPrompt;
         private static bool m_StartupPromptShown;
-        private static bool m_FileDescriptorProbeRun;
+        private static string m_FileDescriptorProbeRootIdentity;
         private static string m_ActiveRootIdentity;
         private static AndroidStorageManager m_Instance;
 
@@ -176,12 +176,18 @@ namespace TiltBrush
 
         private static void RunFileDescriptorProbeOnce()
         {
-            if (!Debug.isDebugBuild || m_FileDescriptorProbeRun)
+            string rootIdentity = AndroidSafStorage.GetSelectedRootIdentity();
+            if (!Debug.isDebugBuild ||
+                string.IsNullOrEmpty(rootIdentity) ||
+                string.Equals(
+                    m_FileDescriptorProbeRootIdentity,
+                    rootIdentity,
+                    StringComparison.Ordinal))
             {
                 return;
             }
 
-            m_FileDescriptorProbeRun = true;
+            m_FileDescriptorProbeRootIdentity = rootIdentity;
             bool success = AndroidSafStorage.RunFileDescriptorProbe(out string report);
             if (success)
             {
