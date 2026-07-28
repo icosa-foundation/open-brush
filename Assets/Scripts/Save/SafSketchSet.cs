@@ -237,6 +237,7 @@ namespace TiltBrush
         private readonly List<SafSketch> m_Sketches = new List<SafSketch>();
         private readonly Stack<int> m_RequestedLoads = new Stack<int>();
         private Future<StorageDirectoryResult> m_RefreshFuture;
+        private string m_RefreshRootIdentity;
         private bool m_Ready;
         private bool m_RefreshRequested;
 
@@ -402,15 +403,36 @@ namespace TiltBrush
             if (m_RefreshFuture == null && m_RefreshRequested)
             {
                 m_RefreshRequested = false;
+                m_RefreshRootIdentity = m_Backend.RootIdentity;
                 m_RefreshFuture = new Future<StorageDirectoryResult>(
                     () => m_Backend.List(m_Area, "", CancellationToken.None),
                     longRunning: true);
                 OnSketchRefreshingChanged();
                 return;
             }
-            if (m_RefreshFuture == null ||
-                !m_RefreshFuture.TryGetResult(out StorageDirectoryResult result))
+            if (m_RefreshFuture == null)
             {
+                return;
+            }
+
+            StorageDirectoryResult result;
+            try
+            {
+                if (!m_RefreshFuture.TryGetResult(out result))
+                {
+                    return;
+                }
+            }
+            catch (FutureFailed e)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Catalog refresh failed for {m_Area}; retaining the " +
+                    $"previous catalog: {e.InnerException?.Message ?? e.Message}");
+                m_RefreshFuture.Close();
+                m_RefreshFuture = null;
+                m_RefreshRootIdentity = null;
+                m_Ready = true;
+                OnSketchRefreshingChanged();
                 return;
             }
 
@@ -418,6 +440,16 @@ namespace TiltBrush
             m_RefreshFuture = null;
             OnSketchRefreshingChanged();
             m_Ready = true;
+            if (!string.Equals(
+                    m_RefreshRootIdentity,
+                    m_Backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_RefreshRootIdentity = null;
+                m_RefreshRequested = true;
+                return;
+            }
+            m_RefreshRootIdentity = null;
             if (!result.Success)
             {
                 Debug.LogWarning(
