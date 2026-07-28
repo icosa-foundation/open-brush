@@ -28,7 +28,8 @@ public class OpenBrushStorageActivity extends Activity {
                 .setTitle("Choose Open Brush folder")
                 .setMessage("Open Brush needs a shared folder named \""
                         + OPEN_BRUSH_FOLDER_NAME
-                        + "\" for sketches, exports, snapshots, videos, and media. "
+                        + "\" for sketches, exports, snapshots, videos, media, "
+                        + "scripts, plugins, and fonts. "
                         + "You can choose Not Now and continue with reduced storage features.")
                 .setPositiveButton("Choose Folder",
                         new DialogInterface.OnClickListener() {
