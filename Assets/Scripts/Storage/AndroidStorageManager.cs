@@ -17,6 +17,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace TiltBrush
@@ -260,8 +262,49 @@ namespace TiltBrush
                     InputManager.ControllerName.Wand,
                     "The last autosave was recovered into your shared sketchbook.");
             }
+            yield return RefreshRuntimeContent();
             RefreshSharedCatalogs();
             onComplete?.Invoke();
+        }
+
+        private IEnumerator RefreshRuntimeContent()
+        {
+            foreach (StorageArea area in new[]
+            {
+                StorageArea.Scripts,
+                StorageArea.Plugins,
+                StorageArea.Fonts,
+            })
+            {
+                Task<RuntimeProjectionResult> refresh =
+                    UserRuntimeContent.Instance.EnsureCurrentAsync(
+                        area, CancellationToken.None);
+                while (!refresh.IsCompleted)
+                {
+                    yield return null;
+                }
+                if (refresh.IsFaulted)
+                {
+                    string error = refresh.Exception?.GetBaseException().Message ??
+                        "Unknown runtime-content refresh failure.";
+                    Debug.LogWarning(
+                        $"SAF_PROJECTION {area} refresh failed: {error}");
+                    continue;
+                }
+                if (refresh.IsCanceled)
+                {
+                    Debug.LogWarning(
+                        $"SAF_PROJECTION {area} refresh was canceled.");
+                    continue;
+                }
+                RuntimeProjectionResult result = refresh.Result;
+                if (!result.Success)
+                {
+                    Debug.LogWarning(
+                        $"SAF_PROJECTION {area} refresh retained previous content: " +
+                        $"{result.Error}");
+                }
+            }
         }
 
         private static void RecoverAutosave(SafRecoveryReport report)
@@ -344,8 +387,14 @@ namespace TiltBrush
                 UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady)
             {
-                RefreshSharedCatalogs();
+                StartCoroutine(RefreshRuntimeContentAfterResume());
             }
+        }
+
+        private IEnumerator RefreshRuntimeContentAfterResume()
+        {
+            yield return RefreshRuntimeContent();
+            RefreshSharedCatalogs();
         }
 
         private static void RefreshSharedCatalogs()
