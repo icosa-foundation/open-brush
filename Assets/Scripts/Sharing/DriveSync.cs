@@ -744,8 +744,14 @@ namespace TiltBrush
             // number of bytes that was being transferred by the old sync.
             m_PreviousTotalBytesToTransfer = m_TotalBytesToTransfer;
             m_ToTransfer.Clear();
-            // Cancel any transfers to folders we no longer want to backup
-            var toRemove = m_Transfers.Where(x => !IsFolderOfTypeSynced(x.Key.Item.FolderType))
+            // Cancel transfers for disabled folders or a previously selected storage root.
+            string currentRootIdentity = UserStorage.Backend.RootIdentity;
+            var toRemove = m_Transfers.Where(x =>
+                    !IsFolderOfTypeSynced(x.Key.Item.FolderType) ||
+                    !string.Equals(
+                        x.Key.Item.StorageRootIdentity,
+                        currentRootIdentity,
+                        StringComparison.Ordinal))
                 .Select(x => x.Key).ToArray();
             foreach (var transfer in toRemove)
             {
