@@ -86,6 +86,13 @@ namespace TiltBrush
             new Vector2(-0.2f, -0.2f),
         };
 
+        public override void FindClosestPointOnSurface(
+            Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            surfacePos = m_SdfManager.GetNearestPointOnSurface(pos);
+            surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
+        }
+
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             // Cast multiple rays in a cone pattern in front of the controller
