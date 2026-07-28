@@ -42,7 +42,7 @@ namespace TiltBrush
             Assert.IsTrue(settings.EnableGlobalSort);
             Assert.AreEqual(0.01f, settings.DepthPrepassAlphaCutoff);
             Assert.AreEqual(1u, settings.MaxRenderOrder);
-            Assert.AreEqual("1.6.0", settings.Version.ToString());
+            Assert.AreEqual("1.7.0", settings.Version.ToString());
         }
 
         [Test]
