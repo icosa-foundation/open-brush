@@ -2,13 +2,15 @@
 
 ## Status
 
-Proposed replacement for the whole-tree mirrored-cache design on Google Play
-Android builds.
+Implemented replacement for the whole-tree mirrored-cache design on Google
+Play Android builds.
 
-This plan must begin with a device feasibility spike. The production
-architecture should only proceed if Unity IL2CPP can reliably use detached SAF
-file descriptors as seekable `FileStream` instances on the local Android
-Documents provider.
+Static desktop, editor, Android-symbol, and Java compilation can validate the
+code shape, but they do not satisfy the mandatory device gate. Before release,
+run the built-in `SAF_FD` debug probe and the device matrix below on the target
+local Android Documents provider. If detached descriptors are not reliable and
+seekable under IL2CPP, retain the backend/catalog/transaction architecture and
+replace direct archive reads with sparse per-document materialization.
 
 ## Decision Summary
 
@@ -1296,26 +1298,37 @@ The design is ready to replace the mirrored-cache branch when:
 - non-Google-Play platform behavior remains unchanged;
 - target builds compile and device tests pass.
 
-## Open Product Decisions
+## Implementation Decisions
 
-Resolve before final implementation:
+The implementation makes these choices explicitly:
 
-1. Must cloud-backed SAF providers be supported, or only local/removable
-   Documents providers?
-2. Should a failed shared save create a user-visible local recovery item, or is
-   preserving autosave sufficient?
-3. Is legacy directory-format `.tilt` support required on Google Play?
-4. Is legacy Google Drive folder sync required in the Google Play build?
-5. How should users manually refresh externally modified content?
-6. What cache size/retention policy is appropriate for materialized models and
-   videos, based on measured use?
-7. Should provider documents lacking rename/delete flags be read-only in the
-   UI or handled through copy/delete fallbacks?
-8. May users switch SAF roots while recovery work exists, or must they resolve
-   it first?
-9. Which recovery and staged-output states require a persistent UI badge?
-10. Should Scripts, Plugins, or Fonts ever become shared content in a later
-    storage-layout version?
+1. The first release target is Android's local primary-storage Documents
+   provider. Other providers may work when they expose the required seekable
+   descriptors and mutation capabilities, but cloud-provider support is not
+   claimed.
+2. Failed or canceled shared saves preserve the existing app-private autosave.
+   On reconnection, a marked autosave is published through a normal SAF
+   transaction as a uniquely named recovered sketch. There is no second
+   general-purpose recovery snapshot queue.
+3. Google Play SAF sketches use ZIP-format `.tilt` documents. Legacy
+   directory-format `.tilt` sketches are not enumerated by the SAF catalog.
+4. Legacy path-based Google Drive folder sync is disabled on the SAF backend
+   with an explicit UI/log explanation. Other platforms retain it.
+5. Existing sketchbook and reference-panel refresh controls perform manual SAF
+   refreshes. Catalogs also refresh after mutations and application resume.
+6. Materializations are document-ID- and root-scoped disposable caches. The
+   current provisional pressure limit is 512 MiB per active root and must be
+   revisited using the device measurements in this plan.
+7. Documents lacking provider rename/delete/remove capabilities expose
+   explanatory operation failures; overwrite is disabled without rename
+   support. The implementation does not fall back to truncating writes.
+8. Root switching is allowed. Active work detects the identity change and
+   stops; old-root journals and payloads remain root-scoped and are never
+   retargeted.
+9. Existing save/error UI and structured logs expose recovery and cleanup
+   states. No new persistent recovery badge is added.
+10. Scripts, Plugins, Fonts, and autosaves remain app-private and outside every
+    SAF publication/materialization cleanup root.
 
-These decisions change user-visible behavior and should not be silently chosen
-inside the storage implementation.
+Any later change to these decisions is a product change rather than an
+implementation detail.
