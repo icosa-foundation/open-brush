@@ -219,7 +219,7 @@ namespace TiltBrush
                 {
                     report.Pending++;
                     report.Errors.Add(
-                        $"SAF_STORAGE Publication pending for {record.TransactionId}: " +
+                        $"SAF_OUTPUT Publication pending for {record.TransactionId}: " +
                         $"{result.Error}");
                 }
             }

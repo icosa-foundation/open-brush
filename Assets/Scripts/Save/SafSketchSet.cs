@@ -80,7 +80,8 @@ namespace TiltBrush
                 m_Document.DocumentId, CancellationToken.None);
             if (!result.Success)
             {
-                Debug.LogWarning($"SAF_STORAGE Delete failed for {StorageId}: {result.Error}");
+                Debug.LogWarning(
+                    $"SAF_TRANSACTION Delete failed for {HumanName}: {result.Error}");
             }
         }
 
@@ -94,7 +95,8 @@ namespace TiltBrush
                 m_Document.DocumentId, displayName, CancellationToken.None);
             if (!result.Success)
             {
-                Debug.LogWarning($"SAF_STORAGE Rename failed for {StorageId}: {result.Error}");
+                Debug.LogWarning(
+                    $"SAF_TRANSACTION Rename failed for {HumanName}: {result.Error}");
                 return StorageId;
             }
             return result.DocumentId.Value;
@@ -223,7 +225,7 @@ namespace TiltBrush
                 catch (Exception e)
                 {
                     Debug.LogWarning(
-                        $"SAF_STORAGE Failed to read {m_FileInfo.StorageId}: {e.Message}");
+                        $"SAF_STREAM Failed to read {m_FileInfo.HumanName}: {e.Message}");
                     return new LoadedIconMetadata();
                 }
             }

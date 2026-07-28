@@ -94,7 +94,7 @@ namespace TiltBrush
             if (requireSeekable && !stream.CanSeek)
             {
                 stream.Dispose();
-                throw new IOException($"SAF document is not seekable: {documentId}");
+                throw new IOException("The selected SAF document is not seekable.");
             }
             return stream;
         }
@@ -227,7 +227,8 @@ namespace TiltBrush
             DocumentLocation location = GetLocation(documentId);
             if (location == null)
             {
-                throw new IOException($"Unknown SAF document identity: {documentId}");
+                throw new IOException(
+                    "The selected SAF document is not part of the active catalog.");
             }
 
             StorageDocumentId materializationGroupId = location.Document.DocumentId;
@@ -252,7 +253,8 @@ namespace TiltBrush
             DocumentLocation location = GetLocation(documentId);
             if (location == null)
             {
-                throw new IOException($"Unknown SAF document identity: {documentId}");
+                throw new IOException(
+                    "The selected SAF document is not part of the active catalog.");
             }
             return GetMaterializationPath(
                 location, location.Document.DocumentId);

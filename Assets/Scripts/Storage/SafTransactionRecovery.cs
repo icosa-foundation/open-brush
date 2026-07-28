@@ -324,7 +324,7 @@ namespace TiltBrush
             record.LastError = error ?? "";
             SafTransactionJournal.Persist(record);
             string message =
-                $"SAF_STORAGE Recovery pending for {record.TransactionId}: {record.LastError}";
+                $"SAF_RECOVERY Pending {record.TransactionId}: {record.LastError}";
             report.Errors.Add(message);
             Debug.LogWarning(message);
         }

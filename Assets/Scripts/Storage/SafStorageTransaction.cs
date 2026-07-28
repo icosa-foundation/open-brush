@@ -320,6 +320,9 @@ namespace TiltBrush
                 EnsureSelectedRoot();
                 FindExistingTarget(cancellationToken);
                 SafTransactionJournal.Persist(m_Record);
+                Debug.Log(
+                    $"SAF_TRANSACTION {m_Record.TransactionId} " +
+                    $"{SafTransactionState.CreatingTemporary}");
             }
             catch
             {
@@ -594,6 +597,7 @@ namespace TiltBrush
             m_Record.State = state.ToString();
             m_Record.LastError = "";
             SafTransactionJournal.Persist(m_Record);
+            Debug.Log($"SAF_TRANSACTION {m_Record.TransactionId} {state}");
         }
 
         private StorageMutationResult CommitFailed(string error)
@@ -618,6 +622,9 @@ namespace TiltBrush
             m_Record.AttemptCount++;
             m_Record.LastError = error ?? "";
             SafTransactionJournal.Persist(m_Record);
+            Debug.LogWarning(
+                $"SAF_TRANSACTION {m_Record.TransactionId} {state}: " +
+                $"{m_Record.LastError}");
         }
 
         private void CloseStream()
