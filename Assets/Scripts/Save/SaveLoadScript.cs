@@ -668,7 +668,7 @@ namespace TiltBrush
                         false,
                         null,
                         DateTime.Now,
-                        1L << 1,
+                        (1L << 1) | (1L << 6),
                         displayName);
                     return new StorageWriteOutcome
                     {

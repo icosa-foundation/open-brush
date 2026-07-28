@@ -58,7 +58,7 @@ namespace TiltBrush
         public string FullPath => null;
         public string StorageId => m_Document.DocumentId.Value;
         public bool Exists => Available;
-        public bool ReadOnly => !m_Document.SupportsWrite;
+        public bool ReadOnly => !m_Document.SupportsRename;
         public string AssetId => m_AssetId;
         public string SourceId => m_SourceId;
         public int? TriangleCount => null;
