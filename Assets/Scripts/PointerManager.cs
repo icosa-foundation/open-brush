@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Polyhydra.Core;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -252,6 +253,7 @@ namespace TiltBrush
 
         // Used for Polyhydra Symmetry
         private TrTransform m_bestface_OS;
+        private int m_BestFaceIndex = -1;
 
         // ---- events
 
@@ -1604,6 +1606,8 @@ namespace TiltBrush
                         }
                         return tr * xfMain * trAndFix.Item1;
                     }
+                case SymmetryMode.CustomSymmetryMode:
+                    return GetCustomSymmetryTransform(child, xfMain, updateBestFace: false);
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
                         TrTransform scriptedTr;
@@ -1628,6 +1632,58 @@ namespace TiltBrush
                 default:
                     return xfMain;
             }
+        }
+
+        private static TrTransform GetFaceFrame(Face face)
+        {
+            Vector3 position = face.Centroid;
+            Vector3 faceVector = face.GetVertices()[0].Position - position;
+            return TrTransform.TRS(
+                position,
+                Quaternion.LookRotation(face.Normal, faceVector),
+                1f);
+        }
+
+        private TrTransform GetCustomSymmetryTransform(
+            int child, TrTransform xfMain, bool updateBestFace)
+        {
+            PreviewPolyhedron preview = PreviewPolyhedron.m_Instance;
+            if (preview == null || preview.m_PolyMesh == null ||
+                preview.m_PolyMesh.Faces.Count == 0)
+            {
+                return xfMain;
+            }
+
+            var faces = preview.m_PolyMesh.Faces;
+            TrTransform xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+            if (updateBestFace || m_BestFaceIndex < 0 || m_BestFaceIndex >= faces.Count)
+            {
+                Vector3 pointerPosition_OS = (xfWidget.inverse * xfMain).translation;
+                m_BestFaceIndex = Enumerable.Range(0, faces.Count)
+                    .OrderBy(index =>
+                        (pointerPosition_OS - faces[index].Centroid).sqrMagnitude)
+                    .First();
+                m_bestface_OS = GetFaceFrame(faces[m_BestFaceIndex]);
+            }
+
+            if (child == 0)
+            {
+                return xfMain;
+            }
+
+            // Pointer zero represents the nearest face. Map the remaining pointer indices
+            // to every other face without duplicating that nearest face.
+            int targetFaceIndex = child <= m_BestFaceIndex ? child - 1 : child;
+            if (targetFaceIndex < 0 || targetFaceIndex >= faces.Count)
+            {
+                return xfMain;
+            }
+
+            TrTransform targetFace_OS = GetFaceFrame(faces[targetFaceIndex]);
+            TrTransform targetFromBest_OS = targetFace_OS * m_bestface_OS.inverse;
+            TrTransform targetFromBest_GS =
+                xfWidget * targetFromBest_OS * xfWidget.inverse;
+            return targetFromBest_GS * xfMain;
         }
 
         public void CalculateMirrors()
@@ -1756,6 +1812,20 @@ namespace TiltBrush
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                             float scaledSize = m_Pointers[0].m_Script.BrushSize01 * Mathf.Abs(m_CustomMirrorMatrices[i].lossyScale.x);
                             m_Pointers[i].m_Script.BrushSize01 = scaledSize;
+                        }
+                        break;
+                    }
+                case SymmetryMode.CustomSymmetryMode:
+                    {
+                        TrTransform pointer0 =
+                            TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                        bool updateBestFace = !MainPointer.IsCreatingStroke();
+                        for (int i = 1; i < m_NumActivePointers; ++i)
+                        {
+                            TrTransform pointerTransform = GetCustomSymmetryTransform(
+                                i, pointer0, updateBestFace);
+                            updateBestFace = false;
+                            pointerTransform.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;
                     }
