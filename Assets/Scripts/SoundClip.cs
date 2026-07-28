@@ -68,13 +68,17 @@ namespace TiltBrush
                 {
                     if (m_SoundClipInitialized)
                     {
-                        if (m_SoundClipAudioSource.isPlaying)
+                        if (value == m_SoundClipAudioSource.isPlaying)
                         {
-                            m_SoundClipAudioSource.Pause();
+                            return;
+                        }
+                        if (value)
+                        {
+                            m_SoundClipAudioSource.Play();
                         }
                         else
                         {
-                            m_SoundClipAudioSource.Play();
+                            m_SoundClipAudioSource.Pause();
                         }
                     }
                 }
