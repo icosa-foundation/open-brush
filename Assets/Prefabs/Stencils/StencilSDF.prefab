@@ -182,7 +182,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 11
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!120 &5812556056353759099
 LineRenderer:
@@ -327,7 +327,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
+  m_Radius: 0.55
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5823706045242864033
 GameObject:
