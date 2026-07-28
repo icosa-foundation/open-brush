@@ -307,6 +307,7 @@ namespace TiltBrush
         {
             PathT pathT = new PathT(t);
             var knot = _CameraPathWidget.Path.CreateRotationKnot(pathT, rotation);
+            _CameraPathWidget.Path.AddRotationKnot(knot, pathT);
             return _CameraPathWidget.Path.AllKnots.IndexOf(knot);
         }
 
