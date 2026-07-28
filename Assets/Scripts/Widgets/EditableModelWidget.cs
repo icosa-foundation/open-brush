@@ -114,10 +114,10 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-                ok = await CreateModelsFromRelativePath(
-                    modelDatas.FilePath, null,
+                ok = await CreateEditableModelsFromRelativePath(
+                    modelDatas.FilePath,
                     modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds, modelDatas.LayerIds, null, null);
+                    modelDatas.GroupIds, modelDatas.LayerIds);
             }
             else if (modelDatas.AssetId != null)
             {
@@ -137,6 +137,94 @@ namespace TiltBrush
                 ModelCatalog.m_Instance.AddMissingModel(
                     modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
             }
+        }
+
+        private static async Task<bool> CreateEditableModelsFromRelativePath(
+            string relativePath, TrTransform[] xfs, TrTransform[] rawXfs,
+            bool[] pinStates, uint[] groupIds, int[] layerIds)
+        {
+            Model model = ModelCatalog.m_Instance.GetModel(relativePath);
+            if (model == null)
+            {
+                return false;
+            }
+
+            if (!model.m_Valid || !model.TryGetEditableGeometry(out _, out _))
+            {
+                await model.LoadEditableModelAsync();
+            }
+            if (!model.m_Valid ||
+                !model.TryGetEditableGeometry(out _, out _))
+            {
+                return false;
+            }
+
+            if (xfs != null)
+            {
+                // Pre M13 format
+                for (int i = 0; i < xfs.Length; ++i)
+                {
+                    bool pin = pinStates == null || i >= pinStates.Length || pinStates[i];
+                    uint groupId = groupIds != null && i < groupIds.Length ? groupIds[i] : 0;
+                    CreateEditableModel(
+                        model, xfs[i], pin, isNonRawTransform: true, groupId, layerId: 0);
+                }
+            }
+
+            if (rawXfs != null)
+            {
+                // Post M13 format
+                for (int i = 0; i < rawXfs.Length; ++i)
+                {
+                    bool pin = pinStates == null || i >= pinStates.Length || pinStates[i];
+                    uint groupId = groupIds != null && i < groupIds.Length ? groupIds[i] : 0;
+                    int layerId = layerIds != null && i < layerIds.Length ? layerIds[i] : 0;
+                    CreateEditableModel(
+                        model, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                }
+            }
+            return true;
+        }
+
+        private static void CreateEditableModel(
+            Model model, TrTransform xf, bool pin, bool isNonRawTransform,
+            uint groupId, int layerId)
+        {
+            if (!model.TryGetEditableGeometry(out PolyMesh poly, out PolyRecipe recipe))
+            {
+                throw new InvalidOperationException(
+                    $"Model {model.RelativePath} has no editable geometry");
+            }
+
+            var widget = Instantiate(
+                WidgetManager.m_Instance.EditableModelWidgetPrefab) as EditableModelWidget;
+            widget.transform.localPosition = xf.translation;
+            widget.transform.localRotation = xf.rotation;
+            widget.Model = model;
+            widget.m_PolyMesh = poly;
+            widget.m_PolyRecipe = recipe;
+            widget.m_LoadingFromSketch = true;
+            widget.Show(true, false);
+            if (isNonRawTransform)
+            {
+                widget.SetWidgetSizeNonRaw(xf.scale);
+                widget.transform.localPosition -=
+                    xf.rotation * widget.Model.m_MeshBounds.center *
+                    widget.GetSignedWidgetSize();
+            }
+            else
+            {
+                widget.SetSignedWidgetSize(xf.scale);
+            }
+
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                widget.GetTiltMeterCost(), up: true);
+            if (pin)
+            {
+                widget.PinFromSave();
+            }
+            widget.Group = App.GroupManager.GetGroupFromId(groupId);
+            widget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
