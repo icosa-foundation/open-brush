@@ -50,6 +50,10 @@ namespace TiltBrush
 
             private readonly Dictionary<StorageDocumentId, Entry> m_Entries =
                 new Dictionary<StorageDocumentId, Entry>();
+            public int CommitCount { get; private set; }
+            public int FailCommitNumber { get; set; }
+            public string RootAfterFirstCommit { get; set; }
+            public List<string> CommittedNames { get; } = new List<string>();
 
             private sealed class WriteTransaction : IStorageWriteTransaction
             {
@@ -75,7 +79,23 @@ namespace TiltBrush
 
                 public StorageMutationResult Commit()
                 {
+                    int commitNumber = m_Backend.CommitCount + 1;
+                    if (m_Backend.FailCommitNumber == commitNumber)
+                    {
+                        m_Finished = true;
+                        return new StorageMutationResult(
+                            StorageResultCode.Failed,
+                            TargetDocumentId,
+                            "Injected publication failure.");
+                    }
                     TargetDocumentId = m_Backend.AddOrReplace(m_Name, m_Stream.ToArray());
+                    m_Backend.CommitCount = commitNumber;
+                    m_Backend.CommittedNames.Add(m_Name);
+                    if (m_Backend.RootAfterFirstCommit != null &&
+                        commitNumber == 1)
+                    {
+                        m_Backend.RootIdentity = m_Backend.RootAfterFirstCommit;
+                    }
                     m_Finished = true;
                     return new StorageMutationResult(
                         StorageResultCode.Success, TargetDocumentId);
@@ -452,6 +472,30 @@ namespace TiltBrush
         }
 
         [Test]
+        public void StorageDocument_ReportsSafMutationCapabilities()
+        {
+            const long supportsWrite = 1L << 1;
+            const long supportsDelete = 1L << 2;
+            const long supportsRename = 1L << 6;
+            const long supportsRemove = 1L << 10;
+            var document = new StorageDocument(
+                new StorageDocumentId("opaque"),
+                new StorageDocumentId("parent"),
+                "test.tilt",
+                TiltFile.TILT_MIME_TYPE,
+                false,
+                1,
+                DateTime.Now,
+                supportsWrite | supportsDelete | supportsRename | supportsRemove,
+                "test.tilt");
+
+            Assert.IsTrue(document.SupportsWrite);
+            Assert.IsTrue(document.SupportsDelete);
+            Assert.IsTrue(document.SupportsRename);
+            Assert.IsTrue(document.SupportsRemove);
+        }
+
+        [Test]
         public void SafTransactionJournal_IsVersionedAndAtomicallyUpdated()
         {
             string rootId = $"test-root-{Guid.NewGuid():N}";
@@ -602,6 +646,145 @@ namespace TiltBrush
                 Assert.IsTrue(result.Success, result.Error);
                 Assert.IsFalse(File.Exists(stagedFile));
                 Assert.IsTrue(backend.Contains("snapshot.png"));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_DoesNotCrossSelectedRoots()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string first = Path.Combine(stagingRoot, "first.txt");
+            string second = Path.Combine(stagingRoot, "second.txt");
+            File.WriteAllText(first, "first");
+            File.WriteAllText(second, "second");
+            var backend = new FakeSafBackend();
+            string originalRoot = backend.RootIdentity;
+            backend.RootAfterFirstCommit = $"different-root-{Guid.NewGuid():N}";
+            string recoveryRoot =
+                SafTransactionJournal.GetRecoveryRootDirectory(originalRoot);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
+                    backend,
+                    StorageArea.Exports,
+                    new[]
+                    {
+                        new SafStagedPath(first, "first.txt"),
+                        new SafStagedPath(second, "second.txt"),
+                    },
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+
+                Assert.IsFalse(result.Success);
+                Assert.IsTrue(backend.Contains("first.txt"));
+                Assert.IsFalse(backend.Contains("second.txt"));
+                Assert.IsTrue(File.Exists(first));
+                Assert.IsTrue(File.Exists(second));
+                string publicationDirectory = Path.Combine(
+                    recoveryRoot, "publications");
+                Assert.AreEqual(
+                    1,
+                    Directory.GetFiles(publicationDirectory, "*.json").Length);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_RetainsOwnedPayloadAfterFailure()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"publication-test-{Guid.NewGuid():N}");
+            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
+            var backend = new FakeSafBackend { FailCommitNumber = 1 };
+            string recoveryRoot =
+                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Snapshots,
+                    "snapshot.png",
+                    stagedFile,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None);
+
+                Assert.IsFalse(result.Success);
+                Assert.IsTrue(File.Exists(stagedFile));
+                Assert.AreEqual(
+                    1,
+                    Directory.GetFiles(
+                        Path.Combine(recoveryRoot, "publications"), "*.json").Length);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_CommitsFrameMetadataLast()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
+            string frames = Path.Combine(stagingRoot, "frames");
+            Directory.CreateDirectory(frames);
+            File.WriteAllText(Path.Combine(frames, "0001.png"), "one");
+            File.WriteAllText(Path.Combine(frames, "0002.png"), "two");
+            string metadata = Path.Combine(stagingRoot, "sequence.txt");
+            File.WriteAllText(metadata, "complete");
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
+                    backend,
+                    StorageArea.Videos,
+                    new[]
+                    {
+                        new SafStagedPath(frames, "frames"),
+                        new SafStagedPath(metadata, "sequence.txt"),
+                    },
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.AreEqual(
+                    "sequence.txt",
+                    backend.CommittedNames[backend.CommittedNames.Count - 1]);
             }
             finally
             {
