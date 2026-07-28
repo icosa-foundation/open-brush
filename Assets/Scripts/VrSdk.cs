@@ -706,7 +706,13 @@ namespace TiltBrush
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
-            if (device.name.Contains("Oculus Touch"))
+            if (device.name.Contains("Logitech") && device.name.Contains("MX Ink"))
+            {
+                // MX Ink replaces one Quest controller, so retain the Quest controls prefab.
+                // VrStylusHandler supplies its dedicated inputs and model for the assigned hand.
+                SetControllerStyle(ControllerStyle.OculusTouch);
+            }
+            else if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
             }
