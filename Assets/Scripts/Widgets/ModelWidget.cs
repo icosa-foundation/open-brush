@@ -1048,6 +1048,7 @@ namespace TiltBrush
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
                 // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
+                model.ReleaseFromCatalog();
             }
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
             // Set this before loading so mesh splits are available when the prefab is built.
