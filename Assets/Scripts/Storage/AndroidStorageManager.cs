@@ -217,18 +217,38 @@ namespace TiltBrush
                     return transactionReport;
                 },
                 longRunning: true);
-            SafRecoveryReport report;
-            while (!future.TryGetResult(out report))
+            SafRecoveryReport report = null;
+            string recoveryError = null;
+            while (true)
             {
+                bool finished;
+                try
+                {
+                    finished = future.TryGetResult(out report);
+                }
+                catch (FutureFailed e)
+                {
+                    recoveryError = e.InnerException?.Message ?? e.Message;
+                    break;
+                }
+                if (finished)
+                {
+                    break;
+                }
                 yield return null;
             }
             future.Close();
 
-            if (report.Recovered > 0)
+            if (recoveryError != null)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Transaction recovery failed: {recoveryError}");
+            }
+            else if (report != null && report.Recovered > 0)
             {
                 Debug.Log($"SAF_STORAGE Recovered {report.Recovered} storage transaction(s).");
             }
-            if (report.Pending > 0)
+            if (report != null && report.Pending > 0)
             {
                 Debug.LogWarning(
                     $"SAF_STORAGE {report.Pending} storage transaction(s) require recovery.");
@@ -321,9 +341,25 @@ namespace TiltBrush
             Action<bool, string> onComplete)
         {
             var future = new Future<SafPublicationResult>(operation, longRunning: true);
-            SafPublicationResult result;
-            while (!future.TryGetResult(out result))
+            SafPublicationResult result = null;
+            while (true)
             {
+                bool finished;
+                try
+                {
+                    finished = future.TryGetResult(out result);
+                }
+                catch (FutureFailed e)
+                {
+                    result = new SafPublicationResult(
+                        StorageResultCode.Failed,
+                        e.InnerException?.Message ?? e.Message);
+                    break;
+                }
+                if (finished)
+                {
+                    break;
+                }
                 yield return null;
             }
             future.Close();
