@@ -83,31 +83,6 @@ namespace TiltBrush
             get { return "Open Brush/Exports"; }
         }
 
-        public static bool TryGetSharedSketchRelativePath(string localPath, out string relativePath)
-        {
-            relativePath = null;
-
-            if (string.IsNullOrEmpty(localPath))
-            {
-                return false;
-            }
-
-            if (TryGetRelativePath(App.UserSketchPath(), localPath, out string sketchPath) &&
-                !sketchPath.StartsWith("Autosave/"))
-            {
-                relativePath = Path.Combine("Sketches", sketchPath);
-                return true;
-            }
-
-            if (TryGetRelativePath(App.SavedStrokesPath(), localPath, out string savedStrokePath))
-            {
-                relativePath = Path.Combine("Saved Strokes", savedStrokePath);
-                return true;
-            }
-
-            return false;
-        }
-
         public static bool TryGetSharedGeneratedFileRelativePath(
             string localPath, out string relativePath)
         {

@@ -466,7 +466,7 @@ namespace TiltBrush
                 throw new ArgumentException("null filename");
             }
 
-            if (!FileUtils.CheckDiskSpaceWithError(m_SaveDir))
+            if (!directSafSave && !FileUtils.CheckDiskSpaceWithError(m_SaveDir))
             {
                 return new List<Timeslice>().GetEnumerator();
             }
