@@ -88,13 +88,13 @@ namespace TiltBrush
                 // Reduce usage count on old model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount--;
+                    m_Model.ReleaseUsage();
                 }
                 m_Model = value;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount++;
+                    m_Model.AcquireUsage();
                 }
 
                 m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);

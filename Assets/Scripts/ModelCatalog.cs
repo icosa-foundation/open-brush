@@ -247,9 +247,7 @@ namespace TiltBrush
             {
                 foreach (var entry in oldModels)
                 {
-                    // Let each model release procedural meshes, pending builders, and any
-                    // runtime-created assets it owns before it leaves the catalog.
-                    entry.Value.UnloadModel();
+                    entry.Value.ReleaseFromCatalog();
                 }
                 Resources.UnloadUnusedAssets();
             }

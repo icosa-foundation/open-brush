@@ -218,6 +218,7 @@ namespace TiltBrush
 
         // How many widgets are using this model?
         public int m_UsageCount;
+        private bool m_CatalogOwnershipReleased;
 
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
@@ -310,6 +311,38 @@ namespace TiltBrush
         }
 
         public Location GetLocation() { return m_Location; }
+
+        internal void AcquireUsage()
+        {
+            m_UsageCount++;
+        }
+
+        internal void ReleaseUsage()
+        {
+            Debug.Assert(m_UsageCount > 0, $"Model usage count underflow for {m_Location}.");
+            if (m_UsageCount <= 0)
+            {
+                return;
+            }
+
+            m_UsageCount--;
+            if (m_UsageCount == 0 && m_CatalogOwnershipReleased)
+            {
+                UnloadModel();
+            }
+        }
+
+        internal void ReleaseFromCatalog()
+        {
+            m_CatalogOwnershipReleased = true;
+            if (m_UsageCount == 0)
+            {
+                UnloadModel();
+            }
+            // Otherwise retain the inactive owner hierarchy. Active widgets borrow its
+            // procedural meshes and runtime splat asset, and may still consult it for
+            // operations such as breaking a model apart. The final ReleaseUsage unloads it.
+        }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:

@@ -28,6 +28,12 @@ namespace TiltBrush
         private static readonly MethodInfo sm_GetGsplatSourceCoordinates =
             typeof(Model).GetMethod("GetGsplatSourceCoordinates",
                 BindingFlags.Static | BindingFlags.NonPublic);
+        private static readonly MethodInfo sm_ReleaseFromCatalog =
+            typeof(Model).GetMethod("ReleaseFromCatalog",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo sm_ReleaseUsage =
+            typeof(Model).GetMethod("ReleaseUsage",
+                BindingFlags.Instance | BindingFlags.NonPublic);
 
         [TestCase(".ply", SourceCoordinates.RUB)]
         [TestCase(".spz", SourceCoordinates.RUB)]
@@ -68,6 +74,40 @@ namespace TiltBrush
                     {
                         UnityEngine.Object.DestroyImmediate(asset);
                     }
+                }
+            }
+        }
+
+        [Test]
+        public void CatalogRemovalDefersAssetDestructionUntilLastBorrowerReleases()
+        {
+            Assert.IsNotNull(sm_ReleaseFromCatalog);
+            Assert.IsNotNull(sm_ReleaseUsage);
+            var model = new Model($"gsplat-catalog-release-{Guid.NewGuid():N}.ply");
+            var asset = ScriptableObject.CreateInstance<GsplatAssetSpark>();
+            try
+            {
+                model.m_UsageCount = 1;
+                sm_OwnedGsplatAssetField.SetValue(model, asset);
+
+                sm_ReleaseFromCatalog.Invoke(model, null);
+
+                Assert.IsTrue(asset != null,
+                    "Catalog removal destroyed an asset while a widget still borrowed it.");
+                Assert.AreSame(asset, sm_OwnedGsplatAssetField.GetValue(model));
+
+                sm_ReleaseUsage.Invoke(model, null);
+
+                Assert.AreEqual(0, model.m_UsageCount);
+                Assert.IsTrue(asset == null,
+                    "The final borrower release did not destroy the catalog-orphaned asset.");
+                Assert.IsNull(sm_OwnedGsplatAssetField.GetValue(model));
+            }
+            finally
+            {
+                if (asset != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(asset);
                 }
             }
         }
