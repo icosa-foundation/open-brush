@@ -634,6 +634,28 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafStagedOutputPublisher_RejectsRootedDestination()
+        {
+            string stagedFile = Path.GetTempFileName();
+            try
+            {
+                var backend = new FakeSafBackend();
+                Assert.Throws<ArgumentException>(() =>
+                    SafStagedOutputPublisher.Publish(
+                        backend,
+                        StorageArea.Exports,
+                        Path.GetFullPath("outside.txt"),
+                        stagedFile,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None));
+            }
+            finally
+            {
+                File.Delete(stagedFile);
+            }
+        }
+
+        [Test]
         public void SafStagedOutputPublisher_RemovesCommittedOwnedPayload()
         {
             string stagingRoot = Path.Combine(

@@ -687,7 +687,15 @@ namespace TiltBrush
         private static void SplitRelativePath(
             string relativePath, out string directory, out string fileName)
         {
-            string normalized = (relativePath ?? "").Replace('\\', '/').Trim('/');
+            string normalized = (relativePath ?? "").Replace('\\', '/');
+            if (Path.IsPathRooted(normalized) ||
+                normalized.StartsWith("/", StringComparison.Ordinal) ||
+                normalized.EndsWith("/", StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "Storage destination must be a relative file path.",
+                    nameof(relativePath));
+            }
             string[] segments = normalized.Split('/');
             if (segments.Length == 0)
             {

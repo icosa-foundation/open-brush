@@ -704,14 +704,7 @@ public class OpenBrushStorageBridge {
         if (path == null) {
             return "";
         }
-        String normalized = path.replace('\\', '/');
-        while (normalized.startsWith("/")) {
-            normalized = normalized.substring(1);
-        }
-        while (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        return normalized;
+        return path.replace('\\', '/');
     }
 
     private static boolean isSafeRelativePath(String path) {

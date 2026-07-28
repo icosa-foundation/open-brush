@@ -470,7 +470,14 @@ namespace TiltBrush
 
         private static string NormalizeRelativePath(string path)
         {
-            string normalized = (path ?? "").Replace('\\', '/').Trim('/');
+            string normalized = (path ?? "").Replace('\\', '/');
+            if (Path.IsPathRooted(normalized) ||
+                normalized.StartsWith("/", StringComparison.Ordinal) ||
+                normalized.EndsWith("/", StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "Publication destination must be a relative path.");
+            }
             foreach (string segment in normalized.Split('/'))
             {
                 if (string.IsNullOrEmpty(segment) || segment == "." || segment == "..")
