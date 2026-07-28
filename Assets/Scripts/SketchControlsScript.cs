@@ -174,6 +174,7 @@ namespace TiltBrush
 
             MultiplayerSetRoomViewOnly = 1020,
             MultiplayerSetRoomSilent = 1021,
+            MultiplayerManualColocation = 1022,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -5141,6 +5142,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerLeaveRoom:
                 case GlobalCommands.MultiplayerConnect:
                 case GlobalCommands.MultiplayerDisconnect:
+                case GlobalCommands.MultiplayerManualColocation:
                 case GlobalCommands.MultiplayerMutePlayerForMe:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerViewOnlyMode:
@@ -5449,6 +5451,11 @@ namespace TiltBrush
                     return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
+                case GlobalCommands.MultiplayerManualColocation:
+                    return MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM &&
+                        ManualColocationManager.m_Instance != null &&
+                        (MultiplayerManager.m_Instance.IsUserRoomOwner() ||
+                         ManualColocationManager.m_Instance.HasReference);
 
                 // Disabled when in a multiplayer room.
                 case GlobalCommands.Sketchbook:

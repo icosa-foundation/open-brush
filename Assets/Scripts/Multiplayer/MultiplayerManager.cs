@@ -47,6 +47,7 @@ namespace OpenBrush.Multiplayer
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
         [HideInInspector] public RemotePlayers m_RemotePlayers;
+        public int LocalPlayerId => m_LocalPlayer?.PlayerId ?? -1;
 
         public Action<int, ITransientData<PlayerRigData>> localPlayerJoined;
         public Action<RemotePlayer> remotePlayerJoined;
@@ -132,6 +133,10 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             oculusPlayerIds = new List<ulong>();
+            if (GetComponent<ManualColocationManager>() == null)
+            {
+                gameObject.AddComponent<ManualColocationManager>();
+            }
         }
 
         void Start()
@@ -493,6 +498,7 @@ namespace OpenBrush.Multiplayer
 
             m_LocalPlayer = playerData;
             m_LocalPlayer.PlayerId = id;
+            ManualColocationManager.m_Instance?.OnLocalPlayerJoinedRoom();
 
         }
 
@@ -503,6 +509,13 @@ namespace OpenBrush.Multiplayer
             if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
 
             MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
+            if (ManualColocationManager.m_Instance != null &&
+                ManualColocationManager.m_Instance.HasReference)
+            {
+                _ = SendManualColocationReferenceToPlayer(
+                    ManualColocationManager.m_Instance.CurrentReference,
+                    newRemotePlayer.PlayerId);
+            }
             if (CurrentRoomData.silentRoom == true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
             if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
         }
@@ -626,6 +639,49 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        public async Task<bool> PublishManualColocationReference(
+            ManualColocationReference reference)
+        {
+            if (State != ConnectionState.IN_ROOM ||
+                !isUserRoomOwner ||
+                m_Manager == null)
+            {
+                Debug.LogWarning(
+                    "[ManualColocation] Only the room owner can publish a reference.");
+                return false;
+            }
+
+            return await m_Manager.RpcPublishManualColocationReference(reference);
+        }
+
+        public async Task<bool> SendManualColocationReferenceToPlayer(
+            ManualColocationReference reference,
+            int playerId)
+        {
+            if (State != ConnectionState.IN_ROOM ||
+                !isUserRoomOwner ||
+                m_Manager == null)
+            {
+                return false;
+            }
+
+            bool sent =
+                await m_Manager.RpcSendManualColocationReferenceToPlayer(
+                    reference, playerId);
+            if (sent)
+            {
+                Debug.Log(
+                    $"[ManualColocation] Sent revision {reference.Revision} to late joiner {playerId}.");
+            }
+            return sent;
+        }
+
+        public void ReceiveManualColocationReference(
+            ManualColocationReference reference)
+        {
+            ManualColocationManager.m_Instance?.ApplyReceivedReference(reference);
+        }
+
         public async void SendCommandToPlayer(BaseCommand command, int playerID)
         {
             if (State == ConnectionState.IN_ROOM)
@@ -673,6 +729,13 @@ namespace OpenBrush.Multiplayer
         async void ShareAnchors()
         {
 #if OCULUS_SUPPORTED
+            if (ManualColocationManager.m_Instance != null &&
+                ManualColocationManager.m_Instance.IsManualProviderActive)
+            {
+                Debug.Log(
+                    "[ManualColocation] Skipping Meta anchor sharing while manual colocation is active.");
+                return;
+            }
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 

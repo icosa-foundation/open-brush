@@ -363,6 +363,46 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcPublishManualColocationReference(
+            ManualColocationReference reference)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference);
+            });
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcSendManualColocationReferenceToPlayer(
+            ManualColocationReference reference,
+            int playerId)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference, targetPlayer);
+            });
+            await Task.Yield();
+            return true;
+        }
+
         public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);

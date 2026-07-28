@@ -44,9 +44,36 @@ namespace TiltBrush
         [SerializeField] private LocalizedString m_AlertsRoomAlreadyExistent;
         [SerializeField] private LocalizedString m_AlertsPassthroughWarning;
         [SerializeField] private GameObject m_RoomSettingsButton;
+        [SerializeField] private GameObject m_ManualColocationButton;
+        [SerializeField] private TextMeshPro m_ManualColocationStatus;
 
         private PlayerPrefsDataStore m_multiplayer;
         private bool updateDisplay = false;
+        private bool m_ManualColocationEventsSubscribed;
+        private GameObject m_ManualColocationButtonTemplate;
+
+        private const string kManualColocationButtonAlign =
+            "MP_MANUAL_COLOCATION_ALIGN";
+        private const string kManualColocationButtonSet =
+            "MP_MANUAL_COLOCATION_SET";
+        private const string kManualColocationButtonReset =
+            "MP_MANUAL_COLOCATION_RESET";
+        private const string kManualColocationButtonRealign =
+            "MP_MANUAL_COLOCATION_REALIGN";
+        private const string kManualColocationButtonUpdated =
+            "MP_MANUAL_COLOCATION_UPDATED";
+        private const string kManualColocationStatusNotSet =
+            "MP_MANUAL_COLOCATION_STATUS_NOT_SET";
+        private const string kManualColocationStatusRecording =
+            "MP_MANUAL_COLOCATION_STATUS_RECORDING";
+        private const string kManualColocationStatusReady =
+            "MP_MANUAL_COLOCATION_STATUS_READY";
+        private const string kManualColocationStatusAligned =
+            "MP_MANUAL_COLOCATION_STATUS_ALIGNED";
+        private const string kManualColocationStatusStale =
+            "MP_MANUAL_COLOCATION_STATUS_STALE";
+        private const string kManualColocationStatusError =
+            "MP_MANUAL_COLOCATION_STATUS_ERROR";
 
         public string RoomName
         {
@@ -128,6 +155,17 @@ namespace TiltBrush
 
         }
 
+        private void OnDestroy()
+        {
+            if (MultiplayerManager.m_Instance != null)
+            {
+                MultiplayerManager.m_Instance.StateUpdated -= OnStateUpdated;
+                MultiplayerManager.m_Instance.RoomOwnershipUpdated -= OnRoomOwnershipUpdated;
+            }
+            UnsubscribeManualColocationEvents();
+            LocalizationSettings.SelectedLocaleChanged -= OnLanguageChanged;
+        }
+
         private void OnLanguageChanged(Locale newLocale)
         {
             updateDisplay = true;
@@ -177,18 +215,21 @@ namespace TiltBrush
         {
             base.OnEnablePanel();
 
+            EnsureManualColocationUi();
             m_multiplayer = new PlayerPrefsDataStore("Multiplayer");
             RetrieveUsername();
             RetrieveRoomName();
             RetrieveMaxPlayers();
 
             if (MultiplayerManager.m_Instance == null) return;
+            SubscribeManualColocationEvents();
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
             {
                 MultiplayerManager.m_Instance.Connect();
             }
 
             if (updateDisplay) UpdateDisplay();
+            RefreshManualColocationDisplay();
         }
 
         protected override void OnDisablePanel()
@@ -287,6 +328,7 @@ namespace TiltBrush
                 m_RoomAvailable.gameObject.SetActive(true);
             }
             DisplayRoomSettingsButton(newState);
+            RefreshManualColocationDisplay();
             UpdateDisplay();
         }
 
@@ -359,6 +401,7 @@ namespace TiltBrush
             bool showRoomSettingsButton = MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM &&
                 MultiplayerManager.m_Instance.IsUserRoomOwner();
             m_RoomSettingsButton.SetActive(showRoomSettingsButton);
+            RefreshManualColocationDisplay();
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
@@ -461,7 +504,206 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerDisconnect:
                     Disconnect();
                     break;
+                case SketchControlsScript.GlobalCommands.MultiplayerManualColocation:
+                    ManualColocationManager.m_Instance?.BeginAlignmentWorkflow();
+                    break;
             }
+        }
+
+        private void SubscribeManualColocationEvents()
+        {
+            if (m_ManualColocationEventsSubscribed ||
+                ManualColocationManager.m_Instance == null)
+            {
+                return;
+            }
+            ManualColocationManager.m_Instance.ReferenceChanged +=
+                OnManualColocationReferenceChanged;
+            ManualColocationManager.m_Instance.LocalStateChanged +=
+                OnManualColocationStateChanged;
+            m_ManualColocationEventsSubscribed = true;
+        }
+
+        private void UnsubscribeManualColocationEvents()
+        {
+            if (!m_ManualColocationEventsSubscribed ||
+                ManualColocationManager.m_Instance == null)
+            {
+                return;
+            }
+            ManualColocationManager.m_Instance.ReferenceChanged -=
+                OnManualColocationReferenceChanged;
+            ManualColocationManager.m_Instance.LocalStateChanged -=
+                OnManualColocationStateChanged;
+            m_ManualColocationEventsSubscribed = false;
+        }
+
+        private void OnManualColocationReferenceChanged(
+            ManualColocationReference reference)
+        {
+            RefreshManualColocationDisplay();
+        }
+
+        private void OnManualColocationStateChanged(
+            ManualColocationState state)
+        {
+            RefreshManualColocationDisplay();
+        }
+
+        private void RefreshManualColocationDisplay()
+        {
+            SubscribeManualColocationEvents();
+
+            ManualColocationManager colocation =
+                ManualColocationManager.m_Instance;
+            bool inRoom = MultiplayerManager.m_Instance != null &&
+                MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM;
+            bool isOwner = inRoom &&
+                MultiplayerManager.m_Instance.IsUserRoomOwner();
+            bool showButton = inRoom && colocation != null &&
+                (isOwner || colocation.HasReference);
+
+            if (m_ManualColocationButtonTemplate != null)
+            {
+                m_ManualColocationButtonTemplate.SetActive(!inRoom);
+            }
+
+            if (m_ManualColocationButton != null)
+            {
+                m_ManualColocationButton.SetActive(showButton);
+                MultiplayerPanelButton button =
+                    m_ManualColocationButton.GetComponent<MultiplayerPanelButton>();
+                if (button != null && showButton)
+                {
+                    string description;
+                    if (isOwner)
+                    {
+                        description = Localize(colocation.HasReference
+                            ? kManualColocationButtonReset
+                            : kManualColocationButtonSet);
+                    }
+                    else
+                    {
+                        description =
+                            colocation.State == ManualColocationState.Aligned
+                                ? Localize(kManualColocationButtonRealign)
+                                : colocation.State ==
+                                  ManualColocationState.AlignmentStale
+                                    ? Localize(kManualColocationButtonUpdated)
+                                    : Localize(kManualColocationButtonAlign);
+                    }
+                    button.SetDescriptionText(description);
+                }
+            }
+
+            if (m_ManualColocationStatus != null)
+            {
+                m_ManualColocationStatus.gameObject.SetActive(inRoom);
+                m_ManualColocationStatus.text =
+                    colocation == null ? string.Empty :
+                    ManualColocationStatusText(colocation.State);
+            }
+        }
+
+        private static string ManualColocationStatusText(
+            ManualColocationState state)
+        {
+            switch (state)
+            {
+                case ManualColocationState.OwnerCanSetReference:
+                    return Localize(kManualColocationStatusNotSet);
+                case ManualColocationState.CapturingStart:
+                    return Localize(kManualColocationStatusRecording);
+                case ManualColocationState.ReferenceAvailable:
+                    return Localize(kManualColocationStatusReady);
+                case ManualColocationState.Aligned:
+                    return Localize(kManualColocationStatusAligned);
+                case ManualColocationState.AlignmentStale:
+                    return Localize(kManualColocationStatusStale);
+                case ManualColocationState.Error:
+                    return Localize(kManualColocationStatusError);
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private void EnsureManualColocationUi()
+        {
+            MultiplayerPanelButton[] buttons =
+                GetComponentsInChildren<MultiplayerPanelButton>(true);
+            MultiplayerPanelButton template = null;
+            foreach (MultiplayerPanelButton button in buttons)
+            {
+                if (button.m_Command ==
+                    SketchControlsScript.GlobalCommands.MultiplayerJoinRoom)
+                {
+                    template = button;
+                    m_ManualColocationButtonTemplate = button.gameObject;
+                    break;
+                }
+            }
+
+            if (m_ManualColocationButton == null)
+            {
+                if (template != null)
+                {
+                    m_ManualColocationButton = Instantiate(
+                        template.gameObject,
+                        template.transform.parent);
+                    m_ManualColocationButton.name = "ManualColocationButton";
+                    Transform buttonTransform =
+                        m_ManualColocationButton.transform;
+                    buttonTransform.localPosition =
+                        template.transform.localPosition +
+                        new Vector3(0f, 0f, -0.01f);
+                    buttonTransform.localRotation =
+                        template.transform.localRotation;
+                    buttonTransform.localScale =
+                        template.transform.localScale;
+
+                    MultiplayerPanelButton manualButton =
+                        m_ManualColocationButton
+                            .GetComponent<MultiplayerPanelButton>();
+                    manualButton.m_Command =
+                        SketchControlsScript.GlobalCommands
+                            .MultiplayerManualColocation;
+                    manualButton.m_CommandParam = -1;
+                    manualButton.m_CommandParam2 = -1;
+                    manualButton.SetDescriptionText(
+                        Localize(kManualColocationButtonAlign));
+                }
+            }
+
+            if (m_ManualColocationStatus == null && m_RoomOwnership != null)
+            {
+                GameObject statusObject = Instantiate(
+                    m_RoomOwnership.gameObject,
+                    m_RoomOwnership.transform.parent);
+                statusObject.name = "Manual Colocation Status";
+                RectTransform statusTransform =
+                    statusObject.transform as RectTransform;
+                RectTransform ownershipTransform =
+                    m_RoomOwnership.transform as RectTransform;
+                if (statusTransform != null && ownershipTransform != null)
+                {
+                    statusTransform.anchoredPosition =
+                        ownershipTransform.anchoredPosition +
+                        new Vector2(0f, -0.09f);
+                    statusTransform.sizeDelta =
+                        ownershipTransform.sizeDelta;
+                }
+                m_ManualColocationStatus =
+                    statusObject.GetComponent<TextMeshPro>();
+                m_ManualColocationStatus.fontSize =
+                    m_RoomOwnership.fontSize * 0.8f;
+                m_ManualColocationStatus.text = string.Empty;
+            }
+        }
+
+        private static string Localize(string key)
+        {
+            return LocalizationSettings.StringDatabase.GetLocalizedString(
+                "Strings", key);
         }
     }
 } // namespace TiltBrush

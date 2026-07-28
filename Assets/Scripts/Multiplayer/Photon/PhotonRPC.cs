@@ -432,11 +432,46 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.IsViewOnly = isEnabled;
         }
 
+        private static void ReceiveManualColocationReference(
+            NetworkManualColocationReference networkReference)
+        {
+            if (MultiplayerManager.m_Instance == null)
+            {
+                return;
+            }
+            MultiplayerManager.m_Instance.ReceiveManualColocationReference(
+                networkReference.ToReference());
+        }
+
         #region RPCS
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ManualColocationReference(
+            NetworkRunner runner,
+            NetworkManualColocationReference reference)
+        {
+            ReceiveManualColocationReference(reference);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ManualColocationReference(
+            NetworkRunner runner,
+            NetworkManualColocationReference reference,
+            [RpcTarget] PlayerRef targetPlayer)
+        {
+            ReceiveManualColocationReference(reference);
+        }
+
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
 #if OCULUS_SUPPORTED
+            if (ManualColocationManager.m_Instance != null &&
+                ManualColocationManager.m_Instance.IsManualProviderActive)
+            {
+                Debug.Log(
+                    "[ManualColocation] Ignored Meta anchor sync while manual colocation is active.");
+                return;
+            }
             OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
 #endif // OCULUS_SUPPORTED
         }
