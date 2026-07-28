@@ -671,6 +671,7 @@ namespace TiltBrush
             }
 
             return m_GsplatRenderer != null &&
+                m_GsplatRenderer.SupportsSpatialQueries &&
                 m_GsplatRenderer.TryIntersectSphere(center_GS, radius_GS, out score);
         }
 
