@@ -234,6 +234,10 @@ namespace TiltBrush
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                using IDisposable publicationLock = SafDestinationLocks.Acquire(
+                    $"{record.RootId}\n{record.Area}\n__publication_subtree__"
+                        .ToLowerInvariant(),
+                    cancellationToken);
                 if (!string.Equals(
                         record.RootId,
                         backend.RootIdentity,
