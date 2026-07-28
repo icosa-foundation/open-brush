@@ -1168,13 +1168,14 @@ namespace TiltBrush
             StorageDocument storageDocument,
             DriveData.File driveFile,
             string direction,
-            CancellationToken token)
+            CancellationToken token,
+            ContentHashes knownStorageHashes = null)
         {
             if (storageDocument == null || driveFile == null)
             {
                 return;
             }
-            ContentHashes hashes = ComputeStorageHashes(
+            ContentHashes hashes = knownStorageHashes ?? ComputeStorageHashes(
                 UserStorage.Backend, storageDocument.DocumentId, token);
             GetLedger().Confirm(
                 area,
@@ -1340,6 +1341,10 @@ namespace TiltBrush
             var item = transfer.Item;
             IUserStorageBackend backend = UserStorage.Backend;
             EnsureTransferRootMatches(item, backend);
+            ContentHashes sourceHashes = backend.Kind ==
+                StorageBackendKind.StorageAccessFramework
+                    ? ComputeStorageHashes(backend, item.DocumentId, token)
+                    : null;
             var metadata = new DriveData.File
             {
                 Name = item.Name,
@@ -1438,13 +1443,25 @@ namespace TiltBrush
                 }
                 if (backend.Kind == StorageBackendKind.StorageAccessFramework)
                 {
+                    ContentHashes currentHashes = ComputeStorageHashes(
+                        backend, source.DocumentId, token);
+                    if (!source.DocumentId.Equals(item.DocumentId) ||
+                        !string.Equals(
+                            sourceHashes.Sha256,
+                            currentHashes.Sha256,
+                            StringComparison.Ordinal))
+                    {
+                        throw new IOException(
+                            "Google Drive upload source changed during transfer.");
+                    }
                     ConfirmLedger(
                         item.Area,
                         item.LedgerRelativePath,
                         source,
                         committedDriveFile,
                         "Upload",
-                        token);
+                        token,
+                        currentHashes);
                 }
                 item.DriveFile = committedDriveFile;
             }
