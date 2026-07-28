@@ -33,6 +33,7 @@ namespace TiltBrush
         private bool m_WaitingForSketchSetUpdate;
         private bool m_SafSubscribed;
         private bool m_SeedingSafDefaults;
+        private string m_SafSeedAttemptedRootIdentity;
         private const string kSafSeedPreference =
             "GooglePlayStorage.SeededDefaultSavedStrokesFdV1";
 
@@ -141,6 +142,8 @@ namespace TiltBrush
                 EnsureSafSubscription();
                 if (!m_SeedingSafDefaults &&
                     UserStorage.Backend.IsReady &&
+                    m_SafSeedAttemptedRootIdentity !=
+                        UserStorage.Backend.RootIdentity &&
                     PlayerPrefs.GetInt(
                         OpenBrushStorage.GetSafRootScopedPreferenceKey(
                             kSafSeedPreference),
@@ -278,6 +281,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             string seedRootIdentity = UserStorage.Backend.RootIdentity;
+            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
             StorageDirectoryResult listing = UserStorage.Backend.List(
                 StorageArea.SavedStrokes, "", default);
             if (!listing.Success)

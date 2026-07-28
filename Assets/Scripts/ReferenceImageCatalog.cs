@@ -47,6 +47,7 @@ namespace TiltBrush
         private bool m_ResetImageEnumeration;
         private bool m_SafQueryInProgress;
         private bool m_SeedingSafDefaults;
+        private string m_SafSeedAttemptedRootIdentity;
         private const string kSafSeedPreference =
             "GooglePlayStorage.SeededDefaultReferenceImagesFdV1";
 
@@ -127,6 +128,8 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
+                m_SafSeedAttemptedRootIdentity !=
+                    UserStorage.Backend.RootIdentity &&
                 PlayerPrefs.GetInt(
                     OpenBrushStorage.GetSafRootScopedPreferenceKey(
                         SafSeedPreferenceKey),
@@ -193,6 +196,7 @@ namespace TiltBrush
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
             string seedRootIdentity = backend.RootIdentity;
+            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(StorageAreaKind, "", CancellationToken.None),
                 cleanupFunction: null,

@@ -55,6 +55,7 @@ namespace TiltBrush
         private bool m_SafScanInProgress;
         private bool m_SafRescanRequested;
         private string m_SafCatalogRootIdentity;
+        private string m_SafSeedAttemptedRootIdentity;
         private bool m_SeedingSafDefaults;
 
         public bool IsScanning
@@ -370,6 +371,8 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
+                m_SafSeedAttemptedRootIdentity !=
+                    UserStorage.Backend.RootIdentity &&
                 PlayerPrefs.GetInt(
                     OpenBrushStorage.GetSafRootScopedPreferenceKey(
                         kSafSeedPreference),
@@ -388,6 +391,7 @@ namespace TiltBrush
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
             string seedRootIdentity = backend.RootIdentity;
+            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(
                     StorageArea.MediaLibraryModels, "", CancellationToken.None),
