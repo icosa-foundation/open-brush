@@ -300,6 +300,13 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.transform.parent = transform.parent;
+            var audioSettings = GetAudioExportSettings();
+            clone.SetAudioProperties(
+                audioSettings.volume,
+                audioSettings.loop,
+                audioSettings.spatialBlend,
+                audioSettings.minDistance,
+                audioSettings.maxDistance);
             clone.SetSoundClip(m_SoundClip);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
