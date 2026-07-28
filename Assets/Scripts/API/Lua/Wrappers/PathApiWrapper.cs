@@ -174,7 +174,9 @@ namespace TiltBrush
         public TransformApiWrapper last => new(_Path[^1]);
 
         [LuaDocsDescription("The axis-aligned bounds that contain this path")]
-        public BoundsApiWrapper bounds => new(BoundsApiWrapper.Calculate(_Path.Select(t => t.translation)));
+        public BoundsApiWrapper bounds => new(BoundsApiWrapper.Calculate(
+            (_Path ?? Enumerable.Empty<TrTransform>()).Select(t => t.translation)
+        ));
 
         [LuaDocsDescription("Inserts a new point at the end of the path")]
         [LuaDocsExample("myPath:Insert(myTransform")]
