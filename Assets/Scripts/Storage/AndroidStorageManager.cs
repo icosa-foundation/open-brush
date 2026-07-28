@@ -23,7 +23,8 @@ namespace TiltBrush
 {
     public class AndroidStorageManager : MonoBehaviour
     {
-        private const string kStartupPromptDismissedKey = "GooglePlayStorage.StartupPromptDismissed";
+        private const string kLegacyStartupPromptDismissedKey =
+            "GooglePlayStorage.StartupPromptDismissed";
         // Pre-release mirrored-cache builds used this key. Payloads are deliberately retained on
         // disk, but the obsolete retry records must not drive the FD-backed backend.
         private const string kPendingTransfersKey = "GooglePlayStorage.PendingTransfers";
@@ -35,7 +36,6 @@ namespace TiltBrush
         private static Action m_PendingAction;
         private static Action m_PendingCanceledAction;
         private static bool m_RequestInProgress;
-        private static bool m_RequestIsStartupPrompt;
         private static bool m_StartupPromptShown;
         private static string m_FileDescriptorProbeRootIdentity;
         private static string m_ActiveRootIdentity;
@@ -50,6 +50,11 @@ namespace TiltBrush
             }
 
             RemoveObsoletePendingTransferState();
+            if (PlayerPrefs.HasKey(kLegacyStartupPromptDismissedKey))
+            {
+                PlayerPrefs.DeleteKey(kLegacyStartupPromptDismissedKey);
+                PlayerPrefs.Save();
+            }
 
             var existing = GameObject.Find(nameof(AndroidStorageManager));
             if (existing != null)
@@ -89,11 +94,10 @@ namespace TiltBrush
             }
 
             if (!m_StartupPromptShown &&
-                PlayerPrefs.GetInt(kStartupPromptDismissedKey, 0) == 0 &&
                 !AndroidSafStorage.HasOpenBrushFolder())
             {
                 m_StartupPromptShown = true;
-                RequireSharedFolderFor("shared storage", null, null, true);
+                RequireSharedFolderFor("shared storage", null, null);
             }
         }
 
@@ -104,12 +108,6 @@ namespace TiltBrush
 
         public static bool RequireSharedFolderFor(
             string featureName, Action onReady, Action onCanceled)
-        {
-            return RequireSharedFolderFor(featureName, onReady, onCanceled, false);
-        }
-
-        private static bool RequireSharedFolderFor(
-            string featureName, Action onReady, Action onCanceled, bool isStartupPrompt)
         {
             if (!OpenBrushStorage.IsGooglePlayStorageMode || AndroidSafStorage.HasOpenBrushFolder())
             {
@@ -131,7 +129,6 @@ namespace TiltBrush
             m_PendingAction = onReady;
             m_PendingCanceledAction = onCanceled;
             m_RequestInProgress = true;
-            m_RequestIsStartupPrompt = isStartupPrompt;
             string message =
                 $"Choose an Open Brush folder to enable {featureName}. You can cancel and continue without shared storage.";
             ControllerConsoleScript.m_Instance?.AddNewLine(message);
@@ -144,8 +141,6 @@ namespace TiltBrush
         public void OnOpenBrushFolderSelected(string uriString)
         {
             m_RequestInProgress = false;
-            m_RequestIsStartupPrompt = false;
-            PlayerPrefs.DeleteKey(kStartupPromptDismissedKey);
 
             RunFileDescriptorProbeOnce();
             StartCoroutine(RecoverTransactions(() =>
@@ -160,12 +155,6 @@ namespace TiltBrush
         public void OnOpenBrushFolderCanceled(string unused)
         {
             m_RequestInProgress = false;
-            if (m_RequestIsStartupPrompt)
-            {
-                PlayerPrefs.SetInt(kStartupPromptDismissedKey, 1);
-                PlayerPrefs.Save();
-            }
-            m_RequestIsStartupPrompt = false;
             Action pendingCanceledAction = m_PendingCanceledAction;
             m_PendingAction = null;
             m_PendingCanceledAction = null;
