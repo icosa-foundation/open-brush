@@ -158,11 +158,20 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            m_UserPluginsPath = Path.Combine(App.UserPath(), "Plugins");
+            m_UserPluginsPath =
+                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Plugins);
             if (!Directory.Exists(m_UserPluginsPath))
             {
                 Directory.CreateDirectory(m_UserPluginsPath);
             }
+            UserRuntimeContent.Instance.Refreshed += OnRuntimeContentRefreshed;
+        }
+
+        private void OnDestroy()
+        {
+            UserRuntimeContent.Instance.Refreshed -= OnRuntimeContentRefreshed;
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
         }
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
@@ -213,7 +222,10 @@ namespace TiltBrush
                 Directory.CreateDirectory(LuaModulesPath);
             }
 
-            CopyLuaModules();
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local)
+            {
+                CopyLuaModules();
+            }
 
             // Allow includes from Scripts/LuaModules
             Script.DefaultOptions.ScriptLoader = new OpenBrushScriptLoader();
@@ -225,7 +237,8 @@ namespace TiltBrush
             LoadExampleScripts();
             LoadUserScripts();
 
-            if (Directory.Exists(UserPluginsPath()))
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local &&
+                Directory.Exists(UserPluginsPath()))
             {
                 m_FileWatcher = new FileWatcher(UserPluginsPath(), "*.lua");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -423,6 +436,82 @@ namespace TiltBrush
             {
                 LoadScriptFromPath(scriptPath);
             }
+        }
+
+        private void OnRuntimeContentRefreshed(StorageArea area)
+        {
+            if (area != StorageArea.Plugins)
+            {
+                return;
+            }
+            m_UserPluginsPath =
+                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Plugins);
+            if (m_IsInitialized)
+            {
+                ReloadUserScriptsFromRuntimeContent();
+            }
+        }
+
+        private void ReloadUserScriptsFromRuntimeContent()
+        {
+            var selectedNames = new Dictionary<LuaApiCategory, string>();
+            foreach (LuaApiCategory category in ApiCategories)
+            {
+                List<string> names = GetScriptNames(category);
+                int index = ActiveScripts[category];
+                if (index >= 0 && index < names.Count)
+                {
+                    selectedNames[category] = names[index];
+                }
+            }
+            string[] activeBackgroundNames = m_ActiveBackgroundScripts.Keys.ToArray();
+            if (BackgroundScriptsEnabled)
+            {
+                foreach (Script script in m_ActiveBackgroundScripts.Values)
+                {
+                    EndScript(script);
+                }
+            }
+
+            m_ScriptPathsToUpdate.Clear();
+            m_WidgetConfigs.Clear();
+            m_ActiveBackgroundScripts.Clear();
+            foreach (LuaApiCategory category in ApiCategories)
+            {
+                Scripts[category].Clear();
+                ActiveScripts[category] = 0;
+            }
+            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[]
+            {
+                Path.Join(LuaModulesPath, "?.lua")
+            };
+            LoadExampleScripts();
+            LoadUserScripts();
+
+            foreach (KeyValuePair<LuaApiCategory, string> selected in selectedNames)
+            {
+                List<string> names = GetScriptNames(selected.Key);
+                int index = names.IndexOf(selected.Value);
+                if (index >= 0)
+                {
+                    ActiveScripts[selected.Key] = index;
+                }
+            }
+            foreach (string scriptName in activeBackgroundNames)
+            {
+                if (Scripts[LuaApiCategory.BackgroundScript].TryGetValue(
+                        scriptName, out Script script))
+                {
+                    m_ActiveBackgroundScripts[scriptName] = script;
+                    if (BackgroundScriptsEnabled)
+                    {
+                        InitScript(script);
+                    }
+                }
+            }
+            var panel = (ScriptsPanel)PanelManager.m_Instance?.GetPanelByType(
+                BasePanel.PanelType.Scripts);
+            panel?.InitScriptUiNav();
         }
 
         private void LoadExampleScripts()
