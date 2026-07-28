@@ -107,6 +107,12 @@ namespace TiltBrush
                             seed.MimeType ?? StorageMimeTypes.ForPath(relativePath),
                             cancellationToken))
                         {
+                            if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                                transaction.TargetDocumentId.IsValid)
+                            {
+                                names.Add(displayName);
+                                continue;
+                            }
                             using (Stream output = transaction.OpenWrite())
                             {
                                 output.Write(seed.Data, 0, seed.Data.Length);

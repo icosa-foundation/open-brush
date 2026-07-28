@@ -56,6 +56,7 @@ namespace TiltBrush
             public string RootAfterFirstCommit { get; set; }
             public string RootAfterFirstRead { get; set; }
             public StorageResultCode? ListFailureCode { get; set; }
+            public byte[] CreateBeforeNextWriteData { get; set; }
             public int ReadCount { get; private set; }
             public List<string> CommittedNames { get; } = new List<string>();
 
@@ -74,6 +75,7 @@ namespace TiltBrush
                 {
                     m_Backend = backend;
                     m_Name = Path.GetFileName(relativePath);
+                    TargetDocumentId = backend.Find(m_Name)?.Id ?? default;
                 }
 
                 public Stream OpenWrite()
@@ -149,6 +151,13 @@ namespace TiltBrush
                 return Add(name, data);
             }
 
+            private Entry Find(string name)
+            {
+                return m_Entries.Values.FirstOrDefault(
+                    entry => string.Equals(
+                        entry.Name, name, StringComparison.OrdinalIgnoreCase));
+            }
+
             public StorageDocumentId Replace(string name, byte[] data)
             {
                 return AddOrReplace(name, data);
@@ -222,6 +231,12 @@ namespace TiltBrush
                 CancellationToken cancellationToken,
                 StorageDocumentId targetDocumentId = default)
             {
+                if (CreateBeforeNextWriteData != null)
+                {
+                    AddOrReplace(
+                        Path.GetFileName(relativePath), CreateBeforeNextWriteData);
+                    CreateBeforeNextWriteData = null;
+                }
                 return new WriteTransaction(this, relativePath);
             }
 
@@ -1157,6 +1172,73 @@ namespace TiltBrush
                 existing.DocumentId, false, CancellationToken.None)))
             {
                 Assert.AreEqual("user", reader.ReadToEnd());
+            }
+        }
+
+        [Test]
+        public void RuntimeContentSeeder_DoesNotOverwriteFileCreatedAfterListing()
+        {
+            var backend = new FakeSafBackend
+            {
+                CreateBeforeNextWriteData =
+                    System.Text.Encoding.UTF8.GetBytes("user"),
+            };
+            var seed = new RuntimeContentSeed(
+                StorageArea.Plugins,
+                "appeared.lua",
+                "text/x-lua",
+                System.Text.Encoding.UTF8.GetBytes("default"));
+
+            RuntimeContentSeedResult result = RuntimeContentSeeder.SeedMissing(
+                backend, new[] { seed }, CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(0, result.SeededCount);
+            Assert.AreEqual(0, backend.CommitCount);
+            StorageDocument appeared = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None).Documents.Single();
+            using (var reader = new StreamReader(backend.OpenRead(
+                appeared.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user", reader.ReadToEnd());
+            }
+        }
+
+        [Test]
+        public void RuntimeContentPublication_DoesNotOverwriteFileCreatedAfterListing()
+        {
+            IUserStorageBackend previousBackend = UserStorage.Backend;
+            var backend = new FakeSafBackend
+            {
+                CreateBeforeNextWriteData =
+                    System.Text.Encoding.UTF8.GetBytes("user"),
+            };
+            UserStorage.SetBackendForTests(backend);
+            try
+            {
+                RuntimeContentWriteResult result =
+                    UserRuntimeContent.PublishIfMissingAsync(
+                        StorageArea.Scripts,
+                        "appeared.html",
+                        "text/html",
+                        System.Text.Encoding.UTF8.GetBytes("default"),
+                        CancellationToken.None).GetAwaiter().GetResult();
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(result.Created);
+                Assert.AreEqual(0, backend.CommitCount);
+                StorageDocument appeared = backend.List(
+                    StorageArea.Scripts, "", CancellationToken.None).Documents.Single();
+                using (var reader = new StreamReader(backend.OpenRead(
+                    appeared.DocumentId, false, CancellationToken.None)))
+                {
+                    Assert.AreEqual("user", reader.ReadToEnd());
+                }
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previousBackend);
+                UserRuntimeContent.SetForTests(new LocalUserRuntimeContent());
             }
         }
 

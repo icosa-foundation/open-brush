@@ -157,6 +157,12 @@ namespace TiltBrush
                         mimeType ?? StorageMimeTypes.ForPath(normalized),
                         cancellationToken))
                     {
+                        if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                            transaction.TargetDocumentId.IsValid)
+                        {
+                            return new RuntimeContentWriteResult(
+                                StorageResultCode.Success, created: false);
+                        }
                         using (Stream output = transaction.OpenWrite())
                         {
                             output.Write(data, 0, data.Length);
