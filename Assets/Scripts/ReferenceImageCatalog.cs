@@ -223,13 +223,14 @@ namespace TiltBrush
                 }
                 yield return null;
             }
-            if (!listing.Success)
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
             {
                 m_SeedingSafDefaults = false;
                 yield break;
             }
 
-            if (listing.Documents.Count == 0)
+            if (listing.Code == StorageResultCode.NotFound ||
+                listing.Documents.Count == 0)
             {
                 foreach (string resourcePath in m_DefaultImages)
                 {

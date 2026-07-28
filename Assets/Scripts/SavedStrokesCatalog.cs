@@ -284,12 +284,13 @@ namespace TiltBrush
             m_SafSeedAttemptedRootIdentity = seedRootIdentity;
             StorageDirectoryResult listing = UserStorage.Backend.List(
                 StorageArea.SavedStrokes, "", default);
-            if (!listing.Success)
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
             {
                 m_SeedingSafDefaults = false;
                 yield break;
             }
-            if (listing.Documents.Count == 0)
+            if (listing.Code == StorageResultCode.NotFound ||
+                listing.Documents.Count == 0)
             {
                 foreach (string resourcePath in m_DefaultSavedStrokes)
                 {
