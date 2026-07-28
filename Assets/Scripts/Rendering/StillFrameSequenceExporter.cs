@@ -92,6 +92,11 @@ namespace TiltBrush
 
         public void CaptureFrame(float currentTime)
         {
+            CaptureFrame(currentTime, CameraConfig.PostEffects);
+        }
+
+        public void CaptureFrame(float currentTime, bool includePostProcessing)
+        {
             if (!m_IsCapturing || !ShouldCapture(currentTime))
             {
                 return;
@@ -112,7 +117,7 @@ namespace TiltBrush
                 // Render the current frame
                 m_ScreenshotManager.RenderToTexture(
                     renderTexture,
-                    includePostProcessing: CameraConfig.PostEffects);
+                    includePostProcessing: includePostProcessing);
 
                 byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
                 File.WriteAllBytes(frameFilePath, frameData);

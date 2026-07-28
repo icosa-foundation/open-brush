@@ -449,7 +449,8 @@ namespace TiltBrush
                     if (VideoRecorderUtils.ActiveStillFrameExporter != null)
                     {
                         captureTime += 1f / App.UserConfig.Video.FPS;
-                        VideoRecorderUtils.ActiveStillFrameExporter.CaptureFrame(captureTime);
+                        VideoRecorderUtils.ActiveStillFrameExporter.CaptureFrame(
+                            captureTime, includePostProcessing);
                     }
                     yield return null;
                 }
