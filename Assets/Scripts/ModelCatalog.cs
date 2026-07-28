@@ -370,7 +370,10 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
-                PlayerPrefs.GetInt(kSafSeedPreference, 0) == 0)
+                PlayerPrefs.GetInt(
+                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                        kSafSeedPreference),
+                    0) == 0)
             {
                 StartCoroutine(SeedSafDefaults());
             }
@@ -384,6 +387,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
+            string seedRootIdentity = backend.RootIdentity;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(
                     StorageArea.MediaLibraryModels, "", CancellationToken.None),
@@ -468,7 +472,18 @@ namespace TiltBrush
                 }
             }
 
-            PlayerPrefs.SetInt(kSafSeedPreference, 1);
+            if (!string.Equals(
+                    seedRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            PlayerPrefs.SetInt(
+                OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, seedRootIdentity),
+                1);
             PlayerPrefs.Save();
             m_SeedingSafDefaults = false;
             ForceCatalogScan();
@@ -578,12 +593,12 @@ namespace TiltBrush
                     scanRootIdentity,
                     StringComparison.Ordinal))
             {
-                string blocksRoot = App.BlocksModelLibraryPath();
+                string localBlocksRoot = App.BlocksModelLibraryPath();
                 var localModels = m_ModelsByRelativePath.Where(pair =>
                     m_ModelRootsByRelativePath.TryGetValue(
                         pair.Key, out string modelRoot) &&
                     string.Equals(
-                        modelRoot, blocksRoot, StringComparison.OrdinalIgnoreCase))
+                        modelRoot, localBlocksRoot, StringComparison.OrdinalIgnoreCase))
                     .ToDictionary(pair => pair.Key, pair => pair.Value);
                 var removedModels = m_ModelsByRelativePath
                     .Where(pair => !localModels.ContainsKey(pair.Key))
@@ -599,7 +614,7 @@ namespace TiltBrush
                 m_ModelsByRelativePath = localModels;
                 m_ModelRootsByRelativePath = localModels.Keys.ToDictionary(
                     relativePath => relativePath,
-                    _ => blocksRoot);
+                    _ => localBlocksRoot);
                 m_OrderedModelNames.Clear();
                 CatalogChanged?.Invoke();
             }

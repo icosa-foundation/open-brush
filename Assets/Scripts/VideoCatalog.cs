@@ -135,7 +135,10 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
-                PlayerPrefs.GetInt(kSafSeedPreference, 0) == 0)
+                PlayerPrefs.GetInt(
+                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                        kSafSeedPreference),
+                    0) == 0)
             {
                 StartCoroutine(SeedSafDefaults());
             }
@@ -149,6 +152,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
+            string seedRootIdentity = backend.RootIdentity;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(
                     StorageArea.MediaLibraryVideos, "", CancellationToken.None),
@@ -233,7 +237,18 @@ namespace TiltBrush
                 }
             }
 
-            PlayerPrefs.SetInt(kSafSeedPreference, 1);
+            if (!string.Equals(
+                    seedRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            PlayerPrefs.SetInt(
+                OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, seedRootIdentity),
+                1);
             PlayerPrefs.Save();
             m_SeedingSafDefaults = false;
             ForceCatalogScan();

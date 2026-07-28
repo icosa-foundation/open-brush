@@ -83,6 +83,13 @@ namespace TiltBrush
             get { return "Open Brush/Exports"; }
         }
 
+        public static string GetSafRootScopedPreferenceKey(
+            string baseKey, string rootIdentity = null)
+        {
+            string identity = rootIdentity ?? UserStorage.Backend.RootIdentity;
+            return $"{baseKey}.{SafTransactionJournal.GetRootNamespaceId(identity)}";
+        }
+
         public static bool TryGetSharedGeneratedFileRelativePath(
             string localPath, out string relativePath)
         {

@@ -33,6 +33,8 @@ namespace TiltBrush
         private bool m_WaitingForSketchSetUpdate;
         private bool m_SafSubscribed;
         private bool m_SeedingSafDefaults;
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultSavedStrokesFdV1";
 
         private bool IsSafStorage =>
             UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
@@ -139,7 +141,10 @@ namespace TiltBrush
                 EnsureSafSubscription();
                 if (!m_SeedingSafDefaults &&
                     UserStorage.Backend.IsReady &&
-                    PlayerPrefs.GetInt(App.kPlayerPrefSeededDefaultSavedStrokes, 0) == 0)
+                    PlayerPrefs.GetInt(
+                        OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                            kSafSeedPreference),
+                        0) == 0)
                 {
                     StartCoroutine(SeedSafDefaults());
                 }
@@ -272,6 +277,7 @@ namespace TiltBrush
         private IEnumerator<object> SeedSafDefaults()
         {
             m_SeedingSafDefaults = true;
+            string seedRootIdentity = UserStorage.Backend.RootIdentity;
             StorageDirectoryResult listing = UserStorage.Backend.List(
                 StorageArea.SavedStrokes, "", default);
             if (!listing.Success)
@@ -335,7 +341,18 @@ namespace TiltBrush
                 }
             }
 
-            PlayerPrefs.SetInt(App.kPlayerPrefSeededDefaultSavedStrokes, 1);
+            if (!string.Equals(
+                    seedRootIdentity,
+                    UserStorage.Backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            PlayerPrefs.SetInt(
+                OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, seedRootIdentity),
+                1);
             PlayerPrefs.Save();
             m_SeedingSafDefaults = false;
             NotifyStorageChanged();
