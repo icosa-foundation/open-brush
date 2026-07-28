@@ -1338,7 +1338,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Oculus Quest (1)
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
@@ -1388,7 +1388,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Oculus Quest (1)
           path: build_android_quest
 
       - name: Publish Oculus Builds
