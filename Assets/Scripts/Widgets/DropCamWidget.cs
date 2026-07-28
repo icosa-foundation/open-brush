@@ -29,6 +29,8 @@ namespace TiltBrush
 
     public class DropCamWidget : GrabWidget
     {
+        private const string kDomeCompositorLayerName = "DomeCompositor";
+
         public enum Mode
         {
             SlowFollow = 0,
@@ -401,9 +403,11 @@ namespace TiltBrush
         {
             // Show the widget beams if we're not in slow follow mode, and we're active.
             bool bShow = ShouldHmdBeVisible();
+            int domeCompositorLayer = LayerMask.NameToLayer(kDomeCompositorLayerName);
             for (int i = 0; i < m_Renderers.Length; ++i)
             {
-                m_Renderers[i].enabled = bShow;
+                bool isDomeCompositor = m_Renderers[i].gameObject.layer == domeCompositorLayer;
+                m_Renderers[i].enabled = isDomeCompositor || bShow;
             }
         }
 
