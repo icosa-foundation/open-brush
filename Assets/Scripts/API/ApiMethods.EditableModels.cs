@@ -561,8 +561,9 @@ namespace TiltBrush
             }
             else
             {
-                type = type.Replace(",", "_").ToUpper();
-                gridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type);
+                type = type.Replace(",", "_");
+                gridType = (GridEnums.GridTypes)Enum.Parse(
+                    typeof(GridEnums.GridTypes), type, ignoreCase: true);
             }
 
             if (string.IsNullOrEmpty(shape))
@@ -571,8 +572,9 @@ namespace TiltBrush
             }
             else
             {
-                type = type.Replace(",", "_").ToUpper();
-                gridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape);
+                shape = shape.Replace(",", "_");
+                gridShape = (GridEnums.GridShapes)Enum.Parse(
+                    typeof(GridEnums.GridShapes), shape, ignoreCase: true);
             }
 
             var poly = Grids.Build(gridType, gridShape, width, depth);
@@ -580,8 +582,8 @@ namespace TiltBrush
             {
                 ColorMethod = ColorMethods.ByRole,
                 GeneratorType = GeneratorTypes.RegularGrids,
-                GridType = (GridEnums.GridTypes)Enum.Parse(typeof(GridEnums.GridTypes), type),
-                GridShape = (GridEnums.GridShapes)Enum.Parse(typeof(GridEnums.GridShapes), shape),
+                GridType = gridType,
+                GridShape = gridShape,
                 Param1Int = width,
                 Param2Int = depth,
             };
