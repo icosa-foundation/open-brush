@@ -43,6 +43,14 @@ namespace TiltBrush
             UploadAndDownload = Download | Upload,
         }
 
+        private enum SyncDecision
+        {
+            None,
+            Upload,
+            Download,
+            Conflict,
+        }
+
         [Serializable]
         public enum SyncedFolderType
         {
@@ -82,6 +90,10 @@ namespace TiltBrush
             public string StorageRootIdentity;
             public string ParentId;
             public string FileId;
+            public DriveData.File DriveFile;
+            public string LedgerRelativePath;
+            public StorageDocumentId LedgerDocumentId;
+            public bool ConflictCopy;
             public bool Overwrite;
             public DateTime LastModified;
             public bool Upload;
@@ -231,7 +243,9 @@ namespace TiltBrush
         private long m_PreviousTotalBytesToTransfer;
         private long m_BytesTransferred;
         private bool m_IsCancelling;
-        private bool m_StorageBackendWarningShown;
+        private DriveSyncLedger m_Ledger;
+        private string m_LedgerIdentity;
+        private readonly object m_LedgerGate = new object();
 
         public event Action SyncEnabledChanged;
 
@@ -264,23 +278,9 @@ namespace TiltBrush
         /// initialized. Its value cannot be changed while the service is being cancelled / shut down.
         public bool SyncEnabled
         {
-            get => StorageBackendSupportsDriveSync &&
-                (m_SyncEnabled?.Value ?? false);
+            get => m_SyncEnabled?.Value ?? false;
             set
             {
-                if (!StorageBackendSupportsDriveSync)
-                {
-                    if (m_SyncEnabled != null && m_SyncEnabled.Value)
-                    {
-                        m_SyncEnabled.Value = false;
-                        SyncEnabledChanged?.Invoke();
-                    }
-                    if (value)
-                    {
-                        ReportUnsupportedStorageBackend();
-                    }
-                    return;
-                }
                 if (m_Uninitializing)
                 {
                     return;
@@ -344,12 +344,6 @@ namespace TiltBrush
                 SyncedFolderType folderType = (SyncedFolderType)i;
                 m_SyncedFolderFlags[i] = new UserSyncFlag(userId, $"GoogleDriveSyncFlag_{folderType}");
             }
-            if (!StorageBackendSupportsDriveSync && m_SyncEnabled.Value)
-            {
-                m_SyncEnabled.Value = false;
-                SyncEnabledChanged?.Invoke();
-                ReportUnsupportedStorageBackend();
-            }
         }
 
         public void UninitUserSyncOptions()
@@ -360,11 +354,6 @@ namespace TiltBrush
 
         public void ToggleSyncOnFolderOfType(SyncedFolderType type)
         {
-            if (!StorageBackendSupportsDriveSync)
-            {
-                ReportUnsupportedStorageBackend();
-                return;
-            }
             if (m_SyncedFolderFlags == null)
             {
                 return;
@@ -379,10 +368,6 @@ namespace TiltBrush
 
         public bool IsFolderOfTypeSynced(SyncedFolderType type)
         {
-            if (!StorageBackendSupportsDriveSync)
-            {
-                return false;
-            }
             if (m_SyncedFolderFlags == null)
             {
                 return false;
@@ -425,12 +410,6 @@ namespace TiltBrush
         /// kick off a process to sync them.
         public async void InitializeDriveSyncAsync()
         {
-            if (!StorageBackendSupportsDriveSync)
-            {
-                ReportUnsupportedStorageBackend();
-                return;
-            }
-
             async Task InitializeAsync(CancellationToken token)
             {
                 // Make sure we have a root folder
@@ -655,6 +634,8 @@ namespace TiltBrush
                 m_SyncTask = null;
                 m_UpdateTask = null;
                 m_Folders.Clear();
+                m_Ledger = null;
+                m_LedgerIdentity = null;
                 m_TotalBytesToTransfer = 0;
                 m_BytesTransferred = 0;
             }
@@ -676,32 +657,11 @@ namespace TiltBrush
         }
 
         public bool SyncPossible() =>
-            StorageBackendSupportsDriveSync &&
+            UserStorage.Backend.IsReady &&
             m_GoogleIdentity.LoggedIn &&
             SyncEnabled &&
             !DriveIsLowOnSpace &&
             !m_IsCancelling;
-
-        private static bool StorageBackendSupportsDriveSync =>
-            UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework;
-
-        private void ReportUnsupportedStorageBackend()
-        {
-            if (m_StorageBackendWarningShown)
-            {
-                return;
-            }
-            m_StorageBackendWarningShown = true;
-            const string message =
-                "Google Drive folder sync is unavailable while the Google Play " +
-                "shared-storage folder is in use.";
-            Debug.LogWarning($"SAF_STORAGE {message}");
-            ControllerConsoleScript.m_Instance?.AddNewLine(message, bNotify: true);
-            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush,
-                message,
-                fPopScalar: 0.5f);
-        }
 
         /// Syncs the local files with the device's Google Drive folder. If a sync is already in progress
         /// it will be cancelled before a new sync is performed. The sync prepares the transfers required
@@ -913,73 +873,87 @@ namespace TiltBrush
             var driveSet = new HashSet<string>(
                 driveFiles.Keys, StringComparer.OrdinalIgnoreCase);
 
-            if (folder.Download)
+            var allFileNames = new HashSet<string>(
+                localSet.Concat(driveSet), StringComparer.OrdinalIgnoreCase);
+            foreach (string fileName in allFileNames)
             {
-                var toDownload = driveFiles
-                    .Where(x => !localSet.Contains(x.Key) ||
-                        IsDriveNewer(x.Value, localFiles[x.Key]))
-                    .Select(x => x.Value).ToArray();
-                foreach (var file in toDownload)
+                if (!string.Equals(
+                        folder.StorageRootIdentity,
+                        backend.RootIdentity,
+                        StringComparison.Ordinal))
                 {
-                    if (m_Transfers.Keys.Any(transfer => IsSameStoragePath(
-                        transfer.Item, folder.Area, folder.RelativeDirectory, file.Name)))
-                    {
-                        continue;
-                    }
-                    m_ToTransfer.Insert(new SyncItem
-                    {
-                        Name = file.Name,
-                        Area = folder.Area,
-                        RelativeDirectory = folder.RelativeDirectory,
-                        DocumentId = localSet.Contains(file.Name)
-                            ? localFiles[file.Name].DocumentId
-                            : default,
-                        StorageRootIdentity = folder.StorageRootIdentity,
-                        FileId = file.Id,
-                        Overwrite = localSet.Contains(file.Name),
-                        LastModified = file.ModifiedTime ?? DateTime.MinValue,
-                        Upload = false,
-                        Size = file.Size ?? 0,
-                        FolderType = folder.FolderType,
-                    });
-                    m_TotalBytesToTransfer += file.Size ?? 0;
+                    throw new OperationCanceledException(
+                        "The selected user-storage root changed during Google Drive sync.");
                 }
-            }
-
-            if (folder.Upload)
-            {
-                var toUpload = localFiles
-                    .Where(x => !driveSet.Contains(x.Key) ||
-                        IsStorageDocumentNewer(x.Value, driveFiles[x.Key]))
-                    .Select(x => x.Value).ToArray();
-                foreach (var file in toUpload)
+                localFiles.TryGetValue(fileName, out StorageDocument localFile);
+                driveFiles.TryGetValue(fileName, out DriveData.File driveFile);
+                string logicalPath = CombineLogicalPath(
+                    folder.RelativeDirectory, fileName);
+                SyncDecision decision = GetSyncDecision(
+                    folder, logicalPath, localFile, driveFile, token);
+                if (decision == SyncDecision.None)
                 {
-                    if (m_Transfers.Keys.Any(transfer => IsSameStoragePath(
-                        transfer.Item,
+                    continue;
+                }
+                if (decision == SyncDecision.Conflict && !folder.Download)
+                {
+                    ConfirmLedger(
                         folder.Area,
-                        folder.RelativeDirectory,
-                        file.DisplayName)))
-                    {
-                        continue;
-                    }
-                    m_ToTransfer.Insert(new SyncItem()
-                    {
-                        Name = file.DisplayName,
-                        Area = folder.Area,
-                        RelativeDirectory = folder.RelativeDirectory,
-                        DocumentId = file.DocumentId,
-                        StorageRootIdentity = folder.StorageRootIdentity,
-                        ParentId = folder.Drive.Id,
-                        FileId = driveSet.Contains(file.DisplayName)
-                            ? driveFiles[file.DisplayName].Id
-                            : null,
-                        LastModified = file.LastModified ?? DateTime.MinValue,
-                        Upload = true,
-                        Size = file.Size ?? 0,
-                        FolderType = folder.FolderType,
-                    });
-                    m_TotalBytesToTransfer += file.Size ?? 0;
+                        logicalPath,
+                        localFile,
+                        driveFile,
+                        "ConflictDeferred",
+                        token);
+                    ReportDriveConflict(logicalPath, copied: false);
+                    continue;
                 }
+
+                bool conflictCopy = decision == SyncDecision.Conflict;
+                bool upload = decision == SyncDecision.Upload;
+                string destinationName = conflictCopy
+                    ? GetDriveConflictName(fileName, driveFile, localSet)
+                    : fileName;
+                if (conflictCopy)
+                {
+                    localSet.Add(destinationName);
+                }
+                if (m_Transfers.Keys.Any(transfer => IsSameStoragePath(
+                    transfer.Item,
+                    folder.Area,
+                    folder.RelativeDirectory,
+                    destinationName)))
+                {
+                    continue;
+                }
+                var item = new SyncItem
+                {
+                    Name = destinationName,
+                    Area = folder.Area,
+                    RelativeDirectory = folder.RelativeDirectory,
+                    DocumentId = upload
+                        ? localFile.DocumentId
+                        : conflictCopy
+                            ? default
+                            : localFile?.DocumentId ?? default,
+                    LedgerDocumentId = localFile?.DocumentId ?? default,
+                    StorageRootIdentity = folder.StorageRootIdentity,
+                    ParentId = folder.Drive.Id,
+                    FileId = driveFile?.Id,
+                    DriveFile = driveFile,
+                    LedgerRelativePath = logicalPath,
+                    ConflictCopy = conflictCopy,
+                    Overwrite = !upload && !conflictCopy && localFile != null,
+                    LastModified = upload
+                        ? localFile.LastModified ?? DateTime.MinValue
+                        : driveFile?.ModifiedTime ?? DateTime.MinValue,
+                    Upload = upload,
+                    Size = upload
+                        ? localFile.Size ?? 0
+                        : driveFile?.Size ?? 0,
+                    FolderType = folder.FolderType,
+                };
+                m_ToTransfer.Insert(item);
+                m_TotalBytesToTransfer += item.Size;
             }
 
             if (!folder.Recursive)
@@ -1056,6 +1030,240 @@ namespace TiltBrush
                     .TotalSeconds >= 2.5;
         }
 
+        private SyncDecision GetSyncDecision(
+            SyncedFolder folder,
+            string logicalPath,
+            StorageDocument storageDocument,
+            DriveData.File driveFile,
+            CancellationToken token)
+        {
+            if (storageDocument == null)
+            {
+                return driveFile != null && folder.Download
+                    ? SyncDecision.Download
+                    : SyncDecision.None;
+            }
+            if (driveFile == null)
+            {
+                return folder.Upload ? SyncDecision.Upload : SyncDecision.None;
+            }
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local)
+            {
+                if (IsDriveNewer(driveFile, storageDocument))
+                {
+                    return folder.Download
+                        ? SyncDecision.Download
+                        : SyncDecision.None;
+                }
+                if (IsStorageDocumentNewer(storageDocument, driveFile))
+                {
+                    return folder.Upload
+                        ? SyncDecision.Upload
+                        : SyncDecision.None;
+                }
+                return SyncDecision.None;
+            }
+
+            DriveSyncLedger ledger = GetLedger();
+            DriveSyncLedger.Entry entry = ledger.Get(folder.Area, logicalPath);
+            ContentHashes hashes = null;
+            ContentHashes GetHashes()
+            {
+                return hashes ?? (hashes = ComputeStorageHashes(
+                    UserStorage.Backend, storageDocument.DocumentId, token));
+            }
+
+            if (entry != null)
+            {
+                bool storageMatches = ledger.StorageMatches(
+                    entry, storageDocument, () => GetHashes().Sha256);
+                if ((folder.Area == StorageArea.Scripts ||
+                     folder.Area == StorageArea.Plugins) &&
+                    !string.IsNullOrEmpty(entry.StorageSha256))
+                {
+                    storageMatches = string.Equals(
+                        entry.StorageSha256,
+                        GetHashes().Sha256,
+                        StringComparison.Ordinal);
+                }
+                bool driveMatches = ledger.DriveMatches(entry, driveFile);
+                if (storageMatches && driveMatches)
+                {
+                    return SyncDecision.None;
+                }
+                if (!storageMatches && driveMatches)
+                {
+                    return folder.Upload ? SyncDecision.Upload : SyncDecision.None;
+                }
+                if (storageMatches && !driveMatches)
+                {
+                    return folder.Download
+                        ? SyncDecision.Download
+                        : SyncDecision.Conflict;
+                }
+                return SyncDecision.Conflict;
+            }
+
+            if (IsDriveNewer(driveFile, storageDocument))
+            {
+                return folder.Download
+                    ? SyncDecision.Download
+                    : SyncDecision.Conflict;
+            }
+            if (IsStorageDocumentNewer(storageDocument, driveFile))
+            {
+                return folder.Upload ? SyncDecision.Upload : SyncDecision.None;
+            }
+
+            ContentHashes initialHashes = GetHashes();
+            if (!string.IsNullOrEmpty(driveFile.Md5Checksum) &&
+                string.Equals(
+                    initialHashes.Md5,
+                    driveFile.Md5Checksum,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                ledger.Confirm(
+                    folder.Area,
+                    logicalPath,
+                    storageDocument,
+                    initialHashes.Sha256,
+                    initialHashes.Md5,
+                    driveFile,
+                    "Matched");
+                return SyncDecision.None;
+            }
+            return SyncDecision.Conflict;
+        }
+
+        private DriveSyncLedger GetLedger()
+        {
+            string accountIdentity = m_GoogleIdentity.Profile?.id;
+            if (string.IsNullOrEmpty(accountIdentity) ||
+                string.IsNullOrEmpty(m_DriveAccess.DeviceFolder))
+            {
+                throw new IOException(
+                    "Google Drive sync identities are unavailable.");
+            }
+            string identity = $"{accountIdentity}\n{m_DriveAccess.DeviceFolder}\n" +
+                $"{UserStorage.Backend.RootIdentity}";
+            lock (m_LedgerGate)
+            {
+                if (m_Ledger == null ||
+                    !string.Equals(
+                        identity, m_LedgerIdentity, StringComparison.Ordinal))
+                {
+                    m_Ledger = new DriveSyncLedger(
+                        accountIdentity,
+                        m_DriveAccess.DeviceFolder,
+                        UserStorage.Backend.RootIdentity);
+                    m_LedgerIdentity = identity;
+                }
+                return m_Ledger;
+            }
+        }
+
+        private void ConfirmLedger(
+            StorageArea area,
+            string logicalPath,
+            StorageDocument storageDocument,
+            DriveData.File driveFile,
+            string direction,
+            CancellationToken token)
+        {
+            if (storageDocument == null || driveFile == null)
+            {
+                return;
+            }
+            ContentHashes hashes = ComputeStorageHashes(
+                UserStorage.Backend, storageDocument.DocumentId, token);
+            GetLedger().Confirm(
+                area,
+                logicalPath,
+                storageDocument,
+                hashes.Sha256,
+                hashes.Md5,
+                driveFile,
+                direction);
+        }
+
+        private static ContentHashes ComputeStorageHashes(
+            IUserStorageBackend backend,
+            StorageDocumentId documentId,
+            CancellationToken token)
+        {
+            byte[] buffer = new byte[64 * 1024];
+            using (Stream stream = backend.OpenRead(
+                documentId, requireSeekable: false, token))
+            using (var sha256 = System.Security.Cryptography.SHA256.Create())
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                int read;
+                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    token.ThrowIfCancellationRequested();
+                    sha256.TransformBlock(buffer, 0, read, null, 0);
+                    md5.TransformBlock(buffer, 0, read, null, 0);
+                }
+                sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                md5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+                return new ContentHashes(
+                    ToHex(sha256.Hash), ToHex(md5.Hash));
+            }
+        }
+
+        private sealed class ContentHashes
+        {
+            public string Sha256 { get; }
+            public string Md5 { get; }
+
+            public ContentHashes(string sha256, string md5)
+            {
+                Sha256 = sha256;
+                Md5 = md5;
+            }
+        }
+
+        private static string ToHex(byte[] bytes)
+        {
+            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+        }
+
+        private static string GetDriveConflictName(
+            string fileName,
+            DriveData.File driveFile,
+            HashSet<string> reservedNames)
+        {
+            string extension = Path.GetExtension(fileName);
+            string stem = Path.GetFileNameWithoutExtension(fileName);
+            DateTime timestamp = driveFile?.ModifiedTime ?? DateTime.UtcNow;
+            string identity = SafTransactionJournal.GetRootNamespaceId(
+                driveFile?.Id ?? fileName).Substring(0, 8);
+            string baseName =
+                $"{stem}.drive-conflict-{timestamp:yyyyMMdd-HHmmss}-{identity}";
+            for (int suffix = 0; suffix < 10000; ++suffix)
+            {
+                string candidate = suffix == 0
+                    ? $"{baseName}{extension}"
+                    : $"{baseName}-{suffix}{extension}";
+                if (!reservedNames.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+            throw new IOException(
+                $"Could not reserve a Drive conflict name for {fileName}.");
+        }
+
+        private static void ReportDriveConflict(string logicalPath, bool copied)
+        {
+            string message = copied
+                ? $"Google Drive conflict preserved as a separate file: {logicalPath}"
+                : $"Google Drive conflict retained without overwriting device content: " +
+                  $"{logicalPath}";
+            Debug.LogWarning($"DRIVE_CONFLICT {message}");
+            ControllerConsoleScript.m_Instance?.AddNewLine(message, bNotify: true);
+        }
+
         private static bool IsSameStoragePath(
             SyncItem item,
             StorageArea area,
@@ -1076,6 +1284,12 @@ namespace TiltBrush
             return string.IsNullOrEmpty(directory)
                 ? name
                 : $"{directory.TrimEnd('/', '\\')}/{name}";
+        }
+
+        private static string GetLogicalDirectory(string relativePath)
+        {
+            int separator = relativePath?.LastIndexOf('/') ?? -1;
+            return separator < 0 ? "" : relativePath.Substring(0, separator);
         }
 
         // Update checks to see if any transfer tasks are ready to be performed and kicks them off
@@ -1184,19 +1398,55 @@ namespace TiltBrush
 
             try
             {
+                DriveData.File committedDriveFile;
                 using (Stream stream = backend.OpenRead(
                     item.DocumentId, requireSeekable: true, token))
                 {
                     if (item.FileId == null)
                     {
-                        await m_DriveAccess.UploadFileAsync(metadata, stream, token, transfer);
+                        committedDriveFile = await m_DriveAccess.UploadFileAsync(
+                            metadata, stream, token, transfer);
                     }
                     else
                     {
                         metadata.Id = item.FileId;
-                        await m_DriveAccess.UpdateFileAsync(metadata, stream, token, transfer);
+                        committedDriveFile = await m_DriveAccess.UpdateFileAsync(
+                            metadata, stream, token, transfer);
                     }
                 }
+                if (committedDriveFile == null)
+                {
+                    throw new IOException(
+                        "Google Drive upload completed without committed metadata.");
+                }
+                if (string.IsNullOrEmpty(committedDriveFile.Id))
+                {
+                    committedDriveFile.Id = item.FileId;
+                }
+                EnsureTransferRootMatches(item, backend);
+                StorageDocument source = FindStorageDocument(
+                    backend,
+                    item.Area,
+                    item.RelativeDirectory,
+                    item.Name,
+                    item.DocumentId,
+                    token);
+                if (source == null)
+                {
+                    throw new IOException(
+                        "Google Drive upload source changed before confirmation.");
+                }
+                if (backend.Kind == StorageBackendKind.StorageAccessFramework)
+                {
+                    ConfirmLedger(
+                        item.Area,
+                        item.LedgerRelativePath,
+                        source,
+                        committedDriveFile,
+                        "Upload",
+                        token);
+                }
+                item.DriveFile = committedDriveFile;
             }
             catch (IOException ex)
             {
@@ -1300,6 +1550,31 @@ namespace TiltBrush
             {
                 throw new IOException(commit.Error);
             }
+            EnsureTransferRootMatches(item, backend);
+            StorageDocument committedDocument = FindStorageDocument(
+                backend,
+                item.Area,
+                item.RelativeDirectory,
+                item.Name,
+                commit.DocumentId,
+                token);
+            if (committedDocument == null)
+            {
+                throw new IOException(
+                    "Drive download committed but destination metadata is unavailable.");
+            }
+            Exception confirmationError = null;
+            try
+            {
+                ConfirmDownloadedItem(item, backend, committedDocument, token);
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException ||
+                e is InvalidOperationException)
+            {
+                confirmationError = e;
+            }
             if (item.Area == StorageArea.Scripts ||
                 item.Area == StorageArea.Plugins ||
                 item.Area == StorageArea.Fonts)
@@ -1313,9 +1588,15 @@ namespace TiltBrush
                         $"Drive download committed but runtime refresh failed: {refresh.Error}");
                 }
             }
+            if (confirmationError != null)
+            {
+                throw new IOException(
+                    "Drive download committed but sync state could not be recorded.",
+                    confirmationError);
+            }
         }
 
-        private async Task DownloadLocalItemAsync(
+        private async Task<StorageDocument> DownloadLocalItemAsync(
             Transfer transfer,
             IUserStorageBackend backend,
             CancellationToken token)
@@ -1360,6 +1641,84 @@ namespace TiltBrush
                     SketchCatalog.m_Instance.NotifyUserFileCreated(path);
                 }
             }
+            StorageDocument document = FindStorageDocument(
+                backend,
+                item.Area,
+                item.RelativeDirectory,
+                item.Name,
+                new StorageDocumentId(path),
+                token);
+            if (document == null)
+            {
+                throw new IOException(
+                    "Drive download destination metadata is unavailable.");
+            }
+            return document;
+        }
+
+        private void ConfirmDownloadedItem(
+            SyncItem item,
+            IUserStorageBackend backend,
+            StorageDocument downloadedDocument,
+            CancellationToken token)
+        {
+            StorageDocument ledgerDocument = item.ConflictCopy
+                ? FindStorageDocument(
+                    backend,
+                    item.Area,
+                    GetLogicalDirectory(item.LedgerRelativePath),
+                    Path.GetFileName(item.LedgerRelativePath),
+                    item.LedgerDocumentId,
+                    token)
+                : downloadedDocument;
+            if (ledgerDocument == null || item.DriveFile == null)
+            {
+                throw new IOException(
+                    "Drive download cannot be recorded in the sync ledger.");
+            }
+            ConfirmLedger(
+                item.Area,
+                item.LedgerRelativePath,
+                ledgerDocument,
+                item.DriveFile,
+                item.ConflictCopy ? "ConflictCopy" : "Download",
+                token);
+            if (item.ConflictCopy)
+            {
+                ReportDriveConflict(
+                    CombineLogicalPath(item.RelativeDirectory, item.Name),
+                    copied: true);
+            }
+        }
+
+        private static StorageDocument FindStorageDocument(
+            IUserStorageBackend backend,
+            StorageArea area,
+            string relativeDirectory,
+            string displayName,
+            StorageDocumentId preferredId,
+            CancellationToken token)
+        {
+            StorageDirectoryResult listing = backend.List(
+                area, relativeDirectory, token);
+            if (!listing.Success)
+            {
+                return null;
+            }
+            if (preferredId.IsValid)
+            {
+                StorageDocument byId = listing.Documents.FirstOrDefault(
+                    document => document.DocumentId.Equals(preferredId));
+                if (byId != null)
+                {
+                    return byId;
+                }
+            }
+            return listing.Documents.FirstOrDefault(document =>
+                string.Equals(
+                    document.DisplayName,
+                    displayName,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         private static void EnsureTransferRootMatches(

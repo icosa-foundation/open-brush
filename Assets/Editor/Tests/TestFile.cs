@@ -1160,6 +1160,129 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-drive-ledger-test-{Guid.NewGuid():N}");
+            try
+            {
+                var ledger = new DriveSyncLedger(
+                    "account", "drive-root", "storage-root", root);
+                DateTime modified = DateTime.UtcNow;
+                var document = new StorageDocument(
+                    new StorageDocumentId("document-one"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    7,
+                    modified,
+                    0,
+                    "plugin.lua");
+                var driveFile = new Google.Apis.Drive.v3.Data.File
+                {
+                    Id = "drive-one",
+                    Name = "plugin.lua",
+                    Size = 7,
+                    ModifiedTime = modified,
+                    Md5Checksum = "local-md5",
+                    Version = 3,
+                };
+                ledger.Confirm(
+                    StorageArea.Plugins,
+                    "plugin.lua",
+                    document,
+                    "local-sha",
+                    "local-md5",
+                    driveFile,
+                    "Upload");
+
+                DriveSyncLedger.Entry entry =
+                    ledger.Get(StorageArea.Plugins, "plugin.lua");
+
+                Assert.IsTrue(ledger.StorageMatches(
+                    entry, document, () => "unexpected"));
+                Assert.IsTrue(ledger.DriveMatches(entry, driveFile));
+                driveFile.Version = 4;
+                Assert.IsFalse(ledger.DriveMatches(entry, driveFile));
+                var replacementDocument = new StorageDocument(
+                    new StorageDocumentId("document-two"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    7,
+                    modified.AddMinutes(1),
+                    0,
+                    "plugin.lua");
+                Assert.IsTrue(ledger.StorageMatches(
+                    entry, replacementDocument, () => "local-sha"));
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+        [Test]
+        public void DriveSyncLedger_RetainsUnknownVersion()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-drive-ledger-test-{Guid.NewGuid():N}");
+            try
+            {
+                var ledger = new DriveSyncLedger(
+                    "account", "drive-root", "storage-root", root);
+                var document = new StorageDocument(
+                    new StorageDocumentId("document"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    1,
+                    DateTime.UtcNow,
+                    0,
+                    "plugin.lua");
+                var driveFile = new Google.Apis.Drive.v3.Data.File
+                {
+                    Id = "drive",
+                    Size = 1,
+                    ModifiedTime = DateTime.UtcNow,
+                    Version = 1,
+                };
+                ledger.Confirm(
+                    StorageArea.Plugins,
+                    "plugin.lua",
+                    document,
+                    "sha",
+                    "md5",
+                    driveFile,
+                    "Upload");
+                string ledgerPath = Directory.GetFiles(
+                    root, "*.json", SearchOption.AllDirectories).Single();
+                string unknown = File.ReadAllText(ledgerPath)
+                    .Replace("\"Version\": 1", "\"Version\": 999");
+                File.WriteAllText(ledgerPath, unknown);
+                var reloaded = new DriveSyncLedger(
+                    "account", "drive-root", "storage-root", root);
+
+                Assert.Throws<IOException>(
+                    () => reloaded.Get(StorageArea.Plugins, "plugin.lua"));
+                StringAssert.Contains("\"Version\": 999", File.ReadAllText(ledgerPath));
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
         private static byte[] CreateMinimalTiltArchive()
         {
             using (var output = new MemoryStream())

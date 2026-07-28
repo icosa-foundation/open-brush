@@ -366,6 +366,26 @@ namespace TiltBrush
                 var sketchTasks = deviceFolders
                     .Select(x => EnumerateTiltFilesForDevice(x, CancellationToken.None)).ToArray();
                 await Task.WhenAll(sketchTasks);
+                HashSet<string> canonicalSketchNames = null;
+                if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+                {
+                    StorageDirectoryResult localSketches = UserStorage.Backend.List(
+                        StorageArea.Sketches, "", CancellationToken.None);
+                    if (localSketches.Success)
+                    {
+                        canonicalSketchNames = new HashSet<string>(
+                            localSketches.Documents
+                                .Where(document => !document.IsDirectory)
+                                .Select(document => document.DisplayName),
+                            StringComparer.OrdinalIgnoreCase);
+                    }
+                    else
+                    {
+                        Debug.LogWarning(
+                            $"DRIVE_BACKEND_SYNC Could not compare current SAF sketches: " +
+                            $"{localSketches.Error}");
+                    }
+                }
                 // If the sketch is a backup of something that came from the local machine, only show it if
                 // the file is no longer present on the local machine.
                 var sketchList = new List<GoogleDriveFileInfo>();
@@ -373,7 +393,10 @@ namespace TiltBrush
                 {
                     if (deviceFolders[i].Id == App.DriveAccess.DeviceFolder)
                     {
-                        sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.FullPath)));
+                        sketchList.AddRange(sketchTasks[i].Result.Where(x =>
+                            canonicalSketchNames != null
+                                ? !canonicalSketchNames.Contains(x.HumanName)
+                                : !File.Exists(x.FullPath)));
                     }
                     else
                     {
