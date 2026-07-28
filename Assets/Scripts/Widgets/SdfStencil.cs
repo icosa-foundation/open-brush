@@ -129,17 +129,6 @@ namespace TiltBrush
                 
                 surfacePos = closestHit;
                 surfaceNorm = closestNormal;
-                
-                // Transform normal from canvas space to world space
-                Vector3 worldNormal = Coords.CanvasPose.rotation * closestNormal;
-                surfaceNorm = worldNormal;
-                
-                // Debug rotation issue
-                if (Time.frameCount % 60 == 0) {
-                    Debug.Log($"ROTATION_DEBUG: widget rotation={transform.rotation.eulerAngles}");
-                    Debug.Log($"ROTATION_DEBUG: canvas rotation={Coords.CanvasPose.rotation.eulerAngles}");
-                    Debug.Log($"ROTATION_DEBUG: original normal={closestNormal}, transformed normal={worldNormal}");
-                }
             }
             else
             {
