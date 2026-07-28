@@ -517,6 +517,78 @@ namespace TiltBrush
             }
         }
 
+        public static bool IsArchiveValid(
+            Stream stream,
+            string displayName = "<stream>",
+            bool testData = false)
+        {
+            if (!IsHeaderValid(stream, displayName))
+            {
+                return false;
+            }
+
+            long originalPosition = stream.Position;
+            try
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+#if USE_DOTNETZIP
+                using (var archive = ZipLibrary.ZipFile.Read(stream))
+                {
+                    if (archive[FN_SKETCH] == null ||
+                        archive[FN_METADATA] == null &&
+                        archive[FN_METADATA_LEGACY] == null)
+                    {
+                        return false;
+                    }
+                    if (testData)
+                    {
+                        foreach (ZipLibrary.ZipEntry entry in archive)
+                        {
+                            using (Stream input = entry.OpenReader())
+                            {
+                                input.CopyTo(Stream.Null);
+                            }
+                        }
+                    }
+                    return true;
+                }
+#else
+                using (var archive = new ZipLibrary.ZipFile(stream)
+                {
+                    IsStreamOwner = false,
+                })
+                {
+                    if (archive.GetEntry(FN_SKETCH) == null ||
+                        archive.GetEntry(FN_METADATA) == null &&
+                        archive.GetEntry(FN_METADATA_LEGACY) == null)
+                    {
+                        return false;
+                    }
+                    return archive.TestArchive(testData);
+                }
+#endif
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is ZipLibrary.ZipException ||
+                e is InvalidOperationException)
+            {
+                Debug.LogFormat("Invalid .tilt archive {0}: {1}", displayName, e.Message);
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    stream.Seek(originalPosition, SeekOrigin.Begin);
+                }
+                catch (IOException)
+                {
+                    // The caller will observe the provider failure on its next operation.
+                }
+            }
+        }
+
     }
 
 } // namespace TiltBrush

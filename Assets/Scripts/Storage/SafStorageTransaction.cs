@@ -570,7 +570,10 @@ namespace TiltBrush
         {
             if (m_Record.Kind == "tilt-replacement")
             {
-                return TiltFile.IsHeaderValid(stream, m_Record.TemporaryDisplayName);
+                return TiltFile.IsArchiveValid(
+                    stream,
+                    m_Record.TemporaryDisplayName,
+                    testData: false);
             }
             if (!stream.CanRead)
             {

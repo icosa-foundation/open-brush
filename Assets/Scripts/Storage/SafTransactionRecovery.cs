@@ -251,7 +251,10 @@ namespace TiltBrush
                     if (transactionKind == "tilt-replacement" ||
                         transactionKind == "sketch-replacement")
                     {
-                        return TiltFile.IsHeaderValid(stream, document.DisplayName);
+                        return TiltFile.IsArchiveValid(
+                            stream,
+                            document.DisplayName,
+                            testData: true);
                     }
                     return stream.CanRead;
                 }

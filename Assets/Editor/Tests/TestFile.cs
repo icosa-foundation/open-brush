@@ -377,6 +377,17 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TiltArchiveValidation_RejectsTruncatedArchive()
+        {
+            byte[] archive = CreateMinimalTiltArchive();
+            Array.Resize(ref archive, archive.Length - 8);
+            using (var stream = new MemoryStream(archive, writable: false))
+            {
+                Assert.IsFalse(TiltFile.IsArchiveValid(stream, testData: true));
+            }
+        }
+
+        [Test]
         public void TiltFile_ReadsEntriesFromReopenableStream()
         {
             byte[] expected = { 9, 8, 7 };
@@ -805,9 +816,16 @@ namespace TiltBrush
             {
                 using (var writer = new TiltFile.ArchiveWriter(
                     output, ownsOutputStream: false))
-                using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
                 {
-                    entry.WriteByte(1);
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
+                    {
+                        entry.WriteByte(1);
+                    }
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_METADATA))
+                    {
+                        entry.WriteByte((byte)'{');
+                        entry.WriteByte((byte)'}');
+                    }
                 }
                 return output.ToArray();
             }
