@@ -15,6 +15,7 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Experimental.Rendering;
+using System;
 using System.Collections.Generic;
 
 namespace TiltBrush
@@ -75,7 +76,8 @@ namespace TiltBrush
         [SerializeField] private ComputeShader m_ComputeCopyShader;
 
         private Material m_DownsampleMat;
-        private RenderTexture m_HighResTex;
+        private RenderTextureDescriptor m_ResultTextureDescriptor;
+        private readonly HashSet<RenderTexture> m_ActiveResultTextures = new();
         private Camera m_IntersectionCamera;
         private List<ResultReader> m_activeResults = new List<ResultReader>();
 
@@ -128,6 +130,19 @@ namespace TiltBrush
         private void OnDestroy()
         {
             RenderPipelineManager.beginCameraRendering -= OnUrpBeginCameraRendering;
+            if (m_MainVrCamera != null)
+            {
+                var renderWrapper = m_MainVrCamera.GetComponent<RenderWrapper>();
+                if (renderWrapper != null)
+                {
+                    renderWrapper.ReadBackTextures -= ReadResultsDispatchCallback;
+                }
+            }
+            foreach (RenderTexture texture in m_ActiveResultTextures)
+            {
+                RenderTexture.ReleaseTemporary(texture);
+            }
+            m_ActiveResultTextures.Clear();
             if (m_IntersectionCB != null) { m_IntersectionCB.Release(); m_IntersectionCB = null; }
             if (m_IntersectionMaterial != null) { Destroy(m_IntersectionMaterial); m_IntersectionMaterial = null; }
         }
@@ -178,7 +193,8 @@ namespace TiltBrush
             RenderTexture tex = RenderIntersection(vDetectionCenter_GS, radius_GS, renderCullingMask);
             UnityEngine.Profiling.Profiler.EndSample();
             ResultReader resultReader;
-            var ret = new FutureBatchResult(tex, null, maxResults: 1, resultReader: out resultReader);
+            var ret = new FutureBatchResult(
+                tex, null, maxResults: 1, ReleaseResultTexture, resultReader: out resultReader);
             m_activeResults.Add(resultReader);
             return ret;
         }
@@ -199,7 +215,8 @@ namespace TiltBrush
             RenderTexture tex = RenderIntersection(vDetectionCenter_GS, radius_GS, renderCullingMask);
             UnityEngine.Profiling.Profiler.EndSample();
             ResultReader resultReader;
-            var ret = new FutureBatchResult(tex, resultsOut, maxResults, out resultReader);
+            var ret = new FutureBatchResult(
+                tex, resultsOut, maxResults, ReleaseResultTexture, out resultReader);
             m_activeResults.Add(resultReader);
             return ret;
         }
@@ -220,7 +237,8 @@ namespace TiltBrush
             RenderTexture tex = RenderIntersection(vDetectionCenter_GS, radius_GS, renderCullingMask);
             UnityEngine.Profiling.Profiler.EndSample();
             ResultReader resultReader;
-            var ret = new FutureModelResult(tex, resultsOut, maxResults, out resultReader);
+            var ret = new FutureModelResult(
+                tex, resultsOut, maxResults, ReleaseResultTexture, out resultReader);
             m_activeResults.Add(resultReader);
             return ret;
         }
@@ -256,7 +274,7 @@ namespace TiltBrush
             int size = 64;
             // Use an explicit linear UNorm format so platforms (notably URP on Android) cannot
             // reinterpret the texture as sRGB, which would corrupt the packed-int byte contents.
-            var desc = new RenderTextureDescriptor(size, size,
+            m_ResultTextureDescriptor = new RenderTextureDescriptor(size, size,
                 GraphicsFormat.R8G8B8A8_UNorm, depthBufferBits: 16)
             {
                 sRGB = false,
@@ -264,14 +282,14 @@ namespace TiltBrush
                 useMipMap = false,
                 autoGenerateMips = false,
             };
-            m_HighResTex = new RenderTexture(desc);
-            m_HighResTex.filterMode = FilterMode.Point;
-            m_HighResTex.Create();
         }
 
-        void OnDisable()
+        private void ReleaseResultTexture(RenderTexture texture)
         {
-            m_HighResTex.Release();
+            if (texture != null && m_ActiveResultTextures.Remove(texture))
+            {
+                RenderTexture.ReleaseTemporary(texture);
+            }
         }
 
 
@@ -295,13 +313,18 @@ namespace TiltBrush
             m_IntersectionCamera.farClipPlane = radius_GS;
             m_IntersectionCamera.orthographicSize = radius_GS;
 
+            RenderTexture resultTexture =
+                RenderTexture.GetTemporary(m_ResultTextureDescriptor);
+            resultTexture.filterMode = FilterMode.Point;
+            m_ActiveResultTextures.Add(resultTexture);
+
             // CommandBuffer-driven render. Replaces Camera.RenderWithShader, which does not
             // reliably substitute shaders under URP on Android/Vulkan.
             m_IntersectionCB.Clear();
             m_IntersectionCB.SetViewProjectionMatrices(
                 m_IntersectionCamera.worldToCameraMatrix,
                 GL.GetGPUProjectionMatrix(m_IntersectionCamera.projectionMatrix, true));
-            m_IntersectionCB.SetRenderTarget(m_HighResTex);
+            m_IntersectionCB.SetRenderTarget(resultTexture);
             m_IntersectionCB.ClearRenderTarget(true, true, Color.clear);
 
             // Brush strokes. Iterate ALL canvases (main + selection + layers), not just the
@@ -342,7 +365,7 @@ namespace TiltBrush
             // We bypass the legacy downsample blit (which corrupts channels on URP+Vulkan)
             // and return the hi-res RT directly. The compute-shader readback handles the full
             // 64x64 tex (4096 texels) - still trivial bandwidth.
-            return m_HighResTex;
+            return resultTexture;
         }
 
         // ------------------------------------------------------------------------------------------ //
@@ -356,6 +379,7 @@ namespace TiltBrush
             protected int m_ResultCount;
             protected byte m_MaxResults;
             protected int m_StartFrame;
+            private Action<RenderTexture> m_ReleaseTexture;
 
             // Not thread safe, but we can never have multiple threads reading from the GPU anyway.
             internal static int sm_CopyKernel;
@@ -383,12 +407,15 @@ namespace TiltBrush
             }
 
 
-            public FutureResult(RenderTexture texture, byte maxResults, out ResultReader resultReader)
+            public FutureResult(
+                RenderTexture texture, byte maxResults, Action<RenderTexture> releaseTexture,
+                out ResultReader resultReader)
             {
                 m_ResultTex = texture;
                 m_MaxResults = maxResults;
                 m_ResultCount = -1;
                 m_StartFrame = Time.frameCount;
+                m_ReleaseTexture = releaseTexture;
 
                 int pixelCount = m_ResultTex.width * m_ResultTex.height;
                 Debug.Assert(sm_ReadbackBufferStorage.Length == pixelCount);
@@ -460,13 +487,13 @@ namespace TiltBrush
                 int groups = kTexSize / 4;
                 sm_ComputeCopyShader.Dispatch(sm_CopyKernel, groups, groups, 1);
 
-                // Note: m_ResultTex is the persistent m_HighResTex (no longer a temp from
-                // RenderTexture.GetTemporary), so we must NOT call ReleaseTemporary on it.
-                m_ResultTex = null;
-
                 // Read data without allocating new memory.
                 sm_ReadbackBuffer.GetData(sm_ReadbackBufferStorage);
                 uint[] resultColors = sm_ReadbackBufferStorage;
+
+                m_ReleaseTexture(m_ResultTex);
+                m_ResultTex = null;
+                m_ReleaseTexture = null;
 
                 UnityEngine.Profiling.Profiler.EndSample();
 
@@ -490,9 +517,10 @@ namespace TiltBrush
             // captured, as a performance optimization.
             // Pass:
             //   results - if non-null, will be cleared and refilled by the time IsReady=true
-            public FutureBatchResult(RenderTexture texture, List<BatchResult> results, byte maxResults,
-                                     out ResultReader resultReader) :
-                base(texture, maxResults, out resultReader)
+            public FutureBatchResult(
+                RenderTexture texture, List<BatchResult> results, byte maxResults,
+                Action<RenderTexture> releaseTexture, out ResultReader resultReader) :
+                base(texture, maxResults, releaseTexture, out resultReader)
             {
                 m_ResultList = results;
             }
@@ -648,9 +676,10 @@ namespace TiltBrush
             // Sets up a FutureModelResult to be read from texture with maxResults stored in results.
             // Note that when results is null or maxResults < 1, exact triangle intersections will not be
             // captured, as a performance optimization.
-            public FutureModelResult(RenderTexture texture, List<ModelResult> results, byte maxResults,
-                                     out ResultReader resultReader) :
-                base(texture, maxResults, out resultReader)
+            public FutureModelResult(
+                RenderTexture texture, List<ModelResult> results, byte maxResults,
+                Action<RenderTexture> releaseTexture, out ResultReader resultReader) :
+                base(texture, maxResults, releaseTexture, out resultReader)
             {
                 m_ResultList = results;
             }
