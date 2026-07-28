@@ -419,7 +419,7 @@ namespace TiltBrush
         [LuaDocsExample("myTransform = myCameraPath:Sample(2.5, true, false)")]
         [LuaDocsParameter("time", "The time at which to sample the camera path")]
         [LuaDocsParameter("loop", "Determines whether the camera path should loop")]
-        [LuaDocsParameter("pingpong", "Determines whether the camera path should pingpong (reverse direction every loop")]
+        [LuaDocsParameter("pingpong", "Determines whether the camera path should pingpong (reverse direction every loop)")]
         [LuaDocsReturnValue("The sampled transform of the camera at the specified time")]
         public TrTransform Sample(float time, bool loop = true, bool pingpong = false)
         {
