@@ -567,6 +567,10 @@ namespace TiltBrush
         {
             yield return RefreshRuntimeContent();
             RefreshSharedCatalogs();
+            if (App.DriveSync?.SyncEnabled == true)
+            {
+                App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+            }
         }
 
         private static void RefreshSharedCatalogs()
