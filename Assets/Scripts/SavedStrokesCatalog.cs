@@ -292,6 +292,7 @@ namespace TiltBrush
                     }
 
                     string displayName = Path.GetFileName(resourcePath);
+                    string seedError = null;
                     try
                     {
                         using (IStorageWriteTransaction transaction =
@@ -308,16 +309,27 @@ namespace TiltBrush
                             StorageMutationResult commit = transaction.Commit();
                             if (!commit.Success)
                             {
-                                Debug.LogWarning(
-                                    $"SAF_STORAGE Failed to seed {displayName}: {commit.Error}");
-                                m_SeedingSafDefaults = false;
-                                yield break;
+                                seedError = commit.Error;
                             }
                         }
+                    }
+                    catch (Exception e) when (
+                        e is IOException ||
+                        e is UnauthorizedAccessException ||
+                        e is InvalidOperationException)
+                    {
+                        seedError = e.Message;
                     }
                     finally
                     {
                         Resources.UnloadAsset(resource);
+                    }
+                    if (seedError != null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {seedError}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
                     }
                     yield return null;
                 }
