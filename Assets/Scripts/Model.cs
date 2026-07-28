@@ -235,6 +235,7 @@ namespace TiltBrush
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
         public bool IsGsplatModel { get; private set; }
+        private GsplatAsset m_OwnedGsplatAsset;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -666,18 +667,20 @@ namespace TiltBrush
 
         GameObject LoadGsplat(List<string> warningsOut)
         {
+            GsplatAsset asset = null;
+            GameObject root = null;
             try
             {
                 string path = m_Location.AbsolutePath;
                 string ext = m_Location.Extension;
                 SourceCoordinates sourceCoordinates =
                     ext == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
-                GsplatAsset asset = GsplatRuntimeLoader.LoadFile(
+                asset = GsplatRuntimeLoader.LoadFile(
                     path,
                     Gsplat.CompressionMode.Spark,
                     sourceCoordinates);
 
-                GameObject root = new GameObject("ImportedGsplatRoot");
+                root = new GameObject("ImportedGsplatRoot");
                 GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
                 rendererObject.transform.SetParent(root.transform, false);
 
@@ -700,6 +703,11 @@ namespace TiltBrush
             }
             catch (Exception ex)
             {
+                if (root != null)
+                {
+                    UObject.Destroy(root);
+                }
+                DestroyRuntimeGsplatAsset(asset);
                 m_LoadError = new LoadError("Invalid data", ex.Message);
                 m_AllowExport = false;
                 Debug.LogException(ex);
@@ -1128,6 +1136,9 @@ namespace TiltBrush
                 DisplayWarnings(warnings);
             }
 
+            GsplatAsset newOwnedGsplatAsset = go
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+
             // Adopt the GameObject
             go.name = m_Location.ToString();
             go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
@@ -1136,6 +1147,8 @@ namespace TiltBrush
             {
                 UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = newOwnedGsplatAsset;
             m_ModelParent = go.transform;
 
             // For glTF format models, we will have already done this via the import plugin
@@ -1216,7 +1229,26 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = null;
             m_AppliedMeshSplits?.Clear();
+        }
+
+        private static void DestroyRuntimeGsplatAsset(GsplatAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                UObject.Destroy(asset);
+            }
+            else
+            {
+                UObject.DestroyImmediate(asset);
+            }
         }
 
         /// Resets this.Error and tries to load the model again.
