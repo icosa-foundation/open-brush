@@ -179,7 +179,6 @@ namespace TiltBrush
                                 m_Cameras[i].clearFlags = clearFlags;
                             }
                         }
-                        SetDesiredPreset(CurrentEnvironment, false, true, m_HasCustomLights, true);
                     }
                 }
 #else
