@@ -149,6 +149,30 @@ namespace TiltBrush
             using (SafDestinationLocks.AcquireMany(
                 new[] { oldKey, newKey }, cancellationToken))
             {
+                if (location != null)
+                {
+                    string directory = GetLogicalDirectory(location.RelativePath);
+                    StorageDirectoryResult listing = List(
+                        location.Area, directory, cancellationToken);
+                    if (!listing.Success)
+                    {
+                        return new StorageMutationResult(
+                            listing.Code, documentId, listing.Error);
+                    }
+                    StorageDocument conflict = listing.Documents.FirstOrDefault(document =>
+                        !document.DocumentId.Equals(documentId) &&
+                        string.Equals(
+                            document.DisplayName,
+                            newDisplayName,
+                            StringComparison.OrdinalIgnoreCase));
+                    if (conflict != null)
+                    {
+                        return new StorageMutationResult(
+                            StorageResultCode.Failed,
+                            documentId,
+                            "A document with that name already exists.");
+                    }
+                }
                 StorageMutationResult result = RenameWithoutLock(documentId, newDisplayName);
                 if (result.Success && location != null)
                 {
