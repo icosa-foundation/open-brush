@@ -50,6 +50,7 @@ namespace TiltBrush
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingHttpListeners;
         private Dictionary<Uri, WebSocket> m_OutgoingWebsocketListeners;
+        private Dictionary<Uri, Queue<string>> m_PendingOutgoingWebsocketCommands;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -773,6 +774,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
         public void AddOutgoingWebsocketListener(Uri uri)
         {
             if (m_OutgoingWebsocketListeners == null) m_OutgoingWebsocketListeners = new Dictionary<Uri, WebSocket>();
+            if (m_PendingOutgoingWebsocketCommands == null)
+            {
+                m_PendingOutgoingWebsocketCommands = new Dictionary<Uri, Queue<string>>();
+            }
+            if (!m_PendingOutgoingWebsocketCommands.ContainsKey(uri))
+            {
+                m_PendingOutgoingWebsocketCommands[uri] = new Queue<string>();
+            }
             if (m_OutgoingWebsocketListeners.TryGetValue(uri, out var existing) &&
                 existing.State != WebSocketState.Closed)
             {
@@ -786,6 +795,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
         private void OutgoingApiCommand()
         {
             if (!HasOutgoingListeners) return;
+
+            FlushPendingOutgoingWebsocketCommands();
 
             KeyValuePair<string, string> command;
             try
@@ -817,11 +828,31 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 StartCoroutine(request);
             }
 
-            foreach (var conn in m_OutgoingWebsocketListeners?.Values ?? Enumerable.Empty<WebSocket>())
+            foreach (var listener in m_OutgoingWebsocketListeners ??
+                Enumerable.Empty<KeyValuePair<Uri, WebSocket>>())
             {
-                if (conn.State == WebSocketState.Open)
+                if (listener.Value.State == WebSocketState.Open)
                 {
-                    conn.SendText(cmd);
+                    listener.Value.SendText(cmd);
+                }
+                else
+                {
+                    m_PendingOutgoingWebsocketCommands[listener.Key].Enqueue(cmd);
+                }
+            }
+        }
+
+        private void FlushPendingOutgoingWebsocketCommands()
+        {
+            foreach (var listener in m_OutgoingWebsocketListeners ??
+                Enumerable.Empty<KeyValuePair<Uri, WebSocket>>())
+            {
+                if (listener.Value.State != WebSocketState.Open) continue;
+
+                Queue<string> pendingCommands = m_PendingOutgoingWebsocketCommands[listener.Key];
+                while (pendingCommands.Count > 0)
+                {
+                    listener.Value.SendText(pendingCommands.Dequeue());
                 }
             }
         }
