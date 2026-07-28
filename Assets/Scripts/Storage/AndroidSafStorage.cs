@@ -259,7 +259,17 @@ namespace TiltBrush
                 mimeType);
             bool success = TryCreateFileStream(
                 result, FileAccess.ReadWrite, out stream, out string documentUri, out error);
-            documentId = new StorageDocumentId(documentUri);
+            if (!success && !string.IsNullOrEmpty(documentUri))
+            {
+                if (!DeleteDocumentUri(documentUri))
+                {
+                    error = $"{error} Temporary document cleanup also failed.";
+                }
+                documentUri = null;
+            }
+            documentId = success
+                ? new StorageDocumentId(documentUri)
+                : default;
             return success;
 #else
             error = "SAF file descriptors are unavailable on this platform.";
@@ -463,10 +473,11 @@ namespace TiltBrush
             {
                 stream = new FileStream(handle, access);
             }
-            catch
+            catch (Exception e)
             {
                 handle.Dispose();
-                throw;
+                error = $"Failed to wrap the detached file descriptor: {e.Message}";
+                return false;
             }
 
             if (!stream.CanSeek)
