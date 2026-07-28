@@ -630,7 +630,7 @@ namespace TiltBrush
             try
             {
                 FileInfo info = new FileInfo(m_Path);
-                return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+                return info.Length <= UserConfig.PerformanceOverrides.ReferenceImagesMaxFileSize;
             }
             catch (Exception e)
             {

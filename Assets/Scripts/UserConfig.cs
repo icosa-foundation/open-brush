@@ -268,7 +268,7 @@ namespace TiltBrush
             private static PerformanceConfig o = App.UserConfig.Performance;
             public static int HullBrushMaxVertInputs => o.HullBrushMaxVertInputs ?? App.PlatformConfig.HullBrushMaxVertInputs;
             public static int HullBrushMaxKnots => o.HullBrushMaxKnots ?? App.PlatformConfig.HullBrushMaxKnots;
-            public static float ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
+            public static int ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
             public static int ReferenceImagesMaxDimension => o.ReferenceImagesMaxDimension ?? App.PlatformConfig.ReferenceImagesMaxDimension;
             public static int ReferenceImagesResizeDimension => o.ReferenceImagesResizeDimension ?? App.PlatformConfig.ReferenceImagesResizeDimension;
             public static int MemoryWarningVertCount => o.MemoryWarningVertCount ?? App.PlatformConfig.MemoryWarningVertCount;
