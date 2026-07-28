@@ -180,12 +180,12 @@ namespace TiltBrush
                         case VariousSolidTypes.Torus:
                             recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
                             recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
-                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("z"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.Stairs:
                             recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
-                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("y"));
-                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("z"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("y"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.UvSphere:
                         case VariousSolidTypes.UvHemisphere:
