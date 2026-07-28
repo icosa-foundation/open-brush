@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace TiltBrush
@@ -37,6 +38,9 @@ namespace TiltBrush
         Videos,
         VrVideos,
         Exports,
+        Scripts,
+        Plugins,
+        Fonts,
     }
 
     public enum StorageResultCode
@@ -163,6 +167,102 @@ namespace TiltBrush
         }
     }
 
+    public sealed class StorageTreeQuery
+    {
+        public bool Recursive { get; }
+        public bool IncludeDirectories { get; }
+        public IReadOnlyCollection<string> IncludeExtensions { get; }
+        public IReadOnlyCollection<string> ExcludeExtensions { get; }
+        public int MaximumDepth { get; }
+        public int MaximumItemCount { get; }
+
+        public StorageTreeQuery(
+            bool recursive = true,
+            bool includeDirectories = false,
+            IEnumerable<string> includeExtensions = null,
+            IEnumerable<string> excludeExtensions = null,
+            int maximumDepth = 32,
+            int maximumItemCount = 10000)
+        {
+            if (maximumDepth < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maximumDepth), "Maximum depth cannot be negative.");
+            }
+            if (maximumItemCount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maximumItemCount), "Maximum item count must be positive.");
+            }
+            Recursive = recursive;
+            IncludeDirectories = includeDirectories;
+            IncludeExtensions = NormalizeExtensions(includeExtensions);
+            ExcludeExtensions = NormalizeExtensions(excludeExtensions);
+            MaximumDepth = maximumDepth;
+            MaximumItemCount = maximumItemCount;
+        }
+
+        internal bool IncludesFile(string displayName)
+        {
+            string extension = Path.GetExtension(displayName).ToLowerInvariant();
+            return (IncludeExtensions.Count == 0 || IncludeExtensions.Contains(extension)) &&
+                !ExcludeExtensions.Contains(extension);
+        }
+
+        private static IReadOnlyCollection<string> NormalizeExtensions(
+            IEnumerable<string> extensions)
+        {
+            if (extensions == null)
+            {
+                return Array.Empty<string>();
+            }
+            var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string extension in extensions)
+            {
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    continue;
+                }
+                string value = extension.Trim();
+                normalized.Add(value.StartsWith(".", StringComparison.Ordinal)
+                    ? value.ToLowerInvariant()
+                    : $".{value.ToLowerInvariant()}");
+            }
+            return normalized;
+        }
+    }
+
+    public sealed class StorageTreeResult
+    {
+        public StorageResultCode Code { get; }
+        public IReadOnlyList<StorageDocument> Entries { get; }
+        public string Error { get; }
+        public bool Success => Code == StorageResultCode.Success;
+
+        private StorageTreeResult(
+            StorageResultCode code, IReadOnlyList<StorageDocument> entries, string error)
+        {
+            Code = code;
+            Entries = entries ?? Array.Empty<StorageDocument>();
+            Error = error;
+        }
+
+        public static StorageTreeResult Succeeded(IReadOnlyList<StorageDocument> entries)
+        {
+            return new StorageTreeResult(StorageResultCode.Success, entries, null);
+        }
+
+        public static StorageTreeResult Failed(StorageResultCode code, string error)
+        {
+            if (code == StorageResultCode.Success)
+            {
+                throw new ArgumentException(
+                    "A failed result cannot use the success code.", nameof(code));
+            }
+            return new StorageTreeResult(code, null, error);
+        }
+    }
+
     public readonly struct StorageMutationResult
     {
         public StorageResultCode Code { get; }
@@ -196,6 +296,11 @@ namespace TiltBrush
 
         StorageDirectoryResult List(
             StorageArea area, string relativeDirectory, CancellationToken cancellationToken);
+        StorageTreeResult EnumerateTree(
+            StorageArea area,
+            string relativeDirectory,
+            StorageTreeQuery query,
+            CancellationToken cancellationToken);
         Stream OpenRead(
             StorageDocumentId documentId,
             bool requireSeekable,
@@ -321,6 +426,16 @@ namespace TiltBrush
             {
                 return StorageDirectoryResult.Failed(StorageResultCode.Failed, e.Message);
             }
+        }
+
+        public StorageTreeResult EnumerateTree(
+            StorageArea area,
+            string relativeDirectory,
+            StorageTreeQuery query,
+            CancellationToken cancellationToken)
+        {
+            return StorageTreeEnumerator.Enumerate(
+                this, area, relativeDirectory, query, cancellationToken);
         }
 
         public Stream OpenRead(
@@ -458,6 +573,9 @@ namespace TiltBrush
                 case StorageArea.Videos: return App.VideosPath();
                 case StorageArea.VrVideos: return App.VrVideosPath();
                 case StorageArea.Exports: return App.UserExportPath();
+                case StorageArea.Scripts: return Path.Combine(App.UserPath(), "Scripts");
+                case StorageArea.Plugins: return Path.Combine(App.UserPath(), "Plugins");
+                case StorageArea.Fonts: return Path.Combine(App.UserPath(), "Fonts");
                 default: throw new ArgumentOutOfRangeException(nameof(area), area, null);
             }
         }
@@ -651,6 +769,186 @@ namespace TiltBrush
                     m_Stream = null;
                 }
             }
+        }
+    }
+
+    internal static class StorageTreeEnumerator
+    {
+        private readonly struct PendingDirectory
+        {
+            public string RelativePath { get; }
+            public int Depth { get; }
+
+            public PendingDirectory(string relativePath, int depth)
+            {
+                RelativePath = relativePath;
+                Depth = depth;
+            }
+        }
+
+        public static StorageTreeResult Enumerate(
+            IUserStorageBackend backend,
+            StorageArea area,
+            string relativeDirectory,
+            StorageTreeQuery query,
+            CancellationToken cancellationToken)
+        {
+            if (backend == null)
+            {
+                throw new ArgumentNullException(nameof(backend));
+            }
+            query = query ?? new StorageTreeQuery();
+            string rootIdentity = backend.RootIdentity;
+            string initialDirectory = NormalizeDirectory(relativeDirectory);
+            var pending = new Stack<PendingDirectory>();
+            pending.Push(new PendingDirectory(initialDirectory, 0));
+            var entries = new List<StorageDocument>();
+            int observedItemCount = 0;
+
+            try
+            {
+                while (pending.Count > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!string.Equals(
+                            rootIdentity, backend.RootIdentity, StringComparison.Ordinal))
+                    {
+                        return StorageTreeResult.Failed(
+                            StorageResultCode.Cancelled,
+                            "The selected storage root changed during tree enumeration.");
+                    }
+
+                    PendingDirectory current = pending.Pop();
+                    StorageDirectoryResult listing = backend.List(
+                        area, current.RelativePath, cancellationToken);
+                    if (!listing.Success)
+                    {
+                        if (current.Depth == 0 &&
+                            listing.Code == StorageResultCode.NotFound)
+                        {
+                            return StorageTreeResult.Succeeded(Array.Empty<StorageDocument>());
+                        }
+                        return StorageTreeResult.Failed(listing.Code, listing.Error);
+                    }
+
+                    var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (StorageDocument document in listing.Documents)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!names.Add(document.DisplayName))
+                        {
+                            return StorageTreeResult.Failed(
+                                StorageResultCode.Failed,
+                                $"Storage directory contains duplicate child name: " +
+                                $"{CombinePath(current.RelativePath, document.DisplayName)}");
+                        }
+                        ++observedItemCount;
+                        if (observedItemCount > query.MaximumItemCount)
+                        {
+                            return StorageTreeResult.Failed(
+                                StorageResultCode.Failed,
+                                $"Storage tree exceeds the {query.MaximumItemCount} item limit.");
+                        }
+
+                        string childPath = CombinePath(
+                            current.RelativePath, document.DisplayName);
+                        StorageDocument normalized = WithRelativePath(document, childPath);
+                        if (document.IsDirectory)
+                        {
+                            if (query.IncludeDirectories)
+                            {
+                                entries.Add(normalized);
+                            }
+                            if (query.Recursive)
+                            {
+                                if (current.Depth >= query.MaximumDepth)
+                                {
+                                    return StorageTreeResult.Failed(
+                                        StorageResultCode.Failed,
+                                        $"Storage tree exceeds the {query.MaximumDepth} level " +
+                                        $"depth limit at {childPath}.");
+                                }
+                                pending.Push(new PendingDirectory(
+                                    childPath, current.Depth + 1));
+                            }
+                        }
+                        else if (query.IncludesFile(document.DisplayName))
+                        {
+                            entries.Add(normalized);
+                        }
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return StorageTreeResult.Failed(
+                    StorageResultCode.Cancelled, "Storage tree enumeration was cancelled.");
+            }
+            catch (ArgumentException e)
+            {
+                return StorageTreeResult.Failed(StorageResultCode.InvalidPath, e.Message);
+            }
+
+            if (!string.Equals(rootIdentity, backend.RootIdentity, StringComparison.Ordinal))
+            {
+                return StorageTreeResult.Failed(
+                    StorageResultCode.Cancelled,
+                    "The selected storage root changed during tree enumeration.");
+            }
+            entries.Sort((left, right) => StringComparer.OrdinalIgnoreCase.Compare(
+                left.RelativeDisplayPath, right.RelativeDisplayPath));
+            return StorageTreeResult.Succeeded(entries);
+        }
+
+        private static StorageDocument WithRelativePath(
+            StorageDocument document, string relativePath)
+        {
+            return new StorageDocument(
+                document.DocumentId,
+                document.ParentDocumentId,
+                document.DisplayName,
+                document.MimeType,
+                document.IsDirectory,
+                document.Size,
+                document.LastModified,
+                document.ProviderFlags,
+                relativePath);
+        }
+
+        private static string NormalizeDirectory(string relativeDirectory)
+        {
+            if (string.IsNullOrEmpty(relativeDirectory))
+            {
+                return "";
+            }
+            if (Path.IsPathRooted(relativeDirectory))
+            {
+                throw new ArgumentException("Storage tree path must be relative.");
+            }
+            string normalized = relativeDirectory.Replace('\\', '/').Trim('/');
+            foreach (string segment in normalized.Split('/'))
+            {
+                if (string.IsNullOrEmpty(segment) || segment == "." || segment == "..")
+                {
+                    throw new ArgumentException("Storage tree path escapes its logical area.");
+                }
+            }
+            return normalized;
+        }
+
+        private static string CombinePath(string directory, string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName) ||
+                displayName.Contains("/") ||
+                displayName.Contains("\\") ||
+                displayName == "." ||
+                displayName == "..")
+            {
+                throw new ArgumentException("Storage provider returned an invalid display name.");
+            }
+            return string.IsNullOrEmpty(directory)
+                ? displayName
+                : $"{directory}/{displayName}";
         }
     }
 }

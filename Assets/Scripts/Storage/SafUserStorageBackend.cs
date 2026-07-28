@@ -76,6 +76,16 @@ namespace TiltBrush
             return result;
         }
 
+        public StorageTreeResult EnumerateTree(
+            StorageArea area,
+            string relativeDirectory,
+            StorageTreeQuery query,
+            CancellationToken cancellationToken)
+        {
+            return StorageTreeEnumerator.Enumerate(
+                this, area, relativeDirectory, query, cancellationToken);
+        }
+
         public Stream OpenRead(
             StorageDocumentId documentId,
             bool requireSeekable,
@@ -275,6 +285,9 @@ namespace TiltBrush
                 case StorageArea.Videos: return "Videos";
                 case StorageArea.VrVideos: return "VRVideos";
                 case StorageArea.Exports: return "Exports";
+                case StorageArea.Scripts: return "Scripts";
+                case StorageArea.Plugins: return "Plugins";
+                case StorageArea.Fonts: return "Fonts";
                 default: throw new ArgumentOutOfRangeException(nameof(area), area, null);
             }
         }

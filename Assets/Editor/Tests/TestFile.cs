@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using NUnit.Framework;
@@ -175,6 +176,16 @@ namespace TiltBrush
                         entry.Name));
                 }
                 return StorageDirectoryResult.Succeeded(documents);
+            }
+
+            public StorageTreeResult EnumerateTree(
+                StorageArea area,
+                string relativeDirectory,
+                StorageTreeQuery query,
+                CancellationToken cancellationToken)
+            {
+                return StorageTreeEnumerator.Enumerate(
+                    this, area, relativeDirectory, query, cancellationToken);
             }
 
             public Stream OpenRead(
@@ -828,6 +839,89 @@ namespace TiltBrush
                 if (Directory.Exists(recoveryRoot))
                 {
                     Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_RecursesAndFiltersFiles()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "nested", "deeper"));
+                File.WriteAllText(Path.Combine(root, "top.lua"), "top");
+                File.WriteAllText(Path.Combine(root, "ignored.txt"), "ignored");
+                File.WriteAllText(Path.Combine(root, "nested", "child.LUA"), "child");
+                File.WriteAllText(Path.Combine(root, "nested", "deeper", "last.lua"), "last");
+                var backend = new LocalUserStorageBackend(_ => root);
+
+                StorageTreeResult result = backend.EnumerateTree(
+                    StorageArea.Plugins,
+                    "",
+                    new StorageTreeQuery(
+                        recursive: true,
+                        includeDirectories: false,
+                        includeExtensions: new[] { ".lua" }),
+                    CancellationToken.None);
+
+                Assert.IsTrue(result.Success, result.Error);
+                CollectionAssert.AreEqual(
+                    new[] { "nested/child.LUA", "nested/deeper/last.lua", "top.lua" },
+                    result.Entries.Select(entry => entry.RelativeDisplayPath).ToArray());
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_MissingAreaIsSuccessfulEmptyTree()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            var backend = new LocalUserStorageBackend(_ => root);
+
+            StorageTreeResult result = backend.EnumerateTree(
+                StorageArea.Scripts,
+                "",
+                new StorageTreeQuery(),
+                CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.IsEmpty(result.Entries);
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_FailsInsteadOfTruncatingAtDepthLimit()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "nested"));
+                File.WriteAllText(Path.Combine(root, "nested", "child.lua"), "child");
+                var backend = new LocalUserStorageBackend(_ => root);
+
+                StorageTreeResult result = backend.EnumerateTree(
+                    StorageArea.Plugins,
+                    "",
+                    new StorageTreeQuery(recursive: true, maximumDepth: 0),
+                    CancellationToken.None);
+
+                Assert.IsFalse(result.Success);
+                StringAssert.Contains("depth limit", result.Error);
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
                 }
             }
         }
