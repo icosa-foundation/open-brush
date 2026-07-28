@@ -580,8 +580,11 @@ namespace TiltBrush
             // Set the reflection cubemap
             RenderSettings.customReflection = rDesired.m_ReflectionCubemap;
 
-            // Turn on passthrough if requested
-            PassthroughEnabled = m_DesiredEnvironment.m_PassthroughEnabled;
+            // A custom environment applied its saved passthrough state before the transition.
+            if (!m_LoadingCustomEnvironment)
+            {
+                PassthroughEnabled = m_DesiredEnvironment.m_PassthroughEnabled;
+            }
 
             if (!m_LoadingCustomEnvironment)
             {
