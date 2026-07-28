@@ -50,6 +50,7 @@ public class VrStylusHandler : StylusHandler
     private bool m_TipHasVibrated;
     private bool m_MiddleHasVibrated;
     private bool m_DoubleTapHasVibrated;
+    private bool m_BrushHandednessDirty;
     private bool m_ControllerVisibilityDirty;
 
     public bool InUiInteraction
@@ -147,6 +148,7 @@ public class VrStylusHandler : StylusHandler
 
         SetStylusActive(true);
         UpdateHandedness();
+        UpdateBrushHandedness();
 
         UpdatePose();
         UpdateInputs();
@@ -162,8 +164,25 @@ public class VrStylusHandler : StylusHandler
         if (_stylus.isOnRightHand != isOnRightHand)
         {
             _stylus.isOnRightHand = isOnRightHand;
+            m_BrushHandednessDirty = true;
             m_ControllerVisibilityDirty = true;
         }
+    }
+
+    private void UpdateBrushHandedness()
+    {
+        if (!m_BrushHandednessDirty ||
+            InputManager.m_Instance == null ||
+            App.VrSdk.IsInitializingUnityXR)
+        {
+            return;
+        }
+
+        // MX Ink is always the brush. WandOnRight is therefore the inverse of
+        // the physical hand holding the stylus.
+        InputManager.m_Instance.WandOnRight = !_stylus.isOnRightHand;
+        m_BrushHandednessDirty = false;
+        m_ControllerVisibilityDirty = true;
     }
 
     private void UpdatePose()
@@ -232,6 +251,7 @@ public class VrStylusHandler : StylusHandler
         if (_stylus.isActive != active)
         {
             _stylus.isActive = active;
+            m_BrushHandednessDirty = active;
             m_ControllerVisibilityDirty = true;
         }
 
@@ -255,9 +275,12 @@ public class VrStylusHandler : StylusHandler
         }
         else
         {
-            int stylusController = _stylus.isOnRightHand ? 1 : 0;
-            InputManager.m_Instance.ShowController(false, stylusController);
-            InputManager.m_Instance.ShowController(true, 1 - stylusController);
+            InputManager.m_Instance.ShowController(
+                false,
+                (int)InputManager.ControllerName.Brush);
+            InputManager.m_Instance.ShowController(
+                true,
+                (int)InputManager.ControllerName.Wand);
         }
 
         m_ControllerVisibilityDirty = false;
