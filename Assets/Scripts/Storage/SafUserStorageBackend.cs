@@ -392,6 +392,7 @@ namespace TiltBrush
 
             var dependencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string extension = Path.GetExtension(localModelPath).ToLowerInvariant();
+            string modelDirectory = GetLogicalDirectory(model.RelativePath);
             try
             {
                 if (extension == ".gltf" || extension == ".gltf2")
@@ -399,7 +400,8 @@ namespace TiltBrush
                     JToken json = JToken.Parse(File.ReadAllText(localModelPath));
                     foreach (JToken uri in json.SelectTokens("$..uri"))
                     {
-                        AddLocalDependency(dependencies, uri.ToString());
+                        AddLocalDependency(
+                            dependencies, modelDirectory, uri.ToString());
                     }
                 }
                 else if (extension == ".obj")
@@ -409,7 +411,10 @@ namespace TiltBrush
                         string trimmed = line.Trim();
                         if (trimmed.StartsWith("mtllib ", StringComparison.OrdinalIgnoreCase))
                         {
-                            AddLocalDependency(dependencies, trimmed.Substring(7).Trim());
+                            AddLocalDependency(
+                                dependencies,
+                                modelDirectory,
+                                trimmed.Substring(7).Trim());
                         }
                     }
                 }
@@ -422,7 +427,9 @@ namespace TiltBrush
                         if (start >= 0 && end > start)
                         {
                             AddLocalDependency(
-                                dependencies, line.Substring(start + 1, end - start - 1));
+                                dependencies,
+                                modelDirectory,
+                                line.Substring(start + 1, end - start - 1));
                         }
                     }
                 }
@@ -436,12 +443,11 @@ namespace TiltBrush
                     $"{model.RelativePath}: {e.Message}");
             }
 
-            string modelDirectory = GetLogicalDirectory(model.RelativePath);
             foreach (string dependency in dependencies.ToArray())
             {
                 DocumentLocation dependencyLocation = FindByRelativePath(
                     model.Area,
-                    CombineLogicalPath(modelDirectory, dependency),
+                    dependency,
                     cancellationToken);
                 if (dependencyLocation == null || dependencyLocation.Document.IsDirectory)
                 {
@@ -460,7 +466,10 @@ namespace TiltBrush
                             (parts[0].StartsWith("map_", StringComparison.OrdinalIgnoreCase) ||
                              parts[0].Equals("bump", StringComparison.OrdinalIgnoreCase)))
                         {
-                            AddLocalDependency(dependencies, parts[parts.Length - 1]);
+                            AddLocalDependency(
+                                dependencies,
+                                GetLogicalDirectory(dependency),
+                                parts[parts.Length - 1]);
                         }
                     }
                 }
@@ -470,7 +479,7 @@ namespace TiltBrush
             {
                 DocumentLocation dependencyLocation = FindByRelativePath(
                     model.Area,
-                    CombineLogicalPath(modelDirectory, dependency),
+                    dependency,
                     cancellationToken);
                 if (dependencyLocation != null && !dependencyLocation.Document.IsDirectory)
                 {
@@ -497,7 +506,8 @@ namespace TiltBrush
             return document == null ? null : GetLocation(document.DocumentId);
         }
 
-        private static void AddLocalDependency(HashSet<string> dependencies, string uri)
+        private static void AddLocalDependency(
+            HashSet<string> dependencies, string baseDirectory, string uri)
         {
             if (string.IsNullOrWhiteSpace(uri) ||
                 uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
@@ -506,12 +516,32 @@ namespace TiltBrush
                 return;
             }
             string normalized = Uri.UnescapeDataString(uri).Replace('\\', '/');
-            if (normalized.Split('/').Any(segment =>
-                    string.IsNullOrEmpty(segment) || segment == "." || segment == ".."))
+            var segments = new List<string>();
+            if (!string.IsNullOrEmpty(baseDirectory))
             {
-                return;
+                segments.AddRange(baseDirectory.Replace('\\', '/').Split('/'));
             }
-            dependencies.Add(normalized);
+            foreach (string segment in normalized.Split('/'))
+            {
+                if (string.IsNullOrEmpty(segment) || segment == ".")
+                {
+                    continue;
+                }
+                if (segment == "..")
+                {
+                    if (segments.Count == 0)
+                    {
+                        return;
+                    }
+                    segments.RemoveAt(segments.Count - 1);
+                    continue;
+                }
+                segments.Add(segment);
+            }
+            if (segments.Count > 0)
+            {
+                dependencies.Add(string.Join("/", segments));
+            }
         }
 
         private string GetMaterializationPath(DocumentLocation location)
