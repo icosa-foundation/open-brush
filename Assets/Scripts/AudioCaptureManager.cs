@@ -263,6 +263,10 @@ namespace TiltBrush
                     break;
                 case AudioCaptureType.App:
                     bool appAudioWasActive = m_AppAudio.activeSelf;
+                    if (!bWasRequested && CaptureRequested)
+                    {
+                        ResetAndroidSourceProbeTimer();
+                    }
                     m_AppAudio.SetActive(CaptureRequested);
                     if (appAudioWasActive != m_AppAudio.activeSelf)
                     {
