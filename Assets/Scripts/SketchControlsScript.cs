@@ -4109,7 +4109,9 @@ namespace TiltBrush
 #if USD_SUPPORTED
             var current = SaveLoadScript.m_Instance.SceneFile;
             string basename = (current.Valid)
-                ? FileUtils.GetValidFilename(current.HumanName)
+                ? current is SafSceneFileInfo
+                    ? FileUtils.GetValidFilename(current.HumanName)
+                    : Path.GetFileNameWithoutExtension(current.FullPath)
                 : "Untitled";
             if (string.IsNullOrEmpty(basename))
             {
@@ -5667,9 +5669,11 @@ namespace TiltBrush
                     texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
                     RenderTexture.active = prev;
                     byte[] jpegBytes = texture.EncodeToJPG();
-                    string filename =
-                        FileUtils.GetValidFilename(
-                            SaveLoadScript.m_Instance.SceneFile.HumanName);
+                    SceneFileInfo sceneFile =
+                        SaveLoadScript.m_Instance.SceneFile;
+                    string filename = sceneFile is SafSceneFileInfo
+                        ? FileUtils.GetValidFilename(sceneFile.HumanName)
+                        : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
                 }
                 finally
