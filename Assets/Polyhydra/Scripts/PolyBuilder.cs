@@ -105,9 +105,30 @@ namespace TiltBrush
                 //     recipe.JohnsonPolyType = Convert.ToInt32(p.GetValueOrDefault("type"]);)                //     break;
                 case GeneratorTypes.Shapes:
                     recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
-                    recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("a"));
-                    recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
-                    recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
+                    switch (recipe.ShapeType)
+                    {
+                        case ShapeTypes.Polygon:
+                            recipe.Param1Int =
+                                Convert.ToInt32(p.GetValueOrDefault("sides"));
+                            break;
+                        case ShapeTypes.Star:
+                            recipe.Param1Int =
+                                Convert.ToInt32(p.GetValueOrDefault("sides"));
+                            recipe.Param2Float =
+                                Convert.ToSingle(p.GetValueOrDefault("sharpness"));
+                            break;
+                        case ShapeTypes.Arc:
+                        case ShapeTypes.Arch:
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("a"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
+                            break;
+                        default:
+                            recipe.Param1Float = Convert.ToSingle(p.GetValueOrDefault("a"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
+                            break;
+                    }
                     break;
                 case GeneratorTypes.Radial:
                     recipe.RadialPolyType = (RadialSolids.RadialPolyType)Convert.ToInt32(p.GetValueOrDefault("type"));
