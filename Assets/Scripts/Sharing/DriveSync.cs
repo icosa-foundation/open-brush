@@ -1437,7 +1437,10 @@ namespace TiltBrush
             EnsureTransferRootMatches(item, backend);
             ContentHashes sourceHashes = backend.Kind ==
                 StorageBackendKind.StorageAccessFramework
-                    ? ComputeStorageHashes(backend, item.DocumentId, token)
+                    ? await Task.Run(
+                        () => ComputeStorageHashes(
+                            backend, item.DocumentId, token),
+                        token)
                     : null;
             var metadata = new DriveData.File
             {
@@ -1537,8 +1540,10 @@ namespace TiltBrush
                 }
                 if (backend.Kind == StorageBackendKind.StorageAccessFramework)
                 {
-                    ContentHashes currentHashes = ComputeStorageHashes(
-                        backend, source.DocumentId, token);
+                    ContentHashes currentHashes = await Task.Run(
+                        () => ComputeStorageHashes(
+                            backend, source.DocumentId, token),
+                        token);
                     if (!source.DocumentId.Equals(item.DocumentId) ||
                         !string.Equals(
                             sourceHashes.Sha256,
