@@ -66,6 +66,7 @@ namespace TiltBrush
             // Disable old subtool
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
+            m_ActiveSubTool.gameObject.SetActive(true);
         }
 
         public void FinalizeSculptingBatch()
