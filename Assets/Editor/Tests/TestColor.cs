@@ -173,6 +173,64 @@ namespace TiltBrush
             Assert.AreEqual(84, color.g);
             Assert.AreEqual(255, color.b);
         }
+
+        [Test]
+        public void JoiningStrokesConcatenatesCompatiblePointColors()
+        {
+            var first = new Stroke
+            {
+                m_Color = Color.white,
+                m_ColorOverrideMode = ColorOverrideMode.Replace,
+                m_ControlPoints = new PointerManager.ControlPoint[2],
+                m_OverrideColors = new List<Color32?>
+                {
+                    new Color32(255, 0, 0, 255),
+                },
+            };
+            var second = new Stroke
+            {
+                m_Color = Color.white,
+                m_ColorOverrideMode = ColorOverrideMode.Replace,
+                m_ControlPoints = new PointerManager.ControlPoint[1],
+                m_OverrideColors = new List<Color32?>
+                {
+                    new Color32(0, 0, 255, 255),
+                },
+            };
+
+            ApiMethods.MergeJoinedStrokeColors(new[] { first, second }, first);
+
+            CollectionAssert.AreEqual(new Color32?[]
+            {
+                new Color32(255, 0, 0, 255),
+                null,
+                new Color32(0, 0, 255, 255),
+            }, first.m_OverrideColors);
+        }
+
+        [Test]
+        public void JoiningStrokesNormalizesIncompatiblePointColors()
+        {
+            var first = new Stroke
+            {
+                m_Color = Color.red,
+                m_ControlPoints = new PointerManager.ControlPoint[1],
+            };
+            var second = new Stroke
+            {
+                m_Color = Color.green,
+                m_ControlPoints = new PointerManager.ControlPoint[1],
+            };
+
+            ApiMethods.MergeJoinedStrokeColors(new[] { first, second }, first);
+
+            Assert.AreEqual(ColorOverrideMode.Replace, first.m_ColorOverrideMode);
+            CollectionAssert.AreEqual(new Color32?[]
+            {
+                (Color32)Color.red,
+                (Color32)Color.green,
+            }, first.m_OverrideColors);
+        }
     }
 
     internal class TestColorPicker : ColorTestUtils
