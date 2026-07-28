@@ -780,6 +780,11 @@ namespace TiltBrush
 
         public Vector2 GetMouseMoveDelta()
         {
+            if (Mouse.current == null)
+            {
+                return Vector2.zero;
+            }
+
             Vector2 mv = Mouse.current.delta.ReadValue() * 0.125f;
             return new Vector2(Mathf.Abs(mv.x) > m_InputThreshold ? mv.x : 0f,
                 Mathf.Abs(mv.y) > m_InputThreshold ? mv.y : 0f);
