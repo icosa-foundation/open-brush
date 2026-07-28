@@ -463,7 +463,7 @@ namespace TiltBrush
         [LuaDocsExample("sample = myCameraPath:SampleFull(2.5, true, false)")]
         [LuaDocsParameter("time", "The time at which to sample the camera path")]
         [LuaDocsParameter("loop", "Determines whether the camera path should loop")]
-        [LuaDocsParameter("pingpong", "Determines whether the camera path should pingpong (reverse direction every loop")]
+        [LuaDocsParameter("pingpong", "Determines whether the camera path should pingpong (reverse direction every loop)")]
         [LuaDocsReturnValue("The sampled camera path data")]
         public CameraPathSampleApiWrapper SampleFull(float time, bool loop = true, bool pingpong = false)
         {
