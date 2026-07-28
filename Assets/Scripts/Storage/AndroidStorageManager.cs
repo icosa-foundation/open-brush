@@ -153,6 +153,25 @@ namespace TiltBrush
             return false;
         }
 
+        public static void ReselectSharedFolder()
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
+            if (m_RequestInProgress)
+            {
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "Open Brush folder selection is already in progress.");
+                return;
+            }
+
+            m_PendingAction = null;
+            m_PendingCanceledAction = null;
+            m_RequestInProgress = true;
+            AndroidSafStorage.RequestOpenBrushFolder();
+        }
+
         public void OnOpenBrushFolderSelected(string uriString)
         {
             m_RequestInProgress = false;
@@ -174,8 +193,10 @@ namespace TiltBrush
             Action pendingCanceledAction = m_PendingCanceledAction;
             m_PendingAction = null;
             m_PendingCanceledAction = null;
-            string message =
-                "Open Brush folder selection canceled. Shared-storage features remain unavailable.";
+            bool existingFolderRemainsAvailable = AndroidSafStorage.HasOpenBrushFolder();
+            string message = existingFolderRemainsAvailable
+                ? "Open Brush folder selection canceled. The existing folder remains selected."
+                : "Open Brush folder selection canceled. Shared-storage features remain unavailable.";
             ControllerConsoleScript.m_Instance?.AddNewLine(message);
             OutputWindowScript.m_Instance?.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);

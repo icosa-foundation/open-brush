@@ -51,9 +51,14 @@ namespace TiltBrush
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
-        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts storage location")]
         public static void OpenUserScriptsFolder()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                AndroidStorageManager.ReselectSharedFolder();
+                return;
+            }
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
         }
 
