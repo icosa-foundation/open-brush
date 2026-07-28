@@ -49,7 +49,7 @@ namespace TiltBrush
                 return;
             }
 
-            RemoveObsoletePendingTransferState();
+            ReportObsoletePendingTransferState();
             if (PlayerPrefs.HasKey(kLegacyStartupPromptDismissedKey))
             {
                 PlayerPrefs.DeleteKey(kLegacyStartupPromptDismissedKey);
@@ -388,17 +388,15 @@ namespace TiltBrush
             }
         }
 
-        private static void RemoveObsoletePendingTransferState()
+        private static void ReportObsoletePendingTransferState()
         {
             if (!PlayerPrefs.HasKey(kPendingTransfersKey))
             {
                 return;
             }
-            PlayerPrefs.DeleteKey(kPendingTransfersKey);
-            PlayerPrefs.Save();
             Debug.LogWarning(
-                "SAF_STORAGE Removed obsolete pre-release mirror retry records. " +
-                "Their local payload files were retained.");
+                "SAF_STORAGE Obsolete pre-release mirror retry records were found. " +
+                "They are ignored by the SAF backend and retained for explicit cleanup.");
         }
 
         public static void StartStorageOperation(
