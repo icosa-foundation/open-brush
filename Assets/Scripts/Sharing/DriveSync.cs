@@ -909,6 +909,17 @@ namespace TiltBrush
                 }
 
                 bool conflictCopy = decision == SyncDecision.Conflict;
+                if (conflictCopy &&
+                    TryRecoverCommittedConflictCopy(
+                        folder,
+                        logicalPath,
+                        localFile,
+                        driveFile,
+                        localFiles,
+                        token))
+                {
+                    continue;
+                }
                 bool upload = decision == SyncDecision.Upload;
                 string destinationName = conflictCopy
                     ? GetDriveConflictName(fileName, driveFile, localSet)
@@ -1243,12 +1254,7 @@ namespace TiltBrush
             HashSet<string> reservedNames)
         {
             string extension = Path.GetExtension(fileName);
-            string stem = Path.GetFileNameWithoutExtension(fileName);
-            DateTime timestamp = driveFile?.ModifiedTime ?? DateTime.UtcNow;
-            string identity = SafTransactionJournal.GetRootNamespaceId(
-                driveFile?.Id ?? fileName).Substring(0, 8);
-            string baseName =
-                $"{stem}.drive-conflict-{timestamp:yyyyMMdd-HHmmss}-{identity}";
+            string baseName = GetDriveConflictBaseName(fileName, driveFile);
             for (int suffix = 0; suffix < 10000; ++suffix)
             {
                 string candidate = suffix == 0
@@ -1261,6 +1267,86 @@ namespace TiltBrush
             }
             throw new IOException(
                 $"Could not reserve a Drive conflict name for {fileName}.");
+        }
+
+        private bool TryRecoverCommittedConflictCopy(
+            SyncedFolder folder,
+            string logicalPath,
+            StorageDocument canonicalDocument,
+            DriveData.File driveFile,
+            IReadOnlyDictionary<string, StorageDocument> localFiles,
+            CancellationToken token)
+        {
+            if (canonicalDocument == null ||
+                driveFile == null ||
+                string.IsNullOrEmpty(driveFile.Md5Checksum))
+            {
+                return false;
+            }
+            string fileName = Path.GetFileName(logicalPath);
+            string extension = Path.GetExtension(fileName);
+            string baseName = GetDriveConflictBaseName(fileName, driveFile);
+            foreach (KeyValuePair<string, StorageDocument> candidate in localFiles)
+            {
+                if (!IsConflictCopyName(
+                        candidate.Key, baseName, extension))
+                {
+                    continue;
+                }
+                ContentHashes hashes = ComputeStorageHashes(
+                    UserStorage.Backend, candidate.Value.DocumentId, token);
+                if (!string.Equals(
+                        hashes.Md5,
+                        driveFile.Md5Checksum,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                ConfirmLedger(
+                    folder.Area,
+                    logicalPath,
+                    canonicalDocument,
+                    driveFile,
+                    "ConflictRecovered",
+                    token);
+                ReportDriveConflict(
+                    CombineLogicalPath(folder.RelativeDirectory, candidate.Key),
+                    copied: true);
+                return true;
+            }
+            return false;
+        }
+
+        private static string GetDriveConflictBaseName(
+            string fileName, DriveData.File driveFile)
+        {
+            string stem = Path.GetFileNameWithoutExtension(fileName);
+            DateTime timestamp = driveFile?.ModifiedTime ??
+                new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            string identity = SafTransactionJournal.GetRootNamespaceId(
+                driveFile?.Id ?? fileName).Substring(0, 8);
+            return $"{stem}.drive-conflict-{timestamp:yyyyMMdd-HHmmss}-{identity}";
+        }
+
+        private static bool IsConflictCopyName(
+            string fileName, string baseName, string extension)
+        {
+            if (!string.Equals(
+                    Path.GetExtension(fileName),
+                    extension,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            string stem = Path.GetFileNameWithoutExtension(fileName);
+            if (string.Equals(stem, baseName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            string prefix = $"{baseName}-";
+            return stem.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                stem.Substring(prefix.Length).All(character =>
+                    character >= '0' && character <= '9');
         }
 
         private static void ReportDriveConflict(string logicalPath, bool copied)
