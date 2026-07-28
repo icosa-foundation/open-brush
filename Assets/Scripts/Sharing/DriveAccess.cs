@@ -696,6 +696,7 @@ namespace TiltBrush
             await Retry(() =>
             {
                 dataStream.Seek(position, SeekOrigin.Begin);
+                dataStream.SetLength(position);
                 return downloadRequest.DownloadAsync(dataStream, token);
             });
         }
