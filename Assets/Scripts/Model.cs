@@ -715,6 +715,38 @@ namespace TiltBrush
             }
         }
 
+        private void FinishGsplatLoad(GameObject root, List<string> warnings)
+        {
+            if (root == null)
+            {
+                DisplayWarnings(warnings);
+                return;
+            }
+
+            GsplatAsset asset = root
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+            try
+            {
+                CalcBoundsNonGltf(root);
+                EndCreatePrefab(root, warnings);
+            }
+            catch (Exception ex)
+            {
+                if (m_ModelParent == root.transform)
+                {
+                    m_ModelParent = null;
+                    m_OwnedGsplatAsset = null;
+                }
+                UObject.Destroy(root);
+                DestroyRuntimeGsplatAsset(asset);
+                IsGsplatModel = false;
+                m_Valid = false;
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+            }
+        }
+
         GameObject LoadVox(List<string> warningsOut)
         {
             try
@@ -1033,15 +1065,22 @@ namespace TiltBrush
                 }
                 else if (ext == ".ply")
                 {
-                    go = IsGsplatPly(m_Location.AbsolutePath) ? LoadGsplat(warnings) : LoadPly(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
+                    bool isGsplatPly = IsGsplatPly(m_Location.AbsolutePath);
+                    go = isGsplatPly ? LoadGsplat(warnings) : LoadPly(warnings);
+                    if (isGsplatPly)
+                    {
+                        FinishGsplatLoad(go, warnings);
+                    }
+                    else
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
                 }
                 else if (ext == ".spz" || ext == ".sog")
                 {
                     go = LoadGsplat(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
+                    FinishGsplatLoad(go, warnings);
                 }
                 else if (ext == ".vox")
                 {
