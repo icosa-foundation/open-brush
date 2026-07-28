@@ -24,8 +24,6 @@ namespace TiltBrush
 {
     public sealed class SafSceneFileInfo : SceneFileInfo
     {
-        private const long kFlagSupportsWrite = 1L << 1;
-
         private sealed class StorageReadStreamSource : IReopenableReadStream
         {
             private readonly IUserStorageBackend m_Backend;
@@ -60,7 +58,7 @@ namespace TiltBrush
         public string FullPath => null;
         public string StorageId => m_Document.DocumentId.Value;
         public bool Exists => Available;
-        public bool ReadOnly => (m_Document.ProviderFlags & kFlagSupportsWrite) == 0;
+        public bool ReadOnly => !m_Document.SupportsWrite;
         public string AssetId => m_AssetId;
         public string SourceId => m_SourceId;
         public int? TriangleCount => null;
@@ -317,6 +315,14 @@ namespace TiltBrush
             }
             SafSceneFileInfo fileInfo =
                 (SafSceneFileInfo)m_Sketches[index].SceneFileInfo;
+            if (!fileInfo.Document.SupportsDelete &&
+                !fileInfo.Document.SupportsRemove)
+            {
+                OutputWindowScript.Error(
+                    "Failed to delete sketch",
+                    "The selected storage provider does not allow this document to be deleted.");
+                return;
+            }
             StorageMutationResult result = m_Backend.Delete(
                 fileInfo.Document.DocumentId, CancellationToken.None);
             if (result.Success)
@@ -337,6 +343,13 @@ namespace TiltBrush
             }
             SafSceneFileInfo fileInfo =
                 (SafSceneFileInfo)m_Sketches[index].SceneFileInfo;
+            if (!fileInfo.Document.SupportsRename)
+            {
+                OutputWindowScript.Error(
+                    "Failed to rename sketch",
+                    "The selected storage provider does not allow this document to be renamed.");
+                return;
+            }
             string displayName = newName.EndsWith(
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)
                 ? newName

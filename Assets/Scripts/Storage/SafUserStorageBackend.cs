@@ -241,7 +241,9 @@ namespace TiltBrush
 
         internal StorageMutationResult DeleteWithoutLock(StorageDocumentId documentId)
         {
-            return AndroidSafStorage.DeleteDocument(documentId);
+            DocumentLocation location = GetLocation(documentId);
+            return AndroidSafStorage.DeleteDocument(
+                documentId, location?.Document.ParentDocumentId ?? default);
         }
 
         private void RecordLocations(

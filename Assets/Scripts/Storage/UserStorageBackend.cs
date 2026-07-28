@@ -91,6 +91,11 @@ namespace TiltBrush
 
     public sealed class StorageDocument
     {
+        private const long kFlagSupportsWrite = 1L << 1;
+        private const long kFlagSupportsDelete = 1L << 2;
+        private const long kFlagSupportsRename = 1L << 6;
+        private const long kFlagSupportsRemove = 1L << 10;
+
         public StorageDocumentId DocumentId { get; }
         public StorageDocumentId ParentDocumentId { get; }
         public string DisplayName { get; }
@@ -100,6 +105,10 @@ namespace TiltBrush
         public DateTime? LastModified { get; }
         public long ProviderFlags { get; }
         public string RelativeDisplayPath { get; }
+        public bool SupportsWrite => (ProviderFlags & kFlagSupportsWrite) != 0;
+        public bool SupportsDelete => (ProviderFlags & kFlagSupportsDelete) != 0;
+        public bool SupportsRename => (ProviderFlags & kFlagSupportsRename) != 0;
+        public bool SupportsRemove => (ProviderFlags & kFlagSupportsRemove) != 0;
 
         public StorageDocument(
             StorageDocumentId documentId,

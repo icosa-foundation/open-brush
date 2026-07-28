@@ -113,6 +113,16 @@ public class OpenBrushStorageBridge {
         String relativeDisplayPath;
     }
 
+    private static final class FlagLookupResult {
+        final long flags;
+        final String error;
+
+        FlagLookupResult(long flags, String error) {
+            this.flags = flags;
+            this.error = error;
+        }
+    }
+
     public static void requestOpenBrushFolder(Activity activity) {
         Intent intent = new Intent(activity, OpenBrushStorageActivity.class);
         activity.startActivity(intent);
@@ -384,8 +394,18 @@ public class OpenBrushStorageBridge {
             return new DocumentMutationResult(6, null, "Invalid rename request");
         }
         try {
+            Uri source = Uri.parse(documentUri);
+            FlagLookupResult capability = lookupDocumentFlags(context, source);
+            if (capability.error != null) {
+                return new DocumentMutationResult(5, null, capability.error);
+            }
+            if ((capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_RENAME) == 0) {
+                return new DocumentMutationResult(
+                        7, null, "Provider does not support renaming this document");
+            }
             Uri renamed = DocumentsContract.renameDocument(
-                    context.getContentResolver(), Uri.parse(documentUri), newDisplayName);
+                    context.getContentResolver(), source, newDisplayName);
             if (renamed == null) {
                 return new DocumentMutationResult(
                         7, null, "Provider returned no renamed document");
@@ -401,15 +421,36 @@ public class OpenBrushStorageBridge {
     }
 
     public static DocumentMutationResult deleteDocumentByUri(
-            Context context, String documentUri) {
+            Context context, String documentUri, String parentDocumentUri) {
         if (documentUri == null || documentUri.length() == 0) {
             return new DocumentMutationResult(6, null, "Invalid delete request");
         }
         try {
-            boolean deleted = DocumentsContract.deleteDocument(
-                    context.getContentResolver(), Uri.parse(documentUri));
+            Uri document = Uri.parse(documentUri);
+            FlagLookupResult capability = lookupDocumentFlags(context, document);
+            if (capability.error != null) {
+                return new DocumentMutationResult(5, null, capability.error);
+            }
+            boolean deleted;
+            if ((capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_DELETE) != 0) {
+                deleted = DocumentsContract.deleteDocument(
+                        context.getContentResolver(), document);
+            } else if ((capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_REMOVE) != 0
+                    && parentDocumentUri != null
+                    && parentDocumentUri.length() > 0) {
+                DocumentsContract.removeDocument(
+                        context.getContentResolver(),
+                        document,
+                        Uri.parse(parentDocumentUri));
+                deleted = true;
+            } else {
+                return new DocumentMutationResult(
+                        7, null, "Provider does not support deleting this document");
+            }
             return deleted
-                    ? new DocumentMutationResult(0, Uri.parse(documentUri), null)
+                    ? new DocumentMutationResult(0, document, null)
                     : new DocumentMutationResult(7, null, "Provider did not delete document");
         } catch (SecurityException e) {
             return new DocumentMutationResult(3, null, formatProviderError(
@@ -516,6 +557,28 @@ public class OpenBrushStorageBridge {
             DocumentsContract.deleteDocument(resolver, document);
         } catch (Exception ignored) {
             // Best effort cleanup for temporary and backup documents.
+        }
+    }
+
+    private static FlagLookupResult lookupDocumentFlags(Context context, Uri document) {
+        try (Cursor cursor = context.getContentResolver().query(
+                document,
+                new String[]{DocumentsContract.Document.COLUMN_FLAGS},
+                null,
+                null,
+                null)) {
+            if (cursor == null) {
+                return new FlagLookupResult(
+                        0, "Provider returned no document capability result");
+            }
+            if (!cursor.moveToFirst()) {
+                return new FlagLookupResult(
+                        0, "Provider document no longer exists");
+            }
+            return new FlagLookupResult(cursor.isNull(0) ? 0 : cursor.getLong(0), null);
+        } catch (Exception e) {
+            return new FlagLookupResult(0, formatProviderError(
+                    "Failed to query document capabilities", e));
         }
     }
 

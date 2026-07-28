@@ -282,12 +282,16 @@ namespace TiltBrush
 #endif
         }
 
-        public static StorageMutationResult DeleteDocument(StorageDocumentId documentId)
+        public static StorageMutationResult DeleteDocument(
+            StorageDocumentId documentId, StorageDocumentId parentDocumentId = default)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "deleteDocumentByUri", GetActivity(), documentId.Value);
+                "deleteDocumentByUri",
+                GetActivity(),
+                documentId.Value,
+                parentDocumentId.Value ?? "");
             return ReadMutationResult(result, documentId);
 #else
             return new StorageMutationResult(
