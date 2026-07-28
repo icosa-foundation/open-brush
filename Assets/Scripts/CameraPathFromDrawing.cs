@@ -27,7 +27,7 @@ namespace TiltBrush
     {
         public struct Sample
         {
-            public Vector3 position; // Canvas/scene space
+            public Vector3 position; // Active-canvas space
             public float timestamp;  // Time.time when the sample was taken
         }
 
@@ -69,7 +69,7 @@ namespace TiltBrush
 
             // World up expressed in canvas coordinates, so the camera stays level
             // with the real horizon once the canvas pose is re-applied at playback.
-            Vector3 up = Quaternion.Inverse(App.Scene.Pose.rotation) * Vector3.up;
+            Vector3 up = Quaternion.Inverse(App.ActiveCanvas.Pose.rotation) * Vector3.up;
 
             Quaternion rotation = Quaternion.identity;
             bool hasRotation = false;

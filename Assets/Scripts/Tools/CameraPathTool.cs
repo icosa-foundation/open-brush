@@ -363,7 +363,7 @@ namespace TiltBrush
             m_LastDrawnSample_RS = pos_RS;
             m_DrawnSamples.Add(new CameraPathFromDrawing.Sample
             {
-                position = App.Scene.Pose.inverse.MultiplyPoint(pos_RS),
+                position = App.ActiveCanvas.Pose.inverse.MultiplyPoint(pos_RS),
                 timestamp = Time.time,
             });
             RefreshDrawPathPreviewLine();
