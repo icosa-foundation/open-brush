@@ -141,6 +141,7 @@ namespace TiltBrush
         public void OnOpenBrushFolderSelected(string uriString)
         {
             m_RequestInProgress = false;
+            AndroidSafStorage.InvalidateReadiness();
 
             RunFileDescriptorProbeOnce();
             StartCoroutine(RecoverTransactions(() =>

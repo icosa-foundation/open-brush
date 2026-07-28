@@ -23,6 +23,10 @@ namespace TiltBrush
     public static class AndroidSafStorage
     {
         private const string kBridgeClass = "foundation.icosa.openbrush.storage.OpenBrushStorageBridge";
+        private static readonly object sm_ReadinessGate = new object();
+        private static bool sm_HasCachedReadiness;
+        private static bool sm_CachedReadiness;
+        private static long sm_ReadinessCheckedTimestamp;
 
         public static bool IsAvailable
         {
@@ -47,11 +51,34 @@ namespace TiltBrush
         public static bool HasOpenBrushFolder()
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            using var bridge = new AndroidJavaClass(kBridgeClass);
-            return bridge.CallStatic<bool>("hasOpenBrushFolder", GetActivity());
+            lock (sm_ReadinessGate)
+            {
+                long now = System.Diagnostics.Stopwatch.GetTimestamp();
+                long cacheDuration =
+                    System.Diagnostics.Stopwatch.Frequency;
+                if (sm_HasCachedReadiness &&
+                    now - sm_ReadinessCheckedTimestamp < cacheDuration)
+                {
+                    return sm_CachedReadiness;
+                }
+                using var bridge = new AndroidJavaClass(kBridgeClass);
+                sm_CachedReadiness =
+                    bridge.CallStatic<bool>("hasOpenBrushFolder", GetActivity());
+                sm_ReadinessCheckedTimestamp = now;
+                sm_HasCachedReadiness = true;
+                return sm_CachedReadiness;
+            }
 #else
             return true;
 #endif
+        }
+
+        public static void InvalidateReadiness()
+        {
+            lock (sm_ReadinessGate)
+            {
+                sm_HasCachedReadiness = false;
+            }
         }
 
         public static string GetOpenBrushFolderDisplayName()
@@ -79,6 +106,7 @@ namespace TiltBrush
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             using var bridge = new AndroidJavaClass(kBridgeClass);
             bridge.CallStatic("clearOpenBrushFolder", GetActivity());
+            InvalidateReadiness();
 #endif
         }
 
