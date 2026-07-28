@@ -25,6 +25,20 @@ namespace TiltBrush
         private static readonly FieldInfo sm_OwnedGsplatAssetField =
             typeof(Model).GetField("m_OwnedGsplatAsset",
                 BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo sm_GetGsplatSourceCoordinates =
+            typeof(Model).GetMethod("GetGsplatSourceCoordinates",
+                BindingFlags.Static | BindingFlags.NonPublic);
+
+        [TestCase(".ply", SourceCoordinates.RUB)]
+        [TestCase(".spz", SourceCoordinates.RUB)]
+        [TestCase(".sog", SourceCoordinates.RDB)]
+        public void GsplatFormatsRetainMigrationCoordinatePolicy(
+            string extension, SourceCoordinates expected)
+        {
+            Assert.IsNotNull(sm_GetGsplatSourceCoordinates);
+            Assert.AreEqual(expected,
+                sm_GetGsplatSourceCoordinates.Invoke(null, new object[] { extension }));
+        }
 
         [Test]
         public void RepeatedUnloadDestroysEachOwnedRuntimeAsset()

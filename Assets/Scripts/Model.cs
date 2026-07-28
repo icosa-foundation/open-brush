@@ -673,8 +673,7 @@ namespace TiltBrush
             {
                 string path = m_Location.AbsolutePath;
                 string ext = m_Location.Extension;
-                SourceCoordinates sourceCoordinates =
-                    ext == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
+                SourceCoordinates sourceCoordinates = GetGsplatSourceCoordinates(ext);
                 asset = GsplatRuntimeLoader.LoadFile(
                     path,
                     Gsplat.CompressionMode.Spark,
@@ -715,6 +714,11 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
+        }
+
+        private static SourceCoordinates GetGsplatSourceCoordinates(string extension)
+        {
+            return extension == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
         }
 
         private void FinishGsplatLoad(GameObject root, List<string> warnings)
