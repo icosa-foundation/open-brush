@@ -91,7 +91,7 @@ namespace TiltBrush
             {
                 if (_Knot is CameraPathSpeedKnot knot)
                 {
-                    knot.SpeedValue = value;
+                    knot.SetCameraSpeed(value);
                     RefreshPath();
                 }
             }
