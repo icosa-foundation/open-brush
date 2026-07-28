@@ -120,6 +120,43 @@ namespace TiltBrush
 #endif
         }
 
+        public static bool RegisterRuntimeContentObservers()
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            try
+            {
+                using var bridge = new AndroidJavaClass(kBridgeClass);
+                return bridge.CallStatic<bool>(
+                    "registerRuntimeContentObservers", GetActivity());
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(
+                    $"SAF_OBSERVER Runtime content observer registration failed: {e.Message}");
+                return false;
+            }
+#else
+            return false;
+#endif
+        }
+
+        public static void UnregisterRuntimeContentObservers()
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            try
+            {
+                using var bridge = new AndroidJavaClass(kBridgeClass);
+                bridge.CallStatic(
+                    "unregisterRuntimeContentObservers", GetActivity());
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(
+                    $"SAF_OBSERVER Runtime content observer cleanup failed: {e.Message}");
+            }
+#endif
+        }
+
         public static StorageDirectoryResult QueryDirectory(string relativePath)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY

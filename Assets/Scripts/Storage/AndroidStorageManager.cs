@@ -42,6 +42,10 @@ namespace TiltBrush
         private static string m_FileDescriptorProbeRootIdentity;
         private static string m_ActiveRootIdentity;
         private static AndroidStorageManager m_Instance;
+        private int m_ObserverChangeVersion;
+        private bool m_ObserverRefreshRunning;
+        private readonly HashSet<StorageArea> m_PendingObserverAreas =
+            new HashSet<StorageArea>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void CreateInstance()
@@ -72,6 +76,15 @@ namespace TiltBrush
         private void Awake()
         {
             m_Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            AndroidSafStorage.UnregisterRuntimeContentObservers();
+            if (m_Instance == this)
+            {
+                m_Instance = null;
+            }
         }
 
         private IEnumerator Start()
@@ -270,6 +283,11 @@ namespace TiltBrush
         private IEnumerator RefreshRuntimeContent()
         {
             yield return SeedRuntimeContent();
+            if (!AndroidSafStorage.RegisterRuntimeContentObservers())
+            {
+                Debug.LogWarning(
+                    "SAF_OBSERVER Runtime content changes will be repaired on resume.");
+            }
             foreach (StorageArea area in new[]
             {
                 StorageArea.Scripts,
@@ -305,6 +323,86 @@ namespace TiltBrush
                         $"SAF_PROJECTION {area} refresh retained previous content: " +
                         $"{result.Error}");
                 }
+            }
+        }
+
+        public void OnRuntimeContentChanged(string message)
+        {
+            int separator = message?.LastIndexOf('\n') ?? -1;
+            if (separator <= 0 ||
+                !Enum.TryParse(
+                    message.Substring(separator + 1),
+                    ignoreCase: false,
+                    out StorageArea area) ||
+                (area != StorageArea.Scripts &&
+                 area != StorageArea.Plugins &&
+                 area != StorageArea.Fonts))
+            {
+                Debug.LogWarning("SAF_OBSERVER Ignored malformed runtime content event.");
+                return;
+            }
+            string eventRootIdentity = message.Substring(0, separator);
+            if (!string.Equals(
+                    eventRootIdentity,
+                    UserStorage.Backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+            m_PendingObserverAreas.Add(area);
+            ++m_ObserverChangeVersion;
+            if (!m_ObserverRefreshRunning)
+            {
+                StartCoroutine(RefreshObservedRuntimeContent());
+            }
+        }
+
+        private IEnumerator RefreshObservedRuntimeContent()
+        {
+            m_ObserverRefreshRunning = true;
+            try
+            {
+                while (true)
+                {
+                    int version = m_ObserverChangeVersion;
+                    yield return new WaitForSecondsRealtime(0.5f);
+                    if (version != m_ObserverChangeVersion)
+                    {
+                        continue;
+                    }
+                    StorageArea[] areas = m_PendingObserverAreas.ToArray();
+                    m_PendingObserverAreas.Clear();
+                    foreach (StorageArea area in areas)
+                    {
+                        Task<RuntimeProjectionResult> refresh =
+                            UserRuntimeContent.Instance.EnsureCurrentAsync(
+                                area, CancellationToken.None);
+                        while (!refresh.IsCompleted)
+                        {
+                            yield return null;
+                        }
+                        if (refresh.IsFaulted)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_OBSERVER {area} refresh failed: " +
+                                $"{refresh.Exception?.GetBaseException().Message}");
+                        }
+                        else if (!refresh.IsCanceled && !refresh.Result.Success)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_OBSERVER {area} refresh retained previous content: " +
+                                $"{refresh.Result.Error}");
+                        }
+                    }
+                    if (version == m_ObserverChangeVersion)
+                    {
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                m_ObserverRefreshRunning = false;
             }
         }
 
