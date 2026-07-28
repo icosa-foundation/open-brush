@@ -404,7 +404,9 @@ namespace TiltBrush
                         new StorageDocumentId(path),
                         parentId,
                         info.Name,
-                        isDirectory ? "vnd.android.document/directory" : GuessMimeType(path),
+                        isDirectory
+                            ? "vnd.android.document/directory"
+                            : StorageMimeTypes.ForPath(path),
                         isDirectory,
                         size,
                         info.LastWriteTime,
@@ -626,21 +628,6 @@ namespace TiltBrush
             }
         }
 
-        private static string GuessMimeType(string path)
-        {
-            switch (Path.GetExtension(path).ToLowerInvariant())
-            {
-                case ".tilt": return TiltFile.TILT_MIME_TYPE;
-                case ".png": return "image/png";
-                case ".jpg":
-                case ".jpeg": return "image/jpeg";
-                case ".mp4": return "video/mp4";
-                case ".json": return "application/json";
-                case ".txt": return "text/plain";
-                default: return "application/octet-stream";
-            }
-        }
-
         private sealed class LocalWriteTransaction : IStorageWriteTransaction
         {
             private readonly string m_TargetPath;
@@ -768,6 +755,31 @@ namespace TiltBrush
                 {
                     m_Stream = null;
                 }
+            }
+        }
+    }
+
+    internal static class StorageMimeTypes
+    {
+        public static string ForPath(string path)
+        {
+            switch (Path.GetExtension(path).ToLowerInvariant())
+            {
+                case ".tilt": return TiltFile.TILT_MIME_TYPE;
+                case ".png": return "image/png";
+                case ".jpg":
+                case ".jpeg": return "image/jpeg";
+                case ".mp4": return "video/mp4";
+                case ".json": return "application/json";
+                case ".txt": return "text/plain";
+                case ".html":
+                case ".htm": return "text/html";
+                case ".lua": return "text/x-lua";
+                case ".ttf": return "font/ttf";
+                case ".otf": return "font/otf";
+                case ".woff": return "font/woff";
+                case ".woff2": return "font/woff2";
+                default: return "application/octet-stream";
             }
         }
     }
