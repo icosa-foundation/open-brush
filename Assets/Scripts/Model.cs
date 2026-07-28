@@ -711,8 +711,10 @@ namespace TiltBrush
                     path,
                     Gsplat.CompressionMode.Spark,
                     sourceCoordinates);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
                     $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
+#endif
 
                 root = new GameObject("ImportedGsplatRoot");
                 GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
