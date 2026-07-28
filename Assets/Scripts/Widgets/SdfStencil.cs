@@ -48,21 +48,23 @@ namespace TiltBrush
             m_Type = StencilType.SDF;
             m_SdfManager = Instantiate(
                 WidgetManager.m_Instance.m_SDFManager, transform, false);
-            m_SdfManager.gameObject.SetActive(true);
             var sdfTransform = m_SdfManager.transform;
             sdfTransform.localPosition = Vector3.zero;
             sdfTransform.localRotation = Quaternion.identity;
             sdfTransform.localScale = Vector3.one;
         }
 
+        protected override void OnShow()
+        {
+            base.OnShow();
+            m_SdfManager.gameObject.SetActive(true);
+        }
+
         protected override void OnHideStart()
         {
             base.OnHideStart();
-            var sdfTransform = m_SdfManager.transform;
-            sdfTransform.SetParent(WidgetManager.m_Instance.transform, false);
-            sdfTransform.localPosition = Vector3.zero;
-            sdfTransform.localRotation = Quaternion.identity;
-            sdfTransform.localScale = Vector3.one;
+            m_SdfManager.gameObject.SetActive(false);
+            m_hasValidHit = false;
         }
 
         // Smoothing for jitter reduction
