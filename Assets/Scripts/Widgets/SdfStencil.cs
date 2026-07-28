@@ -14,12 +14,15 @@
 
 using System;
 using System.Collections.Generic;
+using IsoMesh;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class SdfStencil : StencilWidget
     {
+        private SDFGroup m_SdfManager;
+
         public override Vector3 Extents
         {
             get
@@ -43,8 +46,10 @@ namespace TiltBrush
         {
             base.Awake();
             m_Type = StencilType.SDF;
-            var sdfTransform = WidgetManager.m_Instance.m_SDFManager.transform;
-            sdfTransform.SetParent(transform, false);
+            m_SdfManager = Instantiate(
+                WidgetManager.m_Instance.m_SDFManager, transform, false);
+            m_SdfManager.gameObject.SetActive(true);
+            var sdfTransform = m_SdfManager.transform;
             sdfTransform.localPosition = Vector3.zero;
             sdfTransform.localRotation = Quaternion.identity;
             sdfTransform.localScale = Vector3.one;
@@ -53,19 +58,11 @@ namespace TiltBrush
         protected override void OnHideStart()
         {
             base.OnHideStart();
-            var sdfTransform = WidgetManager.m_Instance.m_SDFManager.transform;
+            var sdfTransform = m_SdfManager.transform;
             sdfTransform.SetParent(WidgetManager.m_Instance.transform, false);
             sdfTransform.localPosition = Vector3.zero;
             sdfTransform.localRotation = Quaternion.identity;
             sdfTransform.localScale = Vector3.one;
-        }
-
-        /// <summary>
-        /// Convenience accessor for the SDF manager's transform in world space.
-        /// </summary>
-        private TrTransform SdfTransform
-        {
-            get { return TrTransform.FromTransform(WidgetManager.m_Instance.m_SDFManager.transform); }
         }
 
         // Smoothing for jitter reduction
@@ -103,7 +100,7 @@ namespace TiltBrush
             foreach (Vector3 rayDir in rayDirections) {
                 Vector3 normalizedDir = rayDir.normalized;
                 
-                if (WidgetManager.m_Instance.m_SDFManager.Raycast(origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal)) {
+                if (m_SdfManager.Raycast(origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal)) {
                     float distance = Vector3.Distance(origin, hitPoint);
                     
                     // Increased range - consider hits up to 0.5 units away
