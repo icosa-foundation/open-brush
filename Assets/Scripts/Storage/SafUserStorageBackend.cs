@@ -206,13 +206,20 @@ namespace TiltBrush
                 throw new IOException($"Unknown SAF document identity: {documentId}");
             }
 
-            string path = MaterializeFile(location, cancellationToken);
+            StorageDocumentId materializationGroupId = location.Document.DocumentId;
+            string path = MaterializeFile(
+                location, materializationGroupId, cancellationToken);
             if (scope == MaterializationScope.DependencyTree &&
                 location.Area == StorageArea.MediaLibraryModels)
             {
-                MaterializeModelDependencies(location, path, cancellationToken);
+                MaterializeModelDependencies(
+                    location,
+                    path,
+                    materializationGroupId,
+                    cancellationToken);
             }
-            EvictMaterializationCache(path);
+            EvictMaterializationCache(
+                GetMaterializationGroupRoot(location.Area, materializationGroupId));
             return path;
         }
 
@@ -223,7 +230,8 @@ namespace TiltBrush
             {
                 throw new IOException($"Unknown SAF document identity: {documentId}");
             }
-            return GetMaterializationPath(location);
+            return GetMaterializationPath(
+                location, location.Document.DocumentId);
         }
 
         internal static string GetAreaPath(StorageArea area)
@@ -309,15 +317,22 @@ namespace TiltBrush
         }
 
         private string MaterializeFile(
-            DocumentLocation location, CancellationToken cancellationToken)
+            DocumentLocation location,
+            StorageDocumentId materializationGroupId,
+            CancellationToken cancellationToken)
         {
             if (location.Document.IsDirectory)
             {
-                MaterializeDirectory(location.Area, location.RelativePath, cancellationToken);
-                return GetMaterializationPath(location);
+                MaterializeDirectory(
+                    location.Area,
+                    location.RelativePath,
+                    materializationGroupId,
+                    cancellationToken);
+                return GetMaterializationPath(location, materializationGroupId);
             }
 
-            string destination = GetMaterializationPath(location);
+            string destination = GetMaterializationPath(
+                location, materializationGroupId);
             Directory.CreateDirectory(Path.GetDirectoryName(destination));
             string temporary = $"{destination}.obtmp-{Guid.NewGuid():N}";
             try
@@ -355,12 +370,16 @@ namespace TiltBrush
         }
 
         private void MaterializeDirectory(
-            StorageArea area, string relativeDirectory, CancellationToken cancellationToken)
+            StorageArea area,
+            string relativeDirectory,
+            StorageDocumentId materializationGroupId,
+            CancellationToken cancellationToken)
         {
             DocumentLocation directoryLocation = FindLocationByPath(area, relativeDirectory);
             if (directoryLocation != null)
             {
-                Directory.CreateDirectory(GetMaterializationPath(directoryLocation));
+                Directory.CreateDirectory(GetMaterializationPath(
+                    directoryLocation, materializationGroupId));
             }
             StorageDirectoryResult listing = List(
                 area, relativeDirectory, cancellationToken);
@@ -374,11 +393,16 @@ namespace TiltBrush
                 DocumentLocation child = GetLocation(document.DocumentId);
                 if (document.IsDirectory)
                 {
-                    MaterializeDirectory(area, child.RelativePath, cancellationToken);
+                    MaterializeDirectory(
+                        area,
+                        child.RelativePath,
+                        materializationGroupId,
+                        cancellationToken);
                 }
                 else
                 {
-                    MaterializeFile(child, cancellationToken);
+                    MaterializeFile(
+                        child, materializationGroupId, cancellationToken);
                 }
             }
         }
@@ -411,6 +435,7 @@ namespace TiltBrush
         private void MaterializeModelDependencies(
             DocumentLocation model,
             string localModelPath,
+            StorageDocumentId materializationGroupId,
             CancellationToken cancellationToken)
         {
             if (model.Document.IsDirectory)
@@ -482,7 +507,9 @@ namespace TiltBrush
                     continue;
                 }
                 string dependencyPath = MaterializeFile(
-                    dependencyLocation, cancellationToken);
+                    dependencyLocation,
+                    materializationGroupId,
+                    cancellationToken);
                 if (Path.GetExtension(dependencyPath).Equals(
                         ".mtl", StringComparison.OrdinalIgnoreCase))
                 {
@@ -511,7 +538,10 @@ namespace TiltBrush
                     cancellationToken);
                 if (dependencyLocation != null && !dependencyLocation.Document.IsDirectory)
                 {
-                    MaterializeFile(dependencyLocation, cancellationToken);
+                    MaterializeFile(
+                        dependencyLocation,
+                        materializationGroupId,
+                        cancellationToken);
                 }
             }
         }
@@ -572,9 +602,11 @@ namespace TiltBrush
             }
         }
 
-        private string GetMaterializationPath(DocumentLocation location)
+        private string GetMaterializationPath(
+            DocumentLocation location, StorageDocumentId materializationGroupId)
         {
-            string root = GetMaterializationAreaRoot(location.Area);
+            string root = GetMaterializationGroupRoot(
+                location.Area, materializationGroupId);
             string fullRoot = Path.GetFullPath(root);
             string destination = Path.GetFullPath(
                 Path.Combine(fullRoot, location.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
@@ -586,6 +618,19 @@ namespace TiltBrush
                 throw new IOException("Materialization path escapes its cache area.");
             }
             return destination;
+        }
+
+        private static string GetMaterializationGroupRoot(
+            StorageArea area, StorageDocumentId materializationGroupId)
+        {
+            if (!materializationGroupId.IsValid)
+            {
+                throw new IOException("Materialization group identity is empty.");
+            }
+            return Path.Combine(
+                GetMaterializationAreaRoot(area),
+                SafTransactionJournal.GetRootNamespaceId(
+                    materializationGroupId.Value));
         }
 
         private static string GetMaterializationAreaRoot(StorageArea area)
