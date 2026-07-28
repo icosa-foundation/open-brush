@@ -24,6 +24,8 @@ namespace TiltBrush
 
     public class ModelCatalog : MonoBehaviour, IReferenceItemCatalog
     {
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultModelsFdV1";
         static public ModelCatalog m_Instance;
 
         [SerializeField] private string[] m_DefaultModels;
@@ -51,6 +53,7 @@ namespace TiltBrush
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
         private bool m_SafScanInProgress;
+        private bool m_SeedingSafDefaults;
 
         public bool IsScanning
         {
@@ -98,8 +101,11 @@ namespace TiltBrush
 
         public void Init()
         {
-            App.InitMediaLibraryPath();
-            App.InitModelLibraryPath(m_DefaultModels);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitMediaLibraryPath();
+                App.InitModelLibraryPath(m_DefaultModels);
+            }
             m_ModelsByRelativePath = new Dictionary<string, Model>();
             m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
@@ -355,9 +361,127 @@ namespace TiltBrush
 
         void Update()
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                UserStorage.Backend.IsReady &&
+                !m_SeedingSafDefaults &&
+                PlayerPrefs.GetInt(kSafSeedPreference, 0) == 0)
+            {
+                StartCoroutine(SeedSafDefaults());
+            }
             if (m_FolderChanged)
             {
                 ForceCatalogScan();
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            var listingFuture = new Future<StorageDirectoryResult>(
+                () => backend.List(
+                    StorageArea.MediaLibraryModels, "", CancellationToken.None),
+                cleanupFunction: null,
+                longRunning: true);
+            StorageDirectoryResult listing = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out listing);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Could not inspect default model destination: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!listing.Success)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+
+            if (listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultModels)
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default model: {resourcePath}");
+                        continue;
+                    }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    string displayName = Path.GetFileName(resourcePath);
+                    var writeFuture = new Future<StorageMutationResult>(
+                        () => WriteSafDefaultModel(
+                            backend, displayName, bytes),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    StorageMutationResult result;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = writeFuture.TryGetResult(out result);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_STORAGE Failed to seed {displayName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            m_SeedingSafDefaults = false;
+                            yield break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    if (!result.Success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                }
+            }
+
+            PlayerPrefs.SetInt(kSafSeedPreference, 1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            ForceCatalogScan();
+        }
+
+        private static StorageMutationResult WriteSafDefaultModel(
+            IUserStorageBackend backend, string displayName, byte[] bytes)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                StorageArea.MediaLibraryModels,
+                displayName,
+                "application/octet-stream",
+                CancellationToken.None))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                return transaction.Commit();
             }
         }
 

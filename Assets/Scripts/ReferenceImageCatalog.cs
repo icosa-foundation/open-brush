@@ -46,6 +46,9 @@ namespace TiltBrush
         private bool m_RunningImageCacheCoroutine;
         private bool m_ResetImageEnumeration;
         private bool m_SafQueryInProgress;
+        private bool m_SeedingSafDefaults;
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultReferenceImagesFdV1";
 
         [SerializeField] private Texture2D m_ErrorImage;
         [SerializeField] protected string[] m_DefaultImages;
@@ -69,8 +72,11 @@ namespace TiltBrush
             m_Instance = this;
             m_RequestedLoads = new Stack<int>();
 
-            App.InitMediaLibraryPath();
-            App.InitReferenceImagePath(m_DefaultImages);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitMediaLibraryPath();
+                App.InitReferenceImagePath(m_DefaultImages);
+            }
             ImageCache.DeleteObsoleteCaches();
             ChangeDirectory(HomeDirectory);
         }
@@ -96,6 +102,7 @@ namespace TiltBrush
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
         protected virtual StorageArea StorageAreaKind => StorageArea.MediaLibraryImages;
+        protected virtual string SafSeedPreferenceKey => kSafSeedPreference;
 
         public virtual bool IsHomeDirectory()
         {
@@ -117,6 +124,14 @@ namespace TiltBrush
 
         void Update()
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                UserStorage.Backend.IsReady &&
+                !m_SeedingSafDefaults &&
+                PlayerPrefs.GetInt(SafSeedPreferenceKey, 0) == 0)
+            {
+                StartCoroutine(SeedSafDefaults());
+            }
+
             // Safest not to interfere with LoadAllImages().
             // This code can mutate m_Images or mutate entries in m_Images.
             // LoadAllImages() can cause hitchy loads, which if processed here can
@@ -149,6 +164,152 @@ namespace TiltBrush
                 {
                     m_RequestedLoads.Push(iImage);
                 }
+            }
+        }
+
+        protected virtual byte[] LoadSafDefaultBytes(string resourcePath)
+        {
+            string loadPath = resourcePath.Substring(0, resourcePath.IndexOf('.'));
+            Texture2D texture = Resources.Load<Texture2D>(loadPath);
+            if (texture == null)
+            {
+                return null;
+            }
+            try
+            {
+                return texture.EncodeToPNG();
+            }
+            finally
+            {
+                Resources.UnloadAsset(texture);
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            var listingFuture = new Future<StorageDirectoryResult>(
+                () => backend.List(StorageAreaKind, "", CancellationToken.None),
+                cleanupFunction: null,
+                longRunning: true);
+            StorageDirectoryResult listing = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out listing);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Could not inspect default media destination: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!listing.Success)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+
+            if (listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultImages)
+                {
+                    byte[] bytes = LoadSafDefaultBytes(resourcePath);
+                    if (bytes == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default media resource: {resourcePath}");
+                        continue;
+                    }
+                    string displayName = Path.GetFileName(resourcePath);
+                    string mimeType = GetImageMimeType(displayName);
+                    var writeFuture = new Future<StorageMutationResult>(
+                        () => WriteSafDefault(
+                            backend, StorageAreaKind, displayName, mimeType, bytes),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    StorageMutationResult result;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = writeFuture.TryGetResult(out result);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_STORAGE Failed to seed {displayName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            m_SeedingSafDefaults = false;
+                            yield break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    if (!result.Success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                }
+            }
+
+            PlayerPrefs.SetInt(SafSeedPreferenceKey, 1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            ForceCatalogScan();
+        }
+
+        private static StorageMutationResult WriteSafDefault(
+            IUserStorageBackend backend,
+            StorageArea area,
+            string displayName,
+            string mimeType,
+            byte[] bytes)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                area, displayName, mimeType, CancellationToken.None))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                return transaction.Commit();
+            }
+        }
+
+        private static string GetImageMimeType(string displayName)
+        {
+            switch (Path.GetExtension(displayName).ToLowerInvariant())
+            {
+                case ".jpg":
+                case ".jpeg":
+                    return "image/jpeg";
+                case ".svg":
+                    return "image/svg+xml";
+                case ".hdr":
+                    return "image/vnd.radiance";
+                case ".txt":
+                    return "text/plain";
+                default:
+                    return "image/png";
             }
         }
 
