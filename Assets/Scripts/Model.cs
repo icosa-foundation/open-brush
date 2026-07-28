@@ -670,27 +670,12 @@ namespace TiltBrush
             {
                 string path = m_Location.AbsolutePath;
                 string ext = m_Location.Extension;
-                GsplatAsset asset;
-                if (ext == ".spz")
-                {
-                    var spzAsset = ScriptableObject.CreateInstance<GsplatAssetSpz>();
-                    spzAsset.LoadFromSpz(path, SourceCoordinates.RUB);
-                    asset = spzAsset;
-                }
-                else if (ext == ".sog")
-                {
-                    var sogAsset = ScriptableObject.CreateInstance<GsplatAssetSog>();
-                    sogAsset.LoadFromSog(path, SourceCoordinates.RDB);
-                    asset = sogAsset;
-                }
-                else
-                {
-                    var plyAsset = ScriptableObject.CreateInstance<GsplatAssetSpark>();
-                    plyAsset.LoadFromPly(path, sourceCoordinates: SourceCoordinates.RUB);
-                    asset = plyAsset;
-                }
-
-                asset.name = Path.GetFileNameWithoutExtension(path);
+                SourceCoordinates sourceCoordinates =
+                    ext == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
+                GsplatAsset asset = GsplatRuntimeLoader.LoadFile(
+                    path,
+                    Gsplat.CompressionMode.Spark,
+                    sourceCoordinates);
 
                 GameObject root = new GameObject("ImportedGsplatRoot");
                 GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
