@@ -143,8 +143,11 @@ namespace TiltBrush
         void OnBackdropModeChanged()
         {
             DetectCurrentBackdropMode();
-            m_PreviousCustomSkyboxPath = SceneSettings.m_Instance.CustomSkyboxPath;
             bool hasCustom = SceneSettings.m_Instance.HasCustomSkybox;
+            if (hasCustom)
+            {
+                m_PreviousCustomSkyboxPath = SceneSettings.m_Instance.CustomSkyboxPath;
+            }
             if (SceneSettings.m_Instance.CurrentEnvironment != null)
             {
                 m_SwitchToPresetSkyboxButton.SetButtonAvailable(SceneSettings.m_Instance.CurrentEnvironment.HasSkybox);
