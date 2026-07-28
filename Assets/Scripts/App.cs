@@ -2351,7 +2351,10 @@ namespace TiltBrush
                 AppExit();
             }
 
-            AutosaveRestoreFileExists = false;
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                AutosaveRestoreFileExists = false;
+            }
         }
 
         void OnPlaybackComplete()
