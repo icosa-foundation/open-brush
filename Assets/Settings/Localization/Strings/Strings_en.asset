@@ -3827,6 +3827,10 @@ MonoBehaviour:
     m_Localized: Gaussian Splat Pose Capture
     m_Metadata:
       m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: Go to https://icosa.gallery/device to get a login code
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

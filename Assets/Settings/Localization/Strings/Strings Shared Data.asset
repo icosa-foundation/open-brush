@@ -3659,6 +3659,10 @@ MonoBehaviour:
     m_Key: LABS_PANEL_SPLAT_CAPTURE_BUTTON_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 520669196650635264
+    m_Key: POPUP_ICOSA_KEYBOARD_LOGIN_INSTRUCTIONS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
