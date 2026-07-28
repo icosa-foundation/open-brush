@@ -114,7 +114,6 @@ namespace TiltBrush
         public void RecordPath()
         {
             string saveName = MultiCamTool.GetSaveName(MultiCamStyle.Video);
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             string sharedVideoPath;
             if (OpenBrushStorage.IsGooglePlayStorageMode &&
                 OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedVideoPath) &&
@@ -122,7 +121,6 @@ namespace TiltBrush
             {
                 return;
             }
-#endif
 
             // See README.md section # Video support and # Camera path support.
             m_Widget.ResetToPathStart();
@@ -179,12 +177,10 @@ namespace TiltBrush
             }
 
             VideoRecorderUtils.StopVideoCapture(saveCapture);
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (saveCapture && OpenBrushStorage.IsGooglePlayStorageMode && !string.IsNullOrEmpty(m_PathCaptureFile))
             {
                 StartCoroutine(PublishPathCaptureWhenReady(m_PathCaptureFile));
             }
-#endif
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(false);
@@ -195,7 +191,6 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
         }
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
         private IEnumerator PublishPathCaptureWhenReady(string capturePath)
         {
             var recorder = m_Manager.GetComponent<VideoRecorder>();
@@ -217,7 +212,6 @@ namespace TiltBrush
                     }
                 });
         }
-#endif
 
         void RefreshVisibility()
         {

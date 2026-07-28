@@ -1666,7 +1666,6 @@ namespace TiltBrush
 
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             string sharedVideoPath;
             if (OpenBrushStorage.IsGooglePlayStorageMode &&
                 OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(filePath, out sharedVideoPath) &&
@@ -1676,7 +1675,6 @@ namespace TiltBrush
             {
                 return;
             }
-#endif
 
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
@@ -1763,7 +1761,6 @@ namespace TiltBrush
 
             if (m_CurrentVideoState == VideoState.Processing && !IsVideoCaptureSaving(recorder))
             {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
                 if (OpenBrushStorage.IsGooglePlayStorageMode && !m_VideoCapturePublished)
                 {
                     m_VideoCapturePublished = true;
@@ -1778,7 +1775,6 @@ namespace TiltBrush
                             }
                         });
                 }
-#endif
                 if (App.GoogleIdentity.LoggedIn)
                 {
                     m_CurrentVideoState = VideoState.ReadyToShare;
@@ -1864,7 +1860,6 @@ namespace TiltBrush
 
         public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             string sharedSnapshotPath;
             if (OpenBrushStorage.IsGooglePlayStorageMode &&
                 OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedSnapshotPath) &&
@@ -1874,7 +1869,6 @@ namespace TiltBrush
             {
                 yield break;
             }
-#endif
 
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1955,7 +1949,6 @@ namespace TiltBrush
                     catch (IOException e) { err = e.Message; }
                     catch (UnauthorizedAccessException e) { err = e.Message; }
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
                     if (err == null && OpenBrushStorage.IsGooglePlayStorageMode)
                     {
                         bool publishDone = false;
@@ -1982,7 +1975,6 @@ namespace TiltBrush
                         }
                         if (!publishSucceeded) { err = publishError; }
                     }
-#endif
 
                     if (err != null)
                     {

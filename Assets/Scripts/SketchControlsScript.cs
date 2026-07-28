@@ -4076,14 +4076,12 @@ namespace TiltBrush
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (OpenBrushStorage.IsGooglePlayStorageMode &&
                 OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(directoryName, out _) &&
                 !AndroidStorageManager.RequireSharedFolderFor("saving models", SaveModel))
             {
                 return;
             }
-#endif
 
             string usdname = Path.Combine(directoryName, basename + ".usd");
             // TODO: export selection only, though this is still only experimental. The blocking
@@ -4093,7 +4091,6 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (OpenBrushStorage.IsGooglePlayStorageMode)
             {
                 OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
@@ -4112,7 +4109,6 @@ namespace TiltBrush
                     });
                 return;
             }
-#endif
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif

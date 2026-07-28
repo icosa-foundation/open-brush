@@ -127,13 +127,11 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (OpenBrushStorage.IsGooglePlayStorageMode &&
                 !AndroidStorageManager.RequireSharedFolderFor("export", ExportScene))
             {
                 return;
             }
-#endif
 
             var current = SaveLoadScript.m_Instance.SceneFile;
             string validHumanName = FileUtils.GetValidFilename(current.HumanName);
@@ -322,25 +320,12 @@ URL=" + kExportDocumentationUrl;
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
             if (OpenBrushStorage.IsGooglePlayStorageMode)
             {
                 OpenBrushStorage.PublishExportToSharedStorageAsync(parent, readmeFilename, (success, error) =>
                 {
                     if (success)
                     {
-                        try
-                        {
-                            Directory.Delete(parent, true);
-                        }
-                        catch (IOException e)
-                        {
-                            Debug.LogWarning($"Failed to delete export staging folder '{parent}': {e.Message}");
-                        }
-                        catch (UnauthorizedAccessException e)
-                        {
-                            Debug.LogWarning($"Failed to delete export staging folder '{parent}': {e.Message}");
-                        }
                         ControllerConsoleScript.m_Instance.AddNewLine(
                             "Located in " + OpenBrushStorage.SharedExportDisplayPath);
                     }
@@ -358,9 +343,6 @@ URL=" + kExportDocumentationUrl;
             {
                 ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
             }
-#else
-            ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
-#endif
         }
 
         public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
