@@ -31,8 +31,11 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
-            if (!string.IsNullOrEmpty(m_previousSkybox)) SceneSettings.m_Instance.LoadCustomSkybox(m_previousSkybox);
             SceneSettings.m_Instance.PassthroughEnabled = m_previousPassthroughState;
+            if (!string.IsNullOrEmpty(m_previousSkybox))
+            {
+                SceneSettings.m_Instance.LoadCustomSkybox(m_previousSkybox);
+            }
             SceneSettings.m_Instance.InGradient = false;
         }
     }
