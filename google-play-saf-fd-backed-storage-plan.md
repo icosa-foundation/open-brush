@@ -776,18 +776,19 @@ API and Lua callers must use the storage backend for user-visible output.
 - A directory payload created by an API remains staged until its transaction
   commits or the user explicitly discards recovery data.
 
-Initial ownership policy:
+Implemented ownership policy:
 
-- Scripts remain app-private unless a separate feature explicitly exports or
-  imports them.
-- Plugins remain app-private unless a separate feature explicitly exports or
-  imports them.
-- Fonts remain app-private unless they are deliberately added to the shared
-  storage contract.
+- Scripts are canonical in the selected SAF tree and are projected into a
+  root-scoped app-private runtime generation for the existing HTML loader.
+- Plugins and `Plugins/LuaModules` are canonical in the selected SAF tree and
+  are projected into a root-scoped app-private runtime generation for Lua.
+- Fonts are canonical in the selected SAF tree and are projected into a
+  root-scoped app-private runtime generation for path-based font APIs.
 - Autosaves remain app-private.
 
-These locations must not be placed below a materialization, staging, or cleanup
-root traversed by SAF operations.
+Projection generations are disposable app-private data. Canonical runtime
+content and autosaves must not be placed below a materialization, staging, or
+cleanup root traversed by unrelated SAF operations.
 
 ## Generated Outputs
 
@@ -845,21 +846,18 @@ Model/export rules:
 
 ## Google Drive Sync
 
-Current `DriveSync` enumerates local paths. A sparse or direct SAF backend means
-unmaterialized documents will not appear in those directories.
+`DriveSync` now enumerates `IUserStorageBackend` rather than local cache paths.
+Uploads open canonical backend documents as streams. Downloads to SAF use safe
+write transactions. Existing folder directions, recursion, extension filters,
+low-space behavior, and non-Google-Play local behavior are retained.
 
-Before release, make an explicit product decision:
-
-1. Refactor Drive sync to enumerate `IUserStorageBackend` entries and open each
-   upload source through streams or temporary materialization; or
-2. disable legacy folder-based Drive sync on the Google Play storage backend
-   and explain the limitation in UI.
-
-Do not leave Drive sync enabled while silently syncing only previously
-materialized files.
-
-The backend-based refactor is preferred if Google Drive sync is a required
-Google Play feature.
+SAF sync state is namespaced by Google account, Drive device root, and selected
+SAF root. The ledger records confirmed content fingerprints so provider
+timestamps cannot create repeat loops. Simultaneous changes preserve the SAF
+canonical file and create a deterministic Drive conflict copy for two-way
+Scripts and Plugins. Upload-only conflicts retain both sides and remain
+deferred rather than overwriting a changed Drive revision. Absence on either
+side is not propagated as deletion.
 
 ## Folder Selection and Readiness
 
@@ -1252,8 +1250,10 @@ snapshot, visible-item thumbnail scheduling, and measured optimization.
 
 ### External Changes Are Not Immediately Reported
 
-Mitigation: refresh on resume, explicit refresh, post-mutation refresh, and
-optional provider observer.
+Mitigation: recursive provider observation for Scripts, Plugins, and Fonts,
+debounced coherent projection replacement, refresh after app-authored
+mutations, and resume-time refresh as a correctness fallback. Manual refresh
+is recovery UI, not the routine path.
 
 ### Media Importers Require Paths
 
@@ -1261,8 +1261,8 @@ Mitigation: narrow on-demand materialization preserving dependency layout.
 
 ### Google Drive Sync Misses Unmaterialized Content
 
-Mitigation: backend-aware sync or explicit feature disablement. Never silently
-sync a partial view.
+Mitigation: backend enumeration and canonical document streams. Drive sync
+does not depend on materialization or projection contents.
 
 ### Save Fails While Provider Is Unavailable
 
@@ -1292,7 +1292,8 @@ The design is ready to replace the mirrored-cache branch when:
 - frame-sequence metadata cannot describe an incomplete publication;
 - path-only media uses bounded materialization;
 - API/Lua-generated media uses the backend;
-- Scripts, Plugins, Fonts, and autosaves remain outside SAF cleanup roots;
+- Scripts, Plugins, and Fonts are canonical in SAF while autosaves remain
+  app-private; all remain outside unrelated SAF cleanup roots;
 - Google Drive sync behavior is explicit and correct;
 - mirror reconciliation and preserved-path machinery are removed;
 - non-Google-Play platform behavior remains unchanged;
@@ -1312,10 +1313,11 @@ The implementation makes these choices explicitly:
    general-purpose recovery snapshot queue.
 3. Google Play SAF sketches use ZIP-format `.tilt` documents. Legacy
    directory-format `.tilt` sketches are not enumerated by the SAF catalog.
-4. Legacy path-based Google Drive folder sync is disabled on the SAF backend
-   with an explicit UI/log explanation. Other platforms retain it.
-5. Existing sketchbook and reference-panel refresh controls perform manual SAF
-   refreshes. Catalogs also refresh after mutations and application resume.
+4. Google Drive folder sync is implemented through `IUserStorageBackend` on
+   SAF. Other platforms retain the local backend and legacy sync decisions.
+5. Scripts, Plugins, and Fonts use provider observation, post-mutation refresh,
+   and application-resume refresh. Existing manual controls remain recovery
+   actions rather than required workflow.
 6. Materializations are document-ID- and root-scoped disposable caches. The
    current provisional pressure limit is 512 MiB per active root and must be
    revisited using the device measurements in this plan.
@@ -1327,8 +1329,13 @@ The implementation makes these choices explicitly:
    retargeted.
 9. Existing save/error UI and structured logs expose recovery and cleanup
    states. No new persistent recovery badge is added.
-10. Scripts, Plugins, Fonts, and autosaves remain app-private and outside every
-    SAF publication/materialization cleanup root.
+10. Scripts, Plugins, and Fonts are canonical in the selected SAF tree and use
+    bounded root-scoped app-private projections. Autosaves remain app-private.
+    Canonical runtime content and autosaves stay outside unrelated
+    publication/materialization cleanup roots.
+11. The detailed runtime projection, migration, provider observation, and
+    Drive conflict rules are recorded in
+    `google-play-saf-feature-parity-plan.md`.
 
 Any later change to these decisions is a product change rather than an
 implementation detail.

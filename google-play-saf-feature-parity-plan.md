@@ -2,7 +2,18 @@
 
 ## Status
 
-Proposed follow-up to `google-play-saf-fd-backed-storage-plan.md`.
+Implemented follow-up to `google-play-saf-fd-backed-storage-plan.md`.
+
+The code now includes first-class SAF trees for `Scripts`, `Plugins`, and
+`Fonts`; root-scoped coherent runtime projections; migration of legacy private
+content; automatic provider observation with resume fallback; transactional
+publication of built-in and copied plugin content; and storage-backend-based
+Google Drive sync with root-scoped conflict state.
+
+Desktop, editor, Google Play Android-symbol, non-Google-Play Android-symbol,
+and Java static compilation pass. Unity and a target Android device are
+unavailable, so the automated Unity tests and device acceptance matrix in this
+document remain release gates and have not been claimed as run.
 
 The FD-backed implementation keeps shared sketches and media canonical in the
 user-selected SAF tree, but it deliberately left three user-managed directories
@@ -22,8 +33,6 @@ FD-backed architecture:
   filesystems;
 - autosaves remain deliberately app-private recovery data;
 - non-Google-Play behavior remains unchanged.
-
-This is a plan only. It does not authorize changing code or product behavior.
 
 ## Problem Statement
 
@@ -1020,7 +1029,6 @@ This document supersedes only these decisions in its
 - manual refresh being an expected path for externally modified runtime
   content.
 
-After implementation and device validation, update that earlier document to
-reference this feature-parity follow-up and record the final behavior. Do not
-delete either plan: together they explain the base architecture and the parity
-cleanup.
+The earlier document now references this feature-parity follow-up and records
+the implemented behavior. Do not delete either plan: together they explain the
+base architecture and the parity cleanup.
