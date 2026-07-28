@@ -129,10 +129,11 @@ namespace TiltBrush
                     break;
 
                 case ColorOverrideMode.Add:
+                    Color32 additiveBaseColor = m_Color;
                     calculatedColor = new Color32(
-                        (byte)Mathf.Min(255, m_Color.r + controlpointColor.Value.r),
-                        (byte)Mathf.Min(255, m_Color.g + controlpointColor.Value.g),
-                        (byte)Mathf.Min(255, m_Color.b + controlpointColor.Value.b),
+                        (byte)Mathf.Min(255, additiveBaseColor.r + controlpointColor.Value.r),
+                        (byte)Mathf.Min(255, additiveBaseColor.g + controlpointColor.Value.g),
+                        (byte)Mathf.Min(255, additiveBaseColor.b + controlpointColor.Value.b),
                         originalAlpha
                     );
                     break;

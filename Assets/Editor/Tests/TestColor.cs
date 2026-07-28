@@ -153,6 +153,26 @@ namespace TiltBrush
                 Single_HslHsvHsl(hsl);
             }
         }
+
+        [Test]
+        public void StrokeAddOverrideUsesByteColorChannels()
+        {
+            var stroke = new StrokeData
+            {
+                m_Color = new Color(0.5f, 0.25f, 1f, 1f),
+                m_ColorOverrideMode = ColorOverrideMode.Add,
+                m_OverrideColors = new List<Color32?>
+                {
+                    new Color32(10, 20, 10, 255),
+                },
+            };
+
+            Color32 color = stroke.GetColor(0);
+
+            Assert.AreEqual(138, color.r);
+            Assert.AreEqual(84, color.g);
+            Assert.AreEqual(255, color.b);
+        }
     }
 
     internal class TestColorPicker : ColorTestUtils
