@@ -694,6 +694,9 @@ namespace TiltBrush
         private static void EvictMaterializationCache(string protectedPath)
         {
             const long maxBytes = 512L * 1024L * 1024L;
+            string protectedRoot = Path.GetFullPath(protectedPath).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string protectedPrefix = protectedRoot + Path.DirectorySeparatorChar;
             string cacheRoot = Path.Combine(
                 Application.persistentDataPath,
                 "OpenBrushSafMaterialized",
@@ -716,7 +719,9 @@ namespace TiltBrush
                     break;
                 }
                 if (string.Equals(
-                        file.FullName, protectedPath, StringComparison.OrdinalIgnoreCase))
+                        file.FullName, protectedRoot, StringComparison.OrdinalIgnoreCase) ||
+                    file.FullName.StartsWith(
+                        protectedPrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
