@@ -57,11 +57,12 @@ namespace TiltBrush
 
         private class SyncedFolder
         {
-            public string AbsoluteLocalPath;
             public string Name;
+            public StorageArea Area;
+            public string RelativeDirectory;
+            public string StorageRootIdentity;
             public string ParentDriveId;
             public DriveData.File Drive;
-            public DirectoryInfo Local;
             public SyncType SyncType;
             public bool Recursive;
             public string[] IncludeExtensions;
@@ -75,7 +76,10 @@ namespace TiltBrush
         public class SyncItem
         {
             public string Name;
-            public string AbsoluteLocalPath;
+            public StorageArea Area;
+            public string RelativeDirectory;
+            public StorageDocumentId DocumentId;
+            public string StorageRootIdentity;
             public string ParentId;
             public string FileId;
             public bool Overwrite;
@@ -188,6 +192,25 @@ namespace TiltBrush
             public void Cancel()
             {
                 TaskAndCts.Cancel();
+            }
+        }
+
+        private sealed class BackendReadStreamSource : IReopenableReadStream
+        {
+            private readonly IUserStorageBackend m_Backend;
+            private readonly StorageDocumentId m_DocumentId;
+
+            public BackendReadStreamSource(
+                IUserStorageBackend backend, StorageDocumentId documentId)
+            {
+                m_Backend = backend;
+                m_DocumentId = documentId;
+            }
+
+            public Stream Open()
+            {
+                return m_Backend.OpenRead(
+                    m_DocumentId, requireSeekable: true, CancellationToken.None);
             }
         }
 
@@ -484,7 +507,7 @@ namespace TiltBrush
             {
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Sketches",
-                    App.UserSketchPath(),
+                    StorageArea.Sketches,
                     deviceRootId,
                     SyncType.Upload,
                     SyncedFolderType.Sketches,
@@ -496,7 +519,7 @@ namespace TiltBrush
                     await m_DriveAccess.CreateFolderAsync("Media Library", deviceRootId, token);
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Images",
-                    App.ReferenceImagePath(),
+                    StorageArea.MediaLibraryImages,
                     mediaLibrary.Id,
                     SyncType.Upload,
                     SyncedFolderType.MediaLibrary,
@@ -505,7 +528,7 @@ namespace TiltBrush
                 {
                     folderSyncs.Add(AddSyncedFolderAsync(
                         "Models",
-                        App.ModelLibraryPath(),
+                        StorageArea.MediaLibraryModels,
                         mediaLibrary.Id,
                         SyncType.Upload,
                         SyncedFolderType.MediaLibrary,
@@ -514,14 +537,14 @@ namespace TiltBrush
                 }
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "BackgroundImages",
-                    App.BackgroundImagesLibraryPath(),
+                    StorageArea.MediaLibraryBackgroundImages,
                     mediaLibrary.Id,
                     SyncType.Upload,
                     SyncedFolderType.MediaLibrary,
                     token));
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Videos",
-                    App.VideoLibraryPath(),
+                    StorageArea.MediaLibraryVideos,
                     mediaLibrary.Id,
                     SyncType.Upload,
                     SyncedFolderType.MediaLibrary,
@@ -531,7 +554,7 @@ namespace TiltBrush
             {
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Snapshots",
-                    App.SnapshotPath(),
+                    StorageArea.Snapshots,
                     deviceRootId,
                     SyncType.Upload,
                     SyncedFolderType.Snapshots,
@@ -541,7 +564,7 @@ namespace TiltBrush
             {
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Scripts",
-                    ApiManager.Instance.UserScriptsPath(),
+                    StorageArea.Scripts,
                     deviceRootId,
                     SyncType.UploadAndDownload,
                     SyncedFolderType.Scripts,
@@ -551,7 +574,7 @@ namespace TiltBrush
 
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Plugins",
-                    LuaManager.Instance.UserPluginsPath(),
+                    StorageArea.Plugins,
                     deviceRootId,
                     SyncType.UploadAndDownload,
                     SyncedFolderType.Scripts,
@@ -566,7 +589,7 @@ namespace TiltBrush
                 {
                     folderSyncs.Add(AddSyncedFolderAsync(
                         "Videos",
-                        App.VideosPath(),
+                        StorageArea.Videos,
                         deviceRootId,
                         SyncType.Upload,
                         SyncedFolderType.Videos,
@@ -574,7 +597,7 @@ namespace TiltBrush
                         excludeExtensions: new[] { ".bat", ".usda" }));
                     folderSyncs.Add(AddSyncedFolderAsync(
                         "VrVideos",
-                        App.VrVideosPath(),
+                        StorageArea.VrVideos,
                         deviceRootId,
                         SyncType.Upload,
                         SyncedFolderType.Videos,
@@ -586,7 +609,7 @@ namespace TiltBrush
             {
                 folderSyncs.Add(AddSyncedFolderAsync(
                     "Exports",
-                    App.UserExportPath(),
+                    StorageArea.Exports,
                     deviceRootId,
                     SyncType.Upload,
                     SyncedFolderType.Exports,
@@ -721,7 +744,7 @@ namespace TiltBrush
         /// Adds a folder to the list of synced folders.
         private async Task AddSyncedFolderAsync(
             string name,
-            string localPath,
+            StorageArea area,
             string parentId,
             SyncType syncType,
             SyncedFolderType folderType,
@@ -734,8 +757,9 @@ namespace TiltBrush
             var folder = new SyncedFolder()
             {
                 Name = name,
-                AbsoluteLocalPath = localPath,
-                Local = Directory.Exists(localPath) ? new DirectoryInfo(localPath) : null,
+                Area = area,
+                RelativeDirectory = "",
+                StorageRootIdentity = UserStorage.Backend.RootIdentity,
                 Drive = await m_DriveAccess.GetFolderAsync(name, parentId, token),
                 SyncType = syncType,
                 Recursive = recursive,
@@ -803,10 +827,18 @@ namespace TiltBrush
         /// of transfers in each direction to sync them.
         private async Task EnumerateFolderTransfersAsync(SyncedFolder folder, CancellationToken token)
         {
-            if (folder.Local == null && folder.Download)
+            IUserStorageBackend backend = UserStorage.Backend;
+            if (!backend.IsReady)
             {
-                Debug.Log($"Creating new local directory at {folder.AbsoluteLocalPath}.");
-                folder.Local = Directory.CreateDirectory(folder.AbsoluteLocalPath);
+                throw new IOException("User storage is unavailable for Google Drive sync.");
+            }
+            if (!string.Equals(
+                    folder.StorageRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                throw new OperationCanceledException(
+                    "The selected user-storage root changed during Google Drive sync.");
             }
 
             if (folder.Drive == null && folder.Upload)
@@ -816,14 +848,25 @@ namespace TiltBrush
                     folder.Name, folder.ParentDriveId, CancellationToken.None);
             }
 
-            if (folder.Drive == null || folder.Local == null || m_IsCancelling)
+            if (folder.Drive == null || m_IsCancelling)
             {
                 return;
             }
 
+            StorageDirectoryResult localResult = backend.List(
+                folder.Area, folder.RelativeDirectory, token);
+            if (!localResult.Success && localResult.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException(
+                    $"Could not enumerate {folder.Area}/{folder.RelativeDirectory}: " +
+                    $"{localResult.Error}");
+            }
+            IReadOnlyList<StorageDocument> localContents = localResult.Success
+                ? localResult.Documents
+                : Array.Empty<StorageDocument>();
             var driveContents =
                 await m_DriveAccess.GetFolderContentsAsync(folder.Drive.Id, true, true,
-                    CancellationToken.None);
+                    token);
             var driveFiles = new Dictionary<string, DriveData.File>();
             foreach (var item in driveContents
                 .Where(x => x.MimeType != "application/vnd.google-apps.folder"))
@@ -841,79 +884,101 @@ namespace TiltBrush
                     driveFiles.Add(item.Name, item);
                 }
             }
-            var localFiles = folder.Local.GetFiles().ToDictionary(x => x.Name);
-            if (folder.IncludeExtensions != null)
+            var localFiles = new Dictionary<string, StorageDocument>(
+                StringComparer.OrdinalIgnoreCase);
+            foreach (StorageDocument document in localContents.Where(
+                document => !document.IsDirectory))
             {
-                localFiles = localFiles.Values
-                    .Where(x => folder.IncludeExtensions.Contains(Path.GetExtension(x.Name)))
-                    .ToDictionary(x => x.Name);
-                driveFiles = driveFiles.Values
-                    .Where(x => folder.IncludeExtensions.Contains(Path.GetExtension(x.Name)))
-                    .ToDictionary(x => x.Name);
+                if (!localFiles.TryAdd(document.DisplayName, document))
+                {
+                    throw new IOException(
+                        $"Duplicate storage document name: " +
+                        $"{CombineLogicalPath(folder.RelativeDirectory, document.DisplayName)}");
+                }
             }
-            if (folder.ExcludeExtensions != null)
-            {
-                localFiles = localFiles.Values
-                    .Where(x => !folder.ExcludeExtensions.Contains(Path.GetExtension(x.Name)))
-                    .ToDictionary(x => x.Name);
-                driveFiles = driveFiles.Values
-                    .Where(x => !folder.ExcludeExtensions.Contains(Path.GetExtension(x.Name)))
-                    .ToDictionary(x => x.Name);
-            }
-            var localSet = new HashSet<string>(localFiles.Keys);
-            var driveSet = new HashSet<string>(driveFiles.Keys);
+            localFiles = localFiles.Values
+                .Where(document => FolderIncludesFile(folder, document.DisplayName))
+                .ToDictionary(
+                    document => document.DisplayName,
+                    document => document,
+                    StringComparer.OrdinalIgnoreCase);
+            driveFiles = driveFiles.Values
+                .Where(file => FolderIncludesFile(folder, file.Name))
+                .ToDictionary(
+                    file => file.Name,
+                    file => file,
+                    StringComparer.OrdinalIgnoreCase);
+            var localSet = new HashSet<string>(
+                localFiles.Keys, StringComparer.OrdinalIgnoreCase);
+            var driveSet = new HashSet<string>(
+                driveFiles.Keys, StringComparer.OrdinalIgnoreCase);
 
             if (folder.Download)
             {
                 var toDownload = driveFiles
-                    .Where(x => !localSet.Contains(x.Key) || DriveAccess.IsNewer(x.Value, localFiles[x.Key]))
+                    .Where(x => !localSet.Contains(x.Key) ||
+                        IsDriveNewer(x.Value, localFiles[x.Key]))
                     .Select(x => x.Value).ToArray();
                 foreach (var file in toDownload)
                 {
-                    if (m_Transfers.Keys.Any(x => x.Item.Name == file.Name &&
-                        x.Item.AbsoluteLocalPath == folder.Local.FullName))
+                    if (m_Transfers.Keys.Any(transfer => IsSameStoragePath(
+                        transfer.Item, folder.Area, folder.RelativeDirectory, file.Name)))
                     {
                         continue;
                     }
                     m_ToTransfer.Insert(new SyncItem
                     {
                         Name = file.Name,
-                        AbsoluteLocalPath = folder.Local.FullName,
+                        Area = folder.Area,
+                        RelativeDirectory = folder.RelativeDirectory,
+                        DocumentId = localSet.Contains(file.Name)
+                            ? localFiles[file.Name].DocumentId
+                            : default,
+                        StorageRootIdentity = folder.StorageRootIdentity,
                         FileId = file.Id,
                         Overwrite = localSet.Contains(file.Name),
-                        LastModified = file.ModifiedTime.Value,
+                        LastModified = file.ModifiedTime ?? DateTime.MinValue,
                         Upload = false,
-                        Size = file.Size.Value,
+                        Size = file.Size ?? 0,
                         FolderType = folder.FolderType,
                     });
-                    m_TotalBytesToTransfer += file.Size.Value;
+                    m_TotalBytesToTransfer += file.Size ?? 0;
                 }
             }
 
             if (folder.Upload)
             {
                 var toUpload = localFiles
-                    .Where(x => !driveSet.Contains(x.Key) || DriveAccess.IsNewer(x.Value, driveFiles[x.Key]))
+                    .Where(x => !driveSet.Contains(x.Key) ||
+                        IsStorageDocumentNewer(x.Value, driveFiles[x.Key]))
                     .Select(x => x.Value).ToArray();
                 foreach (var file in toUpload)
                 {
-                    if (m_Transfers.Keys.Any(x => x.Item.Name == file.Name &&
-                        x.Item.AbsoluteLocalPath == folder.Local.FullName))
+                    if (m_Transfers.Keys.Any(transfer => IsSameStoragePath(
+                        transfer.Item,
+                        folder.Area,
+                        folder.RelativeDirectory,
+                        file.DisplayName)))
                     {
                         continue;
                     }
                     m_ToTransfer.Insert(new SyncItem()
                     {
-                        Name = file.Name,
-                        AbsoluteLocalPath = folder.Local.FullName,
+                        Name = file.DisplayName,
+                        Area = folder.Area,
+                        RelativeDirectory = folder.RelativeDirectory,
+                        DocumentId = file.DocumentId,
+                        StorageRootIdentity = folder.StorageRootIdentity,
                         ParentId = folder.Drive.Id,
-                        FileId = driveSet.Contains(file.Name) ? driveFiles[file.Name].Id : null,
-                        LastModified = file.LastWriteTime,
+                        FileId = driveSet.Contains(file.DisplayName)
+                            ? driveFiles[file.DisplayName].Id
+                            : null,
+                        LastModified = file.LastModified ?? DateTime.MinValue,
                         Upload = true,
-                        Size = file.Length,
+                        Size = file.Size ?? 0,
                         FolderType = folder.FolderType,
                     });
-                    m_TotalBytesToTransfer += file.Length;
+                    m_TotalBytesToTransfer += file.Size ?? 0;
                 }
             }
 
@@ -922,14 +987,21 @@ namespace TiltBrush
                 return;
             }
 
-            var driveFolders = driveContents.Where(x => x.MimeType == "application/vnd.google-apps.folder")
-                .ToDictionary(x => x.Name);
-            var localFolders = folder.Local.GetDirectories().ToDictionary(x => x.Name);
-            var folderNames = new HashSet<string>(driveFolders.Keys.Concat(localFolders.Keys));
+            var driveFolders = driveContents
+                .Where(x => x.MimeType == "application/vnd.google-apps.folder")
+                .ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
+            var localFolders = localContents
+                .Where(document => document.IsDirectory)
+                .ToDictionary(
+                    document => document.DisplayName,
+                    document => document,
+                    StringComparer.OrdinalIgnoreCase);
+            var folderNames = new HashSet<string>(
+                driveFolders.Keys.Concat(localFolders.Keys),
+                StringComparer.OrdinalIgnoreCase);
             foreach (var subFolderName in folderNames)
             {
                 bool OnDrive = driveFolders.ContainsKey(subFolderName);
-                bool OnLocal = localFolders.ContainsKey(subFolderName);
 
                 if (m_IsCancelling)
                 {
@@ -939,16 +1011,71 @@ namespace TiltBrush
                 var subfolder = new SyncedFolder
                 {
                     Name = subFolderName,
-                    AbsoluteLocalPath = Path.Combine(folder.AbsoluteLocalPath, subFolderName),
+                    Area = folder.Area,
+                    RelativeDirectory = CombineLogicalPath(
+                        folder.RelativeDirectory, subFolderName),
+                    StorageRootIdentity = folder.StorageRootIdentity,
                     Drive = OnDrive ? driveFolders[subFolderName] : null,
-                    Local = OnLocal ? localFolders[subFolderName] : null,
                     SyncType = folder.SyncType,
                     Recursive = folder.Recursive,
                     ParentDriveId = folder.Drive.Id,
+                    IncludeExtensions = folder.IncludeExtensions,
+                    ExcludeExtensions = folder.ExcludeExtensions,
                     FolderType = folder.FolderType,
                 };
                 await EnumerateFolderTransfersAsync(subfolder, token);
             }
+        }
+
+        private static bool FolderIncludesFile(SyncedFolder folder, string displayName)
+        {
+            string extension = Path.GetExtension(displayName);
+            return (folder.IncludeExtensions == null ||
+                    folder.IncludeExtensions.Contains(
+                        extension, StringComparer.OrdinalIgnoreCase)) &&
+                (folder.ExcludeExtensions == null ||
+                 !folder.ExcludeExtensions.Contains(
+                     extension, StringComparer.OrdinalIgnoreCase));
+        }
+
+        private static bool IsDriveNewer(
+            DriveData.File driveFile, StorageDocument storageDocument)
+        {
+            return driveFile.ModifiedTime.HasValue &&
+                storageDocument.LastModified.HasValue &&
+                (driveFile.ModifiedTime.Value - storageDocument.LastModified.Value)
+                    .TotalSeconds >= 2.5;
+        }
+
+        private static bool IsStorageDocumentNewer(
+            StorageDocument storageDocument, DriveData.File driveFile)
+        {
+            return driveFile.ModifiedTime.HasValue &&
+                storageDocument.LastModified.HasValue &&
+                (storageDocument.LastModified.Value - driveFile.ModifiedTime.Value)
+                    .TotalSeconds >= 2.5;
+        }
+
+        private static bool IsSameStoragePath(
+            SyncItem item,
+            StorageArea area,
+            string relativeDirectory,
+            string displayName)
+        {
+            return item.Area == area &&
+                string.Equals(
+                    item.RelativeDirectory,
+                    relativeDirectory,
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(
+                    item.Name, displayName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string CombineLogicalPath(string directory, string name)
+        {
+            return string.IsNullOrEmpty(directory)
+                ? name
+                : $"{directory.TrimEnd('/', '\\')}/{name}";
         }
 
         // Update checks to see if any transfer tasks are ready to be performed and kicks them off
@@ -976,7 +1103,6 @@ namespace TiltBrush
                 {
                     m_BytesTransferred += transfer.BytesTransferred;
                     m_Transfers.TryRemove(transfer, out _);
-                    string fileName = Path.Combine(transfer.Item.AbsoluteLocalPath, transfer.Item.Name);
                 }
 
                 // Kick off transfers in empty slots
@@ -998,20 +1124,23 @@ namespace TiltBrush
         private async Task UploadItemAsync(Transfer transfer, CancellationToken token)
         {
             var item = transfer.Item;
-            string path = Path.Combine(item.AbsoluteLocalPath, item.Name);
-            FileInfo fileInfo = new FileInfo(path);
-            var modified = fileInfo.LastWriteTime;
+            IUserStorageBackend backend = UserStorage.Backend;
+            EnsureTransferRootMatches(item, backend);
             var metadata = new DriveData.File
             {
                 Name = item.Name,
-                ModifiedTime = modified,
                 Parents = new[] { item.ParentId },
             };
+            if (item.LastModified != DateTime.MinValue)
+            {
+                metadata.ModifiedTime = item.LastModified;
+            }
             switch (Path.GetExtension(item.Name))
             {
                 case ".tilt":
                     metadata.MimeType = "application/octet-stream";
-                    metadata.ContentHints = await CreateTiltFileContentHintsAsync(path);
+                    metadata.ContentHints = await CreateTiltFileContentHintsAsync(
+                        backend, item.DocumentId, item.Name);
                     break;
                 case ".jpg":
                 case ".jpeg":
@@ -1055,7 +1184,8 @@ namespace TiltBrush
 
             try
             {
-                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (Stream stream = backend.OpenRead(
+                    item.DocumentId, requireSeekable: true, token))
                 {
                     if (item.FileId == null)
                     {
@@ -1084,32 +1214,34 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(
                     "Google Drive low space warning! Drive backup stopped.", bNotify: true);
             }
-            if (Path.GetExtension(path) == ".tilt")
+            EnsureTransferRootMatches(item, backend);
+            if (Path.GetExtension(item.Name) == ".tilt")
             {
                 var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
                 if (item.FileId == null)
                 {
-                    driveSet.NotifySketchCreated(path);
+                    driveSet.NotifySketchCreated(null);
                 }
                 else
                 {
-                    driveSet.NotifySketchChanged(path);
+                    driveSet.NotifySketchChanged(null);
                 }
             }
         }
 
-        private async Task<DriveData.File.ContentHintsData> CreateTiltFileContentHintsAsync(string path)
+        private async Task<DriveData.File.ContentHintsData> CreateTiltFileContentHintsAsync(
+            IUserStorageBackend backend,
+            StorageDocumentId documentId,
+            string displayName)
         {
             var hints = new DriveData.File.ContentHintsData();
-            var fileInfo = new DiskSceneFileInfo(path);
-            using (var thumbStream = fileInfo.GetReadStream(TiltFile.FN_THUMBNAIL))
+            var tiltFile = new TiltFile(
+                new BackendReadStreamSource(backend, documentId), displayName);
+            using (Stream thumbStream = tiltFile.GetReadStream(TiltFile.FN_THUMBNAIL))
+            using (var thumbnail = new MemoryStream())
             {
-                var thumbBytes = new byte[thumbStream.Length];
-                int read = await thumbStream.ReadAsync(thumbBytes, 0, thumbBytes.Length);
-                if (read != thumbBytes.Length)
-                {
-                    return null;
-                }
+                await thumbStream.CopyToAsync(thumbnail);
+                byte[] thumbBytes = thumbnail.ToArray();
 
                 // The thumbnail has to be encoded as URL-safe Base64, which is not the Base64 that C# encodes
                 // to. (RFC 4648 section 5). This section converts it to be url-safe.
@@ -1138,8 +1270,60 @@ namespace TiltBrush
         private async Task DownloadItemAsync(Transfer transfer, CancellationToken token)
         {
             var item = transfer.Item;
-            string path = Path.Combine(item.AbsoluteLocalPath, item.Name);
+            IUserStorageBackend backend = UserStorage.Backend;
+            EnsureTransferRootMatches(item, backend);
+            if (backend.Kind == StorageBackendKind.Local)
+            {
+                await DownloadLocalItemAsync(transfer, backend, token);
+                return;
+            }
+
+            string relativePath = CombineLogicalPath(
+                item.RelativeDirectory, item.Name);
+            StorageMutationResult commit;
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                item.Area,
+                relativePath,
+                StorageMimeTypes.ForPath(item.Name),
+                token,
+                item.DocumentId))
+            {
+                using (Stream stream = transaction.OpenWrite())
+                {
+                    await m_DriveAccess.DownloadFileAsync(
+                        item.FileId, stream, token, transfer);
+                }
+                EnsureTransferRootMatches(item, backend);
+                commit = transaction.Commit();
+            }
+            if (!commit.Success)
+            {
+                throw new IOException(commit.Error);
+            }
+            if (item.Area == StorageArea.Scripts ||
+                item.Area == StorageArea.Plugins ||
+                item.Area == StorageArea.Fonts)
+            {
+                RuntimeProjectionResult refresh =
+                    await UserRuntimeContent.Instance.EnsureCurrentAsync(
+                        item.Area, token);
+                if (!refresh.Success)
+                {
+                    throw new IOException(
+                        $"Drive download committed but runtime refresh failed: {refresh.Error}");
+                }
+            }
+        }
+
+        private async Task DownloadLocalItemAsync(
+            Transfer transfer,
+            IUserStorageBackend backend,
+            CancellationToken token)
+        {
+            SyncItem item = transfer.Item;
+            string path = GetLocalSyncPath(item);
             string tempPath = path + ".partial";
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             if (File.Exists(path))
             {
                 // The following moves the file to the recycling bin, which is safer in case we do the wrong
@@ -1164,6 +1348,7 @@ namespace TiltBrush
                 }
                 throw;
             }
+            EnsureTransferRootMatches(item, backend);
             if (Path.GetExtension(path) == ".tilt")
             {
                 if (item.Overwrite)
@@ -1177,6 +1362,42 @@ namespace TiltBrush
             }
         }
 
+        private static void EnsureTransferRootMatches(
+            SyncItem item, IUserStorageBackend backend)
+        {
+            if (!ReferenceEquals(backend, UserStorage.Backend) ||
+                !backend.IsReady ||
+                !string.Equals(
+                    item.StorageRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                throw new OperationCanceledException(
+                    "The selected user-storage root changed during Google Drive transfer.");
+            }
+        }
+
+        private static string GetLocalSyncPath(SyncItem item)
+        {
+            string root = Path.GetFullPath(
+                LocalUserStorageBackend.GetAreaRoot(item.Area));
+            string relativePath = CombineLogicalPath(
+                item.RelativeDirectory, item.Name)
+                .Replace('/', Path.DirectorySeparatorChar);
+            string path = Path.GetFullPath(Path.Combine(root, relativePath));
+            string prefix = root.TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (!path.StartsWith(prefix, comparison))
+            {
+                throw new IOException("Google Drive destination escapes its storage area.");
+            }
+            return path;
+        }
+
         public async Task CancelTransferAsync(string filename)
         {
             if (!Initialized)
@@ -1184,9 +1405,11 @@ namespace TiltBrush
                 return;
             }
             string name = Path.GetFileName(filename);
-            string path = Path.GetDirectoryName(filename);
-            var transfer = m_Transfers.Keys.FirstOrDefault(x => x.Item.Name == name &&
-                x.Item.AbsoluteLocalPath == path);
+            var transfer = m_Transfers.Keys.FirstOrDefault(x =>
+                x.Item.Name == name &&
+                x.Item.DocumentId.IsValid &&
+                string.Equals(
+                    x.Item.DocumentId.Value, filename, StringComparison.OrdinalIgnoreCase));
             if (transfer != null)
             {
                 transfer.TaskAndCts.Cancel();
