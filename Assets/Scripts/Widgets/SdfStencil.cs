@@ -72,6 +72,7 @@ namespace TiltBrush
         private Vector3 m_lastHitNormal = Vector3.forward;
         private bool m_hasValidHit = false;
         private const float SMOOTHING_FACTOR = 0.7f;
+        private const float MAX_RAYCAST_DISTANCE = 0.5f;
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
@@ -102,11 +103,13 @@ namespace TiltBrush
             foreach (Vector3 rayDir in rayDirections) {
                 Vector3 normalizedDir = rayDir.normalized;
                 
-                if (m_SdfManager.Raycast(origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal)) {
+                if (m_SdfManager.Raycast(
+                    origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal,
+                    MAX_RAYCAST_DISTANCE)) {
                     float distance = Vector3.Distance(origin, hitPoint);
                     
-                    // Increased range - consider hits up to 0.5 units away
-                    if (distance > 0.05f && distance < closestDistance) {
+                    if (distance > 0.05f && distance <= MAX_RAYCAST_DISTANCE &&
+                        distance < closestDistance) {
                         closestHit = hitPoint;
                         closestNormal = hitNormal;
                         closestDistance = distance;
