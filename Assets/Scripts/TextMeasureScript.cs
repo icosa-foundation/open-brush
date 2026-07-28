@@ -28,6 +28,7 @@ namespace TiltBrush
     {
         static public TextMeasureScript m_Instance;
         private TextMeshPro m_TextMesh;
+        private bool m_HasLoggedMissingFont;
 
         //dictionary key-- override IEquatable to cut down on GC and increase speed
         private struct TextParams : IEquatable<TextParams>
@@ -38,8 +39,9 @@ namespace TiltBrush
 
             public bool Equals(TextParams other)
             {
-                return (m_FontSize == other.m_FontSize) &&
-                    m_Text.Equals(other.m_Text) && m_Font.name.Equals(other.m_Font.name);
+                return m_FontSize == other.m_FontSize &&
+                    m_Font == other.m_Font &&
+                    string.Equals(m_Text, other.m_Text, StringComparison.Ordinal);
             }
             public override bool Equals(object other)
             {
@@ -51,17 +53,22 @@ namespace TiltBrush
             }
             public override int GetHashCode()
             {
-                return m_FontSize.GetHashCode() ^ m_Text.GetHashCode();
+                unchecked
+                {
+                    int hash = m_FontSize.GetHashCode();
+                    hash = (hash * 397) ^ (m_Font != null ? m_Font.GetInstanceID() : 0);
+                    hash = (hash * 397) ^
+                        (m_Text != null ? StringComparer.Ordinal.GetHashCode(m_Text) : 0);
+                    return hash;
+                }
             }
             public static bool operator ==(TextParams a, TextParams b)
             {
-                return a.m_FontSize == b.m_FontSize &&
-                    a.m_Text.Equals(b.m_Text) && a.m_Font.name.Equals(b.m_Font.name);
+                return a.Equals(b);
             }
             public static bool operator !=(TextParams a, TextParams b)
             {
-                return a.m_FontSize == b.m_FontSize &&
-                    a.m_Text.Equals(b.m_Text) && a.m_Font.name.Equals(b.m_Font.name);
+                return !a.Equals(b);
             }
         }
         private Dictionary<TextParams, Vector2> m_StringSizeMap;
@@ -85,6 +92,8 @@ namespace TiltBrush
 
         public float GetTextWidth(float fFontSize, TMP_FontAsset rFont, string sText)
         {
+            sText = sText ?? string.Empty;
+
             //look for this string in the dictionary first
             TextParams rParams = new TextParams
             {
@@ -105,6 +114,8 @@ namespace TiltBrush
 
         public float GetTextHeight(float fFontSize, TMP_FontAsset rFont, string sText)
         {
+            sText = sText ?? string.Empty;
+
             //look for this string in the dictionary first
             TextParams rParams = new TextParams
             {
@@ -125,6 +136,20 @@ namespace TiltBrush
 
         Vector2 AddNewString(TextParams rParams, float fFontSize, TMP_FontAsset rFont, string sText)
         {
+            if (rFont == null)
+            {
+                if (!m_HasLoggedMissingFont)
+                {
+                    Debug.LogWarning(
+                        "TEXT_MEASURE_NULL_FONT Falling back to estimated text dimensions");
+                    m_HasLoggedMissingFont = true;
+                }
+
+                Vector2 fallbackSize = new Vector2(sText.Length * fFontSize * 0.5f, fFontSize);
+                m_StringSizeMap.Add(rParams, fallbackSize);
+                return fallbackSize;
+            }
+
             m_TextMesh.fontSize = fFontSize;
             m_TextMesh.font = rFont;
             m_TextMesh.text = sText;
