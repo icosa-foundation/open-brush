@@ -856,7 +856,7 @@ namespace TiltBrush
                         string.Format("Error detected in sketch '{0}'.\nSuggest re-saving.",
                             fileInfo.HumanName));
                     Debug.LogWarning(string.Format("Error reading meteadata for {0}.\n{1}",
-                        fileInfo.FullPath,
+                        fileInfo.FullPath ?? fileInfo.HumanName,
                         SaveLoadScript.m_Instance.LastMetadataError));
                 }
                 if (jsonData.RequiredCapabilities != null)

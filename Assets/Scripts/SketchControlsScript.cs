@@ -3992,7 +3992,45 @@ namespace TiltBrush
             for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
-                using (var coroutine = LoadAndExport(rInfo.FullPath))
+                string loadPath = rInfo.FullPath;
+                if (rInfo is SafSceneFileInfo safInfo)
+                {
+                    var materialization = new Future<string>(
+                        () => UserStorage.Backend.Materialize(
+                            safInfo.Document.DocumentId,
+                            MaterializationScope.File,
+                            default),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    bool failed = false;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = materialization.TryGetResult(out loadPath);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_MATERIALIZE Could not export {rInfo.HumanName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            failed = true;
+                            break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    materialization.Close();
+                    if (failed)
+                    {
+                        continue;
+                    }
+                }
+                using (var coroutine = LoadAndExport(loadPath))
                 {
                     while (coroutine.MoveNext())
                     {
@@ -4071,8 +4109,12 @@ namespace TiltBrush
 #if USD_SUPPORTED
             var current = SaveLoadScript.m_Instance.SceneFile;
             string basename = (current.Valid)
-                ? Path.GetFileNameWithoutExtension(current.FullPath)
+                ? FileUtils.GetValidFilename(current.HumanName)
                 : "Untitled";
+            if (string.IsNullOrEmpty(basename))
+            {
+                basename = "Untitled";
+            }
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
@@ -5626,7 +5668,8 @@ namespace TiltBrush
                     RenderTexture.active = prev;
                     byte[] jpegBytes = texture.EncodeToJPG();
                     string filename =
-                        Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
+                        FileUtils.GetValidFilename(
+                            SaveLoadScript.m_Instance.SceneFile.HumanName);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
                 }
                 finally

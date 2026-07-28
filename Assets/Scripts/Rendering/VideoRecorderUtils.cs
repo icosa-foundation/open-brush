@@ -312,7 +312,12 @@ namespace TiltBrush
                         if (App.UserConfig.Video.SaveCameraPath && saveCapture)
                         {
                             m_UsdPathSerializer.Save();
-                            CreateOfflineRenderBatchFile(SaveLoadScript.m_Instance.SceneFile.FullPath, m_UsdPath);
+                            string sketchPath =
+                                SaveLoadScript.m_Instance.SceneFile.FullPath;
+                            if (!string.IsNullOrEmpty(sketchPath))
+                            {
+                                CreateOfflineRenderBatchFile(sketchPath, m_UsdPath);
+                            }
                         }
                     }
                 }
