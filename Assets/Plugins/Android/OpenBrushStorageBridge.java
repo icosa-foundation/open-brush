@@ -146,13 +146,24 @@ public class OpenBrushStorageBridge {
             }
         }
 
-        if (hasPersistedGrant
-                && canQueryRoot(context)
-                && OPEN_BRUSH_FOLDER_NAME.equals(getOpenBrushFolderDisplayName(context))) {
-            return true;
+        if (!hasPersistedGrant) {
+            clearOpenBrushFolder(context);
+            return false;
         }
 
-        clearOpenBrushFolder(context);
+        if (!canQueryRoot(context)) {
+            // A provider can be temporarily unavailable or return a null cursor. Preserve the
+            // persisted identity so recovery work remains attached to the correct root.
+            return false;
+        }
+
+        String displayName = getOpenBrushFolderDisplayName(context);
+        if (OPEN_BRUSH_FOLDER_NAME.equals(displayName)) {
+            return true;
+        }
+        if (displayName.length() > 0) {
+            clearOpenBrushFolder(context);
+        }
         return false;
     }
 
