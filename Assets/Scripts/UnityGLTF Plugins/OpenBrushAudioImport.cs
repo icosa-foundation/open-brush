@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using GLTF.Schema;
+using Newtonsoft.Json.Linq;
 using TiltBrush;
 using UnityEngine;
 
@@ -33,7 +34,53 @@ namespace UnityGLTF.Plugins
 
         public override GLTFImportPluginContext CreateInstance(GLTFImportContext context)
         {
+            GLTFProperty.RegisterExtension(new OpenBrushAudioEmitterFactory());
             return new OpenBrushAudioImportContext(context);
+        }
+    }
+
+    internal class OpenBrushAudioEmitterExtension : KHR_audio_emitter
+    {
+        public readonly HashSet<KHR_AudioEmitter> EmittersWithExplicitGain = new();
+    }
+
+    internal class OpenBrushAudioEmitterFactory : ExtensionFactory
+    {
+        private readonly KHR_audio_emitterFactory _defaultFactory = new();
+
+        public OpenBrushAudioEmitterFactory()
+        {
+            ExtensionName = KHR_audio_emitter.ExtensionName;
+        }
+
+        public override IExtension Deserialize(GLTFRoot root, JProperty extensionToken)
+        {
+            IExtension parsedExtension = _defaultFactory.Deserialize(root, extensionToken);
+            if (parsedExtension is not KHR_audio_emitter parsedAudioExtension)
+            {
+                return parsedExtension;
+            }
+
+            var audioExtension = new OpenBrushAudioEmitterExtension
+            {
+                audio = parsedAudioExtension.audio,
+                sources = parsedAudioExtension.sources,
+                emitters = parsedAudioExtension.emitters,
+            };
+
+            if (extensionToken.Value[nameof(KHR_audio_emitter.emitters)] is JArray emitterTokens)
+            {
+                int emitterCount = Math.Min(emitterTokens.Count, audioExtension.emitters.Count);
+                for (int i = 0; i < emitterCount; i++)
+                {
+                    if (emitterTokens[i]?[nameof(KHR_AudioEmitter.gain)] != null)
+                    {
+                        audioExtension.EmittersWithExplicitGain.Add(audioExtension.emitters[i]);
+                    }
+                }
+            }
+
+            return audioExtension;
         }
     }
 
@@ -41,6 +88,7 @@ namespace UnityGLTF.Plugins
     {
         private readonly GLTFImportContext _context;
         private KHR_audio_emitter _audioExtension;
+        private readonly HashSet<KHR_AudioEmitter> _emittersWithExplicitGain = new();
 
         private struct PendingAudioNode
         {
@@ -65,7 +113,14 @@ namespace UnityGLTF.Plugins
         {
             if (gltfRoot.Extensions == null) return;
             if (gltfRoot.Extensions.TryGetValue(KHR_audio_emitter.ExtensionName, out var ext))
+            {
                 _audioExtension = ext as KHR_audio_emitter;
+                if (ext is OpenBrushAudioEmitterExtension openBrushAudioExtension)
+                {
+                    _emittersWithExplicitGain.UnionWith(
+                        openBrushAudioExtension.EmittersWithExplicitGain);
+                }
+            }
         }
 
         public override void OnAfterImportNode(Node node, int nodeIndex, GameObject nodeObject)
@@ -180,7 +235,8 @@ namespace UnityGLTF.Plugins
             }
 
             bool isSpatial = emitter.type == "positional";
-            float gain = (emitter.gain > 0 ? emitter.gain : 1f) * (source.gain ?? 1f);
+            float emitterGain = _emittersWithExplicitGain.Contains(emitter) ? emitter.gain : 1f;
+            float gain = emitterGain * (source.gain ?? 1f);
             bool loop = source.loop ?? true;
             bool autoPlay = source.autoPlay ?? true;
 
