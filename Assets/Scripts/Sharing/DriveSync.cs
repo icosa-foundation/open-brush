@@ -1093,6 +1093,14 @@ namespace TiltBrush
                 }
                 if (!storageMatches && driveMatches)
                 {
+                    if (!folder.Download &&
+                        string.Equals(
+                            entry.LastDirection,
+                            "ConflictDeferred",
+                            StringComparison.Ordinal))
+                    {
+                        return SyncDecision.Conflict;
+                    }
                     return folder.Upload ? SyncDecision.Upload : SyncDecision.None;
                 }
                 if (storageMatches && !driveMatches)
