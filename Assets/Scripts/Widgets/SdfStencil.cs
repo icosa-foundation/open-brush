@@ -100,23 +100,26 @@ namespace TiltBrush
             Vector3 forward = rot * (-Vector3.forward);
             Vector3 right = rot * Vector3.right;
             Vector3 up = rot * Vector3.up;
-            
+
             Vector3 closestHit = origin;
             Vector3 closestNormal = forward;
             float closestDistance = float.MaxValue;
             bool foundHit = false;
-            
-            foreach (Vector2 offset in sm_RayOffsets) {
+
+            foreach (Vector2 offset in sm_RayOffsets)
+            {
                 Vector3 rayDir = forward + right * offset.x + up * offset.y;
                 Vector3 normalizedDir = rayDir.normalized;
-                
+
                 if (m_SdfManager.Raycast(
                     origin, normalizedDir, out Vector3 hitPoint, out Vector3 hitNormal,
-                    MAX_RAYCAST_DISTANCE)) {
+                    MAX_RAYCAST_DISTANCE))
+                {
                     float distance = Vector3.Distance(origin, hitPoint);
-                    
+
                     if (distance > 0.05f && distance <= MAX_RAYCAST_DISTANCE &&
-                        distance < closestDistance) {
+                        distance < closestDistance)
+                    {
                         closestHit = hitPoint;
                         closestNormal = hitNormal;
                         closestDistance = distance;
@@ -124,19 +127,20 @@ namespace TiltBrush
                     }
                 }
             }
-            
+
             if (foundHit)
             {
                 // Apply smoothing to reduce jitter
-                if (m_hasValidHit) {
+                if (m_hasValidHit)
+                {
                     closestHit = Vector3.Lerp(m_lastHitPos, closestHit, 1f - SMOOTHING_FACTOR);
                     closestNormal = Vector3.Slerp(m_lastHitNormal, closestNormal, 1f - SMOOTHING_FACTOR).normalized;
                 }
-                
+
                 m_lastHitPos = closestHit;
                 m_lastHitNormal = closestNormal;
                 m_hasValidHit = true;
-                
+
                 surfacePos = closestHit;
                 surfaceNorm = closestNormal;
             }
@@ -146,7 +150,7 @@ namespace TiltBrush
                 surfaceNorm = forward;
             }
         }
-        
+
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
