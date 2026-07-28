@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 
@@ -58,6 +59,15 @@ public class OpenBrushStorageActivity extends Activity {
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String selectedRoot =
+                    OpenBrushStorageBridge.getSelectedRootIdentity(this);
+            if (selectedRoot.length() > 0) {
+                intent.putExtra(
+                        DocumentsContract.EXTRA_INITIAL_URI,
+                        Uri.parse(selectedRoot));
+            }
+        }
         startActivityForResult(intent, REQUEST_OPEN_BRUSH_FOLDER);
     }
 
