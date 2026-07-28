@@ -54,6 +54,7 @@ namespace TiltBrush
         private Dictionary<string, string> m_ModelRootsByRelativePath;
         private bool m_SafScanInProgress;
         private bool m_SafRescanRequested;
+        private string m_SafCatalogRootIdentity;
         private bool m_SeedingSafDefaults;
 
         public bool IsScanning
@@ -571,6 +572,25 @@ namespace TiltBrush
             m_SafScanInProgress = true;
             IUserStorageBackend backend = UserStorage.Backend;
             string scanRootIdentity = backend.RootIdentity;
+            if (m_SafCatalogRootIdentity != null &&
+                !string.Equals(
+                    m_SafCatalogRootIdentity,
+                    scanRootIdentity,
+                    StringComparison.Ordinal))
+            {
+                foreach (Model oldModel in m_ModelsByRelativePath.Values.Distinct())
+                {
+                    if (oldModel.m_ModelParent != null)
+                    {
+                        Destroy(oldModel.m_ModelParent.gameObject);
+                    }
+                }
+                m_ModelsByRelativePath.Clear();
+                m_ModelRootsByRelativePath.Clear();
+                m_OrderedModelNames.Clear();
+                CatalogChanged?.Invoke();
+            }
+            m_SafCatalogRootIdentity = scanRootIdentity;
             var scan = new Future<List<SafModelRecord>>(
                 () => ListSafModelsRecursively(backend, ""),
                 cleanupFunction: null,

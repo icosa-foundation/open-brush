@@ -238,6 +238,7 @@ namespace TiltBrush
         private readonly Stack<int> m_RequestedLoads = new Stack<int>();
         private Future<StorageDirectoryResult> m_RefreshFuture;
         private string m_RefreshRootIdentity;
+        private string m_AppliedRootIdentity;
         private bool m_Ready;
         private bool m_RefreshRequested;
 
@@ -419,6 +420,16 @@ namespace TiltBrush
             {
                 m_RefreshRequested = false;
                 m_RefreshRootIdentity = m_Backend.RootIdentity;
+                if (m_AppliedRootIdentity != null &&
+                    !string.Equals(
+                        m_AppliedRootIdentity,
+                        m_RefreshRootIdentity,
+                        StringComparison.Ordinal))
+                {
+                    ClearCatalog();
+                    m_AppliedRootIdentity = m_RefreshRootIdentity;
+                    OnChanged();
+                }
                 m_RefreshFuture = new Future<StorageDirectoryResult>(
                     () => m_Backend.List(m_Area, "", CancellationToken.None),
                     longRunning: true);
@@ -472,12 +483,7 @@ namespace TiltBrush
                 return;
             }
 
-            foreach (SafSketch sketch in m_Sketches)
-            {
-                sketch.Unload();
-            }
-            m_Sketches.Clear();
-            m_RequestedLoads.Clear();
+            ClearCatalog();
             foreach (StorageDocument document in result.Documents)
             {
                 if (!document.IsDirectory &&
@@ -490,7 +496,18 @@ namespace TiltBrush
             }
             m_Sketches.Sort((left, right) =>
                 right.CreationTime.CompareTo(left.CreationTime));
+            m_AppliedRootIdentity = m_Backend.RootIdentity;
             OnChanged();
+        }
+
+        private void ClearCatalog()
+        {
+            foreach (SafSketch sketch in m_Sketches)
+            {
+                sketch.Unload();
+            }
+            m_Sketches.Clear();
+            m_RequestedLoads.Clear();
         }
 
         public event Action OnChanged = delegate { };
