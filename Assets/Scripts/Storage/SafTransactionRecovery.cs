@@ -326,7 +326,17 @@ namespace TiltBrush
         {
             record.AttemptCount++;
             record.LastError = error ?? "";
-            SafTransactionJournal.Persist(record);
+            try
+            {
+                SafTransactionJournal.Persist(record);
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException)
+            {
+                record.LastError =
+                    $"{record.LastError} Recovery journal update failed: {e.Message}".Trim();
+            }
             string message =
                 $"SAF_RECOVERY Pending {record.TransactionId}: {record.LastError}";
             report.Errors.Add(message);

@@ -634,7 +634,18 @@ namespace TiltBrush
             m_Record.State = state.ToString();
             m_Record.AttemptCount++;
             m_Record.LastError = error ?? "";
-            SafTransactionJournal.Persist(m_Record);
+            try
+            {
+                SafTransactionJournal.Persist(m_Record);
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException)
+            {
+                Debug.LogError(
+                    $"SAF_TRANSACTION {m_Record.TransactionId} could not update its " +
+                    $"recovery journal: {e.Message}");
+            }
             Debug.LogWarning(
                 $"SAF_TRANSACTION {m_Record.TransactionId} {state}: " +
                 $"{m_Record.LastError}");

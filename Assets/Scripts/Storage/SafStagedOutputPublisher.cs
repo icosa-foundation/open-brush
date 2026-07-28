@@ -411,8 +411,19 @@ namespace TiltBrush
             record.AttemptCount++;
             record.LastError = error ?? "";
             record.State = "Pending";
-            Persist(record);
-            return new SafPublicationResult(code, error);
+            string resultError = error;
+            try
+            {
+                Persist(record);
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException)
+            {
+                resultError =
+                    $"{error} Recovery journal update failed: {e.Message}".Trim();
+            }
+            return new SafPublicationResult(code, resultError);
         }
 
         private static void Persist(SafPublicationRecord record)
