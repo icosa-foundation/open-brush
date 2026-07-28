@@ -703,7 +703,9 @@ namespace TiltBrush
                 }
             }
 
-            if (Config.m_AutosaveRestoreEnabled && AutosaveRestoreFileExists)
+            if (Config.m_AutosaveRestoreEnabled &&
+                AutosaveRestoreFileExists &&
+                !OpenBrushStorage.IsGooglePlayStorageMode)
             {
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)

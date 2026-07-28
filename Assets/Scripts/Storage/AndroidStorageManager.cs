@@ -14,6 +14,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -220,6 +223,7 @@ namespace TiltBrush
                     transactionReport.Recovered += publicationReport.Recovered;
                     transactionReport.Pending += publicationReport.Pending;
                     transactionReport.Errors.AddRange(publicationReport.Errors);
+                    RecoverAutosave(transactionReport);
                     return transactionReport;
                 },
                 longRunning: true);
@@ -259,8 +263,89 @@ namespace TiltBrush
                 Debug.LogWarning(
                     $"SAF_STORAGE {report.Pending} storage transaction(s) require recovery.");
             }
+            if (report != null && report.AutosaveRecovered)
+            {
+                App.Instance.AutosaveRestoreFileExists = false;
+                OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                    InputManager.ControllerName.Wand,
+                    "The last autosave was recovered into your shared sketchbook.");
+            }
             RefreshSharedCatalogs();
             onComplete?.Invoke();
+        }
+
+        private static void RecoverAutosave(SafRecoveryReport report)
+        {
+            if (!App.Config.m_AutosaveRestoreEnabled ||
+                App.Instance == null ||
+                !App.Instance.AutosaveRestoreFileExists)
+            {
+                return;
+            }
+
+            string autosavePath = SaveLoadScript.m_Instance?.MostRecentAutosaveFile();
+            if (string.IsNullOrEmpty(autosavePath) || !File.Exists(autosavePath))
+            {
+                report.Pending++;
+                report.Errors.Add(
+                    "SAF_RECOVERY Autosave marker exists but no autosave file was found.");
+                return;
+            }
+
+            try
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                StorageDirectoryResult listing = backend.List(
+                    StorageArea.Sketches, "", default);
+                if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                {
+                    throw new IOException(listing.Error);
+                }
+                var existingNames = new HashSet<string>(
+                    listing.Documents.Select(document => document.DisplayName),
+                    StringComparer.OrdinalIgnoreCase);
+                string timestamp = File.GetLastWriteTime(autosavePath)
+                    .ToString("yyyy-MM-dd HH-mm-ss");
+                string baseName = $"Recovered Autosave {timestamp}";
+                string displayName = $"{baseName}{SaveLoadScript.TILT_SUFFIX}";
+                for (int suffix = 2; existingNames.Contains(displayName); ++suffix)
+                {
+                    displayName =
+                        $"{baseName} ({suffix}){SaveLoadScript.TILT_SUFFIX}";
+                }
+
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    StorageArea.Sketches,
+                    displayName,
+                    TiltFile.TILT_MIME_TYPE,
+                    default))
+                {
+                    using (Stream input = new FileStream(
+                        autosavePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    using (Stream output = transaction.OpenWrite())
+                    {
+                        input.CopyTo(output);
+                    }
+                    StorageMutationResult commit = transaction.Commit();
+                    if (!commit.Success)
+                    {
+                        throw new IOException(commit.Error);
+                    }
+                }
+                report.AutosaveRecovered = true;
+                report.Recovered++;
+                Debug.Log("SAF_RECOVERY Autosave committed to the shared sketchbook.");
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException ||
+                e is InvalidOperationException)
+            {
+                report.Pending++;
+                string error = $"SAF_RECOVERY Autosave remains local: {e.Message}";
+                report.Errors.Add(error);
+                Debug.LogWarning(error);
+            }
         }
 
         private void OnApplicationPause(bool paused)

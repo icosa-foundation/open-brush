@@ -25,6 +25,7 @@ namespace TiltBrush
     {
         public int Recovered { get; internal set; }
         public int Pending { get; internal set; }
+        public bool AutosaveRecovered { get; internal set; }
         public List<string> Errors { get; } = new List<string>();
     }
 
