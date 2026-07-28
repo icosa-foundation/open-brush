@@ -358,7 +358,22 @@ namespace TiltBrush
             {
                 yield break;
             }
-            controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
+            if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
+            {
+                string reason = audioClipTask.Exception?.GetBaseException().Message ??
+                    "the load operation was canceled";
+                Error = $"Failed to load audio clip '{AbsolutePath}': {reason}";
+                yield break;
+            }
+
+            AudioClip audioClip = audioClipTask.Result;
+            if (audioClip == null)
+            {
+                Error = $"Failed to load audio clip '{AbsolutePath}'.";
+                yield break;
+            }
+
+            controller.m_SoundClipAudioSource.clip = audioClip;
             controller.m_SoundClipAudioSource.loop = true;
 
             Width = 128;
