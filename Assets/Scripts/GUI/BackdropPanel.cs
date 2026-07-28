@@ -126,7 +126,11 @@ namespace TiltBrush
         {
             if (string.IsNullOrEmpty(m_PreviousCustomSkyboxPath))
             {
-                m_PreviousCustomSkyboxPath = BackgroundImageCatalog.m_Instance.IndexToImage(0).FileName;
+                var image = BackgroundImageCatalog.m_Instance.IndexToImage(0);
+                if (image != null)
+                {
+                    m_PreviousCustomSkyboxPath = image.FileName;
+                }
             }
 
             // If user has removed all custom skybox files then the value could still be null
