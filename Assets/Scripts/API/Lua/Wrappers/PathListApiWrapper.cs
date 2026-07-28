@@ -94,7 +94,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("The axis-aligned bounds that contain all paths in this PathList")]
         public BoundsApiWrapper bounds => new(BoundsApiWrapper.Calculate(
-            _PathList.SelectMany(path => path).Select(t => t.translation)
+            (_PathList ?? Enumerable.Empty<List<TrTransform>>())
+                .SelectMany(path => path)
+                .Select(t => t.translation)
         ));
 
         public override string ToString()
