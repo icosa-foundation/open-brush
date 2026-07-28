@@ -364,7 +364,11 @@ namespace TiltBrush
                 targetSize.z / Mathf.Max(sourceSize.z, kMinSize)
             );
             if (!keepAspect) return scale;
-            var uniform = Mathf.Min(scale.x, Mathf.Min(scale.y, scale.z));
+            var uniform = float.PositiveInfinity;
+            if (sourceSize.x > kMinSize) uniform = Mathf.Min(uniform, scale.x);
+            if (sourceSize.y > kMinSize) uniform = Mathf.Min(uniform, scale.y);
+            if (sourceSize.z > kMinSize) uniform = Mathf.Min(uniform, scale.z);
+            if (float.IsPositiveInfinity(uniform)) uniform = 1;
             return Vector3.one * uniform;
         }
 
