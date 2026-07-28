@@ -635,6 +635,7 @@ namespace TiltBrush
             string imageDir, bool userOverlay)
         {
             m_SafQueryInProgress = true;
+            string queryRootIdentity = UserStorage.Backend.RootIdentity;
             string relativeDirectory;
             if (!TryGetRelativeDirectory(HomeDirectory, imageDir, out relativeDirectory))
             {
@@ -677,6 +678,15 @@ namespace TiltBrush
                     $"SAF_CATALOG Image query failed; retaining the previous catalog: " +
                     $"{listing.Code} {listing.Error}");
                 m_SafQueryInProgress = false;
+                yield break;
+            }
+            if (!string.Equals(
+                    queryRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SafQueryInProgress = false;
+                m_DirNeedsProcessing = true;
                 yield break;
             }
 

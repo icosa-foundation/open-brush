@@ -62,7 +62,14 @@ namespace TiltBrush
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
-            StartCoroutine(ScanReferenceDirectory());
+            if (m_ScanningDirectory)
+            {
+                m_DirectoryScanRequired = true;
+            }
+            else
+            {
+                StartCoroutine(ScanReferenceDirectory());
+            }
 
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
                 Directory.Exists(m_CurrentVideoDirectory))
@@ -334,6 +341,7 @@ namespace TiltBrush
         private IEnumerable<object> ScanSafReferenceDirectory()
         {
             IUserStorageBackend backend = UserStorage.Backend;
+            string scanRootIdentity = backend.RootIdentity;
             string relativeDirectory;
             if (!TryGetRelativeDirectory(
                     HomeDirectory, m_CurrentVideoDirectory, out relativeDirectory))
@@ -371,6 +379,16 @@ namespace TiltBrush
                     break;
                 }
                 yield return null;
+            }
+
+            if (!string.Equals(
+                    scanRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_ScanningDirectory = false;
+                m_DirectoryScanRequired = true;
+                yield break;
             }
 
             var oldVideos = m_Videos.ToDictionary(video => video.CatalogIdentity);

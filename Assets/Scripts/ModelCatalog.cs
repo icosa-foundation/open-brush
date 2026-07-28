@@ -53,6 +53,7 @@ namespace TiltBrush
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
         private bool m_SafScanInProgress;
+        private bool m_SafRescanRequested;
         private bool m_SeedingSafDefaults;
 
         public bool IsScanning
@@ -288,7 +289,11 @@ namespace TiltBrush
         {
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
-                if (!m_SafScanInProgress)
+                if (m_SafScanInProgress)
+                {
+                    m_SafRescanRequested = true;
+                }
+                else
                 {
                     StartCoroutine(LoadSafModelsForNewDirectory(path));
                 }
@@ -565,6 +570,7 @@ namespace TiltBrush
         {
             m_SafScanInProgress = true;
             IUserStorageBackend backend = UserStorage.Backend;
+            string scanRootIdentity = backend.RootIdentity;
             var scan = new Future<List<SafModelRecord>>(
                 () => ListSafModelsRecursively(backend, ""),
                 cleanupFunction: null,
@@ -583,6 +589,11 @@ namespace TiltBrush
                         $"SAF_CATALOG Model query failed; retaining the previous catalog: " +
                         $"{e.InnerException?.Message ?? e.Message}");
                     m_SafScanInProgress = false;
+                    if (m_SafRescanRequested)
+                    {
+                        m_SafRescanRequested = false;
+                        LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+                    }
                     yield break;
                 }
                 if (finished)
@@ -590,6 +601,16 @@ namespace TiltBrush
                     break;
                 }
                 yield return null;
+            }
+            if (!string.Equals(
+                    scanRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SafScanInProgress = false;
+                m_SafRescanRequested = false;
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+                yield break;
             }
 
             Dictionary<string, Model> previous = m_ModelsByRelativePath;
@@ -647,6 +668,11 @@ namespace TiltBrush
             m_FolderChanged = false;
             m_SafScanInProgress = false;
             CatalogChanged?.Invoke();
+            if (m_SafRescanRequested)
+            {
+                m_SafRescanRequested = false;
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            }
         }
 
         private static List<SafModelRecord> ListSafModelsRecursively(
