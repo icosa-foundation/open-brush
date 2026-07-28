@@ -305,14 +305,15 @@ namespace TiltBrush
                 "video");
 
             string fullPath = BuildCapturePath(filename, "video.mp4", ".mp4", App.VideosPath());
+            string outputDirectory = StillFrameSequenceExporter.GetOutputDirectory(fullPath);
             App.Instance.StartCoroutine(CaptureVideoCoroutine(
                 fullPath,
                 Mathf.Max(0.1f, seconds),
                 usePostProcessing));
             Debug.Log(
-                $"{logPrefix} Queued video capture path={fullPath} " +
+                $"{logPrefix} Queued video frame-sequence capture path={outputDirectory} " +
                 $"seconds={seconds} post={usePostProcessing}.");
-            return fullPath;
+            return outputDirectory;
         }
 
         [ApiEndpoint(
@@ -457,7 +458,8 @@ namespace TiltBrush
 
                 VideoRecorderUtils.StopVideoCapture(saveCapture: true);
                 Debug.Log(
-                    $"{logPrefix} Video capture finished path={fullPath} " +
+                    $"{logPrefix} Video frame-sequence capture finished " +
+                    $"path={StillFrameSequenceExporter.GetOutputDirectory(fullPath)} " +
                     $"seconds={seconds} post={includePostProcessing}.");
             }
             finally

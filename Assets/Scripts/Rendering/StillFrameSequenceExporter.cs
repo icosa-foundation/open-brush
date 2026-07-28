@@ -35,7 +35,14 @@ namespace TiltBrush
         public float FPS => m_FPS;
         public bool IsCapturing => m_IsCapturing;
         public bool IsSaving => m_IsSaving;
+        public string OutputDirectory => m_DirectoryPath;
 
+        public static string GetOutputDirectory(string filePath)
+        {
+            string baseDir = Path.GetDirectoryName(filePath);
+            string baseFileName = Path.GetFileNameWithoutExtension(filePath);
+            return Path.Combine(baseDir, $"{baseFileName}_frames");
+        }
 
         private void Awake()
         {
@@ -56,8 +63,7 @@ namespace TiltBrush
             m_FilePath = filePath;
             m_BaseFileName = Path.GetFileNameWithoutExtension(filePath);
             // Create subfolder for still frames using the same naming as the video file
-            string baseDir = Path.GetDirectoryName(filePath);
-            m_DirectoryPath = Path.Combine(baseDir, m_BaseFileName + "_frames");
+            m_DirectoryPath = GetOutputDirectory(filePath);
             m_FPS = fps;
             m_FrameCount = 0;
             m_FrameInterval = 1.0f / fps;
