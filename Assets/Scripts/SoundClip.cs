@@ -23,6 +23,8 @@ namespace TiltBrush
     [System.Serializable]
     public class SoundClip
     {
+        private const int kMaxWaveformFramesPerColumn = 4096;
+
         /// The controller is used as a handle for controlling the clip - clips stay instantiated as
         /// long as there are controllers in existence that reference them. For this reason it is
         /// important to Dispose() of controllers once they are no longer needed.
@@ -432,23 +434,47 @@ namespace TiltBrush
             }
             if (audio == null) return null;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            float[] samples = new float[audio.samples * audio.channels];
-            audio.GetData(samples, 0);
 
-            // Find peak amplitude per column using max abs value in each range
+            // Read a bounded, representative window for each output column. Short clips are
+            // sampled in full; long clips avoid allocating or scanning every decoded sample.
             float[] waveform = new float[width];
-            int packSize = Mathf.Max(samples.Length / width, 1);
-            for (int x = 0; x < width; x++)
+            int totalFrames = audio.samples;
+            int channels = Mathf.Max(audio.channels, 1);
+            if (totalFrames > 0)
             {
-                float peak = 0f;
-                int start = x * packSize;
-                int end = Mathf.Min(start + packSize, samples.Length);
-                for (int i = start; i < end; i++)
+                int maxBinFrames = Mathf.CeilToInt(totalFrames / (float)width);
+                int sampleFrames = Mathf.Min(maxBinFrames, kMaxWaveformFramesPerColumn);
+                float[] samples = new float[sampleFrames * channels];
+
+                for (int x = 0; x < width; x++)
                 {
-                    float abs = Mathf.Abs(samples[i]);
-                    if (abs > peak) peak = abs;
+                    int binStart = (int)((long)x * totalFrames / width);
+                    int binEnd = (int)((long)(x + 1) * totalFrames / width);
+                    int binFrames = binEnd - binStart;
+                    if (binFrames == 0)
+                    {
+                        continue;
+                    }
+                    int framesToInspect = Mathf.Min(binFrames, sampleFrames);
+                    int inspectionStart = binStart + (binFrames - framesToInspect) / 2;
+                    int sampleOffset = Mathf.Min(inspectionStart, totalFrames - sampleFrames);
+
+                    if (!audio.GetData(samples, sampleOffset))
+                    {
+                        continue;
+                    }
+
+                    float peak = 0f;
+                    int valuesToInspect = framesToInspect * channels;
+                    int firstValue = (inspectionStart - sampleOffset) * channels;
+                    int endValue = firstValue + valuesToInspect;
+                    for (int i = firstValue; i < endValue; i++)
+                    {
+                        float abs = Mathf.Abs(samples[i]);
+                        if (abs > peak) peak = abs;
+                    }
+                    waveform[x] = peak;
                 }
-                waveform[x] = peak;
             }
 
             // Normalize so the loudest peak fills the available height
