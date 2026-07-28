@@ -42,9 +42,15 @@ namespace TiltBrush
             m_collector = new ImportMaterialCollector(mDir, m_path);
         }
 
-        public (GameObject, List<string> warnings, ImportMaterialCollector) Import(bool editable)
+        public (
+            GameObject gameObject,
+            List<string> warnings,
+            ImportMaterialCollector collector,
+            PolyMesh poly,
+            PolyRecipe recipe) Import(bool editable)
         {
             GameObject go = new GameObject($"Obj model: {m_path}");
+            PolyMesh poly;
 
             var objLoaderFactory = new ObjLoaderFactory();
             var objLoader = objLoaderFactory.Create();
@@ -57,7 +63,7 @@ namespace TiltBrush
                     .Groups
                     .SelectMany(g => g.Faces)
                     .Select(f => f._vertices.Select(v => v.VertexIndex - 1));
-                var poly = new PolyMesh(verts, faceIndices);
+                poly = new PolyMesh(verts, faceIndices);
                 var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByTags);
                 var mesh = poly.BuildUnityMesh(meshData);
                 if (editable)
@@ -70,7 +76,22 @@ namespace TiltBrush
                     EditableModelManager.m_Instance.UpdateMesh(go, mesh, m_vertexColorMaterial);
                 }
             }
-            return (go, warnings.Distinct().ToList(), m_collector);
+
+            var recipe = new PolyRecipe
+            {
+                GeneratorType = GeneratorTypes.GeometryData,
+                Vertices = poly.Vertices.Select(vertex => vertex.Position).ToList(),
+                Faces = poly.ListFacesByVertexIndices().ToList(),
+                FaceRoles = Enumerable.Repeat((int)Roles.New, poly.Faces.Count).ToList(),
+                VertexRoles = Enumerable.Repeat((int)Roles.New, poly.Vertices.Count).ToList(),
+                FaceTags = poly.FaceTags?
+                    .Select(tags => new HashSet<string>(tags)).ToList(),
+                Operators = new List<PreviewPolyhedron.OpDefinition>(),
+                MaterialIndex = 0,
+                ColorMethod = ColorMethods.ByTags,
+                Colors = (Color[])PolyMesh.DefaultFaceColors.Clone(),
+            };
+            return (go, warnings.Distinct().ToList(), m_collector, poly, recipe);
         }
 
     }

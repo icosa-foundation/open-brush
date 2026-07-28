@@ -218,7 +218,16 @@ namespace TiltBrush
 
             if (editable)
             {
-                model.LoadEditableModel();
+                AsyncHelpers.RunSync(() => model.LoadEditableModelAsync());
+                if (!model.m_Valid ||
+                    !model.TryGetEditableGeometry(out PolyMesh poly, out PolyRecipe recipe))
+                {
+                    OutputWindowScript.Error(
+                        $"Couldn't load editable model: {model.Error?.message ?? relativePath}",
+                        model.Error?.detail);
+                    return null;
+                }
+
                 CreateWidgetCommand createCommand = new CreateWidgetCommand(
                     WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
@@ -226,6 +235,8 @@ namespace TiltBrush
                 if (emodelWidget != null)
                 {
                     emodelWidget.Model = model;
+                    emodelWidget.m_PolyMesh = poly;
+                    emodelWidget.m_PolyRecipe = recipe;
                     emodelWidget.Show(true);
                     createCommand.SetWidgetCost(emodelWidget.GetTiltMeterCost());
                 }

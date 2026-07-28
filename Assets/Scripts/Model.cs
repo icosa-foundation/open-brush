@@ -730,9 +730,14 @@ namespace TiltBrush
             try
             {
                 var reader = new ObjReader(m_Location.AbsolutePath);
-                var (gameObject, warnings, collector) = reader.Import(editable);
+                var (gameObject, warnings, collector, poly, recipe) = reader.Import(editable);
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
+                if (editable)
+                {
+                    m_EditablePolyMesh = poly;
+                    m_EditablePolyRecipe = recipe;
+                }
                 m_AllowExport = (m_ImportMaterialCollector != null);
                 return gameObject;
             }
@@ -979,6 +984,26 @@ namespace TiltBrush
             StartCreatePrefab(go, true);
         }
 
+        public async Task LoadEditableModelAsync()
+        {
+            await StartCreatePrefab(null, true);
+        }
+
+        public bool TryGetEditableGeometry(out PolyMesh poly, out PolyRecipe recipe)
+        {
+            if (m_EditablePolyMesh == null)
+            {
+                poly = null;
+                recipe = default;
+                return false;
+            }
+
+            poly = m_EditablePolyMesh.Duplicate();
+            poly.ScalingFactor = m_EditablePolyMesh.ScalingFactor;
+            recipe = m_EditablePolyRecipe.Clone();
+            return true;
+        }
+
         public EditableModelWidget CreateNativeBlocksWidget(
             TrTransform spawnTransform, Quaternion? desiredEndForward = null,
             bool forceTransform = true, float snapGrid = 0, float snapAngle = 0,
@@ -1150,6 +1175,64 @@ namespace TiltBrush
                 EndCreatePrefab(go, warnings);
             }
 
+            if (editable && m_Valid && m_EditablePolyMesh == null)
+            {
+                CreateEditableGeometryFromLoadedModel();
+            }
+        }
+
+        private void CreateEditableGeometryFromLoadedModel()
+        {
+            var vertices = new List<Vector3>();
+            var faces = new List<List<int>>();
+            foreach (MeshFilter meshFilter in GetMeshes())
+            {
+                Mesh mesh = meshFilter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                int firstVertex = vertices.Count;
+                Matrix4x4 toModel =
+                    m_ModelParent.worldToLocalMatrix * meshFilter.transform.localToWorldMatrix;
+                vertices.AddRange(mesh.vertices.Select(toModel.MultiplyPoint3x4));
+                int[] triangles = mesh.triangles;
+                for (int i = 0; i < triangles.Length; i += 3)
+                {
+                    faces.Add(new List<int>
+                    {
+                        firstVertex + triangles[i],
+                        firstVertex + triangles[i + 1],
+                        firstVertex + triangles[i + 2],
+                    });
+                }
+            }
+
+            if (vertices.Count == 0 || faces.Count == 0)
+            {
+                return;
+            }
+
+            m_EditablePolyMesh = new PolyMesh(vertices, faces);
+            m_EditablePolyMesh.MergeCoplanarFaces(0.01f);
+            m_EditablePolyRecipe = new PolyRecipe
+            {
+                GeneratorType = GeneratorTypes.GeometryData,
+                Vertices = m_EditablePolyMesh.Vertices
+                    .Select(vertex => vertex.Position).ToList(),
+                Faces = m_EditablePolyMesh.ListFacesByVertexIndices().ToList(),
+                FaceRoles = Enumerable.Repeat(
+                    (int)Roles.New, m_EditablePolyMesh.Faces.Count).ToList(),
+                VertexRoles = Enumerable.Repeat(
+                    (int)Roles.New, m_EditablePolyMesh.Vertices.Count).ToList(),
+                FaceTags = m_EditablePolyMesh.FaceTags?
+                    .Select(tags => new HashSet<string>(tags)).ToList(),
+                Operators = new List<PreviewPolyhedron.OpDefinition>(),
+                MaterialIndex = 0,
+                ColorMethod = ColorMethods.ByTags,
+                Colors = (Color[])PolyMesh.DefaultFaceColors.Clone(),
+            };
         }
 
         public void CalcBoundsGltf(GameObject go)
