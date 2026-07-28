@@ -73,6 +73,18 @@ namespace TiltBrush
         private bool m_hasValidHit = false;
         private const float SMOOTHING_FACTOR = 0.7f;
         private const float MAX_RAYCAST_DISTANCE = 0.5f;
+        private static readonly Vector2[] sm_RayOffsets =
+        {
+            Vector2.zero,
+            new Vector2(0.3f, 0),
+            new Vector2(-0.3f, 0),
+            new Vector2(0, 0.3f),
+            new Vector2(0, -0.3f),
+            new Vector2(0.2f, 0.2f),
+            new Vector2(0.2f, -0.2f),
+            new Vector2(-0.2f, 0.2f),
+            new Vector2(-0.2f, -0.2f),
+        };
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
@@ -87,20 +99,8 @@ namespace TiltBrush
             float closestDistance = float.MaxValue;
             bool foundHit = false;
             
-            // Create cone of rays (forward + angled directions)
-            Vector3[] rayDirections = {
-                forward,                                    // Center
-                forward + right * 0.3f,                    // Right
-                forward - right * 0.3f,                    // Left  
-                forward + up * 0.3f,                       // Up
-                forward - up * 0.3f,                       // Down
-                forward + (right + up) * 0.2f,             // Top-right
-                forward + (right - up) * 0.2f,             // Bottom-right
-                forward + (-right + up) * 0.2f,            // Top-left
-                forward + (-right - up) * 0.2f,            // Bottom-left
-            };
-            
-            foreach (Vector3 rayDir in rayDirections) {
+            foreach (Vector2 offset in sm_RayOffsets) {
+                Vector3 rayDir = forward + right * offset.x + up * offset.y;
                 Vector3 normalizedDir = rayDir.normalized;
                 
                 if (m_SdfManager.Raycast(
