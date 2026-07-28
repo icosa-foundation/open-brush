@@ -5,15 +5,10 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
-
-import com.unity3d.player.UnityPlayer;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,10 +18,6 @@ public class OpenBrushStorageBridge {
     private static final String OPEN_BRUSH_FOLDER_URI = "openBrushFolderUri";
     private static final String OPEN_BRUSH_FOLDER_NAME = "Open Brush";
     private static final AtomicInteger NEXT_TEMP_FILE_ID = new AtomicInteger(1);
-    private static final Object OBSERVER_LOCK = new Object();
-    private static final ArrayList<ContentObserver> RUNTIME_CONTENT_OBSERVERS =
-            new ArrayList<>();
-    private static ContentResolver runtimeContentObserverResolver;
     private static class DocumentLookupResult {
         final Uri uri;
         final String error;
@@ -197,7 +188,6 @@ public class OpenBrushStorageBridge {
     }
 
     public static void clearOpenBrushFolder(Context context) {
-        unregisterRuntimeContentObservers(context);
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().remove(OPEN_BRUSH_FOLDER_URI).apply();
     }
@@ -208,76 +198,6 @@ public class OpenBrushStorageBridge {
 
     public static boolean ensureDirectory(Context context, String relativePath) {
         return ensureDirectoryUri(context, relativePath) != null;
-    }
-
-    public static boolean registerRuntimeContentObservers(Context context) {
-        synchronized (OBSERVER_LOCK) {
-            unregisterRuntimeContentObserversLocked();
-            final Uri treeUri = getTreeUri(context);
-            if (treeUri == null) {
-                return false;
-            }
-            final String rootIdentity = treeUri.toString();
-            final ContentResolver resolver = context.getContentResolver();
-            final Handler handler = new Handler(Looper.getMainLooper());
-            final String[] areas = new String[]{"Scripts", "Plugins", "Fonts"};
-            try {
-                for (final String area : areas) {
-                    Uri directoryUri = ensureDirectoryUri(context, area);
-                    if (directoryUri == null) {
-                        unregisterRuntimeContentObserversLocked();
-                        return false;
-                    }
-                    Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                            treeUri, DocumentsContract.getDocumentId(directoryUri));
-                    ContentObserver observer = new ContentObserver(handler) {
-                        @Override
-                        public void onChange(boolean selfChange) {
-                            notifyRuntimeContentChanged(rootIdentity, area);
-                        }
-
-                        @Override
-                        public void onChange(boolean selfChange, Uri uri) {
-                            notifyRuntimeContentChanged(rootIdentity, area);
-                        }
-                    };
-                    resolver.registerContentObserver(childrenUri, true, observer);
-                    RUNTIME_CONTENT_OBSERVERS.add(observer);
-                }
-                runtimeContentObserverResolver = resolver;
-                return true;
-            } catch (Exception e) {
-                unregisterRuntimeContentObserversLocked();
-                return false;
-            }
-        }
-    }
-
-    public static void unregisterRuntimeContentObservers(Context context) {
-        synchronized (OBSERVER_LOCK) {
-            unregisterRuntimeContentObserversLocked();
-        }
-    }
-
-    private static void unregisterRuntimeContentObserversLocked() {
-        if (runtimeContentObserverResolver != null) {
-            for (ContentObserver observer : RUNTIME_CONTENT_OBSERVERS) {
-                try {
-                    runtimeContentObserverResolver.unregisterContentObserver(observer);
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        RUNTIME_CONTENT_OBSERVERS.clear();
-        runtimeContentObserverResolver = null;
-    }
-
-    private static void notifyRuntimeContentChanged(
-            String rootIdentity, String area) {
-        UnityPlayer.UnitySendMessage(
-                "AndroidStorageManager",
-                "OnRuntimeContentChanged",
-                rootIdentity + "\n" + area);
     }
 
     public static DirectoryQueryResult queryDirectory(Context context, String relativePath) {

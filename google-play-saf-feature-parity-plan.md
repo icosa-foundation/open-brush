@@ -6,9 +6,20 @@ Implemented follow-up to `google-play-saf-fd-backed-storage-plan.md`.
 
 The code now includes first-class SAF trees for `Scripts`, `Plugins`, and
 `Fonts`; root-scoped coherent runtime projections; migration of legacy private
-content; automatic provider observation with resume fallback; transactional
-publication of built-in and copied plugin content; and storage-backend-based
-Google Drive sync with root-scoped conflict state.
+content; transactional publication of built-in and copied plugin content; and
+storage-backend-based Google Drive sync with root-scoped conflict state.
+
+Amendment (2026-07-28): the automatic `ContentObserver` provider-observation
+layer described in this plan was implemented and later removed. Mobile
+platform configs ship with `UseFileSystemWatcher: 0`, so no existing Android
+build (Quest, Pico) has live external-change detection; observation exceeded
+the parity bar this plan exists to meet, and its background-triggered
+refreshes were the main source of concurrent-refresh complexity. Runtime
+content is refreshed at startup, after folder selection or root changes, and
+on application resume — which covers external edits made over USB, the Files
+app, or a browser, since all of those background the application first. The
+observation-related sections and test matrices below are retained for
+history but are superseded by this amendment.
 
 Desktop, editor, Google Play Android-symbol, non-Google-Play Android-symbol,
 and Java static compilation pass. Unity and a target Android device are
@@ -122,8 +133,9 @@ implementation:
    backend.
 2. Their app-private runtime directories are projections, not independent user
    stores.
-3. Refresh is automatic. A manual refresh command may remain useful for
-   diagnostics but is not the expected workflow.
+3. Superseded by the amendment above: refresh happens at startup, after
+   folder selection or root changes, and on application resume, matching the
+   no-watcher behavior of existing mobile builds.
 4. Autosaves remain app-private and are not projected, published, or Drive
    synced as ordinary sketches.
 5. Existing Google Drive sync directions and extension filters are preserved.
