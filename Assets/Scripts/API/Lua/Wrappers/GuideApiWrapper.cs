@@ -53,11 +53,8 @@ namespace TiltBrush
         [LuaDocsDescription("The dimensions of the Guide Widget")]
         public Vector3 dimensions
         {
-            get => _StencilWidget.CustomDimension;
-            set
-            {
-                _StencilWidget.CustomDimension = value;
-            }
+            get => _StencilWidget.Extents;
+            set => _StencilWidget.Extents = value;
         }
 
         [LuaDocsDescription("The type of the Guide Widget")]
