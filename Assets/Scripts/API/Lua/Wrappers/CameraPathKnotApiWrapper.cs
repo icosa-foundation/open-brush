@@ -105,7 +105,7 @@ namespace TiltBrush
             {
                 if (_Knot is CameraPathFovKnot knot)
                 {
-                    knot.FovValue = value;
+                    knot.SetCameraFov(value);
                     RefreshPath();
                 }
             }
