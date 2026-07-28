@@ -110,9 +110,9 @@ namespace TiltBrush
             s_QuillStatsRecorder = recorder;
             try
             {
-                if (sequence == null)
+                if (sequence?.RootLayer == null)
                 {
-                    Debug.LogError("Failed to read Quill sequence");
+                    Debug.LogError("Failed to read Quill sequence or root layer");
                     return;
                 }
 
@@ -144,8 +144,8 @@ namespace TiltBrush
                 Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
                 Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
 
-                bool rootVisible = sequence.RootLayer == null || sequence.RootLayer.Visible;
-                float rootOpacity = sequence.RootLayer == null ? 1f : sequence.RootLayer.Opacity;
+                bool rootVisible = sequence.RootLayer.Visible;
+                float rootOpacity = sequence.RootLayer.Opacity;
                 if (!rootVisible || rootOpacity <= 0f)
                 {
                     return;
