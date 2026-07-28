@@ -339,7 +339,7 @@ namespace TiltBrush
                     var r = batch.GetComponent<MeshRenderer>();
                     if (r == null) continue;
                     if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
-                    m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
+                    DrawRendererSubmeshes(r);
                 }
             }
 
@@ -355,7 +355,7 @@ namespace TiltBrush
                     {
                         var r = renderers[i];
                         if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
-                        m_IntersectionCB.DrawRenderer(r, m_IntersectionMaterial, 0, 0);
+                        DrawRendererSubmeshes(r);
                     }
                 }
             }
@@ -366,6 +366,28 @@ namespace TiltBrush
             // and return the hi-res RT directly. The compute-shader readback handles the full
             // 64x64 tex (4096 texels) - still trivial bandwidth.
             return resultTexture;
+        }
+
+        private void DrawRendererSubmeshes(Renderer renderer)
+        {
+            int subMeshCount = 1;
+            if (renderer is SkinnedMeshRenderer skinnedMeshRenderer &&
+                skinnedMeshRenderer.sharedMesh != null)
+            {
+                subMeshCount = skinnedMeshRenderer.sharedMesh.subMeshCount;
+            }
+            else if (renderer is MeshRenderer &&
+                renderer.TryGetComponent(out MeshFilter meshFilter) &&
+                meshFilter.sharedMesh != null)
+            {
+                subMeshCount = meshFilter.sharedMesh.subMeshCount;
+            }
+
+            for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
+            {
+                m_IntersectionCB.DrawRenderer(
+                    renderer, m_IntersectionMaterial, subMesh, 0);
+            }
         }
 
         // ------------------------------------------------------------------------------------------ //
