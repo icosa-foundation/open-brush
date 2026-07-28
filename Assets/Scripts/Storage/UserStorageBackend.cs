@@ -204,7 +204,8 @@ namespace TiltBrush
             StorageArea area,
             string relativePath,
             string mimeType,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken,
+            StorageDocumentId targetDocumentId = default);
         StorageMutationResult Rename(
             StorageDocumentId documentId,
             string newDisplayName,
@@ -343,7 +344,8 @@ namespace TiltBrush
             StorageArea area,
             string relativePath,
             string mimeType,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            StorageDocumentId targetDocumentId = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             string targetPath = ResolveRelativePath(m_AreaRoot(area), relativePath);

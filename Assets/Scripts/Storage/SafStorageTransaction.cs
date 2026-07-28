@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -278,6 +279,7 @@ namespace TiltBrush
             StorageArea area,
             string relativePath,
             string mimeType,
+            StorageDocumentId targetDocumentId,
             CancellationToken cancellationToken)
         {
             m_Area = area;
@@ -302,6 +304,7 @@ namespace TiltBrush
                 Area = area.ToString(),
                 RelativePath = relativePath.Replace('\\', '/'),
                 TargetDisplayName = targetName,
+                TargetDocumentId = targetDocumentId.Value,
                 TemporaryDisplayName = $".ob-{transactionId}.tmp",
                 BackupDisplayName = $".ob-{transactionId}.bak",
                 InvalidDisplayName = $".ob-{transactionId}.invalid",
@@ -514,16 +517,39 @@ namespace TiltBrush
             {
                 throw new IOException(listing.Error);
             }
-            foreach (StorageDocument document in listing.Documents)
+            if (TargetDocumentId.IsValid)
             {
-                if (string.Equals(
-                        document.DisplayName,
-                        m_Record.TargetDisplayName,
-                        StringComparison.OrdinalIgnoreCase))
+                StorageDocument target = listing.Documents.FirstOrDefault(document =>
+                    document.DocumentId.Equals(TargetDocumentId));
+                if (target == null)
                 {
-                    m_Record.TargetDocumentId = document.DocumentId.Value;
-                    return;
+                    throw new IOException(
+                        "The SAF document selected for overwrite no longer exists.");
                 }
+                if (!string.Equals(
+                        target.DisplayName,
+                        m_Record.TargetDisplayName,
+                        StringComparison.Ordinal))
+                {
+                    throw new IOException(
+                        "The SAF document selected for overwrite was renamed externally.");
+                }
+                return;
+            }
+
+            List<StorageDocument> matches = listing.Documents.Where(document =>
+                string.Equals(
+                    document.DisplayName,
+                    m_Record.TargetDisplayName,
+                    StringComparison.OrdinalIgnoreCase)).ToList();
+            if (matches.Count > 1)
+            {
+                throw new IOException(
+                    "Multiple SAF documents share the requested destination name.");
+            }
+            if (matches.Count == 1)
+            {
+                m_Record.TargetDocumentId = matches[0].DocumentId.Value;
             }
         }
 

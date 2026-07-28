@@ -169,7 +169,8 @@ namespace TiltBrush
                 StorageArea area,
                 string relativePath,
                 string mimeType,
-                CancellationToken cancellationToken)
+                CancellationToken cancellationToken,
+                StorageDocumentId targetDocumentId = default)
             {
                 return new WriteTransaction(this, relativePath);
             }
@@ -500,7 +501,7 @@ namespace TiltBrush
             string rootId = $"test-root-{Guid.NewGuid():N}";
             string transactionId = Guid.NewGuid().ToString("N");
             string backupName = $".ob-{transactionId}.bak";
-            var backend = new FakeSafBackend();
+            var backend = new FakeSafBackend { RootIdentity = rootId };
             backend.Add("Recovery Test.tilt", new byte[] { 1, 2, 3 });
             backend.Add(backupName, CreateMinimalTiltArchive());
             var record = new SafTransactionRecord

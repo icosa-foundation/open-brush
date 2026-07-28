@@ -638,7 +638,10 @@ namespace TiltBrush
                     area,
                     displayName,
                     TiltFile.TILT_MIME_TYPE,
-                    default))
+                    default,
+                    fileInfo is SafSceneFileInfo safFileInfo
+                        ? safFileInfo.Document.DocumentId
+                        : default))
                 {
                     string writeError;
                     using (Stream stream = transaction.OpenWrite())

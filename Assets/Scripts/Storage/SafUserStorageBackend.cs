@@ -103,7 +103,8 @@ namespace TiltBrush
             StorageArea area,
             string relativePath,
             string mimeType,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            StorageDocumentId targetDocumentId = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (!IsReady)
@@ -111,7 +112,11 @@ namespace TiltBrush
                 throw new IOException("Open Brush shared folder is unavailable.");
             }
             return new SafFileWriteTransaction(
-                area, relativePath, mimeType, cancellationToken);
+                area,
+                relativePath,
+                mimeType,
+                targetDocumentId,
+                cancellationToken);
         }
 
         public StorageMutationResult Rename(
