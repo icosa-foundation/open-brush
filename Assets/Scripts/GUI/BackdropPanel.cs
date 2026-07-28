@@ -94,9 +94,9 @@ namespace TiltBrush
             switch (newMode)
             {
                 case BackdropMode.Gradient:
-                    SceneSettings.m_Instance.ClearCustomSkybox();
-                    SceneSettings.m_Instance.PassthroughEnabled = false;
-                    if (!SceneSettings.m_Instance.InGradient)
+                    if (!SceneSettings.m_Instance.InGradient ||
+                        SceneSettings.m_Instance.HasCustomSkybox ||
+                        SceneSettings.m_Instance.PassthroughEnabled)
                     {
                         SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlockSkyboxCommand());
                     }
