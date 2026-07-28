@@ -578,15 +578,28 @@ namespace TiltBrush
                     scanRootIdentity,
                     StringComparison.Ordinal))
             {
-                foreach (Model oldModel in m_ModelsByRelativePath.Values.Distinct())
+                string blocksRoot = App.BlocksModelLibraryPath();
+                var localModels = m_ModelsByRelativePath.Where(pair =>
+                    m_ModelRootsByRelativePath.TryGetValue(
+                        pair.Key, out string modelRoot) &&
+                    string.Equals(
+                        modelRoot, blocksRoot, StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
+                var removedModels = m_ModelsByRelativePath
+                    .Where(pair => !localModels.ContainsKey(pair.Key))
+                    .Select(pair => pair.Value)
+                    .Distinct();
+                foreach (Model oldModel in removedModels)
                 {
                     if (oldModel.m_ModelParent != null)
                     {
                         Destroy(oldModel.m_ModelParent.gameObject);
                     }
                 }
-                m_ModelsByRelativePath.Clear();
-                m_ModelRootsByRelativePath.Clear();
+                m_ModelsByRelativePath = localModels;
+                m_ModelRootsByRelativePath = localModels.Keys.ToDictionary(
+                    relativePath => relativePath,
+                    _ => blocksRoot);
                 m_OrderedModelNames.Clear();
                 CatalogChanged?.Invoke();
             }
