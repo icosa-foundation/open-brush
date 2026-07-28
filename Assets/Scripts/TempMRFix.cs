@@ -1,4 +1,3 @@
-using System;
 using TiltBrush;
 using UnityEngine;
 
@@ -10,8 +9,7 @@ public class TempMRFix : MonoBehaviour
     {
         var pos = gameObject.transform.position;
         gameObject.transform.position = new Vector3(pos.x, App.Scene.Pose.translation.y, pos.z);
-        var rot = gameObject.transform.position;
-        gameObject.transform.rotation = Quaternion.Euler(0, rot.y, 0);
+        gameObject.transform.rotation = gameObject.transform.parent.rotation;
     }
 
     void OnEnable()
