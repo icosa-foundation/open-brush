@@ -64,6 +64,7 @@ namespace TiltBrush
             {
                 if (_Knot.KnotType == CameraPathKnot.Type.Position) return;
                 _Knot.PathT = new PathT(value);
+                Path.SortKnotList(_Knot.KnotType);
                 _Knot.SetPosition(Path.GetPosition(_Knot.PathT));
                 RefreshPath();
             }
