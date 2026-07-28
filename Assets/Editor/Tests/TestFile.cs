@@ -577,6 +577,44 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void SafStagedOutputPublisher_RemovesCommittedOwnedPayload()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"publication-test-{Guid.NewGuid():N}");
+            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Snapshots,
+                    "snapshot.png",
+                    stagedFile,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None);
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(File.Exists(stagedFile));
+                Assert.IsTrue(backend.Contains("snapshot.png"));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
         private static byte[] CreateMinimalTiltArchive()
         {
             using (var output = new MemoryStream())

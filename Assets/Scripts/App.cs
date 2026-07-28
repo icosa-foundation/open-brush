@@ -2323,16 +2323,34 @@ namespace TiltBrush
 
         static public string SnapshotPath()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalSnapshotStagingPath;
+            }
+#endif
             return Path.Combine(UserPath(), "Snapshots");
         }
 
         static public string VideosPath()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalVideoStagingPath;
+            }
+#endif
             return Path.Combine(UserPath(), "Videos");
         }
 
         static public string VrVideosPath()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalVrVideoStagingPath;
+            }
+#endif
             return Path.Combine(UserPath(), "VRVideos");
         }
 

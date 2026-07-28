@@ -269,10 +269,6 @@ namespace TiltBrush
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         string completedKey = $"{itemIndex}:{relativeFile}";
-                        if (completed.Contains(completedKey))
-                        {
-                            continue;
-                        }
                         string destination = item.IsDirectory
                             ? CombineProviderPath(item.DestinationRelativePath, relativeFile)
                             : item.DestinationRelativePath;
@@ -286,8 +282,10 @@ namespace TiltBrush
                         {
                             return Fail(record, result.Code, result.Error);
                         }
-                        record.CompletedFiles.Add(completedKey);
-                        completed.Add(completedKey);
+                        if (completed.Add(completedKey))
+                        {
+                            record.CompletedFiles.Add(completedKey);
+                        }
                         record.LastError = "";
                         Persist(record);
                     }
@@ -492,9 +490,7 @@ namespace TiltBrush
             string fullPath = Path.GetFullPath(path);
             string[] roots =
             {
-                Path.GetFullPath(OpenBrushStorage.LocalExportStagingPath),
-                Path.GetFullPath(Path.Combine(
-                    UnityEngine.Application.temporaryCachePath, "OpenBrushSafStaging")),
+                Path.GetFullPath(OpenBrushStorage.LocalStagingPath),
             };
             foreach (string root in roots)
             {

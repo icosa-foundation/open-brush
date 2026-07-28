@@ -46,9 +46,21 @@ namespace TiltBrush
         {
             get
             {
-                return Path.Combine(Application.temporaryCachePath, "OpenBrushExports");
+                return Path.Combine(LocalStagingPath, "Exports");
             }
         }
+
+        public static string LocalStagingPath =>
+            Path.Combine(Application.temporaryCachePath, "OpenBrushSafStaging");
+
+        public static string LocalSnapshotStagingPath =>
+            Path.Combine(LocalStagingPath, "Snapshots");
+
+        public static string LocalVideoStagingPath =>
+            Path.Combine(LocalStagingPath, "Videos");
+
+        public static string LocalVrVideoStagingPath =>
+            Path.Combine(LocalStagingPath, "VRVideos");
 
         public static string LocalMaterializedMediaLibraryPath
         {
@@ -157,7 +169,8 @@ namespace TiltBrush
                 return true;
             }
 
-            return PublishPathToSharedStorage(relativePath, localPath, out error);
+            return PublishPathToSharedStorage(
+                relativePath, localPath, transactionOwnsPayload: true, out error);
         }
 
         public static void PublishGeneratedFileToSharedStorageAsync(
@@ -170,7 +183,12 @@ namespace TiltBrush
                 return;
             }
 
-            PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete);
+            PublishPathToSharedStorageAsync(
+                relativePath,
+                localPath,
+                label,
+                transactionOwnsPayload: true,
+                onComplete);
         }
 
         public static void PublishGeneratedFilesToSharedStorageAsync(
@@ -213,7 +231,7 @@ namespace TiltBrush
                         UserStorage.Backend,
                         bundleArea.Value,
                         stagedPaths,
-                        transactionOwnsPayload: false,
+                        transactionOwnsPayload: true,
                         CancellationToken.None),
                     onComplete);
                 return;
@@ -256,7 +274,8 @@ namespace TiltBrush
                 return true;
             }
 
-            return PublishPathToSharedStorage(relativePath, localPath, out error);
+            return PublishPathToSharedStorage(
+                relativePath, localPath, transactionOwnsPayload: false, out error);
         }
 
         public static void PublishMediaLibraryPathToSharedStorageAsync(
@@ -269,7 +288,12 @@ namespace TiltBrush
                 return;
             }
 
-            PublishPathToSharedStorageAsync(relativePath, localPath, label, onComplete);
+            PublishPathToSharedStorageAsync(
+                relativePath,
+                localPath,
+                label,
+                transactionOwnsPayload: false,
+                onComplete);
         }
 
         public static bool PublishVideoCaptureToSharedStorage(
@@ -318,7 +342,7 @@ namespace TiltBrush
                     UserStorage.Backend,
                     area,
                     stagedPaths,
-                    transactionOwnsPayload: false,
+                    transactionOwnsPayload: true,
                     CancellationToken.None);
                 error = result.Error;
                 return result.Success;
@@ -386,7 +410,7 @@ namespace TiltBrush
                         UserStorage.Backend,
                         area,
                         stagedPaths,
-                        transactionOwnsPayload: false,
+                        transactionOwnsPayload: true,
                         CancellationToken.None),
                     onComplete);
                 return;
@@ -436,7 +460,7 @@ namespace TiltBrush
                         UserStorage.Backend,
                         StorageArea.Exports,
                         stagedPaths,
-                        transactionOwnsPayload: false,
+                        transactionOwnsPayload: true,
                         CancellationToken.None),
                     onComplete);
                 return;
@@ -447,6 +471,7 @@ namespace TiltBrush
                 relativeExportPath,
                 localExportDirectory,
                 "export " + exportName,
+                transactionOwnsPayload: true,
                 (exportCopied, exportError) =>
                 {
                     if (!exportCopied)
@@ -459,6 +484,7 @@ namespace TiltBrush
                         Path.Combine("Exports", "README.txt"),
                         localReadmePath,
                         "export README",
+                        transactionOwnsPayload: true,
                         onComplete);
                 });
         }
@@ -467,6 +493,7 @@ namespace TiltBrush
             string relativePath,
             string localPath,
             string label,
+            bool transactionOwnsPayload,
             Action<bool, string> onComplete)
         {
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
@@ -488,13 +515,16 @@ namespace TiltBrush
                     area,
                     areaRelativePath,
                     localPath,
-                    transactionOwnsPayload: false,
+                    transactionOwnsPayload,
                     CancellationToken.None),
                 onComplete);
         }
 
         private static bool PublishPathToSharedStorage(
-            string relativePath, string localPath, out string error)
+            string relativePath,
+            string localPath,
+            bool transactionOwnsPayload,
+            out string error)
         {
             error = null;
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
@@ -513,7 +543,7 @@ namespace TiltBrush
                 area,
                 areaRelativePath,
                 localPath,
-                transactionOwnsPayload: false,
+                transactionOwnsPayload,
                 CancellationToken.None);
             error = result.Error;
             return result.Success;
