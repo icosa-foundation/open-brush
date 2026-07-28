@@ -21,6 +21,10 @@ namespace TiltBrush
         private void RefreshPath()
         {
             _Knot.RefreshVisuals();
+            if (_Knot.KnotType == CameraPathKnot.Type.Rotation)
+            {
+                Path.RefreshRotationKnotPolarities();
+            }
             Path.RefreshEntirePath();
         }
 
