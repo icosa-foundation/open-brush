@@ -243,8 +243,8 @@ namespace TiltBrush
             public bool? BillboardsFaceCameraPosition; // true / false
             public int? ShadowMode;                    // HardOnly / Disable
             public int? ShadowResolution;              // High / Low
-            public int? ShadowDistance;                // 30 / 15
-            public int? LodBias;                       // 1 / 0.3
+            public float? ShadowDistance;              // 30 / 15
+            public float? LodBias;                     // 1 / 0.3
             public int? SkinWeights;                   // 2 / 1
 
 
@@ -256,7 +256,7 @@ namespace TiltBrush
         public static class PerformanceOverrides
         {
             // User overrides
-            private static PerformanceConfig o = App.UserConfig.Performance;
+            private static PerformanceConfig o => App.UserConfig.Performance;
             public static int HullBrushMaxVertInputs => o.HullBrushMaxVertInputs ?? App.PlatformConfig.HullBrushMaxVertInputs;
             public static int HullBrushMaxKnots => o.HullBrushMaxKnots ?? App.PlatformConfig.HullBrushMaxKnots;
             public static int ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
@@ -270,6 +270,19 @@ namespace TiltBrush
             public static bool EnableExportMemoryOptimization => o.EnableExportMemoryOptimization ?? App.PlatformConfig.EnableExportMemoryOptimization;
             public static bool EnableMulticamPreview => o.EnableMulticamPreview ?? App.PlatformConfig.EnableMulticamPreview;
             public static int MaxSnapshotDimension => o.MaxSnapshotDimension ?? App.PlatformConfig.MaxSnapshotDimension;
+            public static bool? QuestDynamicFoveation => o.QuestDynamicFoveation;
+            public static bool? QuestDynamicResolution => o.QuestDynamicResolution;
+            public static int? OverrideQuestGPULevel => o.OverrideQuestGPULevel;
+            public static int? OverrideQuestFoveationLevel => o.OverrideQuestFoveationLevel;
+            public static int? OverrideQualityLevel => o.OverrideQualityLevel;
+            public static bool? AnisotropicFiltering => o.AnisotropicFiltering;
+            public static bool? BillboardsFaceCameraPosition => o.BillboardsFaceCameraPosition;
+            public static int? ShadowMode => o.ShadowMode;
+            public static int? ShadowResolution => o.ShadowResolution;
+            public static float? ShadowDistance => o.ShadowDistance;
+            public static float? LodBias => o.LodBias;
+            public static int? SkinWeights => o.SkinWeights;
+            public static int? OverrideBloomMode => o.OverrideBloomMode;
         }
 
         public void ApplyPerformanceLimits()

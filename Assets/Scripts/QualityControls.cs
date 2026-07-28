@@ -149,9 +149,24 @@ namespace TiltBrush
 
             // Override from user config, if valid.
             int configQuality = App.UserConfig.Profiling.QualityLevel;
-            if (configQuality >= 0 && configQuality <= AppQualityLevels.Length)
+            if (configQuality >= 0 && configQuality < AppQualityLevels.Length)
             {
                 newLevel = configQuality;
+            }
+
+            int? overrideQuality = UserConfig.PerformanceOverrides.OverrideQualityLevel;
+            if (overrideQuality.HasValue)
+            {
+                if (overrideQuality >= 0 && overrideQuality < AppQualityLevels.Length)
+                {
+                    newLevel = overrideQuality.Value;
+                }
+                else
+                {
+                    Debug.LogError(
+                        $"[PerformanceOverrides] Quality level {overrideQuality} is outside the valid " +
+                        $"range 0-{AppQualityLevels.Length - 1}.");
+                }
             }
 
             // Apply the quality level.
@@ -351,12 +366,26 @@ namespace TiltBrush
                 settings = settingLevels[value];
             }
 
-            SetBloomMode(settings.Bloom);
+            BloomMode bloomMode = settings.Bloom;
+            int? overrideBloomMode = UserConfig.PerformanceOverrides.OverrideBloomMode;
+            if (overrideBloomMode.HasValue)
+            {
+                if (Enum.IsDefined(typeof(BloomMode), overrideBloomMode.Value))
+                {
+                    bloomMode = (BloomMode)overrideBloomMode.Value;
+                }
+                else
+                {
+                    Debug.LogError(
+                        $"[PerformanceOverrides] Bloom mode {overrideBloomMode} is not valid.");
+                }
+            }
+
+            SetBloomMode(bloomMode);
             EnableHDR(settings.Hdr);
             EnableFxaa(settings.Fxaa);
             Shader.globalMaximumLOD = settings.MaxLod;
             m_msaaLevel = settings.MsaaLevel;
-            QualitySettings.anisotropicFiltering = settings.Anisotropic;
             SimplificationLevel = settings.StrokeSimplification;
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
@@ -392,14 +421,86 @@ namespace TiltBrush
                 m_lastQualityLevel = value;
             }
 
-            App.VrSdk.SetGpuClockLevel(AppQualitySettings.GpuLevel);
-            App.VrSdk.SetFixedFoveation(AppQualitySettings.FixedFoveationLevel);
+            if (UserConfig.PerformanceOverrides.QuestDynamicFoveation.HasValue)
+            {
+                App.VrSdk.SetDynamicFoveation(
+                    UserConfig.PerformanceOverrides.QuestDynamicFoveation.Value);
+            }
+            if (UserConfig.PerformanceOverrides.QuestDynamicResolution.HasValue)
+            {
+                App.VrSdk.SetDynamicResolution(
+                    UserConfig.PerformanceOverrides.QuestDynamicResolution.Value);
+            }
+
+            App.VrSdk.SetGpuClockLevel(
+                UserConfig.PerformanceOverrides.OverrideQuestGPULevel ?? settings.GpuLevel);
+            App.VrSdk.SetFixedFoveation(
+                UserConfig.PerformanceOverrides.OverrideQuestFoveationLevel ??
+                settings.FixedFoveationLevel);
 
             QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
+            ApplyUnityQualityOverrides(settings);
 
             if (OnQualityLevelChange != null)
             {
                 OnQualityLevelChange(value);
+            }
+        }
+
+        void ApplyUnityQualityOverrides(AppQualitySettingLevels.AppQualitySettings settings)
+        {
+            bool? anisotropicFiltering = UserConfig.PerformanceOverrides.AnisotropicFiltering;
+            QualitySettings.anisotropicFiltering = anisotropicFiltering.HasValue
+                ? anisotropicFiltering.Value
+                    ? AnisotropicFiltering.Enable
+                    : AnisotropicFiltering.Disable
+                : settings.Anisotropic;
+
+            if (UserConfig.PerformanceOverrides.BillboardsFaceCameraPosition.HasValue)
+            {
+                QualitySettings.billboardsFaceCameraPosition =
+                    UserConfig.PerformanceOverrides.BillboardsFaceCameraPosition.Value;
+            }
+            ApplyEnumOverride<ShadowQuality>(
+                UserConfig.PerformanceOverrides.ShadowMode,
+                value => QualitySettings.shadows = value,
+                "shadow mode");
+            ApplyEnumOverride<ShadowResolution>(
+                UserConfig.PerformanceOverrides.ShadowResolution,
+                value => QualitySettings.shadowResolution = value,
+                "shadow resolution");
+            if (UserConfig.PerformanceOverrides.ShadowDistance.HasValue)
+            {
+                QualitySettings.shadowDistance =
+                    UserConfig.PerformanceOverrides.ShadowDistance.Value;
+            }
+            if (UserConfig.PerformanceOverrides.LodBias.HasValue)
+            {
+                QualitySettings.lodBias = UserConfig.PerformanceOverrides.LodBias.Value;
+            }
+            ApplyEnumOverride<SkinWeights>(
+                UserConfig.PerformanceOverrides.SkinWeights,
+                value => QualitySettings.skinWeights = value,
+                "skin weights");
+        }
+
+        static void ApplyEnumOverride<T>(int? configuredValue, Action<T> apply, string settingName)
+            where T : struct
+        {
+            if (!configuredValue.HasValue)
+            {
+                return;
+            }
+
+            if (Enum.IsDefined(typeof(T), configuredValue.Value))
+            {
+                apply((T)Enum.ToObject(typeof(T), configuredValue.Value));
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[PerformanceOverrides] Configured {settingName} value " +
+                    $"{configuredValue} is not valid.");
             }
         }
 
