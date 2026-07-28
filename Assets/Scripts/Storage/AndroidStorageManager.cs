@@ -269,6 +269,7 @@ namespace TiltBrush
 
         private IEnumerator RefreshRuntimeContent()
         {
+            yield return SeedRuntimeContent();
             foreach (StorageArea area in new[]
             {
                 StorageArea.Scripts,
@@ -304,6 +305,54 @@ namespace TiltBrush
                         $"SAF_PROJECTION {area} refresh retained previous content: " +
                         $"{result.Error}");
                 }
+            }
+        }
+
+        private IEnumerator SeedRuntimeContent()
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework ||
+                !UserStorage.Backend.IsReady)
+            {
+                yield break;
+            }
+            var seeds = new List<RuntimeContentSeed>();
+            foreach (TextAsset library in Resources.LoadAll<TextAsset>("LuaModules"))
+            {
+                seeds.Add(new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    $"LuaModules/{library.name}.lua",
+                    "text/x-lua",
+                    library.bytes));
+            }
+            Task<RuntimeContentSeedResult> task = Task.Run(() =>
+                RuntimeContentSeeder.SeedMissing(
+                    UserStorage.Backend, seeds, CancellationToken.None));
+            while (!task.IsCompleted)
+            {
+                yield return null;
+            }
+            if (task.IsFaulted)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Runtime content seeding failed: " +
+                    $"{task.Exception?.GetBaseException().Message}");
+                yield break;
+            }
+            if (task.IsCanceled)
+            {
+                Debug.LogWarning("SAF_STORAGE Runtime content seeding was canceled.");
+                yield break;
+            }
+            RuntimeContentSeedResult result = task.Result;
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Runtime content seeding failed: {result.Error}");
+            }
+            else if (result.SeededCount > 0)
+            {
+                Debug.Log(
+                    $"SAF_STORAGE Seeded {result.SeededCount} runtime content file(s).");
             }
         }
 

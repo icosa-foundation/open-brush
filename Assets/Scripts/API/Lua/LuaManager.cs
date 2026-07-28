@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
@@ -1305,23 +1307,52 @@ namespace TiltBrush
             }
         }
 
-        public bool CopyActiveScriptToUserScriptFolder(LuaApiCategory category)
+        public Task<bool> CopyActiveScriptToUserScriptFolderAsync(LuaApiCategory category)
         {
             var index = ActiveScripts[category];
             var scriptName = GetScriptNames(category)[index];
-            return CopyScriptToUserScriptFolder(category, scriptName);
+            return CopyScriptToUserScriptFolderAsync(category, scriptName);
         }
 
-        public bool CopyScriptToUserScriptFolder(LuaApiCategory category, string scriptName)
+        public async Task<bool> CopyScriptToUserScriptFolderAsync(
+            LuaApiCategory category, string scriptName)
         {
             var originalFilename = $"{category}.{scriptName}";
-            var newFilename = Path.Join(UserPluginsPath(), $"{originalFilename}.lua");
-            if (!File.Exists(newFilename))
+            string displayName = $"{originalFilename}.lua";
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local)
             {
-                FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
-                return true;
+                var newFilename = Path.Join(UserPluginsPath(), displayName);
+                if (!File.Exists(newFilename))
+                {
+                    FileUtils.WriteTextFromResources(
+                        $"LuaScriptExamples/{originalFilename}", newFilename);
+                    return true;
+                }
+                return false;
             }
-            return false;
+
+            TextAsset resource = Resources.Load<TextAsset>(
+                $"LuaScriptExamples/{originalFilename}");
+            if (resource == null)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Missing example plugin resource: {originalFilename}");
+                return false;
+            }
+            RuntimeContentWriteResult result =
+                await UserRuntimeContent.PublishIfMissingAsync(
+                    StorageArea.Plugins,
+                    displayName,
+                    "text/x-lua",
+                    resource.bytes,
+                    CancellationToken.None);
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Could not publish example plugin {displayName}: " +
+                    $"{result.Error}");
+            }
+            return result.Success && result.Created;
         }
 
         public bool IsBackgroundScriptActive(string scriptName)

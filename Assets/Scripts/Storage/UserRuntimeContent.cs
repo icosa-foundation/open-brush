@@ -65,6 +65,22 @@ namespace TiltBrush
         event Action<StorageArea> Refreshed;
     }
 
+    public sealed class RuntimeContentWriteResult
+    {
+        public StorageResultCode Code { get; }
+        public bool Created { get; }
+        public string Error { get; }
+        public bool Success => Code == StorageResultCode.Success;
+
+        public RuntimeContentWriteResult(
+            StorageResultCode code, bool created, string error = null)
+        {
+            Code = code;
+            Created = created;
+            Error = error;
+        }
+    }
+
     public static class UserRuntimeContent
     {
         private static readonly object sm_Gate = new object();
@@ -97,6 +113,113 @@ namespace TiltBrush
                 sm_Backend = UserStorage.Backend;
                 sm_Content = content;
             }
+        }
+
+        public static async Task<RuntimeContentWriteResult> PublishIfMissingAsync(
+            StorageArea area,
+            string relativePath,
+            string mimeType,
+            byte[] data,
+            CancellationToken cancellationToken)
+        {
+            LocalUserRuntimeContent.EnsureRuntimeArea(area);
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+            string normalized = NormalizeRelativePath(relativePath);
+            string directory = GetLogicalDirectory(normalized);
+            string displayName = Path.GetFileName(normalized);
+            IUserStorageBackend backend = UserStorage.Backend;
+            RuntimeContentWriteResult write = await Task.Run(() =>
+            {
+                StorageDirectoryResult listing = backend.List(
+                    area, directory, cancellationToken);
+                if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                {
+                    return new RuntimeContentWriteResult(
+                        listing.Code, created: false, listing.Error);
+                }
+                if (listing.Success && listing.Documents.Any(document =>
+                        string.Equals(
+                            document.DisplayName,
+                            displayName,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Success, created: false);
+                }
+                try
+                {
+                    using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                        area,
+                        normalized,
+                        mimeType ?? StorageMimeTypes.ForPath(normalized),
+                        cancellationToken))
+                    {
+                        using (Stream output = transaction.OpenWrite())
+                        {
+                            output.Write(data, 0, data.Length);
+                        }
+                        StorageMutationResult commit = transaction.Commit();
+                        return new RuntimeContentWriteResult(
+                            commit.Code, commit.Success, commit.Error);
+                    }
+                }
+                catch (OperationCanceledException e)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Cancelled, created: false, e.Message);
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.PermissionDenied, created: false, e.Message);
+                }
+                catch (Exception e) when (
+                    e is IOException || e is ArgumentException || e is InvalidOperationException)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Failed, created: false, e.Message);
+                }
+            }, cancellationToken);
+            if (!write.Success || !write.Created)
+            {
+                return write;
+            }
+            RuntimeProjectionResult refresh =
+                await Instance.EnsureCurrentAsync(area, cancellationToken);
+            return refresh.Success
+                ? write
+                : new RuntimeContentWriteResult(
+                    refresh.Code,
+                    created: true,
+                    $"Content was committed but runtime refresh failed: {refresh.Error}");
+        }
+
+        private static string NormalizeRelativePath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath) ||
+                Path.IsPathRooted(relativePath))
+            {
+                throw new ArgumentException("Runtime content path must be relative.");
+            }
+            string normalized = relativePath.Replace('\\', '/').Trim('/');
+            foreach (string segment in normalized.Split('/'))
+            {
+                if (string.IsNullOrEmpty(segment) || segment == "." || segment == "..")
+                {
+                    throw new ArgumentException(
+                        "Runtime content path escapes its storage area.");
+                }
+            }
+            return normalized;
+        }
+
+        private static string GetLogicalDirectory(string relativePath)
+        {
+            int separator = relativePath.LastIndexOf('/');
+            return separator < 0 ? "" : relativePath.Substring(0, separator);
         }
     }
 

@@ -1121,6 +1121,45 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void RuntimeContentSeeder_WritesOnlyMissingFiles()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("existing.lua", System.Text.Encoding.UTF8.GetBytes("user"));
+            var seeds = new[]
+            {
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "existing.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("default")),
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "missing.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("seed")),
+            };
+
+            RuntimeContentSeedResult first = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+            RuntimeContentSeedResult second = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+
+            Assert.IsTrue(first.Success, first.Error);
+            Assert.AreEqual(1, first.SeededCount);
+            Assert.IsTrue(second.Success, second.Error);
+            Assert.AreEqual(0, second.SeededCount);
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDocument existing = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None).Documents
+                .Single(document => document.DisplayName == "existing.lua");
+            using (var reader = new StreamReader(backend.OpenRead(
+                existing.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user", reader.ReadToEnd());
+            }
+        }
+
         private static byte[] CreateMinimalTiltArchive()
         {
             using (var output = new MemoryStream())
