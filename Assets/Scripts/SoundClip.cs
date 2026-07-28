@@ -338,6 +338,10 @@ namespace TiltBrush
             {
                 yield break;
             }
+            if (string.IsNullOrEmpty(AbsolutePath))
+            {
+                yield break;
+            }
             controller.m_SoundClipAudioSource.playOnAwake = false;
             var audioClipTask = LoadClip(AbsolutePath);
             while (!audioClipTask.IsCompleted)
