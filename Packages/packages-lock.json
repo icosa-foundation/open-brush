@@ -11,10 +11,17 @@
       "depth": 0,
       "source": "git",
       "dependencies": {
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.physics2d": "1.0.0",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.test-framework": "1.1.31"
       },
-      "hash": "a2a5edf8d8e3f715881c0db4589c18feff7c379f"
+      "hash": "bd72241ab91c664176091789c9408d676783abec"
     },
     "com.icosa.open-brush-unity-tools": {
       "version": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
@@ -54,6 +61,13 @@
       "source": "git",
       "dependencies": {},
       "hash": "9818db6327e09d399bf4fb84da4ed19f03b565b4"
+    },
+    "com.rlabrecque.steamworks.net": {
+      "version": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c791803ec16191a1f771b591438151d5f46e865e"
     },
     "com.sandrofigo.voxreader": {
       "version": "5.0.6",
@@ -497,6 +511,16 @@
       "source": "git",
       "dependencies": {},
       "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
+    },
+    "com.valvesoftware.openxr.utils": {
+      "version": "https://github.com/ValveSoftware/Unity.git?path=/com.valvesoftware.openxr.utils",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.xr.openxr": "1.10.0",
+        "com.unity.inputsystem": "1.7.0"
+      },
+      "hash": "28c3b8d9a4ecd7a128906e11c398944d3c8524dc"
     },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",

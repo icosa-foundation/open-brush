@@ -8,14 +8,35 @@ namespace TiltBrush
 {
     public static class LuaApiMethods
     {
-        public static void DrawPath(IPathApiWrapper path)
+        public static StrokeListApiWrapper DrawPath(IPathApiWrapper path)
         {
-            DrawStrokes.DrawNestedTrList(path.AsMultiTrList(), TrTransform.identity);
+            return new StrokeListApiWrapper(
+                DrawStrokes.DrawNestedTrList(path.AsMultiTrList(), TrTransform.identity)
+            );
         }
 
-        public static void DrawPaths(IPathApiWrapper paths)
+        public static StrokeListApiWrapper DrawPaths(IPathApiWrapper paths)
         {
-            DrawStrokes.DrawNestedTrList(paths.AsMultiTrList(), TrTransform.identity);
+            var colors = paths is PathListApiWrapper pathList ? pathList._Colors : null;
+            return new StrokeListApiWrapper(
+                DrawStrokes.DrawNestedTrList(paths.AsMultiTrList(), TrTransform.identity, colors)
+            );
+        }
+
+        public static StrokeListApiWrapper DrawPath(
+            IPathApiWrapper path, string brushType, float brushSize, ColorApiWrapper color,
+            float smoothing = 0, LayerApiWrapper layer = null, GroupApiWrapper group = null)
+        {
+            var brush = string.IsNullOrEmpty(brushType) ? null : ApiMethods.LookupBrushDescriptor(brushType);
+            var canvas = layer?._CanvasScript ?? App.Scene.ActiveCanvas;
+            var pathList = path.AsMultiTrList();
+            var colors = color == null ? null : pathList.Select(_ => color._Color).ToList();
+            return new StrokeListApiWrapper(
+                DrawStrokes.DrawNestedTrList(
+                    pathList, TrTransform.identity, colors, smoothing: smoothing,
+                    brush: brush, brushSize: brushSize, canvas: canvas, groupTag: group?._Group
+                )
+            );
         }
 
         public static void TransformPath(PathApiWrapper path, TrTransform tr)
