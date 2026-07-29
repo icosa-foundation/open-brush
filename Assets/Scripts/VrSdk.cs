@@ -54,6 +54,7 @@ namespace TiltBrush
         Neo3,
         Phoenix,
         Zapbox,
+        SteamFrame,
     }
 
     //
@@ -82,6 +83,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_UnityXRNeo3ControlsPrefab;
         [SerializeField] private GameObject m_UnityXRPhoenixControlsPrefab;
         [SerializeField] private GameObject m_UnityXRZapboxControlsPrefab;
+        [SerializeField] private GameObject m_UnityXRSteamFrameControlsPrefab;
         // Prefab for the old-style Touch controllers, used only for Rift
         [SerializeField] private GameObject m_OculusRiftControlsPrefab;
         // Prefab for the new-style Touch controllers, used for Rift-S and Quest
@@ -91,6 +93,8 @@ namespace TiltBrush
 
         // This is the object "Camera (eye)"
         [SerializeField] private Camera m_VrCamera;
+
+        [SerializeField] private ControllerStyle m_ForceControllerStyleForTesting = ControllerStyle.Unset;
 
         // Runtime VR Spawned Controllers
         //  - This is the source of truth for controllers.
@@ -102,6 +106,8 @@ namespace TiltBrush
         [NonSerialized] public OVRManager m_OvrManager;
 #endif
         private bool m_HasVrFocus = true;
+        private bool m_HasLoggedForcedUnityXRControllerStyle;
+        private bool m_HasLoggedSteamFrameControllerStyle;
 
         private Bounds? m_RoomBoundsAabbCached;
 
@@ -475,7 +481,8 @@ namespace TiltBrush
                 style == ControllerStyle.Cosmos ||
                 style == ControllerStyle.Neo3 ||
                 style == ControllerStyle.Phoenix ||
-                style == ControllerStyle.Zapbox;
+                style == ControllerStyle.Zapbox ||
+                style == ControllerStyle.SteamFrame;
         }
 
         // Destroy and recreate the ControllerBehavior and ControllerGeometry objects.
@@ -564,6 +571,13 @@ namespace TiltBrush
                 case ControllerStyle.Zapbox:
                     controlsPrefab = m_UnityXRZapboxControlsPrefab;
                     break;
+                case ControllerStyle.SteamFrame:
+                    controlsPrefab = m_UnityXRSteamFrameControlsPrefab;
+                    if (controlsPrefab == null)
+                    {
+                        Debug.LogError("STEAM_FRAME_GEOM_MISSING_CONTROLS_PREFAB VrSdk.m_UnityXRSteamFrameControlsPrefab is not assigned");
+                    }
+                    break;
                 case ControllerStyle.Gvr:
                     controlsPrefab = m_GvrPointerControlsPrefab;
                     break;
@@ -577,6 +591,10 @@ namespace TiltBrush
             if (controlsPrefab != null)
             {
                 Debug.Assert(m_VrControls == null);
+                if (style == ControllerStyle.SteamFrame)
+                {
+                    Debug.Log($"STEAM_FRAME_GEOM_INSTANTIATE_CONTROLS prefab={controlsPrefab.name}");
+                }
                 GameObject controlsObject = Instantiate(controlsPrefab);
                 m_VrControls = controlsObject.GetComponent<VrControllers>();
                 if (m_VrControls == null)
@@ -713,12 +731,24 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogWarning("Unrecognised device connected: {device.manufacturer}, {device.name}");
+                Debug.LogWarning($"Unrecognised device connected: {device.manufacturer}, {device.name}");
             }
         }
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
+            if (m_ForceControllerStyleForTesting != ControllerStyle.Unset)
+            {
+                if (!m_HasLoggedForcedUnityXRControllerStyle)
+                {
+                    Debug.Log(
+                        $"STEAM_FRAME_GEOM_FORCE_STYLE style={m_ForceControllerStyleForTesting} device={device.manufacturer}, {device.name}");
+                    m_HasLoggedForcedUnityXRControllerStyle = true;
+                }
+                SetControllerStyle(m_ForceControllerStyleForTesting);
+                return;
+            }
+
             if (device.name.Contains("Oculus Touch"))
             {
                 SetControllerStyle(ControllerStyle.OculusTouch);
@@ -726,6 +756,16 @@ namespace TiltBrush
             else if (device.name.StartsWith("Index Controller OpenXR"))
             {
                 SetControllerStyle(ControllerStyle.Knuckles);
+            }
+            else if (device.name.Contains("Steam Frame Controller"))
+            {
+                if (!m_HasLoggedSteamFrameControllerStyle)
+                {
+                    Debug.Log(
+                        $"STEAM_FRAME_GEOM_DETECTED_STYLE style={ControllerStyle.SteamFrame} device={device.manufacturer}, {device.name}");
+                    m_HasLoggedSteamFrameControllerStyle = true;
+                }
+                SetControllerStyle(ControllerStyle.SteamFrame);
             }
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
             {
