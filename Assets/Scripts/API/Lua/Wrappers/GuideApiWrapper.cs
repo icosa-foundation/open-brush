@@ -147,13 +147,16 @@ namespace TiltBrush
         public void Scale(Vector3 scale) => SketchMemoryScript.m_Instance.PerformAndRecordCommand(
             new MoveWidgetCommand(_StencilWidget, _StencilWidget.LocalTransform, scale));
 
-        [LuaDocsDescription("")]
-        [LuaDocsExample("myGuide:ClosestPoint(Vector3:New(2, 3, 4)")]
-        [LuaDocsParameter("point", "")]
+        [LuaDocsDescription("Returns the closest point on the guide surface and its orientation")]
+        [LuaDocsExample("closest = myGuide:ClosestPoint(Vector3:New(2, 3, 4))")]
+        [LuaDocsParameter("point", "The point to project onto the guide surface")]
+        [LuaDocsReturnValue("A transform whose position is on the guide and whose up axis follows the surface normal")]
         public TransformApiWrapper ClosestPoint(Vector3 point)
         {
             _StencilWidget.FindClosestPointOnSurface(point, out Vector3 closestPoint, out Vector3 normal);
-            Quaternion rotation = Quaternion.LookRotation(Vector3.up, normal);
+            Quaternion rotation = normal.sqrMagnitude > 0.000001f
+                ? Quaternion.FromToRotation(Vector3.up, normal.normalized)
+                : Quaternion.identity;
             return new TransformApiWrapper(closestPoint, rotation);
         }
 

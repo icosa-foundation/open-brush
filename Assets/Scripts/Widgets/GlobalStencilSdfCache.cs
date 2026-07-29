@@ -62,7 +62,17 @@ namespace TiltBrush
         {
             Vector3 candidate = point + direction.normalized * velocity;
             float dist = SignedDistance(candidate);
+            if (float.IsNaN(dist) || float.IsInfinity(dist))
+            {
+                return point;
+            }
+
             Vector3 normal = EstimateNormal(candidate, epsilon);
+            if (normal.sqrMagnitude < 0.000001f)
+            {
+                return point;
+            }
+
             return candidate - normal * dist;
         }
 
@@ -71,11 +81,34 @@ namespace TiltBrush
             Vector3 x = new Vector3(eps, 0f, 0f);
             Vector3 y = new Vector3(0f, eps, 0f);
             Vector3 z = new Vector3(0f, 0f, eps);
-            float dx = SignedDistance(p + x) - SignedDistance(p - x);
-            float dy = SignedDistance(p + y) - SignedDistance(p - y);
-            float dz = SignedDistance(p + z) - SignedDistance(p - z);
+            float x1 = SignedDistance(p + x);
+            float x2 = SignedDistance(p - x);
+            float y1 = SignedDistance(p + y);
+            float y2 = SignedDistance(p - y);
+            float z1 = SignedDistance(p + z);
+            float z2 = SignedDistance(p - z);
+            if (!IsFinite(x1) || !IsFinite(x2) ||
+                !IsFinite(y1) || !IsFinite(y2) ||
+                !IsFinite(z1) || !IsFinite(z2))
+            {
+                return Vector3.zero;
+            }
+
+            float dx = x1 - x2;
+            float dy = y1 - y2;
+            float dz = z1 - z2;
             Vector3 grad = new Vector3(dx, dy, dz);
-            return grad.normalized;
+            return IsFinite(grad) ? grad.normalized : Vector3.zero;
+        }
+
+        static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
         }
 
         static float DistanceToStencil(StencilWidget s, Vector3 worldPos)
