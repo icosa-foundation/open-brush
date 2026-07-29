@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace TiltBrush
 {
@@ -189,6 +191,147 @@ namespace TiltBrush
 
         public ControllerStyle Style { get => m_ControllerStyle; }
 
+        public void SetControllerEmission(Color color)
+        {
+            SetRendererEmission(MainMesh, color);
+            SetRendererEmission(TriggerMesh, color);
+            if (OtherMeshes == null)
+            {
+                return;
+            }
+            for (int i = 0; i < OtherMeshes.Length; ++i)
+            {
+                SetRendererEmission(OtherMeshes[i], color);
+            }
+        }
+
+        public void SetTransformVisualsTint(Color color)
+        {
+            if (TransformVisualsRenderer != null)
+            {
+                TransformVisualsRenderer.material.SetColor("_Color", color);
+            }
+        }
+
+        public void SetTransformVisualsActive(bool active, float intensity)
+        {
+            if (TransformVisualsRenderer == null)
+            {
+                return;
+            }
+
+            TransformVisualsRenderer.gameObject.SetActive(active);
+            TransformVisualsRenderer.material.SetFloat("_Intensity", intensity);
+        }
+
+        public void RegisterTransformVisualMeshes(SelectionEffect selectionEffect)
+        {
+            RegisterRendererMesh(selectionEffect, TransformVisualsRenderer);
+            switch (Style)
+            {
+                case ControllerStyle.OculusTouch:
+                case ControllerStyle.Knuckles:
+                case ControllerStyle.Phoenix:
+                case ControllerStyle.Neo3:
+                case ControllerStyle.Zapbox:
+                    RegisterRendererMesh(selectionEffect, JoystickPad);
+                    break;
+                case ControllerStyle.Vive:
+                    RegisterRendererMesh(selectionEffect, PadMesh);
+                    break;
+            }
+        }
+
+        public void SetGripVisualState(BaseControllerBehavior.GripState state, Color tint)
+        {
+            if (Style == ControllerStyle.InitializingUnityXR ||
+                Style == ControllerStyle.None ||
+                Style == ControllerStyle.Unset ||
+                LeftGripMesh == null ||
+                RightGripMesh == null)
+            {
+                return;
+            }
+
+            bool manuallyAnimateGrips = Style == ControllerStyle.Vive || Style == ControllerStyle.Wmr;
+            switch (state)
+            {
+                case BaseControllerBehavior.GripState.Standard:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = Vector3.zero;
+                        RightGripMesh.transform.localPosition = Vector3.zero;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, BaseGrippedMaterial, tint, false);
+                    SetGripRendererMaterial(RightGripMesh, BaseGrippedMaterial, tint, false);
+                    break;
+                case BaseControllerBehavior.GripState.ReadyToGrip:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = LeftGripPopOutVector;
+                        Vector3 rightPopOut = LeftGripPopOutVector;
+                        rightPopOut.x *= -1.0f;
+                        RightGripMesh.transform.localPosition = rightPopOut;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, GripReadyMaterial, tint, true);
+                    SetGripRendererMaterial(RightGripMesh, GripReadyMaterial, tint, true);
+                    break;
+                case BaseControllerBehavior.GripState.Gripped:
+                    if (manuallyAnimateGrips)
+                    {
+                        LeftGripMesh.transform.localPosition = LeftGripPopInVector;
+                        Vector3 rightPopIn = LeftGripPopInVector;
+                        rightPopIn.x *= -1.0f;
+                        RightGripMesh.transform.localPosition = rightPopIn;
+                    }
+                    SetGripRendererMaterial(LeftGripMesh, GrippedMaterial, tint, true);
+                    SetGripRendererMaterial(RightGripMesh, GrippedMaterial, tint, true);
+                    break;
+            }
+        }
+
+        private static void SetRendererEmission(Renderer renderer, Color color)
+        {
+            if (renderer == null)
+            {
+                return;
+            }
+
+            var material = renderer.material;
+            if (material.HasProperty("_EmissionColor"))
+            {
+                material.SetColor("_EmissionColor", color);
+            }
+        }
+
+        private static void RegisterRendererMesh(SelectionEffect selectionEffect, Renderer renderer)
+        {
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            if (renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+            {
+                selectionEffect.RegisterMesh(meshFilter);
+            }
+        }
+
+        private static void SetGripRendererMaterial(
+            Renderer renderer, Material material, Color tint, bool applyTint)
+        {
+            if (renderer == null || material == null)
+            {
+                return;
+            }
+
+            renderer.material = material;
+            if (applyTint && renderer.material.HasProperty("_Color"))
+            {
+                renderer.material.SetColor("_Color", tint);
+            }
+        }
+
         // Style is meant to be read-only and immutable, but there is currently one situation
         // that requires it to be writable. TODO: remove when possible?
         public ControllerStyle TempWritableStyle
@@ -250,6 +393,22 @@ namespace TiltBrush
             }
         }
 
+        private struct SteamFramePartState
+        {
+            public readonly Transform transform;
+            public readonly Vector3 initialLocalPosition;
+            public readonly Quaternion initialLocalRotation;
+
+            public SteamFramePartState(Transform transform)
+            {
+                this.transform = transform;
+                this.initialLocalPosition = transform != null ? transform.localPosition : Vector3.zero;
+                this.initialLocalRotation = transform != null ? transform.localRotation : Quaternion.identity;
+            }
+
+            public bool IsValid => transform != null;
+        }
+
         private PopupAnimState m_JoyAnimState;
         private PopupAnimState m_PadAnimState;
         private int m_LastPadButton;
@@ -257,6 +416,68 @@ namespace TiltBrush
         private float m_LogitechPenHandednessHysteresis = 10.0f;
         // True if we're the default orientation, false if we need to be rotated 180 degrees.
         private bool m_LogitechPenHandedness;
+        private bool m_SteamFramePartsCached;
+        private bool m_SteamFrameIsRight;
+        private const int kSteamFrameLeftViewButtonOtherMesh = 3;
+        private const int kSteamFrameLeftSystemButtonOtherMesh = 4;
+        private const int kSteamFrameLeftBumperOtherMesh = 5;
+        private const int kSteamFrameRightXButtonOtherMesh = 4;
+        private const int kSteamFrameRightYButtonOtherMesh = 5;
+        private const int kSteamFrameRightMenuButtonOtherMesh = 6;
+        private const int kSteamFrameRightSystemButtonOtherMesh = 7;
+        private const int kSteamFrameRightBumperOtherMesh = 8;
+        private SteamFramePartState m_SteamFrameTriggerPart;
+        private SteamFramePartState m_SteamFrameGripPart;
+        private SteamFramePartState m_SteamFrameDpadPart;
+        private SteamFramePartState m_SteamFrameDpadPivotPart;
+        private SteamFramePartState m_SteamFramePrimaryButtonPart;
+        private SteamFramePartState m_SteamFrameSecondaryButtonPart;
+        private SteamFramePartState m_SteamFrameTertiaryButtonPart;
+        private SteamFramePartState m_SteamFrameQuaternaryButtonPart;
+        private SteamFramePartState m_SteamFrameMenuButtonPart;
+        private SteamFramePartState m_SteamFrameSystemButtonPart;
+        private SteamFramePartState m_SteamFrameBumperPart;
+
+        private static Transform FindDeepChild(Transform root, string childName)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                if (child.name == childName)
+                {
+                    return child;
+                }
+
+                var match = FindDeepChild(child, childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+            return null;
+        }
+
+        private static Transform GetAnimatedPart(Renderer renderer)
+        {
+            if (renderer == null)
+            {
+                return null;
+            }
+
+            return renderer.transform.parent != null
+                ? renderer.transform.parent
+                : renderer.transform;
+        }
+
+        private Transform GetAnimatedOtherMeshPart(int index)
+        {
+            if (OtherMeshes == null || index < 0 || index >= OtherMeshes.Length)
+            {
+                return null;
+            }
+
+            return GetAnimatedPart(OtherMeshes[index]);
+        }
 
         // Cached value of transform.parent.GetComponent<BaseControllerBehavior>()
         private BaseControllerBehavior m_Behavior;
@@ -269,6 +490,11 @@ namespace TiltBrush
 
         private void Awake()
         {
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                CacheSteamFrameAnimatedParts();
+            }
+
             if (LeftGripMesh != null)
             {
                 m_BaseGrippedMaterial = LeftGripMesh.material;
@@ -285,6 +511,53 @@ namespace TiltBrush
         private ControllerMaterialCatalog Materials
         {
             get { return ControllerMaterialCatalog.m_Instance; }
+        }
+
+        private Renderer PrimaryAffordanceMesh
+        {
+            get { return Button01Mesh != null ? Button01Mesh : PadMesh; }
+        }
+
+        private Renderer SecondaryAffordanceMesh
+        {
+            get { return Button02Mesh != null ? Button02Mesh : PadMesh; }
+        }
+
+        private Renderer DirectionalAffordanceMesh
+        {
+            get { return JoystickPad != null ? JoystickPad : JoystickMesh != null ? JoystickMesh : PadMesh; }
+        }
+
+        private bool HasSeparatePrimarySecondaryAffordances
+        {
+            get
+            {
+                return PrimaryAffordanceMesh != null &&
+                    SecondaryAffordanceMesh != null &&
+                    PrimaryAffordanceMesh != SecondaryAffordanceMesh;
+            }
+        }
+
+        private void AssignIfPresent(Renderer renderer, Material catalogMat)
+        {
+            if (renderer != null && catalogMat != null)
+            {
+                Materials.Assign(renderer, catalogMat);
+            }
+        }
+
+        private void SetRatioIfPresent(Renderer renderer, float ratio)
+        {
+            if (renderer != null && renderer.material.HasProperty("_Ratio"))
+            {
+                renderer.material.SetFloat("_Ratio", ratio);
+            }
+        }
+
+        private void AssignWithRatioIfPresent(Renderer renderer, Material catalogMat, float ratio)
+        {
+            AssignIfPresent(renderer, catalogMat);
+            SetRatioIfPresent(renderer, ratio);
         }
 
         // Returns the ratio of the given controller input.
@@ -351,6 +624,308 @@ namespace TiltBrush
             m_LogitechPenHandedness = angle > flipAngle;
         }
 
+        private void CacheSteamFrameAnimatedParts()
+        {
+            if (m_SteamFramePartsCached)
+            {
+                return;
+            }
+
+            m_SteamFramePartsCached = true;
+            bool isRight = name.Contains("Right");
+            bool isLeft = name.Contains("Left");
+            if (!isLeft && !isRight)
+            {
+                isRight = m_ControllerName == InputManager.ControllerName.Brush;
+            }
+            m_SteamFrameIsRight = isRight;
+
+            Transform trigger = GetAnimatedPart(TriggerMesh);
+            Transform grip = GetAnimatedPart(LeftGripMesh);
+            Transform dpad = GetAnimatedPart(PadMesh);
+            Transform primaryButton = GetAnimatedPart(Button01Mesh);
+            Transform secondaryButton = GetAnimatedPart(Button02Mesh);
+            Transform xButton = GetAnimatedOtherMeshPart(kSteamFrameRightXButtonOtherMesh);
+            Transform yButton = GetAnimatedOtherMeshPart(kSteamFrameRightYButtonOtherMesh);
+            Transform menuButton = GetAnimatedOtherMeshPart(kSteamFrameRightMenuButtonOtherMesh);
+            Transform systemButton = GetAnimatedOtherMeshPart(isRight
+                ? kSteamFrameRightSystemButtonOtherMesh
+                : kSteamFrameLeftSystemButtonOtherMesh);
+            Transform bumper = GetAnimatedOtherMeshPart(isRight
+                ? kSteamFrameRightBumperOtherMesh
+                : kSteamFrameLeftBumperOtherMesh);
+            Transform viewButton = GetAnimatedOtherMeshPart(kSteamFrameLeftViewButtonOtherMesh);
+
+            m_SteamFrameTriggerPart = new SteamFramePartState(trigger);
+            m_SteamFrameGripPart = new SteamFramePartState(grip);
+            m_SteamFrameDpadPart = new SteamFramePartState(dpad);
+            m_SteamFrameDpadPivotPart = new SteamFramePartState(PadAnchor);
+            m_SteamFramePrimaryButtonPart =
+                new SteamFramePartState(isRight ? primaryButton : dpad);
+            m_SteamFrameSecondaryButtonPart =
+                new SteamFramePartState(isRight ? secondaryButton : viewButton);
+            m_SteamFrameTertiaryButtonPart =
+                new SteamFramePartState(isRight ? xButton : systemButton);
+            m_SteamFrameQuaternaryButtonPart =
+                new SteamFramePartState(isRight ? yButton : bumper);
+            m_SteamFrameMenuButtonPart =
+                new SteamFramePartState(isRight ? menuButton : viewButton);
+            m_SteamFrameSystemButtonPart = new SteamFramePartState(systemButton);
+            m_SteamFrameBumperPart = new SteamFramePartState(bumper);
+        }
+
+        private void UpdateSteamFramePartAnimation()
+        {
+            if (EmptyGeometry) { return; }
+
+            var info = ControllerInfo;
+            if (info == null)
+            {
+                return;
+            }
+
+            CacheSteamFrameAnimatedParts();
+
+            InputDevice steamFrameDevice = FindSteamFrameInputDevice();
+            float grip = Mathf.Max(
+                info.GetGripValue(),
+                ReadSteamFrameAxis(steamFrameDevice, "grip"),
+                ReadSteamFrameButton(steamFrameDevice, "gripPressed") ? 1.0f : 0.0f);
+
+            ApplySteamFrameTriggerAnimation(Mathf.Clamp01(
+                Mathf.Max(
+                    info.GetTriggerRatio(),
+                    ReadSteamFrameAxis(steamFrameDevice, "trigger"))));
+            ApplySteamFrameGripAnimation(Mathf.Clamp01(grip));
+
+            bool faceBottom = info.GetVrInput(VrInput.Button01) ||
+                ReadSteamFrameButton(steamFrameDevice, "faceButtonBottom");
+            bool faceInside = ReadSteamFrameButton(steamFrameDevice, "faceButtonInside");
+            bool faceOutside = info.GetVrInput(VrInput.Button02) ||
+                ReadSteamFrameButton(steamFrameDevice, "faceButtonOutside");
+            bool faceTop = ReadSteamFrameButton(steamFrameDevice, "faceButtonTop");
+            bool menu = ReadSteamFrameButton(steamFrameDevice, "menu");
+            bool bumper = ReadSteamFrameButton(steamFrameDevice, "bumper");
+
+            if (m_SteamFrameIsRight)
+            {
+                ApplySteamFrameButtonPress(
+                    m_SteamFramePrimaryButtonPart,
+                    faceBottom,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameSecondaryButtonPart,
+                    faceOutside,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameTertiaryButtonPart,
+                    faceInside,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameQuaternaryButtonPart,
+                    faceTop,
+                    GetSteamFrameRightFaceButtonAxis(),
+                    0.0014f);
+            }
+            else
+            {
+                Vector2 dpad = new Vector2(
+                    (faceInside ? 1.0f : 0.0f) - (faceOutside ? 1.0f : 0.0f),
+                    (faceTop ? 1.0f : 0.0f) - (faceBottom ? 1.0f : 0.0f));
+                ApplySteamFrameDpadAnimation(
+                    Vector2.ClampMagnitude(dpad, 1.0f),
+                    faceBottom || faceInside || faceOutside || faceTop);
+                ApplySteamFrameButtonPress(
+                    m_SteamFrameSystemButtonPart,
+                    false,
+                    GetSteamFrameLeftMenuButtonAxis(),
+                    0.00085f);
+            }
+
+            ApplySteamFrameButtonPress(
+                m_SteamFrameMenuButtonPart,
+                menu,
+                m_SteamFrameIsRight
+                    ? GetSteamFrameRightFaceButtonAxis()
+                    : GetSteamFrameLeftMenuButtonAxis(),
+                0.00085f);
+            ApplySteamFrameBumperAnimation(bumper);
+        }
+
+        private InputDevice FindSteamFrameInputDevice()
+        {
+            string wantedUsage = m_SteamFrameIsRight ? "RightHand" : "LeftHand";
+            foreach (InputDevice device in InputSystem.devices)
+            {
+                if (!IsSteamFrameInputDevice(device))
+                {
+                    continue;
+                }
+
+                foreach (var usage in device.usages)
+                {
+                    if (usage.ToString() == wantedUsage)
+                    {
+                        return device;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsSteamFrameInputDevice(InputDevice device)
+        {
+            string layout = device.layout.ToString();
+            string name = device.name ?? string.Empty;
+            string displayName = device.displayName ?? string.Empty;
+            return layout.Contains("SteamFrameController") ||
+                displayName.Contains("Steam Frame") ||
+                name.Contains("SteamFrame");
+        }
+
+        private static bool ReadSteamFrameButton(InputDevice device, string controlName)
+        {
+            ButtonControl control = device?.TryGetChildControl<ButtonControl>(controlName);
+            return control != null && control.isPressed;
+        }
+
+        private static float ReadSteamFrameAxis(InputDevice device, string controlName)
+        {
+            AxisControl control = device?.TryGetChildControl<AxisControl>(controlName);
+            return control != null ? control.ReadValue() : 0.0f;
+        }
+
+        private void ApplySteamFrameTriggerAnimation(float trigger)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.008507383f, -0.025102803f, 0.043208465f)
+                : new Vector3(0.008507593f, -0.025103247f, 0.043208539f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(0.981060743f, 0.075684428f, -0.178302228f)
+                : new Vector3(0.986111045f, -0.126526967f, 0.107590787f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameTriggerPart, pivot, axis, Mathf.Lerp(0.0f, -12.5f, trigger));
+        }
+
+        private void ApplySteamFrameGripAnimation(float grip)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.015135353f, -0.002164294f, 0.056575201f)
+                : new Vector3(0.015135575f, -0.002164703f, 0.056575201f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(0.165419415f, -0.806284010f, 0.567928314f)
+                : new Vector3(0.165418714f, 0.806282401f, -0.567930639f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameGripPart, pivot, axis, Mathf.Lerp(0.0f, 9.5f, grip));
+        }
+
+        private void ApplySteamFrameDpadAnimation(Vector2 value, bool pressed)
+        {
+            if (!m_SteamFrameDpadPart.IsValid)
+            {
+                return;
+            }
+
+            Vector3 pivot;
+            Quaternion axisFrame;
+            if (m_SteamFrameDpadPivotPart.IsValid)
+            {
+                pivot = m_SteamFrameDpadPivotPart.initialLocalPosition;
+                axisFrame = m_SteamFrameDpadPivotPart.initialLocalRotation;
+            }
+            else
+            {
+                pivot = new Vector3(-0.003449810f, 0.000989080f, 0.040305495f);
+                axisFrame = SteamFrameRotateXYZ(
+                    new Vector3(-35.252409f, -10.270845f, -4.411360f));
+            }
+
+            Vector3 axisX = axisFrame * Vector3.right;
+            Vector3 axisY = axisFrame * Vector3.forward;
+            Quaternion rotation =
+                Quaternion.AngleAxis(-value.y * 7.0f, axisX.normalized) *
+                Quaternion.AngleAxis(-value.x * 7.0f, axisY.normalized);
+
+            if (m_SteamFrameDpadPivotPart.IsValid)
+            {
+                m_SteamFrameDpadPivotPart.transform.localRotation =
+                    rotation * m_SteamFrameDpadPivotPart.initialLocalRotation;
+            }
+
+            ApplySteamFramePartRotationAroundPivot(m_SteamFrameDpadPart, pivot, rotation);
+            m_SteamFrameDpadPart.transform.localPosition +=
+                pressed ? new Vector3(0.0f, -0.000927f, 0.0f) : Vector3.zero;
+        }
+
+        private void ApplySteamFrameBumperAnimation(bool pressed)
+        {
+            Vector3 pivot = m_SteamFrameIsRight
+                ? new Vector3(-0.039387941f, -0.010576765f, 0.051696081f)
+                : new Vector3(0.039388161f, -0.010577183f, 0.051696073f);
+            Vector3 axis = m_SteamFrameIsRight
+                ? new Vector3(-0.165419042f, 0.806284010f, -0.567928374f)
+                : new Vector3(-0.165418446f, -0.806282401f, 0.567930698f);
+
+            ApplySteamFramePartRotationAroundPivot(
+                m_SteamFrameBumperPart, pivot, axis, pressed ? -2.6f : 0.0f);
+        }
+
+        private static Vector3 GetSteamFrameRightFaceButtonAxis()
+        {
+            return new Vector3(0.165419310f, -0.806284010f, 0.567928255f);
+        }
+
+        private static Vector3 GetSteamFrameLeftMenuButtonAxis()
+        {
+            return new Vector3(-0.165418640f, -0.806282520f, 0.567930639f);
+        }
+
+        private static Quaternion SteamFrameRotateXYZ(Vector3 euler)
+        {
+            return Quaternion.AngleAxis(euler.z, Vector3.forward) *
+                Quaternion.AngleAxis(euler.y, Vector3.up) *
+                Quaternion.AngleAxis(euler.x, Vector3.right);
+        }
+
+        private static void ApplySteamFramePartRotationAroundPivot(
+            SteamFramePartState part, Vector3 pivot, Vector3 axis, float degrees)
+        {
+            ApplySteamFramePartRotationAroundPivot(
+                part, pivot, Quaternion.AngleAxis(degrees, axis.normalized));
+        }
+
+        private static void ApplySteamFramePartRotationAroundPivot(
+            SteamFramePartState part, Vector3 pivot, Quaternion rotation)
+        {
+            if (!part.IsValid)
+            {
+                return;
+            }
+
+            part.transform.localPosition =
+                pivot + (rotation * (part.initialLocalPosition - pivot));
+            part.transform.localRotation = rotation * part.initialLocalRotation;
+        }
+
+        private static void ApplySteamFrameButtonPress(
+            SteamFramePartState part, bool isPressed, Vector3 axis, float distance)
+        {
+            if (!part.IsValid)
+            {
+                return;
+            }
+
+            part.transform.localPosition = part.initialLocalPosition +
+                (axis.normalized * (isPressed ? distance : 0.0f));
+            part.transform.localRotation = part.initialLocalRotation;
+        }
+
         // Returns the active material when the pad is touched, else returns inactive.
         private Material SelectPadTouched(Material active, Material inactive)
         {
@@ -407,6 +982,37 @@ namespace TiltBrush
             }
         }
 
+        private void SetColor(Renderer obj,
+                              VrInput primaryInput,
+                              VrInput secondaryInput,
+                              string colorName,
+                              Color activeColor,
+                              Color inactiveColor)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            var info = ControllerInfo;
+            bool touched = info != null &&
+                (info.GetVrInputTouch(primaryInput) || info.GetVrInputTouch(secondaryInput));
+            obj.material.SetColor(colorName, touched ? activeColor : inactiveColor);
+        }
+
+        private void SetButtonAffordanceColor(string colorName, Color activeColor, Color inactiveColor)
+        {
+            if (PrimaryAffordanceMesh == SecondaryAffordanceMesh)
+            {
+                SetColor(PrimaryAffordanceMesh, VrInput.Button01, VrInput.Button02,
+                    colorName, activeColor, inactiveColor);
+                return;
+            }
+
+            SetColor(PrimaryAffordanceMesh, VrInput.Button01, colorName, activeColor, inactiveColor);
+            SetColor(SecondaryAffordanceMesh, VrInput.Button02, colorName, activeColor, inactiveColor);
+        }
+
         private void RefreshMaterialTint(Color tintColor)
         {
             switch (Style)
@@ -416,19 +1022,24 @@ namespace TiltBrush
                 case ControllerStyle.Neo3:
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
-                    JoystickMesh.material.SetColor("_EmissionColor", tintColor);
-                    JoystickPad.material.SetColor("_EmissionColor", tintColor);
-                    Button01Mesh.material.SetColor("_EmissionColor", tintColor);
-                    Button02Mesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(JoystickMesh, tintColor);
+                    SetRendererEmission(JoystickPad, tintColor);
+                    SetRendererEmission(Button01Mesh, tintColor);
+                    SetRendererEmission(Button02Mesh, tintColor);
                     break;
                 case ControllerStyle.Vive:
                 case ControllerStyle.LogitechPen:
-                    PadMesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(PadMesh, tintColor);
                     break;
                 case ControllerStyle.Wmr:
-                    JoystickMesh.material.SetColor("_EmissionColor", tintColor);
-                    PinCushionMesh.material.SetColor("_EmissionColor", tintColor);
-                    PadMesh.material.SetColor("_EmissionColor", tintColor);
+                    SetRendererEmission(JoystickMesh, tintColor);
+                    SetRendererEmission(PinCushionMesh, tintColor);
+                    SetRendererEmission(PadMesh, tintColor);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    SetRendererEmission(DirectionalAffordanceMesh, tintColor);
+                    SetRendererEmission(PrimaryAffordanceMesh, tintColor);
+                    SetRendererEmission(SecondaryAffordanceMesh, tintColor);
                     break;
             }
         }
@@ -454,6 +1065,10 @@ namespace TiltBrush
                 currentColor, darkColor);
             SetColor(JoystickMesh, VrInput.Thumbstick, "_EmissionColor",
                 currentColor, darkColor);
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                SetButtonAffordanceColor("_EmissionColor", currentColor, darkColor);
+            }
 
             currentColor = m_LitButtonColor;
             darkColor = m_DarkButtonColor;
@@ -466,6 +1081,10 @@ namespace TiltBrush
                 currentColor, darkColor);
             SetColor(JoystickMesh, VrInput.Thumbstick, "_Color",
                 currentColor, darkColor);
+            if (Style == ControllerStyle.SteamFrame)
+            {
+                SetButtonAffordanceColor("_Color", currentColor, darkColor);
+            }
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -518,6 +1137,10 @@ namespace TiltBrush
                 case ControllerStyle.LogitechPen:
                     UpdatePadAnimation(m_PadAnimState, PadMesh.material);
                     break;
+                case ControllerStyle.SteamFrame:
+                    UpdatePadAnimation(m_JoyAnimState, JoystickPad != null ? JoystickPad.material : null);
+                    UpdateSteamFramePartAnimation();
+                    break;
             }
 
             RefreshMaterialTint(tintColor);
@@ -564,6 +1187,11 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh, Materials.Blank);
                     Materials.Assign(JoystickPad, Materials.Blank);
                     break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(DirectionalAffordanceMesh, Materials.Blank);
+                    AssignIfPresent(PrimaryAffordanceMesh, Materials.Blank);
+                    AssignIfPresent(SecondaryAffordanceMesh, Materials.Blank);
+                    break;
             }
         }
 
@@ -586,6 +1214,9 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(PrimaryAffordanceMesh, enabled ? padMat : Materials.Blank);
                     break;
             }
         }
@@ -619,6 +1250,13 @@ namespace TiltBrush
                     }
                     Button01Mesh.material.SetFloat("_Ratio", ratio);
                     break;
+                case ControllerStyle.SteamFrame:
+                    if (enableFillTimer)
+                    {
+                        ratio = GetPadRatio(VrInput.Button01);
+                    }
+                    AssignWithRatioIfPresent(PrimaryAffordanceMesh, mat, ratio);
+                    break;
             }
         }
 
@@ -641,6 +1279,9 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(PrimaryAffordanceMesh, enabled ? padMat : Materials.Blank);
                     break;
             }
         }
@@ -665,6 +1306,9 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, enabled ? padMat : Materials.Blank);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(PrimaryAffordanceMesh, enabled ? padMat : Materials.Blank);
                     break;
             }
         }
@@ -692,6 +1336,10 @@ namespace TiltBrush
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button02Mesh, padMat);
                     Materials.Assign(Button01Mesh, Materials.WorldTransformReset);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(SecondaryAffordanceMesh, padMat);
+                    AssignIfPresent(PrimaryAffordanceMesh, Materials.WorldTransformReset);
                     break;
             }
         }
@@ -725,6 +1373,11 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh,
                         SelectThumbStickTouched(Materials.BrushSizerActive, Materials.BrushSizer));
                     JoystickMesh.material.SetFloat("_Ratio", ratio);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh,
+                        SelectThumbStickTouched(Materials.BrushSizerActive, Materials.BrushSizer),
+                        ratio);
                     break;
             }
         }
@@ -760,6 +1413,12 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                     Materials.Assign(PadMesh, toggleSelectionMat);
                     ShowBrushSizer();
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh,
+                        SelectThumbStickTouched(Materials.BrushSizerActive, Materials.BrushSizer),
+                        GetPadRatio(VrInput.Directional));
+                    AssignIfPresent(PrimaryAffordanceMesh, toggleSelectionMat);
                     break;
             }
         }
@@ -798,6 +1457,12 @@ namespace TiltBrush
                     Materials.Assign(PadMesh, togglePinMat);
                     ShowBrushSizer();
                     break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh,
+                        SelectThumbStickTouched(Materials.BrushSizerActive, Materials.BrushSizer),
+                        GetPadRatio(VrInput.Directional));
+                    AssignIfPresent(PrimaryAffordanceMesh, togglePinMat);
+                    break;
             }
         }
 
@@ -820,6 +1485,10 @@ namespace TiltBrush
                     Button01Mesh.material.SetFloat("_Ratio",
                         GetPadRatio(VrInput.Button01));
                     break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(PrimaryAffordanceMesh, Materials.SelectionOptions,
+                        GetPadRatio(VrInput.Button01));
+                    break;
             }
         }
 
@@ -838,6 +1507,10 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, ControllerMaterialCatalog.m_Instance.SelectionOptions);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(PrimaryAffordanceMesh,
+                        ControllerMaterialCatalog.m_Instance.SelectionOptions);
                     break;
             }
         }
@@ -863,6 +1536,10 @@ namespace TiltBrush
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, enabled ? Materials.Trash : Materials.Blank);
                     Button01Mesh.material.SetFloat("_Ratio", ratio);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(PrimaryAffordanceMesh,
+                        enabled ? Materials.Trash : Materials.Blank, ratio);
                     break;
             }
         }
@@ -904,6 +1581,10 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh, padMat);
                     JoystickMesh.material.SetFloat("_Ratio", ratio);
                     break;
+                case ControllerStyle.SteamFrame:
+                    padMat = showHint ? Materials.MulticamSwipeHint : padMat;
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh, padMat, ratio);
+                    break;
             }
         }
 
@@ -923,6 +1604,10 @@ namespace TiltBrush
                 case ControllerStyle.Phoenix:
                 case ControllerStyle.Zapbox:
                     Materials.Assign(Button01Mesh, Materials.Blank);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(PrimaryAffordanceMesh, Materials.Blank);
+                    AssignIfPresent(DirectionalAffordanceMesh, Materials.Blank);
                     break;
             }
         }
@@ -956,6 +1641,11 @@ namespace TiltBrush
 
                     // The button is animated when the user holds it down.
                     Button01Mesh.material.SetFloat("_Ratio", ratio);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(PrimaryAffordanceMesh,
+                        SelectIfTouched(VrInput.Button01, Materials.ShareYtActive, Materials.ShareYt),
+                        ratio);
                     break;
             }
         }
@@ -1059,6 +1749,44 @@ namespace TiltBrush
                     Button02Mesh.material.SetFloat("_Ratio",
                         GetPadRatio(VrInput.Button02));
                     break;
+                case ControllerStyle.SteamFrame:
+                    if (HasSeparatePrimarySecondaryAffordances)
+                    {
+                        AssignWithRatioIfPresent(PrimaryAffordanceMesh, Materials.Yes,
+                            GetPadRatio(VrInput.Button01));
+                        AssignWithRatioIfPresent(SecondaryAffordanceMesh, Materials.Cancel,
+                            GetPadRatio(VrInput.Button02));
+                    }
+                    else
+                    {
+                        Material padMat = Materials.YesOrCancel;
+                        float padX = InputManager.Brush.GetPadValue().x;
+                        int selected = (int)Mathf.Sign(padX);
+                        if (m_LastPadButton != selected)
+                        {
+                            InputManager.m_Instance.TriggerHapticsPulse(InputManager.ControllerName.Brush,
+                                2, 0.15f, 0.1f);
+                        }
+                        m_LastPadButton = selected;
+
+                        if (padX > 0f)
+                        {
+                            padMat = Materials.YesOrCancel_Cancel;
+                        }
+                        else if (padX < 0f)
+                        {
+                            padMat = Materials.YesOrCancel_Yes;
+                        }
+
+                        padMat = SelectPadTouched(padX > 0f ? Materials.YesOrCancel_Cancel
+                                : Materials.YesOrCancel_Yes,
+                            padMat);
+
+                        padMat = SelectBasedOn(padX > 0f ? Materials.Cancel : Materials.Yes, padMat);
+                        AssignWithRatioIfPresent(DirectionalAffordanceMesh, padMat,
+                            GetPadRatio(padX > 0f ? VrInput.Button02 : VrInput.Button01));
+                    }
+                    break;
             }
         }
 
@@ -1083,6 +1811,9 @@ namespace TiltBrush
                 case ControllerStyle.Wmr:
                     // Wmr does not has the capability to detect touch on thumbstick.
                     Materials.Assign(JoystickMesh, mat);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(DirectionalAffordanceMesh, mat);
                     break;
             }
         }
@@ -1128,6 +1859,38 @@ namespace TiltBrush
                         Materials.Assign(Button02Mesh, Materials.Redo);
                     }
                     break;
+                case ControllerStyle.SteamFrame:
+                    if (HasSeparatePrimarySecondaryAffordances)
+                    {
+                        if (canUndo)
+                        {
+                            AssignIfPresent(PrimaryAffordanceMesh, Materials.Undo);
+                        }
+
+                        if (canRedo)
+                        {
+                            AssignIfPresent(SecondaryAffordanceMesh, Materials.Redo);
+                        }
+                    }
+                    else
+                    {
+                        bool steamFrameRedoHover = InputManager.Wand.GetPadValue().x > 0.0f;
+                        bool steamFrameUndoHover = InputManager.Wand.GetPadValue().x < 0.0f;
+
+                        Material steamFrameUndoRedoMat = Materials.UndoRedo;
+                        if (steamFrameRedoHover && canRedo)
+                        {
+                            steamFrameUndoRedoMat = Materials.UndoRedo_Redo;
+                        }
+                        else if (steamFrameUndoHover && canUndo)
+                        {
+                            steamFrameUndoRedoMat = Materials.UndoRedo_Undo;
+                        }
+
+                        AssignIfPresent(DirectionalAffordanceMesh,
+                            SelectPadTouched(steamFrameUndoRedoMat, Materials.UndoRedo));
+                    }
+                    break;
             }
         }
 
@@ -1145,6 +1908,9 @@ namespace TiltBrush
                     break;
                 case ControllerStyle.Wmr:
                     Materials.Assign(PinCushionMesh, Materials.PinCushion);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(SecondaryAffordanceMesh, Materials.PinCushion);
                     break;
             }
         }
@@ -1180,6 +1946,9 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh, mat);
                     JoystickMesh.material.SetFloat("_Ratio", ratio);
                     break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh, mat, ratio);
+                    break;
             }
         }
 
@@ -1213,6 +1982,9 @@ namespace TiltBrush
                     Materials.Assign(JoystickMesh, mat);
                     JoystickMesh.material.SetFloat("_Ratio", value);
                     break;
+                case ControllerStyle.SteamFrame:
+                    AssignWithRatioIfPresent(DirectionalAffordanceMesh, mat, value);
+                    break;
             }
         }
 
@@ -1243,6 +2015,11 @@ namespace TiltBrush
                     Materials.Assign(PadMesh, Materials.Standard);
                     Materials.Assign(JoystickMesh, Materials.Blank);
                     Materials.Assign(PinCushionMesh, Materials.Blank);
+                    break;
+                case ControllerStyle.SteamFrame:
+                    AssignIfPresent(DirectionalAffordanceMesh, Materials.Blank);
+                    AssignIfPresent(PrimaryAffordanceMesh, Materials.Blank);
+                    AssignIfPresent(SecondaryAffordanceMesh, Materials.Blank);
                     break;
             }
         }

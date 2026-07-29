@@ -1130,9 +1130,17 @@ namespace TiltBrush
 
             if (m_RecordMovements && !m_IsSpinningFreely && !bFadingAway)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                bool recorded = SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new MoveWidgetCommand(this, newLocalTransform, CustomDimension, final: !IsMoving()),
                     discardIfNotMerged: true);
+                if (!recorded)
+                {
+                    // The drift couldn't merge into this widget's move command on the undo stack
+                    // (something else was recorded on top of it), so the transform above was never
+                    // applied. Halt the drift rather than freeze the widget mid-coast while its
+                    // velocities keep decaying.
+                    HaltDrift();
+                }
             }
             else
             {
