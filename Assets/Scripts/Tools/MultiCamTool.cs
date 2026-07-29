@@ -2024,6 +2024,10 @@ namespace TiltBrush
                 {
                     // Do not put away the camera.
                     m_RequestExit = false;
+                    if (odsCamera != null)
+                    {
+                        odsCamera.ReleaseTextures();
+                    }
                     if (tmpDepth != null)
                     {
                         RenderTexture.ReleaseTemporary(tmpDepth);

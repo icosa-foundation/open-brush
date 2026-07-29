@@ -100,7 +100,37 @@ public class HybridCamera : MonoBehaviour {
     odsRenderer.SetVr180(enable);
   }
 
+  public void ReleaseTextures() {
+    if (stitched != null) {
+      stitched.Release();
+      Destroy(stitched);
+      stitched = null;
+    }
+    if (bloomed != null) {
+      bloomed.Release();
+      Destroy(bloomed);
+      bloomed = null;
+    }
+    if (finalImage != null) {
+      finalImage.Release();
+      Destroy(finalImage);
+      finalImage = null;
+    }
+    if (returnImage != null) {
+      Destroy(returnImage);
+      returnImage = null;
+    }
+    if (odsRenderer != null) {
+      odsRenderer.Release();
+    }
+
+    // Force the next render to recreate every size-dependent resource.
+    lastImageWidth = 0;
+  }
+
   private void SetupTextures() {
+    ReleaseTextures();
+
     imageHeight    = imageWidth;
 
     int bloomPadding;
@@ -137,6 +167,10 @@ public class HybridCamera : MonoBehaviour {
       outputFolder = System.Environment.GetFolderPath(
         System.Environment.SpecialFolder.DesktopDirectory) + "/ODS";
     }
+  }
+
+  public void OnDisable() {
+    ReleaseTextures();
   }
 
   public int GetClampedImageWidth(int requestedImageWidth) {
