@@ -195,9 +195,28 @@ namespace TiltBrush
         public ReferenceVideo(string filePath)
         {
             NetworkVideo = filePath.EndsWith(".txt");
-            PersistentPath = filePath.Substring(App.VideoLibraryPath().Length + 1);
+            PersistentPath = _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
+        }
+
+        /// A video inside the video library is identified by its path relative to that library.
+        /// Anything else keeps just its filename, which is what the pre-existing sketch metadata
+        /// format stores.
+        private static string _GetPersistentPath(string filePath)
+        {
+            string libraryPath = System.IO.Path.GetFullPath(App.VideoLibraryPath())
+                .TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar) +
+                System.IO.Path.DirectorySeparatorChar;
+            string fullPath = System.IO.Path.GetFullPath(filePath);
+            StringComparison comparison = System.IO.Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (fullPath.StartsWith(libraryPath, comparison))
+            {
+                return fullPath.Substring(libraryPath.Length);
+            }
+            return System.IO.Path.GetFileName(filePath);
         }
 
         // Dummy ReferenceVideo - this is used when a video referenced in a sketch cannot be found.
@@ -266,8 +285,9 @@ namespace TiltBrush
                 }
                 else
                 {
-                    string fullPath = System.IO.Path.Combine(App.VideoLibraryPath(), PersistentPath);
-                    m_VideoPlayer.url = $"{fullPath}";
+                    // AbsolutePath is the path this video was found at, which is not necessarily
+                    // VideoLibraryPath + PersistentPath. The network branch above already uses it.
+                    m_VideoPlayer.url = $"{AbsolutePath}";
                 }
                 m_VideoPlayer.isLooping = true;
                 m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
