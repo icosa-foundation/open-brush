@@ -151,6 +151,17 @@ namespace TiltBrush
             bool input = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             bool inputDown = InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate);
 
+            // The + button explicitly starts a new path. Ignore collision state left by nearby
+            // paths so the first click cannot select or extend one of them instead.
+            if (m_Mode == Mode.AddPositionKnot &&
+                WidgetManager.m_Instance.CreatingCameraPath)
+            {
+                m_LastValidPath = null;
+                m_ExtendPath = null;
+                m_ExtendPathType = ExtendPathType.None;
+                m_PreviewSegment.renderer.enabled = false;
+            }
+
             // Tint any path we're intersecting with.
             if (!input && m_LastValidPath != null && m_Mode != Mode.RemoveKnot)
             {
@@ -440,6 +451,22 @@ namespace TiltBrush
                 m_LastValidPath = null;
                 return;
             }
+
+            // While explicitly creating a path, keep the first position knot at the controller
+            // instead of snapping it to or offering to extend an existing path.
+            if (CurrentMode == Mode.AddPositionKnot &&
+                WidgetManager.m_Instance.CreatingCameraPath)
+            {
+                m_PositionKnot.transform.position = xf.position;
+                m_PositionKnot.transform.rotation = xf.rotation;
+                m_PreviewSegment.renderer.enabled = false;
+                m_PrevLastValidPath = null;
+                m_LastValidPath = null;
+                m_ExtendPath = null;
+                m_ExtendPathType = ExtendPathType.None;
+                return;
+            }
+
             m_RemoveKnot.transform.position = xf.position;
             m_RemoveKnot.transform.rotation = xf.rotation;
 
