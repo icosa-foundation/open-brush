@@ -1394,6 +1394,7 @@ namespace TiltBrush
         )]
         public static void TakeSnapshot(Vector3 position, Vector3 direction, string filename, int width, int height)
         {
+            ValidateSafeFilename(filename, "snapshot filename");
             TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
             float superSampling = 1f;
             bool removeBackground = false;
