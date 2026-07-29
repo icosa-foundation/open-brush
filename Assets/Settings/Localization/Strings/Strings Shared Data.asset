@@ -3631,6 +3631,10 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
     m_Metadata:
       m_Items: []
+  - m_Id: 520669196650635264
+    m_Key: POPUP_ICOSA_KEYBOARD_LOGIN_INSTRUCTIONS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
