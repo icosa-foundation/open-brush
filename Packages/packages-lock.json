@@ -1,14 +1,14 @@
 {
   "dependencies": {
     "com.arloopa.unitysplats": {
-      "version": "https://github.com/icosa-mirror/UnitySplats.git#0ab077b49fe093d1ef6c3b62a0244193cf6174be",
+      "version": "https://github.com/icosa-mirror/UnitySplats.git#e9efb4601cb9cd0b7481bbe3991e10bbbe19d308",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.netpyoung.webp": "0.3.22",
         "com.unity.mathematics": "1.3.2"
       },
-      "hash": "0ab077b49fe093d1ef6c3b62a0244193cf6174be"
+      "hash": "e9efb4601cb9cd0b7481bbe3991e10bbbe19d308"
     },
     "com.autodesk.fbx": {
       "version": "file:com.autodesk.fbx",
