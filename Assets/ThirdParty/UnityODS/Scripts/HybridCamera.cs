@@ -120,8 +120,7 @@ public class HybridCamera : MonoBehaviour {
     bloomed = new RenderTexture(stitched.width, stitched.height, 0, format);
     bloomed.antiAliasing = 1;
             
-    finalImage  = new RenderTexture( imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32 );
-    returnImage = new Texture2D( finalImage.width, finalImage.height, TextureFormat.RGB24, false );
+    finalImage = new RenderTexture(imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32);
 
     odsRenderer.SetWidth(imageWidth, eyeImageWidth, bloomRadius);
     odsRenderer.SetupTextures(format);
@@ -269,14 +268,23 @@ public class HybridCamera : MonoBehaviour {
       }
     }
 
-    oldActiveTexture = RenderTexture.active;
-    RenderTexture.active = finalImage;
-    returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
-    RenderTexture.active = oldActiveTexture;
-
     Graphics.Blit(finalImage, (RenderTexture)null);
 
     if (saveImage) {
+      if (returnImage == null ||
+          returnImage.width != finalImage.width || returnImage.height != finalImage.height) {
+        if (returnImage != null) {
+          Destroy(returnImage);
+        }
+        returnImage = new Texture2D(
+          finalImage.width, finalImage.height, TextureFormat.RGB24, false);
+      }
+
+      oldActiveTexture = RenderTexture.active;
+      RenderTexture.active = finalImage;
+      returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
+      RenderTexture.active = oldActiveTexture;
+
       byte[] image = returnImage.EncodeToPNG();
 
       string file = String.Format(basename + "_{0:d6}.png", frameCount);
