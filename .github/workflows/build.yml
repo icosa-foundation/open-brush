@@ -613,6 +613,11 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
+      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
+        if: startsWith(matrix.name, 'Windows Rift')
+        run: |
+          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
+
       - name: Add bundled Windows tools
         if: matrix.targetPlatform == 'StandaloneWindows64'
         run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
