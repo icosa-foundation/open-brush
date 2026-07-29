@@ -1,3 +1,17 @@
+// Copyright 2020 The Tilt Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,8 +42,7 @@ namespace TiltBrush
             if (WidgetManager.m_Instance == null) { sm_dirty = false; return; }
             foreach (var stencil in WidgetManager.m_Instance.StencilWidgets)
             {
-                if (stencil != null && stencil.gameObject.activeInHierarchy &&
-                    stencil.Type != StencilType.Custom)
+                if (stencil != null && stencil.gameObject.activeInHierarchy)
                 {
                     sm_cache.Add(new Cached { widget = stencil });
                 }
@@ -43,10 +56,26 @@ namespace TiltBrush
         /// </summary>
         public static float SignedDistance(Vector3 worldPos)
         {
+            var widgetManager = WidgetManager.m_Instance;
+            if (widgetManager == null ||
+                (widgetManager.StencilsDisabled &&
+                 !App.UserConfig.Flags.GuideToggleVisiblityOnly))
+            {
+                return float.PositiveInfinity;
+            }
+
             if (sm_dirty) { RebuildCache(); }
             float min = float.PositiveInfinity;
             foreach (var c in sm_cache)
             {
+                // Unity objects can compare equal to null after destruction while a stale
+                // managed reference remains in the cache.
+                if (c.widget == null || !c.widget.gameObject.activeInHierarchy)
+                {
+                    sm_dirty = true;
+                    continue;
+                }
+
                 float d = DistanceToStencil(c.widget, worldPos);
                 if (d < min) { min = d; }
             }
@@ -127,38 +156,75 @@ namespace TiltBrush
                     return SdBox(p, radii);
                 case StencilType.Capsule:
                     {
-                        float r = radii.x;
-                        float half = radii.y - r;
+                        float r = Mathf.Abs(radii.x);
+                        float half = Mathf.Max(Mathf.Abs(radii.y) - r, 0f);
                         return SdCapsule(p, half, r);
                     }
-                case StencilType.Custom:
-                    return float.PositiveInfinity;
                 default:
-                    return DistanceViaCollider(s, worldPos);
+                    return DistanceViaSurfaceQuery(s, worldPos);
             }
         }
 
-        static float DistanceViaCollider(StencilWidget s, Vector3 worldPos)
+        static float DistanceViaSurfaceQuery(StencilWidget s, Vector3 worldPos)
         {
+            Vector3 surfacePos;
+            Vector3 surfaceNormal;
+            s.FindClosestPointOnSurface(worldPos, out surfacePos, out surfaceNormal);
+
+            if (IsFinite(surfacePos))
+            {
+                Vector3 toQuery = worldPos - surfacePos;
+                float distance = toQuery.magnitude;
+                if (IsFinite(distance))
+                {
+                    // FindClosestPointOnSurface guarantees an outward-facing normal.
+                    // Its dot product with the surface-to-query vector therefore gives
+                    // a shape-independent inside/outside test.
+                    if (IsFinite(surfaceNormal) &&
+                        surfaceNormal.sqrMagnitude > 0.000001f)
+                    {
+                        float side = Vector3.Dot(toQuery, surfaceNormal);
+                        if (Mathf.Abs(side) < 0.000001f) { return 0f; }
+                        return side < 0f ? -distance : distance;
+                    }
+
+                    // Some legacy/custom stencils cannot provide a normal. Preserve the
+                    // useful unsigned distance without guessing the sign from their origin.
+                    return distance;
+                }
+            }
+
             Collider col = s.GetComponentInChildren<Collider>();
             if (col == null) { return float.PositiveInfinity; }
             Vector3 closest = col.ClosestPoint(worldPos);
-            float d = Vector3.Distance(worldPos, closest);
-            if ((worldPos - s.transform.position).sqrMagnitude <
-                (closest - s.transform.position).sqrMagnitude)
-            {
-                d = -d;
-            }
-            return d;
+            return IsFinite(closest)
+                ? Vector3.Distance(worldPos, closest)
+                : float.PositiveInfinity;
         }
 
         static float SdEllipsoid(Vector3 p, Vector3 r)
         {
+            const float kMinRadius = 0.000001f;
+            r = new Vector3(
+                Mathf.Max(Mathf.Abs(r.x), kMinRadius),
+                Mathf.Max(Mathf.Abs(r.y), kMinRadius),
+                Mathf.Max(Mathf.Abs(r.z), kMinRadius));
+            float minRadius = Mathf.Min(r.x, Mathf.Min(r.y, r.z));
+            if (p.sqrMagnitude < kMinRadius * kMinRadius)
+            {
+                return -minRadius;
+            }
+
             Vector3 p2 = new Vector3(p.x / r.x, p.y / r.y, p.z / r.z);
-            Vector3 p3 = new Vector3(p.x / (r.x * r.x), p.y / (r.y * r.y), p.z / (r.z * r.z));
+            Vector3 p3 = new Vector3(
+                p.x / (r.x * r.x),
+                p.y / (r.y * r.y),
+                p.z / (r.z * r.z));
             float k0 = p2.magnitude;
             float k1 = p3.magnitude;
-            return k0 * (k0 - 1f) / k1;
+            return k1 > kMinRadius
+                ? k0 * (k0 - 1f) / k1
+                : -minRadius;
         }
 
         static float SdBox(Vector3 p, Vector3 b)
@@ -176,7 +242,13 @@ namespace TiltBrush
             Vector3 b = new Vector3(0f, h, 0f);
             Vector3 pa = p - a;
             Vector3 ba = b - a;
-            float t = Mathf.Clamp(Vector3.Dot(pa, ba) / Vector3.Dot(ba, ba), 0f, 1f);
+            float lengthSquared = Vector3.Dot(ba, ba);
+            if (lengthSquared < 0.000000000001f)
+            {
+                return p.magnitude - r;
+            }
+
+            float t = Mathf.Clamp(Vector3.Dot(pa, ba) / lengthSquared, 0f, 1f);
             Vector3 x = pa - ba * t;
             return x.magnitude - r;
         }
