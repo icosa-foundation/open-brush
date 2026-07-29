@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.IO;
+using Unity.Collections;
 using UnityEngine;
 
 namespace TiltBrush
@@ -580,35 +581,32 @@ namespace TiltBrush
             {
                 RenderTexture prev = RenderTexture.active;
                 RenderTexture.active = depthTexture;
-                texture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.ARGB32, false);
+                texture = new Texture2D(
+                    depthTexture.width, depthTexture.height, TextureFormat.RGBA32, false);
                 texture.ReadPixels(new Rect(0, 0, depthTexture.width, depthTexture.height), 0, 0);
                 RenderTexture.active = prev;
             }
 
             // Unity's EncodeDepthNormal puts depth in blue/alpha channels using EncodeFloatRG
             // Decode using: dot(enc, float2(1.0, 1/255.0))
-            Color[] pixels = texture.GetPixels();
+            NativeArray<Color32> pixels = texture.GetPixelData<Color32>(0);
 
             for (int i = 0; i < pixels.Length; i++)
             {
-                Color pixel = pixels[i];
+                Color32 pixel = pixels[i];
 
                 // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
                 // Blue=enc.x, Alpha=enc.y
-                float depth = 1.0f - (pixel.b * 1.0f + pixel.a * (1.0f / 255.0f));
+                float depth = 1.0f - (pixel.b * (1.0f / 255.0f) +
+                    pixel.a * (1.0f / (255.0f * 255.0f)));
 
                 // Export disparity-style grayscale: white is near and black is far.
-                pixels[i] = new Color(depth, depth, depth, 1.0f);
+                byte value = (byte)Mathf.RoundToInt(Mathf.Clamp01(depth) * 255.0f);
+                pixels[i] = new Color32(value, value, value, 255);
             }
 
-            // Create new texture with grayscale depth values
-            Texture2D grayscaleDepthTexture = new Texture2D(depthTexture.width, depthTexture.height, TextureFormat.RGB24, false);
-            grayscaleDepthTexture.SetPixels(pixels);
-            grayscaleDepthTexture.Apply();
-
-            byte[] bytes = grayscaleDepthTexture.EncodeToPNG();
+            byte[] bytes = texture.EncodeToPNG();
             Destroy(texture);
-            Destroy(grayscaleDepthTexture);
 
             return bytes;
         }
@@ -622,35 +620,36 @@ namespace TiltBrush
             {
                 RenderTexture prev = RenderTexture.active;
                 RenderTexture.active = depthNormalTexture;
-                normalTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.ARGB32, false);
+                normalTexture = new Texture2D(
+                    depthNormalTexture.width, depthNormalTexture.height, TextureFormat.RGBA32, false);
                 normalTexture.ReadPixels(new Rect(0, 0, depthNormalTexture.width, depthNormalTexture.height), 0, 0);
                 RenderTexture.active = prev;
             }
 
             // Decode the stereographically encoded view-space normals from red and green.
-            Color[] pixels = normalTexture.GetPixels();
+            NativeArray<Color32> pixels = normalTexture.GetPixelData<Color32>(0);
             for (int i = 0; i < pixels.Length; i++)
             {
                 const float kStereoScale = 1.7777f;
-                float encodedX = pixels[i].r * (2.0f * kStereoScale) - kStereoScale;
-                float encodedY = pixels[i].g * (2.0f * kStereoScale) - kStereoScale;
+                float encodedX = pixels[i].r * (1.0f / 255.0f) *
+                    (2.0f * kStereoScale) - kStereoScale;
+                float encodedY = pixels[i].g * (1.0f / 255.0f) *
+                    (2.0f * kStereoScale) - kStereoScale;
                 float scale = 2.0f / (encodedX * encodedX + encodedY * encodedY + 1.0f);
                 float nx = encodedX * scale;
                 float ny = encodedY * scale;
                 float nz = scale - 1.0f;
 
                 // Convert back to 0-1 range for storage
-                pixels[i] = new Color(nx * 0.5f + 0.5f, ny * 0.5f + 0.5f, nz * 0.5f + 0.5f, 1.0f);
+                pixels[i] = new Color32(
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(nx * 0.5f + 0.5f) * 255.0f),
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(ny * 0.5f + 0.5f) * 255.0f),
+                    (byte)Mathf.RoundToInt(Mathf.Clamp01(nz * 0.5f + 0.5f) * 255.0f),
+                    255);
             }
 
-            // Create new texture with normal values
-            Texture2D normalOutputTexture = new Texture2D(depthNormalTexture.width, depthNormalTexture.height, TextureFormat.RGB24, false);
-            normalOutputTexture.SetPixels(pixels);
-            normalOutputTexture.Apply();
-
-            byte[] bytes = normalOutputTexture.EncodeToPNG();
+            byte[] bytes = normalTexture.EncodeToPNG();
             Destroy(normalTexture);
-            Destroy(normalOutputTexture);
 
             return bytes;
         }
