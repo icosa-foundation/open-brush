@@ -88,7 +88,7 @@ namespace TiltBrush
         public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
 
         [LuaDocsDescription(@"Converts this model to a stencil/guide for painting")]
-        [LuaDocsExample(@"myStencil = myModel:ConvertToStencil()")]
+        [LuaDocsExample(@"myStencil = myModel:ConvertToGuide()")]
         [LuaDocsReturnValue(@"Returns a ModelStencil instance that can be used as a guide")]
         public ModelStencil ConvertToGuide()
         {

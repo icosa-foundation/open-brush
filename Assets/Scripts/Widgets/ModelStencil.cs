@@ -20,7 +20,7 @@ namespace TiltBrush
 {
     /// <summary>
     /// Stencil that uses imported 3D models with IsoMesh SDF integration
-    /// Requires IsoMesh package: https://github.com/EmmetOT/IsoMesh
+    /// Requires IsoMesh package: https://github.com/icosa-mirror/IsoMesh.git#upm
     /// </summary>
     public class ModelStencil : StencilWidget
     {
@@ -169,11 +169,26 @@ namespace TiltBrush
             string platform = "desktop";
 #endif
 
-            // Only setup mesh collider if below threshold
-            // if (m_TotalTriangleCount <= threshold)
-            // {
-            //     SetupMeshCollider();
-            // }
+            // Fall back to a mesh collider only when SDF generation is unavailable or failed.
+            if (m_SDFMeshAsset == null)
+            {
+                if (m_TotalTriangleCount <= 0)
+                {
+                    Debug.LogWarning(
+                        "ModelStencil: Cannot create MeshCollider fallback: model has no triangles");
+                }
+                else if (m_TotalTriangleCount <= threshold)
+                {
+                    Debug.Log($"ModelStencil: Using MeshCollider fallback on {platform}");
+                    SetupMeshCollider();
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"ModelStencil: Cannot create MeshCollider fallback on {platform}: " +
+                        $"{m_TotalTriangleCount:N0} triangles exceeds the {threshold:N0} triangle limit");
+                }
+            }
 
             // Mark model as loaded to prevent double-loading
             m_ModelLoaded = true;
@@ -556,11 +571,13 @@ namespace TiltBrush
         private Mesh CombineMeshesForSDF(MeshFilter[] meshFilters)
         {
             CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+            Matrix4x4 worldToStencil = transform.worldToLocalMatrix;
 
             for (int i = 0; i < meshFilters.Length; i++)
             {
                 combine[i].mesh = meshFilters[i].sharedMesh;
-                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                combine[i].transform =
+                    worldToStencil * meshFilters[i].transform.localToWorldMatrix;
             }
 
             Mesh combinedMesh = new Mesh();

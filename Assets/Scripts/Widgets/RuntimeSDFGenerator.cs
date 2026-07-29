@@ -70,10 +70,25 @@ namespace TiltBrush
             int[] triangles = mesh.triangles;
             Vector3[] normals = mesh.normals;
 
+            if (vertices == null || vertices.Length == 0 ||
+                triangles == null || triangles.Length < 3)
+            {
+                Debug.LogError(
+                    "ModelStencil: RuntimeSDFGenerator - Mesh has no renderable triangles");
+                return null;
+            }
+
             if (normals == null || normals.Length == 0)
             {
                 mesh.RecalculateNormals();
                 normals = mesh.normals;
+            }
+
+            if (normals == null || normals.Length != vertices.Length)
+            {
+                Debug.LogError(
+                    "ModelStencil: RuntimeSDFGenerator - Mesh normals do not match its vertices");
+                return null;
             }
 
             // Create compute buffers

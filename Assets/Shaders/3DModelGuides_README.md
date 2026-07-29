@@ -8,11 +8,10 @@ The system integrates with **IsoMesh** for GPU-accelerated SDF (Signed Distance 
 
 ## Prerequisites
 
-### Install IsoMesh Package
+### IsoMesh Package
 
-**Required**: Install the IsoMesh Unity package from:
-- GitHub: https://github.com/EmmetOT/IsoMesh
-- Or via Unity Package Manager (if available)
+IsoMesh is included by the project package manifest from the Open Brush mirror:
+https://github.com/icosa-mirror/IsoMesh.git#upm
 
 IsoMesh provides:
 - GPU compute-based mesh voxelization
@@ -50,7 +49,7 @@ With IsoMesh installed:
 
 ```lua
 -- Convert to stencil/guide
-local stencil = model:ConvertToStencil()
+local stencil = model:ConvertToGuide()
 
 -- Now brushes will snap to the model's surface!
 ```
@@ -143,7 +142,7 @@ dragon.position = Vector3(0, 1.5, 0)
 dragon.scale = 3.0
 
 -- Convert to stencil (uses IsoMesh if available)
-local dragonStencil = dragon:ConvertToStencil()
+local dragonStencil = dragon:ConvertToGuide()
 
 -- Paint along the dragon's surface!
 -- Brushes automatically snap to geometry
@@ -157,7 +156,7 @@ local building = Model:Import("architecture.glb")
 building.position = Vector3(5, 0, 0)
 
 -- Convert to stencil for precise painting
-local buildingGuide = building:ConvertToStencil()
+local buildingGuide = building:ConvertToGuide()
 
 -- Paint details that follow the building's geometry
 ```
@@ -169,7 +168,7 @@ local buildingGuide = building:ConvertToStencil()
 local character = Model:Import("character_base.fbx")
 
 -- Generate guide for painting on character
-local characterGuide = character:ConvertToStencil()
+local characterGuide = character:ConvertToGuide()
 
 -- Paint tattoos, armor details, etc. that conform to character surface
 ```
@@ -178,7 +177,9 @@ local characterGuide = character:ConvertToStencil()
 
 ### "IsoMesh integration required" Warning
 
-**Solution**: Install IsoMesh package from https://github.com/EmmetOT/IsoMesh
+**Solution**: Verify that `Packages/manifest.json` includes
+`https://github.com/icosa-mirror/IsoMesh.git#upm` and that the SDF compute shader is
+assigned to the model-stencil prefab.
 
 The system falls back to `MeshCollider`, which works but is slower.
 
@@ -256,7 +257,7 @@ The original plan included a custom JFA (Jump Flood Algorithm) implementation. H
 
 ## References
 
-1. **IsoMesh Repository**
+1. **Upstream IsoMesh Repository**
    https://github.com/EmmetOT/IsoMesh
 
 2. **Jump Flooding Algorithm**
