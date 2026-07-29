@@ -1956,7 +1956,16 @@ namespace TiltBrush
                     if (odsCamera != null)
                     {
                         odsCamera.imageWidth = snapshotWidth;
-                        yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                        float timeScaleRestore = Time.timeScale;
+                        try
+                        {
+                            Time.timeScale = 0.0f;
+                            yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                        }
+                        finally
+                        {
+                            Time.timeScale = timeScaleRestore;
+                        }
                         Graphics.Blit(odsCamera.FinalImage, tmp);
                     }
                     else
