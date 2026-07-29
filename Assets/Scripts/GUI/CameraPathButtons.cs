@@ -112,7 +112,8 @@ namespace TiltBrush
             var currentCameraPath = WidgetManager.m_Instance.GetCurrentCameraPath();
             bool currentCameraPathIsAFullPath = (currentCameraPath != null) &&
                 (currentCameraPath.WidgetScript.Path.NumPositionKnots > 1);
-            bool showPathButtons = anyPathsActive &&
+            bool showPathButtons = !WidgetManager.m_Instance.CreatingCameraPath &&
+                anyPathsActive &&
                 (currentCameraPath == null || currentCameraPathIsAFullPath);
             m_PathObjects.SetActive(showPathButtons);
             m_NoPathObjects.SetActive(!showPathButtons);
