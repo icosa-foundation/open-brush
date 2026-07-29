@@ -90,11 +90,48 @@ namespace TiltBrush
                 case ControllerStyle.Zapbox:
                     bindingGroup = actionSet.ZapboxControllerScheme.bindingGroup;
                     break;
+                case ControllerStyle.SteamFrame:
+                    bindingGroup = GetSteamFrameBindingGroupForCurrentDevice();
+                    break;
                 default:
                     break;
             }
 
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
+        }
+
+        private string GetSteamFrameBindingGroupForCurrentDevice()
+        {
+            // When m_ForceControllerStyleForTesting is used, the geometry is Steam Frame but the
+            // physical controller can still be Quest/Index/etc. Keep the real hardware bindings.
+            string deviceName = device.name ?? string.Empty;
+            if (deviceName.Contains("Oculus Touch"))
+            {
+                return actionSet.OculusTouchControllerScheme.bindingGroup;
+            }
+            if (deviceName.StartsWith("Index Controller OpenXR"))
+            {
+                return actionSet.IndexControllerScheme.bindingGroup;
+            }
+            if (deviceName.StartsWith("HTC Vive Controller OpenXR"))
+            {
+                return actionSet.HTCViveControllerScheme.bindingGroup;
+            }
+            if (deviceName.StartsWith("Windows MR Controller") ||
+                deviceName.StartsWith("HP Reverb G2 Controller"))
+            {
+                return actionSet.WMRControllerScheme.bindingGroup;
+            }
+            if (deviceName.Contains("PICO Controller"))
+            {
+                return actionSet.PicoControllerScheme.bindingGroup;
+            }
+            if (deviceName.Contains("Zapbox"))
+            {
+                return actionSet.ZapboxControllerScheme.bindingGroup;
+            }
+
+            return actionSet.SteamFrameControllerScheme.bindingGroup;
         }
 
         private InputAction FindAction(string actionName)
@@ -113,12 +150,12 @@ namespace TiltBrush
 
         public override Vector2 GetPadValue()
         {
-            return GetThumbStickValue();
+            return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
         public override Vector2 GetThumbStickValue()
         {
-            return FindAction("PadAxis").ReadValue<Vector2>();
+            return FindAction("ThumbAxis").ReadValue<Vector2>();
         }
 
         public override void Update()
