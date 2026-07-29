@@ -14,6 +14,8 @@ using Debug = UnityEngine.Debug;
 [DisallowMultipleComponent]
 public class CameraCaptureRuntime : MonoBehaviour
 {
+    private const int kVolumeViewsPerCell = 18;
+
     private const float kCaptureOverlayFadeDuration = 0.25f;
 
     public static CameraCaptureRuntime m_Instance;
@@ -272,6 +274,18 @@ public class CameraCaptureRuntime : MonoBehaviour
             foreach (var dir in directions)
                 poses.Add((center, Quaternion.LookRotation(dir, Vector3.up)));
         return poses;
+    }
+
+    public int GetVolumeCameraPoseCount(
+        int captureSubdivX,
+        int captureSubdivY,
+        int captureSubdivZ)
+    {
+        long cellCount =
+            (long)Mathf.Max(1, captureSubdivX) *
+            Mathf.Max(1, captureSubdivY) *
+            Mathf.Max(1, captureSubdivZ);
+        return (int)Math.Min(int.MaxValue, cellCount * kVolumeViewsPerCell);
     }
 
     [ContextMenu("Start Dome Capture")]
@@ -1133,7 +1147,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private List<Vector3> GenerateCustomSphericalDirections()
     {
-        List<Vector3> directions = new List<Vector3>();
+        List<Vector3> directions = new List<Vector3>(kVolumeViewsPerCell);
         for (int i = 0; i < 8; i++)
         {
             float azimuth = i * 45f;
@@ -1154,6 +1168,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         directions.Add(Vector3.up);
         directions.Add(Vector3.down);
+        Debug.Assert(directions.Count == kVolumeViewsPerCell);
         return directions;
     }
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -25,6 +26,7 @@ namespace TiltBrush
             WorldWandGrip,
             WorldBrushGrip,
             WorldDoubleGrip,
+            GaussianCaptureDoubleGrip,
             WidgetWandGrip,
             WidgetBrushGrip,
         }
@@ -65,6 +67,7 @@ namespace TiltBrush
         private float m_LineT;
 
         private bool m_AnimalRulerRequestVisible;
+        private TextMeshPro m_GaussianCaptureText;
 
         private Transform m_HeldWidget;
         private bool m_WandInWidgetRange;
@@ -98,6 +101,7 @@ namespace TiltBrush
             m_AnimalRulerRenderers = m_AnimalRulerAnchor.GetComponentsInChildren<Renderer>();
             SetAnimalRulerScale(0);
             m_AnimalRulerRequestVisible = false;
+            CreateGaussianCaptureText();
 
             m_WandInWidgetRange = false;
             m_BrushInWidgetRange = false;
@@ -156,6 +160,7 @@ namespace TiltBrush
                     UpdateVisuals();
                     break;
                 case VisualState.WorldDoubleGrip:
+                case VisualState.GaussianCaptureDoubleGrip:
                     UpdateVisuals();
                     break;
             }
@@ -181,8 +186,10 @@ namespace TiltBrush
             Vector3 brush_pos = GetControllerAttachPos(InputManager.ControllerName.Brush);
             Vector3 wand_pos = GetControllerAttachPos(InputManager.ControllerName.Wand);
 
-            // If we're holding a widget, make our line length zero so it doesn't show.
-            if (m_HeldWidget != null)
+            // Ordinary widget grabs do not show the controller span. Gaussian capture adjustment
+            // uses the span as a scale ruler, so retain it for that dedicated visual state.
+            if (m_HeldWidget != null &&
+                m_CurrentVisualState != VisualState.GaussianCaptureDoubleGrip)
             {
                 Debug.Assert(m_CurrentVisualState == VisualState.WidgetBrushGrip ||
                     m_CurrentVisualState == VisualState.WidgetWandGrip);
@@ -232,6 +239,10 @@ namespace TiltBrush
             {
                 UpdateAnimalRuler();
             }
+            if (m_CurrentVisualState == VisualState.GaussianCaptureDoubleGrip)
+            {
+                UpdateGaussianCaptureText(centerpoint);
+            }
         }
 
         void SwitchState()
@@ -269,6 +280,7 @@ namespace TiltBrush
                     m_AnimalRulerAnchor.gameObject.SetActive(false);
                     SetAnimalRulerScale(0);
                     m_AnimalRulerRequestVisible = false;
+                    m_GaussianCaptureText.gameObject.SetActive(false);
                     break;
                 case VisualState.WorldWandGrip:
                 case VisualState.WidgetWandGrip:
@@ -281,6 +293,7 @@ namespace TiltBrush
                     UpdateBrushControllerGripState();
                     m_AnimalRulerAnchor.gameObject.SetActive(false);
                     m_AnimalRulerRequestVisible = false;
+                    m_GaussianCaptureText.gameObject.SetActive(false);
                     break;
                 case VisualState.WorldBrushGrip:
                 case VisualState.WidgetBrushGrip:
@@ -293,6 +306,7 @@ namespace TiltBrush
                     UpdateWandControllerGripState();
                     m_AnimalRulerAnchor.gameObject.SetActive(false);
                     m_AnimalRulerRequestVisible = false;
+                    m_GaussianCaptureText.gameObject.SetActive(false);
                     break;
                 case VisualState.WorldDoubleGrip:
                     m_LineT = 1.0f;
@@ -306,10 +320,60 @@ namespace TiltBrush
                     brushBehavior.SetGripState(BaseControllerBehavior.GripState.Gripped);
                     m_AnimalRulerAnchor.gameObject.SetActive(true);
                     m_AnimalRulerRequestVisible = true;
+                    m_GaussianCaptureText.gameObject.SetActive(false);
+                    break;
+                case VisualState.GaussianCaptureDoubleGrip:
+                    m_LineT = 1.0f;
+                    m_Intensity = 1.0f;
+                    m_LineRenderer.enabled = true;
+                    m_LineOutlineRenderer.enabled = true;
+                    m_LineRenderer.material.SetFloat("_Intensity", 1.0f);
+                    wandBehavior.EnableTransformVisuals(true, 1.0f);
+                    wandBehavior.SetGripState(BaseControllerBehavior.GripState.Gripped);
+                    brushBehavior.EnableTransformVisuals(true, 1.0f);
+                    brushBehavior.SetGripState(BaseControllerBehavior.GripState.Gripped);
+                    m_AnimalRulerAnchor.gameObject.SetActive(false);
+                    m_AnimalRulerRequestVisible = false;
+                    m_GaussianCaptureText.gameObject.SetActive(true);
                     break;
             }
 
             m_CurrentVisualState = m_DesiredVisualState;
+        }
+
+        public void SetGaussianCaptureText(string text)
+        {
+            if (m_GaussianCaptureText != null)
+            {
+                m_GaussianCaptureText.text = text;
+            }
+        }
+
+        private void CreateGaussianCaptureText()
+        {
+            var textObject = new GameObject("GaussianCaptureReadout");
+            textObject.layer = gameObject.layer;
+            textObject.transform.SetParent(transform, false);
+            m_GaussianCaptureText = textObject.AddComponent<TextMeshPro>();
+            m_GaussianCaptureText.alignment = TextAlignmentOptions.Center;
+            m_GaussianCaptureText.color = Color.white;
+            m_GaussianCaptureText.fontSize = 1.0f;
+            m_GaussianCaptureText.enableWordWrapping = false;
+            m_GaussianCaptureText.overflowMode = TextOverflowModes.Overflow;
+            m_GaussianCaptureText.outlineColor = Color.black;
+            m_GaussianCaptureText.outlineWidth = 0.2f;
+            m_GaussianCaptureText.renderer.sortingOrder = 10;
+            textObject.SetActive(false);
+        }
+
+        private void UpdateGaussianCaptureText(Vector3 controllersMidpoint)
+        {
+            Transform head = ViewpointScript.Head;
+            Vector3 headUp = head.up;
+            Vector3 textPosition = controllersMidpoint + headUp * 0.12f;
+            m_GaussianCaptureText.transform.position = textPosition;
+            m_GaussianCaptureText.transform.rotation = Quaternion.LookRotation(
+                textPosition - head.position, headUp);
         }
 
         void UpdateWandControllerGripState()

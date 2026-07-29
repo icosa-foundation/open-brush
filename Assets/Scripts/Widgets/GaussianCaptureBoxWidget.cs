@@ -173,21 +173,28 @@ namespace TiltBrush
             return $"Hold X/A while scaling to change subdiv ({m_SelectedSubdivisionAxis})";
         }
 
-        protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
+        protected override string GetAdjustmentStatusText()
+        {
+            var runtime = CameraCaptureRuntime.m_Instance;
+            int cameraCount = runtime != null
+                ? runtime.GetVolumeCameraPoseCount(SubdivX, SubdivY, SubdivZ)
+                : 0;
+            string cameraText = runtime != null ? $"{cameraCount} cameras\n" : "";
+            return $"{cameraText}{SubdivX} x {SubdivY} x {SubdivZ} subdivisions ({m_SelectedSubdivisionAxis})";
+        }
+
+        protected override bool TryApplyCaptureStep(int stepCount)
         {
             switch (m_SelectedSubdivisionAxis)
             {
                 case SubdivisionAxis.X:
                     SubdivX += stepCount;
-                    statusText = $"Subdiv X: {SubdivX}";
                     return true;
                 case SubdivisionAxis.Y:
                     SubdivY += stepCount;
-                    statusText = $"Subdiv Y: {SubdivY}";
                     return true;
                 default:
                     SubdivZ += stepCount;
-                    statusText = $"Subdiv Z: {SubdivZ}";
                     return true;
             }
         }

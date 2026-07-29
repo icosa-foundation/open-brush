@@ -89,11 +89,16 @@ namespace TiltBrush
             return "Hold X/A while scaling to change rings + views";
         }
 
-        protected override bool TryApplyCaptureStep(int stepCount, out string statusText)
+        protected override string GetAdjustmentStatusText()
+        {
+            int cameraCount = NumRings * ViewsPerRing;
+            return $"{cameraCount} cameras\n{NumRings} rings x {ViewsPerRing} views";
+        }
+
+        protected override bool TryApplyCaptureStep(int stepCount)
         {
             NumRings += stepCount;
             ViewsPerRing += stepCount;
-            statusText = $"Rings: {NumRings} Views/Ring: {ViewsPerRing}";
             return true;
         }
 

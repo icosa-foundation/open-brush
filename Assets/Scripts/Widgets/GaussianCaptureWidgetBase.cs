@@ -46,7 +46,13 @@ namespace TiltBrush
 
         protected abstract string GetAdjustmentHintText();
 
-        protected abstract bool TryApplyCaptureStep(int stepCount, out string statusText);
+        protected abstract string GetAdjustmentStatusText();
+
+        protected abstract bool TryApplyCaptureStep(int stepCount);
+
+        public string AdjustmentHintText => GetAdjustmentHintText();
+
+        public string AdjustmentStatusText => GetAdjustmentStatusText();
 
         public virtual void PrepareCaptureAdjustmentForAxis(Axis axis) { }
 
@@ -77,7 +83,7 @@ namespace TiltBrush
             }
 
             m_RuntimeScaleAccumulator -= stepCount * stepThreshold;
-            if (!TryApplyCaptureStep(stepCount, out string statusText))
+            if (!TryApplyCaptureStep(stepCount))
             {
                 return true;
             }

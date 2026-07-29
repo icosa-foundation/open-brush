@@ -2084,6 +2084,7 @@ namespace TiltBrush
                     RequestPanelsVisibility(true);
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
+                    SetWidgetGrabVisualState(InputManager.ControllerName.Brush);
                 }
                 else
                 {
@@ -2103,6 +2104,7 @@ namespace TiltBrush
                     m_GrabWidgetOneHandInfo.m_Name = InputManager.ControllerName.Wand;
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
+                    SetWidgetGrabVisualState(InputManager.ControllerName.Wand);
                 }
                 else
                 {
@@ -2132,6 +2134,7 @@ namespace TiltBrush
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
                     m_CurrentGrabWidget.SetUserTwoHandGrabbing(false);
+                    SetWidgetGrabVisualState(m_GrabWidgetOneHandInfo.m_Name);
 
                     // Eat input on the off hand so we don't immediately jump in to world transform.
                     if (m_GrabWidgetOneHandInfo.m_Name == InputManager.ControllerName.Brush)
@@ -2282,6 +2285,16 @@ namespace TiltBrush
             // Ignores TrTransform.scale
             m_CurrentGrabWidget.RecordAndSetPosRot(newWidgetXf);
 
+            if (gaussianCaptureWidget != null)
+            {
+                m_ControllerGrabVisuals.SetDesiredVisualState(
+                    ControllerGrabVisuals.VisualState.GaussianCaptureDoubleGrip);
+                m_ControllerGrabVisuals.SetGaussianCaptureText(
+                    adjustGaussianCaptureParams
+                        ? gaussianCaptureWidget.AdjustmentStatusText
+                        : gaussianCaptureWidget.AdjustmentHintText);
+            }
+
             m_GrabWidgetTwoHandBrushPrev = xfBrush;
             m_GrabWidgetTwoHandWandPrev = xfWand;
         }
@@ -2323,13 +2336,7 @@ namespace TiltBrush
                 RequestPanelsVisibility(false);
             }
 
-            // Notify visuals.
-            ControllerGrabVisuals.VisualState visualState =
-                m_GrabWidgetOneHandInfo.m_Name == InputManager.ControllerName.Brush ?
-                    ControllerGrabVisuals.VisualState.WidgetBrushGrip :
-                    ControllerGrabVisuals.VisualState.WidgetWandGrip;
-            m_ControllerGrabVisuals.SetDesiredVisualState(visualState);
-            m_ControllerGrabVisuals.SetHeldWidget(m_CurrentGrabWidget.transform);
+            SetWidgetGrabVisualState(m_GrabWidgetOneHandInfo.m_Name);
 
             //if a gaze object had focus when we grabbed this widget, take focus off the object
             ResetActivePanel();
@@ -2344,6 +2351,16 @@ namespace TiltBrush
 
             m_BackupWandGrabData = null;
             m_BackupBrushGrabData = null;
+        }
+
+        private void SetWidgetGrabVisualState(InputManager.ControllerName controllerName)
+        {
+            ControllerGrabVisuals.VisualState visualState =
+                controllerName == InputManager.ControllerName.Brush
+                    ? ControllerGrabVisuals.VisualState.WidgetBrushGrip
+                    : ControllerGrabVisuals.VisualState.WidgetWandGrip;
+            m_ControllerGrabVisuals.SetDesiredVisualState(visualState);
+            m_ControllerGrabVisuals.SetHeldWidget(m_CurrentGrabWidget.transform);
         }
 
         void UpdateGrab_ToNone(GrabWidget rPrevGrabWidget)
