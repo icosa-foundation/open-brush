@@ -207,11 +207,11 @@ namespace TiltBrush
                 }
             }
 
+            Vector3 centerpoint = brush_pos - (brush_pos - wand_pos) / 2.0f;
             float line_length = (brush_pos - wand_pos).magnitude - m_LineHorizontalOffset;
             if (line_length > 0.0f)
             {
                 Vector3 brush_to_wand = (brush_pos - wand_pos).normalized;
-                Vector3 centerpoint = brush_pos - (brush_pos - wand_pos) / 2.0f;
                 transform.position = centerpoint;
                 m_Line.position = centerpoint;
                 m_Line.up = brush_to_wand;
