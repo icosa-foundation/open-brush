@@ -505,7 +505,22 @@ namespace TiltBrush
                     Disconnect();
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerManualColocation:
-                    ManualColocationManager.m_Instance?.BeginAlignmentWorkflow();
+                    ManualColocationManager colocation =
+                        ManualColocationManager.m_Instance;
+                    if (colocation == null)
+                    {
+                        break;
+                    }
+                    if (colocation.HasReference &&
+                        MultiplayerManager.m_Instance != null &&
+                        MultiplayerManager.m_Instance.IsUserRoomOwner())
+                    {
+                        _ = colocation.ClearReference();
+                    }
+                    else
+                    {
+                        colocation.BeginAlignmentWorkflow();
+                    }
                     break;
             }
         }
