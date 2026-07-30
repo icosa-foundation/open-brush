@@ -349,7 +349,7 @@ namespace OpenBrush.Multiplayer
             Vector3 start_RS,
             Vector3 end_RS)
         {
-            string controls = $" {Localize( "MP_MANUAL_COLOCATION_CONFIRM_CONTROLS")}";
+            string controls = $" {Localize("MP_MANUAL_COLOCATION_CONFIRM_CONTROLS")}";
 
             if (m_IsCapturingForOwner)
             {
@@ -376,7 +376,7 @@ namespace OpenBrush.Multiplayer
                 return new ManualColocationCaptureFeedback
                 {
                     CanConfirm = true,
-                    Message = $"{string.Format( Localize("MP_MANUAL_COLOCATION_REFERENCE_LENGTH"), Vector3.Distance(start_RS, end_RS))}{controls}",
+                    Message = $"{string.Format(Localize("MP_MANUAL_COLOCATION_REFERENCE_LENGTH"), Vector3.Distance(start_RS, end_RS))}{controls}",
                 };
             }
 
@@ -397,11 +397,11 @@ namespace OpenBrush.Multiplayer
 
             string warning = result.Warnings == ManualColocationWarning.None
                 ? string.Empty
-                : $" {string.Format( Localize("MP_MANUAL_COLOCATION_WARNING"), result.Warnings)}";
+                : $" {string.Format(Localize("MP_MANUAL_COLOCATION_WARNING"), result.Warnings)}";
             return new ManualColocationCaptureFeedback
             {
                 CanConfirm = true,
-                Message = $"{string.Format( Localize("MP_MANUAL_COLOCATION_MEASURED_LENGTH"), result.LocalLengthMeters)}{warning}{controls}",
+                Message = $"{string.Format(Localize("MP_MANUAL_COLOCATION_MEASURED_LENGTH"), result.LocalLengthMeters)}{warning}{controls}",
             };
         }
 
