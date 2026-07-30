@@ -793,6 +793,15 @@ namespace OpenBrush.Multiplayer
             return isUserRoomOwner;
         }
 
+        public bool IsPlayerRoomOwner(int playerId)
+        {
+            if (playerId == LocalPlayerId)
+            {
+                return isUserRoomOwner;
+            }
+            return m_Manager?.GetPlayerRoomOwnershipStatus(playerId) ?? false;
+        }
+
         public bool IsRemotePlayerStillConnected(int playerId)
         {
             if (m_RemotePlayers.List.Any(player => player.PlayerId == playerId)) return true;
