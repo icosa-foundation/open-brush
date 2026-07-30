@@ -274,13 +274,18 @@ namespace OpenBrush.Multiplayer
 
         public bool GetPlayerRoomOwnershipStatus(int playerId)
         {
-            var remotePlayer = m_PlayersSpawning
-                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
-                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+            if (m_Runner == null)
+            {
+                return false;
+            }
 
-            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
-                return remotePlayer.IsRoomOwner;
-            else return false;
+            PlayerRef player = PlayerRef.FromEncoded(playerId);
+            PhotonPlayerRig playerRig =
+                m_Runner.GetPlayerObject(player)?.GetComponent<PhotonPlayerRig>();
+            return playerRig != null &&
+                   playerRig.Object != null &&
+                   playerRig.Object.IsValid &&
+                   playerRig.IsRoomOwner;
         }
 
         public string GetPlayerNickname(int playerId)
