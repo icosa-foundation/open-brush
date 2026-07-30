@@ -351,10 +351,7 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            m_IsApplyingPose = true;
-            App.Scene.Pose = result.ScenePose;
-            TrTransform sanitizedPose = App.Scene.Pose;
-            m_IsApplyingPose = false;
+            TrTransform sanitizedPose = App.Scene.SanitizePose(result.ScenePose);
             result.ScenePose = sanitizedPose;
 
             Vector3 mappedStart_RS =
@@ -369,6 +366,22 @@ namespace OpenBrush.Multiplayer
                 ManualColocationSolver.EndpointResidualMetersWarning)
             {
                 result.Warnings |= ManualColocationWarning.EndpointResidual;
+                SetError(
+                    $"Alignment exceeds the scene bounds ({result.EndpointResidualMeters:F3} m residual).");
+                Debug.LogWarning(
+                    $"[ManualColocationBounds] Rejected pose for revision {captureReference.Revision}; residual={result.EndpointResidualMeters:F3} m.");
+                return;
+            }
+
+            m_IsApplyingPose = true;
+            try
+            {
+                App.Scene.Pose = sanitizedPose;
+                result.ScenePose = App.Scene.Pose;
+            }
+            finally
+            {
+                m_IsApplyingPose = false;
             }
 
             SetState(ManualColocationState.Aligned);
