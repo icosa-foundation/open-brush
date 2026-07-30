@@ -46,6 +46,10 @@ namespace OpenBrush.Multiplayer
         Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
         Task<bool> UndoCommand(BaseCommand command);
         Task<bool> RedoCommand(BaseCommand command);
+        Task<bool> RpcPublishManualColocationReference(
+            ManualColocationReference reference);
+        Task<bool> RpcSendManualColocationReferenceToPlayer(
+            ManualColocationReference reference, int playerId);
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);

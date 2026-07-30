@@ -432,7 +432,57 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.IsViewOnly = isEnabled;
         }
 
+        private static void ReceiveManualColocationReference(
+            NetworkManualColocationReference networkReference,
+            PlayerRef source,
+            bool requireCreatorMatch)
+        {
+            MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+            if (multiplayer == null)
+            {
+                return;
+            }
+
+            ManualColocationReference reference = networkReference.ToReference();
+            int sourcePlayerId = source.RawEncoded;
+            bool senderIsOwner = multiplayer.IsPlayerRoomOwner(sourcePlayerId);
+            if (!senderIsOwner ||
+                (requireCreatorMatch &&
+                 reference.CreatorPlayerId != sourcePlayerId))
+            {
+                string reason = senderIsOwner
+                    ? $"creator is player {reference.CreatorPlayerId}"
+                    : "sender is not the room owner";
+                Debug.LogWarning(
+                    $"[ManualColocationAuth] Rejected reference revision {reference.Revision} from player {sourcePlayerId}: {reason}.");
+                return;
+            }
+
+            multiplayer.ReceiveManualColocationReference(reference);
+        }
+
         #region RPCS
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ManualColocationReference(
+            NetworkRunner runner,
+            NetworkManualColocationReference reference,
+            RpcInfo info = default)
+        {
+            ReceiveManualColocationReference(
+                reference, info.Source, requireCreatorMatch: true);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_ManualColocationReference(
+            NetworkRunner runner,
+            NetworkManualColocationReference reference,
+            [RpcTarget] PlayerRef targetPlayer,
+            RpcInfo info = default)
+        {
+            ReceiveManualColocationReference(
+                reference, info.Source, requireCreatorMatch: false);
+        }
+
         [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
