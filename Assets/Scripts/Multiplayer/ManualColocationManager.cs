@@ -44,10 +44,12 @@ namespace OpenBrush.Multiplayer
         public bool HasReference => m_CurrentReference.IsValid;
 
         private ManualColocationReference m_CurrentReference;
+        private ManualColocationReference m_CaptureReference;
         private ManualColocationState m_State = ManualColocationState.Unavailable;
         private BaseTool.ToolType m_PreviousToolType;
         private ManualColocationTool m_CaptureTool;
         private bool m_IsApplyingPose;
+        private bool m_IsCaptureActive;
         private bool m_IsCapturingForOwner;
         private uint m_LatestRevision;
 
@@ -130,6 +132,11 @@ namespace OpenBrush.Multiplayer
 
             m_PreviousToolType = surface.ActiveToolType;
             m_IsCapturingForOwner = isOwner;
+            m_IsCaptureActive = true;
+            if (!isOwner)
+            {
+                m_CaptureReference = m_CurrentReference;
+            }
             m_CaptureTool.BeginCapture(
                 OnCaptureCompleted,
                 CancelCapture,
@@ -142,6 +149,7 @@ namespace OpenBrush.Multiplayer
 
         public void CancelCapture()
         {
+            m_IsCaptureActive = false;
             RestorePreviousTool();
             RefreshState();
             Debug.Log("[ManualColocation] Capture cancelled.");
@@ -210,8 +218,21 @@ namespace OpenBrush.Multiplayer
             }
 
             bool wasLocallyAligned = m_State == ManualColocationState.Aligned;
+            bool cancelParticipantCapture =
+                m_IsCaptureActive &&
+                !m_IsCapturingForOwner &&
+                reference.Revision != m_CaptureReference.Revision;
             m_LatestRevision = reference.Revision;
             m_CurrentReference = reference;
+
+            if (cancelParticipantCapture)
+            {
+                m_IsCaptureActive = false;
+                RestorePreviousTool();
+                Debug.Log(
+                    $"[ManualColocation] Capture cancelled because the reference changed from revision {m_CaptureReference.Revision} to {reference.Revision}.");
+            }
+
             ReferenceChanged?.Invoke(reference);
 
             if (!reference.IsValid)
@@ -235,8 +256,10 @@ namespace OpenBrush.Multiplayer
 
         public void ResetForRoomLifecycle()
         {
+            m_IsCaptureActive = false;
             RestorePreviousTool();
             m_CurrentReference = default;
+            m_CaptureReference = default;
             m_LatestRevision = 0;
             m_IsCapturingForOwner = false;
             ReferenceChanged?.Invoke(m_CurrentReference);
@@ -256,7 +279,15 @@ namespace OpenBrush.Multiplayer
 
         private async void OnCaptureCompleted(Vector3 start_RS, Vector3 end_RS)
         {
+            bool wasCaptureActive = m_IsCaptureActive;
+            ManualColocationReference captureReference = m_CaptureReference;
+            m_IsCaptureActive = false;
             RestorePreviousTool();
+
+            if (!wasCaptureActive)
+            {
+                return;
+            }
 
             MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
             if (multiplayer == null || multiplayer.State != ConnectionState.IN_ROOM)
@@ -303,15 +334,17 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            if (!m_CurrentReference.IsValid)
+            if (!m_CurrentReference.IsValid ||
+                m_CurrentReference.Revision != captureReference.Revision)
             {
-                SetError("The room alignment reference is no longer available.");
+                SetError(
+                    $"The room alignment reference changed during capture (started={captureReference.Revision}, current={m_CurrentReference.Revision}).");
                 return;
             }
 
             ManualColocationSolveResult result =
                 ManualColocationSolver.TrySolve(
-                    m_CurrentReference, start_RS, end_RS);
+                    captureReference, start_RS, end_RS);
             if (!result.Success)
             {
                 SetError($"Alignment solve failed: {result.Error}");
@@ -325,9 +358,9 @@ namespace OpenBrush.Multiplayer
             result.ScenePose = sanitizedPose;
 
             Vector3 mappedStart_RS =
-                sanitizedPose.MultiplyPoint(m_CurrentReference.Start_SS);
+                sanitizedPose.MultiplyPoint(captureReference.Start_SS);
             Vector3 mappedEnd_RS =
-                sanitizedPose.MultiplyPoint(m_CurrentReference.End_SS);
+                sanitizedPose.MultiplyPoint(captureReference.End_SS);
             result.EndpointResidualMeters = Mathf.Max(
                 Vector3.Distance(mappedStart_RS, start_RS),
                 Vector3.Distance(mappedEnd_RS, end_RS));
@@ -340,7 +373,7 @@ namespace OpenBrush.Multiplayer
             SetState(ManualColocationState.Aligned);
             AlignmentApplied?.Invoke(result);
             Debug.Log(
-                $"[ManualColocation] Pose applied. Revision={m_CurrentReference.Revision}, yaw={result.YawDegrees:F2}, residual={result.EndpointResidualMeters:F3}, warnings={result.Warnings}");
+                $"[ManualColocation] Pose applied. Revision={captureReference.Revision}, yaw={result.YawDegrees:F2}, residual={result.EndpointResidualMeters:F3}, warnings={result.Warnings}");
         }
 
         private ManualColocationCaptureFeedback GetCaptureFeedback(
@@ -380,7 +413,7 @@ namespace OpenBrush.Multiplayer
 
             ManualColocationSolveResult result =
                 ManualColocationSolver.TrySolve(
-                    m_CurrentReference, start_RS, end_RS);
+                    m_CaptureReference, start_RS, end_RS);
             if (!result.Success)
             {
                 return new ManualColocationCaptureFeedback
