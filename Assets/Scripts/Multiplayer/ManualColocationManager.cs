@@ -351,27 +351,37 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
+            TrTransform solvedPose = result.ScenePose;
             TrTransform sanitizedPose = App.Scene.SanitizePose(result.ScenePose);
             result.ScenePose = sanitizedPose;
 
+            Vector3 solvedStart_RS =
+                solvedPose.MultiplyPoint(captureReference.Start_SS);
+            Vector3 solvedEnd_RS =
+                solvedPose.MultiplyPoint(captureReference.End_SS);
             Vector3 mappedStart_RS =
                 sanitizedPose.MultiplyPoint(captureReference.Start_SS);
             Vector3 mappedEnd_RS =
                 sanitizedPose.MultiplyPoint(captureReference.End_SS);
-            result.EndpointResidualMeters = Mathf.Max(
-                Vector3.Distance(mappedStart_RS, start_RS),
-                Vector3.Distance(mappedEnd_RS, end_RS)) *
+            float sanitizationDisplacementMeters = Mathf.Max(
+                Vector3.Distance(solvedStart_RS, mappedStart_RS),
+                Vector3.Distance(solvedEnd_RS, mappedEnd_RS)) *
                 App.UNITS_TO_METERS;
-            if (result.EndpointResidualMeters >
+            if (sanitizationDisplacementMeters >
                 ManualColocationSolver.EndpointResidualMetersWarning)
             {
                 result.Warnings |= ManualColocationWarning.EndpointResidual;
                 SetError(
-                    $"Alignment exceeds the scene bounds ({result.EndpointResidualMeters:F3} m residual).");
+                    $"Alignment exceeds the scene bounds ({sanitizationDisplacementMeters:F3} m adjustment).");
                 Debug.LogWarning(
-                    $"[ManualColocationBounds] Rejected pose for revision {captureReference.Revision}; residual={result.EndpointResidualMeters:F3} m.");
+                    $"[ManualColocationBounds] Rejected pose for revision {captureReference.Revision}; adjustment={sanitizationDisplacementMeters:F3} m.");
                 return;
             }
+
+            result.EndpointResidualMeters = Mathf.Max(
+                Vector3.Distance(mappedStart_RS, start_RS),
+                Vector3.Distance(mappedEnd_RS, end_RS)) *
+                App.UNITS_TO_METERS;
 
             m_IsApplyingPose = true;
             try
