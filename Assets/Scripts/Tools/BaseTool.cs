@@ -50,6 +50,7 @@ namespace TiltBrush
             FlyTool,
             PushPullTool = 5100,
             TintColorTool = 5101,
+            ManualColocationTool = 1022,
             ScriptedTool = 6001,
             SnipTool = 11000,
             JoinTool = 11001
