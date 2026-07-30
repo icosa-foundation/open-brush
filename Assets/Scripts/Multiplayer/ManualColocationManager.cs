@@ -363,7 +363,8 @@ namespace OpenBrush.Multiplayer
                 sanitizedPose.MultiplyPoint(captureReference.End_SS);
             result.EndpointResidualMeters = Mathf.Max(
                 Vector3.Distance(mappedStart_RS, start_RS),
-                Vector3.Distance(mappedEnd_RS, end_RS));
+                Vector3.Distance(mappedEnd_RS, end_RS)) *
+                App.UNITS_TO_METERS;
             if (result.EndpointResidualMeters >
                 ManualColocationSolver.EndpointResidualMetersWarning)
             {

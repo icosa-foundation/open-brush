@@ -79,13 +79,16 @@ namespace OpenBrush.Multiplayer
             }
 
             Vector3 delta = end_RS - start_RS;
-            if (delta.magnitude < MinLineLengthMeters)
+            float lengthMeters = delta.magnitude * App.UNITS_TO_METERS;
+            if (lengthMeters < MinLineLengthMeters)
             {
                 return ManualColocationValidationError.LineTooShort;
             }
 
-            float horizontalSpan = Vector3.ProjectOnPlane(delta, Vector3.up).magnitude;
-            if (horizontalSpan < minimumHorizontalSpanMeters)
+            float horizontalSpanMeters =
+                Vector3.ProjectOnPlane(delta, Vector3.up).magnitude *
+                App.UNITS_TO_METERS;
+            if (horizontalSpanMeters < minimumHorizontalSpanMeters)
             {
                 return ManualColocationValidationError.InsufficientHorizontalSpan;
             }
@@ -179,12 +182,14 @@ namespace OpenBrush.Multiplayer
             Vector3 referenceDelta_SS = reference.End_SS - reference.Start_SS;
             Vector3 referenceDelta_RS = referenceDelta_SS * reference.SceneScale;
             Vector3 referenceHorizontal = Vector3.ProjectOnPlane(referenceDelta_RS, Vector3.up);
-            if (referenceDelta_RS.magnitude < MinLineLengthMeters)
+            if (referenceDelta_RS.magnitude * App.UNITS_TO_METERS <
+                MinLineLengthMeters)
             {
                 result.Error = ManualColocationValidationError.LineTooShort;
                 return result;
             }
-            if (referenceHorizontal.magnitude < MinHorizontalSpanMeters)
+            if (referenceHorizontal.magnitude * App.UNITS_TO_METERS <
+                MinHorizontalSpanMeters)
             {
                 result.Error = ManualColocationValidationError.InsufficientHorizontalSpan;
                 return result;
@@ -202,22 +207,26 @@ namespace OpenBrush.Multiplayer
 
             result.ScenePose =
                 TrTransform.TRS(translation, rotation, reference.SceneScale);
-            result.ReferenceLengthMeters = referenceDelta_RS.magnitude;
-            result.LocalLengthMeters = localDelta_RS.magnitude;
+            result.ReferenceLengthMeters =
+                referenceDelta_RS.magnitude * App.UNITS_TO_METERS;
+            result.LocalLengthMeters =
+                localDelta_RS.magnitude * App.UNITS_TO_METERS;
             result.LengthMismatchMeters =
                 Mathf.Abs(result.LocalLengthMeters - result.ReferenceLengthMeters);
             result.LengthMismatchRatio = result.ReferenceLengthMeters > Mathf.Epsilon
                 ? result.LengthMismatchMeters / result.ReferenceLengthMeters
                 : 0f;
             result.HorizontalSpanMeters =
-                Mathf.Min(referenceHorizontal.magnitude, localHorizontal.magnitude);
+                Mathf.Min(referenceHorizontal.magnitude, localHorizontal.magnitude) *
+                App.UNITS_TO_METERS;
             result.YawDegrees = yaw;
 
             Vector3 mappedStart_RS = result.ScenePose.MultiplyPoint(reference.Start_SS);
             Vector3 mappedEnd_RS = result.ScenePose.MultiplyPoint(reference.End_SS);
             result.EndpointResidualMeters = Mathf.Max(
                 Vector3.Distance(mappedStart_RS, localStart_RS),
-                Vector3.Distance(mappedEnd_RS, localEnd_RS));
+                Vector3.Distance(mappedEnd_RS, localEnd_RS)) *
+                App.UNITS_TO_METERS;
 
             if (result.LengthMismatchMeters > LengthMismatchMetersWarning ||
                 result.LengthMismatchRatio > LengthMismatchRatioWarning)
@@ -226,8 +235,10 @@ namespace OpenBrush.Multiplayer
             }
 
             float referenceHeightDeltaMeters =
-                Mathf.Abs(referenceDelta_SS.y * reference.SceneScale);
-            float localHeightDeltaMeters = Mathf.Abs(localDelta_RS.y);
+                Mathf.Abs(referenceDelta_SS.y * reference.SceneScale) *
+                App.UNITS_TO_METERS;
+            float localHeightDeltaMeters =
+                Mathf.Abs(localDelta_RS.y) * App.UNITS_TO_METERS;
             if (referenceHeightDeltaMeters > HeightMismatchMetersWarning ||
                 localHeightDeltaMeters > HeightMismatchMetersWarning)
             {
