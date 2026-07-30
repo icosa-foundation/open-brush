@@ -434,7 +434,8 @@ namespace OpenBrush.Multiplayer
 
         private static void ReceiveManualColocationReference(
             NetworkManualColocationReference networkReference,
-            PlayerRef source)
+            PlayerRef source,
+            bool requireCreatorMatch)
         {
             MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
             if (multiplayer == null)
@@ -444,11 +445,16 @@ namespace OpenBrush.Multiplayer
 
             ManualColocationReference reference = networkReference.ToReference();
             int sourcePlayerId = source.RawEncoded;
-            if (reference.CreatorPlayerId != sourcePlayerId ||
-                !multiplayer.IsPlayerRoomOwner(sourcePlayerId))
+            bool senderIsOwner = multiplayer.IsPlayerRoomOwner(sourcePlayerId);
+            if (!senderIsOwner ||
+                (requireCreatorMatch &&
+                 reference.CreatorPlayerId != sourcePlayerId))
             {
+                string reason = senderIsOwner
+                    ? $"creator is player {reference.CreatorPlayerId}"
+                    : "sender is not the room owner";
                 Debug.LogWarning(
-                    $"[ManualColocationAuth] Rejected reference revision {reference.Revision} from non-owner player {sourcePlayerId}.");
+                    $"[ManualColocationAuth] Rejected reference revision {reference.Revision} from player {sourcePlayerId}: {reason}.");
                 return;
             }
 
@@ -462,7 +468,8 @@ namespace OpenBrush.Multiplayer
             NetworkManualColocationReference reference,
             RpcInfo info = default)
         {
-            ReceiveManualColocationReference(reference, info.Source);
+            ReceiveManualColocationReference(
+                reference, info.Source, requireCreatorMatch: true);
         }
 
         [Rpc(InvokeLocal = false)]
@@ -472,7 +479,8 @@ namespace OpenBrush.Multiplayer
             [RpcTarget] PlayerRef targetPlayer,
             RpcInfo info = default)
         {
-            ReceiveManualColocationReference(reference, info.Source);
+            ReceiveManualColocationReference(
+                reference, info.Source, requireCreatorMatch: false);
         }
 
         [Rpc(InvokeLocal = false)]
