@@ -286,7 +286,8 @@ namespace TiltBrush
                 ? existing.gameObject
                 : new GameObject(name);
             marker.transform.SetParent(m_VisualRoot.transform, false);
-            marker.transform.localScale = Vector3.one * kMarkerScaleMeters;
+            marker.transform.localScale =
+                Vector3.one * kMarkerScaleMeters * App.METERS_TO_UNITS;
             Collider collider = marker.GetComponent<Collider>();
             if (collider != null)
             {
@@ -325,8 +326,8 @@ namespace TiltBrush
             }
             line.useWorldSpace = true;
             line.positionCount = positionCount;
-            line.startWidth = kLineWidthMeters;
-            line.endWidth = kLineWidthMeters;
+            line.startWidth = kLineWidthMeters * App.METERS_TO_UNITS;
+            line.endWidth = kLineWidthMeters * App.METERS_TO_UNITS;
             line.numCapVertices = 4;
             line.sharedMaterial = m_LineMaterial;
             return line;
@@ -410,7 +411,9 @@ namespace TiltBrush
             }
             side.Normalize();
 
-            float wingLength = Mathf.Min(0.1f, delta.magnitude * 0.2f);
+            float wingLength = Mathf.Min(
+                0.1f * App.METERS_TO_UNITS,
+                delta.magnitude * 0.2f);
             Vector3 arrowBase = end - direction * wingLength;
             m_Arrow.enabled = true;
             m_Arrow.SetPosition(0, arrowBase + side * wingLength * 0.5f);
