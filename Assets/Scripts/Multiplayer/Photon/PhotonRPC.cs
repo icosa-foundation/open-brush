@@ -465,13 +465,6 @@ namespace OpenBrush.Multiplayer
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
 #if OCULUS_SUPPORTED
-            if (ManualColocationManager.m_Instance != null &&
-                ManualColocationManager.m_Instance.IsManualProviderActive)
-            {
-                Debug.Log(
-                    "[ManualColocation] Ignored Meta anchor sync while manual colocation is active.");
-                return;
-            }
             OculusMRController.m_Instance.RemoteSyncToAnchor(uuid);
 #endif // OCULUS_SUPPORTED
         }

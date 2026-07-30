@@ -42,8 +42,6 @@ namespace OpenBrush.Multiplayer
         public ManualColocationReference CurrentReference => m_CurrentReference;
         public ManualColocationState State => m_State;
         public bool HasReference => m_CurrentReference.IsValid;
-        public bool IsManualProviderActive =>
-            HasReference || m_State == ManualColocationState.CapturingStart;
 
         private ManualColocationReference m_CurrentReference;
         private ManualColocationState m_State = ManualColocationState.Unavailable;

@@ -729,13 +729,6 @@ namespace OpenBrush.Multiplayer
         async void ShareAnchors()
         {
 #if OCULUS_SUPPORTED
-            if (ManualColocationManager.m_Instance != null &&
-                ManualColocationManager.m_Instance.IsManualProviderActive)
-            {
-                Debug.Log(
-                    "[ManualColocation] Skipping Meta anchor sharing while manual colocation is active.");
-                return;
-            }
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
