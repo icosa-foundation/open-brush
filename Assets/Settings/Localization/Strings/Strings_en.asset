@@ -3860,7 +3860,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
-    m_Localized: The reference is too short. Choose endpoints at least 0.5 metres apart.
+    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres apart.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000015
