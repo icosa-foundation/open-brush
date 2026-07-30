@@ -431,7 +431,7 @@ namespace OpenBrush.Multiplayer
                 return new ManualColocationCaptureFeedback
                 {
                     CanConfirm = true,
-                    Message = $"{string.Format(Localize("MP_MANUAL_COLOCATION_REFERENCE_LENGTH"), Vector3.Distance(start_RS, end_RS))}{controls}",
+                    Message = $"{string.Format(Localize("MP_MANUAL_COLOCATION_REFERENCE_LENGTH"), Vector3.Distance(start_RS, end_RS) * App.UNITS_TO_METERS)}{controls}",
                 };
             }
 
