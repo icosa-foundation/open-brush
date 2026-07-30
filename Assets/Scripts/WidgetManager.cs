@@ -181,6 +181,7 @@ namespace TiltBrush
         // Camera path.
         [NonSerialized] public bool FollowingPath;
         private TypedWidgetData<CameraPathWidget> m_CurrentCameraPath;
+        private bool m_CreatingCameraPath;
         private bool m_CameraPathsVisible;
         private CameraPathTinter m_CameraPathTinter;
 
@@ -474,6 +475,16 @@ namespace TiltBrush
 
         public TypedWidgetData<CameraPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
 
+        public bool CreatingCameraPath => m_CreatingCameraPath;
+
+        public void BeginCreatingCameraPath()
+        {
+            FollowingPath = false;
+            m_CreatingCameraPath = true;
+            SetCurrentCameraPath_Internal(null);
+            App.Switchboard.TriggerCurrentCameraPathChanged();
+        }
+
         public void SetCurrentCameraPath(CameraPathWidget path)
         {
             // Early out if we're trying to set the path to the already current path.
@@ -487,6 +498,7 @@ namespace TiltBrush
                 if (m_CameraPathWidgets[i].m_WidgetScript == path)
                 {
                     FollowingPath = false;
+                    m_CreatingCameraPath = false;
                     SetCurrentCameraPath_Internal(m_CameraPathWidgets[i]);
                     App.Switchboard.TriggerCurrentCameraPathChanged();
                     return;
@@ -496,6 +508,11 @@ namespace TiltBrush
 
         public void ValidateCurrentCameraPath()
         {
+            if (m_CreatingCameraPath)
+            {
+                return;
+            }
+
             if (m_CurrentCameraPath == null ||
                 m_CurrentCameraPath.WidgetScript == null ||
                 !IsWidgetObjectActive(m_CurrentCameraPath))
@@ -1546,6 +1563,7 @@ namespace TiltBrush
             DestroyWidgetList(m_SoundClipWidgets);
             DestroyWidgetList(m_StencilWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
+            m_CreatingCameraPath = false;
             SetCurrentCameraPath_Internal(null);
             App.Switchboard.TriggerAllWidgetsDestroyed();
 

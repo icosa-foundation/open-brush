@@ -274,13 +274,18 @@ namespace OpenBrush.Multiplayer
 
         public bool GetPlayerRoomOwnershipStatus(int playerId)
         {
-            var remotePlayer = m_PlayersSpawning
-                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
-                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+            if (m_Runner == null)
+            {
+                return false;
+            }
 
-            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
-                return remotePlayer.IsRoomOwner;
-            else return false;
+            PlayerRef player = PlayerRef.FromEncoded(playerId);
+            PhotonPlayerRig playerRig =
+                m_Runner.GetPlayerObject(player)?.GetComponent<PhotonPlayerRig>();
+            return playerRig != null &&
+                   playerRig.Object != null &&
+                   playerRig.Object.IsValid &&
+                   playerRig.IsRoomOwner;
         }
 
         public string GetPlayerNickname(int playerId)
@@ -359,6 +364,46 @@ namespace OpenBrush.Multiplayer
         {
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid); });
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcPublishManualColocationReference(
+            ManualColocationReference reference)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference);
+            });
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcSendManualColocationReferenceToPlayer(
+            ManualColocationReference reference,
+            int playerId)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference, targetPlayer);
+            });
             await Task.Yield();
             return true;
         }
