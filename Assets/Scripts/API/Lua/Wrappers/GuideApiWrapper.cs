@@ -50,6 +50,22 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("The dimensions of the Guide Widget")]
+        public Vector3 dimensions
+        {
+            get => _StencilWidget.CustomDimension;
+            set
+            {
+                _StencilWidget.CustomDimension = value;
+            }
+        }
+
+        [LuaDocsDescription("The type of the Guide Widget")]
+        public string guideType
+        {
+            get => _StencilWidget.Type.ToString();
+        }
+
         [LuaDocsDescription("The 3D position of the Guide Widget")]
         public Vector3 position
         {
@@ -72,37 +88,37 @@ namespace TiltBrush
         }
 
         [LuaDocsDescription("Creates a new cube guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewCube(Transform:New(0, 5, 2)")]
+        [LuaDocsExample("myGuide = Guide:NewCube(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new cube guide")]
         public static GuideApiWrapper NewCube(TrTransform transform) => _Add(StencilType.Cube, transform);
 
         [LuaDocsDescription("Creates a new sphere guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewSphere(Transform:New(0, 5, 2)")]
+        [LuaDocsExample("myGuide = Guide:NewSphere(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new sphere guide")]
         public static GuideApiWrapper NewSphere(TrTransform transform) => _Add(StencilType.Sphere, transform);
 
         [LuaDocsDescription("Creates a new capsule guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewCapsule(Transform:New(0, 5, 2)")]
+        [LuaDocsExample("myGuide = Guide:NewCapsule(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new capsule guide")]
         public static GuideApiWrapper NewCapsule(TrTransform transform) => _Add(StencilType.Capsule, transform);
 
         [LuaDocsDescription("Creates a new cone guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewCone(Transform:New(0, 5, 2)")]
+        [LuaDocsExample("myGuide = Guide:NewCone(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new cone guide")]
         public static GuideApiWrapper NewCone(TrTransform transform) => _Add(StencilType.Cone, transform);
 
         [LuaDocsDescription("Creates a new ellipsoid guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewEllipsoid(Transform:New(0, 5, 2)")]
+        [LuaDocsExample("myGuide = Guide:NewEllipsoid(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new ellipsoid guide")]
         public static GuideApiWrapper NewEllipsoid(TrTransform transform) => _Add(StencilType.Ellipsoid, transform);
 
         [LuaDocsDescription(@"Creates a new custom guide from a 3d model. Note that custom guides have to be convex so your model will be ""wrapped"" as a convex hull")]
-        [LuaDocsExample("myGuide = Guide:NewCustom(Transform:New(0, 5, 2), myModel")]
+        [LuaDocsExample("myGuide = Guide:NewCustom(Transform:New(0, 5, 2), myModel)")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsParameter("model", "The Model to use for the custom guide")]
         [LuaDocsReturnValue("A new custom guide based on the convex hull of the model")]
@@ -129,10 +145,20 @@ namespace TiltBrush
         public void Delete() => ApiMethods.DeleteWidget(_StencilWidget);
 
         [LuaDocsDescription("Scales the guide (scale can be non-uniform as some guide types can be stretched)")]
-        [LuaDocsExample("myGuide:Scale(Vector3:New(2, 0, 0)")]
+        [LuaDocsExample("myGuide:Scale(Vector3:New(2, 0, 0))")]
         [LuaDocsParameter("scale", "The scale vector for scaling the Guide Widget")]
         public void Scale(Vector3 scale) => SketchMemoryScript.m_Instance.PerformAndRecordCommand(
             new MoveWidgetCommand(_StencilWidget, _StencilWidget.LocalTransform, scale));
+
+        [LuaDocsDescription("")]
+        [LuaDocsExample("myGuide:ClosestPoint(Vector3:New(2, 3, 4))")]
+        [LuaDocsParameter("point", "")]
+        public TransformApiWrapper ClosestPoint(Vector3 point)
+        {
+            _StencilWidget.FindClosestPointOnSurface(point, out Vector3 closestPoint, out Vector3 normal);
+            Quaternion rotation = Quaternion.LookRotation(Vector3.up, normal);
+            return new TransformApiWrapper(closestPoint, rotation);
+        }
 
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
