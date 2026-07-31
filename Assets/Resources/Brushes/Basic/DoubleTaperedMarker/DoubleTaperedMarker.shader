@@ -23,7 +23,7 @@ Category {
   Cull Off Lighting Off
 
   SubShader {
-    Tags{ "DisableBatching" = "True" }
+    Tags{ "DisableBatching" = "True" "RenderType" = "Opaque" }
     Pass {
 
       CGPROGRAM

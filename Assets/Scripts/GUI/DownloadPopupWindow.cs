@@ -183,6 +183,12 @@ namespace TiltBrush
             {
                 return;
             }
+            if (m_DownloadTask?.Task != null && m_DownloadTask.Task.IsFaulted)
+            {
+                Debug.LogWarning($"Drive sketch download failed: {m_DownloadTask.Task.Exception}");
+                MarkDownloadFailed("Could not download sketch.");
+                return;
+            }
             if (m_SceneFileInfo == null || !m_SceneFileInfo.Available)
             {
                 return;
