@@ -20,7 +20,7 @@ namespace TiltBrush
 
     class SketchbookMenuPopUpWindow : MenuPopUpWindow
     {
-        public Transform m_DropPortalButton;
+        public ActionButton m_DropPortalButton;
         private int m_CommandParam;
         private SketchSetType m_SketchSetType;
 
@@ -29,7 +29,13 @@ namespace TiltBrush
             m_CommandParam = iCommandParam;
             m_SketchSetType = (SketchSetType)iCommandParam2;
             bool isLinkableSketch = m_SketchSetType is SketchSetType.Curated or SketchSetType.Liked;
-            m_DropPortalButton.gameObject.SetActive(isLinkableSketch);
+
+            // SetColor is needed to trigger dimming when unavailable for buttons on popups
+            // Proper fix:
+            // In BaseButton: cache the last color passed to SetColor
+            // and re-apply it at the end of SetButtonwhAvailable.
+            m_DropPortalButton?.SetButtonAvailable(isLinkableSketch);
+            m_DropPortalButton?.SetColor(Color.white);
 
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)

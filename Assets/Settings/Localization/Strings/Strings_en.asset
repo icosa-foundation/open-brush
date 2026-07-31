@@ -3880,23 +3880,28 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000012
-    m_Localized: Endpoint A recorded. Place the controller tip at endpoint B and press the trigger.
+    m_Localized: Endpoint A recorded. Place the controller tip at endpoint B and
+      press the trigger.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; cancel retries later.
+    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger
+      swaps A and B; cancel retries later.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
-    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres apart.
+    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres
+      apart.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000015
-    m_Localized: The reference needs more horizontal separation. Choose a longer horizontal edge.
+    m_Localized: The reference needs more horizontal separation. Choose a longer
+      horizontal edge.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000016
-    m_Localized: The controller pose is invalid. Check tracking and try endpoint B again.
+    m_Localized: The controller pose is invalid. Check tracking and try endpoint
+      B again.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000017
@@ -3921,6 +3926,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 521000000000000022
     m_Localized: 'Warning: {0}.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: Only sketches published to Icosa Gallery can be used as portals
     m_Metadata:
       m_Items: []
   references:
