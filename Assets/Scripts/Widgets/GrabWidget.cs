@@ -1586,7 +1586,7 @@ namespace TiltBrush
 
         protected virtual TrTransform ApplyAxisLocks(TrTransform xf_GS)
         {
-            if (this is StencilWidget || this is MediaWidget || this is SelectionWidget)
+            if (this is ShapeWidget || this is MediaWidget || this is SelectionWidget)
             {
                 xf_GS = CalculateAxisLocks(xf_GS);
             }
