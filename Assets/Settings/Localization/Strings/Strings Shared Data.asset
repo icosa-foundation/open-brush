@@ -3755,6 +3755,10 @@ MonoBehaviour:
     m_Key: MP_MANUAL_COLOCATION_WARNING
     m_Metadata:
       m_Items: []
+  - m_Id: 526462189999579136
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTIONEXTRA_PORTAL
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
