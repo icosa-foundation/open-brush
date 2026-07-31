@@ -255,6 +255,28 @@ namespace TiltBrush
             return null;
         }
 
+        public bool RegisterRuntimeTool(BaseTool tool)
+        {
+            if (tool == null || m_Tools == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < m_Tools.Length; ++i)
+            {
+                if (m_Tools[i] == tool || m_Tools[i].m_Type == tool.m_Type)
+                {
+                    return true;
+                }
+            }
+
+            tool.Init();
+            tool.gameObject.SetActive(false);
+            Array.Resize(ref m_Tools, m_Tools.Length + 1);
+            m_Tools[m_Tools.Length - 1] = tool;
+            return true;
+        }
+
         public void VerifyValidToolWithColorUpdate()
         {
             if (ActiveTool.m_Type != BaseTool.ToolType.RepaintTool &&
