@@ -20,6 +20,7 @@ using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 
 namespace TiltBrush
@@ -277,7 +278,9 @@ namespace TiltBrush
         private static bool CanModifyTextOwner(TMP_Text text)
         {
 #if UNITY_EDITOR
-            return Application.isPlaying && !EditorUtility.IsPersistent(text);
+            return Application.isPlaying &&
+                   !EditorUtility.IsPersistent(text) &&
+                   PrefabStageUtility.GetPrefabStage(text.gameObject) == null;
 #else
             return true;
 #endif
