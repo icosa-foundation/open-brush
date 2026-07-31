@@ -3815,8 +3815,137 @@ MonoBehaviour:
       Worlds.'
     m_Metadata:
       m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: Drop Portal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: Export Gaussian Poses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: Add Box Capture Area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: Add Spherical Capture Area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: Add Hemispherical Capture Area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: Add Ellipsoidal Capture Area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: Gaussian Splat Pose Capture
+    m_Metadata:
+      m_Items: []
   - m_Id: 520669196650635264
     m_Localized: Go to https://icosa.gallery/device to get a login code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: Align Play Space
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: Set Shared Alignment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: Reset Shared Alignment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: Realign Play Space
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: Alignment Updated - Realign
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: Shared alignment not set
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: Recording shared alignment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: Shared alignment ready
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: Play space aligned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: Alignment changed - realign
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: Alignment error - retry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: Place the controller tip at endpoint A and press the trigger.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: Endpoint A recorded. Place the controller tip at endpoint B and
+      press the trigger.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger
+      swaps A and B; cancel retries later.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres
+      apart.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: The reference needs more horizontal separation. Choose a longer
+      horizontal edge.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: The controller pose is invalid. Check tracking and try endpoint
+      B again.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: The reference could not be recorded. Try endpoint B again.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: 'The reference is invalid: {0}. Try endpoint B again.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: 'Reference length: {0:F2} m.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: 'Alignment is invalid: {0}. Try endpoint B again.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: 'Measured length: {0:F2} m.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: 'Warning: {0}.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: Only sketches published to Icosa Gallery can be used as portals
     m_Metadata:
       m_Items: []
   references:

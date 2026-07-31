@@ -3647,8 +3647,132 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
     m_Metadata:
       m_Items: []
+  - m_Id: 475814063085543424
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_PORTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Key: CAPTURE_TRAY_SPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Key: CAPTURE_TRAY_ELLIPSOID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Key: CAPTURE_TRAY_HEMISPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Key: CAPTURE_TRAY_BOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Key: LABS_PANEL_SPLAT_CAPTURE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 520669196650635264
     m_Key: POPUP_ICOSA_KEYBOARD_LOGIN_INSTRUCTIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Key: MP_MANUAL_COLOCATION_ALIGN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Key: MP_MANUAL_COLOCATION_SET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Key: MP_MANUAL_COLOCATION_RESET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Key: MP_MANUAL_COLOCATION_REALIGN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Key: MP_MANUAL_COLOCATION_UPDATED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Key: MP_MANUAL_COLOCATION_STATUS_NOT_SET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Key: MP_MANUAL_COLOCATION_STATUS_RECORDING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Key: MP_MANUAL_COLOCATION_STATUS_READY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Key: MP_MANUAL_COLOCATION_STATUS_ALIGNED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Key: MP_MANUAL_COLOCATION_STATUS_STALE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Key: MP_MANUAL_COLOCATION_STATUS_ERROR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Key: MP_MANUAL_COLOCATION_PLACE_A
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Key: MP_MANUAL_COLOCATION_PLACE_B
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Key: MP_MANUAL_COLOCATION_CONFIRM_CONTROLS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Key: MP_MANUAL_COLOCATION_ERROR_TOO_SHORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Key: MP_MANUAL_COLOCATION_ERROR_HORIZONTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Key: MP_MANUAL_COLOCATION_ERROR_TRACKING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Key: MP_MANUAL_COLOCATION_ERROR_RETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Key: MP_MANUAL_COLOCATION_REFERENCE_INVALID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Key: MP_MANUAL_COLOCATION_REFERENCE_LENGTH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Key: MP_MANUAL_COLOCATION_ALIGNMENT_INVALID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Key: MP_MANUAL_COLOCATION_MEASURED_LENGTH
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Key: MP_MANUAL_COLOCATION_WARNING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTIONEXTRA_PORTAL
     m_Metadata:
       m_Items: []
   m_Metadata:
