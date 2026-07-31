@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -29,6 +30,7 @@ namespace TiltBrush
             Recording,
             AddAnimationPositionKnot,
             AddAnimationRotationKnot,
+            DrawPath,
         }
 
         public enum ExtendPathType
@@ -58,6 +60,15 @@ namespace TiltBrush
 
         private KnotSegment m_PreviewSegment;
 
+        // DrawPath mode state.
+        // Minimum controller movement (room space) before a new sample is taken.
+        private const float kDrawPathSampleDistance_RS = 0.15f;
+        private List<CameraPathFromDrawing.Sample> m_DrawnSamples =
+            new List<CameraPathFromDrawing.Sample>();
+        private bool m_DrawingPath;
+        private Vector3 m_LastDrawnSample_RS;
+        private LineRenderer m_DrawPathPreviewLine;
+
         public Mode CurrentMode { get { return m_Mode; } }
 
         override protected void Awake()
@@ -74,6 +85,10 @@ namespace TiltBrush
         {
             base.OnDestroy();
             App.Switchboard.CameraPathModeChanged -= OnCameraPathModeChanged;
+            if (m_DrawPathPreviewLine != null)
+            {
+                Destroy(m_DrawPathPreviewLine.gameObject);
+            }
         }
 
         override public void HideTool(bool hide)
@@ -83,6 +98,7 @@ namespace TiltBrush
             m_PreviewSegment.renderer.enabled = false;
             m_ExtendPath = null;
             m_ExtendPathType = ExtendPathType.None;
+            CancelPathDrawing();
         }
 
         override public void EnableTool(bool bEnable)
@@ -91,6 +107,7 @@ namespace TiltBrush
             m_PreviewSegment.renderer.enabled = false;
             m_ExtendPath = null;
             m_ExtendPathType = ExtendPathType.None;
+            CancelPathDrawing();
         }
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
@@ -122,11 +139,30 @@ namespace TiltBrush
                 return;
             }
 
+            // Path drawing has its own input handling; it doesn't interact with
+            // existing paths or knots.
+            if (CurrentMode == Mode.DrawPath)
+            {
+                UpdateDrawPathInput();
+                return;
+            }
+
             var widgets = WidgetManager.m_Instance.CameraPathWidgets;
             Transform toolAttachXf = InputManager.Brush.Geometry.ToolAttachPoint;
 
             bool input = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             bool inputDown = InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate);
+
+            // The + button explicitly starts a new path. Ignore collision state left by nearby
+            // paths so the first click cannot select or extend one of them instead.
+            if (m_Mode == Mode.AddPositionKnot &&
+                WidgetManager.m_Instance.CreatingCameraPath)
+            {
+                m_LastValidPath = null;
+                m_ExtendPath = null;
+                m_ExtendPathType = ExtendPathType.None;
+                m_PreviewSegment.renderer.enabled = false;
+            }
 
             // Tint any path we're intersecting with.
             if (!input && m_LastValidPath != null && m_Mode != Mode.RemoveKnot)
@@ -355,9 +391,131 @@ namespace TiltBrush
             }
         }
 
+        void UpdateDrawPathInput()
+        {
+            Transform toolAttachXf = InputManager.Brush.Geometry.ToolAttachPoint;
+
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                m_DrawingPath = true;
+                m_DrawnSamples.Clear();
+                AddDrawnSample(toolAttachXf.position);
+            }
+            else if (m_DrawingPath)
+            {
+                if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                {
+                    if (Vector3.Distance(toolAttachXf.position, m_LastDrawnSample_RS) >=
+                        kDrawPathSampleDistance_RS)
+                    {
+                        AddDrawnSample(toolAttachXf.position);
+                    }
+                }
+                else
+                {
+                    FinishPathDrawing(toolAttachXf.position);
+                }
+            }
+        }
+
+        void AddDrawnSample(Vector3 pos_RS)
+        {
+            m_LastDrawnSample_RS = pos_RS;
+            m_DrawnSamples.Add(new CameraPathFromDrawing.Sample
+            {
+                position = App.ActiveCanvas.Pose.inverse.MultiplyPoint(pos_RS),
+                timestamp = Time.time,
+            });
+            RefreshDrawPathPreviewLine();
+        }
+
+        void FinishPathDrawing(Vector3 finalPos_RS)
+        {
+            // Make sure the release position is part of the path.
+            if (Vector3.Distance(finalPos_RS, m_LastDrawnSample_RS) > 1e-4f)
+            {
+                AddDrawnSample(finalPos_RS);
+            }
+
+            CameraPathWidget widget = CameraPathFromDrawing.CreateCameraPath(m_DrawnSamples);
+            CancelPathDrawing();
+            if (widget != null)
+            {
+                WidgetManager.m_Instance.SetCurrentCameraPath(widget);
+            }
+        }
+
+        void CancelPathDrawing()
+        {
+            m_DrawingPath = false;
+            m_DrawnSamples.Clear();
+            if (m_DrawPathPreviewLine != null)
+            {
+                m_DrawPathPreviewLine.positionCount = 0;
+            }
+        }
+
+        void RefreshDrawPathPreviewLine()
+        {
+            if (m_DrawPathPreviewLine == null)
+            {
+                GameObject go = new GameObject("DrawPathPreview");
+                m_DrawPathPreviewLine = go.AddComponent<LineRenderer>();
+                m_DrawPathPreviewLine.material = m_PreviewSegment.renderer.material;
+                m_DrawPathPreviewLine.startWidth = 0.1f;
+                m_DrawPathPreviewLine.endWidth = 0.1f;
+                m_DrawPathPreviewLine.useWorldSpace = false;
+            }
+
+            // Parent under the canvas with canvas-space positions so the preview
+            // stays glued to the scene if it moves while drawing.
+            Transform canvasXf = App.ActiveCanvas.transform;
+            if (m_DrawPathPreviewLine.transform.parent != canvasXf)
+            {
+                m_DrawPathPreviewLine.transform.SetParent(canvasXf, false);
+                m_DrawPathPreviewLine.transform.localPosition = Vector3.zero;
+                m_DrawPathPreviewLine.transform.localRotation = Quaternion.identity;
+                m_DrawPathPreviewLine.transform.localScale = Vector3.one;
+            }
+
+            m_DrawPathPreviewLine.positionCount = m_DrawnSamples.Count;
+            for (int i = 0; i < m_DrawnSamples.Count; ++i)
+            {
+                m_DrawPathPreviewLine.SetPosition(i, m_DrawnSamples[i].position);
+            }
+        }
+
         override public void LateUpdateTool()
         {
             Transform xf = InputManager.Brush.Geometry.ToolAttachPoint;
+
+            // In draw mode the cursor simply follows the controller; none of the
+            // path projection or extension logic below applies.
+            if (CurrentMode == Mode.DrawPath)
+            {
+                m_PositionKnot.transform.position = xf.position;
+                m_PositionKnot.transform.rotation = xf.rotation;
+                m_PreviewSegment.renderer.enabled = false;
+                m_PrevLastValidPath = null;
+                m_LastValidPath = null;
+                return;
+            }
+
+            // While explicitly creating a path, keep the first position knot at the controller
+            // instead of snapping it to or offering to extend an existing path.
+            if (CurrentMode == Mode.AddPositionKnot &&
+                WidgetManager.m_Instance.CreatingCameraPath)
+            {
+                m_PositionKnot.transform.position = xf.position;
+                m_PositionKnot.transform.rotation = xf.rotation;
+                m_PreviewSegment.renderer.enabled = false;
+                m_PrevLastValidPath = null;
+                m_LastValidPath = null;
+                m_ExtendPath = null;
+                m_ExtendPathType = ExtendPathType.None;
+                return;
+            }
+
             m_RemoveKnot.transform.position = xf.position;
             m_RemoveKnot.transform.rotation = xf.rotation;
 
@@ -490,6 +648,10 @@ namespace TiltBrush
 
         void OnCameraPathModeChanged(Mode newMode)
         {
+            if (m_Mode == Mode.DrawPath && newMode != Mode.DrawPath)
+            {
+                CancelPathDrawing();
+            }
             m_Mode = newMode;
             RefreshMeshVisibility();
         }
@@ -533,6 +695,9 @@ namespace TiltBrush
                     break;
                 case Mode.AddAnimationRotationKnot:
                     m_RotationKnot.SetActive(true);
+                    break;
+                case Mode.DrawPath:
+                    m_PositionKnot.SetActive(true);
                     break;
             }
         }

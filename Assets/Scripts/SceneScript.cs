@@ -81,23 +81,7 @@ namespace TiltBrush
             set
             {
                 var prevScene = Coords.AsGlobal[transform];
-
-                value = SketchControlsScript.MakeValidScenePose(value,
-                    SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
-
-                // Clamp scale, and prevent tilt. These are last-ditch sanity checks
-                // and are not the proper way to impose UX constraints.
-                {
-                    value.scale = Mathf.Clamp(Mathf.Abs(value.scale), 1e-4f, 1e4f);
-                    bool bRestoreUp = true;
-                    bRestoreUp = !disableTiltProtection;
-                    if (bRestoreUp)
-                    {
-                        var qRestoreUp = Quaternion.FromToRotation(
-                            value.rotation * Vector3.up, Vector3.up);
-                        value = TrTransform.R(qRestoreUp) * value;
-                    }
-                }
+                value = SanitizePose(value);
 
                 Coords.AsGlobal[transform] = value;
 
@@ -116,6 +100,23 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        public TrTransform SanitizePose(TrTransform pose)
+        {
+            pose = SketchControlsScript.MakeValidScenePose(pose,
+                SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
+
+            // Clamp scale, and prevent tilt. These are last-ditch sanity checks
+            // and are not the proper way to impose UX constraints.
+            pose.scale = Mathf.Clamp(Mathf.Abs(pose.scale), 1e-4f, 1e4f);
+            if (!disableTiltProtection)
+            {
+                var restoreUp = Quaternion.FromToRotation(
+                    pose.rotation * Vector3.up, Vector3.up);
+                pose = TrTransform.R(restoreUp) * pose;
+            }
+            return pose;
         }
 
         /// Safe to use any time after initialization

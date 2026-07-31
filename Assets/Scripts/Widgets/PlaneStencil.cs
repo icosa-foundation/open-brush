@@ -80,14 +80,6 @@ namespace TiltBrush
             surfacePos = transform.TransformPoint(surfacePos);
         }
 
-        // Determines when you can grab.  1 = best, 0 = worst, -1 = invalid
-        public override float GetActivationScore(
-            Vector3 vControllerPos, InputManager.ControllerName name)
-        {
-            float baseScore = base.GetActivationScore(vControllerPos, name);
-            return baseScore;
-        }
-
         // Determine if whether we are trying to scale along an axis or uniformly (Invalid)
         protected override Axis GetInferredManipulationAxis(
             Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInside)
@@ -195,6 +187,11 @@ namespace TiltBrush
             return new Bounds();
         }
 
+
+        protected override void SpoofScaleForShowAnim(float showRatio)
+        {
+            transform.localScale = m_Size * showRatio * m_AspectRatio;
+        }
 
         // Actually perform the scale change on the Unity transform along with tiling the material
         protected override void UpdateScale()
