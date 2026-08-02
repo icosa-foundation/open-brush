@@ -1941,6 +1941,17 @@ namespace TiltBrush
                     snapshotWidth = odsCamera.GetClampedImageWidth(snapshotWidth);
                     snapshotHeight = snapshotWidth;
                 }
+                else if (style == MultiCamStyle.Depth)
+                {
+                    int largestDimension = Mathf.Max(snapshotWidth, snapshotHeight);
+                    if (largestDimension > ScreenshotManager.kMaxDepthCaptureDimension)
+                    {
+                        float scale = ScreenshotManager.kMaxDepthCaptureDimension /
+                            (float)largestDimension;
+                        snapshotWidth = Mathf.Max(1, Mathf.RoundToInt(snapshotWidth * scale));
+                        snapshotHeight = Mathf.Max(1, Mathf.RoundToInt(snapshotHeight * scale));
+                    }
+                }
 
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);

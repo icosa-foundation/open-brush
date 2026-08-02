@@ -1406,7 +1406,7 @@ namespace TiltBrush
         public static void TakeSnapshot(Vector3 position, Vector3 direction, string filename, int width, int height)
         {
             ValidateSafeFilename(filename, "snapshot filename");
-            ValidateSnapshotDimensions(width, height);
+            ValidateSnapshotDimensions(width, height, includesSidecars: true);
             TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
             float superSampling = 1f;
             bool removeBackground = false;
@@ -1415,9 +1415,15 @@ namespace TiltBrush
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
         }
 
-        internal static void ValidateSnapshotDimensions(int width, int height)
+        internal static void ValidateSnapshotDimensions(
+            int width, int height, bool includesSidecars)
         {
             int maxDimension = App.PlatformConfig.MaxSnapshotDimension;
+            if (includesSidecars)
+            {
+                maxDimension = Math.Min(
+                    maxDimension, ScreenshotManager.kMaxDepthCaptureDimension);
+            }
             if (width <= 0 || width > maxDimension)
             {
                 throw new ArgumentOutOfRangeException(

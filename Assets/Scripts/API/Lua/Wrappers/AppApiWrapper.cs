@@ -202,7 +202,8 @@ namespace TiltBrush
         public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false, bool renderNormals = false)
         {
             ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
-            ApiMethods.ValidateSnapshotDimensions(width, height);
+            ApiMethods.ValidateSnapshotDimensions(
+                width, height, includesSidecars: renderDepth || renderNormals);
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
         }
 
