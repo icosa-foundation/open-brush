@@ -142,8 +142,12 @@ public class HybridCamera : MonoBehaviour {
     }
     eyeImageWidth  = imageWidth + bloomPadding;
             
+    bool useHdr = HDR;
+#if UNITY_ANDROID || UNITY_IOS
+    // Avoid float ODS buffers on mobile when the capture camera has HDR disabled.
     Camera sourceCamera = GetComponent<Camera>();
-    bool useHdr = HDR && sourceCamera != null && sourceCamera.allowHDR;
+    useHdr = useHdr && sourceCamera != null && sourceCamera.allowHDR;
+#endif
     RenderTextureFormat format = useHdr
       ? RenderTextureFormat.ARGBFloat
       : RenderTextureFormat.Default;
