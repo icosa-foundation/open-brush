@@ -407,7 +407,7 @@ namespace TiltBrush
                     }
                     catch (KeyNotFoundException)
                     {
-                        m_Images.Add(CreateReferenceImage(filePath));
+                        m_Images.Add(new ReferenceImage(filePath));
                     }
                 }
             }
@@ -454,11 +454,6 @@ namespace TiltBrush
             return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
         }
 
-        protected virtual ReferenceImage CreateReferenceImage(string filePath)
-        {
-            return new ReferenceImage(filePath);
-        }
-
         public ReferenceImage RelativePathToImage(string relativePath)
         {
             // Protect against path traversal below HomeDirectory
@@ -469,7 +464,7 @@ namespace TiltBrush
             var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
             if (refImage == null)
             {
-                refImage = CreateReferenceImage(fullPath);
+                refImage = new ReferenceImage(fullPath);
                 m_Images.Add(refImage);
             }
             return refImage;
