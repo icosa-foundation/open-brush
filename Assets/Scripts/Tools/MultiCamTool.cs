@@ -1950,11 +1950,13 @@ namespace TiltBrush
                 {
                     RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                     float ssaaRestore = wrapper.SuperSampling;
-                    bool postEffectsRestore = CameraConfig.PostEffects;
-                    bool watermarkRestore = CameraConfig.Watermark;
                     bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
                     TiltShift tiltShift = rMgr.gameObject.GetComponent<TiltShift>();
                     bool tiltShiftRestore = tiltShift != null && tiltShift.enabled;
+                    Kino.Vignette vignette = rMgr.gameObject.GetComponent<Kino.Vignette>();
+                    bool vignetteRestore = vignette != null && vignette.enabled;
+                    WatermarkEffect watermark = rMgr.gameObject.GetComponent<WatermarkEffect>();
+                    bool watermarkRestore = watermark != null && watermark.enabled;
                     // If we're beyond our multicam defaults, use low super samplin'.
                     if (snapshotWidth > m_ScreenshotWidth || snapshotHeight > m_ScreenshotHeight)
                     {
@@ -1992,8 +1994,14 @@ namespace TiltBrush
                         }
                         if (style == MultiCamStyle.Depth)
                         {
-                            CameraConfig.PostEffects = false;
-                            CameraConfig.Watermark = false;
+                            if (vignette != null)
+                            {
+                                vignette.enabled = false;
+                            }
+                            if (watermark != null)
+                            {
+                                watermark.enabled = false;
+                            }
                             wrapper.SuppressPostEffects = true;
 
                             tmpDepth = rMgr.CreateTemporaryTargetForSave(
@@ -2004,11 +2012,17 @@ namespace TiltBrush
                     finally
                     {
                         wrapper.SuppressPostEffects = suppressPostEffectsRestore;
-                        CameraConfig.Watermark = watermarkRestore;
-                        CameraConfig.PostEffects = postEffectsRestore;
                         if (style == MultiCamStyle.Depth && tiltShift != null)
                         {
                             tiltShift.enabled = tiltShiftRestore;
+                        }
+                        if (style == MultiCamStyle.Depth && vignette != null)
+                        {
+                            vignette.enabled = vignetteRestore;
+                        }
+                        if (style == MultiCamStyle.Depth && watermark != null)
+                        {
+                            watermark.enabled = watermarkRestore;
                         }
                         wrapper.SuperSampling = ssaaRestore;
                     }
