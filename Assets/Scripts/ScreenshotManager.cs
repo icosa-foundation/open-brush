@@ -967,10 +967,12 @@ namespace TiltBrush
 
                     bool watermarkEnabled = CameraConfig.Watermark;
                     bool postEffectsEnabled = CameraConfig.PostEffects;
+                    bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
                     try
                     {
                         CameraConfig.Watermark = false;
                         CameraConfig.PostEffects = false;
+                        wrapper.SuppressPostEffects = true;
 
                         if (renderDepth)
                         {
@@ -991,6 +993,7 @@ namespace TiltBrush
                     }
                     finally
                     {
+                        wrapper.SuppressPostEffects = suppressPostEffectsRestore;
                         CameraConfig.Watermark = watermarkEnabled;
                         CameraConfig.PostEffects = postEffectsEnabled;
                     }
