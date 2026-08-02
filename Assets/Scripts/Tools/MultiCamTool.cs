@@ -1287,15 +1287,21 @@ namespace TiltBrush
         static public string GetSaveName(MultiCamStyle style)
         {
             string ext = "";
+            string suffix = "";
             switch (style)
             {
                 case MultiCamStyle.AutoGif:
                     ext = ".gif";
                     break;
                 case MultiCamStyle.Snapshot:
+                    ext = ".png";
+                    break;
                 case MultiCamStyle.Depth:
+                    ext = ".png";
+                    break;
                 case MultiCamStyle.Snapshot360:
                     ext = ".png";
+                    suffix = "_360";
                     break;
                 case MultiCamStyle.TimeGif:
                     ext = ".gif";
@@ -1306,7 +1312,7 @@ namespace TiltBrush
             }
 
             var basename = FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.GetLastFileHumanName())
-                + "_{0:00}";
+                + "_{0:00}" + suffix;
 
             try
             {
@@ -1316,7 +1322,7 @@ namespace TiltBrush
             catch (ArgumentException)
             {
                 // Basename had invalid characters.
-                basename = "Unnamed_{0:00}" + ext;
+                basename = "Unnamed_{0:00}" + suffix + ext;
             }
 
             if (style == MultiCamStyle.Video)
