@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using OpenBrush.Multiplayer;
-using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -215,24 +214,24 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            Texture2D tex = null;
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
 
-                if (path.EndsWith(".hdr"))
+                if (HdrTextureLoader.IsSupportedFile(path))
                 {
-                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                    tex = hdr.texture;
+                    tex = HdrTextureLoader.Load(fileData, path);
                 }
                 else
                 {
+                    tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
                     tex.LoadImage(fileData);
                 }
 
-                float aspectRatio = tex.width / tex.height;
+                float aspectRatio = (float)tex.width / tex.height;
                 if (aspectRatio > 1.5)
                 {
                     m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
@@ -263,7 +262,7 @@ namespace TiltBrush
             }
             else
             {
-                float aspectRatio = tex.width / tex.height;
+                float aspectRatio = (float)tex.width / tex.height;
                 if (aspectRatio > 1.5)
                 {
                     m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");

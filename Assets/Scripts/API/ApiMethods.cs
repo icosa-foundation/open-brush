@@ -30,6 +30,7 @@ namespace TiltBrush
                 ".jpeg",
                 ".png",
                 ".hdr",
+                ".exr",
                 ".svg"
             };
 
@@ -1066,7 +1067,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.base64Decode",
-            "Saves base64-encoded PNG, JPEG, HDR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
+            "Saves base64-encoded PNG, JPEG, HDR, EXR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
         )]
         public static string SaveBase64(string base64, string filename)
         {
@@ -1074,7 +1075,7 @@ namespace TiltBrush
             string imageExtension = GetReferenceImageExtension(bytes);
             if (imageExtension == null)
             {
-                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, and SVG image data.");
+                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, EXR, and SVG image data.");
             }
 
             string extension = Path.GetExtension(filename);
@@ -1112,6 +1113,10 @@ namespace TiltBrush
                 (StartsWithAscii(bytes, "#?RADIANCE") || StartsWithAscii(bytes, "#?RGBE")))
             {
                 return ".hdr";
+            }
+            if (HdrTextureLoader.IsExrData(bytes))
+            {
+                return ".exr";
             }
             string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
             if (text.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) ||
