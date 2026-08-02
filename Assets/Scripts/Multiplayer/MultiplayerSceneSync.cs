@@ -168,7 +168,10 @@ namespace OpenBrush.Multiplayer
 
             SendCurrentTargetEnvironmentCommand();
 
-            foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
+            foreach (BaseCommand command in commands)
+            {
+                MultiplayerManager.m_Instance.SendCommandToPlayer(command, id);
+            }
 
             _isSendingCommandHistory = false;
 
