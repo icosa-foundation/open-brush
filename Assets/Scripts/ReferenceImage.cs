@@ -53,6 +53,7 @@ namespace TiltBrush
         private int m_FullSizeReferences = 0;
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
+        private readonly bool m_EnforceFileSizeLimit;
         private SVGParser.SceneInfo _SvgSceneInfo;
 
         private LocalizedString m_ErrorImageTooLargeHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT");
@@ -144,9 +145,10 @@ namespace TiltBrush
         public string RelativePath =>
             $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
 
-        public ReferenceImage(string path)
+        public ReferenceImage(string path, bool enforceFileSizeLimit = true)
         {
             m_Path = path;
+            m_EnforceFileSizeLimit = enforceFileSizeLimit;
         }
 
         /// Returns a full-resolution Texture2D.
@@ -317,7 +319,7 @@ namespace TiltBrush
                 m_State = ImageState.NotReady;
 
                 // If this file is too large for the platform, don't load it.
-                if (!ValidateFileSize())
+                if (m_EnforceFileSizeLimit && !ValidateFileSize())
                 {
                     m_State = ImageState.ErrorImageTooLarge;
                     ControllerConsoleScript.m_Instance.AddNewLine(

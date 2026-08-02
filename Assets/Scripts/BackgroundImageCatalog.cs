@@ -64,6 +64,13 @@ namespace TiltBrush
                 ext == ".exr";
         }
 
+        protected override ReferenceImage CreateReferenceImage(string filePath)
+        {
+            // Encoded HDR and EXR skyboxes are commonly much larger than the source-file limit
+            // used for ordinary reference images. Their decoded dimensions are still validated.
+            return new ReferenceImage(filePath, enforceFileSizeLimit: false);
+        }
+
         protected override void ProcessReferenceDirectory(bool userOverlay = true)
         {
             _ProcessReferenceDirectory_Impl(m_CurrentBackgroundImagesDirectory, userOverlay);
