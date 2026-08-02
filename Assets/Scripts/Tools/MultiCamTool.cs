@@ -1944,6 +1944,11 @@ namespace TiltBrush
                 {
                     RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                     float ssaaRestore = wrapper.SuperSampling;
+                    bool postEffectsRestore = CameraConfig.PostEffects;
+                    bool watermarkRestore = CameraConfig.Watermark;
+                    bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
+                    TiltShift tiltShift = rMgr.gameObject.GetComponent<TiltShift>();
+                    bool tiltShiftRestore = tiltShift != null && tiltShift.enabled;
                     // If we're beyond our multicam defaults, use low super samplin'.
                     if (snapshotWidth > m_ScreenshotWidth || snapshotHeight > m_ScreenshotHeight)
                     {
@@ -1953,32 +1958,54 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    if (odsCamera != null)
+                    try
                     {
-                        odsCamera.imageWidth = snapshotWidth;
-                        float timeScaleRestore = Time.timeScale;
-                        try
+                        if (style == MultiCamStyle.Depth && tiltShift != null)
                         {
-                            Time.timeScale = 0.0f;
-                            yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                            tiltShift.enabled = false;
                         }
-                        finally
+
+                        if (odsCamera != null)
                         {
-                            Time.timeScale = timeScaleRestore;
+                            odsCamera.imageWidth = snapshotWidth;
+                            float timeScaleRestore = Time.timeScale;
+                            try
+                            {
+                                Time.timeScale = 0.0f;
+                                yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                            }
+                            finally
+                            {
+                                Time.timeScale = timeScaleRestore;
+                            }
+                            Graphics.Blit(odsCamera.FinalImage, tmp);
                         }
-                        Graphics.Blit(odsCamera.FinalImage, tmp);
+                        else
+                        {
+                            rMgr.RenderToTexture(tmp);
+                        }
+                        if (style == MultiCamStyle.Depth)
+                        {
+                            CameraConfig.PostEffects = false;
+                            CameraConfig.Watermark = false;
+                            wrapper.SuppressPostEffects = true;
+
+                            tmpDepth = rMgr.CreateTemporaryTargetForSave(
+                                snapshotWidth, snapshotHeight);
+                            rMgr.RenderDepthToTexture(tmpDepth);
+                        }
                     }
-                    else
+                    finally
                     {
-                        rMgr.RenderToTexture(tmp);
+                        wrapper.SuppressPostEffects = suppressPostEffectsRestore;
+                        CameraConfig.Watermark = watermarkRestore;
+                        CameraConfig.PostEffects = postEffectsRestore;
+                        if (style == MultiCamStyle.Depth && tiltShift != null)
+                        {
+                            tiltShift.enabled = tiltShiftRestore;
+                        }
+                        wrapper.SuperSampling = ssaaRestore;
                     }
-                    if (style == MultiCamStyle.Depth)
-                    {
-                        tmpDepth = rMgr.CreateTemporaryTargetForSave(
-                            snapshotWidth, snapshotHeight);
-                        rMgr.RenderDepthToTexture(tmpDepth);
-                    }
-                    wrapper.SuperSampling = ssaaRestore;
                     yield return null;
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
 
