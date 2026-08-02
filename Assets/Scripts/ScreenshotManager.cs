@@ -617,7 +617,7 @@ namespace TiltBrush
                     nearClipMetres = camera.nearClipPlane * App.UNITS_TO_METERS,
                     farClipMetres = farClipMetres,
                     verticalFieldOfViewDegrees = camera.fieldOfView,
-                    aspect = camera.aspect,
+                    aspect = depthNormalTexture.width / (float)depthNormalTexture.height,
                     depth16ScaleMetres = farClipMetres / ushort.MaxValue,
                 };
                 files.metadataJson = System.Text.Encoding.UTF8.GetBytes(
