@@ -27,6 +27,22 @@ namespace TiltBrush
 
     internal class TestMisc
     {
+        [TestCase(30, 0, 30)]
+        [TestCase(30, 5, 25)]
+        [TestCase(30, 30, 0)]
+        [TestCase(-5, 0, 0)]
+        public void TestCalculateSuspensionAdjustmentSeconds(
+            double wallElapsed, double unityElapsed, double expectedAdjustment)
+        {
+            var suspendUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var resumeUtc = suspendUtc.AddSeconds(wallElapsed);
+
+            double adjustment = App.CalculateSuspensionAdjustmentSeconds(
+                suspendUtc, 100, resumeUtc, 100 + unityElapsed);
+
+            Assert.AreEqual(expectedAdjustment, adjustment, 0.000001);
+        }
+
         [Test]
         public void TestBrushMaterialsDeclareRenderType()
         {
