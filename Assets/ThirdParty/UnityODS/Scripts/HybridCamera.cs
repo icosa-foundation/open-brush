@@ -142,7 +142,11 @@ public class HybridCamera : MonoBehaviour {
     }
     eyeImageWidth  = imageWidth + bloomPadding;
             
-    RenderTextureFormat format = HDR ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.Default;
+    Camera sourceCamera = GetComponent<Camera>();
+    bool useHdr = HDR && sourceCamera != null && sourceCamera.allowHDR;
+    RenderTextureFormat format = useHdr
+      ? RenderTextureFormat.ARGBFloat
+      : RenderTextureFormat.Default;
 
     stitched = new RenderTexture(eyeImageWidth, imageHeight, 0, format);
     stitched.antiAliasing = 1;
