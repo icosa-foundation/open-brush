@@ -34,6 +34,33 @@ namespace TiltBrush
     ///
     public class ScreenshotManager : MonoBehaviour
     {
+        public sealed class DepthCaptureFiles
+        {
+            public byte[] normalizedDepthPng;
+            public byte[] linearDepth16Png;
+            public byte[] linearDepthExr;
+            public byte[] metadataJson;
+        }
+
+        [System.Serializable]
+        private sealed class DepthCaptureMetadata
+        {
+            public int schemaVersion = 1;
+            public int width;
+            public int height;
+            public string distanceConvention = "optical-axis";
+            public string units = "metres";
+            public int invalidValue = 0;
+            public float nearClipMetres;
+            public float farClipMetres;
+            public float verticalFieldOfViewDegrees;
+            public float aspect;
+            public string depth16Encoding =
+                "uint16 linear; depthMetres = value * depth16ScaleMetres";
+            public float depth16ScaleMetres;
+            public string exrEncoding = "float32 linear metres";
+        }
+
         class CameraInfo
         {
             // Material is mutated to display renderTexture
@@ -538,6 +565,66 @@ namespace TiltBrush
             outf.Write(buffer, 0, buffer.Length);
         }
 
+        public static void SaveDepthCaptureFiles(string imagePath, DepthCaptureFiles files)
+        {
+            string fullImagePath = Path.GetFullPath(imagePath);
+            string captureBasePath = Path.Combine(
+                Path.GetDirectoryName(fullImagePath),
+                Path.GetFileNameWithoutExtension(fullImagePath));
+            File.WriteAllBytes($"{captureBasePath}_depth.png", files.normalizedDepthPng);
+            File.WriteAllBytes($"{captureBasePath}_depth16.png", files.linearDepth16Png);
+            File.WriteAllBytes($"{captureBasePath}_depth.exr", files.linearDepthExr);
+            File.WriteAllBytes($"{captureBasePath}_depth.json", files.metadataJson);
+        }
+
+        public DepthCaptureFiles EncodeDepthCapture(RenderTexture depthNormalTexture)
+        {
+            Debug.Assert(depthNormalTexture.format == RenderTextureFormat.ARGB32);
+
+            Texture2D encodedDepthTexture;
+            {
+                RenderTexture prev = RenderTexture.active;
+                try
+                {
+                    RenderTexture.active = depthNormalTexture;
+                    encodedDepthTexture = new Texture2D(
+                        depthNormalTexture.width, depthNormalTexture.height,
+                        TextureFormat.RGBA32, false, true);
+                    encodedDepthTexture.ReadPixels(
+                        new Rect(0, 0, depthNormalTexture.width, depthNormalTexture.height),
+                        0, 0);
+                }
+                finally
+                {
+                    RenderTexture.active = prev;
+                }
+            }
+
+            Camera camera = LeftInfo.camera;
+            float farClipMetres = camera.farClipPlane * App.UNITS_TO_METERS;
+            try
+            {
+                var files = EncodeDepthCapture(encodedDepthTexture, farClipMetres);
+                var metadata = new DepthCaptureMetadata
+                {
+                    width = depthNormalTexture.width,
+                    height = depthNormalTexture.height,
+                    nearClipMetres = camera.nearClipPlane * App.UNITS_TO_METERS,
+                    farClipMetres = farClipMetres,
+                    verticalFieldOfViewDegrees = camera.fieldOfView,
+                    aspect = camera.aspect,
+                    depth16ScaleMetres = farClipMetres / ushort.MaxValue,
+                };
+                files.metadataJson = System.Text.Encoding.UTF8.GetBytes(
+                    JsonUtility.ToJson(metadata, true));
+                return files;
+            }
+            finally
+            {
+                Destroy(encodedDepthTexture);
+            }
+        }
+
         static public void SaveNormals(Stream outf, RenderTexture depthNormalTexture)
         {
             var buffer = SaveNormalsToMemory(depthNormalTexture);
@@ -587,21 +674,77 @@ namespace TiltBrush
                 RenderTexture.active = prev;
             }
 
-            // Unity's EncodeDepthNormal puts depth in blue/alpha channels using EncodeFloatRG
-            // Decode using: dot(enc, float2(1.0, 1/255.0))
+            // Unity's EncodeDepthNormal puts linear 0-1 depth in blue/alpha channels using
+            // EncodeFloatRG. Build a histogram from that 16-bit source so the useful depth
+            // range in this particular view can use the full 8-bit output range.
             NativeArray<Color32> pixels = texture.GetPixelData<Color32>(0);
+            const int kDepthHistogramSize = 65536;
+            int[] depthHistogram = new int[kDepthHistogramSize];
+            int validPixelCount = 0;
 
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color32 pixel = pixels[i];
+                // The replacement render clears untouched pixels to encoded depth 1.0.
+                if (pixel.b == 255 && pixel.a == 0)
+                {
+                    continue;
+                }
 
                 // DecodeFloatRG: dot(enc, float2(1.0, 1/255.0))
                 // Blue=enc.x, Alpha=enc.y
-                float depth = 1.0f - (pixel.b * (1.0f / 255.0f) +
-                    pixel.a * (1.0f / (255.0f * 255.0f)));
+                float depth = pixel.b * (1.0f / 255.0f) +
+                    pixel.a * (1.0f / (255.0f * 255.0f));
+                int histogramIndex = Mathf.Clamp(
+                    Mathf.RoundToInt(depth * (kDepthHistogramSize - 1)),
+                    0, kDepthHistogramSize - 1);
+                depthHistogram[histogramIndex]++;
+                validPixelCount++;
+            }
 
-                // Export disparity-style grayscale: white is near and black is far.
-                byte value = (byte)Mathf.RoundToInt(Mathf.Clamp01(depth) * 255.0f);
+            int nearDepthIndex = 0;
+            int farDepthIndex = kDepthHistogramSize - 1;
+            if (validPixelCount > 0)
+            {
+                int nearRank = Mathf.FloorToInt((validPixelCount - 1) * 0.01f);
+                int farRank = Mathf.CeilToInt((validPixelCount - 1) * 0.99f);
+                int cumulativeCount = 0;
+                bool foundNearDepth = false;
+                for (int i = 0; i < depthHistogram.Length; i++)
+                {
+                    cumulativeCount += depthHistogram[i];
+                    if (!foundNearDepth && cumulativeCount > nearRank)
+                    {
+                        nearDepthIndex = i;
+                        foundNearDepth = true;
+                    }
+                    if (cumulativeCount > farRank)
+                    {
+                        farDepthIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            float nearDepth = nearDepthIndex * (1.0f / (kDepthHistogramSize - 1));
+            float farDepth = farDepthIndex * (1.0f / (kDepthHistogramSize - 1));
+            float depthRange = farDepth - nearDepth;
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color32 pixel = pixels[i];
+                byte value = 0;
+                if (validPixelCount > 0 && !(pixel.b == 255 && pixel.a == 0))
+                {
+                    float depth = pixel.b * (1.0f / 255.0f) +
+                        pixel.a * (1.0f / (255.0f * 255.0f));
+                    float normalizedDepth = depthRange > 0.0f
+                        ? Mathf.Clamp01((depth - nearDepth) / depthRange)
+                        : 0.0f;
+
+                    // Export disparity-style grayscale: white is near and black is far.
+                    value = (byte)Mathf.RoundToInt((1.0f - normalizedDepth) * 255.0f);
+                }
                 pixels[i] = new Color32(value, value, value, 255);
             }
 
@@ -609,6 +752,133 @@ namespace TiltBrush
             Destroy(texture);
 
             return bytes;
+        }
+
+        private static DepthCaptureFiles EncodeDepthCapture(
+            Texture2D encodedDepthTexture, float farClipMetres)
+        {
+            int width = encodedDepthTexture.width;
+            int height = encodedDepthTexture.height;
+            NativeArray<Color32> encodedPixels = encodedDepthTexture.GetPixelData<Color32>(0);
+
+            var normalizedTexture = new Texture2D(
+                width, height, TextureFormat.RGBA32, false, true);
+            var depth16Texture = new Texture2D(
+                width, height, TextureFormat.R16, false, true);
+            var exrTexture = new Texture2D(
+                width, height, TextureFormat.RFloat, false, true);
+            try
+            {
+                NativeArray<Color32> normalizedPixels =
+                    normalizedTexture.GetPixelData<Color32>(0);
+                NativeArray<ushort> depth16Pixels = depth16Texture.GetPixelData<ushort>(0);
+                NativeArray<float> exrPixels = exrTexture.GetPixelData<float>(0);
+
+                const int kDepthHistogramSize = 65536;
+                int[] depthHistogram = new int[kDepthHistogramSize];
+                int validPixelCount = 0;
+                for (int i = 0; i < encodedPixels.Length; i++)
+                {
+                    Color32 pixel = encodedPixels[i];
+                    if (IsInvalidEncodedDepth(pixel))
+                    {
+                        continue;
+                    }
+
+                    float linear01Depth = DecodeLinear01Depth(pixel);
+                    int histogramIndex = Mathf.Clamp(
+                        Mathf.RoundToInt(linear01Depth * (kDepthHistogramSize - 1)),
+                        0, kDepthHistogramSize - 1);
+                    depthHistogram[histogramIndex]++;
+                    validPixelCount++;
+                }
+
+                int nearDepthIndex = 0;
+                int farDepthIndex = kDepthHistogramSize - 1;
+                if (validPixelCount > 0)
+                {
+                    int nearRank = Mathf.FloorToInt((validPixelCount - 1) * 0.01f);
+                    int farRank = Mathf.CeilToInt((validPixelCount - 1) * 0.99f);
+                    int cumulativeCount = 0;
+                    bool foundNearDepth = false;
+                    for (int i = 0; i < depthHistogram.Length; i++)
+                    {
+                        cumulativeCount += depthHistogram[i];
+                        if (!foundNearDepth && cumulativeCount > nearRank)
+                        {
+                            nearDepthIndex = i;
+                            foundNearDepth = true;
+                        }
+                        if (cumulativeCount > farRank)
+                        {
+                            farDepthIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                float nearDepth = nearDepthIndex * (1.0f / (kDepthHistogramSize - 1));
+                float farDepth = farDepthIndex * (1.0f / (kDepthHistogramSize - 1));
+                float depthRange = farDepth - nearDepth;
+
+                for (int i = 0; i < encodedPixels.Length; i++)
+                {
+                    Color32 pixel = encodedPixels[i];
+                    if (validPixelCount == 0 || IsInvalidEncodedDepth(pixel))
+                    {
+                        normalizedPixels[i] = new Color32(0, 0, 0, 255);
+                        depth16Pixels[i] = 0;
+                        exrPixels[i] = 0.0f;
+                        continue;
+                    }
+
+                    float linear01Depth = DecodeLinear01Depth(pixel);
+                    float normalizedDepth = depthRange > 0.0f
+                        ? Mathf.Clamp01((linear01Depth - nearDepth) / depthRange)
+                        : 0.0f;
+                    byte normalizedValue =
+                        (byte)Mathf.RoundToInt((1.0f - normalizedDepth) * byte.MaxValue);
+                    normalizedPixels[i] = new Color32(
+                        normalizedValue, normalizedValue, normalizedValue, 255);
+
+                    // Zero is reserved for pixels where the replacement shader rendered nothing.
+                    depth16Pixels[i] = (ushort)Mathf.Clamp(
+                        Mathf.RoundToInt(linear01Depth * ushort.MaxValue),
+                        1, ushort.MaxValue);
+                    exrPixels[i] = linear01Depth * farClipMetres;
+                }
+
+                normalizedTexture.Apply(false, false);
+                depth16Texture.Apply(false, false);
+                exrTexture.Apply(false, false);
+
+                return new DepthCaptureFiles
+                {
+                    normalizedDepthPng = ImageConversion.EncodeToPNG(normalizedTexture),
+                    linearDepth16Png = ImageConversion.EncodeToPNG(depth16Texture),
+                    linearDepthExr = ImageConversion.EncodeToEXR(
+                        exrTexture,
+                        Texture2D.EXRFlags.OutputAsFloat | Texture2D.EXRFlags.CompressZIP),
+                };
+            }
+            finally
+            {
+                Destroy(normalizedTexture);
+                Destroy(depth16Texture);
+                Destroy(exrTexture);
+            }
+        }
+
+        private static bool IsInvalidEncodedDepth(Color32 pixel)
+        {
+            return pixel.b == byte.MaxValue && pixel.a == 0;
+        }
+
+        private static float DecodeLinear01Depth(Color32 pixel)
+        {
+            // Unity's DecodeFloatRG: dot(enc, float2(1.0, 1/255.0)).
+            return pixel.b * (1.0f / byte.MaxValue) +
+                pixel.a * (1.0f / (byte.MaxValue * byte.MaxValue));
         }
 
         static public byte[] SaveNormalsToMemory(RenderTexture depthNormalTexture)
@@ -700,11 +970,8 @@ namespace TiltBrush
                         if (renderDepth)
                         {
                             rMgr.RenderDepthToTexture(tmp);
-                            var depthPath = path.Replace(Path.GetExtension(path), "_depth.png");
-                            using (var fs = new FileStream(depthPath, FileMode.Create))
-                            {
-                                SaveDepth(fs, tmp);
-                            }
+                            var depthFiles = rMgr.EncodeDepthCapture(tmp);
+                            SaveDepthCaptureFiles(path, depthFiles);
                         }
 
                         if (renderNormals)
