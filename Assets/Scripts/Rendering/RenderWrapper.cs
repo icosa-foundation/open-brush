@@ -154,6 +154,21 @@ namespace TiltBrush
             }
         }
 
+        void ConfigureFeaturesForQuality()
+        {
+            int qualityLevel = QualitySettings.GetQualityLevel();
+            if (m_configuredFor == qualityLevel)
+            {
+                return;
+            }
+
+            m_isRecorder = GetComponent<VideoRecorder>() != null;
+            m_features.Clear();
+            AddFeature<FXAA>();
+            AddFeature<SENaturalBloomAndDirtyLens>();
+            m_configuredFor = qualityLevel;
+        }
+
         RenderTextureFormat GetTargetFormat()
         {
             RenderTextureFormat fmt = QualityControls.m_Instance.FramebufferFormat;
@@ -173,6 +188,7 @@ namespace TiltBrush
             m_blitWithScale = new Material(Shader.Find("Hidden/BlitDownsample"));
             m_blitWithScale.SetFloat("_Scale", 1.0f);
             m_selectionEffect = GetComponent<SelectionEffect>();
+            ConfigureFeaturesForQuality();
         }
 
         void Update()
@@ -182,19 +198,10 @@ namespace TiltBrush
                 m_isRecording = false;
             }
 
+            ConfigureFeaturesForQuality();
+
             if (!m_isRecorder)
             {
-                if (m_configuredFor != QualitySettings.GetQualityLevel())
-                {
-                    m_isRecorder = GetComponent<VideoRecorder>() != null;
-                    m_features.Clear();
-
-                    AddFeature<FXAA>();
-                    AddFeature<SENaturalBloomAndDirtyLens>();
-
-                    m_configuredFor = QualitySettings.GetQualityLevel();
-                }
-
                 // Lights may change with the environment, though they likely do not in practice.
                 if (m_shadows.Length != App.Scene.GetNumLights())
                 {
