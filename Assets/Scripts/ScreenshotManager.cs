@@ -567,14 +567,19 @@ namespace TiltBrush
 
         public static void SaveDepthCaptureFiles(string imagePath, DepthCaptureFiles files)
         {
-            string fullImagePath = Path.GetFullPath(imagePath);
-            string captureBasePath = Path.Combine(
-                Path.GetDirectoryName(fullImagePath),
-                Path.GetFileNameWithoutExtension(fullImagePath));
+            string captureBasePath = GetCaptureBasePath(imagePath);
             File.WriteAllBytes($"{captureBasePath}_depth.png", files.normalizedDepthPng);
             File.WriteAllBytes($"{captureBasePath}_depth16.png", files.linearDepth16Png);
             File.WriteAllBytes($"{captureBasePath}_depth.exr", files.linearDepthExr);
             File.WriteAllBytes($"{captureBasePath}_depth.json", files.metadataJson);
+        }
+
+        private static string GetCaptureBasePath(string imagePath)
+        {
+            string fullImagePath = Path.GetFullPath(imagePath);
+            return Path.Combine(
+                Path.GetDirectoryName(fullImagePath),
+                Path.GetFileNameWithoutExtension(fullImagePath));
         }
 
         public DepthCaptureFiles EncodeDepthCapture(RenderTexture depthNormalTexture)
@@ -977,7 +982,7 @@ namespace TiltBrush
                         if (renderNormals)
                         {
                             rMgr.RenderDepthNormalToTexture(tmp);
-                            var normalPath = path.Replace(Path.GetExtension(path), "_normals.png");
+                            var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
                             using (var fs = new FileStream(normalPath, FileMode.Create))
                             {
                                 SaveNormals(fs, tmp);
