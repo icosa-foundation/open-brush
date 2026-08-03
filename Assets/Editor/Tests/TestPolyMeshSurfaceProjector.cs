@@ -98,6 +98,32 @@ namespace TiltBrush
             Assert.That(projector.CanTransition(0, 1, dihedralAngle + 0.5f), Is.True);
         }
 
+        [Test]
+        public void TransitionCanCrossSkippedEligibleFace()
+        {
+            var poly = new PolyMesh(
+                new[]
+                {
+                    new Vector3(0, 0, 0),
+                    new Vector3(1, 0, 0),
+                    new Vector3(2, 0, 0),
+                    new Vector3(3, 0, 0),
+                    new Vector3(0, 1, 0),
+                    new Vector3(1, 1, 0),
+                    new Vector3(2, 1, 0),
+                    new Vector3(3, 1, 0)
+                },
+                new[]
+                {
+                    new[] { 0, 1, 5, 4 },
+                    new[] { 1, 2, 6, 5 },
+                    new[] { 2, 3, 7, 6 }
+                });
+            var projector = new PolyMeshSurfaceProjector(poly);
+
+            Assert.That(projector.CanTransition(0, 2, 0.5f), Is.True);
+        }
+
         private static float FindPairedEdgeAngle(Face face)
         {
             foreach (Halfedge edge in face.GetHalfedges())

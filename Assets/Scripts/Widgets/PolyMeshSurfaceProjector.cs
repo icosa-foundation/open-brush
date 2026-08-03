@@ -132,6 +132,8 @@ namespace TiltBrush
                 return true;
             }
 
+            // Face changes normally occur across one edge. Handle that without allocating the
+            // traversal buffers used when pointer sampling skips one or more intermediate faces.
             foreach (Halfedge edge in m_Faces[fromFaceIndex].Face.GetHalfedges())
             {
                 if (edge.Pair != null &&
@@ -139,6 +141,35 @@ namespace TiltBrush
                     adjacentFaceIndex == toFaceIndex)
                 {
                     return edge.DihedralAngle <= maxDihedralAngle;
+                }
+            }
+
+            var visited = new bool[m_Faces.Length];
+            var pending = new int[m_Faces.Length];
+            int readIndex = 0;
+            int writeIndex = 0;
+            visited[fromFaceIndex] = true;
+            pending[writeIndex++] = fromFaceIndex;
+
+            while (readIndex < writeIndex)
+            {
+                int faceIndex = pending[readIndex++];
+                foreach (Halfedge edge in m_Faces[faceIndex].Face.GetHalfedges())
+                {
+                    if (edge.Pair == null || edge.DihedralAngle > maxDihedralAngle ||
+                        !m_FaceIndices.TryGetValue(edge.Pair.Face, out int adjacentFaceIndex) ||
+                        visited[adjacentFaceIndex])
+                    {
+                        continue;
+                    }
+
+                    if (adjacentFaceIndex == toFaceIndex)
+                    {
+                        return true;
+                    }
+
+                    visited[adjacentFaceIndex] = true;
+                    pending[writeIndex++] = adjacentFaceIndex;
                 }
             }
 
