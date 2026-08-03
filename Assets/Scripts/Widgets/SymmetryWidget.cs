@@ -153,6 +153,29 @@ namespace TiltBrush
                         m_GuideBeams[i].m_BeamRenderer.enabled = false;
                     }
                     break;
+                case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    if (_previewPolyhedron == null)
+                    {
+                        _previewPolyhedron = PreviewPolyhedron.m_Instance;
+                    }
+                    if (_previewPolyhedron == null)
+                    {
+                        break;
+                    }
+                    m_LeftRightMesh.enabled = false;
+                    m_SymmetryGuideMeshRenderer.enabled = true;
+                    m_SymmetryGuideMeshFilter.mesh =
+                        _previewPolyhedron.GetComponent<MeshFilter>().mesh;
+                    m_SymmetryGuideMeshFilter.transform.localScale = Vector3.one * 2.0f;
+                    m_SymmetryGuideMeshRenderer.material =
+                        _previewPolyhedron.SymmetryWidgetMaterial;
+                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    {
+                        m_GuideBeams[i].m_BeamRenderer.enabled =
+                            m_GuideBeams[i].m_Direction != BeamDirection.Up &&
+                            m_GuideBeams[i].m_Direction != BeamDirection.Down;
+                    }
+                    break;
             }
         }
 
