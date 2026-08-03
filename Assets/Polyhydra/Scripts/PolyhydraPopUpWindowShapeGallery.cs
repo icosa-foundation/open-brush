@@ -84,6 +84,7 @@ namespace TiltBrush
         {
             InitShapeGalleryItems();
             ParentPanel = rParent.GetComponentInChildren<PolyhydraModeTray>();
+            ParentPanel.EnsurePreviewPoly();
             FirstButtonIndex = ParentPanel.CurrentGalleryPage * ButtonsPerPage;
             m_ColorBackground = m_Background.GetComponent<MeshRenderer>().sharedMaterial;
             base.Init(rParent, sText);
@@ -158,7 +159,6 @@ namespace TiltBrush
         public void PolyhydraThingButtonPressed(string action)
         {
             HandleButtonPress(action);
-            PreviewPolyhedron.m_Instance.RebuildPoly();
         }
 
         protected ItemListResults GetButtonList()
@@ -180,11 +180,7 @@ namespace TiltBrush
 
         public void HandleButtonPress(string presetName)
         {
-            PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-            if (polyhydraPanel != null)
-            {
-                polyhydraPanel.HandleLoadPresetFromString(ShapeGalleryJson[presetName].text);
-            }
+            ParentPanel.LoadShapeGalleryPreset(ShapeGalleryJson[presetName].text);
         }
 
         public void NextPage()

@@ -3839,6 +3839,14 @@ MonoBehaviour:
   m_AnimateRange: {x: 0, y: 1}
   m_ShowOnToolType: 5000
   m_PreviewPolyAttachPoint: {fileID: 8386990793121641774}
+  m_PreviewPrefab: {fileID: 8240667959069599074, guid: 4c2638b770f13374f82fe34db29dc2bf,
+    type: 3}
+  m_DefaultColorPalette:
+  - {r: 1, g: 0.875, b: 0.25, a: 1}
+  - {r: 1, g: 0.25098038, b: 0.25098038, a: 1}
+  - {r: 0.7490196, g: 0.3764706, b: 0.68692815, a: 1}
+  - {r: 0.5006535, g: 0.3764706, b: 0.7490196, a: 1}
+  - {r: 0.3764706, g: 0.5627451, b: 0.7490196, a: 1}
   references:
     version: 2
     RefIds: []

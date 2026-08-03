@@ -19,9 +19,47 @@ namespace TiltBrush
     public class PolyhydraModeTray : BaseTray
     {
         public Transform m_PreviewPolyAttachPoint;
+        [SerializeField] private Transform m_PreviewPrefab;
+        [SerializeField] private Color[] m_DefaultColorPalette;
         private RepaintTool m_repaintTool;
 
         public int CurrentGalleryPage { get; set; }
+
+        public void LoadShapeGalleryPreset(string presetText)
+        {
+            PreviewPolyhedron preview = EnsurePreviewPoly();
+            preview.m_PolyRecipe = PolyRecipe.FromJson(presetText, m_DefaultColorPalette);
+            preview.Validate();
+            preview.ImmediateMakePolyhedron();
+        }
+
+        public PreviewPolyhedron EnsurePreviewPoly()
+        {
+            bool createdPreview = PreviewPolyhedron.m_Instance == null;
+            if (createdPreview)
+            {
+                if (m_PreviewPrefab == null)
+                {
+                    throw new MissingReferenceException(
+                        "OB_SHAPE_GALLERY: Polyhydra preview prefab is not assigned.");
+                }
+                Instantiate(m_PreviewPrefab);
+            }
+
+            PreviewPolyhedron preview = PreviewPolyhedron.m_Instance;
+            if (preview == null)
+            {
+                throw new MissingReferenceException(
+                    "OB_SHAPE_GALLERY: Failed to instantiate the Polyhydra preview.");
+            }
+
+            if (createdPreview)
+            {
+                preview.m_PolyRecipe = PolyRecipe.CreateDefault(m_DefaultColorPalette);
+                preview.transform.SetParent(m_PreviewPolyAttachPoint, false);
+            }
+            return preview;
+        }
 
         void Update()
         {
@@ -33,6 +71,10 @@ namespace TiltBrush
             }
             else
             {
+                if (PreviewPolyhedron.m_Instance == null)
+                {
+                    EnsurePreviewPoly();
+                }
                 m_PreviewPolyAttachPoint.gameObject.SetActive(true);
             }
         }

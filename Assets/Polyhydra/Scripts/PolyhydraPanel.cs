@@ -210,15 +210,8 @@ namespace TiltBrush
                 Instantiate(m_PreviewPrefab);
             }
 
-            PreviewPolyhedron.m_Instance.m_PolyRecipe = new PolyRecipe
-            {
-                GeneratorType = GeneratorTypes.Uniform,
-                UniformPolyType = UniformTypes.Cube,
-                MaterialIndex = 0,
-                ColorMethod = ColorMethods.ByRole,
-                Colors = (Color[])DefaultColorPalette.Clone(),
-                Operators = new List<PreviewPolyhedron.OpDefinition>()
-            };
+            PreviewPolyhedron.m_Instance.m_PolyRecipe =
+                PolyRecipe.CreateDefault(DefaultColorPalette);
 
             // Attach the preview poly to the Polyhydra panel if opening, or else the polyhydra tray
             Transform attachPoint = null;

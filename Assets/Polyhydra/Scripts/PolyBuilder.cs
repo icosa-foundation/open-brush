@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polyhydra.Core;
 using Polyhydra.Wythoff;
@@ -41,6 +43,38 @@ namespace TiltBrush
         public Color[] Colors;
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
+
+        public static PolyRecipe CreateDefault(Color[] colors)
+        {
+            Color[] palette = colors == null || colors.Length == 0
+                ? new[] { Color.white }
+                : (Color[])colors.Clone();
+            return new PolyRecipe
+            {
+                GeneratorType = GeneratorTypes.Uniform,
+                UniformPolyType = UniformTypes.Cube,
+                MaterialIndex = 0,
+                ColorMethod = ColorMethods.ByRole,
+                Colors = palette,
+                Operators = new List<PreviewPolyhedron.OpDefinition>()
+            };
+        }
+
+        public static PolyRecipe FromJson(string json, Color[] defaultColors)
+        {
+            var serializer = new JsonSerializer
+            {
+                ContractResolver = new CustomJsonContractResolver()
+            };
+            using var textReader = new StringReader(json);
+            using var jsonReader = new JsonTextReader(textReader);
+            var definition = serializer.Deserialize<EditableModelDefinition>(jsonReader);
+            if (definition == null)
+            {
+                throw new JsonSerializationException("Shape preset did not contain a definition.");
+            }
+            return FromDef(definition, defaultColors);
+        }
 
         public PolyRecipe Clone()
         {
@@ -83,7 +117,7 @@ namespace TiltBrush
             return clone;
         }
 
-        public static PolyRecipe FromDef(EditableModelDefinition emd)
+        public static PolyRecipe FromDef(EditableModelDefinition emd, Color[] defaultColors = null)
         {
             var recipe = new PolyRecipe
             {
@@ -245,8 +279,9 @@ namespace TiltBrush
             Color[] colors;
             if (emd.Colors == null || emd.Colors.Length == 0)
             {
-                PolyhydraPanel polyhydraPanel = PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra) as PolyhydraPanel;
-                colors = (Color[])polyhydraPanel.DefaultColorPalette.Clone();
+                colors = defaultColors == null || defaultColors.Length == 0
+                    ? new[] { Color.white }
+                    : (Color[])defaultColors.Clone();
             }
             else
             {
