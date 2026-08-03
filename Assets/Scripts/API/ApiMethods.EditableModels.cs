@@ -701,7 +701,7 @@ namespace TiltBrush
         public static void CustomGuideFromEditableModel(int index)
         {
             EditableModelWidget modelWidget = GetActiveEditableModel(index);
-            var tr = _CurrentBrushTransform();
+            var tr = App.ActiveCanvas.Pose.inverse * _CurrentBrushTransform();
             var stencilWidget = EditableModelManager.AddCustomGuide(modelWidget.m_PolyMesh, tr);
             stencilWidget.SetSignedWidgetSize(modelWidget.GetSignedWidgetSize());
         }

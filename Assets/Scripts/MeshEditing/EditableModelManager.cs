@@ -218,14 +218,15 @@ namespace TiltBrush.MeshEditing
             return widget;
         }
 
-        public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr)
+        public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr_CS)
         {
+            TrTransform tr_GS = App.ActiveCanvas.Pose * tr_CS;
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr,
+                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr_GS,
                 forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var stencilWidget = createCommand.Widget as StencilWidget;
-            stencilWidget.SetSignedWidgetSize(tr.scale);
+            stencilWidget.SetSignedWidgetSize(tr_CS.scale);
             SetCustomStencil(stencilWidget, poly);
             return stencilWidget;
         }
