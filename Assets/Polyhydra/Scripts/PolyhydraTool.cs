@@ -603,7 +603,25 @@ namespace TiltBrush
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (controller == InputManager.ControllerName.Brush && m_CurrentModeIsABrushMode)
+            if (controller != InputManager.ControllerName.Brush)
+            {
+                return;
+            }
+
+            bool creatingShape = m_WasClicked ||
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
+            if (creatingShape)
+            {
+                SelectionManager selectionManager = SelectionManager.m_Instance;
+                bool quickSnapPressed = selectionManager.IsQuickSnapPressed(controller);
+                bool snapPanelSettingsActive = selectionManager.AngleOrPositionSnapEnabled();
+                bool snappingEnabled = quickSnapPressed
+                    ? !snapPanelSettingsActive
+                    : snapPanelSettingsActive;
+                InputManager.Brush.Geometry.TogglePadSnapHint(
+                    snappingEnabled, enabled: true);
+            }
+            else if (m_CurrentModeIsABrushMode)
             {
                 InputManager.Brush.Geometry.ShowBrushSizer();
                 // if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
