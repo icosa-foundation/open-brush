@@ -420,6 +420,7 @@ namespace TiltBrush
             }
             var filter = new Filter(
                 p => clippedFaces.Contains(p.index),
+                p => false, // Never called
                 p => false // Never called
             );
             poly = poly.FaceRemove(new OpParams(filter));

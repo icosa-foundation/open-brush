@@ -31,7 +31,7 @@
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "0dc8eefc3de440acbaa29c723554e3778175a719"
+      "hash": "a40a81354d3ed4ea759940988c8f2d1da1df949d"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
@@ -57,6 +57,13 @@
       },
       "url": "https://npm.developer.oculus.com"
     },
+    "com.nition.unity-octree": {
+      "version": "0.0.1-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.rlabrecque.steamworks.net": {
       "version": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
       "depth": 0,
@@ -67,13 +74,6 @@
     "com.sandrofigo.voxreader": {
       "version": "5.0.6",
       "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://package.openupm.com"
-    },
-    "com.nition.unity-octree": {
-      "version": "0.0.1-preview",
-      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
