@@ -197,7 +197,8 @@ namespace TiltBrush
             // also not do this when the canvas is being manipulated?
             if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel
                 && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror
-                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode)
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
             {
                 // Doing the rotation in object space makes it easier to prove that the
                 // plane normal will never be affected.
@@ -470,7 +471,12 @@ namespace TiltBrush
                 Vector3.up * m_JumpToUserControllerYOffset;
             TrTransform xf_GS = TrTransform.TR(controllerPos + offset, transform.rotation);
 
-            // The transform we built was global space, but we need it in widget local for the command.
+            PlaceAt(xf_GS);
+        }
+
+        public void PlaceAt(TrTransform xf_GS)
+        {
+            // MoveWidgetCommand expects the transform in widget-parent space.
             TrTransform newXf = TrTransform.FromTransform(m_NonScaleChild.parent).inverse * xf_GS;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(this, newXf, CustomDimension, final: true),

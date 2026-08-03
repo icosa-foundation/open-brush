@@ -347,7 +347,8 @@ namespace TiltBrush
                     break;
                 case CreateModes.Mirror:
                     PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.CustomSymmetryMode);
-                    PointerManager.m_Instance.BringSymmetryToUser();
+                    PointerManager.m_Instance.SymmetryWidget.PlaceAt(
+                        App.ActiveCanvas.Pose * tr);
                     break;
             }
         }
