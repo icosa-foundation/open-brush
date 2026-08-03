@@ -221,9 +221,11 @@ namespace TiltBrush.MeshEditing
         public static StencilWidget AddCustomGuide(PolyMesh poly, TrTransform tr)
         {
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr);
+                WidgetManager.m_Instance.GetStencilPrefab(StencilType.Custom), tr,
+                forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             var stencilWidget = createCommand.Widget as StencilWidget;
+            stencilWidget.SetSignedWidgetSize(tr.scale);
             SetCustomStencil(stencilWidget, poly);
             return stencilWidget;
         }
