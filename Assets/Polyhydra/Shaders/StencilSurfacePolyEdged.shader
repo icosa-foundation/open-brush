@@ -13,22 +13,24 @@
 // limitations under the License.
 
 
-Shader "Custom/StencilSurface"
+Shader "Custom/StencilSurfacePolyEdged"
 {
     Properties
     {
         _Color ("Main Color", Color) = (1,1,1,1)
         _BackColor ("Backside Color", Color) = (1,1,1,1)
         _LocalScale ("Local Scale", Vector) = (1,1,1)
-        _GridSize ("Grid Size", Float) = 1
-        _GridLineWidth ("Grid Line Width", Float) = .01
-        _FrameWidth ("Frame Width", Float) = .1
-        _EdgeDistance("_EdgeDistance", Range(0, 1)) = .1
-        _EdgeThickness("_EdgeThickness", Range(0, .5)) = .1
+        _GridSize ("Grid Size", Float) = -.05
+        _GridLineWidth ("Grid Line Width", Float) = .005
+        _FrameWidth ("Frame Width", Float) = -1
+        _EdgeDistance("_EdgeDistance", Range(0, 1)) = .02
+        _EdgeThickness("_EdgeThickness", Range(0, .5)) = .001
     }
 
     CGINCLUDE
     #include "UnityCG.cginc"
+    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Assets/Shaders/Include/MobileSelection.cginc"
 
     #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 
@@ -53,9 +55,10 @@ Shader "Custom/StencilSurface"
         float4 vertex : POSITION;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        float2 edgeUv : TEXCOORD1;
+        float3 barycentric : TEXCOORD2;
 
-        // float4 uv1 : TEXCOORD1;
-        // float4 uv2 : TEXCOORD2;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f
@@ -65,15 +68,19 @@ Shader "Custom/StencilSurface"
         float3 normal : TEXCOORD2;
         float2 texcoord : TEXCOORD3;
         float4 screenPos : TEXCOORD4;
+        float2 edgeUv : TEXCOORD5;
+        float3 barycentric : TEXCOORD6;
 
-        // float4 uv1 : TEXCOORD1;
-        // float4 uv2 : TEXCOORD2;
-
+        UNITY_VERTEX_OUTPUT_STEREO
     };
 
     v2f vert(appdata_t v)
     {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.pos = v.vertex;
         o.vertex = UnityObjectToClipPos(v.vertex);
@@ -87,6 +94,8 @@ Shader "Custom/StencilSurface"
         o.normal = v.normal;
         o.texcoord = v.texcoord;
         o.screenPos = ComputeScreenPos(o.vertex);
+        o.edgeUv = v.edgeUv;
+        o.barycentric = v.barycentric;
         return o;
     }
 
@@ -98,6 +107,23 @@ Shader "Custom/StencilSurface"
     };
 
     Facings facings;
+
+    float calcTriEdge(float input)
+    {
+        return 1 - smoothstep(_EdgeDistance, _EdgeDistance + _EdgeThickness, input);
+    }
+
+    float calcPolyEdge(v2f i)
+    {
+        float triEdge = max(
+            max(calcTriEdge(i.barycentric.x), calcTriEdge(i.barycentric.y)),
+            calcTriEdge(i.barycentric.z));
+        float polyEdge = 1 - smoothstep(
+            1 - _EdgeDistance,
+            1 - (_EdgeDistance + _EdgeThickness),
+            i.edgeUv.x);
+        return min(polyEdge, triEdge);
+    }
 
     float getInteriorGrid(v2f i, in float gridSizeMultiplier, in float gridWidthMultiplier,
                           in float UVGridWidthMultiplier)
@@ -206,6 +232,7 @@ Shader "Custom/StencilSurface"
             fixed4 frag(v2f i) : SV_Target
             {
                 float4 c = createStencilGrid(i, 2, .5, .25);
+                c.rgb = max(c.rgb, calcPolyEdge(i));
 
                 #if SELECTION_ON
                     return float4(GetSelectionColor().rgb, c.r) * 0.65;
@@ -230,21 +257,10 @@ Shader "Custom/StencilSurface"
             #pragma vertex vert
             #pragma fragment frag
 
-            float calcTriEdge(float input)
-            {
-                return 1 - smoothstep(_EdgeDistance, _EdgeDistance + _EdgeThickness, input);
-            }
-
-            float calcEdges(float4 uv1, float4 uv2)
-            {
-                float triEdge = max(max(calcTriEdge(uv2.x), calcTriEdge(uv2.y)), calcTriEdge(uv2.z));
-                float polyEdge = (1 - smoothstep(1 - _EdgeDistance, 1 - (_EdgeDistance + _EdgeThickness), uv1).r);
-                return min(polyEdge, triEdge);
-            }
-
             fixed4 frag(v2f i) : SV_Target
             {
                 float4 c = createStencilGrid(i, 1, 1, .5);
+                c.rgb = max(c.rgb, calcPolyEdge(i));
 
                 #if SELECTION_ON
                     return float4(GetSelectionColor().rgb, c.r);
