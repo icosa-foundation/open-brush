@@ -258,16 +258,33 @@ namespace TiltBrush
                 previewMaterial = PreviewPolyhedron.m_Instance.GetComponent<MeshRenderer>().material;
             }
 
-            Vector3 SnapToGrid(Vector3 v)
-            {
-                return SelectionManager.m_Instance.SnapToGrid_CS(v);
-            }
+            SelectionManager selectionManager = SelectionManager.m_Instance;
+            bool quickSnapPressed = selectionManager.IsQuickSnapPressed(
+                InputManager.ControllerName.Brush);
+            bool snapPanelSettingsActive = selectionManager.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (selectionManager.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                selectionManager.CurrentSnapGridIndex != 0;
 
-            var position_CS = SnapToGrid(m_FirstPositionClicked_CS.translation);
-            var drawnVector_CS = SnapToGrid(rAttachPoint_CS.translation) - position_CS;
-            var rotation_CS = SelectionManager.m_Instance.QuantizeAngle(
-                Quaternion.LookRotation(drawnVector_CS, Vector3.up)
-            );
+            Vector3 position_CS = gridSnapEnabled
+                ? selectionManager.SnapToGrid_CS(m_FirstPositionClicked_CS.translation)
+                : m_FirstPositionClicked_CS.translation;
+            Vector3 endPosition_CS = gridSnapEnabled
+                ? selectionManager.SnapToGrid_CS(rAttachPoint_CS.translation)
+                : rAttachPoint_CS.translation;
+            var drawnVector_CS = endPosition_CS - position_CS;
+            Quaternion unsnappedRotation_CS =
+                Quaternion.LookRotation(drawnVector_CS, Vector3.up);
+            Quaternion rotation_CS = unsnappedRotation_CS;
+            if (angleSnapEnabled)
+            {
+                rotation_CS = selectionManager.CurrentSnapAngleIndex != 0
+                    ? selectionManager.QuantizeAngle(unsnappedRotation_CS)
+                    : selectionManager.QuantizeAngle(
+                        unsnappedRotation_CS, 90f, useEnabledAxes: false);
+            }
             var scale_CS = drawnVector_CS.magnitude;
 
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
@@ -280,7 +297,7 @@ namespace TiltBrush
                 Matrix4x4 mat_GS = App.ActiveCanvas.Pose.ToMatrix4x4() * mat_CS;
 
                 Graphics.DrawMesh(previewMesh, mat_GS, previewMaterial, 0);
-                if (SelectionManager.m_Instance.SnappingAngle != 0 || SelectionManager.m_Instance.SnappingGridSize != 0)
+                if (angleSnapEnabled || gridSnapEnabled)
                 {
                     var vec = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
                     Matrix4x4 ghostMat_CS = Matrix4x4.TRS(

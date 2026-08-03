@@ -1188,6 +1188,13 @@ namespace TiltBrush
             );
         }
 
+        public bool IsQuickSnapPressed(InputManager.ControllerName controller)
+        {
+            return InputManager.Controllers[(int)controller].GetCommand(
+                InputManager.SketchCommands.MenuContextClick) &&
+                SketchControlsScript.m_Instance.ShouldRespondToPadInput(controller);
+        }
+
         public void SetSnappingAngle(string angleAsString)
         {
             int requestedIndex = m_AngleSnaps.Select(x => x.ToString()).ToList().FindIndex(x => x == angleAsString);
@@ -1267,15 +1274,20 @@ namespace TiltBrush
 
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
-            var snapAngle = SnappingAngle;
+            return QuantizeAngle(rotation, SnappingAngle, useEnabledAxes: true);
+        }
+
+        public Quaternion QuantizeAngle(
+            Quaternion rotation, float snapAngle, bool useEnabledAxes)
+        {
             if (snapAngle == 0) return rotation;
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
 
             Vector3 euler = rotation.eulerAngles;
             euler = new Vector3(
-                m_EnableSnapRotationX ? round(euler.x) : euler.x,
-                m_EnableSnapRotationY ? round(euler.y) : euler.y,
-                m_EnableSnapRotationZ ? round(euler.z) : euler.z
+                !useEnabledAxes || m_EnableSnapRotationX ? round(euler.x) : euler.x,
+                !useEnabledAxes || m_EnableSnapRotationY ? round(euler.y) : euler.y,
+                !useEnabledAxes || m_EnableSnapRotationZ ? round(euler.z) : euler.z
             );
             return Quaternion.Euler(euler);
         }

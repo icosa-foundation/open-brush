@@ -1318,9 +1318,7 @@ namespace TiltBrush
         private bool IsQuickSnapPressed()
         {
             return !SnapButtonConflictsWithDuplicate &&
-                InputManager.Controllers[(int)m_InteractingController].GetCommand(
-                    InputManager.SketchCommands.MenuContextClick) &&
-                SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
+                SelectionManager.m_Instance.IsQuickSnapPressed(m_InteractingController);
         }
 
         private bool IsSnapPanelSettingsActive()
