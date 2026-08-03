@@ -232,12 +232,22 @@ namespace TiltBrush.MeshEditing
 
         public static void SetCustomStencil(StencilWidget stencilWidget, PolyMesh poly)
         {
-            poly = poly.ConvexHull();
-            var meshData = poly.BuildMeshData(colorMethod: ColorMethods.ByRole);
-            Mesh mesh = poly.BuildUnityMesh(meshData);
-            var collider = stencilWidget.GetComponentInChildren<MeshCollider>();
-            collider.sharedMesh = mesh;
-            collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
+            // Apply PolyMesh's deferred scaling to the retained topology so its face coordinates
+            // exactly match the Unity mesh used by the stencil.
+            PolyMesh surfacePoly = poly.Duplicate(Vector3.zero, poly.ScalingFactor);
+            var surfaceMeshData = surfacePoly.BuildMeshData(colorMethod: ColorMethods.ByRole);
+            Mesh surfaceMesh = surfacePoly.BuildUnityMesh(surfaceMeshData);
+
+            // The physics collider remains a convex broad-phase/grab proxy. Drawing projection uses
+            // surfacePoly directly, so concave faces and cavities are not discarded.
+            PolyMesh colliderPoly = surfacePoly.ConvexHull();
+            var colliderMeshData = colliderPoly.BuildMeshData(colorMethod: ColorMethods.ByRole);
+            Mesh colliderMesh = colliderPoly.BuildUnityMesh(colliderMeshData);
+
+            if (stencilWidget is CustomStencil customStencil)
+            {
+                customStencil.SetCustomStencil(surfacePoly, surfaceMesh, colliderMesh);
+            }
         }
 
         public static void UpdateWidgetFromPolyMesh(EditableModelWidget widget, PolyMesh poly, PolyRecipe polyRecipe)
