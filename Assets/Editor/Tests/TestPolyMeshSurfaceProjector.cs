@@ -44,6 +44,35 @@ namespace TiltBrush
         }
 
         [Test]
+        public void ClosestFaceUsesPolygonSurfaceRatherThanCentroid()
+        {
+            var poly = new PolyMesh(
+                new[]
+                {
+                    new Vector3(-5, -1, 0),
+                    new Vector3(0, -1, 0),
+                    new Vector3(0, 1, 0),
+                    new Vector3(-5, 1, 0),
+                    new Vector3(0, -1, 0),
+                    new Vector3(1, -1, 0),
+                    new Vector3(1, 1, 0),
+                    new Vector3(0, 1, 0)
+                },
+                new[]
+                {
+                    new[] { 0, 1, 2, 3 },
+                    new[] { 4, 5, 6, 7 }
+                });
+            var projector = new PolyMeshSurfaceProjector(poly);
+
+            int faceIndex = projector.FindClosestFace(
+                new Vector3(-0.1f, 0, 0.25f), out Vector3 closestPoint);
+
+            Assert.That(faceIndex, Is.EqualTo(0));
+            MathTestUtils.AssertAlmostEqual(new Vector3(-0.1f, 0, 0), closestPoint);
+        }
+
+        [Test]
         public void TransitionUsesHalfedgeDihedralAngle()
         {
             var poly = new PolyMesh(

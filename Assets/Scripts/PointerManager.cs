@@ -254,6 +254,8 @@ namespace TiltBrush
         // Used for Polyhydra Symmetry
         private TrTransform m_bestface_OS;
         private int m_BestFaceIndex = -1;
+        private PolyMesh m_CustomSymmetryPoly;
+        private PolyMeshSurfaceProjector m_CustomSymmetrySurfaceProjector;
 
         // ---- events
 
@@ -1634,14 +1636,26 @@ namespace TiltBrush
             }
         }
 
-        private static TrTransform GetFaceFrame(Face face)
+        private static TrTransform GetFaceFrame(Face face, float meshScale)
         {
-            Vector3 position = face.Centroid;
-            Vector3 faceVector = face.GetVertices()[0].Position - position;
+            Vector3 position = face.Centroid * meshScale;
+            Vector3 faceVector =
+                (face.GetBestEdge().Midpoint - face.Centroid) * meshScale;
             return TrTransform.TRS(
                 position,
                 Quaternion.LookRotation(face.Normal, faceVector),
                 1f);
+        }
+
+        private PolyMeshSurfaceProjector GetCustomSymmetrySurfaceProjector(PolyMesh poly)
+        {
+            if (!ReferenceEquals(m_CustomSymmetryPoly, poly))
+            {
+                m_CustomSymmetryPoly = poly;
+                m_CustomSymmetrySurfaceProjector = new PolyMeshSurfaceProjector(poly);
+                m_BestFaceIndex = -1;
+            }
+            return m_CustomSymmetrySurfaceProjector;
         }
 
         private TrTransform GetCustomSymmetryTransform(
@@ -1655,15 +1669,18 @@ namespace TiltBrush
             }
 
             var faces = preview.m_PolyMesh.Faces;
+            float meshScale = preview.m_PolyMesh.ScalingFactor;
             TrTransform xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
             if (updateBestFace || m_BestFaceIndex < 0 || m_BestFaceIndex >= faces.Count)
             {
                 Vector3 pointerPosition_OS = (xfWidget.inverse * xfMain).translation;
-                m_BestFaceIndex = Enumerable.Range(0, faces.Count)
-                    .OrderBy(index =>
-                        (pointerPosition_OS - faces[index].Centroid).sqrMagnitude)
-                    .First();
-                m_bestface_OS = GetFaceFrame(faces[m_BestFaceIndex]);
+                if (Mathf.Abs(meshScale) > Mathf.Epsilon)
+                {
+                    pointerPosition_OS /= meshScale;
+                }
+                m_BestFaceIndex = GetCustomSymmetrySurfaceProjector(preview.m_PolyMesh)
+                    .FindClosestFace(pointerPosition_OS, out _);
+                m_bestface_OS = GetFaceFrame(faces[m_BestFaceIndex], meshScale);
             }
 
             if (child == 0)
@@ -1679,7 +1696,7 @@ namespace TiltBrush
                 return xfMain;
             }
 
-            TrTransform targetFace_OS = GetFaceFrame(faces[targetFaceIndex]);
+            TrTransform targetFace_OS = GetFaceFrame(faces[targetFaceIndex], meshScale);
             TrTransform targetFromBest_OS = targetFace_OS * m_bestface_OS.inverse;
             TrTransform targetFromBest_GS =
                 xfWidget * targetFromBest_OS * xfWidget.inverse;
