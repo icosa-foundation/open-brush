@@ -1446,7 +1446,13 @@ namespace TiltBrush
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
             // Early out if we're already in the requested mode (but allow None for initial hide of widget)
-            if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
+            bool refreshCustomSymmetry =
+                mode == SymmetryMode.CustomSymmetryMode && m_CurrentSymmetryMode == mode;
+            if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode &&
+                !refreshCustomSymmetry)
+            {
+                return;
+            }
 
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
@@ -1486,16 +1492,23 @@ namespace TiltBrush
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
             }
-            if (m_NumActivePointers != active)
+            if (m_NumActivePointers != active || refreshCustomSymmetry)
             {
                 ChangeNumActivePointers(active);
+            }
+
+            if (refreshCustomSymmetry)
+            {
+                m_CustomSymmetryPoly = null;
+                m_CustomSymmetrySurfaceProjector = null;
+                m_BestFaceIndex = -1;
             }
 
             var previousMode = m_CurrentSymmetryMode;
             m_CurrentSymmetryMode = mode;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
-            if (recordCommand)
+            if (recordCommand && !refreshCustomSymmetry)
             {
                 SketchMemoryScript.m_Instance.RecordCommand(
                     new SymmetryWidgetVisibleCommand(mode, previousMode));
