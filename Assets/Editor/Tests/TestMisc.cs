@@ -14,7 +14,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
@@ -25,6 +27,33 @@ namespace TiltBrush
 
     internal class TestMisc
     {
+        [Test]
+        public void TestBrushMaterialsDeclareRenderType()
+        {
+            var missingRenderTypes = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:BrushDescriptor"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var descriptor = AssetDatabase.LoadAssetAtPath<BrushDescriptor>(path);
+                Material material = descriptor != null ? descriptor.Material : null;
+                if (material == null)
+                {
+                    continue;
+                }
+
+                string renderType = material.GetTag(
+                    "RenderType", searchFallbacks: false, defaultValue: string.Empty);
+                if (string.IsNullOrEmpty(renderType))
+                {
+                    missingRenderTypes.Add(
+                        $"{path}: material {material.name}, shader {material.shader.name}");
+                }
+            }
+
+            Assert.That(missingRenderTypes, Is.Empty,
+                $"Brush materials must declare RenderType so replacement-shader captures include them:\n{string.Join("\n", missingRenderTypes)}");
+        }
+
         [Test]
         public void TestStreamlineStackTrace()
         {

@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using Newtonsoft.Json;
+using ODS;
 using TMPro;
 using UnityEngine.Serialization;
 #if USD_SUPPORTED
@@ -240,6 +241,8 @@ namespace TiltBrush
         [SerializeField] GameObject m_SketchSurface;
         [SerializeField] GameObject m_ErrorDialog;
         [SerializeField] GameObject m_OdsPrefab;
+        [SerializeField] Transform m_GaussianCapturePrefab;
+
         GameObject m_OdsPivot;
 
         [Header("Intro")]
@@ -2599,6 +2602,8 @@ namespace TiltBrush
 
             ODS.HybridCamera cam = driver.OdsCamera;
             cam.CollapseIpd = Config.m_OdsCollapseIpd;
+            // Use slice rendering for higher-quality 360 captures
+            cam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             if (Config.m_OdsPreview)
             {
                 // Keep --preview tied to the default ODS width so offline 8k renders do not create 2k previews.

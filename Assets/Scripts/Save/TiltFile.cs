@@ -589,6 +589,27 @@ namespace TiltBrush
             }
         }
 
+        public bool IsLoadable()
+        {
+            if (!IsHeaderValid())
+            {
+                return false;
+            }
+
+            using (Stream sketch = GetReadStream(FN_SKETCH))
+            {
+                if (sketch == null)
+                {
+                    return false;
+                }
+            }
+
+            using (Stream metadata = GetReadStream(FN_METADATA) ?? GetReadStream(FN_METADATA_LEGACY))
+            {
+                return metadata != null;
+            }
+        }
+
     }
 
 } // namespace TiltBrush
