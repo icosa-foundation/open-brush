@@ -410,8 +410,22 @@ namespace TiltBrush
                             fPopScalar: 0.5f
                         );
                     }
-                    string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
-                    App.OpenURL($"{VrAssetService.m_Instance.IcosaHomePage}/device?appId=openbrush&secret={secret}");
+                    string deviceCodeUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device";
+                    if (App.DeviceCanOpenSystemBrowser)
+                    {
+                        string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
+                        if (!App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}"))
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (!App.OpenURL(deviceCodeUrl))
+                        {
+                            break;
+                        }
+                    }
                     ShowIcosaLogin();
                     break;
                 case SketchControlsScript.GlobalCommands.AccountInfo:
