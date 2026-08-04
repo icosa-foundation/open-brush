@@ -114,6 +114,12 @@ namespace TiltBrush
         [LuaDocsReturnValue("A new ellipsoid guide")]
         public static GuideApiWrapper NewEllipsoid(TrTransform transform) => _Add(StencilType.Ellipsoid, transform);
 
+        [LuaDocsDescription("Creates a new SDF guide with a default size using the transform for position and orientation")]
+        [LuaDocsExample("myGuide = Guide:NewSDF(Transform:New(0, 5, 2))")]
+        [LuaDocsParameter("transform", "The transform of the Guide Widget")]
+        [LuaDocsReturnValue("A new SDF guide")]
+        public static GuideApiWrapper NewSDF(TrTransform transform) => _Add(StencilType.SDF, transform);
+
         [LuaDocsDescription(@"Creates a new custom guide from a 3d model. Note that custom guides have to be convex so your model will be ""wrapped"" as a convex hull")]
         [LuaDocsExample("myGuide = Guide:NewCustom(Transform:New(0, 5, 2), myModel)")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
@@ -153,7 +159,8 @@ namespace TiltBrush
         [LuaDocsReturnValue("A transform whose position is on the guide and whose up axis follows the surface normal")]
         public TransformApiWrapper ClosestPoint(Vector3 point)
         {
-            _StencilWidget.FindClosestPointOnSurface(point, out Vector3 closestPoint, out Vector3 normal);
+            ApiMethods.FindClosestPointOnGuide(
+                _StencilWidget, point, out Vector3 closestPoint, out Vector3 normal);
             Quaternion rotation = normal.sqrMagnitude > 0.000001f
                 ? Quaternion.FromToRotation(Vector3.up, normal.normalized)
                 : Quaternion.identity;

@@ -16,6 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -1321,7 +1323,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "guide.add",
-            "Adds a guide to the scene (cube, sphere, capsule, cone, ellipsoid)",
+            "Adds a guide to the scene (cube, sphere, capsule, cone, ellipsoid, sdf)",
             "cube"
         )]
         public static void AddGuide(string type)
@@ -1355,6 +1357,49 @@ namespace TiltBrush
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint(
+            "guide.closestpoint",
+            "Returns the closest surface position and outward normal for a guide as JSON",
+            "0,0,1,0"
+        )]
+        public static string GetGuideClosestPoint(int index, Vector3 point)
+        {
+            FindClosestPointOnGuide(
+                _GetActiveStencil(index), point, out Vector3 surfacePosition,
+                out Vector3 surfaceNormal);
+            return new JObject
+            {
+                ["position"] = Vector3ToJson(surfacePosition),
+                ["normal"] = Vector3ToJson(surfaceNormal)
+            }.ToString(Formatting.None);
+        }
+
+        [ApiEndpoint(
+            "guide.dimensions",
+            "Returns the dimensions of a guide as JSON",
+            "0"
+        )]
+        public static string GetGuideDimensions(int index)
+        {
+            return Vector3ToJson(_GetActiveStencil(index).Extents).ToString(Formatting.None);
+        }
+
+        internal static void FindClosestPointOnGuide(
+            StencilWidget guide, Vector3 point, out Vector3 surfacePosition,
+            out Vector3 surfaceNormal)
+        {
+            guide.FindClosestPointOnSurface(point, out surfacePosition, out surfaceNormal);
+            if (surfaceNormal.sqrMagnitude > 0.000001f)
+            {
+                surfaceNormal.Normalize();
+            }
+        }
+
+        private static JArray Vector3ToJson(Vector3 value)
+        {
+            return new JArray(value.x, value.y, value.z);
         }
 
         [ApiEndpoint(
