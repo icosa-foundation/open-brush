@@ -121,7 +121,7 @@ namespace TiltBrush
             switch (m_CurrentOverlayState)
             {
                 case OverlayState.Exiting:
-                    m_OverlayStateTransitionValue -= Time.deltaTime;
+                    m_OverlayStateTransitionValue -= Time.unscaledDeltaTime;
                     SetOverlayAlpha(
                         Mathf.Max(m_OverlayStateTransitionValue, 0.0f) / m_OverlayStateTransitionDuration);
                     if (m_OverlayStateTransitionValue <= 0.0f)
@@ -382,6 +382,42 @@ namespace TiltBrush
             bool bFullProgress = false,
             bool showSuccessText = false)
         {
+            var routine = RunInCompositorImpl(
+                overlayType, action, fadeDuration, bFullProgress, showSuccessText);
+            try
+            {
+                while (routine.MoveNext())
+                {
+                    Debug.Assert(routine.Current == null);
+                    yield return null;
+                }
+            }
+            finally
+            {
+                (routine as IDisposable)?.Dispose();
+            }
+        }
+
+        /// Runs a Unity-style coroutine in the compositor. Unlike the bare-coroutine overload,
+        /// this supports yield instructions and nested coroutines.
+        public System.Collections.IEnumerator RunInCompositor(
+            OverlayType overlayType,
+            System.Collections.IEnumerator action,
+            float fadeDuration,
+            bool bFullProgress = false,
+            bool showSuccessText = false)
+        {
+            return RunInCompositorImpl(
+                overlayType, action, fadeDuration, bFullProgress, showSuccessText);
+        }
+
+        private System.Collections.IEnumerator RunInCompositorImpl(
+            OverlayType overlayType,
+            System.Collections.IEnumerator action,
+            float fadeDuration,
+            bool bFullProgress,
+            bool showSuccessText)
+        {
             SetOverlayFromType(overlayType);
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
@@ -397,7 +433,7 @@ namespace TiltBrush
                 // alpha, so you can't reliably wait for it to be done.
                 // Therefore, we use the simple method of just waiting a bit longer than we should
                 // need to.
-                for (float t = 0; t < 1.1f; t += Time.deltaTime / fadeDuration)
+                for (float t = 0; t < 1.1f; t += Time.unscaledDeltaTime / fadeDuration)
                 {
                     SetOverlayTransitionRatio(Mathf.Clamp01(t));
                     yield return null;
@@ -429,7 +465,7 @@ namespace TiltBrush
                 }
                 finally
                 {
-                    action.Dispose();
+                    (action as IDisposable)?.Dispose();
                 }
                 yield return null; // eat a frame
                 if (showSuccessText)
@@ -438,14 +474,14 @@ namespace TiltBrush
                     float successHold = 1.0f;
                     while (successHold >= 0.0f)
                     {
-                        successHold -= Time.deltaTime;
+                        successHold -= Time.unscaledDeltaTime;
                         yield return null;
                     }
                 }
 
                 PauseRendering(false);
                 FadeFromCompositor(fadeDuration);
-                for (float t = 1; t > 0; t -= Time.deltaTime / fadeDuration)
+                for (float t = 1; t > 0; t -= Time.unscaledDeltaTime / fadeDuration)
                 {
                     SetOverlayTransitionRatio(Mathf.Clamp01(t));
                     yield return null;
@@ -472,7 +508,7 @@ namespace TiltBrush
             if (end > start) { FadeToCompositor(duration); }
             else { FadeFromCompositor(duration); }
 
-            for (float elapsed = 0; elapsed < duration; elapsed += Time.deltaTime)
+            for (float elapsed = 0; elapsed < duration; elapsed += Time.unscaledDeltaTime)
             {
                 float cur = Mathf.Lerp(start, end, elapsed / duration);
                 SetOverlayTransitionRatio(Mathf.Clamp01(cur));
