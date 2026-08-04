@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 975057b4fdcfb8142b3080d19a5cc712, type: 3}
   m_Name: OpenXR Editor Settings
   m_EditorClassIdentifier: 
-  Keys: 07000000
+  Keys: 0700000001000000
   Values:
   - featureSets:
     - com.unity.openxr.featureset.android
+  - featureSets: []
   m_vulkanAdditionalGraphicsQueue: 0
   m_vulkanOffscreenSwapchainNoMainDisplay: 1
