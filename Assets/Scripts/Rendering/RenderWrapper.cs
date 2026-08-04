@@ -74,6 +74,10 @@ namespace TiltBrush
         // SuperSampling factor. A value of 1.0 = disabled, 4.0 = 4x SSAA, etc.
         private float m_superSampling = 1.0f;
 
+        // Used by capture modes that require an unprocessed image. This is checked in
+        // OnPreRender because the quality feature state is normally restored there.
+        private bool m_suppressPostEffects;
+
         // The Quality Level for which the renderer was configured.
         // This allows us to refresh components when quality level changes.
         int m_configuredFor = -1;
@@ -114,6 +118,16 @@ namespace TiltBrush
             }
         }
 
+        public bool SuppressPostEffects
+        {
+            get { return m_suppressPostEffects; }
+            set
+            {
+                m_suppressPostEffects = value;
+                ToggleFeatures(!m_suppressPostEffects);
+            }
+        }
+
         // -------------------------------------------------------------------------------------------- //
         // Quality Control Helpers
         // -------------------------------------------------------------------------------------------- //
@@ -140,6 +154,21 @@ namespace TiltBrush
             }
         }
 
+        void ConfigureFeaturesForQuality()
+        {
+            int qualityLevel = QualitySettings.GetQualityLevel();
+            if (m_configuredFor == qualityLevel)
+            {
+                return;
+            }
+
+            m_isRecorder = GetComponent<VideoRecorder>() != null;
+            m_features.Clear();
+            AddFeature<FXAA>();
+            AddFeature<SENaturalBloomAndDirtyLens>();
+            m_configuredFor = qualityLevel;
+        }
+
         RenderTextureFormat GetTargetFormat()
         {
             RenderTextureFormat fmt = QualityControls.m_Instance.FramebufferFormat;
@@ -159,6 +188,7 @@ namespace TiltBrush
             m_blitWithScale = new Material(Shader.Find("Hidden/BlitDownsample"));
             m_blitWithScale.SetFloat("_Scale", 1.0f);
             m_selectionEffect = GetComponent<SelectionEffect>();
+            ConfigureFeaturesForQuality();
         }
 
         void Update()
@@ -168,19 +198,10 @@ namespace TiltBrush
                 m_isRecording = false;
             }
 
+            ConfigureFeaturesForQuality();
+
             if (!m_isRecorder)
             {
-                if (m_configuredFor != QualitySettings.GetQualityLevel())
-                {
-                    m_isRecorder = GetComponent<VideoRecorder>() != null;
-                    m_features.Clear();
-
-                    AddFeature<FXAA>();
-                    AddFeature<SENaturalBloomAndDirtyLens>();
-
-                    m_configuredFor = QualitySettings.GetQualityLevel();
-                }
-
                 // Lights may change with the environment, though they likely do not in practice.
                 if (m_shadows.Length != App.Scene.GetNumLights())
                 {
@@ -339,7 +360,7 @@ namespace TiltBrush
             }
             else
             {
-                ToggleFeatures(true);
+                ToggleFeatures(!m_suppressPostEffects);
             }
 
             // Setup the render texture framebuffer.

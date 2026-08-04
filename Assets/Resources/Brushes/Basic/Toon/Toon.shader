@@ -161,6 +161,7 @@ ENDCG
 
 
 SubShader {
+  Tags { "RenderType"="Opaque" }
   // For exportManifest.json:
   //   GltfCull Back
   Cull Back
