@@ -411,29 +411,32 @@ namespace TiltBrush
             return duplicate;
         }
 
-        public void PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
+        /// Returns true if the command was recorded (either on its own or merged into an existing
+        /// command), false if it was discarded without being executed.
+        public bool PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
-            if (!command.IsAvailable) return;
+            if (!command.IsAvailable) return false;
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
             bool discardCommand = discardIfNotMerged;
             BaseCommand delta = command;
             ClearRedo();
-            while (m_OperationStack.Any())
+            while (m_OperationStack.Any())  // Are there any commands on the undo stack?
             {
                 BaseCommand top = m_OperationStack.Pop();
-                if (!top.Merge(command))
+                if (!top.Merge(command))  // Have we hit a command we can't merge?
                 {
                     m_OperationStack.Push(top);
                     break;
                 }
-                discardCommand = false;
+                discardCommand = false;  // We're still merging
                 command = top;
             }
-            if (discardCommand)
+            if (discardCommand) // Nothing merged and the caller asked us to discard in that case
             {
                 command.Dispose();
-                return;
+                return false;
             }
+            // Either something merged, or the caller wants this recorded regardless
             delta.Redo();
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
@@ -442,6 +445,7 @@ namespace TiltBrush
             {
                 CommandPerformed?.Invoke(command);
             }
+            return true;
         }
 
         /// Executes and records a network-synchronized command.

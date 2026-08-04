@@ -31,6 +31,7 @@ Shader "Brush/Special/LightWire" {
   }
 
   SubShader {
+    Tags { "RenderType"="Opaque" }
     Cull Back
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
