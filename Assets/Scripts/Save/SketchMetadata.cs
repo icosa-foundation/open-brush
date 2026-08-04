@@ -36,5 +36,7 @@ namespace TiltBrush
     using Mirror = OpenBrush.TiltFile.Mirror;
     using TiltText = OpenBrush.TiltFile.TiltText;
     using TiltVideo = OpenBrush.TiltFile.TiltVideo;
+    using TiltPortal = OpenBrush.TiltFile.TiltPortal;
+    using TiltGaussianCapture = OpenBrush.TiltFile.TiltGaussianCapture;
     using SketchMetadata = OpenBrush.TiltFile.SketchMetadata;
 }
