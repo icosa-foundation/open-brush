@@ -274,13 +274,18 @@ namespace OpenBrush.Multiplayer
 
         public bool GetPlayerRoomOwnershipStatus(int playerId)
         {
-            var remotePlayer = m_PlayersSpawning
-                .Select(playerRef => m_Runner.GetPlayerObject(playerRef)?.GetComponent<PhotonPlayerRig>())
-                .FirstOrDefault(playerRig => playerRig != null && playerRig.PlayerId == playerId);
+            if (m_Runner == null)
+            {
+                return false;
+            }
 
-            if (remotePlayer != null && remotePlayer.Object != null && remotePlayer.Object.IsValid)
-                return remotePlayer.IsRoomOwner;
-            else return false;
+            PlayerRef player = PlayerRef.FromEncoded(playerId);
+            PhotonPlayerRig playerRig =
+                m_Runner.GetPlayerObject(player)?.GetComponent<PhotonPlayerRig>();
+            return playerRig != null &&
+                   playerRig.Object != null &&
+                   playerRig.Object.IsValid &&
+                   playerRig.IsRoomOwner;
         }
 
         public string GetPlayerNickname(int playerId)
@@ -363,6 +368,46 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcPublishManualColocationReference(
+            ManualColocationReference reference)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference);
+            });
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcSendManualColocationReferenceToPlayer(
+            ManualColocationReference reference,
+            int playerId)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            var networkReference =
+                new NetworkManualColocationReference(reference);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_ManualColocationReference(
+                    m_Runner, networkReference, targetPlayer);
+            });
+            await Task.Yield();
+            return true;
+        }
+
         public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
@@ -440,6 +485,22 @@ namespace OpenBrush.Multiplayer
                     break;
                 case SwitchEnvironmentCommand:
                     success &= CommandSwitchEnvironment(command as SwitchEnvironmentCommand, playerRef);
+                    break;
+                case MoveWidgetCommand moveCommand:
+                    // Widget manipulation generates a MoveWidgetCommand every frame. Send_BaseCommand
+                    // carries no transform data, so each one only adds an empty, unmergeable command
+                    // to every remote peer's undo stack - broadcasting them per frame buries a remote
+                    // user's own undo history. Send just the settled one.
+                    // NOTE: this does not make widget movement replicate; it never has. See the
+                    // payload of CommandBase / PhotonRPC.BaseCommand.
+                    if (moveCommand.IsFinal)
+                    {
+                        success &= CommandBase(command);
+                    }
+                    else
+                    {
+                        success = true;
+                    }
                     break;
                 case BaseCommand:
                     success &= CommandBase(command);

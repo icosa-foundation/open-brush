@@ -1,0 +1,389 @@
+{
+    "thumbnail": "frame_controller_left_thumb.png",
+    "components": {
+        "body": {
+            "filename": "frame_controller_left_body.obj",
+            "component_local": {
+                "origin": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "rotate_xyz": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "status": {
+            "filename": "frame_controller_left_status.obj",
+            "component_local": {
+                "origin": [
+                    0.001618,
+                    0.014606,
+                    0.113347
+                ],
+                "rotate_xyz": [
+                    92.5705,
+                    0.2628,
+                    -11.4859
+                ]
+            },
+            "visibility": {
+                "default": false
+            }
+        },
+        "thumbstick": {
+            "filename": "frame_controller_left_thumbstick.obj",
+            "motion": {
+                "type": "joystick",
+                "controller_axis": 0,
+                "joystick_path": "/input/thumbstick",
+                "center": [
+                    0.021772298961877823,
+                    -0.004882689565420151,
+                    0.056458838284015656
+                ],
+                "rotate_xyz": [
+                    -35.25240947637669,
+                    -10.270844884214252,
+                    -4.411360064609599
+                ],
+                "joystick_rotation_x": [
+                    20,
+                    -20
+                ],
+                "joystick_rotation_y": [
+                    20,
+                    -20
+                ],
+                "component_path": "/input/thumbstick",
+                "press_translate": [
+                    0.0,
+                    -0.0005,
+                    0.0
+                ]
+            },
+            "component_local": {
+                "origin": [
+                    0.024709,
+                    0.009419,
+                    0.046381
+                ],
+                "rotate_xyz": [
+                    51.7053,
+                    -2.1218,
+                    -8.2871
+                ]
+            }
+        },
+        "dpad": {
+            "filename": "frame_controller_left_dpad.obj",
+            "motion": {
+                "type": "dpad",
+                "center": [
+                    -0.003449810203164816,
+                    0.0009890797082334757,
+                    0.040305495262145996
+                ],
+                "rotate_xyz": [
+                    -35.25240947637669,
+                    -10.270844884214252,
+                    -4.411360064609599
+                ],
+                "joystick_rotation_x": [
+                    7,
+                    -7
+                ],
+                "joystick_rotation_y": [
+                    7,
+                    -7
+                ],
+                "press_translate": [
+                    0.0,
+                    -0.000927,
+                    0.0
+                ],
+                "dpad_up_path": "/input/dpad_up/click",
+                "dpad_down_path": "/input/dpad_down/click",
+                "dpad_left_path": "/input/dpad_left/click",
+                "dpad_right_path": "/input/dpad_right/click"
+            },
+            "component_local": {
+                "origin": [
+                    -0.003074,
+                    0.002091,
+                    0.039522
+                ],
+                "rotate_xyz": [
+                    54.7280,
+                    -2.4049,
+                    -7.5549
+                ]
+            }
+        },
+        "button_grip": {
+            "filename": "frame_controller_left_grip_button.obj",
+            "component_local": {
+                "origin": [
+                    0.019701,
+                    -0.007341,
+                    0.085983
+                ],
+                "rotate_xyz": [
+                    82.4041,
+                    -22.6096,
+                    -106.1074
+                ]
+            },
+            "motion": {
+                "type": "rotate",
+                "controller_axis": 1,
+                "controller_axis_component": 0,
+                "trigger_path": "/input/grip",
+                "value_mapping": [
+                    0.0,
+                    -9.5
+                ],
+                "pivot": [
+                    0.015135575085878372,
+                    -0.0021647028625011444,
+                    0.05657520145177841
+                ],
+                "axis": [
+                    0.16541871428489685,
+                    0.8062824010848999,
+                    -0.5679306387901306
+                ],
+                "pressed_value_override": -11
+            }
+        },
+        "trigger": {
+            "filename": "frame_controller_left_trigger.obj",
+            "component_local": {
+                "origin": [
+                    0.005987,
+                    -0.046922,
+                    0.050916
+                ],
+                "rotate_xyz": [
+                    15.8758,
+                    -29.5434,
+                    -115.0083
+                ]
+            },
+            "motion": {
+                "type": "rotate",
+                "controller_axis": 1,
+                "controller_axis_component": 0,
+                "trigger_path": "/input/trigger",
+                "value_mapping": [
+                    0.0,
+                    -12.5
+                ],
+                "pivot": [
+                    0.008507592603564262,
+                    -0.025103246793150902,
+                    0.043208539485931396
+                ],
+                "axis": [
+                    0.986111044883728,
+                    -0.12652696669101715,
+                    0.10759078711271286
+                ],
+                "pressed_value_override": -14
+            }
+        },
+        "button_view": {
+            "filename": "frame_controller_left_view_button.obj",
+            "component_local": {
+                "origin": [
+                    0.013357,
+                    -0.006668,
+                    0.032344
+                ],
+                "rotate_xyz": [
+                    57.0672,
+                    -10.4627,
+                    -4.5357
+                ]
+            },
+            "motion": {
+                "type": "translate",
+                "pressed_path": "/input/view/click",
+                "controller_button": 1,
+                "value_mapping": [
+                    0.0,
+                    0.00085
+                ],
+                "axis": [
+                    -0.16541863977909088,
+                    -0.8062825202941895,
+                    0.5679306387901306
+                ]
+            }
+        },
+        "button_system": {
+            "filename": "frame_controller_left_system_button.obj",
+            "component_local": {
+                "origin": [
+                    0.005237,
+                    0.011247,
+                    0.059389
+                ],
+                "rotate_xyz": [
+                    59.3771,
+                    -9.9351,
+                    -3.1776
+                ]
+            },
+            "motion": {
+                "type": "translate",
+                "pressed_path": "/input/system/click",
+                "controller_button": 0,
+                "value_mapping": [
+                    0.0,
+                    0.00085
+                ],
+                "axis": [
+                    -0.16541863977909088,
+                    -0.8062825202941895,
+                    0.5679306387901306
+                ]
+            }
+        },
+        "bumper": {
+            "filename": "frame_controller_left_bumper.obj",
+            "component_local": {
+                "origin": [
+                    0.008433,
+                    -0.033635,
+                    0.037223
+                ],
+                "rotate_xyz": [
+                    7.1322,
+                    -43.1747,
+                    -106.1587
+                ]
+            },
+            "motion": {
+                "type": "rotate",
+                "pressed_path": "/input/bumper/click",
+                "controller_button": 0,
+                "value_mapping": [
+                    0.0,
+                    -2.6
+                ],
+                "pivot": [
+                    0.03938816115260124,
+                    -0.010577183216810226,
+                    0.05169607326388359
+                ],
+                "axis": [
+                    -0.16541844606399536,
+                    -0.8062824010848999,
+                    0.5679306983947754
+                ]
+            }
+        },
+        "base": {
+            "component_local": {
+                "origin": [
+                    -0.0024,
+                    -0.0024,
+                    0.1531
+                ],
+                "rotate_xyz": [
+                    -0.4,
+                    180.0,
+                    0.0
+                ]
+            }
+        },
+        "tip": {
+            "component_local": {
+                "origin": [
+                    0.012694,
+                    -0.02522,
+                    0.020687
+                ],
+                "rotate_xyz": [
+                    -40,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "openxr_aim": {
+            "component_local": {
+                "origin": [
+                    0.012694,
+                    -0.02522,
+                    0.020687
+                ],
+                "rotate_xyz": [
+                    -40,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "openxr_grip": {
+            "component_local": {
+                "origin": [
+                    -0.003117,
+                    -0.004277,
+                    0.099501
+                ],
+                "rotate_xyz": [
+                    2.8091,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "openxr_handmodel": {
+            "component_local": {
+                "origin": [
+                    -0.01125,
+                    -0.00182941,
+                    0.1019482
+                ],
+                "rotate_xyz": [
+                    -39.4,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "handgrip": {
+            "component_local": {
+                "origin": [
+                    -0.003117,
+                    -0.004277,
+                    0.099501
+                ],
+                "rotate_xyz": [
+                    2.8091,
+                    0.0,
+                    0.0
+                ]
+            }
+        },
+        "grip": {
+            "component_local": {
+                "origin": [
+                    -0.003117,
+                    -0.004277,
+                    0.099501
+                ],
+                "rotate_xyz": [
+                    2.8091,
+                    0.0,
+                    0.0
+                ]
+            }
+        }
+    }
+}

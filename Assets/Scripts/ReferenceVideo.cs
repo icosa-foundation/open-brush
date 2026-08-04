@@ -298,7 +298,8 @@ namespace TiltBrush
                 }
                 else
                 {
-                    // Use the stored AbsolutePath directly (supports paths outside media library)
+                    // AbsolutePath is the path this video was found at, which is not necessarily
+                    // VideoLibraryPath + PersistentPath. The network branch above already uses it.
                     m_VideoPlayer.url = $"{AbsolutePath}";
                 }
                 m_VideoPlayer.isLooping = true;
