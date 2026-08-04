@@ -20,6 +20,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using UnityEngine;
 using TMPro;
+using ODS;
 
 namespace TiltBrush
 {
@@ -192,6 +193,7 @@ namespace TiltBrush
         private bool m_LockToController;
 
         private float m_ShotTimer;
+        private bool m_SnapshotCaptureInProgress;
         private bool m_EatPadInput = false;
 
         private State m_CurrentState;
@@ -507,7 +509,7 @@ namespace TiltBrush
                     break;
             }
 
-            return m_ShotTimer <= 0.0f && bStyleOK;
+            return !m_SnapshotCaptureInProgress && m_ShotTimer <= 0.0f && bStyleOK;
         }
 
         public void ExternalObjectNextCameraStyle()
@@ -534,6 +536,11 @@ namespace TiltBrush
 
         bool CanSwitchCameras()
         {
+            if (m_SnapshotCaptureInProgress)
+            {
+                return false;
+            }
+
             switch (CurrentCameraStyle)
             {
                 case MultiCamStyle.AutoGif: return m_AutoGifCreationState != GifCreationState.Capturing;
@@ -743,13 +750,19 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot));
                             }
                             break;
                         case MultiCamStyle.Depth:
                             if (FileUtils.CheckDiskSpaceWithError(saveName))
                             {
-                                StartCoroutine(TakeScreenshotAsync(saveName, true));
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Depth));
+                            }
+                            break;
+                        case MultiCamStyle.Snapshot360:
+                            if (FileUtils.CheckDiskSpaceWithError(saveName))
+                            {
+                                StartCoroutine(TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot360));
                             }
                             break;
                         case MultiCamStyle.AutoGif:
@@ -875,6 +888,7 @@ namespace TiltBrush
                         case MultiCamStyle.Snapshot:
                         case MultiCamStyle.Depth:
                         case MultiCamStyle.AutoGif:
+                        case MultiCamStyle.Snapshot360:
                             break;
                     }
 
@@ -1273,14 +1287,21 @@ namespace TiltBrush
         static public string GetSaveName(MultiCamStyle style)
         {
             string ext = "";
+            string suffix = "";
             switch (style)
             {
                 case MultiCamStyle.AutoGif:
                     ext = ".gif";
                     break;
                 case MultiCamStyle.Snapshot:
+                    ext = ".png";
+                    break;
                 case MultiCamStyle.Depth:
                     ext = ".png";
+                    break;
+                case MultiCamStyle.Snapshot360:
+                    ext = ".png";
+                    suffix = "_360";
                     break;
                 case MultiCamStyle.TimeGif:
                     ext = ".gif";
@@ -1291,7 +1312,7 @@ namespace TiltBrush
             }
 
             var basename = FileUtils.SanitizeFilename(SaveLoadScript.m_Instance.GetLastFileHumanName())
-                + "_{0:00}";
+                + "_{0:00}" + suffix;
 
             try
             {
@@ -1301,7 +1322,7 @@ namespace TiltBrush
             catch (ArgumentException)
             {
                 // Basename had invalid characters.
-                basename = "Unnamed_{0:00}" + ext;
+                basename = "Unnamed_{0:00}" + suffix + ext;
             }
 
             if (style == MultiCamStyle.Video)
@@ -1831,7 +1852,59 @@ namespace TiltBrush
         // Snapshot
         //
 
-        public IEnumerator TakeScreenshotAsync(string saveName, bool renderDepth = false)
+        public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style)
+        {
+            if (m_SnapshotCaptureInProgress)
+            {
+                yield break;
+            }
+
+            m_SnapshotCaptureInProgress = true;
+            GameObject odsCaptureRoot = null;
+            try
+            {
+                HybridCamera odsCamera = null;
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    odsCamera = SketchControlsScript.m_Instance.MultiCamCaptureRig.OdsCameraFromStyle(style);
+                    if (odsCamera == null)
+                    {
+                        Debug.LogError("[Snapshot360Capture] Missing HybridCamera on the Snapshot360 capture object.");
+                        yield break;
+                    }
+
+                    odsCaptureRoot = new GameObject("Snapshot360 Frozen Capture Origin");
+                    odsCaptureRoot.hideFlags = HideFlags.HideAndDontSave;
+                    odsCaptureRoot.transform.SetPositionAndRotation(
+                        odsCamera.transform.position, odsCamera.transform.rotation);
+                    odsCaptureRoot.transform.localScale = odsCamera.transform.lossyScale;
+                }
+
+                IEnumerator capture = TakeScreenshotInternalAsync(
+                    saveName, style, odsCamera, odsCaptureRoot?.transform);
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    yield return OverlayManager.m_Instance.RunInCompositor(
+                        OverlayType.Export, capture, fadeDuration: 0.25f);
+                }
+                else
+                {
+                    yield return capture;
+                }
+            }
+            finally
+            {
+                if (odsCaptureRoot != null)
+                {
+                    Destroy(odsCaptureRoot);
+                }
+                m_SnapshotCaptureInProgress = false;
+            }
+        }
+
+        private IEnumerator TakeScreenshotInternalAsync(
+            string saveName, MultiCamStyle style, HybridCamera odsCamera,
+            Transform odsCaptureTransform)
         {
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
@@ -1852,7 +1925,7 @@ namespace TiltBrush
                 yield return null;
             }
 
-            ScreenshotManager rMgr = GetScreenshotManager(renderDepth ? MultiCamStyle.Depth : MultiCamStyle.Snapshot);
+            ScreenshotManager rMgr = GetScreenshotManager(style);
             if (rMgr != null)
             {
                 // Default to the multicam values, and overwrite with user config values.
@@ -1863,6 +1936,23 @@ namespace TiltBrush
                     App.UserConfig.Flags.SnapshotHeight :
                     m_ScreenshotHeight;
 
+                if (style == MultiCamStyle.Snapshot360)
+                {
+                    snapshotWidth = odsCamera.GetClampedImageWidth(snapshotWidth);
+                    snapshotHeight = snapshotWidth;
+                }
+                else if (style == MultiCamStyle.Depth)
+                {
+                    int largestDimension = Mathf.Max(snapshotWidth, snapshotHeight);
+                    if (largestDimension > ScreenshotManager.kMaxDepthCaptureDimension)
+                    {
+                        float scale = ScreenshotManager.kMaxDepthCaptureDimension /
+                            (float)largestDimension;
+                        snapshotWidth = Mathf.Max(1, Mathf.RoundToInt(snapshotWidth * scale));
+                        snapshotHeight = Mathf.Max(1, Mathf.RoundToInt(snapshotHeight * scale));
+                    }
+                }
+
                 RenderTexture tmp = rMgr.CreateTemporaryTargetForSave(
                     snapshotWidth, snapshotHeight);
                 RenderTexture tmpDepth = null;
@@ -1871,6 +1961,13 @@ namespace TiltBrush
                 {
                     RenderWrapper wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
                     float ssaaRestore = wrapper.SuperSampling;
+                    bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
+                    TiltShift tiltShift = rMgr.gameObject.GetComponent<TiltShift>();
+                    bool tiltShiftRestore = tiltShift != null && tiltShift.enabled;
+                    Kino.Vignette vignette = rMgr.gameObject.GetComponent<Kino.Vignette>();
+                    bool vignetteRestore = vignette != null && vignette.enabled;
+                    WatermarkEffect watermark = rMgr.gameObject.GetComponent<WatermarkEffect>();
+                    bool watermarkRestore = watermark != null && watermark.enabled;
                     // If we're beyond our multicam defaults, use low super samplin'.
                     if (snapshotWidth > m_ScreenshotWidth || snapshotHeight > m_ScreenshotHeight)
                     {
@@ -1880,14 +1977,66 @@ namespace TiltBrush
                     {
                         wrapper.SuperSampling = m_superSampling;
                     }
-                    rMgr.RenderToTexture(tmp, asDepth: false);
-                    if (renderDepth)
+                    try
                     {
-                        tmpDepth = rMgr.CreateTemporaryTargetForSave(
-                            snapshotWidth, snapshotHeight);
-                        rMgr.RenderToTexture(tmpDepth, asDepth: true);
+                        if (style == MultiCamStyle.Depth && tiltShift != null)
+                        {
+                            tiltShift.enabled = false;
+                        }
+
+                        if (odsCamera != null)
+                        {
+                            odsCamera.imageWidth = snapshotWidth;
+                            float timeScaleRestore = Time.timeScale;
+                            try
+                            {
+                                Time.timeScale = 0.0f;
+                                yield return odsCamera.Render(odsCaptureTransform, saveImage: false);
+                            }
+                            finally
+                            {
+                                Time.timeScale = timeScaleRestore;
+                            }
+                            Graphics.Blit(odsCamera.FinalImage, tmp);
+                        }
+                        else
+                        {
+                            rMgr.RenderToTexture(tmp);
+                        }
+                        if (style == MultiCamStyle.Depth)
+                        {
+                            if (vignette != null)
+                            {
+                                vignette.enabled = false;
+                            }
+                            if (watermark != null)
+                            {
+                                watermark.enabled = false;
+                            }
+                            wrapper.SuppressPostEffects = true;
+
+                            tmpDepth = rMgr.CreateTemporaryTargetForSave(
+                                snapshotWidth, snapshotHeight);
+                            rMgr.RenderDepthToTexture(tmpDepth);
+                        }
                     }
-                    wrapper.SuperSampling = ssaaRestore;
+                    finally
+                    {
+                        wrapper.SuppressPostEffects = suppressPostEffectsRestore;
+                        if (style == MultiCamStyle.Depth && tiltShift != null)
+                        {
+                            tiltShift.enabled = tiltShiftRestore;
+                        }
+                        if (style == MultiCamStyle.Depth && vignette != null)
+                        {
+                            vignette.enabled = vignetteRestore;
+                        }
+                        if (style == MultiCamStyle.Depth && watermark != null)
+                        {
+                            watermark.enabled = watermarkRestore;
+                        }
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
                     yield return null;
                     SketchControlsScript.m_Instance.MultiCamCaptureRig.EnableCamera(UserConfig.PerformanceOverrides.EnableMulticamPreview);
 
@@ -1900,13 +2049,10 @@ namespace TiltBrush
                         {
                             ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
                         }
-                        if (renderDepth)
+                        if (style == MultiCamStyle.Depth)
                         {
-                            var fullDepthPath = Path.GetFullPath(saveName.Replace(".png", "_depth.png"));
-                            using (var fs = new FileStream(fullDepthPath, FileMode.Create))
-                            {
-                                ScreenshotManager.Save(fs, tmpDepth, bSaveAsPng: true);
-                            }
+                            var depthFiles = rMgr.EncodeDepthCapture(tmpDepth);
+                            ScreenshotManager.SaveDepthCaptureFiles(fullPath, depthFiles);
                         }
                     }
                     catch (IOException e) { err = e.Message; }
@@ -1932,6 +2078,14 @@ namespace TiltBrush
                 {
                     // Do not put away the camera.
                     m_RequestExit = false;
+                    if (odsCamera != null)
+                    {
+                        odsCamera.ReleaseTextures();
+                    }
+                    if (tmpDepth != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmpDepth);
+                    }
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }
