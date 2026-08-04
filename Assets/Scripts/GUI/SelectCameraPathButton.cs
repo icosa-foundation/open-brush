@@ -72,25 +72,24 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            // Create a new path if we pressed the + icon. We deliberately don't activate the
-            // CameraPathTool / AddPositionKnot mode here: doing so used to be the only way to
-            // build a path, but now the user can also record a flight. Instead we drop back to
-            // the default tool so knot placement isn't armed, letting the user choose
-            // click-to-place (via the mode buttons) or fly (via the fly capture button) from the
-            // resulting panel. Dropping to the default tool also disarms AddPositionKnot mode if
-            // it was left active from building a previous path.
+            // Enter path-creation state if we pressed the + icon. The selected creation method
+            // will create the path when the user places a knot, finishes drawing, or finishes
+            // recording a flight.
             if (m_NumActivePaths == m_PathNumber)
             {
-                m_PathWidget = WidgetManager.m_Instance.CreatePathWidget();
                 if (SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
                     BaseTool.ToolType.CameraPathTool)
                 {
                     SketchSurfacePanel.m_Instance.EnableDefaultTool();
                 }
+                WidgetManager.m_Instance.BeginCreatingCameraPath();
+            }
+            else
+            {
+                WidgetManager.m_Instance.SetCurrentCameraPath(m_PathWidget);
             }
 
             WidgetManager.m_Instance.CameraPathsVisible = true;
-            WidgetManager.m_Instance.SetCurrentCameraPath(m_PathWidget);
             SketchControlsScript.m_Instance.EatGazeObjectInput();
         }
 

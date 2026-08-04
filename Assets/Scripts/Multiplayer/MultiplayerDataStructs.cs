@@ -22,6 +22,17 @@ using UnityEngine;
 namespace OpenBrush.Multiplayer
 {
     [System.Serializable]
+    public struct ManualColocationReference
+    {
+        public bool IsValid;
+        public Vector3 Start_SS;
+        public Vector3 End_SS;
+        public float SceneScale;
+        public uint Revision;
+        public int CreatorPlayerId;
+    }
+
+    [System.Serializable]
     public struct PlayerRigData
     {
         public Vector3 HeadPosition;

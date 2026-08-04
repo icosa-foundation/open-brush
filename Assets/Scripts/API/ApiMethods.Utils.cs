@@ -336,6 +336,44 @@ namespace TiltBrush
                 OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
         }
 
+        internal static void _PublishSnapshotFilesToSharedStorage(
+            string filename, bool renderDepth, bool renderNormals)
+        {
+            if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                filename += ".jpg";
+            }
+
+            string imagePath = GetSafePathInDirectory(
+                App.SnapshotPath(), filename, "snapshot filename");
+            _PublishExistingApiGeneratedFileToSharedStorage(imagePath);
+
+            string captureBasePath = Path.Combine(
+                Path.GetDirectoryName(imagePath),
+                Path.GetFileNameWithoutExtension(imagePath));
+            if (renderDepth)
+            {
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.png");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth16.png");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.exr");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.json");
+            }
+            if (renderNormals)
+            {
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_normals.png");
+            }
+        }
+
+        private static void _PublishExistingApiGeneratedFileToSharedStorage(string localPath)
+        {
+            if (File.Exists(localPath))
+            {
+                _PublishApiGeneratedFileToSharedStorage(localPath);
+            }
+        }
+
         internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(

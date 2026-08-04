@@ -31,6 +31,7 @@ namespace TiltBrush
     {
         // TODO L10n
         public const string kRemoveHeadsetFyi = "Remove headset to view.";
+        private const float kPointableReticleSurfaceOffset = 0.12f;
 
         private string m_OpenBrushGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/openbrush";
         private string m_BlocksGalleryUrl => $"{VrAssetService.m_Instance.IcosaHomePage}/blocks";
@@ -174,6 +175,7 @@ namespace TiltBrush
 
             MultiplayerSetRoomViewOnly = 1020,
             MultiplayerSetRoomSilent = 1021,
+            MultiplayerManualColocation = 1022,
 
             RenameSketch = 5200,
             OpenLayerOptionsPopup = 5201,
@@ -198,6 +200,8 @@ namespace TiltBrush
             ChangeSnapAngle = 8000,
             OpenColorPicker = 9000,
             OpenTexturePicker = 9001,
+            SpawnGaussianCaptureWidget = 9600,
+            ExportGaussianSplatPoses = 9601,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000
@@ -431,6 +435,10 @@ namespace TiltBrush
         private int m_CurrentGazeObject;
         private bool m_EatInputGazeObject;
         private Vector3 m_CurrentGazeHitPoint;
+        private GrabWidget m_CurrentPointableWidget;
+        private GrabWidget m_PreviousPointableWidget;
+        private Vector3 m_CurrentPointableHitPoint;
+        private Vector3 m_CurrentPointableReticleForward;
         private Ray m_GazeControllerRay;
         private Ray m_GazeControllerRayActivePanel;
         private bool m_ForcePanelActivation = false;
@@ -711,7 +719,9 @@ namespace TiltBrush
         }
         public bool IsUserInteractingWithUI()
         {
-            return (m_CurrentGazeObject != -1) || (m_GazePanelDectivationCountdown > 0.0f);
+            return (m_CurrentGazeObject != -1) ||
+                m_CurrentPointableWidget != null ||
+                (m_GazePanelDectivationCountdown > 0.0f);
         }
         public bool IsUIBlockingUndoRedo()
         {
@@ -753,7 +763,12 @@ namespace TiltBrush
         public bool IsUserGrabbingWorld() { return m_GrabWand.grabbingWorld || m_GrabBrush.grabbingWorld; }
         public bool IsUserGrabbingWorldWithBrushHand() { return m_GrabBrush.grabbingWorld; }
         public bool IsUserTransformingWorld() { return m_GrabWand.grabbingWorld && m_GrabBrush.grabbingWorld; }
-        public float GetGazePanelActivationRatio() { return m_GazePanelDectivationCountdown / m_GazePanelDectivationDelay; }
+        public float GetGazePanelActivationRatio()
+        {
+            return m_CurrentPointableWidget != null
+                ? 1.0f
+                : m_GazePanelDectivationCountdown / m_GazePanelDectivationDelay;
+        }
         public bool IsCurrentGrabWidgetPinned() { return IsUserInteractingWithAnyWidget() && m_CurrentGrabWidget.Pinned; }
         public bool CanCurrentGrabWidgetBePinned() { return IsUserInteractingWithAnyWidget() && m_CurrentGrabWidget.AllowPinning; }
         public bool DidUserGrabWithBothInside() { return m_GrabBrush.startedGrabInsideWidget && m_GrabWand.startedGrabInsideWidget; }
@@ -797,6 +812,10 @@ namespace TiltBrush
 
         public Transform GazeObjectTransform()
         {
+            if (m_CurrentPointableWidget != null)
+            {
+                return m_CurrentPointableWidget.transform;
+            }
             if (m_CurrentGazeObject != -1)
             {
                 return m_PanelManager.GetPanel(m_CurrentGazeObject).transform;
@@ -1083,9 +1102,16 @@ namespace TiltBrush
                 // update tools.
                 if (bWidgetGrabOK && !m_GrabBrush.grabbingWorld)
                 {
-                    if (m_CurrentGazeObject != -1 && !m_WorldBeingGrabbed)
+                    if ((m_CurrentGazeObject != -1 || m_CurrentPointableWidget != null) && !m_WorldBeingGrabbed)
                     {
-                        UpdateActiveGazeObject();
+                        if (m_CurrentPointableWidget != null)
+                        {
+                            UpdateActivePointableWidget();
+                        }
+                        else
+                        {
+                            UpdateActiveGazeObject();
+                        }
 
                         // Allow for standard input (like Undo / Redo) even when gazing at a panel.
                         if (m_CurrentInputState == InputState.Standard)
@@ -2059,6 +2085,7 @@ namespace TiltBrush
                     RequestPanelsVisibility(true);
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
+                    SetWidgetGrabVisualState(InputManager.ControllerName.Brush);
                 }
                 else
                 {
@@ -2078,6 +2105,7 @@ namespace TiltBrush
                     m_GrabWidgetOneHandInfo.m_Name = InputManager.ControllerName.Wand;
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
+                    SetWidgetGrabVisualState(InputManager.ControllerName.Wand);
                 }
                 else
                 {
@@ -2107,6 +2135,7 @@ namespace TiltBrush
                     InitializeGrabWidgetControllerInfo(m_GrabWidgetOneHandInfo);
                     m_GrabWidgetState = GrabWidgetState.OneHand;
                     m_CurrentGrabWidget.SetUserTwoHandGrabbing(false);
+                    SetWidgetGrabVisualState(m_GrabWidgetOneHandInfo.m_Name);
 
                     // Eat input on the off hand so we don't immediately jump in to world transform.
                     if (m_GrabWidgetOneHandInfo.m_Name == InputManager.ControllerName.Brush)
@@ -2136,6 +2165,11 @@ namespace TiltBrush
             TrTransform xfBrush = TrTransform.FromTransform(InputManager.Brush.Transform);
             TrTransform xfWand = TrTransform.FromTransform(InputManager.Wand.Transform);
             Vector2 vSizeRange = m_CurrentGrabWidget.GetWidgetSizeRange();
+            bool adjustGaussianCaptureParams =
+                InputManager.Brush.GetVrInput(VrInput.Button01) ||
+                InputManager.Wand.GetVrInput(VrInput.Button01);
+            GaussianCaptureWidgetBase gaussianCaptureWidget =
+                m_CurrentGrabWidget as GaussianCaptureWidgetBase;
 
             GrabWidget.Axis axis = m_CurrentGrabWidget.GetScaleAxis(
                 xfWand.translation, xfBrush.translation,
@@ -2173,7 +2207,15 @@ namespace TiltBrush
                 // The above functions return undefined values in newWidgetXf.scale; but that's
                 // okay because RecordAndSetPosRot ignores xf.scale.
                 // TODO: do this more cleanly
-                m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
+                {
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentForAxis(axis);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndApplyScaleToAxis(deltaScale, axis);
+                }
             }
             else
             {
@@ -2218,7 +2260,20 @@ namespace TiltBrush
                 }
 
                 // Must do separately becvause RecordAndSetPosRot ignores newWidgetXf.scale
-                m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                if (adjustGaussianCaptureParams && gaussianCaptureWidget != null)
+                {
+                    float widgetSizeBeforeScale = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
+                    float deltaScale = widgetSizeBeforeScale > 0.0f
+                        ? newWidgetXf.scale / widgetSizeBeforeScale
+                        : 1.0f;
+                    gaussianCaptureWidget.PrepareCaptureAdjustmentFromHands(
+                        xfBrush.translation, xfWand.translation);
+                    gaussianCaptureWidget.TryAdjustCaptureParametersFromScale(deltaScale);
+                }
+                else
+                {
+                    m_CurrentGrabWidget.RecordAndSetSize(newWidgetXf.scale);
+                }
 
                 float currentSize = Mathf.Abs(m_CurrentGrabWidget.GetSignedWidgetSize());
                 if (currentSize == vSizeRange.x || currentSize == vSizeRange.y)
@@ -2230,6 +2285,16 @@ namespace TiltBrush
 
             // Ignores TrTransform.scale
             m_CurrentGrabWidget.RecordAndSetPosRot(newWidgetXf);
+
+            if (gaussianCaptureWidget != null)
+            {
+                m_ControllerGrabVisuals.SetDesiredVisualState(
+                    ControllerGrabVisuals.VisualState.GaussianCaptureDoubleGrip);
+                m_ControllerGrabVisuals.SetGaussianCaptureText(
+                    adjustGaussianCaptureParams
+                        ? gaussianCaptureWidget.AdjustmentStatusText
+                        : gaussianCaptureWidget.AdjustmentHintText);
+            }
 
             m_GrabWidgetTwoHandBrushPrev = xfBrush;
             m_GrabWidgetTwoHandWandPrev = xfWand;
@@ -2272,13 +2337,7 @@ namespace TiltBrush
                 RequestPanelsVisibility(false);
             }
 
-            // Notify visuals.
-            ControllerGrabVisuals.VisualState visualState =
-                m_GrabWidgetOneHandInfo.m_Name == InputManager.ControllerName.Brush ?
-                    ControllerGrabVisuals.VisualState.WidgetBrushGrip :
-                    ControllerGrabVisuals.VisualState.WidgetWandGrip;
-            m_ControllerGrabVisuals.SetDesiredVisualState(visualState);
-            m_ControllerGrabVisuals.SetHeldWidget(m_CurrentGrabWidget.transform);
+            SetWidgetGrabVisualState(m_GrabWidgetOneHandInfo.m_Name);
 
             //if a gaze object had focus when we grabbed this widget, take focus off the object
             ResetActivePanel();
@@ -2293,6 +2352,16 @@ namespace TiltBrush
 
             m_BackupWandGrabData = null;
             m_BackupBrushGrabData = null;
+        }
+
+        private void SetWidgetGrabVisualState(InputManager.ControllerName controllerName)
+        {
+            ControllerGrabVisuals.VisualState visualState =
+                controllerName == InputManager.ControllerName.Brush
+                    ? ControllerGrabVisuals.VisualState.WidgetBrushGrip
+                    : ControllerGrabVisuals.VisualState.WidgetWandGrip;
+            m_ControllerGrabVisuals.SetDesiredVisualState(visualState);
+            m_ControllerGrabVisuals.SetHeldWidget(m_CurrentGrabWidget.transform);
         }
 
         void UpdateGrab_ToNone(GrabWidget rPrevGrabWidget)
@@ -3011,6 +3080,8 @@ namespace TiltBrush
             UnityEngine.Profiling.Profiler.BeginSample("SketchControlScript.RefreshCurrentGazeObject");
             int iPrevGazeObject = m_CurrentGazeObject;
             m_CurrentGazeObject = -1;
+            m_PreviousPointableWidget = m_CurrentPointableWidget;
+            m_CurrentPointableWidget = null;
             bool bGazeAllowed = (m_CurrentInputState == InputState.Standard)
                 && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)
                 && !m_SketchSurfacePanel.ActiveTool.InputBlocked()
@@ -3022,6 +3093,8 @@ namespace TiltBrush
 
             bool bGazeDeactivationOverrideWithInput = false;
             List<PanelManager.PanelData> aAllPanels = m_PanelManager.GetAllPanels();
+            float fNearestWidget = 99999.0f;
+            float fNearestPointableWidget = 99999.0f;
 
             bool hasController = m_ControlsType == ControlsType.SixDofControllers;
 
@@ -3032,7 +3105,7 @@ namespace TiltBrush
             }
             // Only activate gaze objects if we're in standard input mode, and if we don't have the 'draw'
             // button held.
-            else if ((bGazeAllowed || (iPrevGazeObject != -1)))
+            else if (bGazeAllowed || iPrevGazeObject != -1 || m_PreviousPointableWidget != null)
             {
                 //reset hit flags
                 for (int i = 0; i < m_GazeResults.Length; ++i)
@@ -3043,10 +3116,19 @@ namespace TiltBrush
                 }
 
                 // If we're in controller mode, find the nearest colliding widget that might get in our way.
-                float fNearestWidget = 99999.0f;
                 if (hasController)
                 {
                     fNearestWidget = m_WidgetManager.DistanceToNearestWidget(m_GazeControllerRay);
+                    if (m_WidgetManager.TryGetNearestPointableWidget(
+                        m_GazeControllerRay, out GrabWidget pointableWidget, out RaycastHit pointableHitInfo))
+                    {
+                        m_CurrentPointableWidget = pointableWidget;
+                        fNearestPointableWidget = pointableHitInfo.distance;
+                        m_CurrentPointableHitPoint =
+                            pointableHitInfo.point -
+                            m_GazeControllerRay.direction * kPointableReticleSurfaceOffset;
+                        m_CurrentPointableReticleForward = m_GazeControllerRay.direction;
+                    }
                 }
 
                 //check all panels for gaze hit
@@ -3170,8 +3252,14 @@ namespace TiltBrush
                 }
 
                 //if we found something near our controller, take it
-                if (iControllerIndex != -1)
+                if (m_CurrentPointableWidget != null &&
+                    (iControllerIndex == -1 || fNearestPointableWidget <= fControllerDist))
                 {
+                    m_CurrentGazeObject = -1;
+                }
+                else if (iControllerIndex != -1)
+                {
+                    m_CurrentPointableWidget = null;
                     m_CurrentGazeObject = iControllerIndex;
                     m_CurrentGazeHitPoint = m_GazeResults[iControllerIndex].m_ControllerPosition;
 
@@ -3219,7 +3307,7 @@ namespace TiltBrush
             }
 
             //if we're staring at a panel, keep our countdown fresh
-            if (m_CurrentGazeObject != -1 || m_ForcePanelActivation)
+            if (m_CurrentGazeObject != -1 || m_CurrentPointableWidget != null || m_ForcePanelActivation)
             {
                 m_GazePanelDectivationCountdown = m_GazePanelDectivationDelay;
             }
@@ -3253,7 +3341,8 @@ namespace TiltBrush
             }
 
             //prime objects if we change targets
-            if (iPrevGazeObject != m_CurrentGazeObject)
+            if (iPrevGazeObject != m_CurrentGazeObject ||
+                m_PreviousPointableWidget != m_CurrentPointableWidget)
             {
                 //if we're switching panels, make sure the pointer doesn't streak
                 PointerManager.m_Instance.DisablePointerPreviewLine();
@@ -3262,6 +3351,10 @@ namespace TiltBrush
                 {
                     aAllPanels[iPrevGazeObject].m_Panel.PanelGazeActive(false);
                     aAllPanels[iPrevGazeObject].m_Panel.SetPositioningPercent(0.0f);
+                }
+                if (m_PreviousPointableWidget != null)
+                {
+                    m_PreviousPointableWidget.Activate(false);
                 }
                 if (m_CurrentGazeObject != -1)
                 {
@@ -3279,6 +3372,13 @@ namespace TiltBrush
                     {
                         m_SketchSurfacePanel.RequestHideActiveTool(true);
                     }
+                }
+                else if (m_CurrentPointableWidget != null)
+                {
+                    PointerManager.m_Instance.EnableLine(false);
+                    PointerManager.m_Instance.AllowPointerPreviewLine(false);
+                    m_CurrentPointableWidget.Activate(true);
+                    m_SketchSurfacePanel.RequestHideActiveTool(true);
                 }
                 else
                 {
@@ -3390,7 +3490,15 @@ namespace TiltBrush
             }
 
             SetUIReticleTransform(reticlePos, -reticleForward);
-            m_UIReticle.SetActive(GetGazePanelActivationRatio() >= 1.0f);
+            bool reticleActive = GetGazePanelActivationRatio() >= 1.0f;
+            m_UIReticle.SetActive(reticleActive);
+        }
+
+        void UpdateActivePointableWidget()
+        {
+            PointerManager.m_Instance.RequestPointerRendering(false);
+            SetUIReticleTransform(m_CurrentPointableHitPoint, m_CurrentPointableReticleForward);
+            m_UIReticle.SetActive(true);
         }
 
         public void ResetActivePanel()
@@ -5164,12 +5272,21 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.SpawnGaussianCaptureWidget:
+                    var brushAttach = InputManager.m_Instance.GetBrushControllerAttachPoint();
+                    var spawnXf = TrTransform.TR(brushAttach.position, brushAttach.rotation);
+                    m_WidgetManager.CreateGaussianCaptureWidget(spawnXf, (StencilType)iParam1);
+                    break;
+                case GlobalCommands.ExportGaussianSplatPoses:
+                    CameraCaptureRuntime.m_Instance.StartAllCapture();
+                    break;
                 case GlobalCommands.RepaintOptions:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
                 case GlobalCommands.MultiplayerLeaveRoom:
                 case GlobalCommands.MultiplayerConnect:
                 case GlobalCommands.MultiplayerDisconnect:
+                case GlobalCommands.MultiplayerManualColocation:
                 case GlobalCommands.MultiplayerMutePlayerForMe:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerViewOnlyMode:
@@ -5478,6 +5595,11 @@ namespace TiltBrush
                     return !PanelManager.m_Instance.AdvancedModeActive() && MultiplayerManager.m_Instance.CanJoinRoom();
                 case GlobalCommands.MultiplayerLeaveRoom:
                     return MultiplayerManager.m_Instance.CanLeaveRoom();
+                case GlobalCommands.MultiplayerManualColocation:
+                    return MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM &&
+                        ManualColocationManager.m_Instance != null &&
+                        (MultiplayerManager.m_Instance.IsUserRoomOwner() ||
+                         ManualColocationManager.m_Instance.HasReference);
 
                 // Disabled when in a multiplayer room.
                 case GlobalCommands.Sketchbook:
@@ -5518,6 +5640,7 @@ namespace TiltBrush
                 LightsControlScript.m_Instance.LightsChanged ||
                 m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
+                m_WidgetManager.ActivePortalWidgets.Any() ||
                 m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||
                 m_WidgetManager.VideoWidgets.Any(w => w.gameObject.activeSelf) ||
