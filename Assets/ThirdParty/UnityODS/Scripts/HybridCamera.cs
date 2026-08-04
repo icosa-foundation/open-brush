@@ -102,7 +102,37 @@ public class HybridCamera : MonoBehaviour {
     odsRenderer.SetVr180(enable);
   }
 
+  public void ReleaseTextures() {
+    if (stitched != null) {
+      stitched.Release();
+      Destroy(stitched);
+      stitched = null;
+    }
+    if (bloomed != null) {
+      bloomed.Release();
+      Destroy(bloomed);
+      bloomed = null;
+    }
+    if (finalImage != null) {
+      finalImage.Release();
+      Destroy(finalImage);
+      finalImage = null;
+    }
+    if (returnImage != null) {
+      Destroy(returnImage);
+      returnImage = null;
+    }
+    if (odsRenderer != null) {
+      odsRenderer.Release();
+    }
+
+    // Force the next render to recreate every size-dependent resource.
+    lastImageWidth = 0;
+  }
+
   private void SetupTextures() {
+    ReleaseTextures();
+
     imageHeight    = imageWidth;
 
     int bloomPadding;
@@ -114,7 +144,15 @@ public class HybridCamera : MonoBehaviour {
     }
     eyeImageWidth  = imageWidth + bloomPadding;
             
-    RenderTextureFormat format = HDR ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.Default;
+    bool useHdr = HDR;
+#if UNITY_ANDROID || UNITY_IOS
+    // Avoid float ODS buffers on mobile when the capture camera has HDR disabled.
+    Camera sourceCamera = GetComponent<Camera>();
+    useHdr = useHdr && sourceCamera != null && sourceCamera.allowHDR;
+#endif
+    RenderTextureFormat format = useHdr
+      ? RenderTextureFormat.ARGBFloat
+      : RenderTextureFormat.Default;
 
     stitched = new RenderTexture(eyeImageWidth, imageHeight, 0, format);
     stitched.antiAliasing = 1;
@@ -122,8 +160,7 @@ public class HybridCamera : MonoBehaviour {
     bloomed = new RenderTexture(stitched.width, stitched.height, 0, format);
     bloomed.antiAliasing = 1;
             
-    finalImage  = new RenderTexture( imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32 );
-    returnImage = new Texture2D( finalImage.width, finalImage.height, TextureFormat.RGB24, false );
+    finalImage = new RenderTexture(imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32);
 
     odsRenderer.SetWidth(imageWidth, eyeImageWidth, bloomRadius);
     odsRenderer.SetupTextures(format);
@@ -142,7 +179,22 @@ public class HybridCamera : MonoBehaviour {
     }
   }
 
-  public IEnumerator Render(Transform node) {
+  public void OnDisable() {
+    ReleaseTextures();
+  }
+
+  public int GetClampedImageWidth(int requestedImageWidth) {
+    int bloomPaddingMultiplier = vr180 ? 4 : 2;
+    int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
+    int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
+    int clampedBloomRadius = Math.Min(bloomRadius, maxBloomRadius);
+    int bloomPadding = bloomPaddingMultiplier * clampedBloomRadius;
+    int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
+    maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
+    return Math.Min(((requestedImageWidth + 3) / 4) * 4, maxImageWidth);
+  }
+
+  public IEnumerator Render(Transform node, bool saveImage = true) {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
       // Round image width to a multiple of four to keep symmetry with the image height.
@@ -152,10 +204,7 @@ public class HybridCamera : MonoBehaviour {
       int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
       int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
       bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
-      int bloomPadding = bloomPaddingMultiplier * bloomRadius;
-      int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
-      maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
-      imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, maxImageWidth );
+      imageWidth = GetClampedImageWidth(imageWidth);
 
       SetupTextures();
 
@@ -165,8 +214,8 @@ public class HybridCamera : MonoBehaviour {
       lastvr180        = vr180;
     }
 
-    if ( outputFolder != null  && !Directory.Exists( outputFolder ) ) {
-      Directory.CreateDirectory( outputFolder );
+    if ( saveImage && outputFolder != null && !Directory.Exists(outputFolder) ) {
+      Directory.CreateDirectory(outputFolder);
     }
 
     GameObject renderCameraObject = new GameObject();
@@ -281,35 +330,46 @@ public class HybridCamera : MonoBehaviour {
       }
     }
 
-    oldActiveTexture = RenderTexture.active;
-    RenderTexture.active = finalImage;
-    returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
-    RenderTexture.active = oldActiveTexture;
-
     Graphics.Blit(finalImage, (RenderTexture)null);
 
-    byte[] image = returnImage.EncodeToPNG();
+    if (saveImage) {
+      if (returnImage == null ||
+          returnImage.width != finalImage.width || returnImage.height != finalImage.height) {
+        if (returnImage != null) {
+          Destroy(returnImage);
+        }
+        returnImage = new Texture2D(
+          finalImage.width, finalImage.height, TextureFormat.RGB24, false);
+      }
 
-    string file = String.Format(basename + "_{0:d6}.png", frameCount);
-    string path = Path.Combine(outputFolder, file);
+      oldActiveTexture = RenderTexture.active;
+      RenderTexture.active = finalImage;
+      returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
+      RenderTexture.active = oldActiveTexture;
+
+      byte[] image = returnImage.EncodeToPNG();
+
+      string file = String.Format(basename + "_{0:d6}.png", frameCount);
+      string path = Path.Combine(outputFolder, file);
 
 #if MULTI_THREADED
-  Thread imageWriter = new Thread(() => {
-    File.WriteAllBytes(path, image);
+      Thread imageWriter = new Thread(() => {
+        File.WriteAllBytes(path, image);
 #if LOG_IMAGE_WRITES
-    Debug.Log( "Wrote image " + path );
+        Debug.Log( "Wrote image " + path );
 #endif
-  });
-  imageWriter.IsBackground = true;
-  imageWriter.Start();
+      });
+      imageWriter.IsBackground = true;
+      imageWriter.Start();
 #else
-    File.WriteAllBytes( path, image );
+      File.WriteAllBytes( path, image );
 #if LOG_IMAGE_WRITES
-  Debug.Log( "Wrote image " + path );
+      Debug.Log( "Wrote image " + path );
 #endif
 #endif
 
-    frameCount++;
+      frameCount++;
+    }
   }  // Render method
 
   //This render function can be called from the Editor to make testing easier.
