@@ -624,6 +624,11 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
+      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
+        if: startsWith(matrix.name, 'Windows Rift')
+        run: |
+          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
+
       - name: Add bundled Windows tools
         if: matrix.targetPlatform == 'StandaloneWindows64'
         run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
@@ -1654,11 +1659,11 @@ jobs:
           if [ "$PRERELEASE" == "false" ]
           then
             # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO Neo3,PICO Neo3 Pro,PICO Neo3 Eye,PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
           fi
 
   publish_pico_arborxr:

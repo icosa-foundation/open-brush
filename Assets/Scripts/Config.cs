@@ -89,6 +89,13 @@ namespace TiltBrush
     ///
     public class Config : MonoBehaviour
     {
+        public enum BrowserModeOverride
+        {
+            Auto,
+            SystemBrowser,
+            SteamOverlay,
+        }
+
         // When set, ModelWidget creation waits for Poly models to be loaded into memory.
         // When not set, ModelWidgets may be created with "dummy" Models which are automatically
         // replaced with the real Model once it's loaded.
@@ -114,6 +121,12 @@ namespace TiltBrush
 
         [Header("Startup")]
         public string m_FakeCommandLineArgsInEditor;
+
+#if UNITY_EDITOR
+        [Header("Editor testing")]
+        [Tooltip("Overrides URL handling in Play Mode so the Steam Frame login flow can be tested in the Editor.")]
+        public BrowserModeOverride m_BrowserModeOverrideInEditor;
+#endif
 
         [Header("Overwritten by build process")]
         [SerializeField] private PlatformConfig m_PlatformConfig;
@@ -141,6 +154,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData ViveSecrets => Secrets[SecretsConfig.Service.Vive];
 
         public bool DisableAccountLogins;
+        [NonSerialized] public bool ForceSteamOverlayBrowser;
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -499,6 +513,11 @@ namespace TiltBrush
                 else if (args[i] == "--ForceViewOnly")
                 {
                     ParseUserSetting("--Flags.ForceViewOnly", "true");
+                }
+                else if (args[i] == "--forceSteamOverlayBrowser")
+                {
+                    ForceSteamOverlayBrowser = true;
+                    Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
                 }
                 else if (args[i].Contains("."))
                 {
