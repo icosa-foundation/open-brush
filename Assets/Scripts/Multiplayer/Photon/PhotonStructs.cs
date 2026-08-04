@@ -69,6 +69,39 @@ namespace OpenBrush.Multiplayer
         }
     }
 
+    public struct NetworkManualColocationReference : INetworkStruct
+    {
+        public bool IsValid;
+        public Vector3 Start_SS;
+        public Vector3 End_SS;
+        public float SceneScale;
+        public uint Revision;
+        public int CreatorPlayerId;
+
+        public NetworkManualColocationReference(ManualColocationReference reference)
+        {
+            IsValid = reference.IsValid;
+            Start_SS = reference.Start_SS;
+            End_SS = reference.End_SS;
+            SceneScale = reference.SceneScale;
+            Revision = reference.Revision;
+            CreatorPlayerId = reference.CreatorPlayerId;
+        }
+
+        public ManualColocationReference ToReference()
+        {
+            return new ManualColocationReference
+            {
+                IsValid = IsValid,
+                Start_SS = Start_SS,
+                End_SS = End_SS,
+                SceneScale = SceneScale,
+                Revision = Revision,
+                CreatorPlayerId = CreatorPlayerId,
+            };
+        }
+    }
+
     public struct NetworkPlayerSettings : INetworkStruct
     {
          public int m_PlayerId;
