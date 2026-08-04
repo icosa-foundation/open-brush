@@ -28,7 +28,7 @@ Properties {
 }
 
 SubShader {
-    Tags { "RenderPipeline"="UniversalPipeline" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
   Pass {
     Tags { "LightMode" = "UniversalForward" }
     Blend SrcAlpha OneMinusSrcAlpha
