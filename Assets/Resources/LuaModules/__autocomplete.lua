@@ -75,18 +75,54 @@ function App:Error(message) end
 function App:SetFont(fontData) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
----@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
+---@param filename string The filename for the color snapshot and base name for optional sidecars. Directory separators, rooted paths, and parent-directory traversal are rejected
 ---@param width number Image width
 ---@param height number Image height
 ---@param superSampling? number The supersampling strength to apply (between 0.125 and 4.0)
----@param renderDepth? boolean If true then render the depth buffer instead of the image
----@param removeBackground? boolean If true then render the image with a transparent background
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground) end
+---@param renderDepth? boolean If true, also save a depth map with the suffix _depth.png
+---@param removeBackground? boolean If true then render with a transparent background
+---@param renderNormals? boolean If true, also save a normals map with the suffix _normals.png
+---@param includePostProcessing? boolean If true then include capture post-processing. If omitted, uses App:PostProcessing state
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals, includePostProcessing) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
 ---@param width? number The width of the image
 function App:Take360Snapshot(tr, filename, width) end
+
+
+
+---@class Bounds
+---@field center Vector3 | number[] The bounds center
+---@field size Vector3 | number[] The bounds full size
+---@field extents Vector3 | number[] Half of the bounds size
+---@field min Vector3 | number[] The minimum corner of the bounds
+---@field max Vector3 | number[] The maximum corner of the bounds
+---@field radius number The radius of the smallest sphere centered on this bounds that contains all corners
+---@field longestSide number The longest side of the bounds
+---@field shortestSide number The shortest side of the bounds
+Bounds = {}
+---@param center Vector3 The center of the bounds
+---@param size Vector3 The full size of the bounds
+---@return Bounds # The new bounds
+function Bounds:New(center, size) end
+
+---@param min Vector3 The minimum corner of the bounds
+---@param max Vector3 The maximum corner of the bounds
+---@return Bounds # The new bounds
+function Bounds:FromMinMax(min, max) end
+
+---@param path Path The path to measure
+---@return Bounds # The calculated bounds
+function Bounds:FromPath(path) end
+
+---@param paths PathList The paths to measure
+---@return Bounds # The calculated bounds
+function Bounds:FromPaths(paths) end
+
+---@param point Vector3 The point to test
+---@return boolean # True if the point is inside the bounds
+function Bounds:Contains(point) end
 
 
 
@@ -181,6 +217,12 @@ function Brush:GetShaderVectorParameters(type) end
 ---@field position Vector3 | number[] The 3D position of the Camera Path (usually but not always its first position knot)
 ---@field rotation Rotation | number[] The 3D orientation of the Brush Camera Path
 ---@field scale number The scale of the camera path
+---@field knots CameraPathKnotList | CameraPathKnot[] All knots on this camera path
+---@field positionKnots CameraPathKnotList | CameraPathKnot[] The position knots on this camera path
+---@field rotationKnots CameraPathKnotList | CameraPathKnot[] The rotation knots on this camera path
+---@field speedKnots CameraPathKnotList | CameraPathKnot[] The speed knots on this camera path
+---@field fovKnots CameraPathKnotList | CameraPathKnot[] The field-of-view knots on this camera path
+---@field bounds Bounds The sampled axis-aligned bounds that contain this camera path
 CameraPath = {}
 
 function CameraPath:RenderActivePath() end
@@ -206,9 +248,18 @@ function CameraPath:New() end
 ---@return CameraPath # A new CameraPath
 function CameraPath:FromPath(path, looped) end
 
+---@param path Path The Path to convert
+---@param looped boolean Whether the resulting CameraPath should loop
+---@return CameraPath # A new CameraPath
+function CameraPath:FromPathWithRotations(path, looped) end
+
 ---@param step number The time step is use for each sample
 ---@return Path # The new Path
 function CameraPath:AsPath(step) end
+
+---@param step? number The time step to use for each sample
+---@return Bounds # The calculated bounds
+function CameraPath:GetBounds(step) end
 
 
 ---@return CameraPath # The copy of the specied CameraPath
@@ -270,15 +321,51 @@ function CameraPath:RecordActivePath() end
 
 ---@param time number The time at which to sample the camera path
 ---@param loop? boolean Determines whether the camera path should loop
----@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop
+---@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop)
 ---@return Transform # The sampled transform of the camera at the specified time
 function CameraPath:Sample(time, loop, pingpong) end
+
+---@param time number The time at which to sample the camera path
+---@param loop? boolean Determines whether the camera path should loop
+---@param pingpong? boolean Determines whether the camera path should pingpong (reverse direction every loop)
+---@return CameraPathSample # The sampled camera path data
+function CameraPath:SampleFull(time, loop, pingpong) end
+
+---@param step number The time step to use for each sample
+---@return StrokeList # The strokes that were created
+function CameraPath:Draw(step) end
+
+---@param step number The time step to use for each sample
+---@param brushType string The brush name or guid to use
+---@param brushSize number The brush size to use
+---@param color Color The brush color to use
+---@param smoothing? number The amount of smoothing to apply
+---@return StrokeList # The strokes that were created
+function CameraPath:DrawWithBrush(step, brushType, brushSize, color, smoothing) end
 
 ---@param tolerance number The tolerance used for simplification
 ---@param smoothing number The smoothing factor used for simplification
 ---@return CameraPath # A new simplified Camera Path
 function CameraPath:Simplify(tolerance, smoothing) end
 
+
+
+---@class CameraPathKnot
+---@field type string The knot type: Position, Rotation, Speed, Fov, or Invalid
+---@field transform Transform The knot's transform
+---@field position Vector3 | number[] The knot's position
+---@field rotation Rotation | number[] The knot's rotation
+---@field pathT number The knot's time along the camera path
+---@field tangent number Position-knot tangent magnitude. Returns 0 for non-position knots
+---@field speed number Speed-knot camera speed. Returns the sampled path speed for non-speed knots
+---@field fov number FOV-knot camera field of view. Returns the sampled path FOV for non-FOV knots
+CameraPathKnot = {}
+
+
+---@class CameraPathKnotList
+---@field last CameraPathKnot Returns the last knot
+---@field count number The number of knots
+CameraPathKnotList = {}
 
 
 ---@class CameraPathList
@@ -295,6 +382,17 @@ function CameraPathList:HideAll() end
 ---@param active boolean A boolean value indicating whether to preview the active path or not
 function CameraPathList:PreviewActivePath(active) end
 
+
+
+---@class CameraPathSample
+---@field time number The time used to sample the camera path
+---@field transform Transform The sampled transform
+---@field position Vector3 | number[] The sampled position
+---@field rotation Rotation | number[] The sampled rotation
+---@field speed number The sampled camera speed
+---@field fov number The sampled camera field of view
+---@field pathRatio number The sampled position along the path as a ratio from 0 to 1
+CameraPathSample = {}
 
 
 ---@class Color
@@ -1154,6 +1252,7 @@ ModelList = {}
 ---@class Path
 ---@field count number Returns the number of points in this path
 ---@field last Transform Returns the last point in this path
+---@field bounds Bounds The axis-aligned bounds that contain this path
 Path = {}
 
 ---@return Path # 
@@ -1180,7 +1279,17 @@ function Path:GetNormal(index) end
 function Path:GetTangent(index) end
 
 
+---@return StrokeList # The strokes that were created
 function Path:Draw() end
+
+---@param brushType string The brush name or guid to use
+---@param brushSize number The brush size to use
+---@param color Color The brush color to use
+---@param smoothing? number The amount of smoothing to apply
+---@param layer? Layer The layer to draw on. Defaults to the active layer
+---@param group? Group The group to assign the new strokes to
+---@return StrokeList # The strokes that were created
+function Path:DrawWithBrush(brushType, brushSize, color, smoothing, layer, group) end
 
 ---@param transform Transform The transform to be inserted at the end of the path
 function Path:Insert(transform) end
@@ -1238,6 +1347,14 @@ function Path:FindMaximumZ() end
 ---@param size? number The size of the cube to fit the path into
 function Path:Normalize(size) end
 
+---@param targetBounds Bounds The bounds to fit inside
+---@param keepAspect? boolean If true, scale uniformly so the path keeps its proportions
+function Path:FitInside(targetBounds, keepAspect) end
+
+---@param center Vector3 The sphere center
+---@param radius number The sphere radius
+function Path:FitInsideSphere(center, radius) end
+
 ---@param spacing number The space between points in the new path
 function Path:SampleByDistance(spacing) end
 
@@ -1261,6 +1378,7 @@ function Path:Hermite(startTransform, endTransform, startTangent, endTangent, re
 ---@class PathList
 ---@field count number Gets the number of paths in the PathList
 ---@field pointCount number Gets the number of points in all paths in the PathList
+---@field bounds Bounds The axis-aligned bounds that contain all paths in this PathList
 PathList = {}
 
 ---@return PathList # 
@@ -1271,7 +1389,17 @@ function PathList:New() end
 function PathList:New(pathList) end
 
 
+---@return StrokeList # The strokes that were created
 function PathList:Draw() end
+
+---@param brushType string The brush name or guid to use
+---@param brushSize number The brush size to use
+---@param color Color The brush color to use
+---@param smoothing? number The amount of smoothing to apply
+---@param layer? Layer The layer to draw on. Defaults to the active layer
+---@param group? Group The group to assign the new strokes to
+---@return StrokeList # The strokes that were created
+function PathList:DrawWithBrush(brushType, brushSize, color, smoothing, layer, group) end
 
 ---@param text string Input text to generate a path.
 ---@return PathList # 
@@ -1312,6 +1440,14 @@ function PathList:Center() end
 
 ---@param size? number The size of the cube to fit inside
 function PathList:Normalize(size) end
+
+---@param targetBounds Bounds The bounds to fit inside
+---@param keepAspect? boolean If true, scale uniformly so the paths keep their proportions
+function PathList:FitInside(targetBounds, keepAspect) end
+
+---@param center Vector3 The sphere center
+---@param radius number The sphere radius
+function PathList:FitInsideSphere(center, radius) end
 
 ---@param spacing number The distance between each new point
 function PathList:SampleByDistance(spacing) end
