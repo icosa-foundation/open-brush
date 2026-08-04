@@ -152,6 +152,8 @@ namespace TiltBrush
                 Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
                 TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping),
                 SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping),
+                Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping),
+                GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping),
                 Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
                 GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping),
                 Palette = CustomColorPaletteStorage.m_Instance.GetPaletteForSaving(),

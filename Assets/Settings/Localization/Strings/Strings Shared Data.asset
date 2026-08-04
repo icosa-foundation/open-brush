@@ -3675,10 +3675,40 @@ MonoBehaviour:
     m_Key: QUILL_PANEL_NO_IMM_FILES
     m_Metadata:
       m_Items: []
+  - m_Id: 475814063085543424
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTION_PORTAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Key: CAPTURE_TRAY_SPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Key: CAPTURE_TRAY_ELLIPSOID_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Key: CAPTURE_TRAY_HEMISPHERE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Key: CAPTURE_TRAY_BOX_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Key: LABS_PANEL_SPLAT_CAPTURE_BUTTON_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   - m_Id: 520669196650635264
     m_Key: POPUP_ICOSA_KEYBOARD_LOGIN_INSTRUCTIONS
     m_Metadata:
       m_Items: []
+  - m_Id: 522174996334338048
+    m_Key: MULTICAM_TOOL_360_TEXT
   - m_Id: 521000000000000000
     m_Key: MP_MANUAL_COLOCATION_ALIGN
     m_Metadata:
@@ -3769,6 +3799,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 521000000000000022
     m_Key: MP_MANUAL_COLOCATION_WARNING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTIONEXTRA_PORTAL
     m_Metadata:
       m_Items: []
   m_Metadata:

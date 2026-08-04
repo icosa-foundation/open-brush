@@ -23,7 +23,7 @@ Properties {
 
 SubShader {
   Cull Off
-  Tags{ "DisableBatching" = "True" }
+  Tags{ "DisableBatching" = "True" "RenderType" = "Opaque" }
 
   CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON

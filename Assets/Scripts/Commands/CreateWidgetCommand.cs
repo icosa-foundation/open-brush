@@ -98,6 +98,11 @@ namespace TiltBrush
                 {
                     // Widget type specific initialization.
                     case StencilWidget:
+                    case PortalSphereWidget:
+                    case PortalBoxWidget:
+                    case GaussianCaptureBoxWidget:
+                    case GaussianCaptureEllipsoidWidget:
+                    case GaussianCaptureSphereWidget:
                     case LightWidget:
                     case ImageWidget:
                     case TextWidget:
