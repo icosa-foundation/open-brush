@@ -186,11 +186,29 @@ namespace TiltBrush
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            float fRadius = Mathf.Abs(GetSignedWidgetSize()) * 0.5f * Coords.CanvasPose.scale;
-            float baseScore = (1.0f - (transform.position - vControllerPos).magnitude / fRadius);
-            // don't try to scale if invalid; scaling by zero will make it look valid
-            if (baseScore < 0) { return baseScore; }
-            return baseScore * Mathf.Pow(1 - m_Size / m_MaxSize_CS, 2);
+            // Keep the stand-in collider as a cheap broad-phase test, but use the signed
+            // distance field itself to decide whether the controller is inside the guide.
+            if (m_Collider != null && !m_Collider.bounds.Contains(vControllerPos))
+            {
+                return -1.0f;
+            }
+
+            float signedDistance = m_SdfManager.GetDistanceToSurface(vControllerPos);
+            if (signedDistance > 0.0f)
+            {
+                return -1.0f;
+            }
+
+            float characteristicRadius = m_Collider != null
+                ? m_Collider.bounds.extents.Max()
+                : Mathf.Abs(GetSignedWidgetSize()) * 0.5f * Coords.CanvasPose.scale;
+            if (characteristicRadius <= Mathf.Epsilon)
+            {
+                return -1.0f;
+            }
+
+            float penetrationScore = Mathf.Clamp01(-signedDistance / characteristicRadius);
+            return penetrationScore * Mathf.Pow(1 - m_Size / m_MaxSize_CS, 2);
         }
 
         protected override Axis GetInferredManipulationAxis(
