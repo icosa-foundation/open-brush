@@ -1046,7 +1046,7 @@ namespace TiltBrush
 
                 // Using the 0 index of m_StencilContactInfos as a shortcut.
                 m_StencilContactInfos[0].widget = m_ActiveStencil;
-                FindClosestPointOnWidgetSurface(pos, rot, ref m_StencilContactInfos[0]);
+                FindClosestPointOnWidgetSurface(pos, ref m_StencilContactInfos[0]);
 
                 m_ActiveStencil.SetInUse(true);
                 pos = m_StencilContactInfos[0].pos;
@@ -1087,7 +1087,7 @@ namespace TiltBrush
 
                     m_StencilContactInfos[sIndex].widget = sw;
 
-                    FindClosestPointOnWidgetSurface(samplePos, rot, ref m_StencilContactInfos[sIndex]);
+                    FindClosestPointOnWidgetSurface(samplePos, ref m_StencilContactInfos[sIndex]);
 
                     // Find out how far we are from this point and save it as a score.
                     float distToSurfactPoint = (m_StencilContactInfos[sIndex].pos - samplePos).magnitude;
@@ -1147,16 +1147,9 @@ namespace TiltBrush
             return collider.Raycast(rRay, out rHitInfo, fDist);
         }
 
-        void FindClosestPointOnWidgetSurface(Vector3 pos, Quaternion rot, ref StencilContactInfo info)
+        void FindClosestPointOnWidgetSurface(Vector3 pos, ref StencilContactInfo info)
         {
-            if (info.widget.Type == StencilType.SDF)
-            {
-                info.widget.RaycastToNearest(pos, rot, out info.pos, out info.normal);
-            }
-            else
-            {
-                info.widget.FindClosestPointOnSurface(pos, out info.pos, out info.normal);
-            }
+            info.widget.FindClosestPointOnSurface(pos, out info.pos, out info.normal);
         }
 
         public bool ShouldUpdateCollisions()
