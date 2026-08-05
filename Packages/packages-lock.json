@@ -6,15 +6,6 @@
       "source": "embedded",
       "dependencies": {}
     },
-    "com.immersive-foundation.imm-stroke-reader": {
-      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
-      },
-      "hash": "ae80872e65ee8e4f1f47375976891675fd34338a"
-    },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
       "depth": 0,
@@ -31,6 +22,15 @@
         "com.unity.test-framework": "1.1.31"
       },
       "hash": "bd72241ab91c664176091789c9408d676783abec"
+    },
+    "com.immersive-foundation.imm-stroke-reader": {
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+      },
+      "hash": "ae80872e65ee8e4f1f47375976891675fd34338a"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
@@ -397,13 +397,6 @@
         "com.unity.xr.legacyinputhelpers": "2.1.2"
       },
       "url": "https://packages.unity.com"
-    },
-    "com.valvesoftware.steamaudio": {
-      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
     },
     "com.valvesoftware.openxr.utils": {
       "version": "https://github.com/ValveSoftware/Unity.git?path=/com.valvesoftware.openxr.utils",
