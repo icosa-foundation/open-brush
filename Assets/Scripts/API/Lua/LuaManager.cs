@@ -935,6 +935,7 @@ namespace TiltBrush
             RegisterApiClass(script, "GroupList", typeof(GroupListApiWrapper));
             RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
             RegisterApiClass(script, "GuideList", typeof(GuideListApiWrapper));
+            RegisterApiClass(script, "SDFPrimitive", typeof(SdfPrimitiveApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
             RegisterApiClass(script, "Image", typeof(ImageApiWrapper));
             RegisterApiClass(script, "ImageList", typeof(ImageListApiWrapper));

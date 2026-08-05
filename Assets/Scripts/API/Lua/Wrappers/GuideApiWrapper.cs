@@ -120,6 +120,17 @@ namespace TiltBrush
         [LuaDocsReturnValue("A new SDF guide")]
         public static GuideApiWrapper NewSDF(TrTransform transform) => _Add(StencilType.SDF, transform);
 
+        [LuaDocsDescription("Creates an empty SDF guide whose primitives can be defined at runtime")]
+        [LuaDocsExample("myGuide = Guide:NewCustomSDF(Transform:New(0, 5, 2))")]
+        [LuaDocsParameter("transform", "The transform of the Guide Widget")]
+        [LuaDocsReturnValue("A new empty, editable SDF guide")]
+        public static GuideApiWrapper NewCustomSDF(TrTransform transform)
+        {
+            GuideApiWrapper guide = _Add(StencilType.SDF, transform);
+            guide.GetSdfStencil().ClearPrimitives();
+            return guide;
+        }
+
         [LuaDocsDescription(@"Creates a new custom guide from a 3d model. Note that custom guides have to be convex so your model will be ""wrapped"" as a convex hull")]
         [LuaDocsExample("myGuide = Guide:NewCustom(Transform:New(0, 5, 2), myModel)")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
@@ -174,6 +185,53 @@ namespace TiltBrush
         public float SignedDistance(Vector3 point)
         {
             return ApiMethods.GetSignedDistanceToGuide(_StencilWidget, point);
+        }
+
+        [LuaDocsDescription("The number of primitives in this SDF guide")]
+        public int primitiveCount => GetSdfStencil().PrimitiveCount;
+
+        [LuaDocsDescription("Adds a primitive to this SDF guide")]
+        [LuaDocsExample("primitive = myGuide:AddPrimitive(\"sphere\", Vector4:New(1, 0, 0, 0), Transform:New(0, 0, 0), \"union\", 0)")]
+        [LuaDocsParameter("primitiveType", "sphere, torus, cuboid, boxframe, or cylinder")]
+        [LuaDocsParameter("geometry", "Primitive dimensions: sphere radius; torus radii; cuboid half-extents; boxframe half-extents and thickness; or cylinder radius and half-height")]
+        [LuaDocsParameter("transform", "The primitive transform relative to the guide")]
+        [LuaDocsParameter("operation", "union, subtract, or intersect")]
+        [LuaDocsParameter("blend", "The non-negative smoothing distance for the operation")]
+        [LuaDocsReturnValue("The new editable SDF primitive")]
+        public SdfPrimitiveApiWrapper AddPrimitive(
+            string primitiveType, Vector4ApiWrapper geometry, TrTransform transform,
+            string operation, float blend)
+        {
+            SdfStencil stencil = GetSdfStencil();
+            var primitive = stencil.AddPrimitive(
+                SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4, transform,
+                SdfStencil.ParseOperation(operation), blend);
+            return new SdfPrimitiveApiWrapper(stencil, primitive);
+        }
+
+        [LuaDocsDescription("Returns a primitive from this SDF guide; negative indexes count from the end")]
+        [LuaDocsParameter("index", "The zero-based primitive index")]
+        [LuaDocsReturnValue("The editable SDF primitive")]
+        public SdfPrimitiveApiWrapper GetPrimitive(int index)
+        {
+            SdfStencil stencil = GetSdfStencil();
+            return new SdfPrimitiveApiWrapper(stencil, stencil.GetPrimitive(index));
+        }
+
+        [LuaDocsDescription("Removes every primitive from this SDF guide")]
+        public void ClearPrimitives()
+        {
+            GetSdfStencil().ClearPrimitives();
+        }
+
+        private SdfStencil GetSdfStencil()
+        {
+            if (!(_StencilWidget is SdfStencil stencil))
+            {
+                throw new System.InvalidOperationException(
+                    "SDF primitives are only available on SDF guides.");
+            }
+            return stencil;
         }
 
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)

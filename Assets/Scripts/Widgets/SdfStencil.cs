@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using IsoMesh;
 using UnityEngine;
 
@@ -22,6 +23,8 @@ namespace TiltBrush
     public class SdfStencil : StencilWidget
     {
         private SDFGroup m_SdfManager;
+
+        public int PrimitiveCount => GetPrimitives().Count;
 
         public override Vector3 Extents
         {
@@ -84,6 +87,234 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_SdfManager.transform, m_BatchId);
             RestoreGameObjectLayer(App.Scene.MainCanvas.gameObject.layer);
             UpdateMaterialScale();
+        }
+
+        public static SDFPrimitiveType ParsePrimitiveType(string type)
+        {
+            switch (type?.Trim().ToLowerInvariant())
+            {
+                case "sphere": return SDFPrimitiveType.Sphere;
+                case "torus": return SDFPrimitiveType.Torus;
+                case "cuboid":
+                case "box": return SDFPrimitiveType.Cuboid;
+                case "boxframe":
+                case "frame": return SDFPrimitiveType.BoxFrame;
+                case "cylinder": return SDFPrimitiveType.Cylinder;
+                default:
+                    throw new ArgumentException(
+                        $"Unknown SDF primitive type '{type}'. Expected sphere, torus, cuboid, boxframe, or cylinder.",
+                        nameof(type));
+            }
+        }
+
+        public static string PrimitiveTypeName(SDFPrimitiveType type)
+        {
+            return type.ToString().ToLowerInvariant();
+        }
+
+        public static SDFCombineType ParseOperation(string operation)
+        {
+            switch (operation?.Trim().ToLowerInvariant())
+            {
+                case "union":
+                case "add": return SDFCombineType.SmoothUnion;
+                case "subtract": return SDFCombineType.SmoothSubtract;
+                case "intersect": return SDFCombineType.SmoothIntersect;
+                default:
+                    throw new ArgumentException(
+                        $"Unknown SDF operation '{operation}'. Expected union, subtract, or intersect.",
+                        nameof(operation));
+            }
+        }
+
+        public static string OperationName(SDFCombineType operation)
+        {
+            switch (operation)
+            {
+                case SDFCombineType.SmoothUnion: return "union";
+                case SDFCombineType.SmoothSubtract: return "subtract";
+                case SDFCombineType.SmoothIntersect: return "intersect";
+                default: throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
+            }
+        }
+
+        public IReadOnlyList<SDFPrimitive> GetPrimitives()
+        {
+            return m_SdfManager.GetComponentsInChildren<SDFPrimitive>(true)
+                .OrderBy(primitive => primitive.transform.GetSiblingIndex())
+                .ToList();
+        }
+
+        public SDFPrimitive GetPrimitive(int index)
+        {
+            IReadOnlyList<SDFPrimitive> primitives = GetPrimitives();
+            if (index < 0)
+            {
+                index += primitives.Count;
+            }
+            if (index < 0 || index >= primitives.Count)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(index), index, $"SDF primitive index must be between 0 and {primitives.Count - 1}.");
+            }
+            return primitives[index];
+        }
+
+        public SDFPrimitive AddPrimitive(
+            SDFPrimitiveType type, Vector4 geometry, TrTransform localTransform,
+            SDFCombineType operation, float blend)
+        {
+            if (localTransform.scale <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(localTransform), localTransform.scale,
+                    "An SDF primitive transform must have a positive scale.");
+            }
+            if (blend < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blend), blend, "SDF blend cannot be negative.");
+            }
+            if (PrimitiveCount == 0 && operation != SDFCombineType.SmoothUnion)
+            {
+                throw new ArgumentException(
+                    "The first SDF primitive must use the union operation.", nameof(operation));
+            }
+
+            var primitiveObject = new GameObject(PrimitiveTypeName(type));
+            primitiveObject.SetActive(false);
+            primitiveObject.transform.SetParent(m_SdfManager.transform, false);
+            ApplyLocalTransform(primitiveObject.transform, localTransform);
+
+            SDFPrimitive primitive = primitiveObject.AddComponent<SDFPrimitive>();
+            primitive.Configure(type, geometry, operation, blend);
+            primitiveObject.SetActive(true);
+            return primitive;
+        }
+
+        public void SetPrimitiveGeometry(
+            SDFPrimitive primitive, SDFPrimitiveType type, Vector4 geometry)
+        {
+            ValidatePrimitive(primitive);
+            primitive.SetType(type);
+            primitive.SetData(geometry);
+            primitive.gameObject.name = PrimitiveTypeName(type);
+            RefreshSdf();
+        }
+
+        public void SetPrimitiveTransform(SDFPrimitive primitive, TrTransform localTransform)
+        {
+            ValidatePrimitive(primitive);
+            if (localTransform.scale <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(localTransform), localTransform.scale,
+                    "An SDF primitive transform must have a positive scale.");
+            }
+            ApplyLocalTransform(primitive.transform, localTransform);
+            RefreshSdf();
+        }
+
+        public void SetPrimitiveOperation(SDFPrimitive primitive, SDFCombineType operation)
+        {
+            ValidatePrimitive(primitive);
+            if (primitive == GetPrimitive(0) && operation != SDFCombineType.SmoothUnion)
+            {
+                throw new ArgumentException(
+                    "The first SDF primitive must use the union operation.", nameof(operation));
+            }
+            primitive.SetOperation(operation);
+            RefreshSdf();
+        }
+
+        public void SetPrimitiveBlend(SDFPrimitive primitive, float blend)
+        {
+            ValidatePrimitive(primitive);
+            if (blend < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blend), blend, "SDF blend cannot be negative.");
+            }
+            primitive.SetSmoothing(blend);
+            RefreshSdf();
+        }
+
+        public void UpdatePrimitive(
+            SDFPrimitive primitive, SDFPrimitiveType? type = null, Vector4? geometry = null,
+            TrTransform? localTransform = null, SDFCombineType? operation = null,
+            float? blend = null)
+        {
+            ValidatePrimitive(primitive);
+            SDFCombineType updatedOperation = operation ?? primitive.Operation;
+            float updatedBlend = blend ?? primitive.Smoothing;
+            if (primitive == GetPrimitive(0) && updatedOperation != SDFCombineType.SmoothUnion)
+            {
+                throw new ArgumentException("The first SDF primitive must use the union operation.");
+            }
+            if (updatedBlend < 0f)
+            {
+                throw new ArgumentOutOfRangeException(nameof(blend), updatedBlend, "SDF blend cannot be negative.");
+            }
+            if (localTransform.HasValue && localTransform.Value.scale <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(localTransform), localTransform.Value.scale,
+                    "An SDF primitive transform must have a positive scale.");
+            }
+
+            SDFPrimitiveType updatedType = type ?? primitive.Type;
+            primitive.Configure(
+                updatedType, geometry ?? primitive.Data, updatedOperation, updatedBlend,
+                primitive.Flip);
+            primitive.gameObject.name = PrimitiveTypeName(updatedType);
+            if (localTransform.HasValue)
+            {
+                ApplyLocalTransform(primitive.transform, localTransform.Value);
+            }
+            RefreshSdf();
+        }
+
+        public void RemovePrimitive(SDFPrimitive primitive)
+        {
+            ValidatePrimitive(primitive);
+            primitive.gameObject.SetActive(false);
+            primitive.transform.SetParent(null, false);
+            Destroy(primitive.gameObject);
+
+            IReadOnlyList<SDFPrimitive> remaining = GetPrimitives();
+            if (remaining.Count > 0 && remaining[0].Operation != SDFCombineType.SmoothUnion)
+            {
+                remaining[0].SetOperation(SDFCombineType.SmoothUnion);
+                RefreshSdf();
+            }
+        }
+
+        public void ClearPrimitives()
+        {
+            foreach (SDFPrimitive primitive in GetPrimitives())
+            {
+                primitive.gameObject.SetActive(false);
+                primitive.transform.SetParent(null, false);
+                Destroy(primitive.gameObject);
+            }
+        }
+
+        public void RefreshSdf()
+        {
+            m_SdfManager.RequestUpdate(onlySendBufferOnChange: false);
+        }
+
+        private void ValidatePrimitive(SDFPrimitive primitive)
+        {
+            if (primitive == null || primitive.Group != m_SdfManager)
+            {
+                throw new ArgumentException("The primitive does not belong to this SDF guide.", nameof(primitive));
+            }
+        }
+
+        private static void ApplyLocalTransform(Transform target, TrTransform localTransform)
+        {
+            target.localPosition = localTransform.translation;
+            target.localRotation = localTransform.rotation;
+            target.localScale = Vector3.one * localTransform.scale;
         }
 
         protected override void OnShow()
