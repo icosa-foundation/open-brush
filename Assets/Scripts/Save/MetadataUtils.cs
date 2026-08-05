@@ -233,14 +233,20 @@ namespace TiltBrush
 
             return portals
                 .OrderBy(x => ByTranslation(x.GetSaveTransform()))
-                .Select(portal => new TiltPortal
+                .Select(portal =>
                 {
-                    ShapeType = portal.PortalShapeType,
-                    Transform = portal.GetSaveTransform(),
-                    Destination = portal.Destination,
-                    Pinned = portal.Pinned,
-                    GroupId = groupIdMapping.GetId(portal.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(portal.Canvas),
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(portal.Canvas);
+                    return new TiltPortal
+                    {
+                        ShapeType = portal.PortalShapeType,
+                        Transform = portal.GetSaveTransform(),
+                        Destination = portal.Destination,
+                        Pinned = portal.Pinned,
+                        GroupId = groupIdMapping.GetId(portal.Group),
+                        LayerId = layerId,
+                        FrameId = frameId,
+                    };
                 })
                 .ToArray();
         }
@@ -254,6 +260,8 @@ namespace TiltBrush
             var results = captures
                 .Select(widget =>
                 {
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                     if (widget is GaussianCaptureBoxWidget box)
                     {
                         return new TiltGaussianCapture
@@ -266,7 +274,8 @@ namespace TiltBrush
                             SubdivZ = box.SubdivZ,
                             Pinned = box.Pinned,
                             GroupId = groupIdMapping.GetId(box.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(box.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -281,7 +290,8 @@ namespace TiltBrush
                             ViewsPerRing = ellipsoid.ViewsPerRing,
                             Pinned = ellipsoid.Pinned,
                             GroupId = groupIdMapping.GetId(ellipsoid.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(ellipsoid.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -296,7 +306,8 @@ namespace TiltBrush
                             ViewsPerRing = dome.ViewsPerRing,
                             Pinned = dome.Pinned,
                             GroupId = groupIdMapping.GetId(dome.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(dome.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 

@@ -816,6 +816,7 @@ namespace TiltBrush
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
@@ -837,6 +838,7 @@ namespace TiltBrush
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
