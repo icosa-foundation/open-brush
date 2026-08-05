@@ -52,6 +52,38 @@ namespace TiltBrush
             sdfTransform.localPosition = Vector3.zero;
             sdfTransform.localRotation = Quaternion.identity;
             sdfTransform.localScale = Vector3.one;
+
+            RegisterGeneratedMeshRenderer();
+        }
+
+        private void RegisterGeneratedMeshRenderer()
+        {
+            SDFGroupMeshGenerator generator =
+                m_SdfManager.GetComponentInChildren<SDFGroupMeshGenerator>(true);
+            if (generator == null)
+            {
+                Debug.LogWarning(
+                    "SDFGuideSetup: SDF manager has no mesh generator", this);
+                return;
+            }
+
+            MeshRenderer generatedRenderer = generator.MeshRenderer;
+            MeshFilter generatedFilter = generatedRenderer.GetComponent<MeshFilter>();
+            if (generatedFilter == null)
+            {
+                Debug.LogWarning(
+                    "SDFGuideSetup: Generated renderer has no mesh filter", this);
+                return;
+            }
+
+            m_TintableMeshes = new Renderer[] { generatedRenderer };
+            m_HighlightMeshFilters = new MeshFilter[] { generatedFilter };
+
+            // The widget starts invisible; OnShow refreshes this using the current stencil state.
+            generatedRenderer.enabled = false;
+            HierarchyUtils.RecursivelySetMaterialBatchID(m_SdfManager.transform, m_BatchId);
+            RestoreGameObjectLayer(App.Scene.MainCanvas.gameObject.layer);
+            UpdateMaterialScale();
         }
 
         protected override void OnShow()
