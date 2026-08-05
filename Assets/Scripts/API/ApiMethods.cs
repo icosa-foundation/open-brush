@@ -1386,6 +1386,39 @@ namespace TiltBrush
             return Vector3ToJson(_GetActiveStencil(index).Extents).ToString(Formatting.None);
         }
 
+        [ApiEndpoint(
+            "guide.signeddistance",
+            "Returns the signed distance from a point to one guide; negative values are inside",
+            "0,0,1,0"
+        )]
+        public static string GetGuideSignedDistance(int index, Vector3 point)
+        {
+            return FloatToJson(GetSignedDistanceToGuide(_GetActiveStencil(index), point));
+        }
+
+        [ApiEndpoint(
+            "guides.signeddistance",
+            "Returns the signed distance from a point to the combined volume of all active guides",
+            "0,1,0"
+        )]
+        public static string GetActiveGuidesSignedDistance(Vector3 point)
+        {
+            return FloatToJson(GlobalStencilSdfCache.SignedDistance(point));
+        }
+
+        [ApiEndpoint(
+            "guides.nextsurfacepoint",
+            "Steps in a direction and projects the result onto the combined surface of all active guides",
+            "0,1,0,0.1,1,0,0"
+        )]
+        public static string GetActiveGuidesNextSurfacePoint(
+            Vector3 point, float stepDistance, Vector3 direction)
+        {
+            Vector3 surfacePoint = GlobalStencilSdfCache.NextPointOnSurface(
+                point, stepDistance, direction);
+            return Vector3ToJson(surfacePoint).ToString(Formatting.None);
+        }
+
         internal static void FindClosestPointOnGuide(
             StencilWidget guide, Vector3 point, out Vector3 surfacePosition,
             out Vector3 surfaceNormal)
@@ -1397,9 +1430,35 @@ namespace TiltBrush
             }
         }
 
+        internal static float GetSignedDistanceToGuide(StencilWidget guide, Vector3 point)
+        {
+            return GlobalStencilSdfCache.SignedDistance(guide, point);
+        }
+
+        internal static float GetSignedDistanceToGuides(
+            IEnumerable<StencilWidget> guides, Vector3 point)
+        {
+            return GlobalStencilSdfCache.SignedDistance(guides, point);
+        }
+
+        internal static Vector3 GetNextPointOnGuideSurfaces(
+            IEnumerable<StencilWidget> guides, Vector3 point,
+            float stepDistance, Vector3 direction)
+        {
+            return GlobalStencilSdfCache.NextPointOnSurface(
+                guides, point, stepDistance, direction);
+        }
+
         private static JArray Vector3ToJson(Vector3 value)
         {
             return new JArray(value.x, value.y, value.z);
+        }
+
+        private static string FloatToJson(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value)
+                ? "null"
+                : new JValue(value).ToString(Formatting.None);
         }
 
         [ApiEndpoint(

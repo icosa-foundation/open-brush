@@ -56,78 +56,129 @@ namespace TiltBrush
         /// </summary>
         public static float SignedDistance(Vector3 worldPos)
         {
+            return TryFindClosestActiveStencil(worldPos, out _, out float distance)
+                ? distance
+                : float.PositiveInfinity;
+        }
+
+        /// <summary>
+        /// Returns the signed distance from the given world position to one stencil.
+        /// Negative values are inside the stencil, positive outside.
+        /// </summary>
+        public static float SignedDistance(StencilWidget stencil, Vector3 worldPos)
+        {
+            return stencil == null
+                ? float.PositiveInfinity
+                : DistanceToStencil(stencil, worldPos);
+        }
+
+        /// <summary>
+        /// Returns the minimum signed distance from the given world position to the supplied stencils.
+        /// Negative values are inside their combined volume, positive outside.
+        /// </summary>
+        public static float SignedDistance(IEnumerable<StencilWidget> stencils, Vector3 worldPos)
+        {
+            return TryFindClosestStencil(stencils, worldPos, out _, out float distance)
+                ? distance
+                : float.PositiveInfinity;
+        }
+
+        /// <summary>
+        /// Steps along the combined isosurface from a starting point, moving in the given direction
+        /// at the specified velocity. The candidate step is projected onto the closest contributing
+        /// stencil.
+        /// </summary>
+        public static Vector3 NextPointOnSurface(
+            Vector3 point, float stepDistance, Vector3 direction)
+        {
+            Vector3 candidate = point + direction.normalized * stepDistance;
+            if (!TryFindClosestActiveStencil(candidate, out StencilWidget stencil, out _))
+            {
+                return point;
+            }
+
+            return ProjectOntoStencil(stencil, candidate, point);
+        }
+
+        /// <summary>
+        /// Steps along the combined isosurface of the supplied stencils.
+        /// </summary>
+        public static Vector3 NextPointOnSurface(
+            IEnumerable<StencilWidget> stencils, Vector3 point,
+            float stepDistance, Vector3 direction)
+        {
+            Vector3 candidate = point + direction.normalized * stepDistance;
+            if (!TryFindClosestStencil(stencils, candidate, out StencilWidget stencil, out _))
+            {
+                return point;
+            }
+
+            return ProjectOntoStencil(stencil, candidate, point);
+        }
+
+        static bool TryFindClosestActiveStencil(
+            Vector3 worldPos, out StencilWidget closestStencil, out float closestDistance)
+        {
+            closestStencil = null;
+            closestDistance = float.PositiveInfinity;
+
             var widgetManager = WidgetManager.m_Instance;
             if (widgetManager == null ||
                 (widgetManager.StencilsDisabled &&
                  !App.UserConfig.Flags.GuideToggleVisiblityOnly))
             {
-                return float.PositiveInfinity;
+                return false;
             }
 
             if (sm_dirty) { RebuildCache(); }
-            float min = float.PositiveInfinity;
-            foreach (var c in sm_cache)
+            foreach (var cached in sm_cache)
             {
-                // Unity objects can compare equal to null after destruction while a stale
-                // managed reference remains in the cache.
-                if (c.widget == null || !c.widget.gameObject.activeInHierarchy)
+                if (cached.widget == null || !cached.widget.gameObject.activeInHierarchy)
                 {
                     sm_dirty = true;
                     continue;
                 }
 
-                float d = DistanceToStencil(c.widget, worldPos);
-                if (d < min) { min = d; }
+                float distance = DistanceToStencil(cached.widget, worldPos);
+                if (distance < closestDistance)
+                {
+                    closestStencil = cached.widget;
+                    closestDistance = distance;
+                }
             }
-            return min;
+
+            return closestStencil != null && IsFinite(closestDistance);
         }
 
-        /// <summary>
-        /// Steps along the SDF isosurface from a starting point, moving in the given direction
-        /// at the specified velocity. The candidate step is projected back to the surface using
-        /// the field's gradient.
-        /// </summary>
-        public static Vector3 NextPointOnSurface(Vector3 point, float velocity, Vector3 direction, float epsilon = 0.01f)
+        static bool TryFindClosestStencil(
+            IEnumerable<StencilWidget> stencils, Vector3 worldPos,
+            out StencilWidget closestStencil, out float closestDistance)
         {
-            Vector3 candidate = point + direction.normalized * velocity;
-            float dist = SignedDistance(candidate);
-            if (float.IsNaN(dist) || float.IsInfinity(dist))
+            closestStencil = null;
+            closestDistance = float.PositiveInfinity;
+            if (stencils == null) { return false; }
+
+            foreach (StencilWidget stencil in stencils)
             {
-                return point;
+                if (stencil == null || !stencil.gameObject.activeInHierarchy) { continue; }
+
+                float distance = DistanceToStencil(stencil, worldPos);
+                if (distance < closestDistance)
+                {
+                    closestStencil = stencil;
+                    closestDistance = distance;
+                }
             }
 
-            Vector3 normal = EstimateNormal(candidate, epsilon);
-            if (normal.sqrMagnitude < 0.000001f)
-            {
-                return point;
-            }
-
-            return candidate - normal * dist;
+            return closestStencil != null && IsFinite(closestDistance);
         }
 
-        static Vector3 EstimateNormal(Vector3 p, float eps)
+        static Vector3 ProjectOntoStencil(
+            StencilWidget stencil, Vector3 candidate, Vector3 fallback)
         {
-            Vector3 x = new Vector3(eps, 0f, 0f);
-            Vector3 y = new Vector3(0f, eps, 0f);
-            Vector3 z = new Vector3(0f, 0f, eps);
-            float x1 = SignedDistance(p + x);
-            float x2 = SignedDistance(p - x);
-            float y1 = SignedDistance(p + y);
-            float y2 = SignedDistance(p - y);
-            float z1 = SignedDistance(p + z);
-            float z2 = SignedDistance(p - z);
-            if (!IsFinite(x1) || !IsFinite(x2) ||
-                !IsFinite(y1) || !IsFinite(y2) ||
-                !IsFinite(z1) || !IsFinite(z2))
-            {
-                return Vector3.zero;
-            }
-
-            float dx = x1 - x2;
-            float dy = y1 - y2;
-            float dz = z1 - z2;
-            Vector3 grad = new Vector3(dx, dy, dz);
-            return IsFinite(grad) ? grad.normalized : Vector3.zero;
+            stencil.FindClosestPointOnSurface(
+                candidate, out Vector3 surfacePosition, out _);
+            return IsFinite(surfacePosition) ? surfacePosition : fallback;
         }
 
         static bool IsFinite(float value)

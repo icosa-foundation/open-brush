@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
+using UnityEngine;
+
 namespace TiltBrush
 {
     [LuaDocsDescription("The list of Guides in the scene. (You don't instantiate this yourself. Access this via Sketch.guides)")]
@@ -38,6 +40,28 @@ namespace TiltBrush
 
         [LuaDocsDescription("The number of guides")]
         public int count => _Guides?.Count ?? 0;
+
+        [LuaDocsDescription("Returns the signed distance from a point to the combined volume of these guides; negative values are inside")]
+        [LuaDocsExample("distance = Sketch.guides:SignedDistance(Vector3:New(2, 3, 4))")]
+        [LuaDocsParameter("point", "The point to measure from")]
+        [LuaDocsReturnValue("The signed distance to the closest contributing guide, or positive infinity when the list is empty")]
+        public float SignedDistance(Vector3 point)
+        {
+            return ApiMethods.GetSignedDistanceToGuides(_Guides, point);
+        }
+
+        [LuaDocsDescription("Steps in a direction and projects the result onto the combined surface of these guides")]
+        [LuaDocsExample("nextPoint = Sketch.guides:NextPointOnSurface(point, 0.1, Vector3.forward)")]
+        [LuaDocsParameter("point", "The current point on or near the guide surface")]
+        [LuaDocsParameter("stepDistance", "The distance to step before projecting back to the surface")]
+        [LuaDocsParameter("direction", "The direction in which to step")]
+        [LuaDocsReturnValue("The next point on the combined guide surface, or the input point when the list is empty")]
+        public Vector3 NextPointOnSurface(
+            Vector3 point, float stepDistance, Vector3 direction)
+        {
+            return ApiMethods.GetNextPointOnGuideSurfaces(
+                _Guides, point, stepDistance, direction);
+        }
 
     }
 }

@@ -167,6 +167,15 @@ namespace TiltBrush
             return new TransformApiWrapper(closestPoint, rotation);
         }
 
+        [LuaDocsDescription("Returns the signed distance from a point to this guide; negative values are inside")]
+        [LuaDocsExample("distance = myGuide:SignedDistance(Vector3:New(2, 3, 4))")]
+        [LuaDocsParameter("point", "The point to measure from")]
+        [LuaDocsReturnValue("The signed distance to the guide surface")]
+        public float SignedDistance(Vector3 point)
+        {
+            return ApiMethods.GetSignedDistanceToGuide(_StencilWidget, point);
+        }
+
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(type), tr, forceTransform: true);
