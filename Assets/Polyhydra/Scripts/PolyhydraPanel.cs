@@ -948,6 +948,8 @@ namespace TiltBrush
             var recipe = ewidget.m_PolyRecipe.CloneWithUnitGeometryBounds();
             var edef = new EditableModelDefinition(recipe);
             LoadFromDefinition(edef);
+            CurrentPresetPath = "";
+            EnablePresetSaveButtons(popupButtonEnabled: false);
         }
 
         public void LoadFromDefinition(EditableModelDefinition emd)
