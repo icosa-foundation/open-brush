@@ -1140,6 +1140,15 @@ namespace TiltBrush
             return stencilWasUsed;
         }
 
+        public void ClearActiveStencil()
+        {
+            if (m_ActiveStencil != null)
+            {
+                m_ActiveStencil.SetInUse(false);
+                m_ActiveStencil = null;
+            }
+        }
+
         bool FindClosestPointOnCollider(
             Ray rRay, Collider collider, out RaycastHit rHitInfo, float fDist)
         {

@@ -1275,7 +1275,7 @@ namespace TiltBrush
         public static void ActivatePointerScript(string scriptName)
         {
             LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.PointerScript, scriptName);
-            LuaManager.Instance.PointerScriptsEnabled = true;
+            LuaManager.Instance.EnablePointerScript(true);
         }
 
         [ApiEndpoint(
@@ -1285,7 +1285,7 @@ namespace TiltBrush
         )]
         public static void DeactivatePointerScript()
         {
-            LuaManager.Instance.PointerScriptsEnabled = false;
+            LuaManager.Instance.EnablePointerScript(false);
         }
 
         [ApiEndpoint(
