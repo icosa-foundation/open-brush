@@ -22,7 +22,18 @@ namespace TiltBrush
 {
     public class SdfStencil : StencilWidget
     {
+        private const double k_VisualRefreshIntervalSeconds = 0.1;
+        private const double k_FinalVisualRefreshDelaySeconds = 0.2;
+
         private SDFGroup m_SdfManager;
+        private SDFGroupMeshGenerator m_MeshGenerator;
+        private int m_RequestedVisualRevision;
+        private int m_StartedVisualRevision;
+        private int m_CompletedVisualRevision;
+        private int m_FinalizedVisualRevision;
+        private bool m_StartedVisualGenerationIsFinal;
+        private double m_LastVisualMutationTime;
+        private double m_LastVisualGenerationStartTime = double.NegativeInfinity;
 
         public int PrimitiveCount => GetPrimitives().Count;
 
@@ -57,20 +68,24 @@ namespace TiltBrush
             sdfTransform.localScale = Vector3.one;
 
             RegisterGeneratedMeshRenderer();
+            RequestVisualRefresh();
         }
 
         private void RegisterGeneratedMeshRenderer()
         {
-            SDFGroupMeshGenerator generator =
+            m_MeshGenerator =
                 m_SdfManager.GetComponentInChildren<SDFGroupMeshGenerator>(true);
-            if (generator == null)
+            if (m_MeshGenerator == null)
             {
                 Debug.LogWarning(
                     "SDFGuideSetup: SDF manager has no mesh generator", this);
                 return;
             }
 
-            MeshRenderer generatedRenderer = generator.MeshRenderer;
+            m_MeshGenerator.MainSettings.AutoUpdate = false;
+            m_MeshGenerator.MeshGenerationFinished += OnMeshGenerationFinished;
+
+            MeshRenderer generatedRenderer = m_MeshGenerator.MeshRenderer;
             MeshFilter generatedFilter = generatedRenderer.GetComponent<MeshFilter>();
             if (generatedFilter == null)
             {
@@ -188,6 +203,7 @@ namespace TiltBrush
             SDFPrimitive primitive = primitiveObject.AddComponent<SDFPrimitive>();
             primitive.Configure(type, geometry, operation, blend);
             primitiveObject.SetActive(true);
+            RefreshSdf();
             return primitive;
         }
 
@@ -283,8 +299,8 @@ namespace TiltBrush
             if (remaining.Count > 0 && remaining[0].Operation != SDFCombineType.SmoothUnion)
             {
                 remaining[0].SetOperation(SDFCombineType.SmoothUnion);
-                RefreshSdf();
             }
+            RefreshSdf();
         }
 
         public void ClearPrimitives()
@@ -295,11 +311,93 @@ namespace TiltBrush
                 primitive.transform.SetParent(null, false);
                 Destroy(primitive.gameObject);
             }
+            RefreshSdf();
         }
 
         public void RefreshSdf()
         {
             m_SdfManager.RequestUpdate(onlySendBufferOnChange: false);
+            RequestVisualRefresh();
+        }
+
+        private void RequestVisualRefresh()
+        {
+            ++m_RequestedVisualRevision;
+            m_LastVisualMutationTime = Time.realtimeSinceStartupAsDouble;
+        }
+
+        private void OnMeshGenerationFinished(bool _)
+        {
+            // A revision is considered handled even if generation failed. This avoids an
+            // unsupported or failing readback producing a retry-and-log loop every frame; a later
+            // edit or show operation requests another attempt.
+            m_CompletedVisualRevision = Math.Max(
+                m_CompletedVisualRevision, m_StartedVisualRevision);
+            if (m_StartedVisualGenerationIsFinal)
+            {
+                m_FinalizedVisualRevision = Math.Max(
+                    m_FinalizedVisualRevision, m_StartedVisualRevision);
+            }
+
+            RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+
+            if (m_MeshGenerator == null || m_SdfManager == null ||
+                !m_SdfManager.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            if (m_SdfManager.IsEmpty)
+            {
+                m_CompletedVisualRevision = m_RequestedVisualRevision;
+                m_FinalizedVisualRevision = m_RequestedVisualRevision;
+                return;
+            }
+
+            if (m_MeshGenerator.IsMeshGenerationPending)
+            {
+                return;
+            }
+
+            double now = Time.realtimeSinceStartupAsDouble;
+            bool refreshIntervalElapsed =
+                now - m_LastVisualGenerationStartTime >= k_VisualRefreshIntervalSeconds;
+            bool editingIsIdle =
+                now - m_LastVisualMutationTime >= k_FinalVisualRefreshDelaySeconds;
+            bool needsUpdatedMesh =
+                m_CompletedVisualRevision < m_RequestedVisualRevision;
+            bool needsFinalMesh =
+                editingIsIdle && m_FinalizedVisualRevision < m_RequestedVisualRevision;
+            if (!needsUpdatedMesh && !needsFinalMesh)
+            {
+                return;
+            }
+            if (!refreshIntervalElapsed && !editingIsIdle)
+            {
+                return;
+            }
+
+            int targetRevision = m_RequestedVisualRevision;
+            int previousStartedRevision = m_StartedVisualRevision;
+            bool previousStartedWasFinal = m_StartedVisualGenerationIsFinal;
+            int previousRequestCount = m_MeshGenerator.MeshGenerationRequestCount;
+            m_StartedVisualRevision = targetRevision;
+            m_StartedVisualGenerationIsFinal = editingIsIdle;
+            m_MeshGenerator.UpdateMesh();
+
+            if (m_MeshGenerator.MeshGenerationRequestCount == previousRequestCount)
+            {
+                m_StartedVisualRevision = previousStartedRevision;
+                m_StartedVisualGenerationIsFinal = previousStartedWasFinal;
+                return;
+            }
+
+            m_LastVisualGenerationStartTime = now;
         }
 
         private void ValidatePrimitive(SDFPrimitive primitive)
@@ -321,6 +419,7 @@ namespace TiltBrush
         {
             base.OnShow();
             m_SdfManager.gameObject.SetActive(true);
+            RequestVisualRefresh();
         }
 
         protected override void OnHideStart()
@@ -328,6 +427,15 @@ namespace TiltBrush
             base.OnHideStart();
             m_SdfManager.gameObject.SetActive(false);
             m_hasValidHit = false;
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_MeshGenerator != null)
+            {
+                m_MeshGenerator.MeshGenerationFinished -= OnMeshGenerationFinished;
+            }
+            base.OnDestroy();
         }
 
         // Smoothing for jitter reduction

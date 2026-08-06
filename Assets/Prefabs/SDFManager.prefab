@@ -171,9 +171,9 @@ MonoBehaviour:
   m_proceduralMeshMaterial: {fileID: 0}
   m_meshRenderer: {fileID: 1360901391}
   m_mainSettings:
-    m_autoUpdate: 1
+    m_autoUpdate: 0
     m_outputMode: 2
-    m_isAsynchronous: 0
+    m_isAsynchronous: 1
     m_proceduralMaterial: {fileID: 0}
   m_voxelSettings:
     m_cellSizeMode: 0
