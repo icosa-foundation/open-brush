@@ -118,7 +118,7 @@ namespace TiltBrush
         [LuaDocsExample("myGuide = Guide:NewSDF(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
         [LuaDocsReturnValue("A new SDF guide")]
-        public static GuideApiWrapper NewSDF(TrTransform transform) => _Add(StencilType.SDF, transform);
+        public static GuideApiWrapper NewSDF(TrTransform transform) => _AddSdf(transform);
 
         [LuaDocsDescription("Creates an empty SDF guide whose primitives can be defined at runtime")]
         [LuaDocsExample("myGuide = Guide:NewCustomSDF(Transform:New(0, 5, 2))")]
@@ -126,7 +126,7 @@ namespace TiltBrush
         [LuaDocsReturnValue("A new empty, editable SDF guide")]
         public static GuideApiWrapper NewCustomSDF(TrTransform transform)
         {
-            GuideApiWrapper guide = _Add(StencilType.SDF, transform);
+            GuideApiWrapper guide = _AddSdf(transform);
             guide.GetSdfStencil().ClearPrimitives();
             return guide;
         }
@@ -283,7 +283,17 @@ namespace TiltBrush
 
         private static GuideApiWrapper _Add(StencilType type, TrTransform tr)
         {
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(type), tr, forceTransform: true);
+            return _Add(WidgetManager.m_Instance.GetStencilPrefab(type), tr);
+        }
+
+        private static GuideApiWrapper _AddSdf(TrTransform tr)
+        {
+            return _Add(WidgetManager.m_Instance.SdfStencilPrefab, tr);
+        }
+
+        private static GuideApiWrapper _Add(StencilWidget prefab, TrTransform tr)
+        {
+            var cmd = new CreateWidgetCommand(prefab, tr, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var widget = cmd.Widget as StencilWidget;
             return new GuideApiWrapper(widget);

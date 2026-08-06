@@ -1666,7 +1666,8 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 10
+  m_Type: 9
+  m_IsSdf: 1
   references:
     version: 2
     RefIds: []

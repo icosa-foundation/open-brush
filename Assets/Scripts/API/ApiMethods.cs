@@ -1328,34 +1328,35 @@ namespace TiltBrush
         )]
         public static void AddGuide(string type)
         {
-            StencilType stencilType;
+            StencilWidget stencilPrefab;
 
             switch (type)
             {
                 case "cube":
-                    stencilType = StencilType.Cube;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cube);
                     break;
                 case "sphere":
-                    stencilType = StencilType.Sphere;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Sphere);
                     break;
                 case "capsule":
-                    stencilType = StencilType.Capsule;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Capsule);
                     break;
                 case "cone":
-                    stencilType = StencilType.Cone;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cone);
                     break;
                 case "ellipsoid":
-                    stencilType = StencilType.Ellipsoid;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Ellipsoid);
                     break;
                 case "sdf":
-                    stencilType = StencilType.SDF;
+                    stencilPrefab = WidgetManager.m_Instance.SdfStencilPrefab;
                     break;
                 default:
-                    stencilType = StencilType.Sphere;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Sphere);
                     break;
             }
 
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
+            var cmd = new CreateWidgetCommand(
+                stencilPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
