@@ -531,6 +531,8 @@ namespace OpenBrush.Multiplayer
             BrushStrokeCommand command, PlayerRef playerRef, bool rebaseTimestamps)
         {
             var stroke = command.m_Stroke;
+            bool hasSourceTimeSession = SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(
+                stroke, out StrokeTimeSessionMetadata sourceTimeSession);
             int maxPointsPerChunk = NetworkingConstants.MaxControlPointsPerChunk;
 
             int totalPoints = stroke.m_ControlPoints.Length;
@@ -542,10 +544,23 @@ namespace OpenBrush.Multiplayer
             if (numberOfChunks == 1)
             {
                 // Send it all at once as a full stroke
-                PhotonRPCBatcher.EnqueueRPC(() =>
-                { PhotonRPC.Send_BrushStrokeFull(m_Runner, new NetworkedStroke().Init(stroke),
-                    command.Guid, (int)command.NetworkTimestamp, rebaseTimestamps,
-                    command.ParentGuid, command.ChildrenCount, playerRef); });
+                if (hasSourceTimeSession)
+                {
+                    PhotonRPCBatcher.EnqueueRPC(() =>
+                    { PhotonRPC.Send_BrushStrokeFullClockV1(
+                        m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
+                        (int)command.NetworkTimestamp, sourceTimeSession.StartUtcMs,
+                        sourceTimeSession.StartSketchTimeMs, command.ParentGuid,
+                        command.ChildrenCount, playerRef); });
+                }
+                else
+                {
+                    PhotonRPCBatcher.EnqueueRPC(() =>
+                    { PhotonRPC.Send_BrushStrokeFull(
+                        m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
+                        (int)command.NetworkTimestamp, rebaseTimestamps, command.ParentGuid,
+                        command.ChildrenCount, playerRef); });
+                }
                 return true;
             }
 
@@ -590,10 +605,21 @@ namespace OpenBrush.Multiplayer
             }
 
             // After all chunks have been sent, send the Complete call
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.Send_BrushStrokeComplete(m_Runner, strokeGuid, command.Guid,
-                (int)command.NetworkTimestamp, rebaseTimestamps, command.ParentGuid,
-                command.ChildrenCount, playerRef); });
+            if (hasSourceTimeSession)
+            {
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeCompleteClockV1(
+                    m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp,
+                    sourceTimeSession.StartUtcMs, sourceTimeSession.StartSketchTimeMs,
+                    command.ParentGuid, command.ChildrenCount, playerRef); });
+            }
+            else
+            {
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeComplete(
+                    m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp,
+                    rebaseTimestamps, command.ParentGuid, command.ChildrenCount, playerRef); });
+            }
 
             return true;
         }

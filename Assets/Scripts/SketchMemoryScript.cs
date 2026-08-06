@@ -603,6 +603,163 @@ namespace TiltBrush
             }).ToArray();
         }
 
+        internal StrokeTimeSessionMetadata[] AddAdditiveStrokeTimeSessions(
+            StrokeTimeSessionMetadata[] sessions, uint timestampOffset)
+        {
+            if (sessions == null || sessions.Length == 0)
+            {
+                return Array.Empty<StrokeTimeSessionMetadata>();
+            }
+
+            var shiftedSessions = new List<StrokeTimeSessionMetadata>();
+            foreach (var session in sessions)
+            {
+                if (session == null || session.EndSketchTimeMs < session.StartSketchTimeMs)
+                {
+                    Debug.LogWarning(
+                        "[AdditiveStrokeClock] Ignoring invalid imported stroke time session.");
+                    continue;
+                }
+
+                try
+                {
+                    var shiftedSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = session.StartUtcMs,
+                        StartSketchTimeMs = checked(
+                            session.StartSketchTimeMs + timestampOffset),
+                        EndSketchTimeMs = checked(
+                            session.EndSketchTimeMs + timestampOffset),
+                    };
+                    shiftedSessions.Add(shiftedSession);
+                }
+                catch (OverflowException)
+                {
+                    Debug.LogWarning("[AdditiveStrokeClock] Ignoring imported stroke time session whose shifted timestamps overflow uint.");
+                }
+            }
+
+            RestoreStrokeTimeSessions(shiftedSessions);
+            return shiftedSessions.ToArray();
+        }
+
+        internal void RestoreStrokeTimeSessions(
+            IEnumerable<StrokeTimeSessionMetadata> sessions)
+        {
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session != null && !m_StrokeTimeSessions.Contains(session))
+                {
+                    m_StrokeTimeSessions.Add(session);
+                }
+            }
+        }
+
+        internal void RemoveStrokeTimeSessions(
+            IEnumerable<StrokeTimeSessionMetadata> sessions)
+        {
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session != null)
+                {
+                    m_StrokeTimeSessions.Remove(session);
+                }
+            }
+        }
+
+        public bool TryGetStrokeTimeSession(
+            Stroke stroke, out StrokeTimeSessionMetadata session)
+        {
+            session = null;
+            if (stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = m_StrokeTimeSessions.Count - 1; i >= 0; --i)
+            {
+                var candidate = m_StrokeTimeSessions[i];
+                if (candidate.StartSketchTimeMs <= stroke.HeadTimestampMs &&
+                    candidate.EndSketchTimeMs >= stroke.TailTimestampMs)
+                {
+                    session = CopyStrokeTimeSession(candidate);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryGetActiveStrokeTimeSession(out StrokeTimeSessionMetadata session)
+        {
+            var activeSession = m_CurrentStrokeTimeSession ?? m_PendingStrokeTimeSession;
+            session = CopyStrokeTimeSession(activeSession);
+            return session != null;
+        }
+
+        internal static bool TryConvertStrokeTimestampToSession(
+            uint sourceTimestampMs,
+            long sourceStartUtcMs,
+            uint sourceStartSketchTimeMs,
+            long targetStartUtcMs,
+            uint targetStartSketchTimeMs,
+            out uint targetTimestampMs)
+        {
+            long convertedTimestampMs;
+            try
+            {
+                checked
+                {
+                    long pointUtcMs = sourceStartUtcMs +
+                        ((long)sourceTimestampMs - sourceStartSketchTimeMs);
+                    convertedTimestampMs = targetStartSketchTimeMs +
+                        (pointUtcMs - targetStartUtcMs);
+                }
+            }
+            catch (OverflowException)
+            {
+                targetTimestampMs = 0;
+                return false;
+            }
+
+            if (convertedTimestampMs < uint.MinValue ||
+                convertedTimestampMs > uint.MaxValue)
+            {
+                targetTimestampMs = 0;
+                return false;
+            }
+
+            targetTimestampMs = (uint)convertedTimestampMs;
+            return true;
+        }
+
+        private static StrokeTimeSessionMetadata CopyStrokeTimeSession(
+            StrokeTimeSessionMetadata session)
+        {
+            if (session == null)
+            {
+                return null;
+            }
+
+            return new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = session.EndSketchTimeMs,
+            };
+        }
+
         public void BeginPendingStrokeTimeSession()
         {
             if (m_CurrentStrokeTimeSession != null)
