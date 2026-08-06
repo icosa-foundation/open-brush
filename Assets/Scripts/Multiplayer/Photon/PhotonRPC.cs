@@ -328,6 +328,10 @@ namespace OpenBrush.Multiplayer
                 stroke.m_Type = Stroke.Type.NotCreated;
                 stroke.m_IntendedCanvas = App.Scene.MainCanvas;
                 stroke.Recreate(null, App.Scene.MainCanvas);
+                if (rebaseTimestamps)
+                {
+                    SketchMemoryScript.m_Instance.RecordStrokeInCurrentTimeSession(stroke);
+                }
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
             };
 

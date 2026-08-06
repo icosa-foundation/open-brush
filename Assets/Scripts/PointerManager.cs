@@ -1953,6 +1953,8 @@ namespace TiltBrush
 
             HandleColorJitter();
 
+            SketchMemoryScript.m_Instance.BeginPendingStrokeTimeSession();
+
             if (m_StraightEdgeEnabled)
             {
                 StraightEdgeGuide.SetTempShape(StraightEdgeGuideScript.Shape.Line);

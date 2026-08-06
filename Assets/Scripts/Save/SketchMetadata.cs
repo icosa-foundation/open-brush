@@ -753,6 +753,14 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class StrokeTimeSessionMetadata
+    {
+        public long StartUtcMs { get; set; }
+        public uint StartSketchTimeMs { get; set; }
+        public uint EndSketchTimeMs { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
@@ -861,6 +869,8 @@ namespace TiltBrush
         public LayerMetadata[] Layers { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public StrokeTimeSessionMetadata[] StrokeTimeSessions { get; set; }
 
         // Added for 24.0b Open-source edition
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

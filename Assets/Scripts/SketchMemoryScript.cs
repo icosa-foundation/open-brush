@@ -109,6 +109,10 @@ namespace TiltBrush
         // TODO: Have Update() advance this position to match current sketch time so that we
         // amortize list traversal in timeline edit mode.
         private LinkedListNode<Stroke> m_CurrentNodeByTime;
+        private readonly List<StrokeTimeSessionMetadata> m_StrokeTimeSessions =
+            new List<StrokeTimeSessionMetadata>();
+        private StrokeTimeSessionMetadata m_CurrentStrokeTimeSession;
+        private StrokeTimeSessionMetadata m_PendingStrokeTimeSession;
 
         //for loading .sketches
         public enum PlaybackMode
@@ -557,6 +561,118 @@ namespace TiltBrush
             }
         }
 
+        public void SetStrokeTimeSessions(StrokeTimeSessionMetadata[] sessions)
+        {
+            m_StrokeTimeSessions.Clear();
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
+
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session == null)
+                {
+                    continue;
+                }
+
+                m_StrokeTimeSessions.Add(new StrokeTimeSessionMetadata
+                {
+                    StartUtcMs = session.StartUtcMs,
+                    StartSketchTimeMs = session.StartSketchTimeMs,
+                    EndSketchTimeMs = session.EndSketchTimeMs,
+                });
+            }
+        }
+
+        public StrokeTimeSessionMetadata[] GetStrokeTimeSessionsForSaving()
+        {
+            if (m_StrokeTimeSessions.Count == 0)
+            {
+                return null;
+            }
+
+            return m_StrokeTimeSessions.Select(session => new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = session.EndSketchTimeMs,
+            }).ToArray();
+        }
+
+        public void BeginPendingStrokeTimeSession()
+        {
+            if (m_CurrentStrokeTimeSession != null)
+            {
+                return;
+            }
+
+            uint currentSketchTimeMs = (uint)(App.Instance.CurrentSketchTime * 1000);
+            m_PendingStrokeTimeSession = new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                StartSketchTimeMs = currentSketchTimeMs,
+                EndSketchTimeMs = currentSketchTimeMs,
+            };
+        }
+
+        public void RecordStrokeInCurrentTimeSession(Stroke stroke)
+        {
+            if (stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return;
+            }
+
+            if (m_CurrentStrokeTimeSession == null)
+            {
+                if (m_PendingStrokeTimeSession != null)
+                {
+                    long elapsedToFirstPointMs =
+                        (long)stroke.HeadTimestampMs -
+                        m_PendingStrokeTimeSession.StartSketchTimeMs;
+                    m_CurrentStrokeTimeSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = m_PendingStrokeTimeSession.StartUtcMs +
+                            elapsedToFirstPointMs,
+                        StartSketchTimeMs = stroke.HeadTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+                else
+                {
+                    long currentSketchTimeMs = (long)(App.Instance.CurrentSketchTime * 1000);
+                    long elapsedSinceStrokeStartMs = Math.Max(
+                        0, currentSketchTimeMs - stroke.HeadTimestampMs);
+                    m_CurrentStrokeTimeSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() -
+                            elapsedSinceStrokeStartMs,
+                        StartSketchTimeMs = stroke.HeadTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+
+                m_PendingStrokeTimeSession = null;
+                m_StrokeTimeSessions.Add(m_CurrentStrokeTimeSession);
+                return;
+            }
+
+            if (stroke.HeadTimestampMs < m_CurrentStrokeTimeSession.StartSketchTimeMs)
+            {
+                uint adjustmentMs =
+                    m_CurrentStrokeTimeSession.StartSketchTimeMs - stroke.HeadTimestampMs;
+                m_CurrentStrokeTimeSession.StartUtcMs -= adjustmentMs;
+                m_CurrentStrokeTimeSession.StartSketchTimeMs = stroke.HeadTimestampMs;
+            }
+
+            m_CurrentStrokeTimeSession.EndSketchTimeMs = Math.Max(
+                m_CurrentStrokeTimeSession.EndSketchTimeMs, stroke.TailTimestampMs);
+        }
+
         public void MemorizeBatchedBrushStroke(
             BatchSubset subset, Color rColor, Guid brushGuid,
             float fBrushSize, float brushScale,
@@ -578,6 +694,7 @@ namespace TiltBrush
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
             subset.m_Stroke = rNewStroke;
+            RecordStrokeInCurrentTimeSession(rNewStroke);
 
             PerformAndRecordCommand(
                 new BrushStrokeCommand(
@@ -619,6 +736,7 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             brushScript.Stroke = rNewStroke;
+            RecordStrokeInCurrentTimeSession(rNewStroke);
 
             SketchMemoryScript.m_Instance.RecordCommand(
                 new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
@@ -892,6 +1010,9 @@ namespace TiltBrush
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
+            m_StrokeTimeSessions.Clear();
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
             m_CurrentNodeByTime = null;

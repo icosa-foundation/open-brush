@@ -794,6 +794,8 @@ namespace TiltBrush
                 {
                     ModelCatalog.m_Instance.ClearMissingModels();
                     SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+                    SketchMemoryScript.m_Instance.SetStrokeTimeSessions(
+                        jsonData.StrokeTimeSessions);
 
                     if (jsonData.ModelIndex != null)
                     {
