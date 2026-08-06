@@ -23,15 +23,6 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        private struct SdfPrimitiveSpec
-        {
-            public SDFPrimitiveType Type;
-            public Vector4 Geometry;
-            public TrTransform Transform;
-            public SDFCombineType Operation;
-            public float Blend;
-        }
-
         [ApiEndpoint(
             "guide.sdf.create",
             "Creates an editable SDF guide from a JSON transform and ordered primitive list",
@@ -39,7 +30,7 @@ namespace TiltBrush
         public static string CreateSdfGuide(string json)
         {
             JObject request = ParseSdfRequest(json);
-            var specs = new List<SdfPrimitiveSpec>();
+            var definitions = new List<SdfStencil.PrimitiveDefinition>();
             if (request["primitives"] is JArray primitives)
             {
                 for (int i = 0; i < primitives.Count; ++i)
@@ -48,7 +39,7 @@ namespace TiltBrush
                     {
                         throw new ArgumentException($"primitives[{i}] must be a JSON object.");
                     }
-                    specs.Add(ParsePrimitiveSpec(primitiveObject));
+                    definitions.Add(ParsePrimitiveDefinition(primitiveObject));
                 }
             }
             else if (request["primitives"] != null)
@@ -56,10 +47,7 @@ namespace TiltBrush
                 throw new ArgumentException("primitives must be a JSON array.");
             }
 
-            if (specs.Count > 0 && specs[0].Operation != SDFCombineType.SmoothUnion)
-            {
-                throw new ArgumentException("The first SDF primitive must use the union operation.");
-            }
+            SdfStencil.ValidatePrimitiveDefinitions(definitions);
 
             TrTransform transform = request["transform"] == null
                 ? _CurrentBrushTransform()
@@ -74,12 +62,7 @@ namespace TiltBrush
                 throw new InvalidOperationException("The configured SDF guide prefab did not create an SDF guide.");
             }
 
-            stencil.ClearPrimitives();
-            foreach (SdfPrimitiveSpec spec in specs)
-            {
-                stencil.AddPrimitive(
-                    spec.Type, spec.Geometry, spec.Transform, spec.Operation, spec.Blend);
-            }
+            stencil.ReplacePrimitives(definitions);
 
             return new JObject
             {
@@ -96,9 +79,10 @@ namespace TiltBrush
             JObject request = ParseSdfRequest(json);
             int guideIndex = RequiredInt(request, "guide");
             SdfStencil stencil = GetSdfStencil(guideIndex);
-            SdfPrimitiveSpec spec = ParsePrimitiveSpec(request);
+            SdfStencil.PrimitiveDefinition definition = ParsePrimitiveDefinition(request);
             SDFPrimitive primitive = stencil.AddPrimitive(
-                spec.Type, spec.Geometry, spec.Transform, spec.Operation, spec.Blend);
+                definition.Type, definition.Geometry, definition.Transform,
+                definition.Operation, definition.Blend);
 
             return new JObject
             {
@@ -189,7 +173,7 @@ namespace TiltBrush
             }
         }
 
-        private static SdfPrimitiveSpec ParsePrimitiveSpec(JObject value)
+        private static SdfStencil.PrimitiveDefinition ParsePrimitiveDefinition(JObject value)
         {
             string type = value.Value<string>("type");
             if (string.IsNullOrWhiteSpace(type))
@@ -207,18 +191,17 @@ namespace TiltBrush
                 throw new ArgumentOutOfRangeException(nameof(value), blend, "SDF blend cannot be negative.");
             }
 
-            return new SdfPrimitiveSpec
-            {
-                Type = SdfStencil.ParsePrimitiveType(type),
-                Geometry = ParseVector4(value["geometry"], "geometry"),
-                Transform = value["transform"] == null
+            return new SdfStencil.PrimitiveDefinition(
+                SdfStencil.ParsePrimitiveType(type),
+                ParseVector4(value["geometry"], "geometry"),
+                value["transform"] == null
                     ? TrTransform.identity
                     : ParseTransform(value["transform"], "transform"),
-                Operation = value["operation"] == null
+                value["operation"] == null
                     ? SDFCombineType.SmoothUnion
                     : SdfStencil.ParseOperation(value.Value<string>("operation")),
-                Blend = blend
-            };
+                blend,
+                false);
         }
 
         private static SdfStencil GetSdfStencil(int index)

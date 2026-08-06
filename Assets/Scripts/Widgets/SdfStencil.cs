@@ -35,6 +35,28 @@ namespace TiltBrush
         private double m_LastVisualMutationTime;
         private double m_LastVisualGenerationStartTime = double.NegativeInfinity;
 
+        internal struct PrimitiveDefinition
+        {
+            public SDFPrimitiveType Type;
+            public Vector4 Geometry;
+            public TrTransform Transform;
+            public SDFCombineType Operation;
+            public float Blend;
+            public bool Flip;
+
+            public PrimitiveDefinition(
+                SDFPrimitiveType type, Vector4 geometry, TrTransform transform,
+                SDFCombineType operation, float blend, bool flip)
+            {
+                Type = type;
+                Geometry = geometry;
+                Transform = transform;
+                Operation = operation;
+                Blend = blend;
+                Flip = flip;
+            }
+        }
+
         public int PrimitiveCount => GetPrimitives().Count;
 
         public override Vector3 Extents
@@ -115,16 +137,32 @@ namespace TiltBrush
                 case "boxframe":
                 case "frame": return SDFPrimitiveType.BoxFrame;
                 case "cylinder": return SDFPrimitiveType.Cylinder;
+                case "capsule": return SDFPrimitiveType.Capsule;
+                case "ellipsoid": return SDFPrimitiveType.Ellipsoid;
+                case "cone": return SDFPrimitiveType.Cone;
+                case "pyramid": return SDFPrimitiveType.Pyramid;
                 default:
                     throw new ArgumentException(
-                        $"Unknown SDF primitive type '{type}'. Expected sphere, torus, cuboid, boxframe, or cylinder.",
+                        $"Unknown SDF primitive type '{type}'. Expected sphere, torus, cuboid, boxframe, cylinder, capsule, ellipsoid, cone, or pyramid.",
                         nameof(type));
             }
         }
 
         public static string PrimitiveTypeName(SDFPrimitiveType type)
         {
-            return type.ToString().ToLowerInvariant();
+            switch (type)
+            {
+                case SDFPrimitiveType.Sphere: return "sphere";
+                case SDFPrimitiveType.Torus: return "torus";
+                case SDFPrimitiveType.Cuboid: return "cuboid";
+                case SDFPrimitiveType.BoxFrame: return "boxframe";
+                case SDFPrimitiveType.Cylinder: return "cylinder";
+                case SDFPrimitiveType.Capsule: return "capsule";
+                case SDFPrimitiveType.Ellipsoid: return "ellipsoid";
+                case SDFPrimitiveType.Cone: return "cone";
+                case SDFPrimitiveType.Pyramid: return "pyramid";
+                default: throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
         }
 
         public static SDFCombineType ParseOperation(string operation)
@@ -179,32 +217,43 @@ namespace TiltBrush
             SDFPrimitiveType type, Vector4 geometry, TrTransform localTransform,
             SDFCombineType operation, float blend)
         {
-            if (localTransform.scale <= 0f)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(localTransform), localTransform.scale,
-                    "An SDF primitive transform must have a positive scale.");
-            }
-            if (blend < 0f)
-            {
-                throw new ArgumentOutOfRangeException(nameof(blend), blend, "SDF blend cannot be negative.");
-            }
-            if (PrimitiveCount == 0 && operation != SDFCombineType.SmoothUnion)
-            {
-                throw new ArgumentException(
-                    "The first SDF primitive must use the union operation.", nameof(operation));
-            }
-
-            var primitiveObject = new GameObject(PrimitiveTypeName(type));
-            primitiveObject.SetActive(false);
-            primitiveObject.transform.SetParent(m_SdfManager.transform, false);
-            ApplyLocalTransform(primitiveObject.transform, localTransform);
-
-            SDFPrimitive primitive = primitiveObject.AddComponent<SDFPrimitive>();
-            primitive.Configure(type, geometry, operation, blend);
-            primitiveObject.SetActive(true);
+            var definition = new PrimitiveDefinition(
+                type, geometry, localTransform, operation, blend, false);
+            ValidatePrimitiveDefinition(definition, PrimitiveCount);
+            SDFPrimitive primitive = CreatePrimitive(definition);
             RefreshSdf();
             return primitive;
+        }
+
+        internal void ReplacePrimitives(IReadOnlyList<PrimitiveDefinition> definitions)
+        {
+            ValidatePrimitiveDefinitions(definitions);
+
+            foreach (SDFPrimitive primitive in GetPrimitives())
+            {
+                primitive.gameObject.SetActive(false);
+                primitive.transform.SetParent(null, false);
+                Destroy(primitive.gameObject);
+            }
+
+            for (int i = 0; i < definitions.Count; ++i)
+            {
+                CreatePrimitive(definitions[i]);
+            }
+            RefreshSdf();
+        }
+
+        internal static void ValidatePrimitiveDefinitions(
+            IReadOnlyList<PrimitiveDefinition> definitions)
+        {
+            if (definitions == null)
+            {
+                throw new ArgumentNullException(nameof(definitions));
+            }
+            for (int i = 0; i < definitions.Count; ++i)
+            {
+                ValidatePrimitiveDefinition(definitions[i], i);
+            }
         }
 
         public void SetPrimitiveGeometry(
@@ -305,13 +354,72 @@ namespace TiltBrush
 
         public void ClearPrimitives()
         {
-            foreach (SDFPrimitive primitive in GetPrimitives())
+            ReplacePrimitives(Array.Empty<PrimitiveDefinition>());
+        }
+
+        protected override void PopulateSaveState(Guides.State state)
+        {
+            IReadOnlyList<SDFPrimitive> primitives = GetPrimitives();
+            var primitiveStates = new Guides.SdfPrimitiveState[primitives.Count];
+            for (int i = 0; i < primitives.Count; ++i)
             {
-                primitive.gameObject.SetActive(false);
-                primitive.transform.SetParent(null, false);
-                Destroy(primitive.gameObject);
+                SDFPrimitive primitive = primitives[i];
+                primitiveStates[i] = new Guides.SdfPrimitiveState
+                {
+                    Type = PrimitiveTypeName(primitive.Type),
+                    Geometry = primitive.Data,
+                    Transform = TrTransform.FromLocalTransform(primitive.transform),
+                    Operation = OperationName(primitive.Operation),
+                    Blend = primitive.Smoothing,
+                    Flip = primitive.Flip
+                };
             }
-            RefreshSdf();
+            state.Sdf = new Guides.SdfGuideState { Primitives = primitiveStates };
+        }
+
+        protected override void ApplySaveState(Guides.State state)
+        {
+            if (state.Sdf == null)
+            {
+                throw new ArgumentException("An SDF guide state requires an Sdf definition.", nameof(state));
+            }
+            if (state.Sdf.Primitives == null)
+            {
+                throw new ArgumentException(
+                    "An SDF guide definition requires a Primitives array.", nameof(state));
+            }
+
+            var definitions = new List<PrimitiveDefinition>(state.Sdf.Primitives.Length);
+            for (int i = 0; i < state.Sdf.Primitives.Length; ++i)
+            {
+                Guides.SdfPrimitiveState primitive = state.Sdf.Primitives[i];
+                if (primitive == null)
+                {
+                    throw new ArgumentException($"SDF primitive {i} cannot be null.", nameof(state));
+                }
+                if (!primitive.HasGeometry)
+                {
+                    throw new ArgumentException($"SDF primitive {i} requires Geometry.", nameof(state));
+                }
+                if (!primitive.HasTransform)
+                {
+                    throw new ArgumentException($"SDF primitive {i} requires Transform.", nameof(state));
+                }
+                if (!primitive.HasBlend)
+                {
+                    throw new ArgumentException($"SDF primitive {i} requires Blend.", nameof(state));
+                }
+                if (!primitive.HasFlip)
+                {
+                    throw new ArgumentException($"SDF primitive {i} requires Flip.", nameof(state));
+                }
+
+                definitions.Add(new PrimitiveDefinition(
+                    ParsePrimitiveType(primitive.Type), primitive.Geometry,
+                    primitive.Transform, ParseOperation(primitive.Operation),
+                    primitive.Blend, primitive.Flip));
+            }
+            ReplacePrimitives(definitions);
         }
 
         public void RefreshSdf()
@@ -406,6 +514,71 @@ namespace TiltBrush
             {
                 throw new ArgumentException("The primitive does not belong to this SDF guide.", nameof(primitive));
             }
+        }
+
+        private SDFPrimitive CreatePrimitive(PrimitiveDefinition definition)
+        {
+            var primitiveObject = new GameObject(PrimitiveTypeName(definition.Type));
+            primitiveObject.SetActive(false);
+            primitiveObject.transform.SetParent(m_SdfManager.transform, false);
+            ApplyLocalTransform(primitiveObject.transform, definition.Transform);
+
+            SDFPrimitive primitive = primitiveObject.AddComponent<SDFPrimitive>();
+            primitive.Configure(
+                definition.Type, definition.Geometry, definition.Operation,
+                definition.Blend, definition.Flip);
+            primitiveObject.SetActive(true);
+            return primitive;
+        }
+
+        private static void ValidatePrimitiveDefinition(PrimitiveDefinition definition, int index)
+        {
+            if (!Enum.IsDefined(typeof(SDFPrimitiveType), definition.Type))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition), definition.Type, $"SDF primitive {index} has an unknown type.");
+            }
+            if (!Enum.IsDefined(typeof(SDFCombineType), definition.Operation))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition), definition.Operation,
+                    $"SDF primitive {index} has an unknown operation.");
+            }
+            if (index == 0 && definition.Operation != SDFCombineType.SmoothUnion)
+            {
+                throw new ArgumentException("The first SDF primitive must use the union operation.");
+            }
+            if (!IsFinite(definition.Geometry))
+            {
+                throw new ArgumentException($"SDF primitive {index} geometry must be finite.");
+            }
+            if (!definition.Transform.IsFinite())
+            {
+                throw new ArgumentException($"SDF primitive {index} transform must be finite.");
+            }
+            if (definition.Transform.scale <= 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition), definition.Transform.scale,
+                    $"SDF primitive {index} transform must have a positive scale.");
+            }
+            if (!IsFinite(definition.Blend) || definition.Blend < 0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(definition), definition.Blend,
+                    $"SDF primitive {index} blend must be finite and non-negative.");
+            }
+        }
+
+        private static bool IsFinite(Vector4 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) &&
+                IsFinite(value.z) && IsFinite(value.w);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static void ApplyLocalTransform(Transform target, TrTransform localTransform)
