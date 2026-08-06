@@ -77,6 +77,7 @@ namespace OpenBrush.Multiplayer
         public bool @private;
         public int maxPlayers;
         public bool silentRoom;
+        public bool voiceDisabled;
         public bool viewOnlyRoom;
     }
 

@@ -53,6 +53,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
+        Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);
 

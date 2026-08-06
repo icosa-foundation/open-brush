@@ -711,6 +711,7 @@ namespace OpenBrush.Multiplayer
 
             currentRoomData.maxPlayers = roomData.m_MaxPlayers;
             currentRoomData.silentRoom = roomData.m_IsSilentRoom;
+            currentRoomData.voiceDisabled = roomData.m_IsVoiceDisabled;
             currentRoomData.viewOnlyRoom = roomData.m_IsViewOnlyRoom;
             
             MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings, currentRoomData);
@@ -1052,6 +1053,19 @@ namespace OpenBrush.Multiplayer
         public static void RPC_SetUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
         {
             SetViewOnly(value);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_SetRoomVoiceEnabled(
+            NetworkRunner runner, bool enabled, [RpcTarget] PlayerRef targetPlayer)
+        {
+            MultiplayerManager.m_Instance.ApplyRoomVoiceEnabled(enabled);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_SetRoomVoiceEnabled(NetworkRunner runner, bool enabled)
+        {
+            MultiplayerManager.m_Instance.ApplyRoomVoiceEnabled(enabled);
         }
 
         [Rpc(InvokeLocal = false)]

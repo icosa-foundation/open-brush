@@ -442,6 +442,23 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1)
+        {
+            if (playerId < 0)
+            {
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.RPC_SetRoomVoiceEnabled(m_Runner, enabled); });
+            }
+            else
+            {
+                PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.RPC_SetRoomVoiceEnabled(m_Runner, enabled, targetPlayer); });
+            }
+            await Task.Yield();
+            return true;
+        }
+
         public async Task<bool> RpcKickPlayerOut(int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);

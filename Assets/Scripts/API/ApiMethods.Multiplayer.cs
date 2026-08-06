@@ -50,5 +50,35 @@ namespace TiltBrush
             }
         }
 
+        [ApiEndpoint(
+            "multiplayer.voice",
+            "Enables or disables multiplayer voice. Disabling disconnects the voice client to stop both incoming and outgoing voice bandwidth.",
+            "false")]
+        public static void MultiplayerVoice(bool enabled)
+        {
+            var voiceTask = MultiplayerManager.m_Instance.SetVoiceEnabled(enabled);
+            AsyncHelpers.RunSync(() => voiceTask);
+            if (!voiceTask.Result)
+            {
+                Debug.LogError(
+                    $"[MultiplayerVoiceApi] Failed to set multiplayer voice enabled state to {enabled}.");
+            }
+        }
+
+        [ApiEndpoint(
+            "multiplayer.voiceall",
+            "Allows or disables multiplayer voice for the whole room. Only the room owner can change this setting, and disabling it disconnects every participant's voice client.",
+            "false")]
+        public static void MultiplayerVoiceAll(bool enabled)
+        {
+            var voiceTask = MultiplayerManager.m_Instance.SetRoomVoiceEnabled(enabled);
+            AsyncHelpers.RunSync(() => voiceTask);
+            if (!voiceTask.Result)
+            {
+                Debug.LogError(
+                    $"[MultiplayerVoiceAll] Failed to set room voice enabled state to {enabled}. Only the room owner can change it.");
+            }
+        }
+
     }
 }

@@ -44,6 +44,11 @@ namespace OpenBrush.Multiplayer
 
         private IDataConnectionHandler m_Manager;
         private IVoiceConnectionHandler m_VoiceManager;
+        private bool m_IsLocalVoiceEnabled = true;
+        private bool m_IsRoomVoiceEnabled = true;
+        private bool m_IsVoiceEnabled = true;
+
+        public bool IsVoiceEnabled => m_IsVoiceEnabled;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
         [HideInInspector] public RemotePlayers m_RemotePlayers;
@@ -215,8 +220,11 @@ namespace OpenBrush.Multiplayer
             var successData = false;
             if (m_Manager != null) successData = await m_Manager.Connect();
 
-            var successVoice = false;
-            if (m_VoiceManager != null) successVoice = await m_VoiceManager.Connect();
+            bool successVoice = true;
+            if (m_IsVoiceEnabled && m_VoiceManager != null)
+            {
+                successVoice = await m_VoiceManager.Connect();
+            }
 
             if (!successData)
             {
@@ -245,9 +253,15 @@ namespace OpenBrush.Multiplayer
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);
 
-            bool successVoice = false;
-            if (m_VoiceManager != null) successVoice = await m_VoiceManager.JoinRoom(RoomData);
-            m_VoiceManager?.StartSpeaking();
+            bool successVoice = true;
+            if (m_IsVoiceEnabled && m_VoiceManager != null)
+            {
+                successVoice = await m_VoiceManager.JoinRoom(RoomData);
+                if (successVoice)
+                {
+                    m_VoiceManager.StartSpeaking();
+                }
+            }
 
             if (!successData)
             {
@@ -262,7 +276,7 @@ namespace OpenBrush.Multiplayer
             else State = ConnectionState.IN_ROOM;
 
             //asing the room name to the current room name
-            RoomCreateData CurrentRoomData = RoomData;
+            CurrentRoomData = RoomData;
 
             return successData & successVoice;
         }
@@ -274,9 +288,12 @@ namespace OpenBrush.Multiplayer
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.LeaveRoom();
 
-            bool successVoice = false;
-            m_VoiceManager?.StopSpeaking();
-            if (m_VoiceManager != null) successVoice = await m_VoiceManager.LeaveRoom();
+            bool successVoice = true;
+            if (m_VoiceManager != null && m_VoiceManager.State == ConnectionState.IN_ROOM)
+            {
+                m_VoiceManager.StopSpeaking();
+                successVoice = await m_VoiceManager.LeaveRoom();
+            }
 
             if (!successData)
             {
@@ -345,6 +362,7 @@ namespace OpenBrush.Multiplayer
         {
 
             CurrentRoomData = roomData;
+            ApplyRoomVoiceEnabled(!roomData.voiceDisabled);
 
             foreach (var p in playerSettings)
             {
@@ -523,6 +541,8 @@ namespace OpenBrush.Multiplayer
             }
             if (CurrentRoomData.silentRoom == true) MutePlayerForAll(true, newRemotePlayer.PlayerId);
             if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
+            _ = m_Manager.RpcSetRoomVoiceEnabled(
+                !CurrentRoomData.voiceDisabled, newRemotePlayer.PlayerId);
         }
 
         public void SetRoomSilent(bool isSilent)
@@ -805,12 +825,91 @@ namespace OpenBrush.Multiplayer
 
         public void StartSpeaking()
         {
-            m_VoiceManager?.StartSpeaking();
+            if (m_IsVoiceEnabled)
+            {
+                m_VoiceManager?.StartSpeaking();
+            }
         }
 
         public void StopSpeaking()
         {
             m_VoiceManager?.StopSpeaking();
+        }
+
+        public Task<bool> SetVoiceEnabled(bool enabled)
+        {
+            m_IsLocalVoiceEnabled = enabled;
+            return ApplyVoiceEnabled(m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled);
+        }
+
+        public async Task<bool> SetRoomVoiceEnabled(bool enabled)
+        {
+            if (!isUserRoomOwner || State != ConnectionState.IN_ROOM)
+            {
+                return false;
+            }
+
+            CurrentRoomData.voiceDisabled = !enabled;
+            m_IsRoomVoiceEnabled = enabled;
+            bool appliedLocally = await ApplyVoiceEnabled(
+                m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled);
+            bool sentToRoom = await m_Manager.RpcSetRoomVoiceEnabled(enabled);
+            return appliedLocally && sentToRoom;
+        }
+
+        public async void ApplyRoomVoiceEnabled(bool enabled)
+        {
+            CurrentRoomData.voiceDisabled = !enabled;
+            m_IsRoomVoiceEnabled = enabled;
+            if (!await ApplyVoiceEnabled(m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled))
+            {
+                Debug.LogError(
+                    $"[MultiplayerVoiceAll] Failed to apply room voice enabled state {enabled}.");
+            }
+        }
+
+        private async Task<bool> ApplyVoiceEnabled(bool enabled)
+        {
+            if (m_IsVoiceEnabled == enabled)
+            {
+                return true;
+            }
+
+            m_IsVoiceEnabled = enabled;
+            if (m_VoiceManager == null)
+            {
+                return !enabled;
+            }
+
+            if (!enabled)
+            {
+                m_VoiceManager.StopSpeaking();
+                return await m_VoiceManager.Disconnect();
+            }
+
+            if (State != ConnectionState.IN_LOBBY && State != ConnectionState.IN_ROOM)
+            {
+                return true;
+            }
+
+            if (!await m_VoiceManager.Connect())
+            {
+                m_IsVoiceEnabled = false;
+                return false;
+            }
+
+            if (State == ConnectionState.IN_ROOM)
+            {
+                if (!await m_VoiceManager.JoinRoom(CurrentRoomData))
+                {
+                    m_IsVoiceEnabled = false;
+                    await m_VoiceManager.Disconnect();
+                    return false;
+                }
+                m_VoiceManager.StartSpeaking();
+            }
+
+            return true;
         }
 
         public bool IsDisconnectable()

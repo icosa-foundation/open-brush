@@ -59,12 +59,14 @@ namespace OpenBrush.Multiplayer
     {
         public int m_MaxPlayers;
         public bool m_IsSilentRoom;
+        public bool m_IsVoiceDisabled;
         public bool m_IsViewOnlyRoom;
 
         public NetworkRoomSettings(RoomCreateData data)
         {
             m_MaxPlayers = data.maxPlayers;
             m_IsSilentRoom = data.silentRoom;
+            m_IsVoiceDisabled = data.voiceDisabled;
             m_IsViewOnlyRoom = data.viewOnlyRoom;
         }
     }
