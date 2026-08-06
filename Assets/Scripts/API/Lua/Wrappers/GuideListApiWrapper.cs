@@ -54,7 +54,10 @@ namespace TiltBrush
         [LuaDocsReturnValue("The signed distance to the closest contributing guide, or positive infinity when the list is empty")]
         public float SignedDistance(Vector3 point)
         {
-            return ApiMethods.GetSignedDistanceToGuides(_Guides, point);
+            TrTransform canvasPose = App.Scene.ActiveCanvas.Pose;
+            Vector3 point_GS = (canvasPose * TrTransform.T(point)).translation;
+            return ApiMethods.GetSignedDistanceToGuides(_Guides, point_GS) /
+                   canvasPose.scale;
         }
 
         [LuaDocsDescription("Steps in a direction and projects the result onto the combined surface of these guides")]
@@ -66,8 +69,12 @@ namespace TiltBrush
         public Vector3 NextPointOnSurface(
             Vector3 point, float stepDistance, Vector3 direction)
         {
-            return ApiMethods.GetNextPointOnGuideSurfaces(
-                _Guides, point, stepDistance, direction);
+            TrTransform canvasPose = App.Scene.ActiveCanvas.Pose;
+            Vector3 point_GS = (canvasPose * TrTransform.T(point)).translation;
+            Vector3 direction_GS = canvasPose.rotation * direction;
+            Vector3 result_GS = ApiMethods.GetNextPointOnGuideSurfaces(
+                _Guides, point_GS, stepDistance * canvasPose.scale, direction_GS);
+            return (canvasPose.inverse * TrTransform.T(result_GS)).translation;
         }
 
     }

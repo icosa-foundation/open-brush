@@ -170,12 +170,17 @@ namespace TiltBrush
         [LuaDocsReturnValue("A transform whose position is on the guide and whose up axis follows the surface normal")]
         public TransformApiWrapper ClosestPoint(Vector3 point)
         {
+            TrTransform canvasPose = App.Scene.ActiveCanvas.Pose;
+            Vector3 point_GS = (canvasPose * TrTransform.T(point)).translation;
             ApiMethods.FindClosestPointOnGuide(
-                _StencilWidget, point, out Vector3 closestPoint, out Vector3 normal);
-            Quaternion rotation = normal.sqrMagnitude > 0.000001f
-                ? Quaternion.FromToRotation(Vector3.up, normal.normalized)
+                _StencilWidget, point_GS, out Vector3 closestPoint_GS, out Vector3 normal_GS);
+            Vector3 closestPoint_CS =
+                (canvasPose.inverse * TrTransform.T(closestPoint_GS)).translation;
+            Vector3 normal_CS = Quaternion.Inverse(canvasPose.rotation) * normal_GS;
+            Quaternion rotation = normal_CS.sqrMagnitude > 0.000001f
+                ? Quaternion.FromToRotation(Vector3.up, normal_CS.normalized)
                 : Quaternion.identity;
-            return new TransformApiWrapper(closestPoint, rotation);
+            return new TransformApiWrapper(closestPoint_CS, rotation);
         }
 
         [LuaDocsDescription("Returns the signed distance from a point to this guide; negative values are inside")]
@@ -184,7 +189,49 @@ namespace TiltBrush
         [LuaDocsReturnValue("The signed distance to the guide surface")]
         public float SignedDistance(Vector3 point)
         {
-            return ApiMethods.GetSignedDistanceToGuide(_StencilWidget, point);
+            TrTransform canvasPose = App.Scene.ActiveCanvas.Pose;
+            Vector3 point_GS = (canvasPose * TrTransform.T(point)).translation;
+            return ApiMethods.GetSignedDistanceToGuide(_StencilWidget, point_GS) /
+                   canvasPose.scale;
+        }
+
+        [LuaDocsDescription("Steps in a direction and projects the result back onto this guide surface")]
+        [LuaDocsExample("nextPoint = myGuide:NextPointOnSurface(point, 0.1, Vector3.forward)")]
+        [LuaDocsParameter("point", "The current point on or near the guide surface")]
+        [LuaDocsParameter("stepDistance", "The distance to step before projecting back to the surface")]
+        [LuaDocsParameter("direction", "The direction in which to step")]
+        [LuaDocsReturnValue("The next point on this guide surface")]
+        public Vector3 NextPointOnSurface(
+            Vector3 point, float stepDistance, Vector3 direction)
+        {
+            TrTransform canvasPose = App.Scene.ActiveCanvas.Pose;
+            Vector3 point_GS = (canvasPose * TrTransform.T(point)).translation;
+            Vector3 direction_GS = canvasPose.rotation * direction;
+            Vector3 result_GS = ApiMethods.GetNextPointOnGuideSurfaces(
+                new[] { _StencilWidget }, point_GS,
+                stepDistance * canvasPose.scale, direction_GS);
+            return (canvasPose.inverse * TrTransform.T(result_GS)).translation;
+        }
+
+        [LuaDocsDescription("Converts a canvas-space transform to a transform relative to this guide")]
+        [LuaDocsExample("localTransform = myGuide:ToLocalTransform(Transform:New(Brush.position, Brush.rotation, 1))")]
+        [LuaDocsParameter("canvasTransform", "The transform in active-canvas space")]
+        [LuaDocsReturnValue("The transform in guide-local space")]
+        public TrTransform ToLocalTransform(TrTransform canvasTransform)
+        {
+            TrTransform transform_GS = App.Scene.ActiveCanvas.Pose * canvasTransform;
+            TrTransform guide_GS = TrTransform.FromTransform(_StencilWidget.transform);
+            return guide_GS.inverse * transform_GS;
+        }
+
+        [LuaDocsDescription("Converts a guide-local transform to active-canvas space")]
+        [LuaDocsExample("canvasTransform = myGuide:ToCanvasTransform(localTransform)")]
+        [LuaDocsParameter("localTransform", "The transform in guide-local space")]
+        [LuaDocsReturnValue("The transform in active-canvas space")]
+        public TrTransform ToCanvasTransform(TrTransform localTransform)
+        {
+            TrTransform guide_GS = TrTransform.FromTransform(_StencilWidget.transform);
+            return App.Scene.ActiveCanvas.Pose.inverse * guide_GS * localTransform;
         }
 
         [LuaDocsDescription("The number of primitives in this SDF guide")]
