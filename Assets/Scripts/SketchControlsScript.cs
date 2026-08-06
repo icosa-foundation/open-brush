@@ -4405,7 +4405,9 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
+        public void LoadSketch(
+            SceneFileInfo fileInfo, bool quickload = false,
+            SketchMemoryScript.PlaybackMode? playbackModeOverride = null)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4419,7 +4421,9 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
-                SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
+                var playbackMode = playbackModeOverride ?? m_SketchPlaybackMode;
+                SketchMemoryScript.m_Instance.SetPlaybackMode(
+                    playbackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
@@ -5327,7 +5331,17 @@ namespace TiltBrush
             }
         }
 
-        private void LoadNamed(string path, bool quickload, bool additive)
+        public void LoadNamedFileWithPlaybackMode(
+            string path, SketchMemoryScript.PlaybackMode playbackMode)
+        {
+            LoadNamed(
+                path, quickload: false, additive: false,
+                playbackModeOverride: playbackMode);
+        }
+
+        private void LoadNamed(
+            string path, bool quickload, bool additive,
+            SketchMemoryScript.PlaybackMode? playbackModeOverride = null)
         {
             var fileInfo = new DiskSceneFileInfo(path);
             fileInfo.ReadMetadata();
@@ -5345,7 +5359,7 @@ namespace TiltBrush
             }
             else
             {
-                LoadSketch(fileInfo, quickload);
+                LoadSketch(fileInfo, quickload, playbackModeOverride);
             }
             if (m_ControlsType != ControlsType.ViewingOnly)
             {

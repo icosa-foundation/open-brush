@@ -164,22 +164,30 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "load.named",
-            "Loads a sketch filename from the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
-            "Untitled_1"
+            "Loads a sketch filename from the user's Sketches folder. Set realTime to true to play it using recorded wall-clock timing; sketches without complete wall-clock metadata fall back to ordinary timestamp playback. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "Untitled_1,false"
         )]
-        public static void LoadNamedFile(string filename)
+        public static void LoadNamedFile(string filename, bool realTime = false)
         {
             if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
             {
                 filename += SaveLoadScript.TILT_SUFFIX;
             }
             string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
-            SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadNamedFile,
-                (int)SketchControlsScript.LoadSpeed.Quick,
-                -1,
-                path
-            );
+            if (realTime)
+            {
+                SketchControlsScript.m_Instance.LoadNamedFileWithPlaybackMode(
+                    path, SketchMemoryScript.PlaybackMode.RealTime);
+            }
+            else
+            {
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadNamedFile,
+                    (int)SketchControlsScript.LoadSpeed.Quick,
+                    -1,
+                    path
+                );
+            }
             PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 

@@ -12,15 +12,126 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
 {
 
+    public interface IStrokePlaybackTimeline
+    {
+        long GetHeadTimeMs(Stroke stroke);
+        long GetTailTimeMs(Stroke stroke);
+        long GetControlPointTimeMs(Stroke stroke, uint timestampMs);
+    }
+
+    public class SketchTimeStrokePlaybackTimeline : IStrokePlaybackTimeline
+    {
+        public long GetHeadTimeMs(Stroke stroke) => stroke.HeadTimestampMs;
+        public long GetTailTimeMs(Stroke stroke) => stroke.TailTimestampMs;
+        public long GetControlPointTimeMs(Stroke stroke, uint timestampMs) => timestampMs;
+    }
+
+    public class RealTimeStrokePlaybackTimeline : IStrokePlaybackTimeline
+    {
+        private readonly Dictionary<Stroke, StrokeTimeSessionMetadata> m_strokeSessions;
+        private readonly long m_startUtcMs;
+
+        private RealTimeStrokePlaybackTimeline(
+            Dictionary<Stroke, StrokeTimeSessionMetadata> strokeSessions,
+            long startUtcMs)
+        {
+            m_strokeSessions = strokeSessions;
+            m_startUtcMs = startUtcMs;
+        }
+
+        public static bool TryCreate(
+            IEnumerable<Stroke> strokes,
+            out RealTimeStrokePlaybackTimeline timeline)
+        {
+            var strokeSessions = new Dictionary<Stroke, StrokeTimeSessionMetadata>();
+            long startUtcMs = long.MaxValue;
+            bool hasStroke = false;
+
+            foreach (var stroke in strokes)
+            {
+                if (stroke == null || stroke.m_ControlPoints == null ||
+                    stroke.m_ControlPoints.Length == 0)
+                {
+                    continue;
+                }
+
+                hasStroke = true;
+                if (!SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(
+                    stroke, out var session))
+                {
+                    timeline = null;
+                    return false;
+                }
+
+                try
+                {
+                    DateTimeOffset.FromUnixTimeMilliseconds(session.StartUtcMs);
+                    long headUtcMs = checked(
+                        session.StartUtcMs +
+                        ((long)stroke.HeadTimestampMs - session.StartSketchTimeMs));
+                    long tailUtcMs = checked(
+                        session.StartUtcMs +
+                        ((long)stroke.TailTimestampMs - session.StartSketchTimeMs));
+                    if (tailUtcMs < headUtcMs)
+                    {
+                        timeline = null;
+                        return false;
+                    }
+                    startUtcMs = Math.Min(startUtcMs, headUtcMs);
+                    strokeSessions.Add(stroke, session);
+                }
+                catch (OverflowException)
+                {
+                    timeline = null;
+                    return false;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    timeline = null;
+                    return false;
+                }
+            }
+
+            if (!hasStroke)
+            {
+                timeline = null;
+                return false;
+            }
+
+            timeline = new RealTimeStrokePlaybackTimeline(strokeSessions, startUtcMs);
+            return true;
+        }
+
+        public long GetHeadTimeMs(Stroke stroke)
+        {
+            return GetControlPointTimeMs(stroke, stroke.HeadTimestampMs);
+        }
+
+        public long GetTailTimeMs(Stroke stroke)
+        {
+            return GetControlPointTimeMs(stroke, stroke.TailTimestampMs);
+        }
+
+        public long GetControlPointTimeMs(Stroke stroke, uint timestampMs)
+        {
+            var session = m_strokeSessions[stroke];
+            return checked(
+                session.StartUtcMs + ((long)timestampMs - session.StartSketchTimeMs) -
+                m_startUtcMs);
+        }
+    }
+
     public class StrokePlaybackByTime : StrokePlayback
     {
         private LinkedListNode<Stroke> m_strokeNode;
+        private IStrokePlaybackTimeline m_timeline;
 
         public LinkedListNode<Stroke> StrokeNode
         {
@@ -28,9 +139,11 @@ namespace TiltBrush
         }
 
         public void Init(LinkedListNode<Stroke> memoryObjectNode,
-                         PointerScript pointer, CanvasScript canvas)
+                         PointerScript pointer, CanvasScript canvas,
+                         IStrokePlaybackTimeline timeline)
         {
             m_strokeNode = memoryObjectNode;
+            m_timeline = timeline;
             BaseInit(memoryObjectNode.Value, pointer, canvas);
         }
 
@@ -42,8 +155,9 @@ namespace TiltBrush
 
         protected override bool IsControlPointReady(PointerManager.ControlPoint controlPoint)
         {
-            // TODO: API accepts time source function
-            return (controlPoint.m_TimestampMs / 1000F) <= App.Instance.CurrentSketchTime;
+            long currentTimeMs = (long)(App.Instance.CurrentSketchTime * 1000);
+            return m_timeline.GetControlPointTimeMs(
+                m_stroke, controlPoint.m_TimestampMs) <= currentTimeMs;
         }
     }
 
@@ -68,7 +182,7 @@ namespace TiltBrush
     {
         // Array of pending stroke playbacks indexed by pointer.
         private StrokePlaybackByTime[] m_strokePlaybacks;
-        private int m_lastTimeMs = 0;
+        private long m_lastTimeMs = 0;
         // List of unrendered strokes ordered by head timestamp, earliest first
         private SortedLinkedList<Stroke> m_unrenderedStrokes;
         // List of rendered strokes ordered by tail timestamp, latest first
@@ -76,20 +190,25 @@ namespace TiltBrush
         private int m_strokeCount;
         private int m_maxPointerUnderrun = 0;
         private CanvasScript m_targetCanvas;
+        private IStrokePlaybackTimeline m_timeline;
+        private bool m_quickLoadRemaining;
 
         public int MaxPointerUnderrun { get { return m_maxPointerUnderrun; } }
         public int MemoryObjectsDrawn { get { return 0; } } // unimplemented
 
         // Input strokes must be ordered by head timestamp
-        public ScenePlaybackByTimeLayered(IEnumerable<Stroke> strokes)
+        public ScenePlaybackByTimeLayered(
+            IEnumerable<Stroke> strokes,
+            IStrokePlaybackTimeline timeline = null)
         {
+            m_timeline = timeline ?? new SketchTimeStrokePlaybackTimeline();
             m_targetCanvas = App.ActiveCanvas;
             m_unrenderedStrokes = new SortedLinkedList<Stroke>(
-                (a, b) => (a.HeadTimestampMs < b.HeadTimestampMs),
+                (a, b) => (m_timeline.GetHeadTimeMs(a) < m_timeline.GetHeadTimeMs(b)),
                 strokes);
             m_strokeCount = m_unrenderedStrokes.Count;
             m_renderedStrokes = new SortedLinkedList<Stroke>(
-                (a, b) => (a.TailTimestampMs >= b.TailTimestampMs),
+                (a, b) => (m_timeline.GetTailTimeMs(a) >= m_timeline.GetTailTimeMs(b)),
                 new Stroke[] { });
             m_strokePlaybacks = new StrokePlaybackByTime[PointerManager.m_Instance.NumTransientPointers];
             for (int i = 0; i < m_strokePlaybacks.Length; ++i)
@@ -101,7 +220,9 @@ namespace TiltBrush
         // Continue drawing stroke for this frame, returning true if more rendering is pending.
         public bool Update()
         {
-            int currentTimeMs = (int)(App.Instance.CurrentSketchTime * 1000);
+            long currentTimeMs = m_quickLoadRemaining
+                ? long.MaxValue
+                : (long)(App.Instance.CurrentSketchTime * 1000);
 
             // Handle a jump back in time by resetting corresponding in-flight or completed strokes
             // to the undrawn state.
@@ -120,7 +241,7 @@ namespace TiltBrush
                 }
                 // delete any stroke having final timestamp > new current time
                 while (m_renderedStrokes.Count > 0 &&
-                    m_renderedStrokes.First.Value.TailTimestampMs > currentTimeMs)
+                    m_timeline.GetTailTimeMs(m_renderedStrokes.First.Value) > currentTimeMs)
                 {
                     var node = m_renderedStrokes.PopFirst();
                     if (node.Value.IsVisibleForPlayback)
@@ -148,13 +269,15 @@ namespace TiltBrush
                     }
                     // grab and play available strokes, until one is left pending
                     while (stroke.IsDone() && m_unrenderedStrokes.Count > 0 &&
-                        (m_unrenderedStrokes.First.Value.HeadTimestampMs <= currentTimeMs ||
+                        (m_timeline.GetHeadTimeMs(m_unrenderedStrokes.First.Value) <= currentTimeMs ||
                         !m_unrenderedStrokes.First.Value.IsVisibleForPlayback))
                     {
                         var node = m_unrenderedStrokes.PopFirst();
                         if (node.Value.IsVisibleForPlayback)
                         {
-                            stroke.Init(node, PointerManager.m_Instance.GetTransientPointer(i), m_targetCanvas);
+                            stroke.Init(
+                                node, PointerManager.m_Instance.GetTransientPointer(i),
+                                m_targetCanvas, m_timeline);
                             stroke.Update();
                             if (stroke.IsDone())
                             {
@@ -181,7 +304,7 @@ namespace TiltBrush
                     {
                         continue;
                     }
-                    if (obj.HeadTimestampMs <= currentTimeMs)
+                    if (m_timeline.GetHeadTimeMs(obj) <= currentTimeMs)
                     {
                         ++underrun;
                     }
@@ -216,7 +339,11 @@ namespace TiltBrush
             --m_strokeCount;
         }
 
-        public void QuickLoadRemaining() { App.Instance.CurrentSketchTime = float.MaxValue; }
+        public void QuickLoadRemaining()
+        {
+            m_quickLoadRemaining = true;
+            App.Instance.CurrentSketchTime = float.MaxValue;
+        }
     }
 
 } // namespace TiltBrush

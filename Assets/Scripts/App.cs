@@ -2406,7 +2406,7 @@ namespace TiltBrush
         void OnPlaybackComplete()
         {
             SaveLoadScript.m_Instance.SignalPlaybackCompletion();
-            if (SketchControlsScript.m_Instance.SketchPlaybackMode !=
+            if (SketchMemoryScript.m_Instance.CurrentPlaybackMode !=
                 SketchMemoryScript.PlaybackMode.Timestamps)
             {
 

@@ -119,12 +119,14 @@ namespace TiltBrush
         {
             Distance,
             Timestamps,
+            RealTime,
         }
         private IScenePlayback m_ScenePlayback;
 
         /// discern between initial and edit-time playback in timeline edit mode
         private bool m_IsInitialPlay;
         private PlaybackMode m_PlaybackMode;
+        public PlaybackMode CurrentPlaybackMode => m_PlaybackMode;
         private float m_DistancePerSecond; // in units. for PlaybackMode.Distance
 
         // operation stack size as of last load (always 0) or save
@@ -1392,6 +1394,24 @@ namespace TiltBrush
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = GetEarliestTimestamp();
                         m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
+                        break;
+                    case PlaybackMode.RealTime:
+                        if (RealTimeStrokePlaybackTimeline.TryCreate(
+                            strokesToRender, out var realTimeTimeline))
+                        {
+                            var strokesInWallClockOrder = strokesToRender
+                                .OrderBy(realTimeTimeline.GetHeadTimeMs)
+                                .ToArray();
+                            App.Instance.CurrentSketchTime = 0;
+                            m_ScenePlayback = new ScenePlaybackByTimeLayered(
+                                strokesInWallClockOrder, realTimeTimeline);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[RealTimePlayback] Sketch does not contain complete wall-clock metadata; using ordinary timestamp playback.");
+                            App.Instance.CurrentSketchTime = GetEarliestTimestamp();
+                            m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
+                        }
                         break;
                 }
                 m_IsInitialPlay = true;
