@@ -127,6 +127,12 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void Awake()
     {
         m_Instance = this;
+
+        if (cameraToUse != null)
+        {
+            cameraToUse.enabled = false;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(cameraToUse);
+        }
     }
 
     // When transparentBackground is off, use RGB24 so sky pixels (alpha=0 in the RT) don't
