@@ -4,7 +4,7 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("multiplayer.join", "Joins a multiplayer room")]
+        [ApiEndpoint("multiplayer.join", "Joins a multiplayer room, creating it if it does not exist")]
         public static void MultiplayerJoin(string nickname, string roomName, bool isPrivate, int maxPlayers, bool silentRoom, bool viewOnlyRoom)
         {
             ConnectionUserInfo userInfo = new ConnectionUserInfo
@@ -35,7 +35,8 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogError("Failed to join room");
+                Debug.LogError(
+                    $"[MultiplayerHttpJoin] Failed to join or create room '{roomName}': {MultiplayerManager.m_Instance.LastError}");
             }
         }
 

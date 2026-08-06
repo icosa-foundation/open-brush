@@ -244,11 +244,22 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
-            State = ConnectionState.JOINING_ROOM;
+            if (State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED)
+            {
+                if (!await Connect())
+                {
+                    return false;
+                }
+            }
 
-            // check if room exist to determine if user is room owner
-            DoesRoomNameExist(RoomData.roomName);
-            if (!isUserRoomOwner) SketchMemoryScript.m_Instance.ClearMemory();
+            if (State != ConnectionState.IN_LOBBY)
+            {
+                LastError = $"Cannot join room while multiplayer is in state {State}.";
+                Debug.LogError($"[MultiplayerHttpJoin] {LastError}");
+                return false;
+            }
+
+            State = ConnectionState.JOINING_ROOM;
 
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);

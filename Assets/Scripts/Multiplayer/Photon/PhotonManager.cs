@@ -155,6 +155,8 @@ namespace OpenBrush.Multiplayer
                 PlayerCount = roomCreateData.maxPlayers != 0 ? roomCreateData.maxPlayers : null,
                 SceneManager = m_Runner.gameObject.GetComponent<NetworkSceneManagerDefault>(),
                 Scene = sceneInfo, // Pass the configured NetworkSceneInfo
+                IsOpen = true,
+                IsVisible = !roomCreateData.@private,
                 UseDefaultPhotonCloudPorts = k_UseDefaultPhotonCloudPorts,
             };
 
@@ -735,7 +737,7 @@ namespace OpenBrush.Multiplayer
                 RoomData data = new RoomData()
                 {
                     roomName = session.Name,
-                    @private = session.IsOpen,
+                    @private = !session.IsVisible,
                     numPlayers = session.PlayerCount,
                     maxPlayers = session.MaxPlayers
                 };
