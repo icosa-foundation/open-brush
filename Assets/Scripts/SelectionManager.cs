@@ -870,17 +870,6 @@ namespace TiltBrush
                 SelectWidget(widget);
             }
 
-            var lastWidget = widgets.LastOrDefault();
-            LastSelectedWidget = lastWidget != null ? lastWidget : LastSelectedWidget;
-            var imageWidget = widgets.LastOrDefault(w => w is ImageWidget) as ImageWidget;
-            LastSelectedImage = imageWidget != null ? imageWidget : LastSelectedImage;
-            var videoWidget = widgets.LastOrDefault(w => w is VideoWidget) as VideoWidget;
-            LastSelectedVideo = videoWidget != null ? videoWidget : LastSelectedVideo;
-            var modelWidget = widgets.LastOrDefault(w => w is ModelWidget) as ModelWidget;
-            LastSelectedModel = modelWidget != null ? modelWidget : LastSelectedModel;
-            var stencilWidget = widgets.LastOrDefault(w => w is StencilWidget) as StencilWidget;
-            LastSelectedStencil = stencilWidget != null ? stencilWidget : LastSelectedStencil;
-
             // If the manager is tasked to select something, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
             // undo causing something to be highlighted, force the user to have the SelectionTool.
@@ -889,6 +878,7 @@ namespace TiltBrush
 
         public void SelectWidget(GrabWidget widget)
         {
+            RememberLastSelectedWidget(widget);
             if (IsWidgetSelected(widget))
             {
                 Debug.LogWarning("Attempted to select widget that is already selected.");
@@ -906,6 +896,15 @@ namespace TiltBrush
             }
             Debug.Assert(!groupWidgets.Contains(widget));
             groupWidgets.Add(widget);
+        }
+
+        private void RememberLastSelectedWidget(GrabWidget widget)
+        {
+            LastSelectedWidget = widget;
+            if (widget is ImageWidget imageWidget) { LastSelectedImage = imageWidget; }
+            if (widget is VideoWidget videoWidget) { LastSelectedVideo = videoWidget; }
+            if (widget is ModelWidget modelWidget) { LastSelectedModel = modelWidget; }
+            if (widget is StencilWidget stencilWidget) { LastSelectedStencil = stencilWidget; }
         }
 
         public void DeselectWidget(GrabWidget widget, CanvasScript targetCanvas = null)
