@@ -151,7 +151,8 @@ namespace TiltBrush
             ArchimedeanGrids,
             TwoUniformGrids,
             DurerGrids,
-            Various
+            Various,
+            CustomGeometry
         }
 
         public static Dictionary<string, string> FriendlyOpLabels = new Dictionary<string, string>
@@ -498,6 +499,7 @@ namespace TiltBrush
                     break;
 
                 case PolyhydraMainCategories.Waterman:
+                case PolyhydraMainCategories.CustomGeometry:
                     ButtonUniformType.gameObject.SetActive(false);
                     ButtonRadialType.gameObject.SetActive(false);
                     ButtonGridType.gameObject.SetActive(false);
@@ -531,6 +533,12 @@ namespace TiltBrush
                     Slider2.gameObject.SetActive(false);
                     Slider3.gameObject.SetActive(false);
                     break;
+
+                case PolyhydraMainCategories.CustomGeometry:
+                    Slider1.gameObject.SetActive(false);
+                    Slider2.gameObject.SetActive(false);
+                    Slider3.gameObject.SetActive(false);
+                    return;
 
                 case PolyhydraMainCategories.Radial:
 
@@ -872,6 +880,10 @@ namespace TiltBrush
             switch (buttonType)
             {
                 case PolyhydraButtonTypes.MainCategory:
+                    if (label == PolyhydraMainCategories.CustomGeometry.ToString())
+                    {
+                        return Resources.Load<Texture2D>("Icons/model_import_noborder");
+                    }
                     path = $"ShapeTypeButtons/{label}";
                     return Resources.Load<Texture2D>(path);
                 case PolyhydraButtonTypes.UniformType:
@@ -1009,6 +1021,9 @@ namespace TiltBrush
 
             switch (emd.GeneratorType)
             {
+                case GeneratorTypes.GeometryData:
+                    m_CurrentMainCategory = PolyhydraMainCategories.CustomGeometry;
+                    break;
                 case GeneratorTypes.FileSystem:
                 case GeneratorTypes.ConwayString:
                 case GeneratorTypes.Johnson:
@@ -1806,7 +1821,11 @@ namespace TiltBrush
 
         public List<string> GetMainCategoryNames()
         {
-            return Enum.GetNames(typeof(PolyhydraMainCategories)).ToList();
+            return Enum.GetValues(typeof(PolyhydraMainCategories))
+                .Cast<PolyhydraMainCategories>()
+                .Where(category => category != PolyhydraMainCategories.CustomGeometry)
+                .Select(category => category.ToString())
+                .ToList();
         }
 
         public List<string> GetGridTypeNames()
