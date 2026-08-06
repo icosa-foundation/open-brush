@@ -482,7 +482,10 @@ namespace TiltBrush
                     ButtonGridType.gameObject.SetActive(false);
                     ButtonGridShape.gameObject.SetActive(false);
                     ButtonOtherSolidsType.gameObject.SetActive(true);
-                    SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, recipe.VariousSolidsType.ToString());
+                    string otherSolidType = recipe.GeneratorType == GeneratorTypes.Shapes
+                        ? recipe.ShapeType.ToString()
+                        : recipe.VariousSolidsType.ToString();
+                    SetButtonTextAndIcon(PolyhydraButtonTypes.OtherSolidsType, otherSolidType);
                     break;
 
                 case PolyhydraMainCategories.Radial:
