@@ -544,7 +544,20 @@ namespace OpenBrush.Multiplayer
             if (numberOfChunks == 1)
             {
                 // Send it all at once as a full stroke
-                if (hasSourceTimeSession)
+                if (stroke.m_MultiplayerContributorId != Guid.Empty)
+                {
+                    PhotonRPCBatcher.EnqueueRPC(() =>
+                    { PhotonRPC.Send_BrushStrokeFullContributorV1(
+                        m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
+                        (int)command.NetworkTimestamp, rebaseTimestamps,
+                        stroke.m_MultiplayerContributorId,
+                        stroke.m_MultiplayerContributorNickname,
+                        hasSourceTimeSession,
+                        sourceTimeSession?.StartUtcMs ?? 0,
+                        sourceTimeSession?.StartSketchTimeMs ?? 0,
+                        command.ParentGuid, command.ChildrenCount, playerRef); });
+                }
+                else if (hasSourceTimeSession)
                 {
                     PhotonRPCBatcher.EnqueueRPC(() =>
                     { PhotonRPC.Send_BrushStrokeFullClockV1(
@@ -578,9 +591,20 @@ namespace OpenBrush.Multiplayer
             var strokeGuid = Guid.NewGuid();
 
             // Send the initial Begin call
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.Send_BrushStrokeBegin(
-                m_Runner, strokeGuid, netStroke, totalPoints, playerRef); });
+            if (stroke.m_MultiplayerContributorId != Guid.Empty)
+            {
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeBeginContributorV1(
+                    m_Runner, strokeGuid, netStroke, totalPoints,
+                    stroke.m_MultiplayerContributorId,
+                    stroke.m_MultiplayerContributorNickname, playerRef); });
+            }
+            else
+            {
+                PhotonRPCBatcher.EnqueueRPC(() =>
+                { PhotonRPC.Send_BrushStrokeBegin(
+                    m_Runner, strokeGuid, netStroke, totalPoints, playerRef); });
+            }
 
             // Send the middle "Continue" chunks (if any)
             for (int chunkIndex = 1; chunkIndex < numberOfChunks; chunkIndex++)

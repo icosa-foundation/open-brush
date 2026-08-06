@@ -94,7 +94,8 @@ namespace OpenBrush.Multiplayer
                 var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
                 counter += chunk.Count;
                 int percentage = (int)((counter / (float)strokeList.Count) * 100);
-                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                byte[] strokesData = await MultiplayerStrokeSerialization
+                    .SerializeAndCompressContributorMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
                 //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
@@ -104,13 +105,15 @@ namespace OpenBrush.Multiplayer
         {
 
             // Decompress and deserialize strokes asynchronously
-            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
+            List<Stroke> strokes = await MultiplayerStrokeSerialization
+                .DecompressAndDeserializeContributorMemoryListAsync(largeData);
 
             Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
 
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
             {
+                MultiplayerManager.m_Instance.PlaceStrokeOnContributorLayer(stroke);
                 BrushStrokeCommand c = new BrushStrokeCommand(stroke);
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);

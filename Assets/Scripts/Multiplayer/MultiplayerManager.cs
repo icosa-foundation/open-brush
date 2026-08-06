@@ -61,6 +61,10 @@ namespace OpenBrush.Multiplayer
 
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
+        private readonly Dictionary<Guid, CanvasScript> m_ContributorLayers =
+            new Dictionary<Guid, CanvasScript>();
+
+        public Guid LocalContributorId { get; private set; }
 
         ulong myOculusUserId;
 
@@ -132,6 +136,7 @@ namespace OpenBrush.Multiplayer
         void Awake()
         {
             m_Instance = this;
+            LocalContributorId = Guid.NewGuid();
             oculusPlayerIds = new List<ulong>();
             if (GetComponent<ManualColocationManager>() == null)
             {
@@ -592,6 +597,48 @@ namespace OpenBrush.Multiplayer
             m_Manager.SendLargeDataToPlayer(playerId, Data, percentage);
         }
 
+        public void TagStrokeWithLocalContributor(Stroke stroke)
+        {
+            if (stroke == null || stroke.m_MultiplayerContributorId != Guid.Empty)
+            {
+                return;
+            }
+
+            stroke.m_MultiplayerContributorId = LocalContributorId;
+            stroke.m_MultiplayerContributorNickname = UserInfo.Nickname;
+        }
+
+        public CanvasScript GetOrCreateContributorLayer(Guid contributorId, string nickname)
+        {
+            if (contributorId == Guid.Empty)
+            {
+                return App.Scene.MainCanvas;
+            }
+
+            if (m_ContributorLayers.TryGetValue(contributorId, out var layer) && layer != null)
+            {
+                return layer;
+            }
+
+            layer = App.Scene.AddLayerNow();
+            string displayName = string.IsNullOrWhiteSpace(nickname) ? "Player" : nickname.Trim();
+            App.Scene.RenameLayer(layer, $"Multiplayer - {displayName}");
+            m_ContributorLayers[contributorId] = layer;
+            return layer;
+        }
+
+        public void PlaceStrokeOnContributorLayer(Stroke stroke)
+        {
+            if (stroke == null || stroke.m_MultiplayerContributorId == Guid.Empty)
+            {
+                return;
+            }
+
+            stroke.m_IntendedCanvas = GetOrCreateContributorLayer(
+                stroke.m_MultiplayerContributorId,
+                stroke.m_MultiplayerContributorNickname);
+        }
+
         void OnPlayerLeft(int id)
         {
             if (m_LocalPlayer.PlayerId == id)
@@ -635,6 +682,10 @@ namespace OpenBrush.Multiplayer
         {
             if (State == ConnectionState.IN_ROOM)
             {
+                if (command is BrushStrokeCommand brushStrokeCommand)
+                {
+                    TagStrokeWithLocalContributor(brushStrokeCommand.m_Stroke);
+                }
                 await m_Manager.PerformCommand(command);
             }
         }

@@ -25,16 +25,121 @@ namespace OpenBrush.Multiplayer
 {
     public static class MultiplayerStrokeSerialization
     {
+        private const uint k_ContributorEnvelopeMagic = 0x3143504d;
+        private const int k_ContributorEnvelopeVersion = 1;
+
         public static async Task<byte[]> SerializeAndCompressMemoryListAsync(List<Stroke> memoryList)
         {
             byte[] serializedData = await SerializeMemoryList(memoryList);
             return await Compress(serializedData);
         }
 
+        public static async Task<byte[]> SerializeAndCompressContributorMemoryListAsync(
+            List<Stroke> memoryList)
+        {
+            byte[] strokeData = await SerializeMemoryList(memoryList);
+            byte[] envelope;
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(k_ContributorEnvelopeMagic);
+                writer.Write(k_ContributorEnvelopeVersion);
+                writer.Write(memoryList.Count);
+                foreach (var stroke in memoryList)
+                {
+                    writer.Write(stroke.m_MultiplayerContributorId.ToByteArray());
+                    writer.Write(stroke.m_MultiplayerContributorNickname ?? string.Empty);
+                }
+                writer.Write(strokeData.Length);
+                writer.Write(strokeData);
+                writer.Flush();
+                envelope = stream.ToArray();
+            }
+            return await Compress(envelope);
+        }
+
         public static async Task<List<Stroke>> DecompressAndDeserializeMemoryListAsync(byte[] compressedData)
         {
             byte[] decompressedData = await Decompress(compressedData);
             return await DeserializeMemoryList(decompressedData);
+        }
+
+        public static async Task<List<Stroke>>
+            DecompressAndDeserializeContributorMemoryListAsync(byte[] compressedData)
+        {
+            byte[] data = await Decompress(compressedData);
+            if (!TryReadContributorEnvelope(
+                data, out var contributorIds, out var contributorNicknames,
+                out var strokeData))
+            {
+                return await DeserializeMemoryList(data);
+            }
+
+            List<Stroke> strokes = await DeserializeMemoryList(
+                strokeData, squashLayers: true);
+            if (strokes == null || strokes.Count != contributorIds.Count)
+            {
+                throw new InvalidDataException(
+                    "Multiplayer contributor metadata does not match the stroke count.");
+            }
+
+            for (int i = 0; i < strokes.Count; ++i)
+            {
+                strokes[i].m_MultiplayerContributorId = contributorIds[i];
+                strokes[i].m_MultiplayerContributorNickname = contributorNicknames[i];
+            }
+            return strokes;
+        }
+
+        private static bool TryReadContributorEnvelope(
+            byte[] data, out List<Guid> contributorIds,
+            out List<string> contributorNicknames, out byte[] strokeData)
+        {
+            contributorIds = null;
+            contributorNicknames = null;
+            strokeData = null;
+            if (data == null || data.Length < sizeof(uint) + sizeof(int))
+            {
+                return false;
+            }
+
+            using var stream = new MemoryStream(data);
+            using var reader = new BinaryReader(stream);
+            if (reader.ReadUInt32() != k_ContributorEnvelopeMagic)
+            {
+                return false;
+            }
+            if (reader.ReadInt32() != k_ContributorEnvelopeVersion)
+            {
+                throw new InvalidDataException("Unsupported multiplayer contributor envelope.");
+            }
+
+            int count = reader.ReadInt32();
+            if (count < 0 || count > 10000)
+            {
+                throw new InvalidDataException("Invalid multiplayer contributor count.");
+            }
+
+            contributorIds = new List<Guid>(count);
+            contributorNicknames = new List<string>(count);
+            for (int i = 0; i < count; ++i)
+            {
+                byte[] guidBytes = reader.ReadBytes(16);
+                if (guidBytes.Length != 16)
+                {
+                    throw new EndOfStreamException();
+                }
+                contributorIds.Add(new Guid(guidBytes));
+                contributorNicknames.Add(reader.ReadString());
+            }
+
+            int strokeDataLength = reader.ReadInt32();
+            if (strokeDataLength < 0 || strokeDataLength > stream.Length - stream.Position)
+            {
+                throw new InvalidDataException("Invalid multiplayer stroke payload length.");
+            }
+            strokeData = reader.ReadBytes(strokeDataLength);
+            return true;
         }
 
         // Serializes a LinkedList of Strokes into a byte array using SketchWriter.
@@ -60,14 +165,16 @@ namespace OpenBrush.Multiplayer
 
         // Deserializes a byte array into a List of Strokes using SketchWriter.
         // We did not event anything new we are using SketchWriter.GetStrokes from TiltBrush.
-        public static async Task<List<Stroke>> DeserializeMemoryList(byte[] data)
+        public static async Task<List<Stroke>> DeserializeMemoryList(
+            byte[] data, bool squashLayers = false)
         {
             try
             {
                 using (var memoryStream = new MemoryStream(data))
                 {
                     var oldGroupToNewGroup = new Dictionary<int, int>();
-                    var strokes = SketchWriter.GetStrokes(memoryStream, allowFastPath: true);
+                    var strokes = SketchWriter.GetStrokes(
+                        memoryStream, allowFastPath: true, squashLayers: squashLayers);
 
                     if (strokes != null)
                     {
