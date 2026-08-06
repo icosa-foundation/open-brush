@@ -23,6 +23,7 @@ namespace TiltBrush
         private EditableModelWidget m_widget;
         private PreviewPolyhedron.OpDefinition m_OpDefinition;
         private PolyMesh m_previousPoly;
+        private PolyRecipe m_previousPolyRecipe;
 
         override public bool NeedsSave
         {
@@ -42,12 +43,18 @@ namespace TiltBrush
         {
             var poly = m_widget.m_PolyMesh;
             m_previousPoly = poly;
+            m_previousPolyRecipe = m_widget.m_PolyRecipe.Clone();
             poly = PreviewPolyhedron.ApplyOp(poly, m_OpDefinition);
+            var newRecipe = m_previousPolyRecipe.Clone();
+            newRecipe.Operators ??= new List<PreviewPolyhedron.OpDefinition>();
+            newRecipe.Operators.Add(m_OpDefinition);
+            m_widget.m_PolyRecipe = newRecipe;
             EditableModelManager.m_Instance.RegenerateMesh(m_widget, poly);
         }
 
         protected override void OnUndo()
         {
+            m_widget.m_PolyRecipe = m_previousPolyRecipe.Clone();
             EditableModelManager.m_Instance.RegenerateMesh(m_widget, m_previousPoly);
         }
     }
