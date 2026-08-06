@@ -1155,13 +1155,17 @@ namespace TiltBrush
 
                 if (opDict.ContainsKey("paramColor"))
                 {
-                    var colorData = opDict["paramColor"] as JArray;
-                    if (colorData != null && colorData.Count >= 3)
+                    object colorData = opDict["paramColor"];
+                    if (colorData is Color color)
+                    {
+                        newOp.paramColor = color;
+                    }
+                    else if (colorData is JArray colorArray && colorArray.Count >= 3)
                     {
                         newOp.paramColor = new Color(
-                            colorData[0].Value<float>(),
-                            colorData[1].Value<float>(),
-                            colorData[2].Value<float>()
+                            colorArray[0].Value<float>(),
+                            colorArray[1].Value<float>(),
+                            colorArray[2].Value<float>()
                         );
                     }
                 }
