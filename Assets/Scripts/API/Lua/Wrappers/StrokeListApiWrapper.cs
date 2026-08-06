@@ -11,7 +11,14 @@ namespace TiltBrush
         public List<Stroke> _Strokes;
 
         [LuaDocsDescription("Returns the last stroke that was selected")]
-        public StrokeApiWrapper lastSelected => new(SelectionManager.m_Instance.LastSelectedStroke);
+        public StrokeApiWrapper lastSelected
+        {
+            get
+            {
+                Stroke stroke = SelectionManager.m_Instance.LastSelectedStroke;
+                return stroke == null ? null : new StrokeApiWrapper(stroke);
+            }
+        }
 
         [LuaDocsDescription("Returns the last Stroke")]
         public StrokeApiWrapper last => _Strokes == null || _Strokes.Count == 0 ? null : new StrokeApiWrapper(_Strokes[^1]);

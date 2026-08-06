@@ -13,7 +13,14 @@ namespace TiltBrush
         public List<StencilWidget> _Guides;
 
         [LuaDocsDescription("Returns the last guide that was selected")]
-        public GuideApiWrapper lastSelected => new(SelectionManager.m_Instance.LastSelectedStencil);
+        public GuideApiWrapper lastSelected
+        {
+            get
+            {
+                StencilWidget stencil = SelectionManager.m_Instance.LastSelectedStencil;
+                return stencil == null ? null : new GuideApiWrapper(stencil);
+            }
+        }
 
         [LuaDocsDescription("Returns the last Guide")]
         public GuideApiWrapper last => (_Guides == null || _Guides.Count == 0) ? null : new GuideApiWrapper(_Guides[^1]);
