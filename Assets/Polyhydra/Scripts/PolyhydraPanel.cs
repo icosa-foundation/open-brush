@@ -970,17 +970,25 @@ namespace TiltBrush
                 Slider3.UpdateValueAbsolute(sliderParamValues[2]);
             }
 
-            // If no colors are supplied then use the current palette
-            Color[] colors;
-            if (emd.Colors == null || emd.Colors.Length == 0)
+            // The panel always edits one color per palette button. Preserve any additional source
+            // colors, and fill missing panel entries from the default palette.
+            Color[] sourceColors = emd.Colors == null || emd.Colors.Length == 0
+                ? DefaultColorPalette
+                : emd.Colors;
+            int colorCount = Mathf.Max(ColorPalletteButtons.Length, sourceColors.Length);
+            Color[] colors = new Color[colorCount];
+            for (int i = 0; i < colors.Length; i++)
             {
-                colors = (Color[])DefaultColorPalette.Clone();
+                colors[i] = i < sourceColors.Length
+                    ? sourceColors[i]
+                    : i < DefaultColorPalette.Length
+                        ? DefaultColorPalette[i]
+                        : Color.white;
             }
-            else
-            {
-                colors = (Color[])emd.Colors.Clone();
-            }
-            List<string> colorStrings = colors.Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.Colors = (Color[])colors.Clone();
+            List<string> colorStrings = colors
+                .Take(ColorPalletteButtons.Length)
+                .Select(c => $"#{ColorUtility.ToHtmlStringRGB(c)}").ToList();
             SetColorsToPalette(colorStrings);
             HandleSetColorMethod(emd.ColorMethod);
             SetMaterial(emd.MaterialIndex);
