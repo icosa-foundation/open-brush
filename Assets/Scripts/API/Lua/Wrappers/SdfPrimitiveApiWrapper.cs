@@ -53,6 +53,21 @@ namespace TiltBrush
             set => m_Stencil.SetPrimitiveBlend(Primitive, value);
         }
 
+        [LuaDocsDescription("Updates the geometry, local transform, operation, and blend in one mesh rebuild")]
+        [LuaDocsParameter("primitiveType", "sphere, torus, cuboid, boxframe, or cylinder")]
+        [LuaDocsParameter("geometry", "The primitive dimensions")]
+        [LuaDocsParameter("transform", "The primitive transform relative to its guide")]
+        [LuaDocsParameter("operation", "union, subtract, or intersect")]
+        [LuaDocsParameter("blend", "The non-negative smoothing distance")]
+        public void Update(
+            string primitiveType, Vector4ApiWrapper geometry, TrTransform transform,
+            string operation, float blend)
+        {
+            m_Stencil.UpdatePrimitive(
+                Primitive, SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4,
+                transform, SdfStencil.ParseOperation(operation), blend);
+        }
+
         [LuaDocsDescription("The zero-based position of this primitive in the SDF evaluation order")]
         public int index
         {
