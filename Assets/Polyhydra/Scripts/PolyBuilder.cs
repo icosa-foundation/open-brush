@@ -41,6 +41,7 @@ namespace TiltBrush
         public int MaterialIndex;
         public ColorMethods ColorMethod;
         public Color[] Colors;
+        public float? AutoSmoothAngle;
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
 
@@ -290,6 +291,7 @@ namespace TiltBrush
             recipe.Colors = colors;
             recipe.MaterialIndex = emd.MaterialIndex;
             recipe.ColorMethod = emd.ColorMethod;
+            recipe.AutoSmoothAngle = emd.AutoSmoothAngle;
             return recipe;
         }
     }
@@ -433,7 +435,14 @@ namespace TiltBrush
                     poly = ApplyOp(poly, op);
                 }
             }
-            PolyMesh.MeshData meshData = poly.BuildMeshData(false, p.Colors, p.ColorMethod);
+            if (p.AutoSmoothAngle.HasValue)
+            {
+                poly.AutoSmooth(p.AutoSmoothAngle.Value);
+            }
+            PolyMesh.MeshData meshData = poly.BuildMeshData(
+                generateSubmeshes: false,
+                colors: p.Colors,
+                colorMethod: p.ColorMethod);
             return (poly, meshData);
         }
 
