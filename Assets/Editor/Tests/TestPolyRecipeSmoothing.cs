@@ -55,5 +55,26 @@ namespace TiltBrush
             Assert.That(recipe.AutoSmoothAngle, Is.Null);
             Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.False);
         }
+
+        [Test]
+        public void ZeroAutoSmoothAngleKeepsEdgesHard()
+        {
+            PolyRecipe recipe = PolyRecipe.CreateDefault(null);
+            recipe.AutoSmoothAngle = 0f;
+
+            var (poly, _) = PolyBuilder.BuildFromPolyDef(recipe);
+
+            Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.False);
+        }
+
+        [TestCase(0f, null)]
+        [TestCase(-1f, null)]
+        [TestCase(45.4f, 45f)]
+        [TestCase(45.5f, 46f)]
+        [TestCase(181f, 180f)]
+        public void SliderValueMapsToOptionalAutoSmoothAngle(float value, float? expected)
+        {
+            Assert.That(PolyhydraPanel.AutoSmoothAngleFromSlider(value), Is.EqualTo(expected));
+        }
     }
 }

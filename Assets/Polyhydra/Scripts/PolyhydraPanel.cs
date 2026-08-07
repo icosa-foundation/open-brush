@@ -72,6 +72,7 @@ namespace TiltBrush
         public GameObject AllGeneratorControls;
         public GameObject AllOpControls;
         public GameObject AllAppearanceControls;
+        public AdvancedSlider SliderAutoSmooth;
         public GameObject OpPanel;
         public PolyhydraOptionButton ButtonOpType;
         public AdvancedSlider SliderOpParam1;
@@ -255,6 +256,7 @@ namespace TiltBrush
             preview.m_PolyRecipe = PolyRecipe.FromJson(presetText, DefaultColorPalette);
             preview.Validate();
             preview.ImmediateMakePolyhedron();
+            SyncAutoSmoothSlider();
         }
 
         public override void InitPanel()
@@ -267,6 +269,7 @@ namespace TiltBrush
             OpFilterControlParent.SetActive(false);
             OpPanel.SetActive(false);
             SetSliderConfiguration();
+            ConfigureAutoSmoothSlider();
             SetMainButtonVisibility();
             EnablePresetSaveButtons(popupButtonEnabled: false);
             m_Initialized = true;
@@ -328,6 +331,36 @@ namespace TiltBrush
         private void RebuildPreviewAndLinked()
         {
             PreviewPolyhedron.m_Instance.RebuildPoly();
+        }
+
+        private void ConfigureAutoSmoothSlider()
+        {
+            SliderAutoSmooth.SetMin(0);
+            SliderAutoSmooth.SetMax(180);
+            SliderAutoSmooth.SliderType = SliderTypes.Int;
+            SliderAutoSmooth.SetDescriptionText("Auto Smooth Angle");
+            SliderAutoSmooth.onUpdateValue.RemoveListener(HandleAutoSmoothAngleSlider);
+            SliderAutoSmooth.onUpdateValue.AddListener(HandleAutoSmoothAngleSlider);
+            SyncAutoSmoothSlider();
+        }
+
+        private void SyncAutoSmoothSlider()
+        {
+            float angle = PreviewPolyhedron.m_Instance.m_PolyRecipe.AutoSmoothAngle ?? 0f;
+            SliderAutoSmooth.SetInitialValueAndUpdate(angle);
+        }
+
+        internal static float? AutoSmoothAngleFromSlider(float value)
+        {
+            int angle = Mathf.Clamp(Mathf.RoundToInt(value), 0, 180);
+            return angle == 0 ? null : angle;
+        }
+
+        public void HandleAutoSmoothAngleSlider(Vector3 value)
+        {
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.AutoSmoothAngle =
+                AutoSmoothAngleFromSlider(value.z);
+            RebuildPreviewAndLinked();
         }
 
         public void HandleOpAmountSlider(Vector3 value)
@@ -397,6 +430,7 @@ namespace TiltBrush
             AllGeneratorControls.SetActive(false);
             AllOpControls.SetActive(false);
             AllAppearanceControls.SetActive(true);
+            SyncAutoSmoothSlider();
         }
 
         public void HandleSliderFilterParam(Vector3 value)
@@ -1058,6 +1092,7 @@ namespace TiltBrush
             SetColorsToPalette(colorStrings);
             HandleSetColorMethod(emd.ColorMethod);
             SetMaterial(emd.MaterialIndex);
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.AutoSmoothAngle = emd.AutoSmoothAngle;
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = emd.GeneratorType;
 
