@@ -88,13 +88,13 @@ namespace TiltBrush
                 // Reduce usage count on old model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount--;
+                    m_Model.ReleaseUsage();
                 }
                 m_Model = value;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount++;
+                    m_Model.AcquireUsage();
                 }
 
                 m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
@@ -671,6 +671,7 @@ namespace TiltBrush
             }
 
             return m_GsplatRenderer != null &&
+                m_GsplatRenderer.SupportsSpatialQueries &&
                 m_GsplatRenderer.TryIntersectSphere(center_GS, radius_GS, out score);
         }
 
@@ -1047,6 +1048,7 @@ namespace TiltBrush
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
                 // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
+                model.ReleaseFromCatalog();
             }
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
             // Set this before loading so mesh splits are available when the prefab is built.

@@ -218,6 +218,7 @@ namespace TiltBrush
 
         // How many widgets are using this model?
         public int m_UsageCount;
+        private bool m_CatalogOwnershipReleased;
 
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
@@ -235,6 +236,7 @@ namespace TiltBrush
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
         public bool IsGsplatModel { get; private set; }
+        private GsplatAsset m_OwnedGsplatAsset;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -309,6 +311,38 @@ namespace TiltBrush
         }
 
         public Location GetLocation() { return m_Location; }
+
+        internal void AcquireUsage()
+        {
+            m_UsageCount++;
+        }
+
+        internal void ReleaseUsage()
+        {
+            Debug.Assert(m_UsageCount > 0, $"Model usage count underflow for {m_Location}.");
+            if (m_UsageCount <= 0)
+            {
+                return;
+            }
+
+            m_UsageCount--;
+            if (m_UsageCount == 0 && m_CatalogOwnershipReleased)
+            {
+                UnloadModel();
+            }
+        }
+
+        internal void ReleaseFromCatalog()
+        {
+            m_CatalogOwnershipReleased = true;
+            if (m_UsageCount == 0)
+            {
+                UnloadModel();
+            }
+            // Otherwise retain the inactive owner hierarchy. Active widgets borrow its
+            // procedural meshes and runtime splat asset, and may still consult it for
+            // operations such as breaking a model apart. The final ReleaseUsage unloads it.
+        }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:
@@ -666,33 +700,23 @@ namespace TiltBrush
 
         GameObject LoadGsplat(List<string> warningsOut)
         {
+            GsplatAsset asset = null;
+            GameObject root = null;
             try
             {
                 string path = m_Location.AbsolutePath;
                 string ext = m_Location.Extension;
-                GsplatAsset asset;
-                if (ext == ".spz")
-                {
-                    var spzAsset = ScriptableObject.CreateInstance<GsplatAssetSpz>();
-                    spzAsset.LoadFromSpz(path, SourceCoordinates.RUB);
-                    asset = spzAsset;
-                }
-                else if (ext == ".sog")
-                {
-                    var sogAsset = ScriptableObject.CreateInstance<GsplatAssetSog>();
-                    sogAsset.LoadFromSog(path, SourceCoordinates.RDB);
-                    asset = sogAsset;
-                }
-                else
-                {
-                    var plyAsset = ScriptableObject.CreateInstance<GsplatAssetSpark>();
-                    plyAsset.LoadFromPly(path, sourceCoordinates: SourceCoordinates.RUB);
-                    asset = plyAsset;
-                }
+                SourceCoordinates sourceCoordinates = GetGsplatSourceCoordinates(ext);
+                asset = GsplatRuntimeLoader.LoadFile(
+                    path,
+                    Gsplat.CompressionMode.Spark,
+                    sourceCoordinates);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
+                    $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
+#endif
 
-                asset.name = Path.GetFileNameWithoutExtension(path);
-
-                GameObject root = new GameObject("ImportedGsplatRoot");
+                root = new GameObject("ImportedGsplatRoot");
                 GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
                 rendererObject.transform.SetParent(root.transform, false);
 
@@ -715,10 +739,52 @@ namespace TiltBrush
             }
             catch (Exception ex)
             {
+                if (root != null)
+                {
+                    UObject.Destroy(root);
+                }
+                DestroyRuntimeGsplatAsset(asset);
                 m_LoadError = new LoadError("Invalid data", ex.Message);
                 m_AllowExport = false;
                 Debug.LogException(ex);
                 return null;
+            }
+        }
+
+        private static SourceCoordinates GetGsplatSourceCoordinates(string extension)
+        {
+            return extension == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
+        }
+
+        private void FinishGsplatLoad(GameObject root, List<string> warnings)
+        {
+            if (root == null)
+            {
+                DisplayWarnings(warnings);
+                return;
+            }
+
+            GsplatAsset asset = root
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+            try
+            {
+                CalcBoundsNonGltf(root);
+                EndCreatePrefab(root, warnings);
+            }
+            catch (Exception ex)
+            {
+                if (m_ModelParent == root.transform)
+                {
+                    m_ModelParent = null;
+                    m_OwnedGsplatAsset = null;
+                }
+                UObject.Destroy(root);
+                DestroyRuntimeGsplatAsset(asset);
+                IsGsplatModel = false;
+                m_Valid = false;
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
             }
         }
 
@@ -1040,15 +1106,22 @@ namespace TiltBrush
                 }
                 else if (ext == ".ply")
                 {
-                    go = IsGsplatPly(m_Location.AbsolutePath) ? LoadGsplat(warnings) : LoadPly(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
+                    bool isGsplatPly = IsGsplatPly(m_Location.AbsolutePath);
+                    go = isGsplatPly ? LoadGsplat(warnings) : LoadPly(warnings);
+                    if (isGsplatPly)
+                    {
+                        FinishGsplatLoad(go, warnings);
+                    }
+                    else
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
                 }
                 else if (ext == ".spz" || ext == ".sog")
                 {
                     go = LoadGsplat(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
+                    FinishGsplatLoad(go, warnings);
                 }
                 else if (ext == ".vox")
                 {
@@ -1143,6 +1216,9 @@ namespace TiltBrush
                 DisplayWarnings(warnings);
             }
 
+            GsplatAsset newOwnedGsplatAsset = go
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+
             // Adopt the GameObject
             go.name = m_Location.ToString();
             go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
@@ -1151,6 +1227,8 @@ namespace TiltBrush
             {
                 UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = newOwnedGsplatAsset;
             m_ModelParent = go.transform;
 
             // For glTF format models, we will have already done this via the import plugin
@@ -1231,7 +1309,26 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = null;
             m_AppliedMeshSplits?.Clear();
+        }
+
+        private static void DestroyRuntimeGsplatAsset(GsplatAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                UObject.Destroy(asset);
+            }
+            else
+            {
+                UObject.DestroyImmediate(asset);
+            }
         }
 
         /// Resets this.Error and tries to load the model again.

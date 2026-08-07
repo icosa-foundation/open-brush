@@ -1004,6 +1004,11 @@ namespace TiltBrush
                             {
                                 OnIntroComplete();
                             }
+                            else if (UserConfig.Flags.ForceViewOnly)
+                            {
+                                OnIntroComplete(markTutorialComplete: false);
+                                PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
+                            }
                             else if (!VrSdk.IsHmdInitialized() ||
                                      UserConfig.Flags.SkipIntro ||
                                      UserConfig.Flags.DisableXrMode ||
@@ -1727,14 +1732,17 @@ namespace TiltBrush
             }
         }
 
-        void OnIntroComplete()
+        void OnIntroComplete(bool markTutorialComplete = true)
         {
             SaveLoadScript.m_Instance.NewAutosaveFile();
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             SketchControlsScript.m_Instance.RequestPanelsVisibility(true);
 
-            // If the user chooses to skip the intro, assume they've done the tutorial before.
-            PlayerPrefs.SetInt(App.kPlayerPrefHasPlayedBefore, 1);
+            if (markTutorialComplete)
+            {
+                // If the user chooses to skip the intro, assume they've done the tutorial before.
+                PlayerPrefs.SetInt(App.kPlayerPrefHasPlayedBefore, 1);
+            }
 
             m_DesiredAppState = AppState.Standard;
         }
@@ -2386,7 +2394,7 @@ namespace TiltBrush
 
         public static string SplatPosesPath()
         {
-            return Path.Combine(MediaLibraryPath(), "SplatPoses");
+            return Path.Combine(UserPath(), "SplatPoses");
         }
 
         static public string QuillLibraryPath()

@@ -340,6 +340,18 @@ namespace TiltBrush
             return original;
         }
 
+        private void ParseArgString(string argString)
+        {
+            // ParseArgs expects the executable name at index zero, matching
+            // Environment.GetCommandLineArgs(). Split quoted sections as single arguments.
+            var args = ("OpenBrush " + argString).Split('"')
+                .Select((element, index) => index % 2 == 0
+                    ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    : new string[] { element })
+                .SelectMany(element => element).ToArray();
+            ParseArgs(args);
+        }
+
         void ParseArgs(string[] args)
         {
             List<string> files = new List<string>();
@@ -574,13 +586,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    // This splits the arguments by spaces, excepting arguments enclosed by quotes.
-                    var args = ("TiltBrush.exe " + m_FakeCommandLineArgsInEditor).Split('"')
-                        .Select((element, index) => index % 2 == 0
-                            ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                            : new string[] { element })
-                        .SelectMany(element => element).ToArray();
-                    ParseArgs(args);
+                    ParseArgString(m_FakeCommandLineArgsInEditor);
                 }
                 catch (Exception e)
                 {
@@ -620,6 +626,13 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
                     UnityEngine.XR.XRSettings.enabled = false;
+                }
+
+                string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");
+                if (!string.IsNullOrWhiteSpace(openBrushArgs))
+                {
+                    Debug.Log("[OB_ANDROID_ARGS] Parsing OpenBrushArgs intent extra");
+                    ParseArgString(openBrushArgs);
                 }
 
                 // TODO Re-enable launch extra shortcuts. They will be useful but need a bit more thought and testing

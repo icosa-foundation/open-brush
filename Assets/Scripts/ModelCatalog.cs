@@ -247,12 +247,7 @@ namespace TiltBrush
             {
                 foreach (var entry in oldModels)
                 {
-                    // Verified that destroy a gameObject removes all children transforms,
-                    // all components, and most importantly all textures no longer used by the destroyed objects
-                    if (entry.Value.m_ModelParent != null)
-                    {
-                        Destroy(entry.Value.m_ModelParent.gameObject);
-                    }
+                    entry.Value.ReleaseFromCatalog();
                 }
                 Resources.UnloadUnusedAssets();
             }
