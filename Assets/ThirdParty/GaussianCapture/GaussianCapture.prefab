@@ -146,7 +146,6 @@ MonoBehaviour:
   width: 1920
   height: 1080
   raysPerView: 1000
-  outputFolder:
   captureMsaaSamples: 4
   runtimeSequence: 0
   fbs: 25
