@@ -800,7 +800,8 @@ namespace TiltBrush
                                        List<Roles> vertexRoles, List<HashSet<string>> faceTags,
                                        Color[] colors, ColorMethods colorMethod, int materialIndex,
                                        GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
-                                       List<Dictionary<string, object>> operations)
+                                       List<Dictionary<string, object>> operations,
+                                       float? autoSmoothAngle = null)
         {
             Vertices = vertices;
             Faces = faces;
@@ -813,6 +814,7 @@ namespace TiltBrush
             GeneratorType = generatorType;
             GeneratorParameters = generatorParameters;
             Operations = operations;
+            AutoSmoothAngle = autoSmoothAngle;
         }
 
         public EditableModelDefinition(PolyRecipe recipe)
@@ -832,6 +834,7 @@ namespace TiltBrush
             MaterialIndex = recipe.MaterialIndex;
             ColorMethod = recipe.ColorMethod;
             Colors = (Color[])recipe.Colors?.Clone();
+            AutoSmoothAngle = recipe.AutoSmoothAngle;
         }
 
         public static List<Dictionary<string, object>> OpsFromRecipe(PolyRecipe recipe)
@@ -1053,6 +1056,7 @@ namespace TiltBrush
         public List<Roles> VertexRoles { get; }
         public List<HashSet<string>> FaceTags { get; }
         public List<Dictionary<string, object>> Operations { get; }
+        public float? AutoSmoothAngle { get; }
 
     }
 
