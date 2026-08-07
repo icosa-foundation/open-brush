@@ -26,8 +26,6 @@ public class CameraCaptureRuntime : MonoBehaviour
     public int height = 1080;
     [Tooltip("Samples per image for point cloud (~sqrt grid)")]
     public int raysPerView = 500;
-    [Tooltip("Root output folder. If empty, defaults to Application.persistentDataPath + /Output")]
-    public string outputFolder = "";
 
     [Header("Image Quality")]
     [Tooltip("MSAA samples for color capture. Use 1 to disable.")]
@@ -129,6 +127,12 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void Awake()
     {
         m_Instance = this;
+
+        if (cameraToUse != null)
+        {
+            cameraToUse.enabled = false;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(cameraToUse);
+        }
     }
 
     // When transparentBackground is off, use RGB24 so sky pixels (alpha=0 in the RT) don't
@@ -392,10 +396,6 @@ public class CameraCaptureRuntime : MonoBehaviour
             Debug.LogError("Assign a Camera to use.");
             return false;
         }
-        if (string.IsNullOrEmpty(outputFolder))
-        {
-            outputFolder = Path.Combine(Application.persistentDataPath, "Output");
-        }
         if (width <= 0 || height <= 0)
         {
             Debug.LogError("Invalid Width/Height.");
@@ -410,6 +410,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private string CreateUniqueCaptureOutputFolder()
     {
+        string outputFolder = App.SplatPosesPath();
         var current = SaveLoadScript.m_Instance.SceneFile;
         string basename = current.Valid
             ? current.HumanName
