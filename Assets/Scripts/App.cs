@@ -2322,7 +2322,7 @@ namespace TiltBrush
 
         public static string SplatPosesPath()
         {
-            return Path.Combine(MediaLibraryPath(), "SplatPoses");
+            return Path.Combine(UserPath(), "SplatPoses");
         }
 
         static public string AutosavePath()
