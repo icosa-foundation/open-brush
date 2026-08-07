@@ -130,7 +130,10 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         if (cameraToUse != null)
         {
+            // This camera is rendered explicitly into capture textures. Keep it out of the
+            // regular camera loop and XR displays, independently of the active render pipeline.
             cameraToUse.enabled = false;
+            cameraToUse.stereoTargetEye = StereoTargetEyeMask.None;
             UrpPostProcessingController.ConfigureOffscreenCaptureCamera(cameraToUse);
         }
     }
