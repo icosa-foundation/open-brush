@@ -37,7 +37,8 @@ namespace TiltBrush
         private void DetectSupportedDevices()
         {
             // Currently only the Logitech stylus needs this panel
-            bool needsBrushSizeUI = VrStylusHandler.m_Instance.CurrentState.isActive;
+            bool needsBrushSizeUI =
+                VrStylusHandler.m_Instance?.CurrentState?.isActive == true;
 
             // DoAnimateIn performs a toggle so we have to also check the state
             if (needsBrushSizeUI)

@@ -1,221 +1,338 @@
-using UnityEngine;
-using System;
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System.Linq;
 using TiltBrush;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR;
+
+using MxInkController =
+    UnityEngine.XR.OpenXR.Features.Interactions.LogitechMxInkControllerProfile.LogitechMxInkController;
+
+#if USE_INPUT_SYSTEM_POSE_CONTROL
+using OpenXRPoseControl = UnityEngine.InputSystem.XR.PoseControl;
+#else
+using OpenXRPoseControl = UnityEngine.XR.OpenXR.Input.PoseControl;
+#endif
 
 public class VrStylusHandler : StylusHandler
 {
+    private const float kHapticClickDuration = 0.01f;
+    private const float kHapticClickAmplitude = 0.9f;
+    private const float kHapticClickMinThreshold = 0.2f;
+
     [SerializeField] private GameObject _mxInk_model;
     [SerializeField] private GameObject _tip;
     [SerializeField] private GameObject _cluster_front;
     [SerializeField] private GameObject _cluster_middle;
     [SerializeField] private GameObject _cluster_back;
 
-    static public VrStylusHandler m_Instance;
-
-    void Awake()
-    {
-        _stylus = new StylusInputs();
-        m_Instance = this;
-    }
-
-#if OCULUS_SUPPORTED
-    private bool _inUiInteraction = false;
-
-    public bool InUiInteraction
-    {
-        get { return _inUiInteraction; }
-        set { _inUiInteraction = value; }
-    }
-
-    private bool _positionIsTracked;
-    private bool _positionIsValid;
-
-    public bool positionIsTracked
-    {
-        get { return _positionIsTracked; }
-    }
-    public bool positionIsValid
-    {
-        get { return _positionIsValid; }
-    }
+    public static VrStylusHandler m_Instance;
 
     public Color active_color = Color.green;
     public Color double_tap_active_color = Color.cyan;
     public Color default_color = Color.white;
 
-    public override bool CanDraw()
+    private MxInkController m_Device;
+    private bool m_InUiInteraction;
+    private bool m_TipHasVibrated;
+    private bool m_MiddleHasVibrated;
+    private bool m_DoubleTapHasVibrated;
+    private bool m_BrushHandednessDirty;
+    private bool m_ControllerVisibilityDirty;
+
+    public bool InUiInteraction
     {
-        return _positionIsTracked && _positionIsValid && !_inUiInteraction;
+        get { return m_InUiInteraction; }
+        set { m_InUiInteraction = value; }
     }
 
-    // Defined action names.
-    private const string MX_Ink_Pose_Right = "aim_right";
-    private const string MX_Ink_Pose_Left = "aim_left";
-    private const string MX_Ink_TipForce = "tip";
-    private const string MX_Ink_MiddleForce = "middle";
-    private const string MX_Ink_ClusterFront = "front";
-    private const string MX_Ink_ClusterBack = "back";
-    private const string MX_Ink_ClusterBack_DoubleTap = "back_double_tap";
-    private const string MX_Ink_ClusterFront_DoubleTap = "front_double_tap";
-    private const string MX_Ink_Dock = "dock";
-    private const string MX_Ink_Haptic_Pulse = "haptic_pulse";
+    public bool positionIsTracked => _stylus.positionIsTracked;
+    public bool positionIsValid => _stylus.positionIsValid;
 
-    private bool _tipHasVibrated = false;
-    private bool _middleHasVibrated = false;
-    private bool _doubleTapHasVibrated = false;
-    private float _hapticClickDuration = 0.01f;
-    private float _hapticClickAmplitude = 0.9f;
-    private float _hapticClickMinThreshold = 0.2f;
+    private void Awake()
+    {
+        _stylus = new StylusInputs();
+        m_Instance = this;
+        SetStylusActive(false);
+    }
+
+    private void OnEnable()
+    {
+        InputSystem.onDeviceChange += OnInputDeviceChange;
+        RefreshDevice();
+    }
+
+    private void OnDisable()
+    {
+        InputSystem.onDeviceChange -= OnInputDeviceChange;
+        m_Device = null;
+        SetStylusActive(false);
+        UpdateControllerVisibility();
+    }
+
+    private void OnDestroy()
+    {
+        if (m_Instance == this)
+        {
+            m_Instance = null;
+        }
+    }
+
+    public override bool CanDraw()
+    {
+        return _stylus.positionIsTracked &&
+            _stylus.positionIsValid &&
+            !m_InUiInteraction;
+    }
+
+    private void OnInputDeviceChange(
+        UnityEngine.InputSystem.InputDevice device,
+        InputDeviceChange change)
+    {
+        if (device is MxInkController || device == m_Device)
+        {
+            RefreshDevice();
+        }
+    }
+
+    private void RefreshDevice()
+    {
+        MxInkController previousDevice = m_Device;
+        m_Device = InputSystem.devices
+            .OfType<MxInkController>()
+            .FirstOrDefault(device => device.added);
+
+        SetStylusActive(m_Device != null);
+        if (m_Device != null)
+        {
+            UpdateHandedness();
+        }
+
+        if (previousDevice != m_Device)
+        {
+            ResetHapticState();
+            string deviceName = m_Device != null ? m_Device.displayName : "none";
+            string hand = m_Device == null
+                ? "none"
+                : _stylus.isOnRightHand ? "right" : "left";
+            Debug.Log($"[MXINK-OPENXR] Active device: {deviceName}; hand: {hand}");
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (m_Device != null && !m_Device.added)
+        {
+            RefreshDevice();
+        }
+
+        if (m_Device == null)
+        {
+            ClearInputState();
+            UpdateControllerVisibility();
+            return;
+        }
+
+        SetStylusActive(true);
+        UpdateHandedness();
+        UpdateBrushHandedness();
+
+        UpdatePose();
+        UpdateInputs();
+        UpdateModelMaterials();
+        GenerateHapticClicks();
+        UpdateControllerVisibility();
+    }
+
+    private void UpdateHandedness()
+    {
+        bool isOnRightHand =
+            m_Device.usages.Contains(UnityEngine.InputSystem.CommonUsages.RightHand);
+        if (_stylus.isOnRightHand != isOnRightHand)
+        {
+            _stylus.isOnRightHand = isOnRightHand;
+            m_BrushHandednessDirty = true;
+            m_ControllerVisibilityDirty = true;
+        }
+    }
+
+    private void UpdateBrushHandedness()
+    {
+        if (!m_BrushHandednessDirty ||
+            InputManager.m_Instance == null ||
+            App.VrSdk.IsInitializingUnityXR)
+        {
+            return;
+        }
+
+        // MX Ink is always the brush. WandOnRight is therefore the inverse of
+        // the physical hand holding the stylus.
+        InputManager.m_Instance.WandOnRight = !_stylus.isOnRightHand;
+        m_BrushHandednessDirty = false;
+        m_ControllerVisibilityDirty = true;
+    }
 
     private void UpdatePose()
     {
-        _positionIsTracked = false;
-        _positionIsValid = false;
-
-        // Retrieve the interaction profile names of the right and left controllers
-        var leftDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandLeft);
-        var rightDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
-
-        // The Quest 3 touch controller interaction profile name is: /interaction_profiles/meta/touch_controller_plus
-        // The MX Ink interaction profile is: /interaction_profiles/logitech/mx_ink_stylus_logitech
-
-        // Find whether the Logitech MX Ink is on the left or the right hand
-        bool stylusIsOnLeftHand = leftDevice.Contains("logitech");
-        bool stylusIsOnRightHand = rightDevice.Contains("logitech");
-        // Debug.Log($"Device: Left hand: {leftDevice}, Right hand: {rightDevice}");
-        // Flag the stylus as active/inactive, on right/left hand
-        _stylus.isActive = stylusIsOnLeftHand || stylusIsOnRightHand;
-        _stylus.isOnRightHand = stylusIsOnRightHand;
-        // Hide the 3D model if not active
-        _mxInk_model.SetActive(_stylus.isActive);
-        // Hacky
-        InputManager.m_Instance.ShowController(!_stylus.isActive, stylusIsOnLeftHand ? 0 : 1);
-        InputManager.m_Instance.ShowController(true, stylusIsOnLeftHand ? 1 : 0);
-
-        // Select the right/left hand stylus pose to be used
-        string MX_Ink_Pose = _stylus.isOnRightHand ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
-
-        if (OVRPlugin.GetActionStatePose(MX_Ink_Pose, out OVRPlugin.Posef handPose))
+        OpenXRPoseControl poseControl = m_Device.tipPose;
+        if (!poseControl.isTracked.isPressed)
         {
-            transform.localPosition = handPose.Position.FromFlippedZVector3f();
-            transform.rotation = handPose.Orientation.FromFlippedZQuatf();
-            _stylus.inkingPose.position = transform.localPosition;
-            _stylus.inkingPose.rotation = transform.rotation;
-            _positionIsTracked = true;
-            _positionIsValid = true;
+            poseControl = m_Device.pointer;
         }
-        else
+
+        var pose = poseControl.ReadValue();
+        _stylus.positionIsTracked = pose.isTracked;
+        _stylus.positionIsValid =
+            (pose.trackingState & InputTrackingState.Position) != 0 &&
+            (pose.trackingState & InputTrackingState.Rotation) != 0;
+
+        if (!_stylus.positionIsValid)
         {
-            Debug.LogError($"MX_Ink: Error getting Pose action name {MX_Ink_Pose}, check logcat for specifics.");
+            return;
+        }
+
+        transform.localPosition = pose.position;
+        transform.localRotation = pose.rotation;
+        _stylus.inkingPose = new Pose(pose.position, pose.rotation);
+    }
+
+    private void UpdateInputs()
+    {
+        _stylus.tip_value = m_Device.tip.ReadValue();
+        _stylus.cluster_middle_value = m_Device.clusterMiddleButton.ReadValue();
+        _stylus.cluster_front_value = m_Device.clusterFrontButton.isPressed;
+        _stylus.cluster_back_value = m_Device.clusterBackButton.isPressed;
+        _stylus.cluster_back_double_tap_value =
+            m_Device.clusterBackDoubleTap.isPressed ||
+            m_Device.clusterFrontDoubleTap.isPressed;
+        _stylus.docked = m_Device.docked.isPressed;
+        _stylus.any = _stylus.tip_value > 0 ||
+            _stylus.cluster_front_value ||
+            _stylus.cluster_middle_value > 0 ||
+            _stylus.cluster_back_value ||
+            _stylus.cluster_back_double_tap_value;
+    }
+
+    private void ClearInputState()
+    {
+        _stylus.positionIsTracked = false;
+        _stylus.positionIsValid = false;
+        _stylus.tip_value = 0;
+        _stylus.cluster_middle_value = 0;
+        _stylus.cluster_front_value = false;
+        _stylus.cluster_back_value = false;
+        _stylus.cluster_back_double_tap_value = false;
+        _stylus.docked = false;
+        _stylus.any = false;
+    }
+
+    private void ResetHapticState()
+    {
+        m_TipHasVibrated = false;
+        m_MiddleHasVibrated = false;
+        m_DoubleTapHasVibrated = false;
+    }
+
+    private void SetStylusActive(bool active)
+    {
+        if (_stylus.isActive != active)
+        {
+            _stylus.isActive = active;
+            m_BrushHandednessDirty = active;
+            m_ControllerVisibilityDirty = true;
+        }
+
+        if (_mxInk_model != null && _mxInk_model.activeSelf != active)
+        {
+            _mxInk_model.SetActive(active);
         }
     }
 
-    void LateUpdate()
+    private void UpdateControllerVisibility()
     {
-        OVRInput.Update();
-        UpdatePose();
-
-        if (!OVRPlugin.GetActionStateFloat(MX_Ink_TipForce, out _stylus.tip_value))
+        if (!m_ControllerVisibilityDirty || InputManager.m_Instance == null)
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_TipForce}");
+            return;
         }
 
-        if (!OVRPlugin.GetActionStateFloat(MX_Ink_MiddleForce, out _stylus.cluster_middle_value))
+        if (!_stylus.isActive)
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_TipForce}");
-        }
-
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterFront, out _stylus.cluster_front_value))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterFront}");
-        }
-
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterBack, out _stylus.cluster_back_value))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack}");
-        }
-
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterFront_DoubleTap, out _stylus.cluster_back_double_tap_value))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterFront_DoubleTap}");
-        }
-
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterBack_DoubleTap, out _stylus.cluster_back_double_tap_value))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack_DoubleTap}");
-        }
-
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_Dock, out _stylus.docked))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_Dock}");
-        }
-
-        _stylus.any = _stylus.tip_value > 0 || _stylus.cluster_front_value ||
-                        _stylus.cluster_middle_value > 0 || _stylus.cluster_back_value ||
-                        _stylus.cluster_back_double_tap_value;
-
-        _tip.GetComponent<MeshRenderer>().material.color = _stylus.tip_value > 0 ? active_color : default_color;
-        _cluster_front.GetComponent<MeshRenderer>().material.color = _stylus.cluster_front_value ? active_color : default_color;
-        _cluster_middle.GetComponent<MeshRenderer>().material.color = _stylus.cluster_middle_value > 0 ? active_color : default_color;
-        if (_stylus.cluster_back_value)
-        {
-            _cluster_back.GetComponent<MeshRenderer>().material.color = _stylus.cluster_back_value ? active_color : default_color;
+            InputManager.m_Instance.ShowController(true, 0);
+            InputManager.m_Instance.ShowController(true, 1);
         }
         else
         {
-            _cluster_back.GetComponent<MeshRenderer>().material.color = _stylus.cluster_back_double_tap_value ? double_tap_active_color : default_color;
+            InputManager.m_Instance.ShowController(
+                false,
+                (int)InputManager.ControllerName.Brush);
+            InputManager.m_Instance.ShowController(
+                true,
+                (int)InputManager.ControllerName.Wand);
         }
 
-        GenerateHapticClicks();
+        m_ControllerVisibilityDirty = false;
     }
 
-    private void PlayHapticClick(float analogValue, ref bool hasVibrated, OVRPlugin.Hand hand)
+    private void UpdateModelMaterials()
     {
-        if (analogValue >= _hapticClickMinThreshold)
-        {
-            if (!hasVibrated)
-            {
-                OVRPlugin.TriggerVibrationAction(MX_Ink_Haptic_Pulse, hand,
-                _hapticClickDuration, _hapticClickAmplitude);
-                hasVibrated = true;
-            }
-        }
-        if (analogValue < _hapticClickMinThreshold)
-        {
-            hasVibrated = false;
-        }
+        SetMaterialColor(_tip, _stylus.tip_value > 0 ? active_color : default_color);
+        SetMaterialColor(
+            _cluster_front,
+            _stylus.cluster_front_value ? active_color : default_color);
+        SetMaterialColor(
+            _cluster_middle,
+            _stylus.cluster_middle_value > 0 ? active_color : default_color);
+
+        Color backColor = _stylus.cluster_back_value
+            ? active_color
+            : _stylus.cluster_back_double_tap_value
+                ? double_tap_active_color
+                : default_color;
+        SetMaterialColor(_cluster_back, backColor);
     }
 
-    private void PlayHapticClick(bool inputValue, ref bool hasVibrated, OVRPlugin.Hand hand)
+    private static void SetMaterialColor(GameObject target, Color color)
     {
-        if (inputValue)
+        if (target != null && target.TryGetComponent(out MeshRenderer renderer))
         {
-            if (!hasVibrated)
-            {
-                OVRPlugin.TriggerVibrationAction(MX_Ink_Haptic_Pulse, hand,
-                _hapticClickDuration, _hapticClickAmplitude);
-                hasVibrated = true;
-            }
-        }
-        else
-        {
-            hasVibrated = false;
+            renderer.material.color = color;
         }
     }
 
     private void GenerateHapticClicks()
     {
-        try
-        {
-            OVRPlugin.Hand holdingHand = _stylus.isOnRightHand ? OVRPlugin.Hand.HandRight : OVRPlugin.Hand.HandLeft;
-            PlayHapticClick(_stylus.tip_value, ref _tipHasVibrated, holdingHand);
-            PlayHapticClick(_stylus.cluster_middle_value, ref _middleHasVibrated, holdingHand);
-            PlayHapticClick(_stylus.cluster_back_double_tap_value, ref _doubleTapHasVibrated, holdingHand);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e.Message);
-        }
+        PlayHapticClick(_stylus.tip_value, ref m_TipHasVibrated);
+        PlayHapticClick(_stylus.cluster_middle_value, ref m_MiddleHasVibrated);
+        PlayHapticClick(
+            _stylus.cluster_back_double_tap_value,
+            ref m_DoubleTapHasVibrated);
     }
-#endif
+
+    private void PlayHapticClick(float value, ref bool hasVibrated)
+    {
+        PlayHapticClick(value >= kHapticClickMinThreshold, ref hasVibrated);
+    }
+
+    private void PlayHapticClick(bool pressed, ref bool hasVibrated)
+    {
+        if (pressed && !hasVibrated)
+        {
+            m_Device.SendImpulse(kHapticClickAmplitude, kHapticClickDuration);
+        }
+
+        hasVibrated = pressed;
+    }
 }
