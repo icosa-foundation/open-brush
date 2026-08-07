@@ -127,6 +127,14 @@ public class CameraCaptureRuntime : MonoBehaviour
     public void Awake()
     {
         m_Instance = this;
+
+        if (cameraToUse != null)
+        {
+            // This camera is rendered explicitly into capture textures. Keep it out of the
+            // regular camera loop and XR displays, independently of the active render pipeline.
+            cameraToUse.enabled = false;
+            cameraToUse.stereoTargetEye = StereoTargetEyeMask.None;
+        }
     }
 
     // When transparentBackground is off, use RGB24 so sky pixels (alpha=0 in the RT) don't
