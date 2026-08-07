@@ -2384,6 +2384,11 @@ namespace TiltBrush
             return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
+        public static string SplatPosesPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "SplatPoses");
+        }
+
         static public string QuillLibraryPath()
         {
             return Path.Combine(System.Environment.GetFolderPath(
