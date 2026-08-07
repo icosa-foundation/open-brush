@@ -354,6 +354,136 @@ namespace TiltBrush
         }
 
         // TODO Unify this with similar code elsewhere (API?)
+        internal sealed class FaceStrokePath
+        {
+            public readonly List<Halfedge> Edges;
+            public readonly int ColorFaceIndex;
+
+            public FaceStrokePath(List<Halfedge> edges, int colorFaceIndex)
+            {
+                Edges = edges;
+                ColorFaceIndex = colorFaceIndex;
+            }
+        }
+
+        internal static List<Halfedge> GetHardStrokeEdges(PolyMesh poly)
+        {
+            var result = new List<Halfedge>();
+            var drawnEdges = new HashSet<(Guid, Guid)>();
+            foreach (var edge in poly.Halfedges)
+            {
+                if (edge.IsEdgeSmooth)
+                {
+                    continue;
+                }
+                var edgeName = edge.PairedName;
+                if (edgeName.HasValue && !drawnEdges.Add(edgeName.Value))
+                {
+                    continue;
+                }
+                result.Add(edge);
+            }
+            return result;
+        }
+
+        internal static List<FaceStrokePath> GetFaceStrokePaths(PolyMesh poly)
+        {
+            var result = new List<FaceStrokePath>();
+            var faceIndices = poly.Faces
+                .Select((face, index) => (face, index))
+                .ToDictionary(item => item.face, item => item.index);
+            var visitedFaces = new HashSet<Face>();
+
+            foreach (var seedFace in poly.Faces)
+            {
+                if (!visitedFaces.Add(seedFace))
+                {
+                    continue;
+                }
+
+                var island = new List<Face>();
+                var pending = new Stack<Face>();
+                pending.Push(seedFace);
+                while (pending.Count > 0)
+                {
+                    var face = pending.Pop();
+                    island.Add(face);
+                    foreach (var edge in face.GetHalfedges())
+                    {
+                        Face adjacentFace = edge.IsEdgeSmooth ? edge.Pair?.Face : null;
+                        if (adjacentFace != null && visitedFaces.Add(adjacentFace))
+                        {
+                            pending.Push(adjacentFace);
+                        }
+                    }
+                }
+
+                var boundaryEdges = island
+                    .SelectMany(face => face.GetHalfedges())
+                    .Where(edge => !edge.IsEdgeSmooth)
+                    .ToList();
+                int colorFaceIndex = island.Min(face => faceIndices[face]);
+                foreach (var loop in OrderBoundaryEdges(boundaryEdges))
+                {
+                    result.Add(new FaceStrokePath(loop, colorFaceIndex));
+                }
+            }
+
+            return result;
+        }
+
+        private static List<List<Halfedge>> OrderBoundaryEdges(List<Halfedge> boundaryEdges)
+        {
+            var result = new List<List<Halfedge>>();
+            if (boundaryEdges.Count == 0)
+            {
+                return result;
+            }
+
+            var outgoingCounts = new Dictionary<Vertex, int>();
+            var incomingCounts = new Dictionary<Vertex, int>();
+            var outgoingEdges = new Dictionary<Vertex, Halfedge>();
+            foreach (var edge in boundaryEdges)
+            {
+                Vertex start = edge.Prev.Vertex;
+                Vertex end = edge.Vertex;
+                outgoingCounts[start] = outgoingCounts.GetValueOrDefault(start) + 1;
+                incomingCounts[end] = incomingCounts.GetValueOrDefault(end) + 1;
+                outgoingEdges[start] = edge;
+            }
+
+            bool hasAmbiguousVertex = outgoingCounts.Any(item => item.Value != 1) ||
+                                      incomingCounts.Any(item => item.Value != 1) ||
+                                      outgoingCounts.Keys.Any(vertex => !incomingCounts.ContainsKey(vertex)) ||
+                                      incomingCounts.Keys.Any(vertex => !outgoingCounts.ContainsKey(vertex));
+            if (hasAmbiguousVertex)
+            {
+                // A branching or open boundary cannot be represented as an unambiguous loop.
+                // Returning individual segments avoids drawing jumps across the surface.
+                result.AddRange(boundaryEdges.Select(edge => new List<Halfedge> { edge }));
+                return result;
+            }
+
+            var remaining = new HashSet<Halfedge>(boundaryEdges);
+            foreach (var firstEdge in boundaryEdges)
+            {
+                if (!remaining.Contains(firstEdge))
+                {
+                    continue;
+                }
+
+                var loop = new List<Halfedge>();
+                var edge = firstEdge;
+                while (remaining.Remove(edge))
+                {
+                    loop.Add(edge);
+                    edge = outgoingEdges[edge.Vertex];
+                }
+                result.Add(loop);
+            }
+            return result;
+        }
+
         private static void CreateBrushStrokesForPoly(
             PolyMesh poly, TrTransform tr, PolyRecipe polyRecipe)
         {
@@ -368,18 +498,18 @@ namespace TiltBrush
 
             var drawnEdges = new Dictionary<(Guid, Guid), int>();
 
-            foreach (var (face, faceIndex) in poly.Faces.WithIndex())
+            foreach (var (path, pathIndex) in GetFaceStrokePaths(poly).WithIndex())
             {
                 var controlPoints = new List<PointerManager.ControlPoint>();
-                var faceVerts = face.GetVertices();
-                faceVerts.Add(faceVerts[0]);
-                for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
+                Vector3 finalVertexPosition = Vector3.zero;
+                Quaternion finalOrientation = Quaternion.identity;
+                foreach (var edge in path.Edges)
                 {
-                    var vert = faceVerts[vertexIndex];
-                    var nextVert = faceVerts[(vertexIndex + 1) % faceVerts.Count];
+                    var vert = edge.Prev.Vertex;
+                    var nextVert = edge.Vertex;
 
                     float lift = 0;
-                    var key = vert.Halfedge.PairedName.Value;
+                    var key = edge.PairedName.Value;
 
                     if (drawnEdges.ContainsKey(key))
                     {
@@ -393,6 +523,8 @@ namespace TiltBrush
                     }
 
                     Vector3 offsettedVert = vert.Position + vert.Normal * lift;
+                    finalVertexPosition = nextVert.Position + vert.Normal * lift;
+                    finalOrientation = Quaternion.LookRotation(edge.Face.Normal, Vector3.up);
 
                     for (float step = 0; step < 1f; step += .25f)
                     {
@@ -408,12 +540,32 @@ namespace TiltBrush
                         controlPoints.Add(new PointerManager.ControlPoint
                         {
                             m_Pos = tr.translation + vertexPos,
-                            m_Orient = Quaternion.LookRotation(face.Normal, Vector3.up),
+                            m_Orient = finalOrientation,
                             m_Pressure = pressure,
                             m_TimestampMs = incrementedTime
                         });
                         incrementedTime += m_TimeStep;
                     }
+                }
+
+                finalVertexPosition = tr.rotation * (finalVertexPosition * tr.scale);
+                // Preserve the existing face-stroke endpoint padding used by brush geometry.
+                for (var closingPoint = 0; closingPoint < 4; closingPoint++)
+                {
+                    Vector3 closingPosition = finalVertexPosition;
+                    if (PointerManager.m_Instance.positionJitter > 0)
+                    {
+                        closingPosition = PointerManager.m_Instance.GenerateJitteredPosition(
+                            closingPosition, PointerManager.m_Instance.positionJitter);
+                    }
+                    controlPoints.Add(new PointerManager.ControlPoint
+                    {
+                        m_Pos = tr.translation + closingPosition,
+                        m_Orient = finalOrientation,
+                        m_Pressure = pressure,
+                        m_TimestampMs = incrementedTime
+                    });
+                    incrementedTime += m_TimeStep;
                 }
 
                 float brushSize = PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
@@ -424,7 +576,7 @@ namespace TiltBrush
                 }
 
                 Color strokeColor = PreviewPolyhedron.GetFaceColorForStrokes(
-                    poly, polyRecipe, faceIndex);
+                    poly, polyRecipe, path.ColorFaceIndex);
                 if (PointerManager.m_Instance.colorJitter.sqrMagnitude > 0)
                 {
                     float colorLuminanceMin = BrushCatalog.m_Instance.GetBrush(brush.m_Guid).m_ColorLuminanceMin;
@@ -446,7 +598,7 @@ namespace TiltBrush
                 stroke.Group = group;
 
                 stroke.Recreate(null, App.Scene.ActiveCanvas);
-                if (faceIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
+                if (pathIndex != 0) stroke.m_Flags = SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BrushStrokeCommand(stroke, WidgetManager.m_Instance.ActiveStencil, -1) // TODO Do we need to supply the actual length?
@@ -464,15 +616,10 @@ namespace TiltBrush
             var group = App.GroupManager.NewUnusedGroup();
             tr.scale *= poly.ScalingFactor;
 
-            var drawnEdges = new HashSet<(Guid, Guid)?>();
-
             uint incrementedTime = (uint)(Time.unscaledTime / 1000f);
 
-            foreach (var (edge, edgeIndex) in poly.Halfedges.WithIndex())
+            foreach (var (edge, edgeIndex) in GetHardStrokeEdges(poly).WithIndex())
             {
-                if (drawnEdges.Contains(edge.PairedName)) continue;
-                drawnEdges.Add(edge.PairedName);
-
                 var edgeNormal = edge.Pair == null ?
                     edge.Face.Normal :
                     (edge.Face.Normal + edge.Pair.Face.Normal) / 2;
