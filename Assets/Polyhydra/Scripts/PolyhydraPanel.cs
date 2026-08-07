@@ -52,6 +52,7 @@ namespace TiltBrush
 
         [Header("3D Shapes Landing View")]
         [SerializeField] private GameObject m_LandingView;
+        [SerializeField] private GameObject m_ShapeEditorView;
 
         public GameObject PresetInitialSaveButton;
         public GameObject PresetSaveOptionsPopupButton;
@@ -96,7 +97,7 @@ namespace TiltBrush
         [SerializeField] private string m_CurrentPresetPath;
 
         private MeshFilter meshFilter;
-        private readonly List<GameObject> m_ShapeEditorObjects = new();
+        private bool m_Initialized;
 
         public Transform m_PreviewPrefab;
 
@@ -199,7 +200,10 @@ namespace TiltBrush
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
-            ShowLandingView();
+            if (m_Initialized)
+            {
+                ShowLandingView();
+            }
             InitPreviewPoly(true);
         }
 
@@ -256,7 +260,6 @@ namespace TiltBrush
         public override void InitPanel()
         {
             base.InitPanel();
-            FindShapeEditorObjects();
             CurrentPresetsDirectory = App.ShapeRecipesPath();
 
             InitPreviewPoly(false);
@@ -266,22 +269,8 @@ namespace TiltBrush
             SetSliderConfiguration();
             SetMainButtonVisibility();
             EnablePresetSaveButtons(popupButtonEnabled: false);
+            m_Initialized = true;
             ShowLandingView();
-        }
-
-        private void FindShapeEditorObjects()
-        {
-            m_ShapeEditorObjects.Clear();
-            foreach (Transform child in m_Mesh.transform)
-            {
-                bool isLandingView = child.gameObject == m_LandingView;
-                bool isPanelChrome = child.gameObject == m_MeshCollider.gameObject ||
-                    child.name.StartsWith("Border");
-                if (!isLandingView && !isPanelChrome)
-                {
-                    m_ShapeEditorObjects.Add(child.gameObject);
-                }
-            }
         }
 
         public void ShowShapeEditorView()
@@ -296,9 +285,9 @@ namespace TiltBrush
 
         private void SetShapeEditorVisible(bool visible)
         {
-            foreach (GameObject editorObject in m_ShapeEditorObjects)
+            if (m_ShapeEditorView != null)
             {
-                editorObject.SetActive(visible);
+                m_ShapeEditorView.SetActive(visible);
             }
 
             if (m_LandingView != null)
