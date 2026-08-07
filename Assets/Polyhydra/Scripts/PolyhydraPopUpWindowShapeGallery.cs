@@ -35,7 +35,7 @@ namespace TiltBrush
 
         protected float m_ColorTransitionValue;
         protected Material m_ColorBackground;
-        protected PolyhydraModeTray ParentPanel;
+        protected PolyhydraPanel ParentEditorPanel;
 
         override protected void BaseUpdate()
         {
@@ -83,9 +83,14 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
             InitShapeGalleryItems();
-            ParentPanel = rParent.GetComponentInChildren<PolyhydraModeTray>();
-            ParentPanel.EnsurePreviewPoly();
-            FirstButtonIndex = ParentPanel.CurrentGalleryPage * ButtonsPerPage;
+            ParentEditorPanel = rParent.GetComponentInChildren<PolyhydraPanel>();
+            if (ParentEditorPanel == null)
+            {
+                throw new MissingReferenceException(
+                    "OB_3D_SHAPES_PANEL: Shape Gallery requires a Polyhydra panel.");
+            }
+            ParentEditorPanel.EnsurePreviewPoly();
+            FirstButtonIndex = ParentEditorPanel.CurrentGalleryPage * ButtonsPerPage;
             m_ColorBackground = m_Background.GetComponent<MeshRenderer>().sharedMaterial;
             base.Init(rParent, sText);
             _buttons = new List<GameObject>();
@@ -180,14 +185,14 @@ namespace TiltBrush
 
         public void HandleButtonPress(string presetName)
         {
-            ParentPanel.LoadShapeGalleryPreset(ShapeGalleryJson[presetName].text);
+            ParentEditorPanel.LoadShapeGalleryPreset(ShapeGalleryJson[presetName].text);
         }
 
         public void NextPage()
         {
             FirstButtonIndex += ButtonsPerPage;
             CreateButtons();
-            ParentPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
+            SetCurrentGalleryPage();
         }
 
         public void PrevPage()
@@ -195,7 +200,12 @@ namespace TiltBrush
             FirstButtonIndex -= ButtonsPerPage;
             FirstButtonIndex = Mathf.Max(0, FirstButtonIndex);
             CreateButtons();
-            ParentPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
+            SetCurrentGalleryPage();
+        }
+
+        private void SetCurrentGalleryPage()
+        {
+            ParentEditorPanel.CurrentGalleryPage = FirstButtonIndex / ButtonsPerPage;
         }
     }
 } // namespace TiltBrush

@@ -50,6 +50,9 @@ namespace TiltBrush
     {
         public Color[] DefaultColorPalette;
 
+        [Header("3D Shapes Landing View")]
+        [SerializeField] private GameObject m_LandingView;
+
         public GameObject PresetInitialSaveButton;
         public GameObject PresetSaveOptionsPopupButton;
 
@@ -93,6 +96,7 @@ namespace TiltBrush
         [SerializeField] private string m_CurrentPresetPath;
 
         private MeshFilter meshFilter;
+        private readonly List<GameObject> m_ShapeEditorObjects = new();
 
         public Transform m_PreviewPrefab;
 
@@ -190,10 +194,12 @@ namespace TiltBrush
         public int CurrentPresetPage { get; set; }
         public int CurrentOperatorPage { get; set; }
         public int CurrentColorPalettePage { get; set; }
+        public int CurrentGalleryPage { get; set; }
 
         protected override void OnEnablePanel()
         {
             base.OnEnablePanel();
+            ShowLandingView();
             InitPreviewPoly(true);
         }
 
@@ -214,20 +220,11 @@ namespace TiltBrush
             PreviewPolyhedron.m_Instance.m_PolyRecipe =
                 PolyRecipe.CreateDefault(DefaultColorPalette);
 
-            // Attach the preview poly to the Polyhydra panel if opening, or else the polyhydra tray
+            // Attach the preview to whichever view is currently visible.
             Transform attachPoint = null;
             if (attachPreviewHere)
             {
                 attachPoint = m_PreviewAttachPoint;
-            }
-            else
-            {
-                BasePanel experimentalPanel;
-                experimentalPanel = PanelManager.m_Instance.GetActivePanelByType(PanelType.Experimental);
-                if (experimentalPanel != null)
-                {
-                    attachPoint = experimentalPanel.GetComponentInChildren<PolyhydraModeTray>().m_PreviewPolyAttachPoint;
-                }
             }
             if (attachPoint != null)
             {
@@ -235,9 +232,31 @@ namespace TiltBrush
             }
         }
 
+        public PreviewPolyhedron EnsurePreviewPoly()
+        {
+            if (PreviewPolyhedron.m_Instance == null)
+            {
+                Instantiate(m_PreviewPrefab);
+                PreviewPolyhedron.m_Instance.m_PolyRecipe =
+                    PolyRecipe.CreateDefault(DefaultColorPalette);
+            }
+
+            PreviewPolyhedron.m_Instance.transform.SetParent(m_PreviewAttachPoint, false);
+            return PreviewPolyhedron.m_Instance;
+        }
+
+        public void LoadShapeGalleryPreset(string presetText)
+        {
+            PreviewPolyhedron preview = EnsurePreviewPoly();
+            preview.m_PolyRecipe = PolyRecipe.FromJson(presetText, DefaultColorPalette);
+            preview.Validate();
+            preview.ImmediateMakePolyhedron();
+        }
+
         public override void InitPanel()
         {
             base.InitPanel();
+            FindShapeEditorObjects();
             CurrentPresetsDirectory = App.ShapeRecipesPath();
 
             InitPreviewPoly(false);
@@ -247,6 +266,47 @@ namespace TiltBrush
             SetSliderConfiguration();
             SetMainButtonVisibility();
             EnablePresetSaveButtons(popupButtonEnabled: false);
+            ShowLandingView();
+        }
+
+        private void FindShapeEditorObjects()
+        {
+            m_ShapeEditorObjects.Clear();
+            foreach (Transform child in m_Mesh.transform)
+            {
+                bool isLandingView = child.gameObject == m_LandingView;
+                bool isPanelChrome = child.gameObject == m_MeshCollider.gameObject ||
+                    child.name.StartsWith("Border");
+                if (!isLandingView && !isPanelChrome)
+                {
+                    m_ShapeEditorObjects.Add(child.gameObject);
+                }
+            }
+        }
+
+        public void ShowShapeEditorView()
+        {
+            SetShapeEditorVisible(true);
+        }
+
+        public void ShowLandingView()
+        {
+            SetShapeEditorVisible(false);
+        }
+
+        private void SetShapeEditorVisible(bool visible)
+        {
+            foreach (GameObject editorObject in m_ShapeEditorObjects)
+            {
+                editorObject.SetActive(visible);
+            }
+
+            if (m_LandingView != null)
+            {
+                m_LandingView.SetActive(!visible);
+            }
+
+            m_UIComponentManager?.ResetInput();
         }
 
         private void EnablePresetSaveButtons(bool popupButtonEnabled)
