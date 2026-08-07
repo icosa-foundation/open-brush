@@ -66,5 +66,51 @@ namespace TiltBrush
 
             Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.False);
         }
+        [Test]
+        public void EdgeStrokesExcludeAutoSmoothedPrismEdges()
+        {
+            var poly = RadialSolids.Prism(32);
+            poly.AutoSmooth(20f);
+
+            var strokeEdges = PolyhydraTool.GetHardStrokeEdges(poly);
+
+            Assert.That(strokeEdges, Has.Count.EqualTo(64));
+            Assert.That(strokeEdges.All(edge => !edge.IsEdgeSmooth), Is.True);
+        }
+
+        [Test]
+        public void FaceStrokesTraceBoundariesOfSmoothedPrismRegions()
+        {
+            var poly = RadialSolids.Prism(32);
+            poly.AutoSmooth(20f);
+
+            var paths = PolyhydraTool.GetFaceStrokePaths(poly);
+
+            Assert.That(paths, Has.Count.EqualTo(4));
+            Assert.That(paths.Sum(path => path.Edges.Count), Is.EqualTo(128));
+            Assert.That(paths.SelectMany(path => path.Edges)
+                .All(edge => !edge.IsEdgeSmooth), Is.True);
+        }
+
+        [Test]
+        public void FaceStrokesRemainPerFaceWithoutSmoothing()
+        {
+            var poly = RadialSolids.Prism(32);
+
+            var paths = PolyhydraTool.GetFaceStrokePaths(poly);
+
+            Assert.That(paths, Has.Count.EqualTo(34));
+            Assert.That(paths.Sum(path => path.Edges.Count), Is.EqualTo(192));
+        }
+
+        [Test]
+        public void FullySmoothedClosedSurfaceHasNoFaceBoundaryStrokes()
+        {
+            var poly = RadialSolids.Prism(32);
+            poly.AutoSmooth(180f);
+
+            Assert.That(PolyhydraTool.GetHardStrokeEdges(poly), Is.Empty);
+            Assert.That(PolyhydraTool.GetFaceStrokePaths(poly), Is.Empty);
+        }
     }
 }
