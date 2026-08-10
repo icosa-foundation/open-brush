@@ -1009,6 +1009,7 @@ namespace TiltBrush
             SetColorsToPalette(colorStrings);
             HandleSetColorMethod(emd.ColorMethod);
             SetMaterial(emd.MaterialIndex);
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.AutoSmoothAngle = emd.AutoSmoothAngle;
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = emd.GeneratorType;
 

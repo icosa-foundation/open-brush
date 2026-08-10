@@ -435,7 +435,7 @@ namespace TiltBrush
                     poly = ApplyOp(poly, op);
                 }
             }
-            if (p.AutoSmoothAngle.HasValue)
+            if (p.AutoSmoothAngle > 0f)
             {
                 poly.AutoSmooth(p.AutoSmoothAngle.Value);
             }
