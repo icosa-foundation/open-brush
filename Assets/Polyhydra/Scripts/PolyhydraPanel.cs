@@ -99,6 +99,7 @@ namespace TiltBrush
 
         private MeshFilter meshFilter;
         private bool m_Initialized;
+        private PolyRecipePreset m_ExposedParameterPreset;
 
         public Transform m_PreviewPrefab;
 
@@ -216,6 +217,7 @@ namespace TiltBrush
 
         private void InitPreviewPoly(bool attachPreviewHere)
         {
+            ClearExposedParameters();
             // Instantiate the preview poly if needed
             if (PreviewPolyhedron.m_Instance == null)
             {
@@ -252,10 +254,13 @@ namespace TiltBrush
 
         public void LoadShapeGalleryPreset(string presetText)
         {
+            PolyRecipePreset preset = PolyRecipePreset.FromJson(
+                presetText, DefaultColorPalette, LogExposedParameterWarning);
             PreviewPolyhedron preview = EnsurePreviewPoly();
-            preview.m_PolyRecipe = PolyRecipe.FromJson(presetText, DefaultColorPalette);
+            preview.m_PolyRecipe = preset.Recipe;
             preview.Validate();
             preview.ImmediateMakePolyhedron();
+            ConfigureExposedParameters(preset);
             SyncAutoSmoothSlider();
         }
 
@@ -309,6 +314,7 @@ namespace TiltBrush
 
         public void HandleSlider1(Vector3 value)
         {
+            if (TryHandleExposedParameter(0, value.z)) return;
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param1Float = value.z;
             RebuildPreviewAndLinked();
@@ -316,6 +322,7 @@ namespace TiltBrush
 
         public void HandleSlider2(Vector3 value)
         {
+            if (TryHandleExposedParameter(1, value.z)) return;
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param2Float = value.z;
             RebuildPreviewAndLinked();
@@ -323,9 +330,88 @@ namespace TiltBrush
 
         public void HandleSlider3(Vector3 value)
         {
+            if (TryHandleExposedParameter(2, value.z)) return;
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Int = Mathf.FloorToInt(value.z);
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Param3Float = value.z;
             RebuildPreviewAndLinked();
+        }
+
+        private bool TryHandleExposedParameter(int index, float value)
+        {
+            if (m_ExposedParameterPreset == null ||
+                index < 0 || index >= m_ExposedParameterPreset.ExposedParameters.Count)
+            {
+                return false;
+            }
+
+            try
+            {
+                PreviewPolyhedron preview = PreviewPolyhedron.m_Instance;
+                preview.m_PolyRecipe = m_ExposedParameterPreset.SetExposedParameterValue(
+                    preview.m_PolyRecipe,
+                    index,
+                    value,
+                    DefaultColorPalette);
+                preview.Validate();
+                RebuildPreviewAndLinked();
+            }
+            catch (Exception e) when (e is JsonException ||
+                                      e is InvalidOperationException ||
+                                      e is ArgumentException)
+            {
+                Debug.LogError($"OB_EXPOSED_PARAMETER: Could not update parameter: {e.Message}");
+            }
+            return true;
+        }
+
+        private void ClearExposedParameters()
+        {
+            m_ExposedParameterPreset = null;
+        }
+
+        private void ConfigureExposedParameters(PolyRecipePreset preset)
+        {
+            ClearExposedParameters();
+            if (!preset.HasExposedParameters)
+            {
+                return;
+            }
+
+            m_ExposedParameterPreset = preset;
+            AdvancedSlider[] sliders = { Slider1, Slider2, Slider3 };
+            for (int parameterIndex = 0;
+                 parameterIndex < preset.ExposedParameters.Count;
+                 parameterIndex++)
+            {
+                if (parameterIndex >= sliders.Length)
+                {
+                    Debug.LogWarning(
+                        $"OB_EXPOSED_PARAMETER: Only {sliders.Length} parameters can be shown.");
+                    break;
+                }
+
+                ExposedParameterDefinition definition = preset.ExposedParameters[parameterIndex];
+                AdvancedSlider slider = sliders[parameterIndex];
+                slider.gameObject.SetActive(true);
+                slider.SliderType = definition.IsInteger
+                    ? SliderTypes.Int
+                    : SliderTypes.Float;
+                slider.SetMin(definition.Min);
+                slider.SetMax(definition.Max);
+                slider.SetDescriptionText(definition.Label);
+                slider.SetInitialValueAndUpdate(definition.InitialValue);
+            }
+
+            int visibleParameterCount = Math.Min(preset.ExposedParameters.Count, sliders.Length);
+            for (int i = visibleParameterCount; i < sliders.Length; i++)
+            {
+                sliders[i].gameObject.SetActive(false);
+            }
+        }
+
+        private static void LogExposedParameterWarning(string message)
+        {
+            Debug.LogWarning($"OB_EXPOSED_PARAMETER: {message}");
         }
 
         private void RebuildPreviewAndLinked()
@@ -594,6 +680,7 @@ namespace TiltBrush
 
         public void SetSliderConfiguration()
         {
+            ClearExposedParameters();
             switch (m_CurrentMainCategory)
             {
                 case PolyhydraMainCategories.Platonic:
@@ -893,33 +980,35 @@ namespace TiltBrush
 
             using var textWriter = new StreamWriter($"{presetPath}.json");
             using var jsonWriter = new CustomJsonWriter(textWriter);
-            jsonSerializer.Serialize(jsonWriter, emDef);
+            if (m_ExposedParameterPreset == null)
+            {
+                jsonSerializer.Serialize(jsonWriter, emDef);
+            }
+            else
+            {
+                JObject json = m_ExposedParameterPreset.ToJsonObject(
+                    PreviewPolyhedron.m_Instance.m_PolyRecipe);
+                json.WriteTo(jsonWriter);
+            }
         }
 
         public void HandleLoadPresetFromPath(string path)
         {
-            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
-            EditableModelDefinition emd;
-            using (var textReader = new StreamReader(path))
-            using (var jsonReader = new JsonTextReader(textReader))
-            {
-                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
-            }
-            LoadFromDefinition(emd);
+            string presetText = File.ReadAllText(path);
+            PolyRecipePreset preset = PolyRecipePreset.FromJson(
+                presetText, DefaultColorPalette, LogExposedParameterWarning);
+            LoadFromDefinition(new EditableModelDefinition(preset.Recipe));
+            ConfigureExposedParameters(preset);
             CurrentPresetPath = path;
             EnablePresetSaveButtons(popupButtonEnabled: true);
         }
 
         public void HandleLoadPresetFromString(string presetText)
         {
-            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
-            EditableModelDefinition emd;
-            using (var textReader = new StringReader(presetText))
-            using (var jsonReader = new JsonTextReader(textReader))
-            {
-                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
-            }
-            LoadFromDefinition(emd);
+            PolyRecipePreset preset = PolyRecipePreset.FromJson(
+                presetText, DefaultColorPalette, LogExposedParameterWarning);
+            LoadFromDefinition(new EditableModelDefinition(preset.Recipe));
+            ConfigureExposedParameters(preset);
             CurrentPresetPath = "";
             EnablePresetSaveButtons(popupButtonEnabled: false);
         }
@@ -1040,6 +1129,7 @@ namespace TiltBrush
 
         public void LoadFromWidget(EditableModelWidget ewidget)
         {
+            ClearExposedParameters();
             var recipe = ewidget.m_PolyRecipe.CloneWithUnitGeometryBounds();
             var edef = new EditableModelDefinition(recipe);
             LoadFromDefinition(edef);
