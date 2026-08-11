@@ -25,7 +25,8 @@ namespace TiltBrush
             m_Collider = GetComponent<Collider>();
         }
 
-        public override float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing)
+        public override float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
         {
             // this is wrong. should be distance to closest point, not center. That's why it's so scuffed.
             return distance * 0.05f;

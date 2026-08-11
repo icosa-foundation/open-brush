@@ -37,9 +37,16 @@ namespace TiltBrush
             return true;
         }
 
-        public virtual float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing)
+        public virtual float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
         {
             return m_DefaultStrength;
+        }
+
+        public virtual float ConstrainDisplacement(
+            float displacement, float distance, bool bPushing)
+        {
+            return displacement;
         }
 
         public abstract Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup);

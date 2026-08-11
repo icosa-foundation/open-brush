@@ -174,14 +174,16 @@ namespace TiltBrush
                 if (influence > 0f && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
                 {
                     float strength = m_ActiveSubTool.CalculateStrength(
-                        newControlPoint.m_Pos, distance, m_CurrentCanvas.Pose, m_bIsPushing);
+                        newControlPoint.m_Pos, distance, radius, m_CurrentCanvas.Pose, m_bIsPushing);
                     if (strength != 0f)
                     {
                         Vector3 direction = m_ActiveSubTool.CalculateDirection(
                             newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
                             m_bIsPushing, rGroup);
-                        newControlPoint.m_Pos +=
-                            direction * strength * influence * pressure * continuousStrengthScale;
+                        float displacement = m_ActiveSubTool.ConstrainDisplacement(
+                            strength * influence * pressure * continuousStrengthScale,
+                            distance, m_bIsPushing);
+                        newControlPoint.m_Pos += direction * displacement;
                         strokeIsModified = true;
                         newControlPoints[i] = newControlPoint;
                         contactState.ControlPointIndices.Add(i);
@@ -285,9 +287,9 @@ namespace TiltBrush
                 }
                 PointerManager.ControlPoint controlPoint = stroke.m_ControlPoints[index];
                 float distance = Vector3.Distance(controlPoint.m_Pos, toolPosition);
-                if (distance <= radius &&
+                if (StrokeSculptInfluence.CalculateRadialWeight(distance, radius) > 0f &&
                     m_ActiveSubTool.CalculateStrength(
-                        controlPoint.m_Pos, distance, canvasPose, m_bIsPushing) != 0 &&
+                        controlPoint.m_Pos, distance, radius, canvasPose, m_bIsPushing) != 0 &&
                     m_ActiveSubTool.IsInReach(controlPoint.m_Pos, canvasPose))
                 {
                     return true;

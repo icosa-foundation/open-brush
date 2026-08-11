@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -61,6 +62,46 @@ namespace TiltBrush
         {
             Assert.AreEqual(
                 expected, StrokeSculptInfluence.CalculatePressure(triggerRatio, isActive));
+        }
+
+        [Test]
+        public void PushStrengthScalesWithRadiusAndNotDirection()
+        {
+            var gameObject = new GameObject("PushSubTool test");
+            try
+            {
+                var subTool = gameObject.AddComponent<PushSubTool>();
+                float pushStrength = subTool.CalculateStrength(
+                    Vector3.zero, 0.5f, 2f, TrTransform.identity, true);
+                float pullStrength = subTool.CalculateStrength(
+                    Vector3.zero, 0.5f, 2f, TrTransform.identity, false);
+
+                Assert.AreEqual(0.2f, pushStrength);
+                Assert.AreEqual(pushStrength, pullStrength);
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [TestCase(0.2f, 0.5f, true, 0.2f)]
+        [TestCase(0.2f, 0.5f, false, 0.2f)]
+        [TestCase(0.8f, 0.5f, false, 0.5f)]
+        public void PullDisplacementCannotCrossToolCentre(
+            float displacement, float distance, bool pushing, float expected)
+        {
+            var gameObject = new GameObject("PushSubTool test");
+            try
+            {
+                var subTool = gameObject.AddComponent<PushSubTool>();
+                Assert.AreEqual(
+                    expected, subTool.ConstrainDisplacement(displacement, distance, pushing));
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
         }
     }
 } // namespace TiltBrush

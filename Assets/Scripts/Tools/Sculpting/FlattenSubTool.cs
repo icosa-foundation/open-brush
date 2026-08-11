@@ -25,7 +25,8 @@ namespace TiltBrush
             m_Collider = GetComponent<Collider>();
         }
 
-        public override float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing)
+        public override float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
         {
             var distanceToSubTool = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex)).magnitude;
             if (distanceToSubTool < 0.1f)
