@@ -62,6 +62,8 @@ Alternate-mode toggle: **No.** There is currently no sharpen or roughen counterp
 
 ## Alternate-mode state
 
-Attract / Repel and Bundle / Spread share the same internal two-state toggle. Switching modes does not reset it. Consequently, changing from one of these modes to the other preserves the current side of the toggle: the Repel-side state corresponds to Bundle, while the Attract-side state corresponds to Spread.
+Selecting a different mode resets the alternate-mode state. Attract / Repel starts in Repel, while Bundle / Spread starts in Bundle. This prevents a mode from inheriting the alternate state selected in another mode.
+
+Reselecting the already-active mode does not reset its current direction.
 
 Project to Plane, Grab, and Smooth ignore the alternate-mode command, and the controller toggle indicator is hidden for those modes.

@@ -140,7 +140,7 @@ Acceptance criteria:
 3. Show a distinct and accurate interaction volume for every mode.
 4. Show inner strength and outer falloff regions where that distinction is useful.
 5. Only expose a direction toggle for modes with an actual signed operation.
-6. Validate mode switching, trigger cancellation, tool hiding, undo, redo, and multiplayer-disabled behavior.
+6. Validate mode switching, including resetting signed modes to their primary direction, trigger cancellation, tool hiding, undo, redo, and multiplayer-disabled behavior.
 
 ## Orientation handling
 

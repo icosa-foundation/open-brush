@@ -89,6 +89,7 @@ namespace TiltBrush
 
         public void SetSubTool(BaseSculptSubTool subTool)
         {
+            bool modeChanged = m_ActiveSubTool != subTool;
             if (InputManager.m_Instance != null &&
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
@@ -101,6 +102,12 @@ namespace TiltBrush
             m_ActiveSubTool = subTool;
             m_ActiveSubTool.gameObject.SetActive(!m_ToolHidden);
             m_SculptContacts.Clear();
+            if (modeChanged)
+            {
+                // Signed modes should start in their primary state instead of inheriting the
+                // previous mode's alternate state.
+                m_bIsPushing = true;
+            }
         }
 
         public void FinalizeSculptingBatch()
