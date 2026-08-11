@@ -34,7 +34,7 @@ Shader "Brush/Special/MarbledRainbow" {
 		CGPROGRAM
 		#pragma multi_compile __ SHADER_SCRIPTING_ON
 		#pragma target 4.0
-		#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+		#pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow exclude_path:deferred
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 		#include "Assets/Shaders/Include/Brush.cginc"

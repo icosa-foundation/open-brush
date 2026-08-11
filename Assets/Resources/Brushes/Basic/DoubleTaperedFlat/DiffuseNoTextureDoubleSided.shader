@@ -27,7 +27,7 @@ SubShader {
 
   CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-  #pragma surface surf Lambert vertex:vert addshadow
+  #pragma surface surf Lambert vertex:vert addshadow exclude_path:deferred
   #pragma target 3.0
   #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
   #pragma multi_compile __ SELECTION_ON

@@ -160,26 +160,31 @@ float4 NativeToSrgb(float4 color) { return color; }
 // TOOLKIT: #define kDecimetersToWorldUnits 0.1
 #define kDecimetersToWorldUnits 1.0 // NOTOOLKIT
 
+// 2x2 Bayer kernel:
+//   0 2
+//   3 1
+//
+// Arithmetic form avoids dynamic local-array indexing. This produces the
+// same 8x8 Bayer matrix as the old dither8x8[64] lookup, but is friendlier
+// to Unity 6's Vulkan/SPIR-V compiler when used inside discard predicates.
+float DitherBayer2(float x, float y)
+{
+  return 2.0 * x + 3.0 * y - 4.0 * x * y;
+}
+
 float Dither8x8(float2 position)
 {
-  const float DitherSize = 8.0;
-  float2 ditherPosition = position % DitherSize;
-  int x = int(ditherPosition.x);
-  int y = int(ditherPosition.y);
+  float2 p = floor(position);
 
-  const float dither8x8[8*8] =
-  {
-    0,32, 8,40, 2,34,10,42,
-    48,16,56,24,50,18,58,26,
-    12,44, 4,36,14,46, 6,38,
-    60,28,52,20,62,30,54,22,
-    3,35,11,43, 1,33, 9,41,
-    51,19,59,27,49,17,57,25,
-    15,47, 7,39,13,45, 5,37,
-    63,31,55,23,61,29,53,21
-};
+  float2 bit0 = frac(p * 0.5) * 2.0;
+  float2 bit1 = frac(floor(p * 0.5) * 0.5) * 2.0;
+  float2 bit2 = frac(floor(p * 0.25) * 0.5) * 2.0;
 
-  float value = dither8x8[y * 8 + x] / 64.0;
-  return value;
+  float value =
+      16.0 * DitherBayer2(bit0.x, bit0.y) +
+       4.0 * DitherBayer2(bit1.x, bit1.y) +
+             DitherBayer2(bit2.x, bit2.y);
+
+  return value * (1.0 / 64.0);
 }
 

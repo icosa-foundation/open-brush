@@ -1,0 +1,130 @@
+diff --git a/Assets/Shaders/Include/Brush.cginc b/Assets/Shaders/Include/Brush.cginc
+--- a/Assets/Shaders/Include/Brush.cginc
++++ b/Assets/Shaders/Include/Brush.cginc
+@@ -157,25 +157,30 @@
+ // TOOLKIT: #define kDecimetersToWorldUnits 0.1
+ #define kDecimetersToWorldUnits 1.0 // NOTOOLKIT
+ 
++// 2x2 Bayer kernel:
++//   0 2
++//   3 1
++//
++// Arithmetic form avoids dynamic local-array indexing. This produces the
++// same 8x8 Bayer matrix as the old dither8x8[64] lookup, but is friendlier
++// to Unity 6's Vulkan/SPIR-V compiler when used inside discard predicates.
++float DitherBayer2(float x, float y)
++{
++  return 2.0 * x + 3.0 * y - 4.0 * x * y;
++}
++
+ float Dither8x8(float2 position)
+ {
+-  const float DitherSize = 8.0;
+-  float2 ditherPosition = position % DitherSize;
+-  int x = int(ditherPosition.x);
+-  int y = int(ditherPosition.y);
++  float2 p = floor(position);
+ 
+-  const float dither8x8[8*8] =
+-  {
+-    0,32, 8,40, 2,34,10,42,
+-    48,16,56,24,50,18,58,26,
+-    12,44, 4,36,14,46, 6,38,
+-    60,28,52,20,62,30,54,22,
+-    3,35,11,43, 1,33, 9,41,
+-    51,19,59,27,49,17,57,25,
+-    15,47, 7,39,13,45, 5,37,
+-    63,31,55,23,61,29,53,21
+-};
++  float2 bit0 = frac(p * 0.5) * 2.0;
++  float2 bit1 = frac(floor(p * 0.5) * 0.5) * 2.0;
++  float2 bit2 = frac(floor(p * 0.25) * 0.5) * 2.0;
+ 
+-  float value = dither8x8[y * 8 + x] / 64.0;
+-  return value;
++  float value =
++      16.0 * DitherBayer2(bit0.x, bit0.y) +
++       4.0 * DitherBayer2(bit1.x, bit1.y) +
++             DitherBayer2(bit2.x, bit2.y);
++
++  return value * (1.0 / 64.0);
+ }
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader b/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
+@@ -54,5 +54,5 @@
+       struct v2f {
+-        float4 vertex : POSITION;
++        float4 pos : SV_POSITION;
+         fixed4 color : COLOR;
+         float2 texcoord : TEXCOORD0;
+         uint id : TEXCOORD2;
+@@ -73,7 +73,7 @@
+         UNITY_INITIALIZE_OUTPUT(v2f, o);
+         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+ 
+-        o.vertex = UnityObjectToClipPos(v.vertex);
++        o.pos = UnityObjectToClipPos(v.vertex);
+         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+                                 o.color = v.color;
+         o.id = (float2)v.id;
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader b/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
+@@ -229,6 +229,7 @@
+         #pragma multi_compile __ SELECTION_ON
+         #pragma multi_compile_fog
+ 
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+         #include "Assets/Shaders/Include/MobileSelection.cginc"
+@@ -387,4 +387,5 @@
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader b/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
+@@ -174,4 +174,5 @@
+           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
+           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
+           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
++          o.id = v.id;
+           return o;
+@@ -233,6 +233,7 @@
+         #pragma multi_compile __ SELECTION_ON
+         #pragma multi_compile_fog
+ 
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+         #include "Assets/Shaders/Include/MobileSelection.cginc"
+@@ -361,6 +361,7 @@
+         #pragma fragment frag
+         #pragma target 3.0
+ 
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+ 
+@@ -409,4 +409,5 @@
+           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
+           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
+           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
++          o.id = v.id;
+           return o;
+@@ -498,4 +498,5 @@
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;
+@@ -578,4 +578,5 @@
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;

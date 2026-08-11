@@ -118,10 +118,25 @@ namespace TiltBrush
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
 
-        public bool IsInitializingUnityXR
+public bool IsInitializingUnityXR
+{
+    get
+    {
+        // Android XR hands supply our controller abstraction.
+        if (AndroidXRHandBridge.Active)
+            return false;
+
+        if (VrControls == null ||
+            VrControls.Brush == null ||
+            VrControls.Brush.ControllerGeometry == null)
         {
-            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
+            return true;
         }
+
+        return VrControls.Brush.ControllerGeometry.Style ==
+               ControllerStyle.InitializingUnityXR;
+    }
+}
 
         // -------------------------------------------------------------------------------------------- //
         // Private Unity Component Events
@@ -178,7 +193,23 @@ namespace TiltBrush
                 }
                 else
                 {
-                    SetUnityXRControllerStyle(tryGetUnityXRController);
+                    // Always start with a valid placeholder controller setup.
+                    SetControllerStyle(
+                        ControllerStyle.InitializingUnityXR);
+
+                    InputDevice controller =
+                        InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+
+                    if (!controller.isValid)
+                    {
+                        controller =
+                            InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+                    }
+
+                    if (controller.isValid)
+                    {
+                        SetUnityXRControllerStyle(controller);
+                    }
                 }
 
                 SetPassthroughStrategy();
@@ -681,6 +712,11 @@ namespace TiltBrush
 
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                return;
+            }
+
             // Headset Connected
             const InputDeviceCharacteristics kHeadset =
                 InputDeviceCharacteristics.HeadMounted | InputDeviceCharacteristics.TrackedDevice;

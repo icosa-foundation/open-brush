@@ -75,7 +75,7 @@ PlayerSettings:
   androidUseSwappy: 0
   androidDisplayOptions: 1
   androidBlitType: 0
-  androidResizeableActivity: 0
+  androidResizeableActivity: 1
   androidDefaultWindowWidth: 1920
   androidDefaultWindowHeight: 1080
   androidMinimumWindowWidth: 400
@@ -83,7 +83,7 @@ PlayerSettings:
   androidFullscreenMode: 1
   androidAutoRotationBehavior: 1
   androidPredictiveBackSupport: 1
-  androidApplicationEntry: 1
+  androidApplicationEntry: 3
   defaultIsNativeResolution: 1
   macRetinaSupport: 1
   runInBackground: 1
@@ -151,9 +151,6 @@ PlayerSettings:
   preloadedAssets:
   - {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d, type: 2}
   - {fileID: 11400000, guid: feef587f0ac641c4ab7d9e44e7eea888, type: 2}
-  - {fileID: 11400000, guid: 19081a626c84bff4385d3962a9daff0f, type: 2}
-  - {fileID: -5428386068462531570, guid: 07092d12b03adbd49b1ade5f5742e72e, type: 2}
-  - {fileID: 2219514573358777864, guid: bd3da03a27dd86d45b3502af9504154e, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -297,7 +294,7 @@ PlayerSettings:
   AndroidEnableTango: 0
   androidEnableBanner: 1
   androidUseLowAccuracyLocation: 0
-  androidUseCustomKeystore: 1
+  androidUseCustomKeystore: 0
   m_AndroidBanners:
   - width: 320
     height: 180
@@ -353,62 +350,68 @@ PlayerSettings:
     - m_Textures: []
       m_Width: 192
       m_Height: 192
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
     - m_Textures: []
       m_Width: 144
       m_Height: 144
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
     - m_Textures: []
       m_Width: 96
       m_Height: 96
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
     - m_Textures: []
       m_Width: 72
       m_Height: 72
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
     - m_Textures: []
       m_Width: 48
       m_Height: 48
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
     - m_Textures: []
       m_Width: 36
       m_Height: 36
-      m_Kind: 0
+      m_Kind: 1
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 192
       m_Height: 192
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 144
       m_Height: 144
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 96
       m_Height: 96
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 72
       m_Height: 72
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 48
       m_Height: 48
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
-    - m_Textures: []
+    - m_Textures:
+      - {fileID: 0}
       m_Width: 36
       m_Height: 36
-      m_Kind: 1
+      m_Kind: 0
       m_SubKind: 
   - m_BuildTarget: iPhone
     m_Icons:
@@ -518,6 +521,9 @@ PlayerSettings:
   - m_BuildTarget: Standalone
     m_StaticBatching: 0
     m_DynamicBatching: 1
+  - m_BuildTarget: Android
+    m_StaticBatching: 1
+    m_DynamicBatching: 0
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs:
   - m_BuildTarget: MacStandaloneSupport
@@ -918,7 +924,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT;STEAMAUDIO_ENABLED
+    Android: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT;STEAMAUDIO_ENABLED;USE_INPUT_SYSTEM_POSE_CONTROL;USE_STICK_CONTROL_THUMBSTICKS
     EmbeddedLinux: TILT_BRUSH;CROSS_PLATFORM_INPUT
     GameCoreScarlett: TILT_BRUSH;CROSS_PLATFORM_INPUT
     GameCoreXboxOne: TILT_BRUSH;CROSS_PLATFORM_INPUT
@@ -929,10 +935,10 @@ PlayerSettings:
     PS5: TILT_BRUSH;CROSS_PLATFORM_INPUT
     QNX: TILT_BRUSH;CROSS_PLATFORM_INPUT
     ReservedCFE: TILT_BRUSH;CROSS_PLATFORM_INPUT
-    Standalone: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;STEAMAUDIO_ENABLED;STEAMWORKS_NET
+    Standalone: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;STEAMAUDIO_ENABLED;STEAMWORKS_NET;USE_INPUT_SYSTEM_POSE_CONTROL;USE_STICK_CONTROL_THUMBSTICKS
     VisionOS: TILT_BRUSH;CROSS_PLATFORM_INPUT
     WebGL: TILT_BRUSH;CROSS_PLATFORM_INPUT;STEAMAUDIO_ENABLED
-    Windows Store Apps: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME
+    Windows Store Apps: TILT_BRUSH;CROSS_PLATFORM_INPUT;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;USE_INPUT_SYSTEM_POSE_CONTROL;USE_STICK_CONTROL_THUMBSTICKS
     XboxOne: TILT_BRUSH;CROSS_PLATFORM_INPUT
     iPhone: TILT_BRUSH;CROSS_PLATFORM_INPUT;MOBILE_INPUT;STEAMAUDIO_ENABLED
     tvOS: TILT_BRUSH;CROSS_PLATFORM_INPUT

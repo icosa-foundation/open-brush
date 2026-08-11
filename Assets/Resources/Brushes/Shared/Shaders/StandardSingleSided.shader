@@ -37,7 +37,7 @@ Shader "Brush/StandardSingleSided" {
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma target 4.0
-      #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+      #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow exclude_path:deferred
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
@@ -230,6 +230,7 @@ Shader "Brush/StandardSingleSided" {
         #pragma multi_compile __ SELECTION_ON
         #pragma multi_compile_fog
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
         #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -389,6 +390,7 @@ Shader "Brush/StandardSingleSided" {
           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
           o.worldNormal = UnityObjectToWorldNormal(v.normal);
           o.color = v.color;
+          o.id = v.id;
           return o;
         }
 
@@ -427,7 +429,7 @@ Shader "Brush/StandardSingleSided" {
 
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-      #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
+      #pragma surface surf Lambert vertex:vert alphatest:_Cutoff exclude_path:deferred
       #pragma target 3.0
 
       #include "Assets/Shaders/Include/Brush.cginc"

@@ -30,7 +30,7 @@ SubShader {
 
 CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-#pragma surface surf Lambert vertex:vert addshadow
+#pragma surface surf Lambert vertex:vert addshadow exclude_path:deferred
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #pragma multi_compile __ SELECTION_ON
 #include "Assets/Shaders/Include/Brush.cginc"
@@ -117,7 +117,7 @@ SubShader {
 
 CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-#pragma surface surf Lambert vertex:vert alphatest:_Cutoff
+#pragma surface surf Lambert vertex:vert alphatest:_Cutoff exclude_path:deferred
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #include "Assets/Shaders/Include/Brush.cginc"
 #pragma target 4.0

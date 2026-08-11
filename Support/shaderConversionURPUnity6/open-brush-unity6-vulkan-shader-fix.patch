@@ -1,0 +1,146 @@
+diff --git a/Assets/Shaders/Include/Brush.cginc b/Assets/Shaders/Include/Brush.cginc
+--- a/Assets/Shaders/Include/Brush.cginc
++++ b/Assets/Shaders/Include/Brush.cginc
+@@ -157,27 +157,35 @@ float4 NativeToSrgb(float4 color) { return color; }
+ // TOOLKIT: #define kDecimetersToWorldUnits 0.1
+ #define kDecimetersToWorldUnits 1.0 // NOTOOLKIT
+
++// 2x2 Bayer kernel:
++//   0 2
++//   3 1
++//
++// Kept as arithmetic rather than a lookup table. Unity 6's Vulkan shader
++// compiler can fail while lowering dynamically-indexed local arrays used
++// inside discard predicates ("argument pulled into unrelated predicate").
++float DitherBayer2(float x, float y)
++{
++  return 2.0 * x + 3.0 * y - 4.0 * x * y;
++}
++
+ float Dither8x8(float2 position)
+ {
+-  const float DitherSize = 8.0;
+-  float2 ditherPosition = position % DitherSize;
+-  int x = int(ditherPosition.x);
+-  int y = int(ditherPosition.y);
+-
+-  const float dither8x8[8*8] =
+-  {
+-    0,32, 8,40, 2,34,10,42,
+-    48,16,56,24,50,18,58,26,
+-    12,44, 4,36,14,46, 6,38,
+-    60,28,52,20,62,30,54,22,
+-    3,35,11,43, 1,33, 9,41,
+-    51,19,59,27,49,17,57,25,
+-    15,47, 7,39,13,45, 5,37,
+-    63,31,55,23,61,29,53,21
+-};
+-
+-  float value = dither8x8[y * 8 + x] / 64.0;
+-  return value;
++  // screen-space positions are non-negative, but frac/floor also avoids
++  // integer casts and dynamic indexing in the generated SPIR-V.
++  float2 p = floor(position);
++
++  float2 bit0 = frac(p * 0.5) * 2.0;
++  float2 bit1 = frac(floor(p * 0.5) * 0.5) * 2.0;
++  float2 bit2 = frac(floor(p * 0.25) * 0.5) * 2.0;
++
++  float value =
++      16.0 * DitherBayer2(bit0.x, bit0.y) +
++       4.0 * DitherBayer2(bit1.x, bit1.y) +
++             DitherBayer2(bit2.x, bit2.y);
++
++  return value * (1.0 / 64.0);
+ }
+
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader b/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/Multiplicative.shader
+@@ -52,7 +52,7 @@ Category {
+       };
+
+       struct v2f {
+-        float4 vertex : POSITION;
++        float4 pos : SV_POSITION;
+         fixed4 color : COLOR;
+         float2 texcoord : TEXCOORD0;
+         uint id : TEXCOORD2;
+@@ -75,7 +75,7 @@ Category {
+         UNITY_INITIALIZE_OUTPUT(v2f, o);
+         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+-        o.vertex = UnityObjectToClipPos(v.vertex);
++        o.pos = UnityObjectToClipPos(v.vertex);
+         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
+                                 o.color = v.color;
+         o.id = (float2)v.id;
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader b/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/StandardSingleSided.shader
+@@ -229,6 +229,7 @@ Shader "Brush/StandardSingleSided" {
+         #pragma multi_compile __ SELECTION_ON
+         #pragma multi_compile_fog
+
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+         #include "Assets/Shaders/Include/MobileSelection.cginc"
+@@ -388,6 +389,7 @@ Shader "Brush/StandardSingleSided" {
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;
+         }
+
+diff --git a/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader b/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
+--- a/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
++++ b/Assets/Resources/Brushes/Shared/Shaders/StandardDoubleSided.shader
+@@ -174,6 +174,7 @@ Shader "Brush/StandardDoubleSided" {
+           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
+           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
+           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
++          o.id = v.id;
+           return o;
+         }
+
+@@ -233,6 +234,7 @@ Shader "Brush/StandardDoubleSided" {
+         #pragma multi_compile __ SELECTION_ON
+         #pragma multi_compile_fog
+
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+         #include "Assets/Shaders/Include/MobileSelection.cginc"
+@@ -363,6 +365,7 @@ Shader "Brush/StandardDoubleSided" {
+         #pragma fragment frag
+         #pragma target 3.0
+
++        #include "Assets/Shaders/Include/Brush.cginc"
+         #include "UnityCG.cginc"
+         #include "Lighting.cginc"
+
+@@ -411,6 +414,7 @@ Shader "Brush/StandardDoubleSided" {
+           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
+           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
+           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
++          o.id = v.id;
+           return o;
+         }
+
+@@ -500,6 +504,7 @@ Shader "Brush/StandardDoubleSided" {
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;
+         }
+
+@@ -580,6 +585,7 @@ Shader "Brush/StandardDoubleSided" {
+           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+           o.worldNormal = UnityObjectToWorldNormal(v.normal);
+           o.color = v.color;
++          o.id = v.id;
+           return o;
+         }

@@ -53,7 +53,7 @@ Category {
       };
 
       struct v2f {
-        float4 vertex : POSITION;
+        float4 pos : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         uint id : TEXCOORD2;
@@ -78,7 +78,7 @@ Category {
         UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-        o.vertex = UnityObjectToClipPos(v.vertex);
+        o.pos = UnityObjectToClipPos(v.vertex);
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
                                 o.color = v.color;
         o.id = (float2)v.id;

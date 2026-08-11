@@ -38,7 +38,7 @@ Properties {
 		CGPROGRAM
 		#pragma multi_compile __ SHADER_SCRIPTING_ON
 		#pragma target 4.0
-		#pragma surface surf StandardSpecular vertex:vert
+		#pragma surface surf StandardSpecular vertex:vert exclude_path:deferred
 		#pragma multi_compile __ AUDIO_REACTIVE
 		#pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 

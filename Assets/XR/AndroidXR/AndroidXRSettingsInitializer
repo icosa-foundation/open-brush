@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7e9a0ba2b7f40ebbb3dad8385aa807b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.AndroidOpenXR.Editor::UnityEditor.XR.OpenXR.Features.Android.AndroidXRSettingsInitializer
-  isInitialized: 0
+  isInitialized: 1

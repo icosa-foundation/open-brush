@@ -37,7 +37,7 @@ Properties {
     CGPROGRAM
     #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma target 4.0
-    #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+    #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow exclude_path:deferred
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
@@ -178,6 +178,7 @@ Properties {
           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
+          o.id = v.id;
           return o;
         }
 
@@ -233,6 +234,7 @@ Properties {
         #pragma multi_compile __ SELECTION_ON
         #pragma multi_compile_fog
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
         #include "Assets/Shaders/Include/MobileSelection.cginc"
@@ -357,6 +359,7 @@ Properties {
         #pragma fragment frag
         #pragma target 3.0
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -407,6 +410,7 @@ Properties {
           o.tspace0 = half3(wTangent.x, wBitangent.x, wNormal.x);
           o.tspace1 = half3(wTangent.y, wBitangent.y, wNormal.y);
           o.tspace2 = half3(wTangent.z, wBitangent.z, wNormal.z);
+          o.id = v.id;
           return o;
         }
 
@@ -504,6 +508,7 @@ Properties {
           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
           o.worldNormal = UnityObjectToWorldNormal(v.normal);
           o.color = v.color;
+          o.id = v.id;
           return o;
         }
 
@@ -603,6 +608,7 @@ Properties {
           o.uv = TRANSFORM_TEX(v.uv, _MainTex);
           o.worldNormal = UnityObjectToWorldNormal(v.normal);
           o.color = v.color;
+          o.id = v.id;
           return o;
         }
 
@@ -639,7 +645,7 @@ Properties {
 
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
-      #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
+      #pragma surface surf Lambert vertex:vert alphatest:_Cutoff exclude_path:deferred
       #pragma target 3.0
 
       #include "Assets/Shaders/Include/Brush.cginc"

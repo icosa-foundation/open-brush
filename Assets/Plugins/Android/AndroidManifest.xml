@@ -6,14 +6,23 @@
         android:allowBackup="false"
         tools:replace="android:allowBackup"
         android:requestLegacyExternalStorage="true">
-        <activity
-            android:launchMode="singleTask"
-            android:name="com.unity3d.player.UnityPlayerActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
+<activity
+    android:name="com.unity3d.player.UnityPlayerGameActivity"
+    android:theme="@style/BaseUnityGameActivityTheme"
+    android:launchMode="singleTask"
+    android:exported="true"
+    android:configChanges="fontScale|keyboard|keyboardHidden|locale|mnc|mcc|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|touchscreen">
+
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+    </intent-filter>
+
+    <meta-data
+        android:name="android.app.lib_name"
+        android:value="game" />
+
+</activity>
         <!-- Alias that launches into flat/monoscopic mode without VR -->
         <!-- TODO Re-enable launch aliases. They will be useful but need a bit more thought and testing -->
         <!--

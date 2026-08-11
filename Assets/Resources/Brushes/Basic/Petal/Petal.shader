@@ -30,7 +30,7 @@ Shader "Brush/Special/Petal" {
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma target 4.0
-      #pragma surface surf StandardSpecular vertex:vert addshadow
+      #pragma surface surf StandardSpecular vertex:vert addshadow exclude_path:deferred
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ ODS_RENDER
       #pragma multi_compile __ SELECTION_ON
