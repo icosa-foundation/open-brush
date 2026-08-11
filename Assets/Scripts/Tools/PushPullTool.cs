@@ -137,7 +137,7 @@ namespace TiltBrush
             {
                 float elapsed = m_LastSculptTimes.TryGetValue(stroke, out float lastSculptTime)
                     ? Mathf.Min(now - lastSculptTime, k_MaxContinuousStepSeconds)
-                    : Time.unscaledDeltaTime;
+                    : Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
                 continuousStrengthScale = elapsed * k_ReferenceUpdatesPerSecond;
             }
 
