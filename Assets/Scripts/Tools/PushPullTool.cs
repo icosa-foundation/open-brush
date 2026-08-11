@@ -49,6 +49,7 @@ namespace TiltBrush
         private Vector3 m_TransformStartToolPosition;
         private Quaternion m_TransformStartToolRotation;
         private Vector3 m_TwistAxis;
+        private bool m_WaitingForTriggerRelease;
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -88,6 +89,13 @@ namespace TiltBrush
 
         public void SetSubTool(BaseSculptSubTool subTool)
         {
+            if (InputManager.m_Instance != null &&
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                EndOwnedUndoGroup();
+                m_WaitingForTriggerRelease = true;
+            }
+
             // Disable old subtool
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
@@ -102,6 +110,12 @@ namespace TiltBrush
 
         public override void OnUpdateDetection()
         {
+            if (m_WaitingForTriggerRelease &&
+                !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                m_WaitingForTriggerRelease = false;
+            }
+
             if (!m_CurrentlyHot && m_ToolWasHot)
             {
                 FinalizeSculptingBatch();
@@ -165,6 +179,11 @@ namespace TiltBrush
 
         protected override bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
+            if (m_WaitingForTriggerRelease)
+            {
+                return false;
+            }
+
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
             if (IsCapturedTransformMode)
