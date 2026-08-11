@@ -198,6 +198,7 @@ namespace TiltBrush
                 ApiManager.Instance.ActiveUndo = null;
                 if (undoGroup != null && undoGroup.HasChildren)
                 {
+                    SketchSurfacePanel.m_Instance.m_LastCommand = undoGroup;
                     SketchMemoryScript.m_Instance.RecordCommand(undoGroup);
                 }
                 m_OwnsUndoGroup = false;
