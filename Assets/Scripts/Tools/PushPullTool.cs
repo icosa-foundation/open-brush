@@ -187,7 +187,7 @@ namespace TiltBrush
                 m_LastSculptTimes[stroke] = now;
             }
 
-            return true;
+            return strokeIsModified;
         }
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)

@@ -116,7 +116,7 @@ namespace TiltBrush
             int controlPointCount = stroke.m_ControlPoints.Length;
             if (controlPointCount == 0)
             {
-                return true;
+                return false;
             }
 
             List<Color32?> newOverrideColors = stroke.m_OverrideColors != null &&
@@ -224,7 +224,7 @@ namespace TiltBrush
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             }
 
-            return true;
+            return strokeIsModified;
         }
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
