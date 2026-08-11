@@ -141,6 +141,26 @@ namespace TiltBrush
                 .Within(0.00001f));
         }
 
+        [Test]
+        public void GrabTranslationAlwaysUsesCapturedPoints()
+        {
+            var startPoints = new[] { ControlPointAt(1f), ControlPointAt(3f) };
+            startPoints[0].m_Orient = Quaternion.Euler(10f, 20f, 30f);
+            var weights = new[] { 1f, 0.25f };
+            var result = new PointerManager.ControlPoint[2];
+
+            StrokeSculptInfluence.ApplyGrabTranslation(
+                startPoints, weights, new Vector3(4f, 0f, 0f), result);
+            Assert.AreEqual(5f, result[0].m_Pos.x);
+            Assert.AreEqual(4f, result[1].m_Pos.x);
+
+            StrokeSculptInfluence.ApplyGrabTranslation(
+                startPoints, weights, new Vector3(2f, 0f, 0f), result);
+            Assert.AreEqual(3f, result[0].m_Pos.x);
+            Assert.AreEqual(3.5f, result[1].m_Pos.x);
+            Assert.AreEqual(startPoints[0].m_Orient, result[0].m_Orient);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };

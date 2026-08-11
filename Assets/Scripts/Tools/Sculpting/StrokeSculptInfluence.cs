@@ -78,5 +78,24 @@ namespace TiltBrush
                 weights[i] = Mathf.Clamp01(Mathf.Max(weights[i], propagatedWeight));
             }
         }
+
+        /// Applies a captured translation to the original control points. Rebuilding from the
+        /// captured points makes the result independent of frame rate and intersection scheduling.
+        public static void ApplyGrabTranslation(
+            PointerManager.ControlPoint[] startPoints, float[] weights, Vector3 translation,
+            PointerManager.ControlPoint[] result)
+        {
+            if (startPoints == null || weights == null || result == null ||
+                startPoints.Length != weights.Length || startPoints.Length != result.Length)
+            {
+                return;
+            }
+
+            for (int i = 0; i < startPoints.Length; ++i)
+            {
+                result[i] = startPoints[i];
+                result[i].m_Pos += translation * weights[i];
+            }
+        }
     }
 } // namespace TiltBrush

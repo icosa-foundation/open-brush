@@ -25,6 +25,12 @@ namespace TiltBrush
         {
             public float LastApplicationTime;
             public readonly List<int> ControlPointIndices = new();
+            public PointerManager.ControlPoint[] GrabStartPoints;
+            public float[] GrabWeights;
+            public PointerManager.ControlPoint[][] GrabResultBuffers;
+            public int NextGrabResultBuffer;
+            public Vector3 LastGrabTranslation;
+            public bool HasAppliedGrabPose;
         }
 
         private const float k_ReferenceUpdatesPerSecond = 90f;
@@ -38,6 +44,7 @@ namespace TiltBrush
         private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
         private readonly List<Stroke> m_ExpiredSculptContacts = new();
         private float[] m_InfluenceWeights = new float[0];
+        private Vector3 m_GrabStartToolPosition;
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -103,6 +110,8 @@ namespace TiltBrush
             {
                 m_ActiveSculptCommands.Clear();
                 m_SculptContacts.Clear();
+                CanvasScript canvas = m_CurrentCanvas != null ? m_CurrentCanvas : App.ActiveCanvas;
+                m_GrabStartToolPosition = canvas.Pose.inverse * m_ToolTransform.position;
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -119,9 +128,15 @@ namespace TiltBrush
                 m_SculptContacts.Clear();
             }
 
+            if (IsGrabMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
+            {
+                UpdateGrabbedStrokes();
+            }
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
-                if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten)
+                if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
+                    !IsGrabMode)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
@@ -129,7 +144,7 @@ namespace TiltBrush
                 // CTODO: custom feature for Flattening?
             }
 
-            if (m_CurrentlyHot && m_SculptContacts.Count > 0)
+            if (!IsGrabMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
             {
                 ExpireSculptContacts();
             }
@@ -145,6 +160,12 @@ namespace TiltBrush
         {
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
+            if (IsGrabMode)
+            {
+                CaptureGrabContact(stroke);
+                return false;
+            }
+
             var newControlPoints = stroke.m_ControlPoints.ToArray();
             float now = Time.realtimeSinceStartup;
             m_SculptContacts.TryGetValue(stroke, out SculptContactState contactState);
@@ -209,29 +230,7 @@ namespace TiltBrush
 
             if (strokeIsModified)
             {
-                PlayModifyStrokeSound();
-                var undoParent = ApiManager.Instance.ActiveUndo;
-                ModifyStrokePointsCommand cmd;
-                if (undoParent == null)
-                {
-                    cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
-                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-                }
-                else
-                {
-                    if (!m_ActiveSculptCommands.TryGetValue(stroke, out cmd))
-                    {
-                        cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);
-                        m_ActiveSculptCommands.Add(stroke, cmd);
-                    }
-                    else
-                    {
-                        cmd.UpdateEndPoints(newControlPoints);
-                    }
-                    // Apply immediately while keeping this command in the active undo group.
-                    cmd.Redo();
-                }
-                m_AtLeastOneModificationMade = true;
+                ApplyStrokeModification(stroke, newControlPoints);
                 contactState.LastApplicationTime = now;
                 m_SculptContacts[stroke] = contactState;
             }
@@ -245,7 +244,8 @@ namespace TiltBrush
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten)
+            if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
+                !IsGrabMode)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
@@ -266,6 +266,123 @@ namespace TiltBrush
             }
             m_ActiveSculptCommands.Clear();
             m_SculptContacts.Clear();
+        }
+
+        private bool IsGrabMode =>
+            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
+
+        private void CaptureGrabContact(Stroke stroke)
+        {
+            if (stroke?.m_ControlPoints == null || m_SculptContacts.ContainsKey(stroke))
+            {
+                return;
+            }
+
+            if (m_InfluenceWeights.Length < stroke.m_ControlPoints.Length)
+            {
+                m_InfluenceWeights = new float[stroke.m_ControlPoints.Length];
+            }
+            float radius = GetSize() / m_CurrentCanvas.Pose.scale;
+            bool hasInfluence = false;
+            for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
+            {
+                float distance = Vector3.Distance(
+                    stroke.m_ControlPoints[i].m_Pos, m_GrabStartToolPosition);
+                float influence = StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
+                m_InfluenceWeights[i] = influence;
+                hasInfluence |= influence > 0f;
+            }
+
+            if (!hasInfluence)
+            {
+                return;
+            }
+
+            var contactState = new SculptContactState
+            {
+                GrabStartPoints = stroke.m_ControlPoints.ToArray(),
+                GrabWeights = new float[stroke.m_ControlPoints.Length],
+                GrabResultBuffers = new[]
+                {
+                    new PointerManager.ControlPoint[stroke.m_ControlPoints.Length],
+                    new PointerManager.ControlPoint[stroke.m_ControlPoints.Length],
+                },
+            };
+            for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
+            {
+                contactState.GrabWeights[i] = m_InfluenceWeights[i];
+            }
+            StrokeSculptInfluence.FeatherAlongStroke(
+                contactState.GrabStartPoints, contactState.GrabWeights,
+                radius * k_ArcLengthFeatherRadiusRatio);
+            for (int i = 0; i < contactState.GrabWeights.Length; ++i)
+            {
+                if (contactState.GrabWeights[i] > 0f)
+                {
+                    contactState.ControlPointIndices.Add(i);
+                }
+            }
+            m_SculptContacts.Add(stroke, contactState);
+        }
+
+        private void UpdateGrabbedStrokes()
+        {
+            Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+            Vector3 translation = toolPosition - m_GrabStartToolPosition;
+            bool anyStrokeModified = false;
+            foreach (KeyValuePair<Stroke, SculptContactState> contact in m_SculptContacts)
+            {
+                SculptContactState state = contact.Value;
+                if ((state.HasAppliedGrabPose && state.LastGrabTranslation == translation) ||
+                    (!state.HasAppliedGrabPose && translation == Vector3.zero))
+                {
+                    continue;
+                }
+
+                PointerManager.ControlPoint[] newControlPoints =
+                    state.GrabResultBuffers[state.NextGrabResultBuffer];
+                state.NextGrabResultBuffer =
+                    (state.NextGrabResultBuffer + 1) % state.GrabResultBuffers.Length;
+                StrokeSculptInfluence.ApplyGrabTranslation(
+                    state.GrabStartPoints, state.GrabWeights, translation, newControlPoints);
+                ApplyStrokeModification(contact.Key, newControlPoints);
+                state.LastGrabTranslation = translation;
+                state.HasAppliedGrabPose = true;
+                anyStrokeModified = true;
+            }
+
+            if (anyStrokeModified)
+            {
+                IntersectionHappenedThisFrame();
+            }
+        }
+
+        private void ApplyStrokeModification(
+            Stroke stroke, PointerManager.ControlPoint[] newControlPoints)
+        {
+            PlayModifyStrokeSound();
+            var undoParent = ApiManager.Instance.ActiveUndo;
+            ModifyStrokePointsCommand cmd;
+            if (undoParent == null)
+            {
+                cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            }
+            else
+            {
+                if (!m_ActiveSculptCommands.TryGetValue(stroke, out cmd))
+                {
+                    cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);
+                    m_ActiveSculptCommands.Add(stroke, cmd);
+                }
+                else
+                {
+                    cmd.UpdateEndPoints(newControlPoints);
+                }
+                // Apply immediately while keeping this command in the active undo group.
+                cmd.Redo();
+            }
+            m_AtLeastOneModificationMade = true;
         }
 
         private void ExpireSculptContacts()
