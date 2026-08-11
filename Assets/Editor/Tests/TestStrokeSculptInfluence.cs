@@ -51,5 +51,16 @@ namespace TiltBrush
             Assert.That(middle, Is.GreaterThan(outer));
             Assert.That(middle, Is.EqualTo(0.5f).Within(0.00001f));
         }
+
+        [TestCase(0.25f, true, 0.25f)]
+        [TestCase(2f, true, 1f)]
+        [TestCase(0f, true, 1f)]
+        [TestCase(0.75f, false, 0f)]
+        public void PressureUsesAnalogValueWithDigitalFallback(
+            float triggerRatio, bool isActive, float expected)
+        {
+            Assert.AreEqual(
+                expected, StrokeSculptInfluence.CalculatePressure(triggerRatio, isActive));
+        }
     }
 } // namespace TiltBrush

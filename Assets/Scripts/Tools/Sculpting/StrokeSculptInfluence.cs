@@ -31,5 +31,17 @@ namespace TiltBrush
             float normalizedDistance = Mathf.Clamp01(distance / radius);
             return 1f - Mathf.SmoothStep(0f, 1f, normalizedDistance);
         }
+
+        /// Uses analog trigger pressure when available while preserving full-strength input for
+        /// desktop and other controllers which report a digital activation with a zero ratio.
+        public static float CalculatePressure(float triggerRatio, bool isActive)
+        {
+            if (!isActive)
+            {
+                return 0f;
+            }
+
+            return triggerRatio > 0f ? Mathf.Clamp01(triggerRatio) : 1f;
+        }
     }
 } // namespace TiltBrush

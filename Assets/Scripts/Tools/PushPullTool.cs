@@ -162,6 +162,9 @@ namespace TiltBrush
             bool strokeIsModified = false;
             float radius = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+            bool isActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
+            float pressure = StrokeSculptInfluence.CalculatePressure(
+                InputManager.Brush.GetTriggerRatio(), isActive);
             for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
                 var newControlPoint = newControlPoints[i];
@@ -178,9 +181,7 @@ namespace TiltBrush
                             newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
                             m_bIsPushing, rGroup);
                         newControlPoint.m_Pos +=
-                            direction * strength * influence * continuousStrengthScale;
-                        InputManager.m_Instance.TriggerHaptics(
-                            InputManager.ControllerName.Brush, m_HapticsToggleOn);
+                            direction * strength * influence * pressure * continuousStrengthScale;
                         strokeIsModified = true;
                         newControlPoints[i] = newControlPoint;
                         contactState.ControlPointIndices.Add(i);
