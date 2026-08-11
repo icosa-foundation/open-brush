@@ -175,3 +175,24 @@ Acceptance criteria:
 11. `Update sculpt mode names visuals and hints`
 
 Each implementation commit should leave undo grouping and intersection time slicing intact and should include its focused tests where practical.
+
+## Status
+
+Implementation is complete through the proposed commit sequence, with these additional corrections:
+
+1. The tool ghost shader now supports single-pass stereo rendering.
+2. Bundle / Spread influence is measured from its controller-aligned line.
+3. Project to Plane influence is measured within its visible plane.
+4. Switching modes cancels a held sculpt gesture and waits for trigger release.
+
+The current Labs label remains **Sculpt** pending a later naming decision; it may conflict with a separate feature branch that uses the same term.
+
+The remaining work is interactive validation rather than another implementation phase:
+
+1. Confirm the tool ghost renders in both headset eyes.
+2. Check every mode's visible volume against its effective influence boundary.
+3. Exercise undo, redo, mode switching, trigger cancellation, and tool hiding in normal use.
+4. Check orientation behavior with ribbon, tube, particle, and hull brushes.
+5. Compare dense and sparse strokes at small and large canvas scales.
+6. Confirm stalled frames and delayed GPU intersections do not cause jumps or strength loss.
+7. Confirm the tool remains unavailable where multiplayer does not support it.
