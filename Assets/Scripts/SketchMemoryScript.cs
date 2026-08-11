@@ -410,11 +410,7 @@ namespace TiltBrush
 
         /// Returns true if the command was recorded (either on its own or merged into an existing
         /// command), false if it was discarded without being executed.
-        public bool PerformAndRecordCommand(
-            BaseCommand command,
-            bool discardIfNotMerged = false,
-            bool invoke = true,
-            bool redo = true)
+        public bool PerformAndRecordCommand(BaseCommand command, bool discardIfNotMerged = false, bool invoke = true)
         {
             if (!command.IsAvailable) return false;
             SketchSurfacePanel.m_Instance.m_LastCommand = command;
@@ -438,10 +434,7 @@ namespace TiltBrush
                 return false;
             }
             // Either something merged, or the caller wants this recorded regardless
-            if (redo)
-            {
-                delta.Redo();
-            }
+            delta.Redo();
             m_OperationStack.Push(command);
             OperationStackChanged?.Invoke();
 

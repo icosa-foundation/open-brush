@@ -263,7 +263,12 @@ namespace TiltBrush
         {
             if (m_OwnsUndoGroup)
             {
-                ApiManager.Instance.EndUndo(commandAlreadyApplied: true);
+                BaseCommand undoGroup = ApiManager.Instance.ActiveUndo;
+                ApiManager.Instance.ActiveUndo = null;
+                if (undoGroup != null && undoGroup.HasChildren)
+                {
+                    SketchMemoryScript.m_Instance.RecordCommand(undoGroup);
+                }
                 m_OwnsUndoGroup = false;
             }
             m_ActiveTintCommands.Clear();

@@ -1027,12 +1027,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
             ActiveUndo = new BaseCommand();
         }
 
-        public void EndUndo(bool commandAlreadyApplied = false)
+        public void EndUndo()
         {
             if (ActiveUndo != null && ActiveUndo.HasChildren)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    ActiveUndo, redo: !commandAlreadyApplied);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
             }
             ActiveUndo = null;
         }
