@@ -11,8 +11,7 @@ Most modes use a smooth spatial falloff: control points near the centre of the t
 | Attract / Repel | Moves control points radially toward or away from the tool centre. | Yes: switches between Repel and Attract. |
 | Bundle / Spread | Moves control points toward or away from the tool's oriented centre line. | Yes: switches between Bundle and Spread. |
 | Project to Plane | Draws control points toward the tool's oriented plane. | No. |
-| Twist | Translates the affected stroke region with the controller and twists it around the controller's initial forward axis. | No. |
-| Grab | Translates the affected stroke region with the controller. | No. |
+| Grab | Translates the affected stroke region and twists it with controller roll. | No. |
 | Smooth | Relaxes interior control points toward the path between their neighbors. | No. |
 
 ## Attract / Repel
@@ -43,23 +42,15 @@ Influence depends on lateral distance across the plane, not height above or belo
 
 Alternate-mode toggle: **No.** The mode always projects toward the plane.
 
-## Twist
-
-When the trigger first contacts a stroke, this mode captures the original control points and their influence weights. Controller motion then rebuilds the result from that captured state.
-
-Rolling the controller twists the affected region around the controller's forward axis as it was oriented when the trigger was pressed. Moving the controller also translates the affected region. Both translation and rotation fade toward the edge of the influenced area, and control-point orientations rotate with the stroke.
-
-Because every update is calculated from the captured starting state, the result does not accumulate frame-by-frame drift.
-
-Alternate-mode toggle: **No.** Twist direction comes directly from the direction in which the controller is rolled.
-
 ## Grab
 
 When the trigger first contacts a stroke, this mode captures the affected control points and their influence weights. Moving the controller translates those points from their captured positions.
 
-Points near the centre follow the controller closely; points near the edge move by a smaller amount to produce a soft transition into the untouched stroke. Controller rotation does not rotate the grabbed region.
+Rolling the controller also twists the affected region around the controller's forward axis as it was oriented when the trigger was pressed. Translation and rotation both fade toward the edge of the influenced area, and control-point orientations rotate with the stroke.
 
-Alternate-mode toggle: **No.** Moving the controller in the opposite direction provides the opposite edit.
+Because every update is calculated from the captured starting state, the result does not accumulate frame-by-frame drift. Moving without rolling performs a plain translation; rolling without moving performs a twist.
+
+Alternate-mode toggle: **No.** Translation and twist direction come directly from controller movement and roll.
 
 ## Smooth
 
@@ -73,4 +64,4 @@ Alternate-mode toggle: **No.** There is currently no sharpen or roughen counterp
 
 Attract / Repel and Bundle / Spread share the same internal two-state toggle. Switching modes does not reset it. Consequently, changing from one of these modes to the other preserves the current side of the toggle: the Repel-side state corresponds to Bundle, while the Attract-side state corresponds to Spread.
 
-Project to Plane, Twist, Grab, and Smooth ignore the alternate-mode command, and the controller toggle indicator is hidden for those modes.
+Project to Plane, Grab, and Smooth ignore the alternate-mode command, and the controller toggle indicator is hidden for those modes.

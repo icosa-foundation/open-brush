@@ -22,7 +22,6 @@ Replace the mesh-vertex assumptions in Push/Pull with interactions designed for 
 3. **Smooth**: Relax local curvature using neighboring control points and arc-length-aware weights.
 4. **Project to Plane**: Gradually project a region onto a visible controller-aligned plane. This is the revised Flatten mode.
 5. **Pinch/Bundle**: Draw multiple strokes toward a shared controller-aligned line, or spread them away from it. This replaces Crease.
-6. **Twist/Bend**: Apply an actual rotation about a captured pivot and axis. This replaces Rotate and remains an advanced mode.
 
 ## Phase 1: Shared stroke influence and feedback
 
@@ -63,7 +62,7 @@ Acceptance criteria:
 
 1. Capture the tool pose, affected control points, and influence weights when the trigger is pressed.
 2. Apply controller translation relative to the captured pose instead of integrating velocity each frame.
-3. Optionally apply controller rotation about the captured tool pivot.
+3. Apply controller roll about the captured tool pivot and initial forward axis.
 4. Apply the same rigid rotation to each affected control point's orientation.
 5. Preserve the captured selection and weights for the gesture so points do not pop in and out while moving.
 6. Reuse the existing one-gesture undo grouping.
@@ -118,14 +117,14 @@ Acceptance criteria:
 2. Rotating the controller rotates both the displayed and effective pinch region.
 3. Reverse mode spreads the same region with matched strength.
 
-## Phase 7: Twist/Bend
+## Phase 7: Captured Grab Rotation
 
 1. Delete the tangential-displacement implementation.
 2. Capture a pivot and controller-aligned axis at trigger press.
 3. Derive angle from controller roll or another direct user-controlled rotation input.
 4. Apply an exact quaternion rotation to positions, weighted by the shared soft selection.
 5. Apply the corresponding quaternion to control-point orientations.
-6. Decide through interaction testing whether the shipped name and default behavior should be Twist or Bend.
+6. Keep the shipped name Grab while allowing controller roll to twist the captured region.
 
 Acceptance criteria:
 
@@ -170,7 +169,7 @@ Acceptance criteria:
 6. `Add stroke Smooth sculpt mode`
 7. `Project sculpted strokes onto an explicit plane`
 8. `Replace Crease with controller-axis Pinch`
-9. `Replace tangential Rotate with captured Twist`
+9. `Replace tangential Rotate with captured Grab twist`
 10. `Transport sculpted control point orientations`
 11. `Update sculpt mode names visuals and hints`
 

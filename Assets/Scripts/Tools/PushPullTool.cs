@@ -320,10 +320,7 @@ namespace TiltBrush
         private bool IsGrabMode =>
             m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
 
-        private bool IsTwistMode =>
-            m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Twist;
-
-        private bool IsCapturedTransformMode => IsGrabMode || IsTwistMode;
+        private bool IsCapturedTransformMode => IsGrabMode;
 
         private bool IsSmoothMode =>
             m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
@@ -386,11 +383,9 @@ namespace TiltBrush
         {
             Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
             Vector3 translation = toolPosition - m_TransformStartToolPosition;
-            float twistAngle = IsTwistMode
-                ? StrokeSculptInfluence.CalculateTwistAngle(
-                    m_TransformStartToolRotation, m_ToolTransform.rotation,
-                    m_TransformStartToolRotation * Vector3.forward)
-                : 0f;
+            float twistAngle = StrokeSculptInfluence.CalculateTwistAngle(
+                m_TransformStartToolRotation, m_ToolTransform.rotation,
+                m_TransformStartToolRotation * Vector3.forward);
             bool anyStrokeModified = false;
             foreach (KeyValuePair<Stroke, SculptContactState> contact in m_SculptContacts)
             {

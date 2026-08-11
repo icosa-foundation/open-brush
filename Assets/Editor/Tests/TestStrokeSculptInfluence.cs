@@ -38,7 +38,6 @@ namespace TiltBrush
                     SculptSubToolManager.SubTool.Push,
                     SculptSubToolManager.SubTool.Pinch,
                     SculptSubToolManager.SubTool.Flatten,
-                    SculptSubToolManager.SubTool.Twist,
                     SculptSubToolManager.SubTool.Grab,
                     SculptSubToolManager.SubTool.Smooth,
                 },
@@ -288,7 +287,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void CapturedTwistPreservesRadiusAndRotatesOrientation()
+        public void GrabTwistPreservesRadiusAndRotatesOrientation()
         {
             var startPoints = new[] { ControlPointAt(2f, 0f) };
             startPoints[0].m_Orient = Quaternion.identity;

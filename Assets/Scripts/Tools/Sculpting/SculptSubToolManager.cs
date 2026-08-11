@@ -20,7 +20,6 @@ namespace TiltBrush
             Push = 0,
             Pinch = 1,
             Flatten = 2,
-            Twist = 3,
             Grab = 4,
             Smooth = 5
         }

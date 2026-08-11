@@ -16,7 +16,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Marker subtool for the captured-pose Grab behavior implemented by PushPullTool.
+    /// Marker subtool for the captured translation and twist behavior implemented by PushPullTool.
     public class GrabSubTool : BaseSculptSubTool
     {
         public override SculptSubToolManager.SubTool SubToolIdentifier =>
