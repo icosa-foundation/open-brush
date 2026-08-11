@@ -688,7 +688,7 @@ MonoBehaviour:
   m_AudioAttackSpeed: 0
   m_ModifyStrokeSounds:
   - {fileID: 8300000, guid: f587ca1bdddc6014090c8a2169e5745e, type: 3}
-  m_ModifyStrokeMinTriggerTime: 0
+  m_ModifyStrokeMinTriggerTime: 0.1
   m_ToolHotOffMaterial: {fileID: 2100000, guid: 1f259984fed24d4fa141bf61d2abd10a,
     type: 2}
   m_OnMesh: {fileID: 3491021130875935208}
