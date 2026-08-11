@@ -167,7 +167,7 @@ namespace TiltBrush
                     Color32 blended = Color.Lerp(existing, tintColor, amount);
                     blended.a = newOverrideColors[i].HasValue
                         ? newOverrideColors[i].Value.a
-                        : (byte)255;
+                        : ((Color32)baseColor).a;
                     if (!newOverrideColors[i].HasValue || !newOverrideColors[i].Value.Equals(blended))
                     {
                         newOverrideColors[i] = blended;
