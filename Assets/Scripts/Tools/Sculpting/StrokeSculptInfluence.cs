@@ -227,5 +227,69 @@ namespace TiltBrush
                 result[i].m_Orient = rotation * startPoints[i].m_Orient;
             }
         }
+
+        /// Parallel-transports each control point orientation through a non-rigid deformation.
+        /// The minimal rotation from the old curve tangent to the new one preserves existing roll.
+        public static void TransportOrientations(
+            PointerManager.ControlPoint[] startPoints,
+            PointerManager.ControlPoint[] result)
+        {
+            if (startPoints == null || result == null ||
+                startPoints.Length != result.Length || startPoints.Length < 2)
+            {
+                return;
+            }
+
+            for (int i = 0; i < startPoints.Length; ++i)
+            {
+                if (!TryCalculateTangent(startPoints, i, out Vector3 oldTangent) ||
+                    !TryCalculateTangent(result, i, out Vector3 newTangent))
+                {
+                    continue;
+                }
+
+                Quaternion transport = Quaternion.FromToRotation(oldTangent, newTangent);
+                result[i].m_Orient = transport * startPoints[i].m_Orient;
+            }
+        }
+
+        private static bool TryCalculateTangent(
+            PointerManager.ControlPoint[] points, int index, out Vector3 tangent)
+        {
+            int previous = index - 1;
+            while (previous >= 0 &&
+                (points[index].m_Pos - points[previous].m_Pos).sqrMagnitude <= Mathf.Epsilon)
+            {
+                --previous;
+            }
+
+            int next = index + 1;
+            while (next < points.Length &&
+                (points[next].m_Pos - points[index].m_Pos).sqrMagnitude <= Mathf.Epsilon)
+            {
+                ++next;
+            }
+
+            tangent = Vector3.zero;
+            if (previous >= 0 && next < points.Length)
+            {
+                tangent = points[next].m_Pos - points[previous].m_Pos;
+            }
+            if (tangent.sqrMagnitude <= Mathf.Epsilon && next < points.Length)
+            {
+                tangent = points[next].m_Pos - points[index].m_Pos;
+            }
+            if (tangent.sqrMagnitude <= Mathf.Epsilon && previous >= 0)
+            {
+                tangent = points[index].m_Pos - points[previous].m_Pos;
+            }
+
+            if (tangent.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return false;
+            }
+            tangent.Normalize();
+            return true;
+        }
     }
 } // namespace TiltBrush

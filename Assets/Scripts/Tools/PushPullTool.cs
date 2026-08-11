@@ -259,6 +259,8 @@ namespace TiltBrush
 
             if (strokeIsModified)
             {
+                StrokeSculptInfluence.TransportOrientations(
+                    stroke.m_ControlPoints, newControlPoints);
                 ApplyStrokeModification(stroke, newControlPoints);
                 contactState.LastApplicationTime = now;
                 m_SculptContacts[stroke] = contactState;

@@ -254,6 +254,48 @@ namespace TiltBrush
                 Quaternion.AngleAxis(90f, Vector3.forward), result[0].m_Orient);
         }
 
+        [Test]
+        public void OrientationTransportFollowsChangedEndpointTangents()
+        {
+            var startPoints = new[]
+            {
+                ControlPointAt(0f, 0f),
+                ControlPointAt(1f, 0f),
+                ControlPointAt(2f, 0f),
+            };
+            Quaternion originalOrientation = Quaternion.Euler(20f, 30f, 40f);
+            for (int i = 0; i < startPoints.Length; ++i)
+            {
+                startPoints[i].m_Orient = originalOrientation;
+            }
+            var result = (PointerManager.ControlPoint[])startPoints.Clone();
+            result[1].m_Pos = new Vector3(1f, 1f, 0f);
+
+            StrokeSculptInfluence.TransportOrientations(startPoints, result);
+
+            Quaternion expectedStart = Quaternion.FromToRotation(
+                Vector3.right, new Vector3(1f, 1f, 0f)) * originalOrientation;
+            Quaternion expectedEnd = Quaternion.FromToRotation(
+                Vector3.right, new Vector3(1f, -1f, 0f)) * originalOrientation;
+            Assert.AreEqual(expectedStart, result[0].m_Orient);
+            Assert.AreEqual(originalOrientation, result[1].m_Orient);
+            Assert.AreEqual(expectedEnd, result[2].m_Orient);
+        }
+
+        [Test]
+        public void OrientationTransportIgnoresDegenerateStroke()
+        {
+            var startPoints = new[] { ControlPointAt(1f), ControlPointAt(1f) };
+            startPoints[0].m_Orient = Quaternion.Euler(10f, 20f, 30f);
+            startPoints[1].m_Orient = Quaternion.Euler(40f, 50f, 60f);
+            var result = (PointerManager.ControlPoint[])startPoints.Clone();
+
+            StrokeSculptInfluence.TransportOrientations(startPoints, result);
+
+            Assert.AreEqual(startPoints[0].m_Orient, result[0].m_Orient);
+            Assert.AreEqual(startPoints[1].m_Orient, result[1].m_Orient);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };
