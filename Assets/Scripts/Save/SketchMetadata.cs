@@ -974,23 +974,22 @@ namespace TiltBrush
                             };
                             break;
                         case ShapeTypes.Arc:
-                            generatorParameters = new Dictionary<string, object>
-                            {
-                                { "type", ShapeTypes.Arc },
-                                { "a", recipe.Param1Int },
-                                { "b", recipe.Param2Float },
-                                { "c", recipe.Param3Float },
-                            };
-                            break;
                         case ShapeTypes.Arch:
+                        case ShapeTypes.Ring:
+                        case ShapeTypes.Triangle:
+                        case ShapeTypes.Sector:
                             generatorParameters = new Dictionary<string, object>
                             {
-                                { "type", ShapeTypes.Arch },
+                                { "type", recipe.ShapeType },
                                 { "a", recipe.Param1Int },
                                 { "b", recipe.Param2Float },
                                 { "c", recipe.Param3Float },
                             };
                             break;
+                    }
+                    if (recipe.ShapeExtrusion > 0f)
+                    {
+                        generatorParameters["height"] = recipe.ShapeExtrusion;
                     }
                     break;
                 case GeneratorTypes.Various:
@@ -1011,6 +1010,7 @@ namespace TiltBrush
                                 { "type", VariousSolidTypes.UvSphere },
                                 { "x", recipe.Param1Int },
                                 { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Float <= 0f ? 1f : recipe.Param3Float },
                             };
                             break;
                         case VariousSolidTypes.UvHemisphere:
@@ -1036,6 +1036,34 @@ namespace TiltBrush
                                 { "type", VariousSolidTypes.Stairs },
                                 { "x", recipe.Param1Int },
                                 { "y", recipe.Param2Float },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.Capsule:
+                        case VariousSolidTypes.ChamferedCylinder:
+                        case VariousSolidTypes.HollowHemisphere:
+                        case VariousSolidTypes.PartialTorus:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", recipe.VariousSolidsType },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.ChamferedBox:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.ChamferedBox },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Float },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.WireframeBox:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.WireframeBox },
                                 { "z", recipe.Param3Float },
                             };
                             break;

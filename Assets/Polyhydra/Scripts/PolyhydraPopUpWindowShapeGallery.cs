@@ -96,6 +96,16 @@ namespace TiltBrush
         {
             ShapeGalleryJson = Resources.LoadAll<TextAsset>("Shape Gallery Presets").ToDictionary(i => i.name);
             ShapeGalleryIcons = Resources.LoadAll<Texture2D>("Shape Gallery Presets").ToDictionary(i => i.name);
+
+            var missingIconNames = ShapeGalleryJson.Keys
+                .Where(name => !ShapeGalleryIcons.ContainsKey(name))
+                .OrderBy(name => name)
+                .ToList();
+            if (missingIconNames.Count > 0)
+            {
+                string missingIcons = string.Join(", ", missingIconNames);
+                Debug.LogWarning($"OB_3D_SHAPES_GALLERY_MISSING_ICON: No thumbnail was found for: {missingIcons}. Using the fallback icon.");
+            }
         }
 
         protected virtual void CreateButtons()
@@ -175,7 +185,11 @@ namespace TiltBrush
 
         public Texture2D GetButtonTexture(string presetName)
         {
-            return ShapeGalleryIcons[presetName];
+            if (ShapeGalleryIcons.TryGetValue(presetName, out Texture2D texture))
+            {
+                return texture;
+            }
+            return Resources.Load<Texture2D>("Icons/bigquestion");
         }
 
         public void HandleButtonPress(string presetName)
