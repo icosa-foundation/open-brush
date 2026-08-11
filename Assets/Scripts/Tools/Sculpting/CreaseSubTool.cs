@@ -17,21 +17,44 @@ namespace TiltBrush
 {
     public class CreaseSubTool : BaseSculptSubTool
     {
+        private BoxCollider m_BoxCollider;
 
         private void Awake()
         {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
-            m_Collider = GetComponent<Collider>();
+            m_SubToolIdentifier = SculptSubToolManager.SubTool.Pinch;
+            m_BoxCollider = GetComponent<BoxCollider>();
+            m_Collider = m_BoxCollider;
         }
 
         public override bool IsInReach(Vector3 vertex, TrTransform canvasPose)
         {
-            return m_Collider.bounds.Contains(canvasPose * vertex);
+            Vector3 localPoint = m_BoxCollider.transform.InverseTransformPoint(canvasPose * vertex);
+            Vector3 offset = localPoint - m_BoxCollider.center;
+            Vector3 halfSize = m_BoxCollider.size * 0.5f;
+            return Mathf.Abs(offset.x) <= halfSize.x &&
+                Mathf.Abs(offset.y) <= halfSize.y &&
+                Mathf.Abs(offset.z) <= halfSize.z;
+        }
+
+        public override float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
+        {
+            return m_DefaultStrength * CalculateWorldLineOffset(vertex, canvasPose).magnitude /
+                canvasPose.scale;
         }
 
         public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)
         {
-            return (bPushing ? 1 : -1) * -(vertex - rGroup.m_Bounds.center).normalized;
+            Vector3 lineOffset = CalculateWorldLineOffset(vertex, canvasPose);
+            Vector3 direction = Quaternion.Inverse(canvasPose.rotation) * lineOffset;
+            return (bPushing ? 1f : -1f) * direction.normalized;
+        }
+
+        private Vector3 CalculateWorldLineOffset(Vector3 vertex, TrTransform canvasPose)
+        {
+            Vector3 linePoint = m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
+            return StrokeSculptInfluence.CalculateLineOffset(
+                canvasPose * vertex, linePoint, m_BoxCollider.transform.forward);
         }
     }
 

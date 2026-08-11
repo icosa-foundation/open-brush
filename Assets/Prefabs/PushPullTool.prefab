@@ -182,7 +182,7 @@ GameObject:
   - component: {fileID: 3491021130095632299}
   - component: {fileID: 3491021130095632300}
   m_Layer: 14
-  m_Name: Crease
+  m_Name: Pinch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

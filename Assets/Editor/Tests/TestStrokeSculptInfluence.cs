@@ -216,6 +216,15 @@ namespace TiltBrush
             Assert.AreEqual(new Vector3(0f, expectedY, 0f), offset);
         }
 
+        [Test]
+        public void LineOffsetMovesPointPerpendicularlyOntoSharedLine()
+        {
+            Vector3 offset = StrokeSculptInfluence.CalculateLineOffset(
+                new Vector3(4f, 6f, 3f), new Vector3(1f, 2f, 3f), Vector3.up * 2f);
+
+            Assert.AreEqual(new Vector3(-3f, 0f, 0f), offset);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };

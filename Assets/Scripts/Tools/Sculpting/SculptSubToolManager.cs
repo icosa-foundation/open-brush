@@ -20,7 +20,7 @@ namespace TiltBrush
         public enum SubTool
         {
             Push,
-            Crease,
+            Pinch,
             Flatten,
             Rotate,
             Grab,

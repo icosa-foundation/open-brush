@@ -157,5 +157,21 @@ namespace TiltBrush
             float signedDistance = Vector3.Dot(point - planePoint, normal);
             return -signedDistance * normal;
         }
+
+        /// Returns the shortest vector from a point to an infinite line. The line direction need
+        /// not be normalized; finite reach is handled separately by the subtool volume.
+        public static Vector3 CalculateLineOffset(
+            Vector3 point, Vector3 linePoint, Vector3 lineDirection)
+        {
+            if (lineDirection.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 direction = lineDirection.normalized;
+            Vector3 fromLinePoint = point - linePoint;
+            Vector3 closestPoint = linePoint + Vector3.Dot(fromLinePoint, direction) * direction;
+            return closestPoint - point;
+        }
     }
 } // namespace TiltBrush

@@ -673,7 +673,7 @@ GameObject:
   - component: {fileID: 3371786718587815988}
   - component: {fileID: 5278661225779610634}
   m_Layer: 16
-  m_Name: Crease
+  m_Name: Pinch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -779,7 +779,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Crease
+  m_DescriptionText: Pinch
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
