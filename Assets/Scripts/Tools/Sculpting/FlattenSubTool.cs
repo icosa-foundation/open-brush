@@ -41,6 +41,17 @@ namespace TiltBrush
             return m_DefaultStrength * planeOffset.magnitude / canvasPose.scale;
         }
 
+        public override float CalculateInfluence(
+            Vector3 vertex, Vector3 toolPosition, float radius, TrTransform canvasPose)
+        {
+            Vector3 planePoint = canvasPose.inverse *
+                m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
+            Vector3 planeNormal = Quaternion.Inverse(canvasPose.rotation) *
+                m_BoxCollider.transform.up;
+            return StrokeSculptInfluence.CalculatePlaneWeight(
+                vertex, planePoint, planeNormal, radius);
+        }
+
         public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)
         {
             Vector3 planeOffset = CalculateWorldPlaneOffset(vertex, canvasPose);

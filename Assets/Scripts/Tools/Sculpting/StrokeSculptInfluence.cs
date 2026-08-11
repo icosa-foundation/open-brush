@@ -158,6 +158,21 @@ namespace TiltBrush
             return -signedDistance * normal;
         }
 
+        public static float CalculatePlaneWeight(
+            Vector3 point, Vector3 planePoint, Vector3 planeNormal, float radius)
+        {
+            if (planeNormal.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return 0f;
+            }
+
+            Vector3 normal = planeNormal.normalized;
+            Vector3 fromPlanePoint = point - planePoint;
+            Vector3 inPlaneOffset = fromPlanePoint -
+                Vector3.Dot(fromPlanePoint, normal) * normal;
+            return CalculateRadialWeight(inPlaneOffset.magnitude, radius);
+        }
+
         /// Returns the shortest vector from a point to an infinite line. The line direction need
         /// not be normalized; finite reach is handled separately by the subtool volume.
         public static Vector3 CalculateLineOffset(

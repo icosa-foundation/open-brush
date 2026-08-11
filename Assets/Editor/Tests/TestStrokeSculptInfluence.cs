@@ -217,6 +217,18 @@ namespace TiltBrush
         }
 
         [Test]
+        public void PlaneWeightDoesNotFadeWithHeightAbovePlane()
+        {
+            float onPlane = StrokeSculptInfluence.CalculatePlaneWeight(
+                new Vector3(1f, 0f, 0f), Vector3.zero, Vector3.up, 2f);
+            float abovePlane = StrokeSculptInfluence.CalculatePlaneWeight(
+                new Vector3(1f, 100f, 0f), Vector3.zero, Vector3.up, 2f);
+
+            Assert.AreEqual(onPlane, abovePlane);
+            Assert.AreEqual(0.5f, onPlane);
+        }
+
+        [Test]
         public void LineOffsetMovesPointPerpendicularlyOntoSharedLine()
         {
             Vector3 offset = StrokeSculptInfluence.CalculateLineOffset(
