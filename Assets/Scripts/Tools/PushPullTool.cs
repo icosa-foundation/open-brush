@@ -27,7 +27,6 @@ namespace TiltBrush
         /// Keeps track of the first sculpting change made while the trigger is held.
         private bool m_AtLeastOneModificationMade = false;
         private bool m_OwnsUndoGroup;
-        private readonly Dictionary<Stroke, float> m_LastSculptTimes = new();
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
@@ -72,7 +71,6 @@ namespace TiltBrush
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
             m_ActiveSubTool.gameObject.SetActive(!m_ToolHidden);
-            m_LastSculptTimes.Clear();
         }
 
         public void FinalizeSculptingBatch()
@@ -87,12 +85,10 @@ namespace TiltBrush
                 FinalizeSculptingBatch();
                 ResetToolRotation();
                 ClearGpuFutureLists();
-                m_LastSculptTimes.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
-                m_LastSculptTimes.Clear();
                 m_ActiveSculptCommands.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
@@ -131,13 +127,10 @@ namespace TiltBrush
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
             var newControlPoints = stroke.m_ControlPoints.ToArray();
-            float now = Time.realtimeSinceStartup;
             float continuousStrengthScale = 1f;
             if (m_ActiveSubTool.UsesContinuousStrength)
             {
-                float elapsed = m_LastSculptTimes.TryGetValue(stroke, out float lastSculptTime)
-                    ? Mathf.Min(now - lastSculptTime, k_MaxContinuousStepSeconds)
-                    : Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
+                float elapsed = Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
                 continuousStrengthScale = elapsed * k_ReferenceUpdatesPerSecond;
             }
 
@@ -184,7 +177,6 @@ namespace TiltBrush
                     cmd.Redo();
                 }
                 m_AtLeastOneModificationMade = true;
-                m_LastSculptTimes[stroke] = now;
             }
 
             return strokeIsModified;
