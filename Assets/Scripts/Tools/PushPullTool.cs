@@ -160,20 +160,31 @@ namespace TiltBrush
 
             // Tool position adjusted by canvas transformations
             bool strokeIsModified = false;
+            float radius = GetSize() / m_CurrentCanvas.Pose.scale;
+            Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
             for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
                 var newControlPoint = newControlPoints[i];
-                float distance = Vector3.Distance(newControlPoint.m_Pos, m_CurrentCanvas.Pose.inverse * m_ToolTransform.position);
-                float strength = m_ActiveSubTool.CalculateStrength(newControlPoint.m_Pos, distance, m_CurrentCanvas.Pose, m_bIsPushing);
+                float distance = Vector3.Distance(newControlPoint.m_Pos, toolPosition);
+                float influence = StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
 
-                if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
+                if (influence > 0f && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
                 {
-                    Vector3 direction = m_ActiveSubTool.CalculateDirection(newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
-                    newControlPoint.m_Pos += direction * strength * continuousStrengthScale;
-                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
-                    strokeIsModified = true;
-                    newControlPoints[i] = newControlPoint;
-                    contactState.ControlPointIndices.Add(i);
+                    float strength = m_ActiveSubTool.CalculateStrength(
+                        newControlPoint.m_Pos, distance, m_CurrentCanvas.Pose, m_bIsPushing);
+                    if (strength != 0f)
+                    {
+                        Vector3 direction = m_ActiveSubTool.CalculateDirection(
+                            newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
+                            m_bIsPushing, rGroup);
+                        newControlPoint.m_Pos +=
+                            direction * strength * influence * continuousStrengthScale;
+                        InputManager.m_Instance.TriggerHaptics(
+                            InputManager.ControllerName.Brush, m_HapticsToggleOn);
+                        strokeIsModified = true;
+                        newControlPoints[i] = newControlPoint;
+                        contactState.ControlPointIndices.Add(i);
+                    }
                 }
             }
 
