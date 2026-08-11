@@ -45,6 +45,7 @@ namespace TiltBrush
 
         private TintMode m_CurrentMode = TintMode.Replace;
         private bool m_OwnsUndoGroup;
+        private readonly Dictionary<Stroke, ModifyStrokePointColorsCommand> m_ActiveTintCommands = new();
         public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
@@ -62,6 +63,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
+                m_ActiveTintCommands.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -70,8 +72,11 @@ namespace TiltBrush
             }
             else if (m_OwnsUndoGroup && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                ApiManager.Instance.EndUndo();
-                m_OwnsUndoGroup = false;
+                EndOwnedUndoGroup();
+            }
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                m_ActiveTintCommands.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
@@ -195,13 +200,24 @@ namespace TiltBrush
             {
                 PlayModifyStrokeSound();
                 var undoParent = ApiManager.Instance.ActiveUndo;
-                var cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode, undoParent);
+                ModifyStrokePointColorsCommand cmd;
                 if (undoParent == null)
                 {
+                    cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode);
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
                 {
+                    if (!m_ActiveTintCommands.TryGetValue(stroke, out cmd))
+                    {
+                        cmd = new ModifyStrokePointColorsCommand(
+                            stroke, newOverrideColors, targetMode, undoParent);
+                        m_ActiveTintCommands.Add(stroke, cmd);
+                    }
+                    else
+                    {
+                        cmd.UpdateEndState(newOverrideColors, targetMode);
+                    }
                     // Apply changes immediately while keeping this command inside the active undo group.
                     cmd.Redo();
                 }
@@ -245,12 +261,12 @@ namespace TiltBrush
 
         private void EndOwnedUndoGroup()
         {
-            if (!m_OwnsUndoGroup)
+            if (m_OwnsUndoGroup)
             {
-                return;
+                ApiManager.Instance.EndUndo(commandAlreadyApplied: true);
+                m_OwnsUndoGroup = false;
             }
-            ApiManager.Instance.EndUndo();
-            m_OwnsUndoGroup = false;
+            m_ActiveTintCommands.Clear();
         }
     }
 } // namespace TiltBrush

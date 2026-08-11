@@ -28,6 +28,7 @@ namespace TiltBrush
         private bool m_AtLeastOneModificationMade = false;
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, float> m_LastSculptTimes = new();
+        private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -92,6 +93,7 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_LastSculptTimes.Clear();
+                m_ActiveSculptCommands.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -100,8 +102,11 @@ namespace TiltBrush
             }
             else if (m_OwnsUndoGroup && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                ApiManager.Instance.EndUndo();
-                m_OwnsUndoGroup = false;
+                EndOwnedUndoGroup();
+            }
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                m_ActiveSculptCommands.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
@@ -158,13 +163,23 @@ namespace TiltBrush
             {
                 PlayModifyStrokeSound();
                 var undoParent = ApiManager.Instance.ActiveUndo;
-                var cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);
+                ModifyStrokePointsCommand cmd;
                 if (undoParent == null)
                 {
+                    cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
                 {
+                    if (!m_ActiveSculptCommands.TryGetValue(stroke, out cmd))
+                    {
+                        cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);
+                        m_ActiveSculptCommands.Add(stroke, cmd);
+                    }
+                    else
+                    {
+                        cmd.UpdateEndPoints(newControlPoints);
+                    }
                     // Apply immediately while keeping this command in the active undo group.
                     cmd.Redo();
                 }
@@ -185,12 +200,12 @@ namespace TiltBrush
 
         private void EndOwnedUndoGroup()
         {
-            if (!m_OwnsUndoGroup)
+            if (m_OwnsUndoGroup)
             {
-                return;
+                ApiManager.Instance.EndUndo(commandAlreadyApplied: true);
+                m_OwnsUndoGroup = false;
             }
-            ApiManager.Instance.EndUndo();
-            m_OwnsUndoGroup = false;
+            m_ActiveSculptCommands.Clear();
         }
     }
 } // namespace TiltBrush
