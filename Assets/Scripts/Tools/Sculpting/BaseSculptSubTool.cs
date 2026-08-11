@@ -43,6 +43,13 @@ namespace TiltBrush
             return m_DefaultStrength;
         }
 
+        public virtual float CalculateInfluence(
+            Vector3 vertex, Vector3 toolPosition, float radius, TrTransform canvasPose)
+        {
+            return StrokeSculptInfluence.CalculateRadialWeight(
+                Vector3.Distance(vertex, toolPosition), radius);
+        }
+
         public virtual float ConstrainDisplacement(
             float displacement, float distance, bool bPushing)
         {

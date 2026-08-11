@@ -201,9 +201,8 @@ namespace TiltBrush
             }
             for (int i = 0; i < newControlPoints.Length; ++i)
             {
-                float distance = Vector3.Distance(newControlPoints[i].m_Pos, toolPosition);
-                m_InfluenceWeights[i] =
-                    StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
+                m_InfluenceWeights[i] = m_ActiveSubTool.CalculateInfluence(
+                    newControlPoints[i].m_Pos, toolPosition, radius, m_CurrentCanvas.Pose);
             }
             StrokeSculptInfluence.FeatherAlongStroke(
                 newControlPoints, m_InfluenceWeights,

@@ -174,6 +174,13 @@ namespace TiltBrush
             return closestPoint - point;
         }
 
+        public static float CalculateLineWeight(
+            Vector3 point, Vector3 linePoint, Vector3 lineDirection, float radius)
+        {
+            return CalculateRadialWeight(
+                CalculateLineOffset(point, linePoint, lineDirection).magnitude, radius);
+        }
+
         /// Extracts the signed twist around a world-space axis from the controller rotation delta.
         public static float CalculateTwistAngle(
             Quaternion startRotation, Quaternion currentRotation, Vector3 axis)

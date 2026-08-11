@@ -226,6 +226,18 @@ namespace TiltBrush
         }
 
         [Test]
+        public void LineWeightDoesNotFadeAlongLineLength()
+        {
+            float nearOrigin = StrokeSculptInfluence.CalculateLineWeight(
+                new Vector3(1f, 0f, 0f), Vector3.zero, Vector3.forward, 2f);
+            float farAlongLine = StrokeSculptInfluence.CalculateLineWeight(
+                new Vector3(1f, 0f, 100f), Vector3.zero, Vector3.forward, 2f);
+
+            Assert.AreEqual(nearOrigin, farAlongLine);
+            Assert.AreEqual(0.5f, nearOrigin);
+        }
+
+        [Test]
         public void TwistAngleExtractsControllerRoll()
         {
             Quaternion start = Quaternion.Euler(20f, 30f, 10f);
