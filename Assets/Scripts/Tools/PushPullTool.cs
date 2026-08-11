@@ -21,9 +21,13 @@ namespace TiltBrush
 {
     public class PushPullTool : ToggleStrokeModificationTool
     {
+        private const float k_ReferenceUpdatesPerSecond = 90f;
+        private const float k_MaxContinuousStepSeconds = 0.1f;
+
         /// Keeps track of the first sculpting change made while the trigger is held.
         private bool m_AtLeastOneModificationMade = false;
         private bool m_OwnsUndoGroup;
+        private readonly Dictionary<Stroke, float> m_LastSculptTimes = new();
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -67,6 +71,7 @@ namespace TiltBrush
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
             m_ActiveSubTool.gameObject.SetActive(!m_ToolHidden);
+            m_LastSculptTimes.Clear();
         }
 
         public void FinalizeSculptingBatch()
@@ -81,10 +86,12 @@ namespace TiltBrush
                 FinalizeSculptingBatch();
                 ResetToolRotation();
                 ClearGpuFutureLists();
+                m_LastSculptTimes.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
+                m_LastSculptTimes.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -119,6 +126,15 @@ namespace TiltBrush
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
             var newControlPoints = stroke.m_ControlPoints.ToArray();
+            float now = Time.realtimeSinceStartup;
+            float continuousStrengthScale = 1f;
+            if (m_ActiveSubTool.UsesContinuousStrength)
+            {
+                float elapsed = m_LastSculptTimes.TryGetValue(stroke, out float lastSculptTime)
+                    ? Mathf.Min(now - lastSculptTime, k_MaxContinuousStepSeconds)
+                    : Time.unscaledDeltaTime;
+                continuousStrengthScale = elapsed * k_ReferenceUpdatesPerSecond;
+            }
 
             // Tool position adjusted by canvas transformations
             bool strokeIsModified = false;
@@ -131,7 +147,7 @@ namespace TiltBrush
                 if (distance <= GetSize() / m_CurrentCanvas.Pose.scale && strength != 0 && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
                 {
                     Vector3 direction = m_ActiveSubTool.CalculateDirection(newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose, m_bIsPushing, rGroup);
-                    newControlPoint.m_Pos += direction * strength;
+                    newControlPoint.m_Pos += direction * strength * continuousStrengthScale;
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
                     strokeIsModified = true;
                     newControlPoints[i] = newControlPoint;
@@ -153,6 +169,7 @@ namespace TiltBrush
                     cmd.Redo();
                 }
                 m_AtLeastOneModificationMade = true;
+                m_LastSculptTimes[stroke] = now;
             }
 
             return true;

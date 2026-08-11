@@ -25,6 +25,9 @@ namespace TiltBrush
 
         protected Collider m_Collider;
 
+        /// Whether CalculateStrength returns a per-update displacement that should be normalized
+        /// to elapsed time. Subtools that return an absolute positional correction can opt out.
+        public virtual bool UsesContinuousStrength => true;
 
 
         /// For sculpting tools with an interactor that limits the sculpting tool's

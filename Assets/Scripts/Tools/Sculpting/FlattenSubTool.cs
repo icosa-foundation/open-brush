@@ -17,6 +17,7 @@ namespace TiltBrush
 {
     public class FlattenSubTool : BaseSculptSubTool
     {
+        public override bool UsesContinuousStrength => false;
 
         private void Awake()
         {
