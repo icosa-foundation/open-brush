@@ -29,6 +29,7 @@ namespace TiltBrush
 
         private const float k_ReferenceUpdatesPerSecond = 90f;
         private const float k_MaxContinuousStepSeconds = 0.1f;
+        private const float k_ArcLengthFeatherRadiusRatio = 0.25f;
 
         /// Keeps track of the first sculpting change made while the trigger is held.
         private bool m_AtLeastOneModificationMade = false;
@@ -36,6 +37,7 @@ namespace TiltBrush
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
         private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
         private readonly List<Stroke> m_ExpiredSculptContacts = new();
+        private float[] m_InfluenceWeights = new float[0];
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -165,11 +167,25 @@ namespace TiltBrush
             bool isActive = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             float pressure = StrokeSculptInfluence.CalculatePressure(
                 InputManager.Brush.GetTriggerRatio(), isActive);
+            if (m_InfluenceWeights.Length < newControlPoints.Length)
+            {
+                m_InfluenceWeights = new float[newControlPoints.Length];
+            }
+            for (int i = 0; i < newControlPoints.Length; ++i)
+            {
+                float distance = Vector3.Distance(newControlPoints[i].m_Pos, toolPosition);
+                m_InfluenceWeights[i] =
+                    StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
+            }
+            StrokeSculptInfluence.FeatherAlongStroke(
+                newControlPoints, m_InfluenceWeights,
+                radius * k_ArcLengthFeatherRadiusRatio, newControlPoints.Length);
+
             for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
                 var newControlPoint = newControlPoints[i];
                 float distance = Vector3.Distance(newControlPoint.m_Pos, toolPosition);
-                float influence = StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
+                float influence = m_InfluenceWeights[i];
 
                 if (influence > 0f && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
                 {

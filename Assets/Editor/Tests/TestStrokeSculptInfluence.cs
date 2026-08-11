@@ -103,5 +103,47 @@ namespace TiltBrush
                 Object.DestroyImmediate(gameObject);
             }
         }
+
+        [Test]
+        public void FeatherAlongStrokeUsesArcLength()
+        {
+            var controlPoints = new[]
+            {
+                ControlPointAt(-2f),
+                ControlPointAt(-0.5f),
+                ControlPointAt(0f),
+                ControlPointAt(0.5f),
+                ControlPointAt(2f),
+            };
+            var weights = new[] { 0f, 0f, 1f, 0f, 0f };
+
+            StrokeSculptInfluence.FeatherAlongStroke(controlPoints, weights, 2f);
+
+            Assert.That(weights, Is.EqualTo(new[] { 0f, 0.75f, 1f, 0.75f, 0f })
+                .Within(0.00001f));
+        }
+
+        [Test]
+        public void FeatherAlongStrokeCombinesInfluenceFromBothDirections()
+        {
+            var controlPoints = new[]
+            {
+                ControlPointAt(0f),
+                ControlPointAt(1f),
+                ControlPointAt(2f),
+                ControlPointAt(3f),
+            };
+            var weights = new[] { 1f, 0f, 0f, 0.75f };
+
+            StrokeSculptInfluence.FeatherAlongStroke(controlPoints, weights, 4f);
+
+            Assert.That(weights, Is.EqualTo(new[] { 1f, 0.75f, 0.5f, 0.75f })
+                .Within(0.00001f));
+        }
+
+        private static PointerManager.ControlPoint ControlPointAt(float x)
+        {
+            return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };
+        }
     }
 } // namespace TiltBrush

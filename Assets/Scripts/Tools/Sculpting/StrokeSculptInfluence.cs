@@ -43,5 +43,40 @@ namespace TiltBrush
 
             return triggerRatio > 0f ? Mathf.Clamp01(triggerRatio) : 1f;
         }
+
+        /// Extends existing spatial weights along the stroke by arc length. The two linear passes
+        /// produce a finite-support envelope in O(n), so neighboring samples can share influence
+        /// without making the cost dependent on control-point density squared.
+        public static void FeatherAlongStroke(
+            PointerManager.ControlPoint[] controlPoints, float[] weights, float featherDistance,
+            int count = -1)
+        {
+            if (controlPoints == null || weights == null || featherDistance <= 0f)
+            {
+                return;
+            }
+
+            count = count < 0 ? weights.Length : count;
+            if (count > controlPoints.Length || count > weights.Length)
+            {
+                return;
+            }
+
+            for (int i = 1; i < count; ++i)
+            {
+                float segmentLength = Vector3.Distance(
+                    controlPoints[i - 1].m_Pos, controlPoints[i].m_Pos);
+                float propagatedWeight = weights[i - 1] - segmentLength / featherDistance;
+                weights[i] = Mathf.Clamp01(Mathf.Max(weights[i], propagatedWeight));
+            }
+
+            for (int i = count - 2; i >= 0; --i)
+            {
+                float segmentLength = Vector3.Distance(
+                    controlPoints[i].m_Pos, controlPoints[i + 1].m_Pos);
+                float propagatedWeight = weights[i + 1] - segmentLength / featherDistance;
+                weights[i] = Mathf.Clamp01(Mathf.Max(weights[i], propagatedWeight));
+            }
+        }
     }
 } // namespace TiltBrush
