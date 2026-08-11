@@ -126,6 +126,8 @@ namespace TiltBrush
             float amount = pressure * EffectAmount * 0.5f;
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+            ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
+            ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
 
             for (int i = 0; i < controlPointCount; i++)
             {
@@ -137,6 +139,23 @@ namespace TiltBrush
 
                 if (applyingTint)
                 {
+                    if (targetMode != desiredMode)
+                    {
+                        // Override values have different meanings in each mode. Preserve the visible
+                        // colors of untouched points before changing the stroke-wide interpretation.
+                        if (desiredMode == ColorOverrideMode.Replace)
+                        {
+                            for (int j = 0; j < newOverrideColors.Count; j++)
+                            {
+                                if (newOverrideColors[j].HasValue)
+                                {
+                                    newOverrideColors[j] = stroke.GetColor(j);
+                                }
+                            }
+                        }
+                        targetMode = desiredMode;
+                        strokeIsModified = true;
+                    }
                     // Identity depends on mode: Replace=baseColor, Multiply=white, Add=black
                     Color identity = m_CurrentMode == TintMode.Multiply ? Color.white
                         : m_CurrentMode == TintMode.Add ? Color.black
@@ -162,17 +181,7 @@ namespace TiltBrush
                 }
             }
 
-            ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
-            if (applyingTint)
-            {
-                ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
-                if (targetMode != desiredMode)
-                {
-                    targetMode = desiredMode;
-                    strokeIsModified = true;
-                }
-            }
-            else if (!newOverrideColors.Any(c => c.HasValue))
+            if (!applyingTint && !newOverrideColors.Any(c => c.HasValue))
             {
                 if (stroke.m_OverrideColors != null || targetMode != ColorOverrideMode.None)
                 {
