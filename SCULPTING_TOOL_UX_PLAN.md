@@ -185,7 +185,7 @@ Implementation is complete through the proposed commit sequence, with these addi
 3. Project to Plane influence is measured within its visible plane.
 4. Switching modes cancels a held sculpt gesture and waits for trigger release.
 
-The current Labs label remains **Sculpt** pending a later naming decision; it may conflict with a separate feature branch that uses the same term.
+The user-facing tool name is **Reshape**, avoiding a naming conflict with a separate Sculpt feature.
 
 The remaining work is interactive validation rather than another implementation phase:
 

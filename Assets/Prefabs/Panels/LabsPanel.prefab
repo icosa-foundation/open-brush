@@ -3673,7 +3673,7 @@ GameObject:
   - component: {fileID: 7233644460132284582}
   - component: {fileID: 3548459294935518280}
   m_Layer: 16
-  m_Name: Button_Sculpt
+  m_Name: Button_Reshape
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3779,7 +3779,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Sculpt
+  m_DescriptionText: Reshape
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
