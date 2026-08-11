@@ -21,6 +21,12 @@ namespace TiltBrush
 {
     public class PushPullTool : ToggleStrokeModificationTool
     {
+        private sealed class SculptContactState
+        {
+            public float LastApplicationTime;
+            public readonly List<int> ControlPointIndices = new();
+        }
+
         private const float k_ReferenceUpdatesPerSecond = 90f;
         private const float k_MaxContinuousStepSeconds = 0.1f;
 
@@ -28,6 +34,8 @@ namespace TiltBrush
         private bool m_AtLeastOneModificationMade = false;
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
+        private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
+        private readonly List<Stroke> m_ExpiredSculptContacts = new();
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -71,6 +79,7 @@ namespace TiltBrush
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
             m_ActiveSubTool.gameObject.SetActive(!m_ToolHidden);
+            m_SculptContacts.Clear();
         }
 
         public void FinalizeSculptingBatch()
@@ -85,11 +94,13 @@ namespace TiltBrush
                 FinalizeSculptingBatch();
                 ResetToolRotation();
                 ClearGpuFutureLists();
+                m_SculptContacts.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_ActiveSculptCommands.Clear();
+                m_SculptContacts.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -103,6 +114,7 @@ namespace TiltBrush
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 m_ActiveSculptCommands.Clear();
+                m_SculptContacts.Clear();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
@@ -113,6 +125,11 @@ namespace TiltBrush
                     StartToggleAnimation();
                 }
                 // CTODO: custom feature for Flattening?
+            }
+
+            if (m_CurrentlyHot && m_SculptContacts.Count > 0)
+            {
+                ExpireSculptContacts();
             }
         }
 
@@ -127,12 +144,19 @@ namespace TiltBrush
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
             var newControlPoints = stroke.m_ControlPoints.ToArray();
+            float now = Time.realtimeSinceStartup;
+            m_SculptContacts.TryGetValue(stroke, out SculptContactState contactState);
             float continuousStrengthScale = 1f;
             if (m_ActiveSubTool.UsesContinuousStrength)
             {
-                float elapsed = Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
+                float elapsed = contactState != null
+                    ? Mathf.Clamp(
+                        now - contactState.LastApplicationTime, 0f, k_MaxContinuousStepSeconds)
+                    : Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
                 continuousStrengthScale = elapsed * k_ReferenceUpdatesPerSecond;
             }
+            contactState ??= new SculptContactState();
+            contactState.ControlPointIndices.Clear();
 
             // Tool position adjusted by canvas transformations
             bool strokeIsModified = false;
@@ -149,6 +173,7 @@ namespace TiltBrush
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
                     strokeIsModified = true;
                     newControlPoints[i] = newControlPoint;
+                    contactState.ControlPointIndices.Add(i);
                 }
             }
 
@@ -177,6 +202,12 @@ namespace TiltBrush
                     cmd.Redo();
                 }
                 m_AtLeastOneModificationMade = true;
+                contactState.LastApplicationTime = now;
+                m_SculptContacts[stroke] = contactState;
+            }
+            else
+            {
+                m_SculptContacts.Remove(stroke);
             }
 
             return strokeIsModified;
@@ -204,6 +235,53 @@ namespace TiltBrush
                 m_OwnsUndoGroup = false;
             }
             m_ActiveSculptCommands.Clear();
+            m_SculptContacts.Clear();
+        }
+
+        private void ExpireSculptContacts()
+        {
+            m_ExpiredSculptContacts.Clear();
+            foreach (KeyValuePair<Stroke, SculptContactState> contact in m_SculptContacts)
+            {
+                if (!HasSculptContact(contact.Key, contact.Value.ControlPointIndices))
+                {
+                    m_ExpiredSculptContacts.Add(contact.Key);
+                }
+            }
+            foreach (Stroke stroke in m_ExpiredSculptContacts)
+            {
+                m_SculptContacts.Remove(stroke);
+            }
+            m_ExpiredSculptContacts.Clear();
+        }
+
+        private bool HasSculptContact(Stroke stroke, List<int> controlPointIndices)
+        {
+            if (stroke?.m_ControlPoints == null || m_CurrentCanvas == null)
+            {
+                return false;
+            }
+
+            TrTransform canvasPose = m_CurrentCanvas.Pose;
+            Vector3 toolPosition = canvasPose.inverse * m_ToolTransform.position;
+            float radius = GetSize() / canvasPose.scale;
+            foreach (int index in controlPointIndices)
+            {
+                if (index < 0 || index >= stroke.m_ControlPoints.Length)
+                {
+                    continue;
+                }
+                PointerManager.ControlPoint controlPoint = stroke.m_ControlPoints[index];
+                float distance = Vector3.Distance(controlPoint.m_Pos, toolPosition);
+                if (distance <= radius &&
+                    m_ActiveSubTool.CalculateStrength(
+                        controlPoint.m_Pos, distance, canvasPose, m_bIsPushing) != 0 &&
+                    m_ActiveSubTool.IsInReach(controlPoint.m_Pos, canvasPose))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 } // namespace TiltBrush
