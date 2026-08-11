@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -122,6 +126,58 @@ namespace TiltBrush
 
             Assert.That(PolyhydraTool.GetHardStrokeEdges(poly), Is.Empty);
             Assert.That(PolyhydraTool.GetFaceStrokePaths(poly), Is.Empty);
+        }
+
+        [Test]
+        public void ParameterizedPrimitivePresetsBuildWithValidJsonPaths()
+        {
+            string[] presetNames =
+            {
+                "Chamfer Cube", "Sphere", "Half Sphere", "Hollow Half Sphere",
+                "Cylinder", "Chamfered Cylinder", "Tube", "Capsule", "Torus", "Egg",
+                "Wedge", "Quarter Arc", "Cone", "Circle", "Wireframe Cube"
+            };
+            var planarPresets = new HashSet<string> { "Quarter Arc", "Circle" };
+            string presetDirectory = Path.Combine(
+                "Assets", "Polyhydra", "Resources", "Shape Gallery Presets");
+
+            foreach (string presetName in presetNames)
+            {
+                string jsonText = File.ReadAllText(
+                    Path.Combine(presetDirectory, $"{presetName}.json"));
+                var json = JObject.Parse(jsonText);
+                if (json["ExposedParameters"] is JArray parameters)
+                {
+                    Assert.That(parameters.Count, Is.LessThanOrEqualTo(3), presetName);
+                    foreach (JObject parameter in parameters.OfType<JObject>())
+                    {
+                        Assert.DoesNotThrow(
+                            () => PolyRecipePreset.SelectNumericToken(
+                                json, parameter.Value<string>("path")),
+                            $"{presetName}: {parameter.Value<string>("label")}");
+                    }
+                }
+
+                PolyRecipe recipe = PolyRecipe.FromJson(jsonText, null);
+                var (poly, _) = PolyBuilder.BuildFromPolyDef(recipe);
+                Assert.That(poly.IsValid, Is.True, presetName);
+                if (!planarPresets.Contains(presetName))
+                {
+                    Assert.That(poly.Halfedges.All(edge => edge.Pair != null), Is.True,
+                        $"{presetName} has boundary edges");
+                    Vector3 minimum = poly.Vertices[0].Position;
+                    Vector3 maximum = minimum;
+                    foreach (var vertex in poly.Vertices.Skip(1))
+                    {
+                        minimum = Vector3.Min(minimum, vertex.Position);
+                        maximum = Vector3.Max(maximum, vertex.Position);
+                    }
+                    Vector3 size = maximum - minimum;
+                    Assert.That(size.x, Is.GreaterThan(0.001f), $"{presetName} has no width");
+                    Assert.That(size.y, Is.GreaterThan(0.001f), $"{presetName} has no height");
+                    Assert.That(size.z, Is.GreaterThan(0.001f), $"{presetName} has no depth");
+                }
+            }
         }
     }
 }

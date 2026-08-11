@@ -35,6 +35,7 @@ namespace TiltBrush
         public float Param1Float;
         public float Param2Float;
         public float Param3Float;
+        public float ShapeExtrusion;
         public List<PreviewPolyhedron.OpDefinition> Operators;
 
         // Used for all polymeshes
@@ -140,6 +141,9 @@ namespace TiltBrush
                 //     recipe.JohnsonPolyType = Convert.ToInt32(p.GetValueOrDefault("type"]);)                //     break;
                 case GeneratorTypes.Shapes:
                     recipe.ShapeType = (ShapeTypes)Convert.ToInt32(p.GetValueOrDefault("type"));
+                    recipe.ShapeExtrusion = p.TryGetValue("height", out object shapeHeight)
+                        ? Convert.ToSingle(shapeHeight)
+                        : 0f;
                     switch (recipe.ShapeType)
                     {
                         case ShapeTypes.Polygon:
@@ -154,6 +158,9 @@ namespace TiltBrush
                             break;
                         case ShapeTypes.Arc:
                         case ShapeTypes.Arch:
+                        case ShapeTypes.Ring:
+                        case ShapeTypes.Triangle:
+                        case ShapeTypes.Sector:
                             recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("a"));
                             recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
                             recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
@@ -223,9 +230,31 @@ namespace TiltBrush
                             recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                         case VariousSolidTypes.UvSphere:
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
+                            recipe.Param3Float = p.TryGetValue("z", out object sphereCoverage)
+                                ? Convert.ToSingle(sphereCoverage)
+                                : 1f;
+                            break;
                         case VariousSolidTypes.UvHemisphere:
                             recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
                             recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
+                            break;
+                        case VariousSolidTypes.Capsule:
+                        case VariousSolidTypes.ChamferedCylinder:
+                        case VariousSolidTypes.HollowHemisphere:
+                        case VariousSolidTypes.PartialTorus:
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Int = Convert.ToInt32(p.GetValueOrDefault("y"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
+                            break;
+                        case VariousSolidTypes.ChamferedBox:
+                            recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("x"));
+                            recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("y"));
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
+                            break;
+                        case VariousSolidTypes.WireframeBox:
+                            recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("z"));
                             break;
                     }
                     break;
@@ -396,6 +425,25 @@ namespace TiltBrush
                         case ShapeTypes.Arch:
                             poly = Shapes.Build(ShapeTypes.Arch, p.Param1Int, p.Param2Float, p.Param3Float, Shapes.Method.Convex);
                             break;
+                        case ShapeTypes.Ring:
+                            poly = Shapes.Build(ShapeTypes.Ring, p.Param1Int, p.Param2Float);
+                            break;
+                        case ShapeTypes.Triangle:
+                            poly = Shapes.Build(ShapeTypes.Triangle, p.Param1Int, p.Param2Float, p.Param3Float);
+                            break;
+                        case ShapeTypes.Sector:
+                            poly = Shapes.Build(ShapeTypes.Sector, p.Param1Int, 0f, p.Param3Float);
+                            break;
+                    }
+                    if (p.ShapeExtrusion > 0f)
+                    {
+                        Axis axis = p.ShapeType switch
+                        {
+                            ShapeTypes.Arc or ShapeTypes.Arch or ShapeTypes.GothicArch or
+                                ShapeTypes.Ring => Axis.Z,
+                            _ => Axis.Y,
+                        };
+                        poly = poly.LayeredExtrude(1, p.ShapeExtrusion, axis);
                     }
                     break;
                 case GeneratorTypes.Various:
@@ -406,7 +454,9 @@ namespace TiltBrush
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
                             break;
                         case VariousSolidTypes.UvSphere:
-                            poly = VariousSolids.UvSphere(p.Param1Int, p.Param2Int);
+                            poly = VariousSolids.UvSphere(
+                                p.Param1Int, p.Param2Int,
+                                p.Param3Float <= 0f ? 1f : p.Param3Float);
                             poly.ScalingFactor = 0.5f;
                             break;
                         case VariousSolidTypes.UvHemisphere:
@@ -420,6 +470,35 @@ namespace TiltBrush
                         case VariousSolidTypes.Stairs:
                             poly = VariousSolids.Stairs(p.Param1Int, p.Param2Float, p.Param3Float);
                             poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
+                            break;
+                        case VariousSolidTypes.Capsule:
+                            poly = VariousSolids.Capsule(
+                                p.Param1Int, p.Param2Int, p.Param3Float);
+                            poly.ScalingFactor = 0.5f;
+                            break;
+                        case VariousSolidTypes.ChamferedBox:
+                            poly = VariousSolids.ChamferedBox(
+                                p.Param1Int, p.Param2Float, p.Param3Float / 100f);
+                            poly.ScalingFactor = 0.5f;
+                            break;
+                        case VariousSolidTypes.HollowHemisphere:
+                            poly = VariousSolids.HollowHemisphere(
+                                p.Param1Int, p.Param2Int, p.Param3Float / 100f);
+                            poly.ScalingFactor = 0.5f;
+                            break;
+                        case VariousSolidTypes.ChamferedCylinder:
+                            poly = VariousSolids.ChamferedCylinder(
+                                p.Param1Int, p.Param2Int, p.Param3Float / 100f);
+                            poly.ScalingFactor = 0.5f;
+                            break;
+                        case VariousSolidTypes.PartialTorus:
+                            poly = VariousSolids.PartialTorus(
+                                p.Param1Int, p.Param2Int, 25f, 360f * p.Param3Float);
+                            poly.ScalingFactor = 1f / Mathf.Sqrt(2f);
+                            break;
+                        case VariousSolidTypes.WireframeBox:
+                            poly = VariousSolids.WireframeBox(p.Param3Float / 100f);
+                            poly.ScalingFactor = 0.5f;
                             break;
                     }
                     break;
