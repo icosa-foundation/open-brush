@@ -97,5 +97,50 @@ namespace TiltBrush
                 result[i].m_Pos += translation * weights[i];
             }
         }
+
+        /// Relaxes interior control points toward the length-weighted line between their
+        /// neighbors. Endpoints are copied unchanged.
+        public static bool ApplySmooth(
+            PointerManager.ControlPoint[] startPoints, float[] weights, float amount,
+            PointerManager.ControlPoint[] result)
+        {
+            if (startPoints == null || weights == null || result == null ||
+                startPoints.Length != weights.Length || startPoints.Length != result.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < startPoints.Length; ++i)
+            {
+                result[i] = startPoints[i];
+            }
+
+            bool modified = false;
+            for (int i = 1; i < startPoints.Length - 1; ++i)
+            {
+                float previousLength = Vector3.Distance(
+                    startPoints[i - 1].m_Pos, startPoints[i].m_Pos);
+                float nextLength = Vector3.Distance(
+                    startPoints[i].m_Pos, startPoints[i + 1].m_Pos);
+                float combinedLength = previousLength + nextLength;
+                float pointAmount = Mathf.Clamp01(amount * weights[i]);
+                if (combinedLength <= Mathf.Epsilon || pointAmount <= 0f)
+                {
+                    continue;
+                }
+
+                Vector3 target = Vector3.Lerp(
+                    startPoints[i - 1].m_Pos, startPoints[i + 1].m_Pos,
+                    previousLength / combinedLength);
+                Vector3 smoothedPosition = Vector3.Lerp(
+                    startPoints[i].m_Pos, target, pointAmount);
+                if (smoothedPosition != startPoints[i].m_Pos)
+                {
+                    result[i].m_Pos = smoothedPosition;
+                    modified = true;
+                }
+            }
+            return modified;
+        }
     }
 } // namespace TiltBrush

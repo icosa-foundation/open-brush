@@ -161,9 +161,58 @@ namespace TiltBrush
             Assert.AreEqual(startPoints[0].m_Orient, result[0].m_Orient);
         }
 
+        [Test]
+        public void SmoothPreservesEndpointsAndStraightensInteriorPoint()
+        {
+            var startPoints = new[]
+            {
+                ControlPointAt(0f, 0f),
+                ControlPointAt(1f, 1f),
+                ControlPointAt(2f, 0f),
+            };
+            var result = new PointerManager.ControlPoint[3];
+
+            bool modified = StrokeSculptInfluence.ApplySmooth(
+                startPoints, new[] { 1f, 1f, 1f }, 0.5f, result);
+
+            Assert.IsTrue(modified);
+            Assert.AreEqual(startPoints[0].m_Pos, result[0].m_Pos);
+            Assert.AreEqual(startPoints[2].m_Pos, result[2].m_Pos);
+            Assert.AreEqual(new Vector3(1f, 0.5f, 0f), result[1].m_Pos);
+        }
+
+        [Test]
+        public void SmoothUsesSegmentLengthsForUnevenSpacing()
+        {
+            var startPoints = new[]
+            {
+                ControlPointAt(0f, 0f),
+                ControlPointAt(1f, 1f),
+                ControlPointAt(4f, 0f),
+            };
+            var result = new PointerManager.ControlPoint[3];
+
+            StrokeSculptInfluence.ApplySmooth(
+                startPoints, new[] { 1f, 1f, 1f }, 1f, result);
+
+            float previousLength = Vector3.Distance(
+                startPoints[0].m_Pos, startPoints[1].m_Pos);
+            float nextLength = Vector3.Distance(
+                startPoints[1].m_Pos, startPoints[2].m_Pos);
+            Vector3 expected = Vector3.Lerp(
+                startPoints[0].m_Pos, startPoints[2].m_Pos,
+                previousLength / (previousLength + nextLength));
+            Assert.AreEqual(expected, result[1].m_Pos);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };
+        }
+
+        private static PointerManager.ControlPoint ControlPointAt(float x, float y)
+        {
+            return new PointerManager.ControlPoint { m_Pos = new Vector3(x, y, 0f) };
         }
     }
 } // namespace TiltBrush

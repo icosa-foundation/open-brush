@@ -23,7 +23,8 @@ namespace TiltBrush
             Crease,
             Flatten,
             Rotate,
-            Grab
+            Grab,
+            Smooth
         }
 
         private void Awake()

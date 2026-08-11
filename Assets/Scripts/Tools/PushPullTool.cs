@@ -36,6 +36,7 @@ namespace TiltBrush
         private const float k_ReferenceUpdatesPerSecond = 90f;
         private const float k_MaxContinuousStepSeconds = 0.1f;
         private const float k_ArcLengthFeatherRadiusRatio = 0.25f;
+        private const float k_SmoothAmountPerReferenceUpdate = 0.1f;
 
         /// Keeps track of the first sculpting change made while the trigger is held.
         private bool m_AtLeastOneModificationMade = false;
@@ -136,7 +137,7 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
                 if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                    !IsGrabMode)
+                    !IsGrabMode && !IsSmoothMode)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
@@ -202,28 +203,50 @@ namespace TiltBrush
                 newControlPoints, m_InfluenceWeights,
                 radius * k_ArcLengthFeatherRadiusRatio, newControlPoints.Length);
 
-            for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
+            if (IsSmoothMode)
             {
-                var newControlPoint = newControlPoints[i];
-                float distance = Vector3.Distance(newControlPoint.m_Pos, toolPosition);
-                float influence = m_InfluenceWeights[i];
-
-                if (influence > 0f && m_ActiveSubTool.IsInReach(newControlPoint.m_Pos, m_CurrentCanvas.Pose))
+                strokeIsModified = StrokeSculptInfluence.ApplySmooth(
+                    stroke.m_ControlPoints, m_InfluenceWeights,
+                    k_SmoothAmountPerReferenceUpdate * pressure * continuousStrengthScale,
+                    newControlPoints);
+                if (strokeIsModified)
                 {
-                    float strength = m_ActiveSubTool.CalculateStrength(
-                        newControlPoint.m_Pos, distance, radius, m_CurrentCanvas.Pose, m_bIsPushing);
-                    if (strength != 0f)
+                    for (int i = 1; i < stroke.m_ControlPoints.Length - 1; ++i)
                     {
-                        Vector3 direction = m_ActiveSubTool.CalculateDirection(
-                            newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
-                            m_bIsPushing, rGroup);
-                        float displacement = m_ActiveSubTool.ConstrainDisplacement(
-                            strength * influence * pressure * continuousStrengthScale,
-                            distance, m_bIsPushing);
-                        newControlPoint.m_Pos += direction * displacement;
-                        strokeIsModified = true;
-                        newControlPoints[i] = newControlPoint;
-                        contactState.ControlPointIndices.Add(i);
+                        if (newControlPoints[i].m_Pos != stroke.m_ControlPoints[i].m_Pos)
+                        {
+                            contactState.ControlPointIndices.Add(i);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
+                {
+                    var newControlPoint = newControlPoints[i];
+                    float distance = Vector3.Distance(newControlPoint.m_Pos, toolPosition);
+                    float influence = m_InfluenceWeights[i];
+
+                    if (influence > 0f && m_ActiveSubTool.IsInReach(
+                        newControlPoint.m_Pos, m_CurrentCanvas.Pose))
+                    {
+                        float strength = m_ActiveSubTool.CalculateStrength(
+                            newControlPoint.m_Pos, distance, radius,
+                            m_CurrentCanvas.Pose, m_bIsPushing);
+                        if (strength != 0f)
+                        {
+                            Vector3 direction = m_ActiveSubTool.CalculateDirection(
+                                newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
+                                m_bIsPushing, rGroup);
+                            float displacement = m_ActiveSubTool.ConstrainDisplacement(
+                                strength * influence * pressure * continuousStrengthScale,
+                                distance, m_bIsPushing);
+                            newControlPoint.m_Pos += direction * displacement;
+                            strokeIsModified = true;
+                            newControlPoints[i] = newControlPoint;
+                            contactState.ControlPointIndices.Add(i);
+                        }
                     }
                 }
             }
@@ -245,7 +268,7 @@ namespace TiltBrush
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                !IsGrabMode)
+                !IsGrabMode && !IsSmoothMode)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
@@ -270,6 +293,9 @@ namespace TiltBrush
 
         private bool IsGrabMode =>
             m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
+
+        private bool IsSmoothMode =>
+            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
 
         private void CaptureGrabContact(Stroke stroke)
         {
