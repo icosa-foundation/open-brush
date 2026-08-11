@@ -142,5 +142,20 @@ namespace TiltBrush
             }
             return modified;
         }
+
+        /// Returns the shortest vector from a point to a plane. The plane normal need not be
+        /// normalized.
+        public static Vector3 CalculatePlaneOffset(
+            Vector3 point, Vector3 planePoint, Vector3 planeNormal)
+        {
+            if (planeNormal.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return Vector3.zero;
+            }
+
+            Vector3 normal = planeNormal.normalized;
+            float signedDistance = Vector3.Dot(point - planePoint, normal);
+            return -signedDistance * normal;
+        }
     }
 } // namespace TiltBrush

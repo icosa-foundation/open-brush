@@ -205,6 +205,17 @@ namespace TiltBrush
             Assert.AreEqual(expected, result[1].m_Pos);
         }
 
+        [TestCase(2f, -2f)]
+        [TestCase(-3f, 3f)]
+        [TestCase(0f, 0f)]
+        public void PlaneOffsetMovesPointPerpendicularlyOntoPlane(float height, float expectedY)
+        {
+            Vector3 offset = StrokeSculptInfluence.CalculatePlaneOffset(
+                new Vector3(4f, height, 7f), Vector3.zero, Vector3.up * 3f);
+
+            Assert.AreEqual(new Vector3(0f, expectedY, 0f), offset);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };
