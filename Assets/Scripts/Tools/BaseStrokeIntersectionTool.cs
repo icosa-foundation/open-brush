@@ -272,12 +272,8 @@ namespace TiltBrush
                     if (m_GpuOldResultList[i].widget)
                     {
                         var widget = m_GpuOldResultList[i].widget;
-                        if (!WidgetMatchesCurrentCanvas(widget))
-                        {
-                            continue;
-                        }
-
-                        if (HandleIntersectionWithWidget(widget))
+                        if (WidgetMatchesCurrentCanvas(widget) &&
+                            HandleIntersectionWithWidget(widget))
                         {
                             hitCount++;
                         }
@@ -285,7 +281,14 @@ namespace TiltBrush
                     else
                     {
                         BatchSubset subset = m_GpuOldResultList[i].subset;
-                        if (subset.m_ParentBatch == null)
+                        if (subset.m_ParentBatch != null)
+                        {
+                            if (HandleIntersectionWithBatchedStroke(subset))
+                            {
+                                hitCount++;
+                            }
+                        }
+                        else
                         {
                             // The stroke was deleted between creating the result and processing the result. This
                             // could happen due to the inherent latency in GPU intersection, although in practice,
@@ -298,20 +301,12 @@ namespace TiltBrush
                             //     different subset.
                             //   * HandleIntersectionWithBatchedStroke() is called once with another stroke in the
                             //     same group.
-                            continue;
-                        }
-                        if (HandleIntersectionWithBatchedStroke(subset))
-                        {
-                            hitCount++;
                         }
                     }
 
-                    // Always process at least 1 hit. This number can be tuned to taste, but in initial
-                    // tests, it kept the deletion time under the frame budget while still feeling responsive.
-                    if (hitCount > 0)
-                    {
-                        m_TimesUp = m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks;
-                    }
+                    // Check the budget after every result, including intersections that require no action.
+                    // Otherwise a large no-op result set can bypass time slicing for the entire frame.
+                    m_TimesUp = m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks;
                 }
                 m_GpuConsumedResults += processedCount;
                 if (hitCount > 0)
