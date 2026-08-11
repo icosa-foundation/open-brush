@@ -47,6 +47,7 @@ Shader "Custom/ToolGhost"
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
+        #pragma multi_compile_instancing
 
         #include <UnityStandardInput.cginc>
 
@@ -66,20 +67,29 @@ Shader "Custom/ToolGhost"
           fixed4 color : COLOR;
           float3 normal : NORMAL;
           float2 uv : TEXCOORD0;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f
         {
-          float4 vertex : POSITION;
+          float4 vertex : SV_POSITION;
           float3 viewDir : TEXCOORD0;
           float3 normal : NORMAL;
           float2 uv : TEXCOORD1;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
 
         v2f vert(appdata_t v)
         {
+          UNITY_SETUP_INSTANCE_ID(v);
           v2f o;
+          UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_TRANSFER_INSTANCE_ID(v, o);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
           o.vertex = UnityObjectToClipPos(v.vertex);
           o.viewDir = normalize(ObjSpaceViewDir(v.vertex));
           o.normal = normalize(v.normal);
@@ -96,8 +106,9 @@ Shader "Custom/ToolGhost"
           return o;
         }
 
-        fixed4 frag(v2f i) : COLOR
+        fixed4 frag(v2f i) : SV_Target
         {
+          UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
           float facingRatio = saturate(dot(i.viewDir, i.normal));
           facingRatio = 1 - facingRatio;
           float4 texColor = tex2D(_MainTex, i.uv);
