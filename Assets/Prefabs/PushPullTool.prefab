@@ -182,7 +182,7 @@ GameObject:
   - component: {fileID: 3491021130095632299}
   - component: {fileID: 3491021130095632300}
   m_Layer: 14
-  m_Name: Pinch
+  m_Name: BundleSpread
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -797,7 +797,7 @@ MonoBehaviour:
   m_MaxSpinSpeed: 700
   m_SpinSpeedAcceleration: 40000
   m_SpinSpeedDecay: 2500
-  m_ActiveSubTool: {fileID: 3491021130929141854}
+  m_ActiveSubTool: {fileID: 734000000000000003}
 --- !u!1 &3491021130875935221
 GameObject:
   m_ObjectHideFlags: 0
@@ -892,7 +892,7 @@ GameObject:
   - component: {fileID: 3491021130929141853}
   - component: {fileID: 3491021130929141854}
   m_Layer: 14
-  m_Name: Push
+  m_Name: AttractRepel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1037,7 +1037,7 @@ GameObject:
   - component: {fileID: 3491021131110089003}
   - component: {fileID: 3491021131110089004}
   m_Layer: 14
-  m_Name: Flatten
+  m_Name: ProjectToPlane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

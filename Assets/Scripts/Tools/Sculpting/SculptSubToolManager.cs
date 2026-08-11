@@ -39,5 +39,7 @@ namespace TiltBrush
         {
             m_PushPullTool.SetSubTool(m_SubTools[(int)subTool]);
         }
+
+        public SubTool ActiveSubTool => m_PushPullTool.m_ActiveSubTool.m_SubToolIdentifier;
     }
 } // namespace TiltBrush

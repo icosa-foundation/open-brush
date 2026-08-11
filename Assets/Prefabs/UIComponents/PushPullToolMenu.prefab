@@ -673,7 +673,7 @@ GameObject:
   - component: {fileID: 3371786718587815988}
   - component: {fileID: 5278661225779610634}
   m_Layer: 16
-  m_Name: Pinch
+  m_Name: BundleSpread
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -779,7 +779,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Pinch
+  m_DescriptionText: Bundle / Spread
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -829,7 +829,7 @@ GameObject:
   - component: {fileID: 9024801311678540707}
   - component: {fileID: 5058405093779083082}
   m_Layer: 16
-  m_Name: Push
+  m_Name: AttractRepel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -935,7 +935,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Push
+  m_DescriptionText: Attract / Repel
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -985,7 +985,7 @@ GameObject:
   - component: {fileID: 969476577040466812}
   - component: {fileID: 743217307267657451}
   m_Layer: 16
-  m_Name: Flatten
+  m_Name: ProjectToPlane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1091,7 +1091,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Flatten
+  m_DescriptionText: Project to Plane
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 

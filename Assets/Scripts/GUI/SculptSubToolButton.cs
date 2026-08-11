@@ -22,9 +22,29 @@ namespace TiltBrush
         [SerializeField]
         public SculptSubToolManager.SubTool m_SubTool;
 
+        override protected void Start()
+        {
+            base.Start();
+            RefreshSelection();
+        }
+
         override protected void OnButtonPressed()
         {
             SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
+            foreach (SculptSubToolButton button in
+                transform.parent.GetComponentsInChildren<SculptSubToolButton>(true))
+            {
+                button.RefreshSelection();
+            }
+        }
+
+        private void RefreshSelection()
+        {
+            if (SculptSubToolManager.m_Instance != null)
+            {
+                SetButtonSelected(
+                    SculptSubToolManager.m_Instance.ActiveSubTool == m_SubTool);
+            }
         }
     }
 } // namespace TiltBrush
