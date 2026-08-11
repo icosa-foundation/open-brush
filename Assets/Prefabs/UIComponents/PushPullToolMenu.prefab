@@ -1174,7 +1174,7 @@ GameObject:
   - component: {fileID: 1106472252641225548}
   - component: {fileID: 4831094183584463471}
   m_Layer: 16
-  m_Name: Rotate
+  m_Name: Twist
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1280,7 +1280,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Rotate
+  m_DescriptionText: Twist
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 

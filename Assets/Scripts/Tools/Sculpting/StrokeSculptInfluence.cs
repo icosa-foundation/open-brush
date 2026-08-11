@@ -173,5 +173,59 @@ namespace TiltBrush
             Vector3 closestPoint = linePoint + Vector3.Dot(fromLinePoint, direction) * direction;
             return closestPoint - point;
         }
+
+        /// Extracts the signed twist around a world-space axis from the controller rotation delta.
+        public static float CalculateTwistAngle(
+            Quaternion startRotation, Quaternion currentRotation, Vector3 axis)
+        {
+            if (axis.sqrMagnitude <= Mathf.Epsilon)
+            {
+                return 0f;
+            }
+
+            Vector3 normalizedAxis = axis.normalized;
+            Quaternion delta = currentRotation * Quaternion.Inverse(startRotation);
+            Vector3 deltaVector = new Vector3(delta.x, delta.y, delta.z);
+            Vector3 projectedVector = Vector3.Project(deltaVector, normalizedAxis);
+            Quaternion twist = new Quaternion(
+                projectedVector.x, projectedVector.y, projectedVector.z, delta.w);
+            if (Mathf.Abs(twist.x) + Mathf.Abs(twist.y) + Mathf.Abs(twist.z) +
+                Mathf.Abs(twist.w) <= Mathf.Epsilon)
+            {
+                return 0f;
+            }
+
+            twist.Normalize();
+            twist.ToAngleAxis(out float angle, out Vector3 twistAxis);
+            if (angle > 180f)
+            {
+                angle -= 360f;
+            }
+            return Vector3.Dot(twistAxis, normalizedAxis) < 0f ? -angle : angle;
+        }
+
+        /// Applies a captured soft transform. Translation and rotation both fade by the captured
+        /// control-point weight, and orientation follows the same rotation as position.
+        public static void ApplyCapturedTransform(
+            PointerManager.ControlPoint[] startPoints, float[] weights, Vector3 pivot,
+            Vector3 translation, Vector3 rotationAxis, float angle,
+            PointerManager.ControlPoint[] result)
+        {
+            if (startPoints == null || weights == null || result == null ||
+                startPoints.Length != weights.Length || startPoints.Length != result.Length)
+            {
+                return;
+            }
+
+            for (int i = 0; i < startPoints.Length; ++i)
+            {
+                result[i] = startPoints[i];
+                float weight = weights[i];
+                Quaternion rotation = Quaternion.AngleAxis(angle * weight, rotationAxis);
+                result[i].m_Pos = pivot + rotation * (startPoints[i].m_Pos - pivot) +
+                    translation * weight;
+                result[i].m_Orient = rotation * startPoints[i].m_Orient;
+            }
+        }
     }
 } // namespace TiltBrush

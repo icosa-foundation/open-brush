@@ -22,7 +22,7 @@ namespace TiltBrush
             Push,
             Pinch,
             Flatten,
-            Rotate,
+            Twist,
             Grab,
             Smooth
         }

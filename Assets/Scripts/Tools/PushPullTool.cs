@@ -25,12 +25,13 @@ namespace TiltBrush
         {
             public float LastApplicationTime;
             public readonly List<int> ControlPointIndices = new();
-            public PointerManager.ControlPoint[] GrabStartPoints;
-            public float[] GrabWeights;
-            public PointerManager.ControlPoint[][] GrabResultBuffers;
-            public int NextGrabResultBuffer;
-            public Vector3 LastGrabTranslation;
-            public bool HasAppliedGrabPose;
+            public PointerManager.ControlPoint[] TransformStartPoints;
+            public float[] TransformWeights;
+            public PointerManager.ControlPoint[][] TransformResultBuffers;
+            public int NextTransformResultBuffer;
+            public Vector3 LastTransformTranslation;
+            public float LastTransformAngle;
+            public bool HasAppliedTransformPose;
         }
 
         private const float k_ReferenceUpdatesPerSecond = 90f;
@@ -45,7 +46,9 @@ namespace TiltBrush
         private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
         private readonly List<Stroke> m_ExpiredSculptContacts = new();
         private float[] m_InfluenceWeights = new float[0];
-        private Vector3 m_GrabStartToolPosition;
+        private Vector3 m_TransformStartToolPosition;
+        private Quaternion m_TransformStartToolRotation;
+        private Vector3 m_TwistAxis;
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
         private bool m_bIsPushing = true;
@@ -112,7 +115,10 @@ namespace TiltBrush
                 m_ActiveSculptCommands.Clear();
                 m_SculptContacts.Clear();
                 CanvasScript canvas = m_CurrentCanvas != null ? m_CurrentCanvas : App.ActiveCanvas;
-                m_GrabStartToolPosition = canvas.Pose.inverse * m_ToolTransform.position;
+                m_TransformStartToolPosition = canvas.Pose.inverse * m_ToolTransform.position;
+                m_TransformStartToolRotation = m_ToolTransform.rotation;
+                m_TwistAxis =
+                    (Quaternion.Inverse(canvas.Pose.rotation) * m_ToolTransform.forward).normalized;
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -129,15 +135,15 @@ namespace TiltBrush
                 m_SculptContacts.Clear();
             }
 
-            if (IsGrabMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
+            if (IsCapturedTransformMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
             {
-                UpdateGrabbedStrokes();
+                UpdateCapturedTransformStrokes();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
                 if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                    !IsGrabMode && !IsSmoothMode)
+                    !IsCapturedTransformMode && !IsSmoothMode)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
@@ -145,7 +151,7 @@ namespace TiltBrush
                 // CTODO: custom feature for Flattening?
             }
 
-            if (!IsGrabMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
+            if (!IsCapturedTransformMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
             {
                 ExpireSculptContacts();
             }
@@ -161,9 +167,9 @@ namespace TiltBrush
         {
             // Metadata of target stroke
             var stroke = rGroup.m_Stroke;
-            if (IsGrabMode)
+            if (IsCapturedTransformMode)
             {
-                CaptureGrabContact(stroke);
+                CaptureTransformContact(stroke);
                 return false;
             }
 
@@ -268,7 +274,7 @@ namespace TiltBrush
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                !IsGrabMode && !IsSmoothMode)
+                !IsCapturedTransformMode && !IsSmoothMode)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
@@ -294,10 +300,15 @@ namespace TiltBrush
         private bool IsGrabMode =>
             m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
 
+        private bool IsTwistMode =>
+            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Twist;
+
+        private bool IsCapturedTransformMode => IsGrabMode || IsTwistMode;
+
         private bool IsSmoothMode =>
             m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
 
-        private void CaptureGrabContact(Stroke stroke)
+        private void CaptureTransformContact(Stroke stroke)
         {
             if (stroke?.m_ControlPoints == null || m_SculptContacts.ContainsKey(stroke))
             {
@@ -313,7 +324,7 @@ namespace TiltBrush
             for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
             {
                 float distance = Vector3.Distance(
-                    stroke.m_ControlPoints[i].m_Pos, m_GrabStartToolPosition);
+                    stroke.m_ControlPoints[i].m_Pos, m_TransformStartToolPosition);
                 float influence = StrokeSculptInfluence.CalculateRadialWeight(distance, radius);
                 m_InfluenceWeights[i] = influence;
                 hasInfluence |= influence > 0f;
@@ -326,9 +337,9 @@ namespace TiltBrush
 
             var contactState = new SculptContactState
             {
-                GrabStartPoints = stroke.m_ControlPoints.ToArray(),
-                GrabWeights = new float[stroke.m_ControlPoints.Length],
-                GrabResultBuffers = new[]
+                TransformStartPoints = stroke.m_ControlPoints.ToArray(),
+                TransformWeights = new float[stroke.m_ControlPoints.Length],
+                TransformResultBuffers = new[]
                 {
                     new PointerManager.ControlPoint[stroke.m_ControlPoints.Length],
                     new PointerManager.ControlPoint[stroke.m_ControlPoints.Length],
@@ -336,14 +347,14 @@ namespace TiltBrush
             };
             for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
             {
-                contactState.GrabWeights[i] = m_InfluenceWeights[i];
+                contactState.TransformWeights[i] = m_InfluenceWeights[i];
             }
             StrokeSculptInfluence.FeatherAlongStroke(
-                contactState.GrabStartPoints, contactState.GrabWeights,
+                contactState.TransformStartPoints, contactState.TransformWeights,
                 radius * k_ArcLengthFeatherRadiusRatio);
-            for (int i = 0; i < contactState.GrabWeights.Length; ++i)
+            for (int i = 0; i < contactState.TransformWeights.Length; ++i)
             {
-                if (contactState.GrabWeights[i] > 0f)
+                if (contactState.TransformWeights[i] > 0f)
                 {
                     contactState.ControlPointIndices.Add(i);
                 }
@@ -351,29 +362,41 @@ namespace TiltBrush
             m_SculptContacts.Add(stroke, contactState);
         }
 
-        private void UpdateGrabbedStrokes()
+        private void UpdateCapturedTransformStrokes()
         {
             Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
-            Vector3 translation = toolPosition - m_GrabStartToolPosition;
+            Vector3 translation = toolPosition - m_TransformStartToolPosition;
+            float twistAngle = IsTwistMode
+                ? StrokeSculptInfluence.CalculateTwistAngle(
+                    m_TransformStartToolRotation, m_ToolTransform.rotation,
+                    m_TransformStartToolRotation * Vector3.forward)
+                : 0f;
             bool anyStrokeModified = false;
             foreach (KeyValuePair<Stroke, SculptContactState> contact in m_SculptContacts)
             {
                 SculptContactState state = contact.Value;
-                if ((state.HasAppliedGrabPose && state.LastGrabTranslation == translation) ||
-                    (!state.HasAppliedGrabPose && translation == Vector3.zero))
+                bool poseIsUnchanged = state.HasAppliedTransformPose &&
+                    state.LastTransformTranslation == translation &&
+                    Mathf.Approximately(state.LastTransformAngle, twistAngle);
+                bool poseIsAtStart = !state.HasAppliedTransformPose &&
+                    translation == Vector3.zero && Mathf.Approximately(twistAngle, 0f);
+                if (poseIsUnchanged || poseIsAtStart)
                 {
                     continue;
                 }
 
                 PointerManager.ControlPoint[] newControlPoints =
-                    state.GrabResultBuffers[state.NextGrabResultBuffer];
-                state.NextGrabResultBuffer =
-                    (state.NextGrabResultBuffer + 1) % state.GrabResultBuffers.Length;
-                StrokeSculptInfluence.ApplyGrabTranslation(
-                    state.GrabStartPoints, state.GrabWeights, translation, newControlPoints);
+                    state.TransformResultBuffers[state.NextTransformResultBuffer];
+                state.NextTransformResultBuffer =
+                    (state.NextTransformResultBuffer + 1) % state.TransformResultBuffers.Length;
+                StrokeSculptInfluence.ApplyCapturedTransform(
+                    state.TransformStartPoints, state.TransformWeights,
+                    m_TransformStartToolPosition, translation, m_TwistAxis, twistAngle,
+                    newControlPoints);
                 ApplyStrokeModification(contact.Key, newControlPoints);
-                state.LastGrabTranslation = translation;
-                state.HasAppliedGrabPose = true;
+                state.LastTransformTranslation = translation;
+                state.LastTransformAngle = twistAngle;
+                state.HasAppliedTransformPose = true;
                 anyStrokeModified = true;
             }
 

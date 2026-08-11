@@ -225,6 +225,35 @@ namespace TiltBrush
             Assert.AreEqual(new Vector3(-3f, 0f, 0f), offset);
         }
 
+        [Test]
+        public void TwistAngleExtractsControllerRoll()
+        {
+            Quaternion start = Quaternion.Euler(20f, 30f, 10f);
+            Vector3 axis = start * Vector3.forward;
+            Quaternion current = Quaternion.AngleAxis(45f, axis) * start;
+
+            float angle = StrokeSculptInfluence.CalculateTwistAngle(start, current, axis);
+
+            Assert.AreEqual(45f, angle, 0.0001f);
+        }
+
+        [Test]
+        public void CapturedTwistPreservesRadiusAndRotatesOrientation()
+        {
+            var startPoints = new[] { ControlPointAt(2f, 0f) };
+            startPoints[0].m_Orient = Quaternion.identity;
+            var result = new PointerManager.ControlPoint[1];
+
+            StrokeSculptInfluence.ApplyCapturedTransform(
+                startPoints, new[] { 1f }, Vector3.zero, Vector3.zero, Vector3.forward, 90f,
+                result);
+
+            Assert.AreEqual(2f, result[0].m_Pos.magnitude, 0.0001f);
+            Assert.Less(Vector3.Distance(new Vector3(0f, 2f, 0f), result[0].m_Pos), 0.0001f);
+            Assert.AreEqual(
+                Quaternion.AngleAxis(90f, Vector3.forward), result[0].m_Orient);
+        }
+
         private static PointerManager.ControlPoint ControlPointAt(float x)
         {
             return new PointerManager.ControlPoint { m_Pos = new Vector3(x, 0f, 0f) };

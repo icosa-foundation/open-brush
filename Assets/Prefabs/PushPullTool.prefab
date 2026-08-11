@@ -608,7 +608,7 @@ GameObject:
   - component: {fileID: 3491021130712597993}
   - component: {fileID: 3491021130712597996}
   m_Layer: 14
-  m_Name: Rotate
+  m_Name: Twist
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
