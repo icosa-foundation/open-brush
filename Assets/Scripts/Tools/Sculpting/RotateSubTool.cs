@@ -18,12 +18,10 @@ namespace TiltBrush
 {
     public class RotateSubTool : BaseSculptSubTool
     {
-        public override bool UsesContinuousStrength => false;
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Twist;
 
-        private void Awake()
-        {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Twist;
-        }
+        public override bool UsesContinuousStrength => false;
 
         public override Vector3 CalculateDirection(
             Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing,

@@ -156,7 +156,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
             {
-                if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
+                if (m_ActiveSubTool.SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
                     !IsCapturedTransformMode && !IsSmoothMode)
                 {
                     m_bIsPushing = !m_bIsPushing;
@@ -293,7 +293,7 @@ namespace TiltBrush
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
+            if (m_ActiveSubTool.SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
                 !IsCapturedTransformMode && !IsSmoothMode)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
@@ -318,15 +318,15 @@ namespace TiltBrush
         }
 
         private bool IsGrabMode =>
-            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
+            m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Grab;
 
         private bool IsTwistMode =>
-            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Twist;
+            m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Twist;
 
         private bool IsCapturedTransformMode => IsGrabMode || IsTwistMode;
 
         private bool IsSmoothMode =>
-            m_ActiveSubTool.m_SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
+            m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
 
         private void CaptureTransformContact(Stroke stroke)
         {

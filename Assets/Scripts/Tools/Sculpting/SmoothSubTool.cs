@@ -19,10 +19,8 @@ namespace TiltBrush
     /// Marker subtool for the curve-neighbor Smooth behavior implemented by PushPullTool.
     public class SmoothSubTool : BaseSculptSubTool
     {
-        private void Awake()
-        {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Smooth;
-        }
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Smooth;
 
         public override Vector3 CalculateDirection(
             Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing,

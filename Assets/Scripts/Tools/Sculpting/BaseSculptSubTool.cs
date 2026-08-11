@@ -21,7 +21,7 @@ namespace TiltBrush
 
         protected float m_DefaultStrength = 0.1f;
 
-        public SculptSubToolManager.SubTool m_SubToolIdentifier;
+        public abstract SculptSubToolManager.SubTool SubToolIdentifier { get; }
 
         protected Collider m_Collider;
 

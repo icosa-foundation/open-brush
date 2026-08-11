@@ -13,12 +13,38 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace TiltBrush
 {
     internal class TestStrokeSculptInfluence
     {
+        [Test]
+        public void ReshapePrefabRegistersEverySubToolIdentifierOnce()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Prefabs/PushPullTool.prefab");
+            Assert.IsNotNull(prefab);
+
+            BaseSculptSubTool[] subTools =
+                prefab.GetComponentsInChildren<BaseSculptSubTool>(true);
+            var identifiers = System.Array.ConvertAll(
+                subTools, subTool => subTool.SubToolIdentifier);
+
+            CollectionAssert.AreEquivalent(
+                new[]
+                {
+                    SculptSubToolManager.SubTool.Push,
+                    SculptSubToolManager.SubTool.Pinch,
+                    SculptSubToolManager.SubTool.Flatten,
+                    SculptSubToolManager.SubTool.Twist,
+                    SculptSubToolManager.SubTool.Grab,
+                    SculptSubToolManager.SubTool.Smooth,
+                },
+                identifiers);
+        }
+
         [Test]
         public void RadialWeightIsFullAtCentre()
         {

@@ -37,7 +37,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                SubTool identifier = subTool.m_SubToolIdentifier;
+                SubTool identifier = subTool.SubToolIdentifier;
                 if (m_SubTools.ContainsKey(identifier))
                 {
                     Debug.LogError($"Multiple reshape subtools use identifier {identifier}.", child);
@@ -59,6 +59,6 @@ namespace TiltBrush
             }
         }
 
-        public SubTool ActiveSubTool => m_PushPullTool.m_ActiveSubTool.m_SubToolIdentifier;
+        public SubTool ActiveSubTool => m_PushPullTool.m_ActiveSubTool.SubToolIdentifier;
     }
 } // namespace TiltBrush

@@ -19,10 +19,8 @@ namespace TiltBrush
     public class PushSubTool : BaseSculptSubTool
     {
 
-        private void Awake()
-        {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
-        }
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Push;
 
         public override float CalculateStrength(
             Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)

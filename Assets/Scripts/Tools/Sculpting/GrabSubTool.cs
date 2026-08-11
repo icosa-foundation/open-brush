@@ -19,12 +19,10 @@ namespace TiltBrush
     /// Marker subtool for the captured-pose Grab behavior implemented by PushPullTool.
     public class GrabSubTool : BaseSculptSubTool
     {
-        public override bool UsesContinuousStrength => false;
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Grab;
 
-        private void Awake()
-        {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Grab;
-        }
+        public override bool UsesContinuousStrength => false;
 
         public override Vector3 CalculateDirection(
             Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing,

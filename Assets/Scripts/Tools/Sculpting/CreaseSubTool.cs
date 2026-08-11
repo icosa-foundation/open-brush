@@ -19,9 +19,11 @@ namespace TiltBrush
     {
         private BoxCollider m_BoxCollider;
 
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Pinch;
+
         private void Awake()
         {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Pinch;
             m_BoxCollider = GetComponent<BoxCollider>();
             m_Collider = m_BoxCollider;
         }
