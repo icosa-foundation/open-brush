@@ -112,8 +112,8 @@ Shader "Custom/ToolGhost"
           float facingRatio = saturate(dot(i.viewDir, i.normal));
           facingRatio = 1 - facingRatio;
           float4 texColor = tex2D(_MainTex, i.uv);
-          float4 outColor = _Color * (texColor + 0.5) * facingRatio;
-          outColor.a = 0.5;
+          float4 outColor = _Color * (texColor + _Color.a) * facingRatio + 0.05;
+          outColor.a = _Color.a;
           return outColor;
         }
         ENDCG

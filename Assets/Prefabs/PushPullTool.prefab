@@ -44,7 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3fa2dc26b7c47d9bb53202434b87d62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 4
 --- !u!1 &735000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -89,7 +88,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9177732047964ab597264362509dd1ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 5
 --- !u!1 &3491021129685588599
 GameObject:
   m_ObjectHideFlags: 0
@@ -289,7 +287,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0.4}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.15, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3491021130458884548}
@@ -363,7 +361,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61a4f4b9669647408a76a8f36e499491, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 0
 --- !u!65 &3491021130095632300
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -402,7 +399,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3491021130204876304
 Transform:
   m_ObjectHideFlags: 0
@@ -694,8 +691,8 @@ MonoBehaviour:
   m_HapticsIntersection: 0.03
   m_AllowDoubleTap: 0
   m_DoubleTapDuration: 0.4
-  m_MaxSpinSpeed: 700
-  m_SpinSpeedAcceleration: 40000
+  m_MaxSpinSpeed: 0
+  m_SpinSpeedAcceleration: 0
   m_SpinSpeedDecay: 2500
   m_ActiveSubTool: {fileID: 734000000000000003}
 --- !u!1 &3491021130875935221
@@ -715,7 +712,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3491021130875935222
 Transform:
   m_ObjectHideFlags: 0
@@ -832,7 +829,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28362f04618f450192bbd51aa203f99e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 0
 --- !u!1 &3491021131036094009
 GameObject:
   m_ObjectHideFlags: 0
@@ -967,7 +963,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 0.05, z: 2}
+  m_LocalScale: {x: 2, y: 0.025, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3491021130458884548}
@@ -1041,7 +1037,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 401478a7696a46a8b35fc186c6cf40c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_SubToolIdentifier: 0
 --- !u!65 &3491021131110089004
 BoxCollider:
   m_ObjectHideFlags: 0
