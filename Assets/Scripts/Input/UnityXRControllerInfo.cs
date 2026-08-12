@@ -141,7 +141,18 @@ namespace TiltBrush
 
         public override bool IsTrackedObjectValid
         {
-            get => device.isValid;
+            get
+            {
+                // The bridge maps the left hand to Wand and the right hand to Brush. Once hand
+                // mode is running, its joint tracking is authoritative; the physical controller
+                // device may be absent or may report an unrelated validity state.
+                if (AndroidXRHandBridge.Active)
+                {
+                    return AndroidXRHandBridge.IsTracked(isBrush);
+                }
+
+                return device.isValid;
+            }
             set
             {
 
@@ -150,17 +161,35 @@ namespace TiltBrush
 
         public override Vector2 GetPadValue()
         {
+            // The prototype exposes no virtual touchpad or stick for tracked hands.
+            if (AndroidXRHandBridge.Active)
+            {
+                return Vector2.zero;
+            }
+
             return FindAction("PadAxis").ReadValue<Vector2>();
         }
 
         public override Vector2 GetThumbStickValue()
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                return Vector2.zero;
+            }
+
             return FindAction("ThumbAxis").ReadValue<Vector2>();
         }
 
         public override void Update()
         {
             base.Update();
+
+            if (AndroidXRHandBridge.Active)
+            {
+                // Do not retain a physical touchpad position across a switch into hand mode.
+                padAxisPrevious = Vector2.zero;
+                return;
+            }
 
             if (!FindAction("PadTouch").inProgress)
             {
@@ -177,6 +206,11 @@ namespace TiltBrush
 
         public override Vector2 GetPadValueDelta()
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                return Vector2.zero;
+            }
+
             var action = FindAction("ThumbAxis");
             if (action.inProgress)
             {
@@ -222,6 +256,11 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                return 0.0f;
+            }
+
             if (IsStylusActive())
             {
                 return stylusState.cluster_front_value ? 1.0f : 0;
@@ -236,6 +275,12 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                // The bridge deliberately exposes a digital draw gesture only for the Brush.
+                return AndroidXRHandBridge.Trigger(isBrush) ? 1.0f : 0.0f;
+            }
+
             if (IsStylusActive())
             {
                 return Math.Max(stylusState.tip_value, stylusState.cluster_middle_value);
@@ -245,6 +290,12 @@ namespace TiltBrush
 
         private bool MapVrTouch(VrInput input)
         {
+            // No capacitive controller-touch states are synthesized by the prototype.
+            if (AndroidXRHandBridge.Active)
+            {
+                return false;
+            }
+
             switch (input)
             {
                 case VrInput.Directional:
@@ -273,6 +324,13 @@ namespace TiltBrush
 
         private bool MapVrInput(VrInput input)
         {
+            // Suppress stale or concurrently connected physical-controller buttons in hand mode.
+            // The custom draw gesture is the only button state implemented by the prototype.
+            if (AndroidXRHandBridge.Active)
+            {
+                return input == VrInput.Trigger && AndroidXRHandBridge.Trigger(isBrush);
+            }
+
             // This logic is inferred from OculusControllerInfo
             switch (input)
             {
@@ -312,6 +370,18 @@ namespace TiltBrush
 
         private bool MapVrInputPerFrame(VrInput input, bool down)
         {
+            if (AndroidXRHandBridge.Active)
+            {
+                if (input != VrInput.Trigger)
+                {
+                    return false;
+                }
+
+                return down
+                    ? AndroidXRHandBridge.TriggerDown(isBrush)
+                    : AndroidXRHandBridge.TriggerUp(isBrush);
+            }
+
             string selectedAction = string.Empty;
             switch (input)
             {
@@ -360,6 +430,12 @@ namespace TiltBrush
         }
         public override void TriggerControllerHaptics(float seconds)
         {
+            // Tracked hands have no haptic device on this controller path.
+            if (AndroidXRHandBridge.Active)
+            {
+                return;
+            }
+
             float durationSeconds = seconds * App.VrSdk.VrControls.HapticsDurationScale;
             device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, durationSeconds);
         }
