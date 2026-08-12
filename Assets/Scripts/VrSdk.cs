@@ -120,7 +120,19 @@ namespace TiltBrush
 
         public bool IsInitializingUnityXR
         {
-            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
+            get
+            {
+                // AndroidXRHandBridge replaces the temporary UnityXR controller hierarchy once
+                // its hand subsystem is running. At that point InputManager and panel setup must
+                // treat the virtual hand-backed controllers as fully initialized.
+                if (AndroidXRHandBridge.Active)
+                {
+                    return false;
+                }
+
+                return VrControls.Brush.ControllerGeometry.Style ==
+                    ControllerStyle.InitializingUnityXR;
+            }
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -681,6 +693,14 @@ namespace TiltBrush
 
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
+            // A late controller connection must not replace the virtual controller hierarchy that
+            // the active hand bridge is driving. Normal device discovery resumes whenever the
+            // bridge is inactive.
+            if (AndroidXRHandBridge.Active)
+            {
+                return;
+            }
+
             // Headset Connected
             const InputDeviceCharacteristics kHeadset =
                 InputDeviceCharacteristics.HeadMounted | InputDeviceCharacteristics.TrackedDevice;
