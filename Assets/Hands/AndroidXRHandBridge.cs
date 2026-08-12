@@ -12,12 +12,12 @@ namespace TiltBrush
     ///     Left hand  -> Open Brush Wand / panels
     ///     Right hand -> Open Brush Brush / drawing
     ///
-    /// Drawing gesture:
-    ///     Index fingertip close to middle fingertip.
+    /// Drawing gesture (right hand):
+    ///     Index and middle fingers extended and held together,
+    ///     with thumb, ring and little fingers closed/tucked.
     ///
-    /// For initial debugging, Require Other Fingers Closed is OFF by default.
-    /// Once drawing works reliably, enable it to additionally require thumb,
-    /// ring and little fingertips to be close to the palm.
+    /// Menu interaction is a separate right-index fingertip touch/collision
+    /// state. It is intentionally not merged into the Open Brush draw trigger.
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     public class AndroidXRHandBridge : MonoBehaviour
@@ -43,12 +43,6 @@ namespace TiltBrush
         [SerializeField]
         private float drawReleaseDistance = 0.045f;
 
-        [Tooltip(
-            "OFF is recommended for initial testing. " +
-            "When ON, thumb, ring and little fingers must also be closed.")]
-        [SerializeField]
-        private bool requireOtherFingersClosed = false;
-
         [Tooltip("Maximum RingTip -> Palm distance for ring finger to count as closed.")]
         [SerializeField]
         private float ringClosedDistance = 0.075f;
@@ -57,19 +51,53 @@ namespace TiltBrush
         [SerializeField]
         private float littleClosedDistance = 0.070f;
 
-        [Tooltip("Maximum ThumbTip -> Palm distance for thumb to count as closed.")]
+        [Tooltip("Maximum ThumbTip -> Palm distance for thumb to count as closed/tucked.")]
         [SerializeField]
         private float thumbClosedDistance = 0.070f;
+
+        [Tooltip(
+            "Maximum bend angle, in degrees, allowed in the index and middle fingers " +
+            "for them to count as extended.")]
+        [SerializeField]
+        private float extendedFingerMaxBendAngle = 35.0f;
+
+        [Tooltip(
+            "Maximum angle between the final index and middle finger directions " +
+            "while the draw gesture is active.")]
+        [SerializeField]
+        private float drawMaxFingerDirectionAngle = 30.0f;
+
+
+        [Header("Menu Touch - Right Index")]
+
+        [Tooltip(
+            "Radius in metres around the right index fingertip used to detect direct " +
+            "contact with Open Brush panel/UI colliders.")]
+        [SerializeField]
+        private float menuTouchRadius = 0.012f;
+
+        [Tooltip("Physics layers considered by right-index direct menu touch.")]
+        [SerializeField]
+        private LayerMask menuTouchLayerMask = ~0;
+
+        [Tooltip(
+            "Whether direct menu touch should include trigger colliders. " +
+            "Collide is recommended for Open Brush UI.")]
+        [SerializeField]
+        private QueryTriggerInteraction menuTouchQueryTriggerInteraction =
+            QueryTriggerInteraction.Collide;
 
 
         [Header("Brush / Right Hand")]
 
-        [Tooltip("Rotation correction for the virtual Open Brush Brush.")]
+        [Tooltip(
+            "Rotation correction applied after aligning the Open Brush pointer " +
+            "with the right index finger. Start with (0, 0, 0).")]
         public Vector3 brushRotationOffset;
 
         [Tooltip(
-            "Additional local-space offset after placing the Open Brush pointer " +
-            "between the index and middle fingertips.")]
+            "Additional offset in pointer local space after placing the Open Brush " +
+            "PointerAttachPoint at the right index fingertip.")]
         public Vector3 brushPositionOffset;
 
 
@@ -115,11 +143,21 @@ namespace TiltBrush
         private readonly HandState m_Left = new HandState();
         private readonly HandState m_Right = new HandState();
 
+        private const int kMenuTouchHitBufferSize = 32;
+        private readonly Collider[] m_MenuTouchHits =
+            new Collider[kMenuTouchHitBufferSize];
+
+        private bool m_MenuTouchHeld;
+        private bool m_MenuTouchDown;
+        private bool m_MenuTouchUp;
+        private Collider m_MenuTouchCollider;
+
 
         private class HandState
         {
             public bool tracked;
 
+            // "trigger" is deliberately the DRAW trigger only.
             public bool trigger;
             public bool triggerDown;
             public bool triggerUp;
@@ -129,9 +167,18 @@ namespace TiltBrush
             public float littlePalmDistance = float.PositiveInfinity;
             public float thumbPalmDistance = float.PositiveInfinity;
 
+            public float indexBendAngle = float.PositiveInfinity;
+            public float middleBendAngle = float.PositiveInfinity;
+            public float indexMiddleDirectionAngle = float.PositiveInfinity;
+
             public bool ringPoseValid;
             public bool littlePoseValid;
             public bool thumbPoseValid;
+
+            public bool indexDirectionValid;
+            public bool middleDirectionValid;
+            public Vector3 indexDirectionWorld = Vector3.forward;
+            public Vector3 middleDirectionWorld = Vector3.forward;
 
             public Pose palmPose;
             public Pose indexTipPose;
@@ -220,6 +267,37 @@ namespace TiltBrush
 
         public static bool RightDrawUp =>
             Active && Instance.m_Right.triggerUp;
+
+
+        /// <summary>
+        /// Direct right-index contact with an Open Brush panel/UI collider.
+        /// This is separate from the drawing trigger.
+        /// </summary>
+        public static bool MenuTouchHeld =>
+            Active && Instance.m_MenuTouchHeld;
+
+        public static bool MenuTouchDown =>
+            Active && Instance.m_MenuTouchDown;
+
+        public static bool MenuTouchUp =>
+            Active && Instance.m_MenuTouchUp;
+
+        public static Collider MenuTouchCollider =>
+            Active ? Instance.m_MenuTouchCollider : null;
+
+        public static Vector3 RightIndexTipPosition =>
+            RightTracked
+                ? Instance.m_Right.indexTipPose.position
+                : Vector3.zero;
+
+        public static bool RightIndexDirectionValid =>
+            RightTracked &&
+            Instance.m_Right.indexDirectionValid;
+
+        public static Vector3 RightIndexDirection =>
+            RightIndexDirectionValid
+                ? Instance.m_Right.indexDirectionWorld
+                : Vector3.forward;
 
 
         // --------------------------------------------------------------------
@@ -337,10 +415,24 @@ namespace TiltBrush
                 m_Left,
                 allowDrawGesture: false);
 
+            bool wasDrawingBeforeHandUpdate =
+                m_Right.trigger;
+
             UpdateHand(
                 m_Subsystem.rightHand,
                 m_Right,
                 allowDrawGesture: true);
+
+            // Direct panel contact is a separate action from drawing.
+            UpdateMenuTouchState();
+
+            // Never allow a draw stroke to continue/start while the right
+            // index fingertip is physically pressing panel UI.
+            if (m_MenuTouchHeld)
+            {
+                SuppressDrawForMenuContact(
+                    wasDrawingBeforeHandUpdate);
+            }
 
 
             // ------------------------------------------------------------
@@ -703,26 +795,9 @@ namespace TiltBrush
 
             if (!hand.isTracked)
             {
-                state.tracked = false;
-
-                state.trigger = false;
-
-                state.indexMiddleDistance =
-                    float.PositiveInfinity;
-
-                state.ringPalmDistance =
-                    float.PositiveInfinity;
-
-                state.littlePalmDistance =
-                    float.PositiveInfinity;
-
-                state.thumbPalmDistance =
-                    float.PositiveInfinity;
-
-                if (previousTrigger)
-                {
-                    state.triggerUp = true;
-                }
+                ResetHandState(
+                    state,
+                    previousTrigger);
 
                 return;
             }
@@ -749,14 +824,9 @@ namespace TiltBrush
                 !indexTipJoint.TryGetPose(out Pose indexLocal) ||
                 !middleTipJoint.TryGetPose(out Pose middleLocal))
             {
-                state.tracked = false;
-
-                state.trigger = false;
-
-                if (previousTrigger)
-                {
-                    state.triggerUp = true;
-                }
+                ResetHandState(
+                    state,
+                    previousTrigger);
 
                 return;
             }
@@ -780,6 +850,66 @@ namespace TiltBrush
 
 
             // ------------------------------------------------------------
+            // Index / middle final bone directions
+            //
+            // The index direction is also used for the Open Brush pointer.
+            // ------------------------------------------------------------
+
+            state.indexDirectionValid =
+                TryGetFingerTipDirection(
+                    hand,
+                    XRHandJointID.IndexDistal,
+                    XRHandJointID.IndexTip,
+                    out Vector3 indexDirectionLocal);
+
+            state.middleDirectionValid =
+                TryGetFingerTipDirection(
+                    hand,
+                    XRHandJointID.MiddleDistal,
+                    XRHandJointID.MiddleTip,
+                    out Vector3 middleDirectionLocal);
+
+
+            if (state.indexDirectionValid)
+            {
+                state.indexDirectionWorld =
+                    ToWorldDirection(
+                        indexDirectionLocal);
+            }
+            else
+            {
+                // Fallback keeps the pointer usable if a single distal joint
+                // temporarily drops out.
+                state.indexDirectionWorld =
+                    state.indexTipPose.rotation *
+                    Vector3.forward;
+            }
+
+
+            if (state.middleDirectionValid)
+            {
+                state.middleDirectionWorld =
+                    ToWorldDirection(
+                        middleDirectionLocal);
+            }
+            else
+            {
+                state.middleDirectionWorld =
+                    state.middleTipPose.rotation *
+                    Vector3.forward;
+            }
+
+
+            state.indexMiddleDirectionAngle =
+                state.indexDirectionValid &&
+                state.middleDirectionValid
+                    ? Vector3.Angle(
+                        indexDirectionLocal,
+                        middleDirectionLocal)
+                    : float.PositiveInfinity;
+
+
+            // ------------------------------------------------------------
             // Gesture distances stay in XR tracking/session space.
             //
             // XR Hands joint positions are in metres, so these thresholds
@@ -793,11 +923,7 @@ namespace TiltBrush
 
 
             // ------------------------------------------------------------
-            // Optional finger-closed joints
-            //
-            // These are NOT mandatory when Require Other Fingers Closed is
-            // disabled. This avoids losing all drawing simply because one
-            // secondary fingertip pose is temporarily unavailable.
+            // Closed/tucked finger checks
             // ------------------------------------------------------------
 
             state.ringPoseValid = false;
@@ -877,7 +1003,50 @@ namespace TiltBrush
 
 
             // ------------------------------------------------------------
-            // Optional "other fingers closed" condition
+            // Index + middle must be extended.
+            //
+            // We use the maximum bend across the finger's final three
+            // segments. This avoids a closed fist accidentally satisfying
+            // the "tips are close together" test.
+            // ------------------------------------------------------------
+
+            bool indexBendValid =
+                TryGetFingerMaxBendAngle(
+                    hand,
+                    XRHandJointID.IndexProximal,
+                    XRHandJointID.IndexIntermediate,
+                    XRHandJointID.IndexDistal,
+                    XRHandJointID.IndexTip,
+                    out state.indexBendAngle);
+
+            bool middleBendValid =
+                TryGetFingerMaxBendAngle(
+                    hand,
+                    XRHandJointID.MiddleProximal,
+                    XRHandJointID.MiddleIntermediate,
+                    XRHandJointID.MiddleDistal,
+                    XRHandJointID.MiddleTip,
+                    out state.middleBendAngle);
+
+            bool indexExtended =
+                indexBendValid &&
+                state.indexBendAngle <=
+                extendedFingerMaxBendAngle;
+
+            bool middleExtended =
+                middleBendValid &&
+                state.middleBendAngle <=
+                extendedFingerMaxBendAngle;
+
+            bool indexAndMiddleParallel =
+                state.indexDirectionValid &&
+                state.middleDirectionValid &&
+                state.indexMiddleDirectionAngle <=
+                drawMaxFingerDirectionAngle;
+
+
+            // ------------------------------------------------------------
+            // Remaining fingers must be closed/tucked.
             // ------------------------------------------------------------
 
             bool ringClosed =
@@ -895,36 +1064,35 @@ namespace TiltBrush
                 state.thumbPalmDistance <
                 thumbClosedDistance;
 
-
-            bool otherFingersAccepted =
-                !requireOtherFingersClosed ||
-                (
-                    ringClosed &&
-                    littleClosed &&
-                    thumbClosed
-                );
+            bool requiredPose =
+                indexExtended &&
+                middleExtended &&
+                indexAndMiddleParallel &&
+                ringClosed &&
+                littleClosed &&
+                thumbClosed;
 
 
             // ------------------------------------------------------------
             // Drawing trigger with hysteresis
+            //
+            // Gesture:
+            //   - index + middle fingertips together
+            //   - index + middle extended
+            //   - index + middle pointing in approximately same direction
+            //   - thumb + ring + little closed/tucked
             // ------------------------------------------------------------
 
-            if (previousTrigger)
-            {
-                state.trigger =
-                    state.indexMiddleDistance <
-                    drawReleaseDistance
-                    &&
-                    otherFingersAccepted;
-            }
-            else
-            {
-                state.trigger =
-                    state.indexMiddleDistance <
-                    drawPressDistance
-                    &&
-                    otherFingersAccepted;
-            }
+            float indexMiddleThreshold =
+                previousTrigger
+                    ? drawReleaseDistance
+                    : drawPressDistance;
+
+            state.trigger =
+                state.indexMiddleDistance <
+                indexMiddleThreshold
+                &&
+                requiredPose;
 
 
             state.triggerDown =
@@ -946,14 +1114,328 @@ namespace TiltBrush
                     $"down={state.triggerDown} " +
                     $"up={state.triggerUp} " +
                     $"indexMiddle={state.indexMiddleDistance:F3} " +
+                    $"indexBend={state.indexBendAngle:F1} " +
+                    $"middleBend={state.middleBendAngle:F1} " +
+                    $"dirAngle={state.indexMiddleDirectionAngle:F1} " +
                     $"ringPalm={state.ringPalmDistance:F3} " +
                     $"littlePalm={state.littlePalmDistance:F3} " +
                     $"thumbPalm={state.thumbPalmDistance:F3} " +
-                    $"requireClosed={requireOtherFingersClosed} " +
+                    $"indexExtended={indexExtended} " +
+                    $"middleExtended={middleExtended} " +
+                    $"parallel={indexAndMiddleParallel} " +
                     $"ringClosed={ringClosed} " +
                     $"littleClosed={littleClosed} " +
                     $"thumbClosed={thumbClosed}");
             }
+        }
+
+
+        private static void ResetHandState(
+            HandState state,
+            bool previousTrigger)
+        {
+            state.tracked = false;
+
+            state.trigger = false;
+            state.triggerDown = false;
+            state.triggerUp = previousTrigger;
+
+            state.indexMiddleDistance =
+                float.PositiveInfinity;
+
+            state.ringPalmDistance =
+                float.PositiveInfinity;
+
+            state.littlePalmDistance =
+                float.PositiveInfinity;
+
+            state.thumbPalmDistance =
+                float.PositiveInfinity;
+
+            state.indexBendAngle =
+                float.PositiveInfinity;
+
+            state.middleBendAngle =
+                float.PositiveInfinity;
+
+            state.indexMiddleDirectionAngle =
+                float.PositiveInfinity;
+
+            state.ringPoseValid = false;
+            state.littlePoseValid = false;
+            state.thumbPoseValid = false;
+
+            state.indexDirectionValid = false;
+            state.middleDirectionValid = false;
+
+            state.indexDirectionWorld =
+                Vector3.forward;
+
+            state.middleDirectionWorld =
+                Vector3.forward;
+        }
+
+
+        private static bool TryGetFingerTipDirection(
+            XRHand hand,
+            XRHandJointID distalJointId,
+            XRHandJointID tipJointId,
+            out Vector3 direction)
+        {
+            direction = Vector3.forward;
+
+            XRHandJoint distalJoint =
+                hand.GetJoint(
+                    distalJointId);
+
+            XRHandJoint tipJoint =
+                hand.GetJoint(
+                    tipJointId);
+
+            if (!distalJoint.TryGetPose(out Pose distalPose) ||
+                !tipJoint.TryGetPose(out Pose tipPose))
+            {
+                return false;
+            }
+
+            Vector3 delta =
+                tipPose.position -
+                distalPose.position;
+
+            if (delta.sqrMagnitude <
+                0.00000001f)
+            {
+                return false;
+            }
+
+            direction =
+                delta.normalized;
+
+            return true;
+        }
+
+
+        private static bool TryGetFingerMaxBendAngle(
+            XRHand hand,
+            XRHandJointID proximalJointId,
+            XRHandJointID intermediateJointId,
+            XRHandJointID distalJointId,
+            XRHandJointID tipJointId,
+            out float maxBendAngle)
+        {
+            maxBendAngle =
+                float.PositiveInfinity;
+
+            XRHandJoint proximalJoint =
+                hand.GetJoint(
+                    proximalJointId);
+
+            XRHandJoint intermediateJoint =
+                hand.GetJoint(
+                    intermediateJointId);
+
+            XRHandJoint distalJoint =
+                hand.GetJoint(
+                    distalJointId);
+
+            XRHandJoint tipJoint =
+                hand.GetJoint(
+                    tipJointId);
+
+
+            if (!proximalJoint.TryGetPose(out Pose proximalPose) ||
+                !intermediateJoint.TryGetPose(out Pose intermediatePose) ||
+                !distalJoint.TryGetPose(out Pose distalPose) ||
+                !tipJoint.TryGetPose(out Pose tipPose))
+            {
+                return false;
+            }
+
+
+            Vector3 proximalDirection =
+                intermediatePose.position -
+                proximalPose.position;
+
+            Vector3 middleDirection =
+                distalPose.position -
+                intermediatePose.position;
+
+            Vector3 distalDirection =
+                tipPose.position -
+                distalPose.position;
+
+
+            if (proximalDirection.sqrMagnitude <
+                    0.00000001f ||
+                middleDirection.sqrMagnitude <
+                    0.00000001f ||
+                distalDirection.sqrMagnitude <
+                    0.00000001f)
+            {
+                return false;
+            }
+
+
+            float firstBend =
+                Vector3.Angle(
+                    proximalDirection,
+                    middleDirection);
+
+            float secondBend =
+                Vector3.Angle(
+                    middleDirection,
+                    distalDirection);
+
+            maxBendAngle =
+                Mathf.Max(
+                    firstBend,
+                    secondBend);
+
+            return true;
+        }
+
+
+        // --------------------------------------------------------------------
+        // Separate direct-touch menu input
+        // --------------------------------------------------------------------
+
+        private void UpdateMenuTouchState()
+        {
+            bool previousTouch =
+                m_MenuTouchHeld;
+
+            m_MenuTouchHeld = false;
+            m_MenuTouchDown = false;
+            m_MenuTouchUp = false;
+            m_MenuTouchCollider = null;
+
+
+            if (!m_Right.tracked)
+            {
+                m_MenuTouchUp =
+                    previousTouch;
+
+                return;
+            }
+
+
+            int hitCount =
+                Physics.OverlapSphereNonAlloc(
+                    m_Right.indexTipPose.position,
+                    Mathf.Max(
+                        0.001f,
+                        menuTouchRadius),
+                    m_MenuTouchHits,
+                    menuTouchLayerMask,
+                    menuTouchQueryTriggerInteraction);
+
+
+            float closestDistanceSquared =
+                float.PositiveInfinity;
+
+            for (int i = 0;
+                 i < hitCount;
+                 ++i)
+            {
+                Collider hit =
+                    m_MenuTouchHits[i];
+
+                if (!IsPanelUiCollider(
+                        hit))
+                {
+                    continue;
+                }
+
+
+                Vector3 closestPoint =
+                    hit.ClosestPoint(
+                        m_Right.indexTipPose.position);
+
+                float distanceSquared =
+                    (
+                        closestPoint -
+                        m_Right.indexTipPose.position
+                    )
+                    .sqrMagnitude;
+
+
+                if (distanceSquared <
+                    closestDistanceSquared)
+                {
+                    closestDistanceSquared =
+                        distanceSquared;
+
+                    m_MenuTouchCollider =
+                        hit;
+                }
+            }
+
+
+            m_MenuTouchHeld =
+                m_MenuTouchCollider != null;
+
+            m_MenuTouchDown =
+                !previousTouch &&
+                m_MenuTouchHeld;
+
+            m_MenuTouchUp =
+                previousTouch &&
+                !m_MenuTouchHeld;
+
+
+            if (debugLogging &&
+                (m_MenuTouchDown ||
+                 m_MenuTouchUp))
+            {
+                Debug.Log(
+                    "ANDROIDXR_MENU_TOUCH " +
+                    $"held={m_MenuTouchHeld} " +
+                    $"down={m_MenuTouchDown} " +
+                    $"up={m_MenuTouchUp} " +
+                    $"collider=" +
+                    $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")}");
+            }
+        }
+
+
+        private static bool IsPanelUiCollider(
+            Collider collider)
+        {
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+
+            // BasePanel also catches most child/custom panel colliders.
+            if (collider.GetComponentInParent<BasePanel>() != null)
+            {
+                return true;
+            }
+
+            if (collider.GetComponentInParent<PopUpWindow>() != null)
+            {
+                return true;
+            }
+
+            if (collider.GetComponentInParent<UIComponent>() != null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private void SuppressDrawForMenuContact(
+            bool wasDrawingBeforeHandUpdate)
+        {
+            m_Right.trigger = false;
+            m_Right.triggerDown = false;
+            m_Right.triggerUp =
+                wasDrawingBeforeHandUpdate;
         }
 
 
@@ -974,6 +1456,21 @@ namespace TiltBrush
 
                 trackingOrigin.rotation *
                 localPose.rotation);
+        }
+
+
+        private Vector3 ToWorldDirection(
+            Vector3 localDirection)
+        {
+            if (trackingOrigin == null)
+            {
+                return localDirection.normalized;
+            }
+
+            return trackingOrigin
+                .TransformDirection(
+                    localDirection)
+                .normalized;
         }
 
 
@@ -1026,51 +1523,127 @@ namespace TiltBrush
             Transform root =
                 behavior.transform;
 
+            Transform pointer =
+                behavior.PointerAttachPoint;
+
 
             /*
-             * Put Open Brush's existing PointerAttachPoint directly between
-             * the index and middle fingertips.
+             * The Open Brush pointer now starts exactly at the right index tip.
              */
             Vector3 desiredPointerPosition =
-                (
-                    hand.indexTipPose.position +
-                    hand.middleTipPose.position
-                )
-                * 0.5f;
+                hand.indexTipPose.position;
 
 
             /*
-             * Start with palm orientation.
-             * brushRotationOffset can correct the pointer direction in Inspector.
+             * Aim along the physical index finger:
+             *
+             *     IndexDistal -> IndexTip
+             *
+             * This avoids inheriting the borrowed Quest controller's palm /
+             * controller axis, which was responsible for the apparent 90 degree
+             * pointer rotation.
              */
-            Quaternion desiredRotation =
+            Vector3 pointerForward =
+                hand.indexDirectionValid
+                    ? hand.indexDirectionWorld
+                    : hand.indexTipPose.rotation *
+                      Vector3.forward;
+
+
+            if (pointerForward.sqrMagnitude <
+                0.00000001f)
+            {
+                pointerForward =
+                    hand.palmPose.rotation *
+                    Vector3.forward;
+            }
+
+            pointerForward.Normalize();
+
+
+            /*
+             * Build a stable "up" vector from the palm, projected perpendicular
+             * to the finger direction. If the palm up axis happens to be nearly
+             * parallel to the finger, fall back to palm right.
+             */
+            Vector3 palmUp =
                 hand.palmPose.rotation *
+                Vector3.up;
+
+            Vector3 pointerUp =
+                Vector3.ProjectOnPlane(
+                    palmUp,
+                    pointerForward);
+
+            if (pointerUp.sqrMagnitude <
+                0.000001f)
+            {
+                pointerUp =
+                    Vector3.ProjectOnPlane(
+                        hand.palmPose.rotation *
+                        Vector3.right,
+                        pointerForward);
+            }
+
+            if (pointerUp.sqrMagnitude <
+                0.000001f)
+            {
+                pointerUp =
+                    Vector3.up;
+            }
+
+            pointerUp.Normalize();
+
+
+            Quaternion desiredPointerRotation =
+                Quaternion.LookRotation(
+                    pointerForward,
+                    pointerUp)
+                *
                 Quaternion.Euler(
                     brushRotationOffset);
 
 
             /*
-             * Preserve the controller prefab's local offset between its root
-             * and PointerAttachPoint.
+             * PointerAttachPoint belongs to the borrowed controller prefab and
+             * may itself be locally rotated. Preserve that local relationship,
+             * then solve the controller root rotation required to make the
+             * ACTUAL pointer forward match the index finger.
              */
-            Vector3 pointerLocal =
+            Vector3 pointerLocalPosition =
                 root.InverseTransformPoint(
-                    behavior.PointerAttachPoint.position);
+                    pointer.position);
+
+            Quaternion pointerLocalRotation =
+                Quaternion.Inverse(
+                    root.rotation)
+                *
+                pointer.rotation;
+
+
+            Quaternion desiredRootRotation =
+                desiredPointerRotation
+                *
+                Quaternion.Inverse(
+                    pointerLocalRotation);
 
 
             root.rotation =
-                desiredRotation;
+                desiredRootRotation;
 
 
             Vector3 pointerOffsetWorld =
                 root.TransformVector(
-                    pointerLocal);
+                    pointerLocalPosition);
 
 
             root.position =
-                desiredPointerPosition -
-                pointerOffsetWorld +
-                desiredRotation *
+                desiredPointerPosition
+                -
+                pointerOffsetWorld
+                +
+                desiredPointerRotation
+                *
                 brushPositionOffset;
         }
 
@@ -1205,7 +1778,11 @@ namespace TiltBrush
                 $"L={m_Left.tracked} " +
                 $"R={m_Right.tracked} " +
                 $"draw={m_Right.trigger} " +
+                $"menuTouch={m_MenuTouchHeld} " +
                 $"IM={m_Right.indexMiddleDistance:F3} " +
+                $"indexBend={m_Right.indexBendAngle:F1} " +
+                $"middleBend={m_Right.middleBendAngle:F1} " +
+                $"dirAngle={m_Right.indexMiddleDirectionAngle:F1} " +
                 $"ring={m_Right.ringPalmDistance:F3} " +
                 $"little={m_Right.littlePalmDistance:F3} " +
                 $"thumb={m_Right.thumbPalmDistance:F3} " +

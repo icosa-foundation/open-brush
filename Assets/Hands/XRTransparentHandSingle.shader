@@ -1,0 +1,108 @@
+Shader "OpenBrush/XR Hand AlphaToCoverage"
+{
+    Properties
+    {
+        _BaseColor ("Hand Color", Color) = (0.55, 0.55, 0.55, 1.0)
+        _Opacity ("Opacity", Range(0.0, 1.0)) = 0.55
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "RenderPipeline" = "UniversalPipeline"
+            "RenderType" = "TransparentCutout"
+            "Queue" = "AlphaTest+20"
+            "UniversalMaterialType" = "Unlit"
+        }
+
+        Pass
+        {
+            Name "Forward"
+            Tags
+            {
+                "LightMode" = "UniversalForwardOnly"
+            }
+
+            Cull Back
+
+            // Self-occlusion
+            ZWrite On
+            ZTest LEqual
+
+            // Do NOT conventional-alpha-blend.
+            Blend Off
+
+            // Convert output alpha into MSAA sample coverage.
+            AlphaToMask On
+
+            HLSLPROGRAM
+
+            #pragma target 3.0
+
+            #pragma vertex Vert
+            #pragma fragment Frag
+
+            #pragma multi_compile_instancing
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings
+            {
+                float4 positionCS : SV_POSITION;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            CBUFFER_START(UnityPerMaterial)
+
+                half4 _BaseColor;
+                half _Opacity;
+
+            CBUFFER_END
+
+
+            Varyings Vert(Attributes input)
+            {
+                Varyings output = (Varyings)0;
+
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                output.positionCS =
+                    TransformObjectToHClip(input.positionOS.xyz);
+
+                return output;
+            }
+
+
+            half4 Frag(Varyings input) : SV_Target
+            {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+
+                // Alpha isn't blended.
+                // AlphaToMask converts this alpha value into
+                // multisample coverage instead.
+                return half4(
+                    _BaseColor.rgb,
+                    saturate(_Opacity)
+                );
+            }
+
+            ENDHLSL
+        }
+    }
+
+    FallBack Off
+}
