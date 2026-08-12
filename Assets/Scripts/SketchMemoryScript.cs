@@ -410,6 +410,7 @@ namespace TiltBrush
                 duplicate.Recreate(transform, canvas, absoluteScale);
             }
             UpdateTimestampsToCurrentSketchTime(duplicate);
+            RecordStrokeInCurrentTimeSession(duplicate);
             MemoryListAdd(duplicate);
             return duplicate;
         }
