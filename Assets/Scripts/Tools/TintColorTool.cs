@@ -79,7 +79,7 @@ namespace TiltBrush
                 m_ActiveTintCommands.Clear();
             }
 
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
                 int idx = System.Array.IndexOf(k_ModeOrder, m_CurrentMode);
                 m_CurrentMode = k_ModeOrder[(idx + 1) % k_ModeOrder.Length];

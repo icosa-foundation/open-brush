@@ -19,7 +19,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class PushPullTool : ToggleStrokeModificationTool
+    public class ReshapeTool : ToggleStrokeModificationTool
     {
         private sealed class SculptContactState
         {
@@ -161,7 +161,7 @@ namespace TiltBrush
                 UpdateCapturedTransformStrokes();
             }
 
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
                 if (m_ActiveSubTool.SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
                     !IsCapturedTransformMode && !IsSmoothMode)

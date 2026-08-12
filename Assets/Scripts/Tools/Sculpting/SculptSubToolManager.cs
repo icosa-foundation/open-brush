@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 namespace TiltBrush
@@ -11,8 +12,9 @@ namespace TiltBrush
 
         private Dictionary<SubTool, BaseSculptSubTool> m_SubTools;
 
+        [FormerlySerializedAs("m_PushPullTool")]
         [SerializeField]
-        private PushPullTool m_PushPullTool;
+        private ReshapeTool mReshapeTool;
 
         // These explicit values preserve existing serialized prefab values.
         public enum SubTool
@@ -50,7 +52,7 @@ namespace TiltBrush
         {
             if (m_SubTools.TryGetValue(subTool, out BaseSculptSubTool selectedSubTool))
             {
-                m_PushPullTool.SetSubTool(selectedSubTool);
+                mReshapeTool.SetSubTool(selectedSubTool);
             }
             else
             {
@@ -58,6 +60,6 @@ namespace TiltBrush
             }
         }
 
-        public SubTool ActiveSubTool => m_PushPullTool.m_ActiveSubTool.SubToolIdentifier;
+        public SubTool ActiveSubTool => mReshapeTool.m_ActiveSubTool.SubToolIdentifier;
     }
 } // namespace TiltBrush
