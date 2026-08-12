@@ -42,6 +42,7 @@ namespace OpenBrush.Multiplayer
         void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
+        bool RpcSyncSketchTimeToPlayer(uint sketchTimeMs, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
         Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
         Task<bool> UndoCommand(BaseCommand command);

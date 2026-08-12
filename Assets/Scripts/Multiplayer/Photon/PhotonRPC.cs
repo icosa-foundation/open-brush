@@ -774,6 +774,24 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
+        public static void RPC_SyncSketchTime(
+            NetworkRunner runner, uint sourceSketchTimeMs,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+            if (multiplayer == null ||
+                !multiplayer.IsPlayerRoomOwner(info.Source.RawEncoded))
+            {
+                Debug.LogWarning(
+                    $"[MultiplayerStrokeTime] Rejected sketch clock sync from player " +
+                    $"{info.Source.RawEncoded}; sender is not the room owner.");
+                return;
+            }
+
+            multiplayer.ApplySketchTimeSync(sourceSketchTimeMs);
+        }
+
+        [Rpc(InvokeLocal = false)]
         public static void RPC_SyncToSharedAnchor(NetworkRunner runner, string uuid)
         {
 #if OCULUS_SUPPORTED

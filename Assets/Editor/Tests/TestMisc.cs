@@ -20,6 +20,7 @@ using UnityEditor;
 using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
+using OpenBrush.Multiplayer;
 using static TiltBrush.AsyncTestUtils;
 
 namespace TiltBrush
@@ -27,6 +28,18 @@ namespace TiltBrush
 
     internal class TestMisc
     {
+        [TestCase(5, 30000, 30)]
+        [TestCase(45, 30000, 45)]
+        public void TestCalculateSynchronizedSketchTime(
+            double localSketchTime, uint sourceSketchTimeMs, double expectedSketchTime)
+        {
+            Assert.AreEqual(
+                expectedSketchTime,
+                MultiplayerManager.CalculateSynchronizedSketchTime(
+                    localSketchTime, sourceSketchTimeMs),
+                0.000001);
+        }
+
         [TestCase(30, 0, 30)]
         [TestCase(30, 5, 25)]
         [TestCase(30, 30, 0)]
