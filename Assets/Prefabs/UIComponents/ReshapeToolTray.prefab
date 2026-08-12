@@ -122,9 +122,9 @@ Transform:
   - {fileID: 529637542510126424}
   - {fileID: 836000000000000002}
   - {fileID: 835000000000000002}
-  - {fileID: 2199208805347137833}
   - {fileID: 5798431474404876367}
   - {fileID: 3096519506628065163}
+  - {fileID: 2199208805347137833}
   m_Father: {fileID: 4144920620344815534}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1895032314352020
@@ -389,7 +389,7 @@ Transform:
   m_GameObject: {fileID: 835000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.40000093, z: -0.020000003}
+  m_LocalPosition: {x: 0, y: 0.4199999, z: -0.020000003}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -552,7 +552,7 @@ Transform:
   m_GameObject: {fileID: 836000000000000001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.82, z: -0.020000003}
+  m_LocalPosition: {x: 0, y: 0.839999, z: -0.020000003}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -705,7 +705,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2199208805347137833
 Transform:
   m_ObjectHideFlags: 0
@@ -868,7 +868,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &3096519506628065163
 Transform:
   m_ObjectHideFlags: 0
@@ -878,7 +878,7 @@ Transform:
   m_GameObject: {fileID: 1175773417315306131}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.859999, z: -0.020000003}
+  m_LocalPosition: {x: 0, y: -0.42, z: -0.020000003}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1041,7 +1041,7 @@ Transform:
   m_GameObject: {fileID: 2781210885598772063}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.439999, z: -0.020000003}
+  m_LocalPosition: {x: 0, y: 0, z: -0.020000003}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1139,7 +1139,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Project to Plane
+  m_DescriptionText: Planarize
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 

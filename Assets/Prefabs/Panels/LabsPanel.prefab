@@ -2960,7 +2960,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
+  m_DescriptionText: Tint Amount
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
