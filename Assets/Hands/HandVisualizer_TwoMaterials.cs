@@ -267,7 +267,7 @@ namespace TiltBrush
             }
 
             private static void AssignMaterials(
-                SkinnedMeshRenderer renderer,
+                Renderer renderer,
                 Material depthMaterial,
                 Material transparentMaterial)
             {
