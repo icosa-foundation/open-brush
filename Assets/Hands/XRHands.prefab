@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7939760417630352}
   - component: {fileID: 577291779280145952}
-  - component: {fileID: 131358595601226416}
   - component: {fileID: 5567412297101205545}
   m_Layer: 0
   m_Name: XRHands
@@ -45,7 +44,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 791fea45f4d5b4521aad89c2aa913c63, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityEngine.XR.Hands.Samples.VisualizerSample.HandVisualizer
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.HandVisualizer_TwoMaterials
   m_UseOptimizedControls: 0
   m_MetaQuestLeftHandMesh: {fileID: 919132149155446097, guid: bf7151579c38e2a44be94ba8773876c1,
     type: 3}
@@ -60,27 +59,6 @@ MonoBehaviour:
   m_HandMeshTransparentMaterial: {fileID: 2100000, guid: 82acbea961927439795f8d7b88d9631c,
     type: 2}
   m_DrawMeshes: 1
-  m_DebugDrawPrefab: {fileID: 6507399986997092475, guid: 254b742d65a15d14b9df756ae77de868,
-    type: 3}
-  m_DebugDrawJoints: 0
-  m_VelocityPrefab: {fileID: 8538602047018081646, guid: 629fd7882ec6bfc499a5fcf20035282b,
-    type: 3}
-  m_VelocityType: 2
---- !u!114 &131358595601226416
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5367693399227551509}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac5903b776721d74786a2e43f00b949a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ProcessorExampleMode: 0
-  m_LeftHandSmoothingFactor: 16
-  m_RightHandSmoothingFactor: 16
 --- !u!114 &5567412297101205545
 MonoBehaviour:
   m_ObjectHideFlags: 0

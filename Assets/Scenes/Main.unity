@@ -3622,12 +3622,6 @@ Transform:
   - {fileID: 409849877}
   m_Father: {fileID: 1972541291}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &159074808 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5367693399227551509, guid: 95b6e7acb119f412cae8063da6323461,
-    type: 3}
-  m_PrefabInstance: {fileID: 4482580134447887781}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &160917793
 GameObject:
   m_ObjectHideFlags: 0
@@ -4066,44 +4060,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 177030158}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &178334730 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 7939760417630352, guid: 95b6e7acb119f412cae8063da6323461,
-    type: 3}
-  m_PrefabInstance: {fileID: 4482580134447887781}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &178334734
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 159074808}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 791fea45f4d5b4521aad89c2aa913c63, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UnityEngine.XR.Hands.Samples.VisualizerSample.HandVisualizer
-  m_UseOptimizedControls: 0
-  m_MetaQuestLeftHandMesh: {fileID: 919132149155446097, guid: bf7151579c38e2a44be94ba8773876c1,
-    type: 3}
-  m_MetaQuestRightHandMesh: {fileID: 919132149155446097, guid: 56186ccf27ad7864681108ed88349071,
-    type: 3}
-  m_AndroidXRLeftHandMesh: {fileID: 919132149155446097, guid: 7eff605df5fc69141bad762b74fb9228,
-    type: 3}
-  m_AndroidXRRightHandMesh: {fileID: 919132149155446097, guid: 49090752ee8bba242ad64a291905ee10,
-    type: 3}
-  m_HandMeshDepthMaterial: {fileID: 2100000, guid: 2c99f46d48fc64a598ce79eb0c528eb4,
-    type: 2}
-  m_HandMeshTransparentMaterial: {fileID: 2100000, guid: 82acbea961927439795f8d7b88d9631c,
-    type: 2}
-  m_DrawMeshes: 1
-  m_DebugDrawPrefab: {fileID: 6507399986997092475, guid: 254b742d65a15d14b9df756ae77de868,
-    type: 3}
-  m_DebugDrawJoints: 0
-  m_VelocityPrefab: {fileID: 8538602047018081646, guid: 629fd7882ec6bfc499a5fcf20035282b,
-    type: 3}
-  m_VelocityType: 2
 --- !u!1001 &194012493
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18322,10 +18278,6 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1814796582}
-    - targetCorrespondingSourceObject: {fileID: 4000013585580318, guid: dedd7823645ca60468aca5f2ff1b9a7f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 178334730}
     - targetCorrespondingSourceObject: {fileID: 4000011853176074, guid: dedd7823645ca60468aca5f2ff1b9a7f,
         type: 3}
       insertIndex: -1
@@ -32772,11 +32724,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2456230382308583860, guid: 95b6e7acb119f412cae8063da6323461,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5367693399227551509, guid: 95b6e7acb119f412cae8063da6323461,
         type: 3}
       propertyPath: m_Name
@@ -32800,11 +32747,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5367693399227551509, guid: 95b6e7acb119f412cae8063da6323461,
-        type: 3}
-      insertIndex: 1
-      addedObject: {fileID: 178334734}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 95b6e7acb119f412cae8063da6323461, type: 3}
 --- !u!1001 &4492044766644994641
 PrefabInstance:
