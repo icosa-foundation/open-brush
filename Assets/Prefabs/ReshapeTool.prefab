@@ -623,7 +623,7 @@ GameObject:
   - component: {fileID: 3491021130848758576}
   - component: {fileID: 3491021130848758577}
   m_Layer: 14
-  m_Name: PushPullTool
+  m_Name: ReshapeTool
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

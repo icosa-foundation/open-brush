@@ -783,7 +783,7 @@ GameObject:
   - component: {fileID: 3292593805713386625}
   - component: {fileID: 3292519083854899281}
   m_Layer: 16
-  m_Name: CaptureTray
+  m_Name: GaussianCaptureTray
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
