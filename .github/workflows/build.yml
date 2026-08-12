@@ -264,7 +264,7 @@ jobs:
 
           - name: Android OpenXR Google Play
             targetPlatform: Android
-            vrsdk: OpenXR
+            vrsdk: AndroidXR
             cache: Android_Vulkan
             packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
