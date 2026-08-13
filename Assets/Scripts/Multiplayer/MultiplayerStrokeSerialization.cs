@@ -27,6 +27,7 @@ namespace OpenBrush.Multiplayer
     {
         private const uint k_ContributorEnvelopeMagic = 0x3143504d;
         private const int k_ContributorEnvelopeVersion = 1;
+        private const uint k_StrokeClockTrailerMagic = 0x314b4c43;
 
         public static async Task<byte[]> SerializeAndCompressMemoryListAsync(List<Stroke> memoryList)
         {
@@ -52,6 +53,22 @@ namespace OpenBrush.Multiplayer
                 }
                 writer.Write(strokeData.Length);
                 writer.Write(strokeData);
+                // Keep the version-1 envelope layout readable by existing clients. They stop
+                // after strokeData; compatible clients can consume this optional trailer.
+                writer.Write(k_StrokeClockTrailerMagic);
+                writer.Write(memoryList.Count);
+                foreach (var stroke in memoryList)
+                {
+                    bool hasTimeSession = SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(
+                        stroke, out StrokeTimeSessionMetadata timeSession);
+                    writer.Write(hasTimeSession);
+                    if (hasTimeSession)
+                    {
+                        writer.Write(timeSession.StartUtcMs);
+                        writer.Write(timeSession.StartSketchTimeMs);
+                        writer.Write(timeSession.EndSketchTimeMs);
+                    }
+                }
                 writer.Flush();
                 envelope = stream.ToArray();
             }
@@ -70,7 +87,7 @@ namespace OpenBrush.Multiplayer
             byte[] data = await Decompress(compressedData);
             if (!TryReadContributorEnvelope(
                 data, out var contributorIds, out var contributorNicknames,
-                out var strokeData))
+                out var strokeTimeSessions, out var strokeData))
             {
                 return await DeserializeMemoryList(data);
             }
@@ -88,15 +105,29 @@ namespace OpenBrush.Multiplayer
                 strokes[i].m_MultiplayerContributorId = contributorIds[i];
                 strokes[i].m_MultiplayerContributorNickname = contributorNicknames[i];
             }
+
+            SketchMemoryScript.m_Instance.RestoreStrokeTimeSessions(
+                strokeTimeSessions
+                    .Where(session => session != null)
+                    .GroupBy(session => new
+                    {
+                        session.StartUtcMs,
+                        session.StartSketchTimeMs,
+                        session.EndSketchTimeMs,
+                    })
+                    .Select(group => group.First()));
             return strokes;
         }
 
         private static bool TryReadContributorEnvelope(
             byte[] data, out List<Guid> contributorIds,
-            out List<string> contributorNicknames, out byte[] strokeData)
+            out List<string> contributorNicknames,
+            out List<StrokeTimeSessionMetadata> strokeTimeSessions,
+            out byte[] strokeData)
         {
             contributorIds = null;
             contributorNicknames = null;
+            strokeTimeSessions = null;
             strokeData = null;
             if (data == null || data.Length < sizeof(uint) + sizeof(int))
             {
@@ -139,6 +170,38 @@ namespace OpenBrush.Multiplayer
                 throw new InvalidDataException("Invalid multiplayer stroke payload length.");
             }
             strokeData = reader.ReadBytes(strokeDataLength);
+
+            strokeTimeSessions = Enumerable.Repeat<StrokeTimeSessionMetadata>(
+                null, count).ToList();
+            if (stream.Length - stream.Position < sizeof(uint) + sizeof(int))
+            {
+                return true;
+            }
+
+            if (reader.ReadUInt32() != k_StrokeClockTrailerMagic)
+            {
+                return true;
+            }
+
+            int clockCount = reader.ReadInt32();
+            if (clockCount != count)
+            {
+                throw new InvalidDataException(
+                    "Multiplayer stroke clock metadata does not match the stroke count.");
+            }
+            for (int i = 0; i < clockCount; ++i)
+            {
+                if (!reader.ReadBoolean())
+                {
+                    continue;
+                }
+                strokeTimeSessions[i] = new StrokeTimeSessionMetadata
+                {
+                    StartUtcMs = reader.ReadInt64(),
+                    StartSketchTimeMs = reader.ReadUInt32(),
+                    EndSketchTimeMs = reader.ReadUInt32(),
+                };
+            }
             return true;
         }
 

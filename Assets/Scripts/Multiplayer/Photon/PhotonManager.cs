@@ -267,6 +267,13 @@ namespace OpenBrush.Multiplayer
             return 0;
         }
 
+        public bool IsLocalPlayerRoomOwner()
+        {
+            return m_Runner != null &&
+                m_Runner.IsRunning &&
+                m_Runner.IsSharedModeMasterClient;
+        }
+
         public int GetNetworkedTimestampMilliseconds()
         {
             int tickRate = m_Runner.TickRate; // Access TickRate from Config directly

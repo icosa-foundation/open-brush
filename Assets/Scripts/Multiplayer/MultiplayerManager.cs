@@ -525,9 +525,11 @@ namespace OpenBrush.Multiplayer
 
         void OnLocalPlayerJoined(int id, ITransientData<PlayerRigData> playerData)
         {
-            // the user is the room owner if is the firt to get in 
-            isUserRoomOwner = m_Manager.GetPlayerCount() == 1 ? true : false;
-            // if not room owner clear scene 
+            // SessionInfo.PlayerCount can lag during the local join callback. Fusion's shared
+            // mode master-client state is the authoritative ownership signal.
+            isUserRoomOwner = m_Manager.IsLocalPlayerRoomOwner();
+            Debug.Log(
+                $"[MultiplayerJoinConsistency] Local player {id} joined; roomOwner={isUserRoomOwner}.");
             if (!isUserRoomOwner) SketchMemoryScript.m_Instance.ClearMemory();
 
             m_LocalPlayer = playerData;

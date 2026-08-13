@@ -516,25 +516,17 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
 
-            long targetStartUtcMs;
-            uint targetStartSketchTimeMs;
-            if (SketchMemoryScript.m_Instance.TryGetActiveStrokeTimeSession(
-                out var targetTimeSession))
+            // Map from the sender's wall clock to a fresh snapshot of the receiver's
+            // suspension-corrected sketch clock. An active stroke-session anchor may belong
+            // to loaded history or predate a multiplayer clock synchronization.
+            long targetStartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            double targetSketchTimeMsDouble = App.Instance.CurrentSketchTime * 1000.0;
+            if (targetSketchTimeMsDouble < uint.MinValue ||
+                targetSketchTimeMsDouble > uint.MaxValue)
             {
-                targetStartUtcMs = targetTimeSession.StartUtcMs;
-                targetStartSketchTimeMs = targetTimeSession.StartSketchTimeMs;
+                return false;
             }
-            else
-            {
-                SketchMemoryScript.m_Instance.BeginPendingStrokeTimeSession();
-                if (!SketchMemoryScript.m_Instance.TryGetActiveStrokeTimeSession(
-                    out targetTimeSession))
-                {
-                    return false;
-                }
-                targetStartUtcMs = targetTimeSession.StartUtcMs;
-                targetStartSketchTimeMs = targetTimeSession.StartSketchTimeMs;
-            }
+            uint targetStartSketchTimeMs = (uint)targetSketchTimeMsDouble;
 
             try
             {
@@ -623,7 +615,19 @@ namespace OpenBrush.Multiplayer
 
             // TODO : implment GUID for strokesdata.
             // The range of int is large (-2,147,483,648 to 2,147,483,647), but collisions are still possible.
-            var foundStroke = SketchMemoryScript.m_Instance.GetMemoryList.Where(x => x.m_Seed == seed).First();
+            Stroke foundStroke = SketchMemoryScript.m_Instance.GetMemoryList
+                .FirstOrDefault(stroke => stroke.m_Seed == seed);
+            if (foundStroke == null)
+            {
+                // A delete can be a sibling of a brush command under the same compound
+                // command. In that case the target exists in the pending command graph but
+                // has not yet been added to memory.
+                foundStroke = m_pendingCommands
+                    .Select(pending => pending.Command)
+                    .OfType<BrushStrokeCommand>()
+                    .Select(command => command.m_Stroke)
+                    .FirstOrDefault(stroke => stroke.m_Seed == seed);
+            }
 
             if (foundStroke != null)
             {
@@ -634,7 +638,10 @@ namespace OpenBrush.Multiplayer
             }
             else
             {
-                Debug.LogError($"couldn't find stroke with seed: {seed}");
+                // Remote deletes are idempotent. The stroke may already have been removed or
+                // may never have been synchronized to this client.
+                Debug.LogWarning(
+                    $"[MultiplayerJoinConsistency] Ignoring delete for unavailable stroke seed {seed}, command {commandGuid}.");
             }
         }
 

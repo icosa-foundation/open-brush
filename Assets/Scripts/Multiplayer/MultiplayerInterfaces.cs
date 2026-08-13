@@ -36,6 +36,7 @@ namespace OpenBrush.Multiplayer
     {
         void Update();
         int GetPlayerCount();
+        bool IsLocalPlayerRoomOwner();
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
         GameObject GetPlayerPrefab(int playerId);

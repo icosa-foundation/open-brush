@@ -82,6 +82,8 @@ namespace OpenBrush.Multiplayer
 
             if (strokes.Count == 0) return;
 
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
             SendCurrentTargetEnvironmentCommand();
 
             const int chunkSize = 5;
@@ -109,6 +111,12 @@ namespace OpenBrush.Multiplayer
                 .DecompressAndDeserializeContributorMemoryListAsync(largeData);
 
             Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
+
+            if (strokes.Count > 0)
+            {
+                MultiplayerManager.m_Instance.ApplySketchTimeSync(
+                    strokes.Max(stroke => stroke.TailTimestampMs));
+            }
 
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
@@ -173,15 +181,8 @@ namespace OpenBrush.Multiplayer
 
             // History keeps the owner's timestamp domain. Advance the late joiner's sketch
             // clock before sending it so subsequently rebased live strokes cannot precede it.
-            uint sketchTimeMs = (uint)Math.Min(
-                uint.MaxValue, Math.Max(0, App.Instance.CurrentSketchTime * 1000.0));
-            if (SketchMemoryScript.m_Instance.GetMemoryList.Count > 0)
-            {
-                sketchTimeMs = Math.Max(
-                    sketchTimeMs,
-                    SketchMemoryScript.m_Instance.GetMemoryList.Max(stroke => stroke.TailTimestampMs));
-            }
-            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(sketchTimeMs, id);
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
 
             foreach (BaseCommand command in commands)
             {
@@ -190,6 +191,20 @@ namespace OpenBrush.Multiplayer
 
             _isSendingCommandHistory = false;
 
+        }
+
+        private static uint GetCurrentSketchTimeMs()
+        {
+            uint sketchTimeMs = (uint)Math.Min(
+                uint.MaxValue, Math.Max(0, App.Instance.CurrentSketchTime * 1000.0));
+            if (SketchMemoryScript.m_Instance.GetMemoryList.Count > 0)
+            {
+                sketchTimeMs = Math.Max(
+                    sketchTimeMs,
+                    SketchMemoryScript.m_Instance.GetMemoryList.Max(
+                        stroke => stroke.TailTimestampMs));
+            }
+            return sketchTimeMs;
         }
 
         private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
