@@ -720,6 +720,8 @@ namespace OpenBrush.Multiplayer
             currentRoomData.silentRoom = roomData.m_IsSilentRoom;
             currentRoomData.voiceDisabled = roomData.m_IsVoiceDisabled;
             currentRoomData.viewOnlyRoom = roomData.m_IsViewOnlyRoom;
+            currentRoomData.liveStrokeStreaming = roomData.m_LiveStrokeStreaming;
+            currentRoomData.liveStrokeProtocolVersion = roomData.m_LiveStrokeProtocolVersion;
             
             MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings, currentRoomData);
         }
@@ -1078,6 +1080,23 @@ namespace OpenBrush.Multiplayer
         public static void RPC_SetUserViewOnlyMode(NetworkRunner runner, bool value, [RpcTarget] PlayerRef targetPlayer)
         {
             SetViewOnly(value);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_LiveStrokeCapability(
+            NetworkRunner runner, int protocolVersion, RpcInfo info = default)
+        {
+            MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
+                info.Source.RawEncoded, protocolVersion);
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_LiveStrokeRoomState(
+            NetworkRunner runner, bool enabled, int protocolVersion,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            MultiplayerManager.m_Instance?.ApplyLiveStrokeRoomState(
+                enabled, protocolVersion, info.Source.RawEncoded);
         }
 
         [Rpc(InvokeLocal = false)]

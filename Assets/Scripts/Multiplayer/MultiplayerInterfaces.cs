@@ -56,6 +56,9 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1);
+        Task<bool> RpcAdvertiseLiveStrokeSupport(int protocolVersion);
+        Task<bool> RpcSetLiveStrokeRoomState(
+            bool enabled, int protocolVersion, int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);
 

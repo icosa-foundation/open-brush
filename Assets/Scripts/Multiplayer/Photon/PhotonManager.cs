@@ -483,6 +483,39 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public async Task<bool> RpcAdvertiseLiveStrokeSupport(int protocolVersion)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_LiveStrokeCapability(m_Runner, protocolVersion);
+            });
+            await Task.Yield();
+            return true;
+        }
+
+        public async Task<bool> RpcSetLiveStrokeRoomState(
+            bool enabled, int protocolVersion, int playerId)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning || playerId < 0)
+            {
+                return false;
+            }
+
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_LiveStrokeRoomState(
+                    m_Runner, enabled, protocolVersion, targetPlayer);
+            });
+            await Task.Yield();
+            return true;
+        }
+
         public async Task<bool> RpcKickPlayerOut(int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);

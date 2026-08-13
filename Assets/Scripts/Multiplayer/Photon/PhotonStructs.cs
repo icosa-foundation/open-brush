@@ -61,6 +61,8 @@ namespace OpenBrush.Multiplayer
         public bool m_IsSilentRoom;
         public bool m_IsVoiceDisabled;
         public bool m_IsViewOnlyRoom;
+        public bool m_LiveStrokeStreaming;
+        public int m_LiveStrokeProtocolVersion;
 
         public NetworkRoomSettings(RoomCreateData data)
         {
@@ -68,6 +70,8 @@ namespace OpenBrush.Multiplayer
             m_IsSilentRoom = data.silentRoom;
             m_IsVoiceDisabled = data.voiceDisabled;
             m_IsViewOnlyRoom = data.viewOnlyRoom;
+            m_LiveStrokeStreaming = data.liveStrokeStreaming;
+            m_LiveStrokeProtocolVersion = data.liveStrokeProtocolVersion;
         }
     }
 

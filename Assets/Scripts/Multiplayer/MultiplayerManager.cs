@@ -68,6 +68,13 @@ namespace OpenBrush.Multiplayer
         private double? m_NetworkOffsetTimestamp = null;
         private readonly Dictionary<Guid, CanvasScript> m_ContributorLayers =
             new Dictionary<Guid, CanvasScript>();
+        private readonly Dictionary<int, int> m_LiveStrokeProtocolVersions =
+            new Dictionary<int, int>();
+
+        public const int LiveStrokeProtocolVersion = 1;
+        public bool IsLiveStrokeStreamingEnabled { get; private set; }
+        public bool IsLiveStrokeRoomStateReady { get; private set; }
+        public event Action<bool> LiveStrokeStreamingUpdated;
 
         public Guid LocalContributorId { get; private set; }
 
@@ -286,8 +293,25 @@ namespace OpenBrush.Multiplayer
             }
             else State = ConnectionState.IN_ROOM;
 
-            //asing the room name to the current room name
             CurrentRoomData = RoomData;
+            if (successData)
+            {
+                if (isUserRoomOwner)
+                {
+                    ApplyLiveStrokeRoomStateLocally(
+                        RoomData.liveStrokeStreaming,
+                        RoomData.liveStrokeStreaming
+                            ? LiveStrokeProtocolVersion
+                            : 0);
+                }
+                else
+                {
+                    IsLiveStrokeStreamingEnabled = false;
+                    IsLiveStrokeRoomStateReady = false;
+                }
+                await m_Manager.RpcAdvertiseLiveStrokeSupport(
+                    LiveStrokeProtocolVersion);
+            }
 
             return successData & successVoice;
         }
@@ -374,6 +398,9 @@ namespace OpenBrush.Multiplayer
 
             CurrentRoomData = roomData;
             ApplyRoomVoiceEnabled(!roomData.voiceDisabled);
+            ApplyLiveStrokeRoomStateLocally(
+                roomData.liveStrokeStreaming,
+                roomData.liveStrokeProtocolVersion);
 
             foreach (var p in playerSettings)
             {
@@ -556,6 +583,92 @@ namespace OpenBrush.Multiplayer
             if (CurrentRoomData.viewOnlyRoom == true) SetUserViewOnlyMode(true, newRemotePlayer.PlayerId);
             _ = m_Manager.RpcSetRoomVoiceEnabled(
                 !CurrentRoomData.voiceDisabled, newRemotePlayer.PlayerId);
+            if (m_LiveStrokeProtocolVersions.ContainsKey(newRemotePlayer.PlayerId))
+            {
+                _ = SendLiveStrokeRoomStateToPlayer(newRemotePlayer.PlayerId);
+            }
+        }
+
+        public void ReceiveLiveStrokeCapability(int playerId, int protocolVersion)
+        {
+            if (playerId == LocalPlayerId || protocolVersion <= 0)
+            {
+                return;
+            }
+
+            m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
+            if (isUserRoomOwner)
+            {
+                _ = SendLiveStrokeRoomStateToPlayer(playerId);
+            }
+        }
+
+        public bool IsPlayerLiveStrokeCompatible(int playerId)
+        {
+            return m_LiveStrokeProtocolVersions.TryGetValue(
+                playerId, out int version) &&
+                version >= LiveStrokeProtocolVersion;
+        }
+
+        public IReadOnlyList<int> GetLiveStrokeCompatiblePlayerIds()
+        {
+            return m_RemotePlayers.List
+                .Where(player => IsPlayerLiveStrokeCompatible(player.PlayerId))
+                .Select(player => player.PlayerId)
+                .ToList();
+        }
+
+        public async Task<bool> SetLiveStrokeStreamingEnabled(bool enabled)
+        {
+            if (!isUserRoomOwner || State != ConnectionState.IN_ROOM || m_Manager == null)
+            {
+                return false;
+            }
+
+            int protocolVersion = enabled ? LiveStrokeProtocolVersion : 0;
+            ApplyLiveStrokeRoomStateLocally(enabled, protocolVersion);
+
+            bool success = true;
+            foreach (int playerId in GetLiveStrokeCompatiblePlayerIds())
+            {
+                success &= await m_Manager.RpcSetLiveStrokeRoomState(
+                    enabled, protocolVersion, playerId);
+            }
+            return success;
+        }
+
+        public void ApplyLiveStrokeRoomState(
+            bool enabled, int protocolVersion, int sourcePlayerId)
+        {
+            if (!IsPlayerRoomOwner(sourcePlayerId))
+            {
+                Debug.LogWarning(
+                    $"[LiveStrokeStreaming] Rejected room state from non-owner player {sourcePlayerId}.");
+                return;
+            }
+
+            ApplyLiveStrokeRoomStateLocally(enabled, protocolVersion);
+        }
+
+        private void ApplyLiveStrokeRoomStateLocally(bool enabled, int protocolVersion)
+        {
+            bool supported = !enabled || protocolVersion == LiveStrokeProtocolVersion;
+            IsLiveStrokeStreamingEnabled = enabled && supported;
+            IsLiveStrokeRoomStateReady = true;
+            CurrentRoomData.liveStrokeStreaming = enabled;
+            CurrentRoomData.liveStrokeProtocolVersion = protocolVersion;
+            LiveStrokeStreamingUpdated?.Invoke(IsLiveStrokeStreamingEnabled);
+            Debug.Log(
+                $"[LiveStrokeStreaming] Room state applied: enabled={enabled}, " +
+                $"protocol={protocolVersion}, supported={supported}.");
+        }
+
+        private Task<bool> SendLiveStrokeRoomStateToPlayer(int playerId)
+        {
+            return m_Manager.RpcSetLiveStrokeRoomState(
+                CurrentRoomData.liveStrokeStreaming,
+                CurrentRoomData.liveStrokeProtocolVersion,
+                playerId);
         }
 
         public void SetRoomSilent(bool isSilent)
@@ -674,6 +787,7 @@ namespace OpenBrush.Multiplayer
 
         void OnPlayerLeft(int id)
         {
+            m_LiveStrokeProtocolVersions.Remove(id);
             if (m_LocalPlayer.PlayerId == id)
             {
                 m_LocalPlayer = null;
@@ -849,6 +963,9 @@ namespace OpenBrush.Multiplayer
         {
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
+            m_LiveStrokeProtocolVersions.Clear();
+            IsLiveStrokeStreamingEnabled = false;
+            IsLiveStrokeRoomStateReady = false;
             LastError = null;
             State = ConnectionState.DISCONNECTED;
             StateUpdated?.Invoke(State);

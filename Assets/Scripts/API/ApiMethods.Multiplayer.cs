@@ -5,7 +5,9 @@ namespace TiltBrush
     public static partial class ApiMethods
     {
         [ApiEndpoint("multiplayer.join", "Joins a multiplayer room, creating it if it does not exist")]
-        public static void MultiplayerJoin(string nickname, string roomName, bool isPrivate, int maxPlayers, bool silentRoom, bool viewOnlyRoom)
+        public static void MultiplayerJoin(
+            string nickname, string roomName, bool isPrivate, int maxPlayers,
+            bool silentRoom, bool viewOnlyRoom, bool liveStrokeStreaming = false)
         {
             ConnectionUserInfo userInfo = new ConnectionUserInfo
             {
@@ -21,7 +23,11 @@ namespace TiltBrush
                 @private = isPrivate,
                 maxPlayers = maxPlayers,
                 silentRoom = silentRoom,
-                viewOnlyRoom = viewOnlyRoom
+                viewOnlyRoom = viewOnlyRoom,
+                liveStrokeStreaming = liveStrokeStreaming,
+                liveStrokeProtocolVersion = liveStrokeStreaming
+                    ? MultiplayerManager.LiveStrokeProtocolVersion
+                    : 0
             };
             var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
             AsyncHelpers.RunSync(() => joinRoomTask);
@@ -78,6 +84,22 @@ namespace TiltBrush
             {
                 Debug.LogError(
                     $"[MultiplayerVoiceAll] Failed to set room voice enabled state to {enabled}. Only the room owner can change it.");
+            }
+        }
+
+        [ApiEndpoint(
+            "multiplayer.livestrokes",
+            "Enables or disables live multiplayer stroke previews for the room. Only the room owner can change this setting. Completed-stroke delivery remains the fallback.",
+            "true")]
+        public static void MultiplayerLiveStrokes(bool enabled)
+        {
+            var settingTask = MultiplayerManager.m_Instance
+                .SetLiveStrokeStreamingEnabled(enabled);
+            AsyncHelpers.RunSync(() => settingTask);
+            if (!settingTask.Result)
+            {
+                Debug.LogError(
+                    $"[LiveStrokeStreaming] Failed to set room live stroke state to {enabled}. Only the room owner can change it.");
             }
         }
 
