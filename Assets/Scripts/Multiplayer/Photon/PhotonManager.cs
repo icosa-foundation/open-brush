@@ -330,6 +330,21 @@ namespace OpenBrush.Multiplayer
             return ProcessCommand(command, playerRef, rebaseTimestamps: false);
         }
 
+        public bool RpcSyncSketchTimeToPlayer(uint sketchTimeMs, int playerId)
+        {
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            {
+                PhotonRPC.RPC_SyncSketchTime(m_Runner, sketchTimeMs, targetPlayer);
+            });
+            return true;
+        }
+
         public async Task<bool> CheckCommandReception(BaseCommand command, int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);

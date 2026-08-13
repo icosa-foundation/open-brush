@@ -171,6 +171,18 @@ namespace OpenBrush.Multiplayer
 
             SendCurrentTargetEnvironmentCommand();
 
+            // History keeps the owner's timestamp domain. Advance the late joiner's sketch
+            // clock before sending it so subsequently rebased live strokes cannot precede it.
+            uint sketchTimeMs = (uint)Math.Min(
+                uint.MaxValue, Math.Max(0, App.Instance.CurrentSketchTime * 1000.0));
+            if (SketchMemoryScript.m_Instance.GetMemoryList.Count > 0)
+            {
+                sketchTimeMs = Math.Max(
+                    sketchTimeMs,
+                    SketchMemoryScript.m_Instance.GetMemoryList.Max(stroke => stroke.TailTimestampMs));
+            }
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(sketchTimeMs, id);
+
             foreach (BaseCommand command in commands)
             {
                 MultiplayerManager.m_Instance.SendCommandToPlayer(command, id);

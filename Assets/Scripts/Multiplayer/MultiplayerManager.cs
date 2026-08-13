@@ -772,6 +772,25 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        public bool SyncSketchTimeToPlayer(uint sketchTimeMs, int playerId)
+        {
+            return State == ConnectionState.IN_ROOM &&
+                m_Manager != null &&
+                m_Manager.RpcSyncSketchTimeToPlayer(sketchTimeMs, playerId);
+        }
+
+        internal static double CalculateSynchronizedSketchTime(
+            double localSketchTime, uint sourceSketchTimeMs)
+        {
+            return Math.Max(localSketchTime, sourceSketchTimeMs / 1000.0);
+        }
+
+        public void ApplySketchTimeSync(uint sourceSketchTimeMs)
+        {
+            App.Instance.CurrentSketchTime = CalculateSynchronizedSketchTime(
+                App.Instance.CurrentSketchTime, sourceSketchTimeMs);
+        }
+
         public async Task<bool> CheckCommandReception(BaseCommand command, int id)
         {
             if (State == ConnectionState.IN_ROOM)
