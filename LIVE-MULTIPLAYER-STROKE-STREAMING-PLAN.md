@@ -221,22 +221,23 @@ The NVP turns the proof of concept into an optional feature that fails safely ba
 
 ### Capability fallback
 
-1. Advertise live-preview protocol support when joining a room.
+1. Advertise the live-preview protocol version and the client's effective incoming-pointer capacity when joining a room.
 2. Publish the required preview protocol version with the authoritative room setting.
 3. Allow an incompatible client to join a streaming-enabled room and use completed-stroke delivery.
-4. Stream between compatible participants according to the owner-selected room setting.
+4. Stream between compatible participants according to the owner-selected room setting, routing a logical pointer group only to recipients that advertised enough capacity for the entire group.
 5. Ensure compatible clients continue to receive completed strokes sent by incompatible participants.
 6. Ensure incompatible clients receive authoritative completed strokes for drawing actions that compatible clients preview live. The live preview remains optional presentation data; the completed protocol remains the compatibility path.
 7. Do not expose capability fallback as a local setting. A compatible client must obey the room mode.
 8. Keep all existing legacy and current completed-stroke receive paths unchanged.
-9. Treat broader mixed-version protocol negotiation beyond this feature as a separate concern.
+9. If a receiver cannot create or retain any preview in a logical pointer group, have it decline that stream immediately. The sender then cancels the recipient's other previews in the group and sends the normal completed command tree instead.
+10. Treat broader mixed-version protocol negotiation beyond this feature as a separate concern.
 
 ### Simple resource-pressure fallback
 
 Use a small number of understandable limits:
 
 1. Maximum simultaneous outgoing preview streams, derived from the effective `MaxStreamedPointers` value.
-2. Maximum simultaneous incoming preview streams. This must allow concurrent streams from multiple remote painters and must not simply reuse the per-drawing-action pointer limit.
+2. Maximum simultaneous incoming preview streams per remote painter, using the receiver's effective `MaxStreamedPointers` value. Separate painters have separate allowances so one painter cannot consume every receiver preview slot.
 3. Maximum preview RPC queue age or depth.
 
 Choose the mode before the stroke starts whenever possible:
@@ -246,9 +247,10 @@ Choose the mode before the stroke starts whenever possible:
 
 If pressure appears during a stream:
 
-1. Send a pause or cancel indication for the live preview.
-2. Stop live updates.
-3. At completion, send the unsent remainder plus the completion message, or use the existing complete-stroke path if the preview was discarded.
+1. The receiver declines the affected stream and discards its preview.
+2. The sender stops live updates to that recipient for the logical pointer group.
+3. At completion, the sender cancels any remaining previews from that group for the recipient and sends the existing authoritative completed command tree.
+4. Retain completion-time repair for the race where completion crosses the receiver's decline response in flight.
 
 Do not attempt complex frame-time, memory, or bandwidth prediction in the NVP.
 
@@ -326,6 +328,7 @@ This is not required to prove incremental rendering, but it is required for comp
 16. Late joiners retain contributor grouping; after the scene-sync clock extension, they also retain wall-clock playback accuracy.
 17. Remote previews update incrementally without recreating their brush object or replaying previously applied confirmed points.
 18. The effective maximum streamed-pointer count defaults to `16` on PC and `4` on mobile and can be overridden with a positive `Multiplayer.MaxStreamedPointers` value in `Open Brush.cfg`.
+19. A recipient either finalizes every streamed pointer in a logical symmetry group or receives the normal completed command tree; it never retains a partial streamed group.
 
 ---
 

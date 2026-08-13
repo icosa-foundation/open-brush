@@ -70,6 +70,8 @@ namespace OpenBrush.Multiplayer
             new Dictionary<Guid, CanvasScript>();
         private readonly Dictionary<int, int> m_LiveStrokeProtocolVersions =
             new Dictionary<int, int>();
+        private readonly Dictionary<int, int> m_LiveStrokePointerCapacities =
+            new Dictionary<int, int>();
 
         private sealed class OutgoingLiveStroke
         {
@@ -93,6 +95,8 @@ namespace OpenBrush.Multiplayer
             new Dictionary<PointerScript, OutgoingLiveStroke>();
         private readonly Dictionary<int, OutgoingLiveStroke> m_OutgoingLiveStrokesBySeed =
             new Dictionary<int, OutgoingLiveStroke>();
+        private readonly Dictionary<Guid, OutgoingLiveStroke> m_OutgoingLiveStrokesById =
+            new Dictionary<Guid, OutgoingLiveStroke>();
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
 
@@ -100,7 +104,7 @@ namespace OpenBrush.Multiplayer
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
 
-        public const int LiveStrokeProtocolVersion = 1;
+        public const int LiveStrokeProtocolVersion = 2;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
         public int MaxStreamedPointers => App.UserConfig.Multiplayer.MaxStreamedPointers;
@@ -340,7 +344,7 @@ namespace OpenBrush.Multiplayer
                     IsLiveStrokeRoomStateReady = false;
                 }
                 await m_Manager.RpcAdvertiseLiveStrokeSupport(
-                    LiveStrokeProtocolVersion);
+                    LiveStrokeProtocolVersion, MaxStreamedPointers);
             }
 
             return successData & successVoice;
@@ -621,14 +625,21 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public void ReceiveLiveStrokeCapability(int playerId, int protocolVersion)
+        public void ReceiveLiveStrokeCapability(
+            int playerId, int protocolVersion, int maxStreamedPointers)
         {
-            if (playerId == LocalPlayerId || protocolVersion <= 0)
+            if (playerId == LocalPlayerId ||
+                protocolVersion <= 0 ||
+                maxStreamedPointers <= 0)
             {
                 return;
             }
 
             m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
+            m_LiveStrokePointerCapacities[playerId] = maxStreamedPointers;
+            Debug.Log(
+                $"[LiveStrokeCapacityV2] Player {playerId} advertised protocol " +
+                $"{protocolVersion} with capacity {maxStreamedPointers}.");
             if (isUserRoomOwner)
             {
                 _ = SendLiveStrokeRoomStateToPlayer(playerId);
@@ -648,6 +659,14 @@ namespace OpenBrush.Multiplayer
                 .Where(player => IsPlayerLiveStrokeCompatible(player.PlayerId))
                 .Select(player => player.PlayerId)
                 .ToList();
+        }
+
+        private bool CanPlayerReceiveLiveStroke(int playerId, int pointerCount)
+        {
+            return IsPlayerLiveStrokeCompatible(playerId) &&
+                m_LiveStrokePointerCapacities.TryGetValue(
+                    playerId, out int capacity) &&
+                capacity >= pointerCount;
         }
 
         public async Task<bool> SetLiveStrokeStreamingEnabled(bool enabled)
@@ -824,7 +843,9 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
+            int pointerCount = PointerManager.m_Instance.ActiveUserPointerCount;
             var recipients = GetLiveStrokeCompatiblePlayerIds()
+                .Where(playerId => CanPlayerReceiveLiveStroke(playerId, pointerCount))
                 .Where(IsRemotePlayerStillConnected)
                 .ToHashSet();
             if (recipients.Count == 0 ||
@@ -850,6 +871,7 @@ namespace OpenBrush.Multiplayer
             };
             m_OutgoingLiveStrokes[pointer] = stream;
             m_OutgoingLiveStrokesBySeed[stream.Seed] = stream;
+            m_OutgoingLiveStrokesById[stream.StreamId] = stream;
         }
 
         public void NotifyLocalLiveStrokeChanged(PointerScript pointer)
@@ -1045,7 +1067,8 @@ namespace OpenBrush.Multiplayer
 
             foreach (var item in streams)
             {
-                CompleteOutgoingLiveStroke(item.Command, item.Stream);
+                CompleteOutgoingLiveStroke(
+                    item.Command, item.Stream, fullyStreamedRecipients);
             }
 
             foreach (RemotePlayer player in m_RemotePlayers.List)
@@ -1059,9 +1082,17 @@ namespace OpenBrush.Multiplayer
         }
 
         private void CompleteOutgoingLiveStroke(
-            BrushStrokeCommand command, OutgoingLiveStroke stream)
+            BrushStrokeCommand command, OutgoingLiveStroke stream,
+            HashSet<int> fullyStreamedRecipients)
         {
             Stroke stroke = command.m_Stroke;
+            foreach (int playerId in stream.Recipients
+                .Where(IsRemotePlayerStillConnected)
+                .Where(playerId => !fullyStreamedRecipients.Contains(playerId)))
+            {
+                m_Manager.RpcLiveStrokeCancel(stream.StreamId, playerId);
+            }
+
             int nextIndex = stream.SentConfirmedPointCount;
             while (nextIndex < stroke.m_ControlPoints.Length)
             {
@@ -1069,7 +1100,8 @@ namespace OpenBrush.Multiplayer
                     NetworkingConstants.MaxControlPointsPerChunk,
                     stroke.m_ControlPoints.Length - nextIndex);
                 var points = stroke.m_ControlPoints.Skip(nextIndex).Take(count).ToArray();
-                foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+                foreach (int playerId in fullyStreamedRecipients
+                    .Where(IsRemotePlayerStillConnected))
                 {
                     m_Manager.RpcLiveStrokeUpdate(
                         stream.StreamId, nextIndex, points,
@@ -1079,7 +1111,8 @@ namespace OpenBrush.Multiplayer
             }
 
             TagStrokeWithLocalContributor(stroke);
-            foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+            foreach (int playerId in fullyStreamedRecipients
+                .Where(IsRemotePlayerStillConnected))
             {
                 m_Manager.RpcLiveStrokeComplete(
                     stream.StreamId, stroke.m_ControlPoints.Length,
@@ -1136,10 +1169,31 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        public void DeclineLiveStroke(Guid streamId, int sourcePlayerId)
+        {
+            if (State == ConnectionState.IN_ROOM && m_Manager != null)
+            {
+                m_Manager.RpcLiveStrokeDeclined(streamId, sourcePlayerId);
+            }
+        }
+
+        public void ReceiveLiveStrokeDeclined(Guid streamId, int playerId)
+        {
+            if (m_OutgoingLiveStrokesById.TryGetValue(
+                    streamId, out OutgoingLiveStroke stream) &&
+                stream.Recipients.Remove(playerId))
+            {
+                Debug.LogWarning(
+                    $"[LiveStrokeCapacityV2] Player {playerId} declined stream " +
+                    $"{streamId}; the completed stroke group will be sent instead.");
+            }
+        }
+
         private void RemoveOutgoingLiveStroke(OutgoingLiveStroke stream)
         {
             m_OutgoingLiveStrokes.Remove(stream.Pointer);
             m_OutgoingLiveStrokesBySeed.Remove(stream.Seed);
+            m_OutgoingLiveStrokesById.Remove(stream.StreamId);
         }
 
         private void ExpireRetainedLiveStrokeCommands()
@@ -1169,6 +1223,7 @@ namespace OpenBrush.Multiplayer
         void OnPlayerLeft(int id)
         {
             m_LiveStrokeProtocolVersions.Remove(id);
+            m_LiveStrokePointerCapacities.Remove(id);
             m_Manager?.RemoveLiveStrokePreviewsForPlayer(id);
             foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values)
             {
@@ -1357,10 +1412,12 @@ namespace OpenBrush.Multiplayer
             }
             m_OutgoingLiveStrokes.Clear();
             m_OutgoingLiveStrokesBySeed.Clear();
+            m_OutgoingLiveStrokesById.Clear();
             m_RetainedLiveStrokeCommands.Clear();
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeProtocolVersions.Clear();
+            m_LiveStrokePointerCapacities.Clear();
             IsLiveStrokeStreamingEnabled = false;
             IsLiveStrokeRoomStateReady = false;
             LastError = null;

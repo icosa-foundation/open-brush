@@ -483,7 +483,8 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcAdvertiseLiveStrokeSupport(int protocolVersion)
+        public async Task<bool> RpcAdvertiseLiveStrokeSupport(
+            int protocolVersion, int maxStreamedPointers)
         {
             if (m_Runner == null || !m_Runner.IsRunning)
             {
@@ -492,7 +493,8 @@ namespace OpenBrush.Multiplayer
 
             PhotonRPCBatcher.EnqueueRPC(() =>
             {
-                PhotonRPC.RPC_LiveStrokeCapability(m_Runner, protocolVersion);
+                PhotonRPC.RPC_LiveStrokeCapability(
+                    m_Runner, protocolVersion, maxStreamedPointers);
             });
             await Task.Yield();
             return true;
@@ -580,6 +582,17 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
             PhotonRPC.RPC_LiveStrokeCancel(
+                m_Runner, streamId, PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcLiveStrokeDeclined(Guid streamId, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+            PhotonRPC.RPC_LiveStrokeDeclined(
                 m_Runner, streamId, PlayerRef.FromEncoded(playerId));
             return true;
         }

@@ -57,7 +57,6 @@ namespace OpenBrush.Multiplayer
             public float ExpiresAt;
         }
         private static Dictionary<Guid, FailedLiveStrokePreview> m_FailedLiveStrokes;
-        private const int k_MaxIncomingLiveStrokes = 8;
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeTimeoutSeconds = 10f;
         private const float k_ClosedLiveStrokeRetentionSeconds = 30f;
@@ -595,14 +594,24 @@ namespace OpenBrush.Multiplayer
             string contributorNickname, long sourceStartUtcMs,
             uint sourceStartSketchTimeMs, int sourcePlayerId)
         {
-            if (!CanAcceptLiveStrokeFrom(sourcePlayerId) ||
-                streamId == Guid.Empty ||
+            if (!CanAcceptLiveStrokeFrom(sourcePlayerId) || streamId == Guid.Empty ||
                 m_IncomingLiveStrokes.ContainsKey(streamId) ||
                 m_ClosedLiveStrokeIds.ContainsKey(streamId) ||
-                m_FailedLiveStrokes.ContainsKey(streamId) ||
-                m_IncomingLiveStrokes.Count >= k_MaxIncomingLiveStrokes ||
+                m_FailedLiveStrokes.ContainsKey(streamId))
+            {
+                return;
+            }
+
+            int sourcePreviewCount = m_IncomingLiveStrokes.Values.Count(
+                preview => preview.SourcePlayerId == sourcePlayerId);
+            int capacity = MultiplayerManager.m_Instance.MaxStreamedPointers;
+            if (sourcePreviewCount >= capacity ||
                 strokeData.m_ControlPointsCapacity != 1)
             {
+                TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
+                Debug.LogWarning(
+                    $"[LiveStrokeCapacityV2] Declined stream {streamId} from player " +
+                    $"{sourcePlayerId}; active={sourcePreviewCount}, capacity={capacity}.");
                 return;
             }
 
@@ -610,6 +619,7 @@ namespace OpenBrush.Multiplayer
             if (stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length != 1 ||
                 BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid) == null)
             {
+                TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 return;
             }
 
@@ -635,9 +645,24 @@ namespace OpenBrush.Multiplayer
 
             if (!UpdateLiveStrokePreview(preview))
             {
+                DestroyLiveStrokePreview(preview);
+                TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 return;
             }
             m_IncomingLiveStrokes[streamId] = preview;
+        }
+
+        private static void TrackFailedLiveStrokeStart(
+            Guid streamId, int sourcePlayerId)
+        {
+            m_FailedLiveStrokes[streamId] = new FailedLiveStrokePreview
+            {
+                SourcePlayerId = sourcePlayerId,
+                ExpiresAt = Time.realtimeSinceStartup +
+                    k_ClosedLiveStrokeRetentionSeconds,
+            };
+            MultiplayerManager.m_Instance?.DeclineLiveStroke(
+                streamId, sourcePlayerId);
         }
 
         private static void LiveStrokeUpdate(
@@ -662,7 +687,9 @@ namespace OpenBrush.Multiplayer
                 preview.ConfirmedPoints.Count + confirmedControlPoints.Length >
                     k_MaxLiveStrokeControlPoints)
             {
-                FailLiveStrokePreview(preview, requestRepair: false, Guid.Empty);
+                FailLiveStrokePreview(
+                    preview, requestRepair: false, Guid.Empty,
+                    notifySender: true);
                 return;
             }
 
@@ -681,7 +708,9 @@ namespace OpenBrush.Multiplayer
 
             if (!UpdateLiveStrokePreview(preview))
             {
-                FailLiveStrokePreview(preview, requestRepair: false, Guid.Empty);
+                FailLiveStrokePreview(
+                    preview, requestRepair: false, Guid.Empty,
+                    notifySender: true);
             }
         }
 
@@ -825,7 +854,8 @@ namespace OpenBrush.Multiplayer
         }
 
         private static void FailLiveStrokePreview(
-            IncomingLiveStrokePreview preview, bool requestRepair, Guid commandGuid)
+            IncomingLiveStrokePreview preview, bool requestRepair, Guid commandGuid,
+            bool notifySender = false)
         {
             DestroyLiveStrokePreview(preview);
             m_IncomingLiveStrokes.Remove(preview.StreamId);
@@ -844,6 +874,11 @@ namespace OpenBrush.Multiplayer
                     ExpiresAt = Time.realtimeSinceStartup +
                         k_ClosedLiveStrokeRetentionSeconds,
                 };
+                if (notifySender)
+                {
+                    MultiplayerManager.m_Instance?.DeclineLiveStroke(
+                        preview.StreamId, preview.SourcePlayerId);
+                }
             }
         }
 
@@ -865,7 +900,9 @@ namespace OpenBrush.Multiplayer
                 .Where(item => now - item.LastUpdateTime >= k_LiveStrokeTimeoutSeconds)
                 .ToList())
             {
-                FailLiveStrokePreview(preview, requestRepair: false, Guid.Empty);
+                FailLiveStrokePreview(
+                    preview, requestRepair: false, Guid.Empty,
+                    notifySender: true);
             }
             foreach (Guid streamId in m_ClosedLiveStrokeIds
                 .Where(pair => pair.Value <= now)
@@ -1480,10 +1517,11 @@ namespace OpenBrush.Multiplayer
 
         [Rpc(InvokeLocal = false)]
         public static void RPC_LiveStrokeCapability(
-            NetworkRunner runner, int protocolVersion, RpcInfo info = default)
+            NetworkRunner runner, int protocolVersion, int maxStreamedPointers,
+            RpcInfo info = default)
         {
             MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
-                info.Source.RawEncoded, protocolVersion);
+                info.Source.RawEncoded, protocolVersion, maxStreamedPointers);
         }
 
         [Rpc(InvokeLocal = false)]
@@ -1548,6 +1586,15 @@ namespace OpenBrush.Multiplayer
             m_FailedLiveStrokes.Remove(streamId);
             m_ClosedLiveStrokeIds[streamId] = Time.realtimeSinceStartup +
                 k_ClosedLiveStrokeRetentionSeconds;
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_LiveStrokeDeclined(
+            NetworkRunner runner, Guid streamId,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            MultiplayerManager.m_Instance?.ReceiveLiveStrokeDeclined(
+                streamId, info.Source.RawEncoded);
         }
 
         [Rpc(InvokeLocal = false)]

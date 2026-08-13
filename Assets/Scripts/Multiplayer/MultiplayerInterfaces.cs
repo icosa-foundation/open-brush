@@ -56,7 +56,8 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1);
-        Task<bool> RpcAdvertiseLiveStrokeSupport(int protocolVersion);
+        Task<bool> RpcAdvertiseLiveStrokeSupport(
+            int protocolVersion, int maxStreamedPointers);
         Task<bool> RpcSetLiveStrokeRoomState(
             bool enabled, int protocolVersion, int playerId);
         bool RpcLiveStrokeStart(
@@ -72,6 +73,7 @@ namespace OpenBrush.Multiplayer
             SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
             int timestamp, Guid parentGuid, int childCount, int playerId);
         bool RpcLiveStrokeCancel(Guid streamId, int playerId);
+        bool RpcLiveStrokeDeclined(Guid streamId, int playerId);
         bool RpcRequestLiveStrokeRepair(
             Guid streamId, Guid commandGuid, int playerId);
         void RemoveLiveStrokePreviewsForPlayer(int playerId);
