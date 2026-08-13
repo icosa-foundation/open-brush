@@ -516,6 +516,96 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
+        public bool RpcLiveStrokeStart(
+            Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
+            Guid contributorId, string contributorNickname, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId) || stroke == null || sourceTimeSession == null)
+            {
+                return false;
+            }
+
+            PhotonRPC.RPC_LiveStrokeStart(
+                m_Runner, streamId, new NetworkedStroke().Init(stroke),
+                contributorId, contributorNickname,
+                sourceTimeSession.StartUtcMs,
+                sourceTimeSession.StartSketchTimeMs,
+                PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcLiveStrokeUpdate(
+            Guid streamId, int firstControlPointIndex,
+            PointerManager.ControlPoint[] confirmedControlPoints,
+            bool hasProvisionalTail, PointerManager.ControlPoint provisionalTail,
+            int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+
+            var networkedPoints = confirmedControlPoints
+                .Select(point => new NetworkedControlPoint().Init(point))
+                .ToArray();
+            var networkedTail = new NetworkedControlPoint().Init(provisionalTail);
+            PhotonRPC.RPC_LiveStrokeUpdate(
+                m_Runner, streamId, firstControlPointIndex, networkedPoints,
+                hasProvisionalTail, networkedTail,
+                PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcLiveStrokeComplete(
+            Guid streamId, int finalControlPointCount,
+            SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
+            int timestamp, Guid parentGuid, int childCount, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+
+            PhotonRPC.RPC_LiveStrokeComplete(
+                m_Runner, streamId, finalControlPointCount,
+                (uint)strokeFlags, commandGuid, timestamp, parentGuid, childCount,
+                PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcLiveStrokeCancel(Guid streamId, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+            PhotonRPC.RPC_LiveStrokeCancel(
+                m_Runner, streamId, PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcRequestLiveStrokeRepair(
+            Guid streamId, Guid commandGuid, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+            PhotonRPC.RPC_LiveStrokeRepairRequest(
+                m_Runner, streamId, commandGuid, PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public void RemoveLiveStrokePreviewsForPlayer(int playerId)
+        {
+            PhotonRPC.RemoveLiveStrokePreviewsForPlayer(playerId);
+        }
+
+        private bool CanSendLiveStrokeTo(int playerId)
+        {
+            return m_Runner != null && m_Runner.IsRunning && playerId >= 0;
+        }
+
         public async Task<bool> RpcKickPlayerOut(int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);

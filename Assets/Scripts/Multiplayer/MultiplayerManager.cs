@@ -71,6 +71,37 @@ namespace OpenBrush.Multiplayer
         private readonly Dictionary<int, int> m_LiveStrokeProtocolVersions =
             new Dictionary<int, int>();
 
+        private sealed class OutgoingLiveStroke
+        {
+            public Guid StreamId;
+            public PointerScript Pointer;
+            public int Seed;
+            public StrokeTimeSessionMetadata SourceTimeSession;
+            public HashSet<int> Recipients;
+            public int SentConfirmedPointCount;
+            public float NextUpdateTime;
+            public bool StartSent;
+        }
+
+        private sealed class RetainedLiveStrokeCommand
+        {
+            public BrushStrokeCommand Command;
+            public float ExpiresAt;
+        }
+
+        private readonly Dictionary<PointerScript, OutgoingLiveStroke> m_OutgoingLiveStrokes =
+            new Dictionary<PointerScript, OutgoingLiveStroke>();
+        private readonly Dictionary<int, OutgoingLiveStroke> m_OutgoingLiveStrokesBySeed =
+            new Dictionary<int, OutgoingLiveStroke>();
+        private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
+            new Dictionary<Guid, RetainedLiveStrokeCommand>();
+
+        private const int k_MaxOutgoingLiveStrokes = 1;
+        private const int k_MaxStreamedPointers = 1;
+        private const int k_MaxLiveStrokeControlPoints = 32768;
+        private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
+        private const float k_LiveStrokeRepairRetentionSeconds = 30f;
+
         public const int LiveStrokeProtocolVersion = 1;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
@@ -478,6 +509,8 @@ namespace OpenBrush.Multiplayer
 
             m_Manager.Update();
             m_VoiceManager.Update();
+            UpdateOutgoingLiveStrokes();
+            ExpireRetainedLiveStrokeCommands();
 
             // Transmit local player data relative to scene origin
             var headRelativeToScene = App.Scene.AsScene[App.VrSdk.GetVrCamera().transform];
@@ -773,6 +806,286 @@ namespace OpenBrush.Multiplayer
             return layer;
         }
 
+        public void TryBeginLocalLiveStroke(
+            PointerScript pointer, CanvasScript canvas, ParametricStrokeCreator creator)
+        {
+            if (pointer == null || canvas == null || creator != null ||
+                State != ConnectionState.IN_ROOM ||
+                !IsLiveStrokeRoomStateReady ||
+                !IsLiveStrokeStreamingEnabled ||
+                m_Manager == null ||
+                PointerManager.m_Instance == null ||
+                !PointerManager.m_Instance.IsActiveUserPointer(pointer) ||
+                PointerManager.m_Instance.StraightEdgeModeEnabled ||
+                PointerManager.m_Instance.ActiveUserPointerCount > k_MaxStreamedPointers ||
+                m_OutgoingLiveStrokes.Count >= k_MaxOutgoingLiveStrokes ||
+                pointer.CurrentBrushScript == null)
+            {
+                return;
+            }
+
+            var recipients = GetLiveStrokeCompatiblePlayerIds()
+                .Where(IsRemotePlayerStillConnected)
+                .ToHashSet();
+            if (recipients.Count == 0 ||
+                !SketchMemoryScript.m_Instance.TryGetActiveStrokeTimeSession(
+                    out StrokeTimeSessionMetadata sourceTimeSession))
+            {
+                return;
+            }
+
+            var stream = new OutgoingLiveStroke
+            {
+                StreamId = Guid.NewGuid(),
+                Pointer = pointer,
+                Seed = pointer.CurrentBrushScript.RandomSeed,
+                SourceTimeSession = new StrokeTimeSessionMetadata
+                {
+                    StartUtcMs = sourceTimeSession.StartUtcMs,
+                    StartSketchTimeMs = sourceTimeSession.StartSketchTimeMs,
+                    EndSketchTimeMs = sourceTimeSession.EndSketchTimeMs,
+                },
+                Recipients = recipients,
+                NextUpdateTime = Time.realtimeSinceStartup,
+            };
+            m_OutgoingLiveStrokes[pointer] = stream;
+            m_OutgoingLiveStrokesBySeed[stream.Seed] = stream;
+        }
+
+        public void NotifyLocalLiveStrokeChanged(PointerScript pointer)
+        {
+            if (!m_OutgoingLiveStrokes.TryGetValue(pointer, out OutgoingLiveStroke stream) ||
+                stream.StartSent)
+            {
+                return;
+            }
+
+            List<PointerManager.ControlPoint> points = pointer.GetControlPoints();
+            if (points.Count == 0)
+            {
+                return;
+            }
+
+            var line = pointer.CurrentBrushScript;
+            if (line == null)
+            {
+                CancelLocalLiveStroke(pointer);
+                return;
+            }
+
+            var stroke = new Stroke
+            {
+                m_Type = Stroke.Type.NotCreated,
+                m_IntendedCanvas = App.Scene.MainCanvas,
+                m_BrushGuid = line.Descriptor.m_Guid,
+                m_BrushScale = line.StrokeScale,
+                m_BrushSize = line.BaseSize_PS,
+                m_Color = line.CurrentColor,
+                m_Seed = line.RandomSeed,
+                m_ControlPoints = new[] { points[0] },
+                m_ControlPointsToDrop = new[] { false },
+            };
+
+            bool sent = true;
+            foreach (int playerId in stream.Recipients)
+            {
+                sent &= m_Manager.RpcLiveStrokeStart(
+                    stream.StreamId, stroke, stream.SourceTimeSession,
+                    LocalContributorId, UserInfo.Nickname, playerId);
+            }
+            if (!sent)
+            {
+                CancelLocalLiveStroke(pointer);
+                return;
+            }
+
+            stream.StartSent = true;
+            stream.SentConfirmedPointCount = 1;
+            stream.NextUpdateTime = Time.realtimeSinceStartup +
+                k_LiveStrokeUpdateIntervalSeconds;
+        }
+
+        public void CancelLocalLiveStroke(PointerScript pointer)
+        {
+            if (!m_OutgoingLiveStrokes.TryGetValue(pointer, out OutgoingLiveStroke stream))
+            {
+                return;
+            }
+
+            if (stream.StartSent)
+            {
+                foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+                {
+                    m_Manager.RpcLiveStrokeCancel(stream.StreamId, playerId);
+                }
+            }
+            RemoveOutgoingLiveStroke(stream);
+        }
+
+        public void FinishLocalLiveStroke(PointerScript pointer)
+        {
+            // A normal completion removes the stream from OnCommandPerformed. If no matching
+            // command was produced, remove the abandoned presentation stream here.
+            CancelLocalLiveStroke(pointer);
+        }
+
+        private void UpdateOutgoingLiveStrokes()
+        {
+            if (m_OutgoingLiveStrokes.Count == 0)
+            {
+                return;
+            }
+
+            float now = Time.realtimeSinceStartup;
+            foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values.ToList())
+            {
+                if (!stream.StartSent || now < stream.NextUpdateTime)
+                {
+                    continue;
+                }
+
+                List<PointerManager.ControlPoint> points = stream.Pointer.GetControlPoints();
+                if (points.Count > k_MaxLiveStrokeControlPoints)
+                {
+                    CancelLocalLiveStroke(stream.Pointer);
+                    continue;
+                }
+
+                int confirmedCount = stream.Pointer.LastControlPointIsKeeper
+                    ? points.Count
+                    : Math.Max(0, points.Count - 1);
+                bool hasTail = !stream.Pointer.LastControlPointIsKeeper && points.Count > 0;
+                PointerManager.ControlPoint tail = hasTail ? points[points.Count - 1] : default;
+                int nextIndex = stream.SentConfirmedPointCount;
+                while (nextIndex < confirmedCount)
+                {
+                    int count = Math.Min(
+                        NetworkingConstants.MaxControlPointsPerChunk,
+                        confirmedCount - nextIndex);
+                    var confirmed = points.Skip(nextIndex).Take(count).ToArray();
+                    bool includeTail = hasTail && nextIndex + count == confirmedCount;
+                    foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+                    {
+                        m_Manager.RpcLiveStrokeUpdate(
+                            stream.StreamId, nextIndex, confirmed,
+                            includeTail, tail, playerId);
+                    }
+                    nextIndex += count;
+                }
+                if (nextIndex == stream.SentConfirmedPointCount && hasTail)
+                {
+                    foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+                    {
+                        m_Manager.RpcLiveStrokeUpdate(
+                            stream.StreamId, nextIndex,
+                            Array.Empty<PointerManager.ControlPoint>(),
+                            hasProvisionalTail: true, tail, playerId);
+                    }
+                }
+                stream.SentConfirmedPointCount = confirmedCount;
+                stream.NextUpdateTime = now + k_LiveStrokeUpdateIntervalSeconds;
+            }
+        }
+
+        private async Task<bool> TryCompleteOutgoingLiveStroke(BrushStrokeCommand command)
+        {
+            Stroke stroke = command?.m_Stroke;
+            if (stroke == null ||
+                !m_OutgoingLiveStrokesBySeed.TryGetValue(
+                    stroke.m_Seed, out OutgoingLiveStroke stream) ||
+                !stream.StartSent ||
+                stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0 ||
+                stroke.m_ControlPoints.Length > k_MaxLiveStrokeControlPoints)
+            {
+                return false;
+            }
+
+            int nextIndex = stream.SentConfirmedPointCount;
+            while (nextIndex < stroke.m_ControlPoints.Length)
+            {
+                int count = Math.Min(
+                    NetworkingConstants.MaxControlPointsPerChunk,
+                    stroke.m_ControlPoints.Length - nextIndex);
+                var points = stroke.m_ControlPoints.Skip(nextIndex).Take(count).ToArray();
+                foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+                {
+                    m_Manager.RpcLiveStrokeUpdate(
+                        stream.StreamId, nextIndex, points,
+                        hasProvisionalTail: false, default, playerId);
+                }
+                nextIndex += count;
+            }
+
+            TagStrokeWithLocalContributor(stroke);
+            foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
+            {
+                m_Manager.RpcLiveStrokeComplete(
+                    stream.StreamId, stroke.m_ControlPoints.Length,
+                    stroke.m_Flags,
+                    command.Guid, (int)command.NetworkTimestamp,
+                    command.ParentGuid, command.ChildrenCount, playerId);
+            }
+
+            var streamedRecipients = new HashSet<int>(stream.Recipients);
+            RemoveOutgoingLiveStroke(stream);
+            m_RetainedLiveStrokeCommands[command.Guid] = new RetainedLiveStrokeCommand
+            {
+                Command = command,
+                ExpiresAt = Time.realtimeSinceStartup + k_LiveStrokeRepairRetentionSeconds,
+            };
+
+            foreach (RemotePlayer player in m_RemotePlayers.List)
+            {
+                if (!streamedRecipients.Contains(player.PlayerId))
+                {
+                    await m_Manager.SendCommandToPlayer(command, player.PlayerId);
+                }
+            }
+            return true;
+        }
+
+        public void SendLiveStrokeRepair(Guid streamId, Guid commandGuid, int playerId)
+        {
+            if (!IsRemotePlayerStillConnected(playerId) ||
+                !m_RetainedLiveStrokeCommands.TryGetValue(
+                    commandGuid, out RetainedLiveStrokeCommand retained))
+            {
+                Debug.LogWarning(
+                    $"[LiveStrokeStreaming] Repair unavailable for stream {streamId}, command {commandGuid}.");
+                return;
+            }
+            SendCommandToPlayer(retained.Command, playerId);
+        }
+
+        public void RequestLiveStrokeRepair(
+            Guid streamId, Guid commandGuid, int sourcePlayerId)
+        {
+            if (State == ConnectionState.IN_ROOM && m_Manager != null)
+            {
+                m_Manager.RpcRequestLiveStrokeRepair(
+                    streamId, commandGuid, sourcePlayerId);
+            }
+        }
+
+        private void RemoveOutgoingLiveStroke(OutgoingLiveStroke stream)
+        {
+            m_OutgoingLiveStrokes.Remove(stream.Pointer);
+            m_OutgoingLiveStrokesBySeed.Remove(stream.Seed);
+        }
+
+        private void ExpireRetainedLiveStrokeCommands()
+        {
+            float now = Time.realtimeSinceStartup;
+            foreach (Guid commandGuid in m_RetainedLiveStrokeCommands
+                .Where(pair => pair.Value.ExpiresAt <= now)
+                .Select(pair => pair.Key)
+                .ToList())
+            {
+                m_RetainedLiveStrokeCommands.Remove(commandGuid);
+            }
+        }
+
         public void PlaceStrokeOnContributorLayer(Stroke stroke)
         {
             if (stroke == null || stroke.m_MultiplayerContributorId == Guid.Empty)
@@ -788,6 +1101,11 @@ namespace OpenBrush.Multiplayer
         void OnPlayerLeft(int id)
         {
             m_LiveStrokeProtocolVersions.Remove(id);
+            m_Manager?.RemoveLiveStrokePreviewsForPlayer(id);
+            foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values)
+            {
+                stream.Recipients.Remove(id);
+            }
             if (m_LocalPlayer.PlayerId == id)
             {
                 m_LocalPlayer = null;
@@ -832,6 +1150,10 @@ namespace OpenBrush.Multiplayer
                 if (command is BrushStrokeCommand brushStrokeCommand)
                 {
                     TagStrokeWithLocalContributor(brushStrokeCommand.m_Stroke);
+                    if (await TryCompleteOutgoingLiveStroke(brushStrokeCommand))
+                    {
+                        return;
+                    }
                 }
                 await m_Manager.PerformCommand(command);
             }

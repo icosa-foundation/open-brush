@@ -59,6 +59,22 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcAdvertiseLiveStrokeSupport(int protocolVersion);
         Task<bool> RpcSetLiveStrokeRoomState(
             bool enabled, int protocolVersion, int playerId);
+        bool RpcLiveStrokeStart(
+            Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
+            Guid contributorId, string contributorNickname, int playerId);
+        bool RpcLiveStrokeUpdate(
+            Guid streamId, int firstControlPointIndex,
+            PointerManager.ControlPoint[] confirmedControlPoints,
+            bool hasProvisionalTail, PointerManager.ControlPoint provisionalTail,
+            int playerId);
+        bool RpcLiveStrokeComplete(
+            Guid streamId, int finalControlPointCount,
+            SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
+            int timestamp, Guid parentGuid, int childCount, int playerId);
+        bool RpcLiveStrokeCancel(Guid streamId, int playerId);
+        bool RpcRequestLiveStrokeRepair(
+            Guid streamId, Guid commandGuid, int playerId);
+        void RemoveLiveStrokePreviewsForPlayer(int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);
 
