@@ -43,6 +43,9 @@ namespace OpenBrush.Multiplayer
             public bool HasProvisionalTail;
             public PointerManager.ControlPoint ProvisionalTail;
             public BaseBrushScript Brush;
+            public int RenderedConfirmedPointCount;
+            public bool HasRenderedProvisionalTail;
+            public PointerManager.ControlPoint RenderedProvisionalTail;
             public float LastUpdateTime;
         }
 
@@ -630,7 +633,7 @@ namespace OpenBrush.Multiplayer
                 LastUpdateTime = Time.realtimeSinceStartup,
             };
 
-            if (!RebuildLiveStrokePreview(preview))
+            if (!UpdateLiveStrokePreview(preview))
             {
                 return;
             }
@@ -676,7 +679,7 @@ namespace OpenBrush.Multiplayer
             }
             preview.LastUpdateTime = Time.realtimeSinceStartup;
 
-            if (!RebuildLiveStrokePreview(preview))
+            if (!UpdateLiveStrokePreview(preview))
             {
                 FailLiveStrokePreview(preview, requestRepair: false, Guid.Empty);
             }
@@ -741,51 +744,84 @@ namespace OpenBrush.Multiplayer
                 k_ClosedLiveStrokeRetentionSeconds;
         }
 
-        private static bool RebuildLiveStrokePreview(IncomingLiveStrokePreview preview)
+        private static bool UpdateLiveStrokePreview(IncomingLiveStrokePreview preview)
         {
-            if (preview.ConfirmedPoints.Count == 0)
+            if (preview.ConfirmedPoints.Count == 0 ||
+                preview.RenderedConfirmedPointCount > preview.ConfirmedPoints.Count)
             {
                 return false;
             }
 
-            BrushDescriptor descriptor = BrushCatalog.m_Instance.GetBrush(
-                preview.Stroke.m_BrushGuid);
-            CanvasScript canvas = preview.Stroke.m_IntendedCanvas ?? App.Scene.MainCanvas;
-            if (descriptor == null || canvas == null)
+            if (preview.Brush == null)
             {
-                return false;
+                BrushDescriptor descriptor = BrushCatalog.m_Instance.GetBrush(
+                    preview.Stroke.m_BrushGuid);
+                CanvasScript canvas = preview.Stroke.m_IntendedCanvas ?? App.Scene.MainCanvas;
+                if (descriptor == null || canvas == null)
+                {
+                    return false;
+                }
+
+                PointerManager.ControlPoint first = preview.ConfirmedPoints[0];
+                preview.Brush = BaseBrushScript.Create(
+                    canvas.transform,
+                    TrTransform.TRS(
+                        first.m_Pos, first.m_Orient, preview.Stroke.m_BrushScale),
+                    descriptor, preview.Stroke.m_Color, preview.Stroke.m_BrushSize);
+                preview.Brush.RandomSeed = preview.Stroke.m_Seed;
             }
 
-            PointerManager.ControlPoint first = preview.ConfirmedPoints[0];
-            BaseBrushScript replacement = BaseBrushScript.Create(
-                canvas.transform,
-                TrTransform.TRS(first.m_Pos, first.m_Orient, preview.Stroke.m_BrushScale),
-                descriptor, preview.Stroke.m_Color, preview.Stroke.m_BrushSize);
-            replacement.RandomSeed = preview.Stroke.m_Seed;
-            foreach (PointerManager.ControlPoint point in preview.ConfirmedPoints)
+            bool geometryChanged = false;
+            for (int i = preview.RenderedConfirmedPointCount;
+                 i < preview.ConfirmedPoints.Count; ++i)
             {
-                replacement.UpdatePosition_LS(
+                PointerManager.ControlPoint point = preview.ConfirmedPoints[i];
+                preview.Brush.UpdatePosition_LS(
                     TrTransform.TRS(
                         point.m_Pos, point.m_Orient, preview.Stroke.m_BrushScale),
                     point.m_Pressure);
+                geometryChanged = true;
             }
-            if (preview.HasProvisionalTail)
+
+            bool confirmedPointsChanged =
+                preview.RenderedConfirmedPointCount != preview.ConfirmedPoints.Count;
+            if (preview.HasProvisionalTail &&
+                (confirmedPointsChanged ||
+                 !preview.HasRenderedProvisionalTail ||
+                 !ControlPointsEqual(
+                     preview.ProvisionalTail,
+                     preview.RenderedProvisionalTail)))
             {
                 PointerManager.ControlPoint point = preview.ProvisionalTail;
-                replacement.UpdatePosition_LS(
+                preview.Brush.UpdatePosition_LS(
                     TrTransform.TRS(
                         point.m_Pos, point.m_Orient, preview.Stroke.m_BrushScale),
                     point.m_Pressure);
+                geometryChanged = true;
             }
-            replacement.ApplyChangesToVisuals();
 
-            if (preview.Brush != null)
+            if (geometryChanged)
             {
-                preview.Brush.DestroyMesh();
-                UnityEngine.Object.Destroy(preview.Brush.gameObject);
+                preview.Brush.ApplyChangesToVisuals();
             }
-            preview.Brush = replacement;
+
+            preview.RenderedConfirmedPointCount = preview.ConfirmedPoints.Count;
+            preview.HasRenderedProvisionalTail = preview.HasProvisionalTail;
+            if (preview.HasProvisionalTail)
+            {
+                preview.RenderedProvisionalTail = preview.ProvisionalTail;
+            }
             return true;
+        }
+
+        private static bool ControlPointsEqual(
+            PointerManager.ControlPoint left,
+            PointerManager.ControlPoint right)
+        {
+            return left.m_Pos.Equals(right.m_Pos) &&
+                left.m_Orient.Equals(right.m_Orient) &&
+                left.m_Pressure.Equals(right.m_Pressure) &&
+                left.m_TimestampMs == right.m_TimestampMs;
         }
 
         private static void FailLiveStrokePreview(
