@@ -19,6 +19,7 @@ MonoBehaviour:
   ReferenceImagesResizeDimension: 2147483647
   SketchSetMaxCacheSize: 1574000000
   MemoryWarningVertCount: 2147483647
+  MaxStreamedPointers: 16
   UseFileSystemWatcher: 1
   EnableAutosave: 1
   QuickLoadMaxDistancePerFrame: 40

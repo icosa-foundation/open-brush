@@ -96,8 +96,6 @@ namespace OpenBrush.Multiplayer
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
 
-        public const int MaxStreamedPointers = 4;
-        private const int k_MaxOutgoingLiveStrokes = MaxStreamedPointers;
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
@@ -105,6 +103,7 @@ namespace OpenBrush.Multiplayer
         public const int LiveStrokeProtocolVersion = 1;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
+        public int MaxStreamedPointers => App.UserConfig.Multiplayer.MaxStreamedPointers;
         public event Action<bool> LiveStrokeStreamingUpdated;
 
         public Guid LocalContributorId { get; private set; }
@@ -818,7 +817,7 @@ namespace OpenBrush.Multiplayer
                 !PointerManager.m_Instance.IsActiveUserPointer(pointer) ||
                 PointerManager.m_Instance.StraightEdgeModeEnabled ||
                 PointerManager.m_Instance.ActiveUserPointerCount > MaxStreamedPointers ||
-                m_OutgoingLiveStrokes.Count >= k_MaxOutgoingLiveStrokes ||
+                m_OutgoingLiveStrokes.Count >= MaxStreamedPointers ||
                 pointer.CurrentBrushScript == null ||
                 !pointer.CurrentBrushScript.m_bCanBatch)
             {

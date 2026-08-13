@@ -385,6 +385,23 @@ namespace TiltBrush
         public IdentityConfig User;
 
         [Serializable]
+        public struct MultiplayerConfig
+        {
+            private int? m_MaxStreamedPointers;
+            public int MaxStreamedPointers
+            {
+                get
+                {
+                    return m_MaxStreamedPointers > 0
+                        ? m_MaxStreamedPointers.Value
+                        : Mathf.Max(1, App.PlatformConfig.MaxStreamedPointers);
+                }
+                set { m_MaxStreamedPointers = value; }
+            }
+        }
+        public MultiplayerConfig Multiplayer;
+
+        [Serializable]
         public struct VideoConfig
         {
             // Default values and limits.
