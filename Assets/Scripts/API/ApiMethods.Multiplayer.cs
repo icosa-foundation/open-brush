@@ -103,5 +103,108 @@ namespace TiltBrush
             }
         }
 
+        [ApiEndpoint(
+            "multiplayer.muteplayer",
+            "Mutes or unmutes one remote player on this client only.",
+            "0,true")]
+        public static bool MultiplayerMutePlayer(int playerId, bool muted)
+        {
+            if (!TryGetRemotePlayer(playerId, false, out var manager))
+            {
+                return false;
+            }
+
+            manager.MutePlayerForMe(muted, playerId);
+            return true;
+        }
+
+        [ApiEndpoint(
+            "multiplayer.muteplayerall",
+            "Mutes or unmutes one remote player for the whole room. Only the room owner can use this command.",
+            "0,true")]
+        public static bool MultiplayerMutePlayerForAll(int playerId, bool muted)
+        {
+            if (!TryGetRemotePlayer(playerId, true, out var manager))
+            {
+                return false;
+            }
+
+            manager.MutePlayerForAll(muted, playerId);
+            return true;
+        }
+
+        [ApiEndpoint(
+            "multiplayer.viewonlyplayer",
+            "Enables or disables view-only mode for one remote player. Only the room owner can use this command.",
+            "0,true")]
+        public static bool MultiplayerViewOnlyPlayer(int playerId, bool viewOnly)
+        {
+            if (!TryGetRemotePlayer(playerId, true, out var manager))
+            {
+                return false;
+            }
+
+            manager.SetUserViewOnlyMode(viewOnly, playerId);
+            return true;
+        }
+
+        [ApiEndpoint(
+            "multiplayer.kickplayer",
+            "Removes one remote player from the room. Only the room owner can use this command.",
+            "0")]
+        public static bool MultiplayerKickPlayer(int playerId)
+        {
+            if (!TryGetRemotePlayer(playerId, true, out var manager))
+            {
+                return false;
+            }
+
+            manager.KickPlayerOut(playerId);
+            return true;
+        }
+
+        [ApiEndpoint(
+            "multiplayer.transferowner",
+            "Transfers room ownership to one remote player. Only the current room owner can use this command.",
+            "0")]
+        public static bool MultiplayerTransferOwner(int playerId)
+        {
+            if (!TryGetRemotePlayer(playerId, true, out var manager))
+            {
+                return false;
+            }
+
+            manager.RoomOwnershipTransferToUser(playerId);
+            return true;
+        }
+
+        private static bool TryGetRemotePlayer(
+            int playerId, bool requireOwner, out MultiplayerManager manager)
+        {
+            manager = MultiplayerManager.m_Instance;
+            if (manager == null || manager.State != ConnectionState.IN_ROOM)
+            {
+                Debug.LogWarning(
+                    "[MultiplayerHttpPlayers] Player command ignored because this client is not in a room.");
+                return false;
+            }
+
+            if (requireOwner && !manager.IsUserRoomOwner())
+            {
+                Debug.LogWarning(
+                    "[MultiplayerHttpPlayers] Owner-only player command ignored because this client is not the room owner.");
+                return false;
+            }
+
+            if (manager.m_RemotePlayers == null || manager.GetPlayerById(playerId) == null)
+            {
+                Debug.LogWarning(
+                    $"[MultiplayerHttpPlayers] Player command ignored because remote player {playerId} was not found.");
+                return false;
+            }
+
+            return true;
+        }
+
     }
 }

@@ -721,6 +721,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+                case "query.multiplayer":
+                    return ApiMainThreadObserver.Instance?.RequestMultiplayerStatus() ??
+                        "{\"state\":\"UNAVAILABLE\",\"inRoom\":false,\"players\":[]}";
             }
             return "unknown query";
         }

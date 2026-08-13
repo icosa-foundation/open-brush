@@ -13,6 +13,9 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using OpenBrush.Multiplayer;
 using TiltBrush;
 using UnityEngine;
 
@@ -31,6 +34,9 @@ public class ApiMainThreadObserver : MonoBehaviour
     [NonSerialized] public Vector3 SpectatorCamPosition;
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
     [NonSerialized] public Quaternion SpectatorCamRotation;
+    [NonSerialized] public volatile string MultiplayerStatusJson =
+        "{\"state\":\"UNAVAILABLE\",\"inRoom\":false,\"players\":[]}";
+    private volatile bool m_MultiplayerStatusRequested;
 
     public Transform SpectatorCamTarget;
 
@@ -50,9 +56,68 @@ public class ApiMainThreadObserver : MonoBehaviour
         SpectatorCamPosition = spectatorTr.position;
         SpectatorCamRotation = spectatorTr.rotation;
         SpectatorCamTargetPosition = SpectatorCamTarget.position;
+        if (m_MultiplayerStatusRequested)
+        {
+            m_MultiplayerStatusRequested = false;
+            MultiplayerStatusJson = BuildMultiplayerStatusJson();
+        }
         //     m_Status = StatusTypes.Ready;
         // }
 
+    }
+
+    public string RequestMultiplayerStatus()
+    {
+        m_MultiplayerStatusRequested = true;
+        return MultiplayerStatusJson;
+    }
+
+    private static string BuildMultiplayerStatusJson()
+    {
+        var manager = MultiplayerManager.m_Instance;
+        if (manager == null)
+        {
+            return "{\"state\":\"UNAVAILABLE\",\"inRoom\":false,\"players\":[]}";
+        }
+
+        bool inRoom = manager.State == ConnectionState.IN_ROOM;
+        var players = new List<object>();
+        if (inRoom && manager.m_RemotePlayers != null)
+        {
+            foreach (var player in manager.m_RemotePlayers.List)
+            {
+                players.Add(new
+                {
+                    playerId = player.PlayerId,
+                    nickname = player.Nickname,
+                    isOwner = manager.IsPlayerRoomOwner(player.PlayerId),
+                    mutedForMe = player.m_IsMutedForMe,
+                    mutedForAll = player.m_IsMutedForAll,
+                    viewOnly = player.m_IsViewOnly
+                });
+            }
+        }
+
+        var room = manager.CurrentRoomData;
+        return JsonConvert.SerializeObject(new
+        {
+            state = manager.State.ToString(),
+            inRoom,
+            localPlayerId = manager.LocalPlayerId,
+            localNickname = manager.UserInfo.Nickname,
+            isOwner = inRoom && manager.IsUserRoomOwner(),
+            voiceEnabled = manager.IsVoiceEnabled,
+            room = inRoom ? new
+            {
+                name = room.roomName,
+                voiceEnabled = !room.voiceDisabled,
+                silent = room.silentRoom,
+                viewOnly = room.viewOnlyRoom,
+                liveStrokeStreaming = room.liveStrokeStreaming,
+                liveStrokeProtocolVersion = room.liveStrokeProtocolVersion
+            } : null,
+            players
+        });
     }
 
 }
