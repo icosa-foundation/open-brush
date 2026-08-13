@@ -883,7 +883,7 @@ namespace OpenBrush.Multiplayer
             }
 
             List<PointerManager.ControlPoint> points = pointer.GetControlPoints();
-            if (points.Count == 0)
+            if (points.Count == 0 || !pointer.LastControlPointIsKeeper)
             {
                 return;
             }
