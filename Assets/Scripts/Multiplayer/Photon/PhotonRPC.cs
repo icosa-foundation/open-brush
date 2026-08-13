@@ -47,6 +47,7 @@ namespace OpenBrush.Multiplayer
             public bool HasRenderedProvisionalTail;
             public PointerManager.ControlPoint RenderedProvisionalTail;
             public float LastUpdateTime;
+            public bool VisualUpdatePending;
         }
 
         private static Dictionary<Guid, IncomingLiveStrokePreview> m_IncomingLiveStrokes;
@@ -74,6 +75,7 @@ namespace OpenBrush.Multiplayer
         public void Update()
         {
             TryProcessCommands();
+            ApplyPendingLiveStrokeUpdates();
             ExpireLiveStrokePreviews();
         }
 
@@ -705,13 +707,7 @@ namespace OpenBrush.Multiplayer
                     NetworkedControlPoint.ToControlPoint(provisionalTail);
             }
             preview.LastUpdateTime = Time.realtimeSinceStartup;
-
-            if (!UpdateLiveStrokePreview(preview))
-            {
-                FailLiveStrokePreview(
-                    preview, requestRepair: false, Guid.Empty,
-                    notifySender: true);
-            }
+            preview.VisualUpdatePending = true;
         }
 
         private static void LiveStrokeComplete(
@@ -738,6 +734,16 @@ namespace OpenBrush.Multiplayer
             if (preview.SourcePlayerId != sourcePlayerId)
             {
                 return;
+            }
+            if (preview.VisualUpdatePending)
+            {
+                preview.VisualUpdatePending = false;
+                if (!UpdateLiveStrokePreview(preview))
+                {
+                    FailLiveStrokePreview(
+                        preview, requestRepair: true, commandGuid);
+                    return;
+                }
             }
             if (CheckifCommandGuidIsInStack(commandGuid))
             {
@@ -771,6 +777,22 @@ namespace OpenBrush.Multiplayer
             m_IncomingLiveStrokes.Remove(streamId);
             m_ClosedLiveStrokeIds[streamId] = Time.realtimeSinceStartup +
                 k_ClosedLiveStrokeRetentionSeconds;
+        }
+
+        private static void ApplyPendingLiveStrokeUpdates()
+        {
+            foreach (IncomingLiveStrokePreview preview in m_IncomingLiveStrokes.Values
+                .Where(item => item.VisualUpdatePending)
+                .ToList())
+            {
+                preview.VisualUpdatePending = false;
+                if (!UpdateLiveStrokePreview(preview))
+                {
+                    FailLiveStrokePreview(
+                        preview, requestRepair: false, Guid.Empty,
+                        notifySender: true);
+                }
+            }
         }
 
         private static bool UpdateLiveStrokePreview(IncomingLiveStrokePreview preview)
