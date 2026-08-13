@@ -28,7 +28,7 @@ This work should not attempt to stream every kind of drawing operation. Parametr
 6. Current completed-stroke messages can carry an ephemeral contributor token and nickname. Each receiver maps that token to a local layer named `Multiplayer - <nickname>`.
 7. The contributor token exists only for the current application run. It is not written to `.tilt`, `PlayerPrefs`, logs, analytics, or account data. The ordinary human-readable layer name is saved normally.
 8. Disconnecting does not remove the contributor-layer mapping. Reconnecting during the same application run therefore returns the player to the same layer. Restarting Open Brush creates a new token and may create a new layer.
-9. Initial large-data scene synchronization carries temporary contributor metadata, but it does not currently carry stroke clock-session anchors.
+9. Initial large-data scene synchronization carries temporary contributor metadata and an optional per-stroke clock-session trailer. Legacy payloads without that trailer remain readable.
 10. Current receivers retain the legacy completed-stroke paths for strokes without clock or contributor metadata.
 11. `SketchMemoryScript.MemoryListAdd()` expects stored control points to be immutable. A live remote preview must remain outside sketch memory and the undo stack.
 12. `PhotonRPCBatcher` currently sends one queued RPC every 100 ms. It is suitable for an initial low-rate experiment but not a final multi-stream scheduler.
@@ -238,7 +238,7 @@ Use a small number of understandable limits:
 
 1. Maximum simultaneous outgoing preview streams, derived from the effective `MaxStreamedPointers` value.
 2. Maximum simultaneous incoming preview streams per remote painter, using the receiver's effective `MaxStreamedPointers` value. Separate painters have separate allowances so one painter cannot consume every receiver preview slot.
-3. Maximum preview RPC queue age or depth.
+3. No unbounded application-level preview queue. The sender samples each active stream at 10 Hz and sends through Fusion directly, rather than feeding preview updates into the global one-RPC-per-100-ms batcher.
 
 Choose the mode before the stroke starts whenever possible:
 
@@ -276,14 +276,13 @@ This makes retransmission exceptional rather than routine without requiring a ch
 
 ### RPC scheduling
 
-Replace the single global 100 ms queue behaviour for preview traffic with a small coalescing scheduler:
+Preview traffic does not use the single global 100 ms RPC batch queue:
 
-1. Keep at most one pending update per active stream.
-2. Merge newly confirmed points into that pending update.
-3. Replace superseded provisional-tail data.
-4. Give start, cancel, completion, and repair messages priority over preview updates.
-5. Respect `NetworkingConstants.MaxControlPointsPerChunk` and Photon payload limits.
-6. Preserve reliable ordering within each stream without allowing one stream to block unrelated completed commands indefinitely.
+1. The sender samples current pointer state once per active stream at 10 Hz. This naturally merges all newly confirmed points since the previous sample and uses only the latest provisional tail.
+2. Start, cancel, completion, decline, and repair messages are sent directly rather than waiting behind preview updates.
+3. Confirmed-point payloads respect `NetworkingConstants.MaxControlPointsPerChunk`.
+4. Reliable Fusion RPC ordering is preserved within each stream without adding another application-level queue.
+5. The receiver accumulates every message's confirmed points immediately but applies geometry at most once per preview per Unity frame.
 
 ### Preview rendering performance
 
@@ -297,16 +296,12 @@ Replace the single global 100 ms queue behaviour for preview traffic with a smal
 
 ### Late-join synchronization and clock accuracy
 
-The contributor-aware scene-sync envelope already preserves runtime contributor grouping for late joiners. It does not yet include each stroke's clock-session anchor.
+The contributor-aware scene-sync envelope preserves runtime contributor grouping and carries an optional source clock-session anchor for each stroke:
 
-Before claiming that late joiners receive the same timing accuracy as live recipients:
-
-1. Extend the temporary scene-sync envelope with the source clock anchor associated with each stroke.
-2. Convert those timestamps through the same checked receiver-session mapping used by live and completed RPC delivery.
-3. Retain legacy handling for scene-sync payloads without clock metadata.
-4. Keep contributor tokens and clock anchors in the multiplayer transport only; do not add contributor identity to `.tilt` metadata.
-
-This is not required to prove incremental rendering, but it is required for complete real-time playback accuracy after a late join.
+1. The source clock anchor is associated with each stroke in an optional transport trailer.
+2. The receiver restores those clock sessions so the synchronized strokes retain the same wall-clock mapping used by live and completed RPC delivery.
+3. Legacy scene-sync payloads without clock metadata remain supported.
+4. Contributor tokens and clock anchors remain multiplayer transport data; contributor identity is not added to `.tilt` metadata.
 
 ### NVP acceptance criteria
 
@@ -325,7 +320,7 @@ This is not required to prove incremental rendering, but it is required for comp
 13. A missing-point-count condition recovers through an on-demand full-stroke transfer.
 14. Finalized and repaired strokes retain their contributor layer and source clock accuracy.
 15. Disconnects, cancellation, and abandoned streams do not leave permanent preview geometry.
-16. Late joiners retain contributor grouping; after the scene-sync clock extension, they also retain wall-clock playback accuracy.
+16. Late joiners retain contributor grouping and wall-clock playback accuracy when the sender provides the scene-sync clock trailer; legacy senders continue to synchronize without it.
 17. Remote previews update incrementally without recreating their brush object or replaying previously applied confirmed points.
 18. The effective maximum streamed-pointer count defaults to `16` on PC and `4` on mobile and can be overridden with a positive `Multiplayer.MaxStreamedPointers` value in `Open Brush.cfg`.
 19. A recipient either finalizes every streamed pointer in a logical symmetry group or receives the normal completed command tree; it never retains a partial streamed group.
@@ -381,7 +376,7 @@ Each item below is independent and should be justified by observed behaviour bef
 9. Add the platform defaults and `Open Brush.cfg` override for `MaxStreamedPointers`.
 10. Extend the incremental receiver to permitted symmetry groups without rebuilding existing preview geometry.
 11. Implement the remaining NVP lifecycle limits only if the proof of concept demonstrates acceptable behaviour.
-12. Extend late-join scene synchronization with clock anchors before claiming complete real-time playback accuracy for late joiners.
+12. Preserve the existing late-join scene-sync clock trailer and its legacy fallback.
 13. Select stretch goals only from measured problems.
 
 ## Design constraints to preserve
