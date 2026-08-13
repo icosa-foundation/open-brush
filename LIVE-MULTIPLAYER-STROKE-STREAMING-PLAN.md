@@ -279,7 +279,7 @@ This makes retransmission exceptional rather than routine without requiring a ch
 Preview traffic does not use the single global 100 ms RPC batch queue:
 
 1. The sender samples current pointer state once per active stream at 10 Hz. This naturally merges all newly confirmed points since the previous sample and uses only the latest provisional tail.
-2. Start, cancel, completion, decline, and repair messages are sent directly rather than waiting behind preview updates.
+2. Capability, room state, start, cancel, completion, decline, and repair messages are sent directly rather than waiting behind preview updates.
 3. Confirmed-point payloads respect `NetworkingConstants.MaxControlPointsPerChunk`.
 4. Reliable Fusion RPC ordering is preserved within each stream without adding another application-level queue.
 5. The receiver accumulates every message's confirmed points immediately but applies geometry at most once per preview per Unity frame.
