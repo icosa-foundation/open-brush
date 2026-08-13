@@ -596,8 +596,16 @@ namespace OpenBrush.Multiplayer
             string contributorNickname, long sourceStartUtcMs,
             uint sourceStartSketchTimeMs, int sourcePlayerId)
         {
-            if (!CanAcceptLiveStrokeFrom(sourcePlayerId) || streamId == Guid.Empty ||
-                m_IncomingLiveStrokes.ContainsKey(streamId) ||
+            if (streamId == Guid.Empty)
+            {
+                return;
+            }
+            if (!CanAcceptLiveStrokeFrom(sourcePlayerId))
+            {
+                TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
+                return;
+            }
+            if (m_IncomingLiveStrokes.ContainsKey(streamId) ||
                 m_ClosedLiveStrokeIds.ContainsKey(streamId) ||
                 m_FailedLiveStrokes.ContainsKey(streamId))
             {

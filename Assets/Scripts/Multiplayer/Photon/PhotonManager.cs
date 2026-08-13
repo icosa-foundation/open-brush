@@ -491,11 +491,8 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
 
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            {
-                PhotonRPC.RPC_LiveStrokeCapability(
-                    m_Runner, protocolVersion, maxStreamedPointers);
-            });
+            PhotonRPC.RPC_LiveStrokeCapability(
+                m_Runner, protocolVersion, maxStreamedPointers);
             await Task.Yield();
             return true;
         }
@@ -508,12 +505,9 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
 
-            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            {
-                PhotonRPC.RPC_LiveStrokeRoomState(
-                    m_Runner, enabled, protocolVersion, targetPlayer);
-            });
+            PhotonRPC.RPC_LiveStrokeRoomState(
+                m_Runner, enabled, protocolVersion,
+                PlayerRef.FromEncoded(playerId));
             await Task.Yield();
             return true;
         }
