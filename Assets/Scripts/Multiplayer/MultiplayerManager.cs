@@ -1351,6 +1351,13 @@ namespace OpenBrush.Multiplayer
 
         private void OnConnectionHandlerDisconnected()
         {
+            foreach (RemotePlayer player in m_RemotePlayers.List.ToList())
+            {
+                m_Manager?.RemoveLiveStrokePreviewsForPlayer(player.PlayerId);
+            }
+            m_OutgoingLiveStrokes.Clear();
+            m_OutgoingLiveStrokesBySeed.Clear();
+            m_RetainedLiveStrokeCommands.Clear();
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeProtocolVersions.Clear();
