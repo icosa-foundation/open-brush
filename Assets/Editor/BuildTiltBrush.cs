@@ -1561,7 +1561,8 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
-            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
+            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
