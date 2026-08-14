@@ -83,7 +83,7 @@
         </div>
     </section>
 
-    <section class="card">
+    <section id="leaveCard" class="card" hidden>
         <div class="card-body">
             <h2 class="h5">Connection</h2>
             <p class="endpoint">multiplayer.leave</p>
@@ -91,14 +91,14 @@
         </div>
     </section>
 
-    <section class="card">
+    <section id="localVoiceCard" class="card" hidden>
         <div class="card-body">
             <h2 class="h5">Voice on this client</h2>
             <p class="endpoint">multiplayer.voice</p>
             <p>Disabling this disconnects this client's voice connection and stops incoming and outgoing voice bandwidth.</p>
             <div class="button-row">
-                <button class="btn btn-outline-primary" type="button" data-command="multiplayer.voice" data-value="true">Enable voice</button>
-                <button class="btn btn-outline-secondary" type="button" data-command="multiplayer.voice" data-value="false">Disable voice</button>
+                <button id="enableLocalVoice" class="btn btn-outline-primary" type="button" data-command="multiplayer.voice" data-value="true">Enable voice</button>
+                <button id="disableLocalVoice" class="btn btn-outline-secondary" type="button" data-command="multiplayer.voice" data-value="false">Disable voice</button>
             </div>
         </div>
     </section>
@@ -110,8 +110,8 @@
                 <p class="endpoint">multiplayer.voiceall</p>
                 <p>The room owner's setting propagates to current participants and users who join later.</p>
                 <div class="button-row">
-                    <button class="btn btn-outline-primary" type="button" data-command="multiplayer.voiceall" data-value="true">Allow room voice</button>
-                    <button class="btn btn-outline-secondary" type="button" data-command="multiplayer.voiceall" data-value="false">Disable room voice</button>
+                    <button id="enableRoomVoice" class="btn btn-outline-primary" type="button" data-command="multiplayer.voiceall" data-value="true">Allow room voice</button>
+                    <button id="disableRoomVoice" class="btn btn-outline-secondary" type="button" data-command="multiplayer.voiceall" data-value="false">Disable room voice</button>
                 </div>
             </div>
         </section>
@@ -122,14 +122,14 @@
                 <p class="endpoint">multiplayer.livestrokes</p>
                 <p>Compatible clients show eligible strokes while they are drawn. Completed-stroke delivery remains the fallback.</p>
                 <div class="button-row">
-                    <button class="btn btn-outline-primary" type="button" data-command="multiplayer.livestrokes" data-value="true">Enable live strokes</button>
-                    <button class="btn btn-outline-secondary" type="button" data-command="multiplayer.livestrokes" data-value="false">Disable live strokes</button>
+                    <button id="enableLiveStrokes" class="btn btn-outline-primary" type="button" data-command="multiplayer.livestrokes" data-value="true">Enable live strokes</button>
+                    <button id="disableLiveStrokes" class="btn btn-outline-secondary" type="button" data-command="multiplayer.livestrokes" data-value="false">Disable live strokes</button>
                 </div>
             </div>
         </section>
     </div>
 
-    <section class="card">
+    <section id="playerCard" class="card" hidden>
         <div class="card-body">
             <h2 class="h5">Players</h2>
             <p class="mb-2">
@@ -163,6 +163,10 @@
     const ownerRoomControls = document.getElementById("ownerRoomControls");
     const roomSummary = document.getElementById("roomSummary");
     const playerList = document.getElementById("playerList");
+    const playerCard = document.getElementById("playerCard");
+    const joinCard = document.getElementById("joinCard");
+    const leaveCard = document.getElementById("leaveCard");
+    const localVoiceCard = document.getElementById("localVoiceCard");
     const leaveRoom = document.getElementById("leaveRoom");
     let lastQueryError = "";
     let initialStatusRetries = 0;
@@ -273,11 +277,24 @@
     }
 
     function renderMultiplayerStatus(snapshot) {
+        const canJoin = ["INITIALIZED", "DISCONNECTED", "IN_LOBBY"].includes(snapshot.state);
         connectionState.textContent = snapshot.state;
         connectionState.className = `badge ${snapshot.inRoom ? "bg-success" : "bg-secondary"}`;
         ownerBadge.hidden = !snapshot.isOwner;
         ownerRoomControls.hidden = !snapshot.isOwner;
-        leaveRoom.disabled = !snapshot.inRoom;
+        joinCard.hidden = !canJoin || snapshot.inRoom;
+        leaveCard.hidden = !snapshot.inRoom;
+        localVoiceCard.hidden = !snapshot.inRoom;
+        playerCard.hidden = !snapshot.inRoom;
+
+        document.getElementById("enableLocalVoice").hidden = snapshot.localVoiceEnabled;
+        document.getElementById("disableLocalVoice").hidden = !snapshot.localVoiceEnabled;
+        if (snapshot.room) {
+            document.getElementById("enableRoomVoice").hidden = snapshot.room.voiceEnabled;
+            document.getElementById("disableRoomVoice").hidden = !snapshot.room.voiceEnabled;
+            document.getElementById("enableLiveStrokes").hidden = snapshot.room.liveStrokeStreaming;
+            document.getElementById("disableLiveStrokes").hidden = !snapshot.room.liveStrokeStreaming;
+        }
 
         if (snapshot.inRoom && snapshot.room) {
             const roomFlags = [

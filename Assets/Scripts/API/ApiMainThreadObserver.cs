@@ -105,11 +105,12 @@ public class ApiMainThreadObserver : MonoBehaviour
             localPlayerId = manager.LocalPlayerId,
             localNickname = manager.UserInfo.Nickname,
             isOwner = inRoom && manager.IsUserRoomOwner(),
+            localVoiceEnabled = manager.IsLocalVoiceEnabled,
             voiceEnabled = manager.IsVoiceEnabled,
             room = inRoom ? new
             {
                 name = room.roomName,
-                voiceEnabled = !room.voiceDisabled,
+                voiceEnabled = manager.IsRoomVoiceEnabled,
                 silent = room.silentRoom,
                 viewOnly = room.viewOnlyRoom,
                 liveStrokeStreaming = room.liveStrokeStreaming,

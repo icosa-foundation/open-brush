@@ -48,6 +48,8 @@ namespace OpenBrush.Multiplayer
         private bool m_IsRoomVoiceEnabled = true;
         private bool m_IsVoiceEnabled = true;
 
+        public bool IsLocalVoiceEnabled => m_IsLocalVoiceEnabled;
+        public bool IsRoomVoiceEnabled => m_IsRoomVoiceEnabled;
         public bool IsVoiceEnabled => m_IsVoiceEnabled;
 
         public ITransientData<PlayerRigData> m_LocalPlayer;
