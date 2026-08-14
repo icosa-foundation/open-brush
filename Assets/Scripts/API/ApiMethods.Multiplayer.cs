@@ -1,21 +1,23 @@
 ﻿using OpenBrush.Multiplayer;
+using System;
 using UnityEngine;
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
         [ApiEndpoint("multiplayer.join", "Joins a multiplayer room, creating it if it does not exist")]
-        public static void MultiplayerJoin(
+        public static async void MultiplayerJoin(
             string nickname, string roomName, bool isPrivate, int maxPlayers,
             bool silentRoom, bool viewOnlyRoom, bool liveStrokeStreaming = false)
         {
+            var manager = MultiplayerManager.m_Instance;
             ConnectionUserInfo userInfo = new ConnectionUserInfo
             {
                 Nickname = nickname,
-                UserId = MultiplayerManager.m_Instance.UserInfo.UserId,
-                Role = MultiplayerManager.m_Instance.UserInfo.Role
+                UserId = manager.UserInfo.UserId,
+                Role = manager.UserInfo.Role
             };
-            MultiplayerManager.m_Instance.UserInfo = userInfo;
+            manager.UserInfo = userInfo;
 
             RoomCreateData roomData = new RoomCreateData
             {
@@ -29,31 +31,41 @@ namespace TiltBrush
                     ? MultiplayerManager.LiveStrokeProtocolVersion
                     : 0
             };
-            var joinRoomTask = MultiplayerManager.m_Instance.JoinRoom(roomData);
-            AsyncHelpers.RunSync(() => joinRoomTask);
-            if (joinRoomTask.Result)
+            Debug.Log($"[MultiplayerHttpAsync] Joining or creating room '{roomName}'.");
+            try
             {
-                // TODO - we do this when using the non-VR UI
-                // Should we also do it here?
-                // var cameraPos = App.VrSdk.GetVrCamera().transform.position;
-                // cameraPos.y += 12;
-                // App.VrSdk.GetVrCamera().transform.position = cameraPos;
+                if (await manager.JoinRoom(roomData))
+                {
+                    Debug.Log($"[MultiplayerHttpAsync] Joined room '{roomName}'.");
+                }
+                else
+                {
+                    Debug.LogError(
+                        $"[MultiplayerHttpAsync] Failed to join or create room '{roomName}': {manager.LastError}");
+                }
             }
-            else
+            catch (Exception exception)
             {
                 Debug.LogError(
-                    $"[MultiplayerHttpJoin] Failed to join or create room '{roomName}': {MultiplayerManager.m_Instance.LastError}");
+                    $"[MultiplayerHttpAsync] Unexpected error while joining room '{roomName}': {exception}");
             }
         }
 
         [ApiEndpoint("multiplayer.leave", "Leaves a multiplayer room")]
-        public static void MultiplayerLeave()
+        public static async void MultiplayerLeave()
         {
-            var leaveRoomTask = MultiplayerManager.m_Instance.LeaveRoom();
-            AsyncHelpers.RunSync(() => leaveRoomTask);
-            if (!leaveRoomTask.Result)
+            Debug.Log("[MultiplayerHttpAsync] Leaving multiplayer room.");
+            try
             {
-                Debug.LogError("Failed to leave room");
+                if (!await MultiplayerManager.m_Instance.LeaveRoom())
+                {
+                    Debug.LogError("[MultiplayerHttpAsync] Failed to leave multiplayer room.");
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    $"[MultiplayerHttpAsync] Unexpected error while leaving the room: {exception}");
             }
         }
 
@@ -61,14 +73,20 @@ namespace TiltBrush
             "multiplayer.voice",
             "Enables or disables multiplayer voice. Disabling disconnects the voice client to stop both incoming and outgoing voice bandwidth.",
             "false")]
-        public static void MultiplayerVoice(bool enabled)
+        public static async void MultiplayerVoice(bool enabled)
         {
-            var voiceTask = MultiplayerManager.m_Instance.SetVoiceEnabled(enabled);
-            AsyncHelpers.RunSync(() => voiceTask);
-            if (!voiceTask.Result)
+            try
+            {
+                if (!await MultiplayerManager.m_Instance.SetVoiceEnabled(enabled))
+                {
+                    Debug.LogError(
+                        $"[MultiplayerHttpAsync] Failed to set multiplayer voice enabled state to {enabled}.");
+                }
+            }
+            catch (Exception exception)
             {
                 Debug.LogError(
-                    $"[MultiplayerVoiceApi] Failed to set multiplayer voice enabled state to {enabled}.");
+                    $"[MultiplayerHttpAsync] Unexpected error while setting local voice to {enabled}: {exception}");
             }
         }
 
@@ -76,14 +94,20 @@ namespace TiltBrush
             "multiplayer.voiceall",
             "Allows or disables multiplayer voice for the whole room. Only the room owner can change this setting, and disabling it disconnects every participant's voice client.",
             "false")]
-        public static void MultiplayerVoiceAll(bool enabled)
+        public static async void MultiplayerVoiceAll(bool enabled)
         {
-            var voiceTask = MultiplayerManager.m_Instance.SetRoomVoiceEnabled(enabled);
-            AsyncHelpers.RunSync(() => voiceTask);
-            if (!voiceTask.Result)
+            try
+            {
+                if (!await MultiplayerManager.m_Instance.SetRoomVoiceEnabled(enabled))
+                {
+                    Debug.LogError(
+                        $"[MultiplayerHttpAsync] Failed to set room voice enabled state to {enabled}. Only the room owner can change it.");
+                }
+            }
+            catch (Exception exception)
             {
                 Debug.LogError(
-                    $"[MultiplayerVoiceAll] Failed to set room voice enabled state to {enabled}. Only the room owner can change it.");
+                    $"[MultiplayerHttpAsync] Unexpected error while setting room voice to {enabled}: {exception}");
             }
         }
 
@@ -91,15 +115,20 @@ namespace TiltBrush
             "multiplayer.livestrokes",
             "Enables or disables live multiplayer stroke previews for the room. Only the room owner can change this setting. Completed-stroke delivery remains the fallback.",
             "true")]
-        public static void MultiplayerLiveStrokes(bool enabled)
+        public static async void MultiplayerLiveStrokes(bool enabled)
         {
-            var settingTask = MultiplayerManager.m_Instance
-                .SetLiveStrokeStreamingEnabled(enabled);
-            AsyncHelpers.RunSync(() => settingTask);
-            if (!settingTask.Result)
+            try
+            {
+                if (!await MultiplayerManager.m_Instance.SetLiveStrokeStreamingEnabled(enabled))
+                {
+                    Debug.LogError(
+                        $"[MultiplayerHttpAsync] Failed to set room live stroke state to {enabled}. Only the room owner can change it.");
+                }
+            }
+            catch (Exception exception)
             {
                 Debug.LogError(
-                    $"[LiveStrokeStreaming] Failed to set room live stroke state to {enabled}. Only the room owner can change it.");
+                    $"[MultiplayerHttpAsync] Unexpected error while setting live strokes to {enabled}: {exception}");
             }
         }
 
