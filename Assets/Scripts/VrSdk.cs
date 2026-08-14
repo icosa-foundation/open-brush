@@ -118,22 +118,25 @@ namespace TiltBrush
         // Public Controller Properties
         // -------------------------------------------------------------------------------------------- //
 
-        public bool IsInitializingUnityXR
-        {
-            get
-            {
-                // AndroidXRHandBridge replaces the temporary UnityXR controller hierarchy once
-                // its hand subsystem is running. At that point InputManager and panel setup must
-                // treat the virtual hand-backed controllers as fully initialized.
-                if (AndroidXRHandBridge.Active)
-                {
-                    return false;
-                }
+public bool IsInitializingUnityXR
+{
+    get
+    {
+        // Android XR hands supply our controller abstraction.
+        if (AndroidXRHandBridge.Active)
+            return false;
 
-                return VrControls.Brush.ControllerGeometry.Style ==
-                    ControllerStyle.InitializingUnityXR;
-            }
+        if (VrControls == null ||
+            VrControls.Brush == null ||
+            VrControls.Brush.ControllerGeometry == null)
+        {
+            return true;
         }
+
+        return VrControls.Brush.ControllerGeometry.Style ==
+               ControllerStyle.InitializingUnityXR;
+    }
+}
 
         // -------------------------------------------------------------------------------------------- //
         // Private Unity Component Events
@@ -190,7 +193,23 @@ namespace TiltBrush
                 }
                 else
                 {
-                    SetUnityXRControllerStyle(tryGetUnityXRController);
+                    // Always start with a valid placeholder controller setup.
+                    SetControllerStyle(
+                        ControllerStyle.InitializingUnityXR);
+
+                    InputDevice controller =
+                        InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+
+                    if (!controller.isValid)
+                    {
+                        controller =
+                            InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+                    }
+
+                    if (controller.isValid)
+                    {
+                        SetUnityXRControllerStyle(controller);
+                    }
                 }
 
                 SetPassthroughStrategy();
@@ -693,9 +712,6 @@ namespace TiltBrush
 
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
-            // A late controller connection must not replace the virtual controller hierarchy that
-            // the active hand bridge is driving. Normal device discovery resumes whenever the
-            // bridge is inactive.
             if (AndroidXRHandBridge.Active)
             {
                 return;

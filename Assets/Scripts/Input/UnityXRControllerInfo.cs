@@ -12,29 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
-using UnityEngine.XR;
-using UnityEngine.InputSystem;
 using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
+    /// <summary>
+    /// Unity XR controller implementation used by Open Brush.
+    ///
+    /// Android XR hand mode:
+    ///   - Left tracked hand  -> Open Brush Wand
+    ///   - Right tracked hand -> Open Brush Brush
+    ///   - AndroidXRHandBridge supplies Brush trigger state
+    ///   - Controller-only inputs are suppressed while hand mode is active
+    /// </summary>
     public class UnityXRControllerInfo : ControllerInfo
     {
         private UnityEngine.XR.InputDevice device;
         private readonly UnityXRInputAction actionSet = new();
 
-        private Vector2 padAxisPrevious = new Vector2();
+        private Vector2 padAxisPrevious = Vector2.zero;
         private const float kInputScrollScalar = 0.5f;
 
-        private bool isBrush = false;
+        // In Open Brush's UnityXR setup the right-hand ControllerInfo is the Brush,
+        // and the left-hand ControllerInfo is the Wand.
+        private bool isBrush;
 
         private StylusInputs stylusState => VrStylusHandler.m_Instance?.CurrentState;
 
-        private string actionMap
-        {
-            get => isBrush ? "Brush" : "Wand";
-        }
+        private string actionMap => isBrush ? "Brush" : "Wand";
 
         public UnityXRControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
             : base(behavior)
@@ -51,8 +59,11 @@ namespace TiltBrush
 
         private void Init()
         {
-            device = InputDevices.GetDeviceAtXRNode(isBrush ? XRNode.RightHand : XRNode.LeftHand);
+            device = InputDevices.GetDeviceAtXRNode(
+                isBrush ? XRNode.RightHand : XRNode.LeftHand);
+
             SetActionMask();
+
             if (isBrush)
             {
                 actionSet.Brush.Enable();
@@ -62,38 +73,42 @@ namespace TiltBrush
             {
                 actionSet.Wand.Enable();
                 actionSet.Brush.Disable();
-                SetActionMask();
             }
         }
 
         private void SetActionMask()
         {
             string bindingGroup = string.Empty;
+
             switch (Behavior.ControllerGeometry.Style)
             {
                 case ControllerStyle.Vive:
                     bindingGroup = actionSet.HTCViveControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.Knuckles:
                     bindingGroup = actionSet.IndexControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.OculusTouch:
                     bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.Wmr:
                     bindingGroup = actionSet.WMRControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.Neo3:
                 case ControllerStyle.Phoenix:
                     bindingGroup = actionSet.PicoControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.Zapbox:
                     bindingGroup = actionSet.ZapboxControllerScheme.bindingGroup;
                     break;
+
                 case ControllerStyle.SteamFrame:
                     bindingGroup = GetSteamFrameBindingGroupForCurrentDevice();
-                    break;
-                default:
                     break;
             }
 
@@ -105,27 +120,33 @@ namespace TiltBrush
             // When m_ForceControllerStyleForTesting is used, the geometry is Steam Frame but the
             // physical controller can still be Quest/Index/etc. Keep the real hardware bindings.
             string deviceName = device.name ?? string.Empty;
+
             if (deviceName.Contains("Oculus Touch"))
             {
                 return actionSet.OculusTouchControllerScheme.bindingGroup;
             }
+
             if (deviceName.StartsWith("Index Controller OpenXR"))
             {
                 return actionSet.IndexControllerScheme.bindingGroup;
             }
+
             if (deviceName.StartsWith("HTC Vive Controller OpenXR"))
             {
                 return actionSet.HTCViveControllerScheme.bindingGroup;
             }
+
             if (deviceName.StartsWith("Windows MR Controller") ||
                 deviceName.StartsWith("HP Reverb G2 Controller"))
             {
                 return actionSet.WMRControllerScheme.bindingGroup;
             }
+
             if (deviceName.Contains("PICO Controller"))
             {
                 return actionSet.PicoControllerScheme.bindingGroup;
             }
+
             if (deviceName.Contains("Zapbox"))
             {
                 return actionSet.ZapboxControllerScheme.bindingGroup;
@@ -136,62 +157,69 @@ namespace TiltBrush
 
         private InputAction FindAction(string actionName)
         {
-            return actionSet.asset.FindActionMap($"{actionMap}").FindAction($"{actionName}");
+            InputActionMap map = actionSet.asset.FindActionMap(actionMap);
+            return map?.FindAction(actionName);
         }
+
+        // ---------------------------------------------------------------------
+        // Tracking
+        // ---------------------------------------------------------------------
 
         public override bool IsTrackedObjectValid
         {
             get
             {
-                // The bridge maps the left hand to Wand and the right hand to Brush. Once hand
-                // mode is running, its joint tracking is authoritative; the physical controller
-                // device may be absent or may report an unrelated validity state.
                 if (AndroidXRHandBridge.Active)
                 {
+                    // AndroidXRHandBridge owns hand assignment:
+                    // false = Wand/left hand, true = Brush/right hand.
                     return AndroidXRHandBridge.IsTracked(isBrush);
                 }
 
                 return device.isValid;
             }
+
             set
             {
-
+                // Required by ControllerInfo API; tracking validity is read-only here.
             }
         }
 
+        // ---------------------------------------------------------------------
+        // Analog inputs
+        // ---------------------------------------------------------------------
+
         public override Vector2 GetPadValue()
         {
-            // The prototype exposes no virtual touchpad or stick for tracked hands.
             if (AndroidXRHandBridge.Active)
-            {
                 return Vector2.zero;
-            }
 
-            return FindAction("PadAxis").ReadValue<Vector2>();
+            InputAction action = FindAction("PadAxis");
+            return action != null ? action.ReadValue<Vector2>() : Vector2.zero;
         }
 
         public override Vector2 GetThumbStickValue()
         {
             if (AndroidXRHandBridge.Active)
-            {
                 return Vector2.zero;
-            }
 
-            return FindAction("ThumbAxis").ReadValue<Vector2>();
+            InputAction action = FindAction("ThumbAxis");
+            return action != null ? action.ReadValue<Vector2>() : Vector2.zero;
         }
 
         public override void Update()
         {
             base.Update();
 
+            // Hands have no controller touchpad; don't query controller actions.
             if (AndroidXRHandBridge.Active)
             {
-                // Do not retain a physical touchpad position across a switch into hand mode.
                 padAxisPrevious = Vector2.zero;
                 return;
             }
 
-            if (!FindAction("PadTouch").inProgress)
+            InputAction padTouch = FindAction("PadTouch");
+            if (padTouch == null || !padTouch.inProgress)
             {
                 padAxisPrevious = Vector2.zero;
             }
@@ -200,48 +228,52 @@ namespace TiltBrush
         private bool IsStylusActive()
         {
             return stylusState != null &&
-                stylusState.isActive &&
-                stylusState.isOnRightHand == isBrush;
+                   stylusState.isActive &&
+                   stylusState.isOnRightHand == isBrush;
         }
 
         public override Vector2 GetPadValueDelta()
         {
             if (AndroidXRHandBridge.Active)
-            {
                 return Vector2.zero;
-            }
 
-            var action = FindAction("ThumbAxis");
-            if (action.inProgress)
+            InputAction thumbAction = FindAction("ThumbAxis");
+
+            if (thumbAction != null && thumbAction.inProgress)
             {
                 Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                Vector2 stick = action.ReadValue<Vector2>();
-                return new Vector2(Mathf.Clamp(stick.x, range.x, range.y), Mathf.Clamp(stick.y, range.x, range.y));
+                Vector2 stick = thumbAction.ReadValue<Vector2>();
+
+                return new Vector2(
+                    Mathf.Clamp(stick.x, range.x, range.y),
+                    Mathf.Clamp(stick.y, range.x, range.y));
             }
-            else
+
+            InputAction padAction = FindAction("PadAxis");
+            InputAction padTouch = FindAction("PadTouch");
+
+            if (padAction != null &&
+                padTouch != null &&
+                padTouch.IsPressed())
             {
-                action = FindAction("PadAxis");
-                if (FindAction("PadTouch").IsPressed())
+                Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
+                Vector2 padAxisCurrent = padAction.ReadValue<Vector2>();
+
+                if (padAxisPrevious == Vector2.zero)
                 {
-                    Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
-                    Vector2 padAxisCurrent = action.ReadValue<Vector2>();
-
-                    if (padAxisPrevious == Vector2.zero)
-                    {
-                        padAxisPrevious = padAxisCurrent;
-                    }
-
-                    var delta = padAxisCurrent - padAxisPrevious;
                     padAxisPrevious = padAxisCurrent;
-
-                    delta.x = Mathf.Clamp(delta.x, range.x, range.y);
-                    delta.y = Mathf.Clamp(delta.y, range.x, range.y);
-                    return delta * kInputScrollScalar;
                 }
 
-                //padAxisPrevious = Vector2.zero;
-                return Vector2.zero;
+                Vector2 delta = padAxisCurrent - padAxisPrevious;
+                padAxisPrevious = padAxisCurrent;
+
+                delta.x = Mathf.Clamp(delta.x, range.x, range.y);
+                delta.y = Mathf.Clamp(delta.y, range.x, range.y);
+
+                return delta * kInputScrollScalar;
             }
+
+            return Vector2.zero;
         }
 
         public override float GetScrollXDelta()
@@ -256,17 +288,24 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
+            // Grip is currently unused in Android XR hand mode.
             if (AndroidXRHandBridge.Active)
-            {
                 return 0.0f;
-            }
 
+#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
-                return stylusState.cluster_front_value ? 1.0f : 0;
+                return stylusState.cluster_front_value ? 1.0f : 0.0f;
             }
-            return FindAction("GripAxis").ReadValue<float>();
+#endif
+
+            InputAction action = FindAction("GripAxis");
+            return action != null ? action.ReadValue<float>() : 0.0f;
         }
+
+        // ---------------------------------------------------------------------
+        // Trigger / drawing
+        // ---------------------------------------------------------------------
 
         public override float GetTriggerRatio()
         {
@@ -277,43 +316,59 @@ namespace TiltBrush
         {
             if (AndroidXRHandBridge.Active)
             {
-                // The bridge deliberately exposes a digital draw gesture only for the Brush.
+                // Only the Brush/right hand has a draw trigger in hand mode.
                 return AndroidXRHandBridge.Trigger(isBrush) ? 1.0f : 0.0f;
             }
 
+#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
-                return Math.Max(stylusState.tip_value, stylusState.cluster_middle_value);
+                return Math.Max(
+                    stylusState.tip_value,
+                    stylusState.cluster_middle_value);
             }
-            return FindAction("TriggerAxis").ReadValue<float>();
+#endif
+
+            InputAction action = FindAction("TriggerAxis");
+            return action != null ? action.ReadValue<float>() : 0.0f;
         }
+
+        // ---------------------------------------------------------------------
+        // Touch state
+        // ---------------------------------------------------------------------
 
         private bool MapVrTouch(VrInput input)
         {
-            // No capacitive controller-touch states are synthesized by the prototype.
+            // There are no controller capacitive touch controls in custom hand mode yet.
             if (AndroidXRHandBridge.Active)
-            {
                 return false;
-            }
+
+            InputAction action;
 
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                    return FindAction("ThumbTouch").inProgress;
+                    action = FindAction("ThumbTouch");
+                    return action != null && action.inProgress;
+
                 case VrInput.Touchpad:
-                    return FindAction("PadTouch").inProgress;
+                    action = FindAction("PadTouch");
+                    return action != null && action.inProgress;
+
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-                    return FindAction("PrimaryTouch").inProgress;
+                    action = FindAction("PrimaryTouch");
+                    return action != null && action.inProgress;
+
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    return FindAction("SecondaryTouch").inProgress;
-
-
+                    action = FindAction("SecondaryTouch");
+                    return action != null && action.inProgress;
             }
+
             return false;
         }
 
@@ -322,87 +377,141 @@ namespace TiltBrush
             return MapVrTouch(input);
         }
 
+        // ---------------------------------------------------------------------
+        // Button state
+        // ---------------------------------------------------------------------
+
         private bool MapVrInput(VrInput input)
         {
-            // Suppress stale or concurrently connected physical-controller buttons in hand mode.
-            // The custom draw gesture is the only button state implemented by the prototype.
+            // Android XR hand mode currently exposes only the Brush trigger.
             if (AndroidXRHandBridge.Active)
             {
-                return input == VrInput.Trigger && AndroidXRHandBridge.Trigger(isBrush);
+                if (input == VrInput.Trigger)
+                {
+                    return AndroidXRHandBridge.Trigger(isBrush);
+                }
+
+                return false;
             }
 
-            // This logic is inferred from OculusControllerInfo
+            // This logic is inferred from OculusControllerInfo.
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                    return FindAction("ThumbButton").IsPressed();
+                {
+                    InputAction action = FindAction("ThumbButton");
+                    return action != null && action.IsPressed();
+                }
+
                 case VrInput.Touchpad:
-                    return FindAction("PadButton").IsPressed();
+                {
+                    InputAction action = FindAction("PadButton");
+                    return action != null && action.IsPressed();
+                }
+
                 case VrInput.Trigger:
+#if OCULUS_SUPPORTED
                     if (IsStylusActive())
-                        return stylusState.cluster_middle_value > 0.2 || stylusState.tip_value > 0.2;
-                    return FindAction("TriggerAxis").IsPressed();
+                    {
+                        return stylusState.cluster_middle_value > 0.2f ||
+                               stylusState.tip_value > 0.2f;
+                    }
+#endif
+                    {
+                        InputAction action = FindAction("TriggerAxis");
+                        return action != null && action.IsPressed();
+                    }
+
                 case VrInput.Grip:
+#if OCULUS_SUPPORTED
                     if (IsStylusActive())
+                    {
                         return stylusState.cluster_front_value;
-                    return FindAction("GripAxis").IsPressed();
+                    }
+#endif
+                    {
+                        InputAction action = FindAction("GripAxis");
+                        return action != null && action.IsPressed();
+                    }
+
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
+#if OCULUS_SUPPORTED
                     if (IsStylusActive())
+                    {
                         return stylusState.cluster_back_value;
-                    return FindAction("PrimaryButton").IsPressed();
+                    }
+#endif
+                    {
+                        InputAction action = FindAction("PrimaryButton");
+                        return action != null && action.IsPressed();
+                    }
+
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    return FindAction("SecondaryButton").IsPressed();
+                {
+                    InputAction action = FindAction("SecondaryButton");
+                    return action != null && action.IsPressed();
+                }
             }
+
             return false;
         }
 
-        /// Returns the value of the specified button (level trigger).
+        /// <summary>
+        /// Returns the current value of a VR input.
+        /// </summary>
         public override bool GetVrInput(VrInput input)
         {
-            //Debug.Log("Get Input");
             return MapVrInput(input);
         }
 
         private bool MapVrInputPerFrame(VrInput input, bool down)
         {
+            // In Android XR hand mode the custom right-hand gesture is the only
+            // per-frame virtual controller button we currently expose.
             if (AndroidXRHandBridge.Active)
             {
-                if (input != VrInput.Trigger)
+                if (input == VrInput.Trigger)
                 {
-                    return false;
+                    return down
+                        ? AndroidXRHandBridge.TriggerDown(isBrush)
+                        : AndroidXRHandBridge.TriggerUp(isBrush);
                 }
 
-                return down
-                    ? AndroidXRHandBridge.TriggerDown(isBrush)
-                    : AndroidXRHandBridge.TriggerUp(isBrush);
+                return false;
             }
 
             string selectedAction = string.Empty;
+
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
                     selectedAction = "ThumbButton";
                     break;
+
                 case VrInput.Touchpad:
                     selectedAction = "PadButton";
                     break;
+
                 case VrInput.Trigger:
                     selectedAction = "TriggerAxis";
                     break;
+
                 case VrInput.Grip:
                     selectedAction = "GripAxis";
                     break;
+
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
                     selectedAction = "PrimaryButton";
                     break;
+
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
@@ -410,35 +519,55 @@ namespace TiltBrush
                     break;
             }
 
-            if (!string.IsNullOrEmpty(selectedAction))
-            {
-                return down ? FindAction(selectedAction).WasPressedThisFrame() : FindAction(selectedAction).WasReleasedThisFrame();
-            }
-            return false;
+            if (string.IsNullOrEmpty(selectedAction))
+                return false;
+
+            InputAction action = FindAction(selectedAction);
+
+            if (action == null)
+                return false;
+
+            return down
+                ? action.WasPressedThisFrame()
+                : action.WasReleasedThisFrame();
         }
 
-        /// Returns true if the specified button was just pressed (rising-edge trigger).
+        /// <summary>
+        /// Returns true if the specified input was activated this frame.
+        /// </summary>
         public override bool GetVrInputDown(VrInput input)
         {
             return MapVrInputPerFrame(input, true);
         }
 
-        /// Returns true if the specified input has just been deactivated (falling-edge trigger).
+        /// <summary>
+        /// Returns true if the specified input was released this frame.
+        /// </summary>
         public override bool GetVrInputUp(VrInput input)
         {
             return MapVrInputPerFrame(input, false);
         }
+
+        // ---------------------------------------------------------------------
+        // Haptics
+        // ---------------------------------------------------------------------
+
         public override void TriggerControllerHaptics(float seconds)
         {
-            // Tracked hands have no haptic device on this controller path.
+            // Tracked hands don't provide controller haptics through this path.
             if (AndroidXRHandBridge.Active)
-            {
                 return;
-            }
 
-            float durationSeconds = seconds * App.VrSdk.VrControls.HapticsDurationScale;
-            device.SendHapticImpulse(0, App.VrSdk.VrControls.HapticsAmplitudeScale, durationSeconds);
+            if (!device.isValid)
+                return;
+
+            float durationSeconds =
+                seconds * App.VrSdk.VrControls.HapticsDurationScale;
+
+            device.SendHapticImpulse(
+                0,
+                App.VrSdk.VrControls.HapticsAmplitudeScale,
+                durationSeconds);
         }
     }
-
-} // namespace TiltBrush
+}
