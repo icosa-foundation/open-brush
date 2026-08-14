@@ -34,7 +34,7 @@ public class ApiMainThreadObserver : MonoBehaviour
     [NonSerialized] public Vector3 SpectatorCamPosition;
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
     [NonSerialized] public Quaternion SpectatorCamRotation;
-    [NonSerialized] public volatile string MultiplayerStatusJson = """{"state":"UNAVAILABLE","inRoom":false,"players":[]}""";
+    [NonSerialized] public volatile string MultiplayerStatusJson = @"{""state"":""UNAVAILABLE"",""inRoom"":false,""players"":[]}";
     private volatile bool m_MultiplayerStatusRequested;
 
     public Transform SpectatorCamTarget;
