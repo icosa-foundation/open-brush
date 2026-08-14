@@ -592,7 +592,7 @@ namespace OpenBrush.Multiplayer
         }
 
         private static void LiveStrokeStart(
-            Guid streamId, NetworkedStroke strokeData, Guid contributorId,
+            Guid streamId, NetworkedLiveStrokeStart strokeData, Guid contributorId,
             string contributorNickname, long sourceStartUtcMs,
             uint sourceStartSketchTimeMs, int sourcePlayerId)
         {
@@ -615,17 +615,16 @@ namespace OpenBrush.Multiplayer
             int sourcePreviewCount = m_IncomingLiveStrokes.Values.Count(
                 preview => preview.SourcePlayerId == sourcePlayerId);
             int capacity = MultiplayerManager.m_Instance.MaxStreamedPointers;
-            if (sourcePreviewCount >= capacity ||
-                strokeData.m_ControlPointsCapacity != 1)
+            if (sourcePreviewCount >= capacity)
             {
                 TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV2] Declined stream {streamId} from player " +
+                    $"[LiveStrokeCapacityV3] Declined stream {streamId} from player " +
                     $"{sourcePlayerId}; active={sourcePreviewCount}, capacity={capacity}.");
                 return;
             }
 
-            Stroke stroke = NetworkedStroke.ToStroke(strokeData);
+            Stroke stroke = NetworkedLiveStrokeStart.ToStroke(strokeData);
             if (stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length != 1 ||
                 BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid) == null)
             {
@@ -1565,7 +1564,7 @@ namespace OpenBrush.Multiplayer
 
         [Rpc(InvokeLocal = false)]
         public static void RPC_LiveStrokeStart(
-            NetworkRunner runner, Guid streamId, NetworkedStroke strokeData,
+            NetworkRunner runner, Guid streamId, NetworkedLiveStrokeStart strokeData,
             Guid contributorId, string contributorNickname,
             long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)

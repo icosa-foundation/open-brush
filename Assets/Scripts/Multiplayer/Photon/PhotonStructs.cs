@@ -158,6 +158,49 @@ namespace OpenBrush.Multiplayer
     }
 
     [System.Serializable]
+    public struct NetworkedLiveStrokeStart : INetworkStruct
+    {
+        public Color m_Color;
+        public Guid m_BrushGuid;
+        public float m_BrushSize;
+        public float m_BrushScale;
+        public int m_Seed;
+        public NetworkedControlPoint m_FirstControlPoint;
+        public bool m_FirstControlPointToDrop;
+
+        public NetworkedLiveStrokeStart Init(Stroke data)
+        {
+            m_BrushGuid = data.m_BrushGuid;
+            m_BrushScale = data.m_BrushScale;
+            m_BrushSize = data.m_BrushSize;
+            m_Color = data.m_Color;
+            m_Seed = data.m_Seed;
+            m_FirstControlPoint = new NetworkedControlPoint().Init(data.m_ControlPoints[0]);
+            m_FirstControlPointToDrop = data.m_ControlPointsToDrop[0];
+            return this;
+        }
+
+        public static Stroke ToStroke(NetworkedLiveStrokeStart data)
+        {
+            return new Stroke
+            {
+                m_Type = Stroke.Type.NotCreated,
+                m_IntendedCanvas = App.Scene.MainCanvas,
+                m_BrushGuid = data.m_BrushGuid,
+                m_BrushScale = data.m_BrushScale,
+                m_BrushSize = data.m_BrushSize,
+                m_Color = data.m_Color,
+                m_Seed = data.m_Seed,
+                m_ControlPoints = new[]
+                {
+                    NetworkedControlPoint.ToControlPoint(data.m_FirstControlPoint)
+                },
+                m_ControlPointsToDrop = new[] { data.m_FirstControlPointToDrop }
+            };
+        }
+    }
+
+    [System.Serializable]
     public struct NetworkedStroke : INetworkStruct
     {
         public const int k_MaxCapacity = NetworkingConstants.MaxControlPointsPerChunk;

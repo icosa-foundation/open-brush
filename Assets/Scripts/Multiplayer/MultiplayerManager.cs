@@ -106,7 +106,7 @@ namespace OpenBrush.Multiplayer
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
 
-        public const int LiveStrokeProtocolVersion = 2;
+        public const int LiveStrokeProtocolVersion = 3;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
         public int MaxStreamedPointers => App.UserConfig.Multiplayer.MaxStreamedPointers;
@@ -640,7 +640,7 @@ namespace OpenBrush.Multiplayer
             m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
             m_LiveStrokePointerCapacities[playerId] = maxStreamedPointers;
             Debug.Log(
-                $"[LiveStrokeCapacityV2] Player {playerId} advertised protocol " +
+                $"[LiveStrokeCapacityV3] Player {playerId} advertised protocol " +
                 $"{protocolVersion} with capacity {maxStreamedPointers}.");
             if (isUserRoomOwner)
             {
@@ -652,7 +652,7 @@ namespace OpenBrush.Multiplayer
         {
             return m_LiveStrokeProtocolVersions.TryGetValue(
                 playerId, out int version) &&
-                version >= LiveStrokeProtocolVersion;
+                version == LiveStrokeProtocolVersion;
         }
 
         public IReadOnlyList<int> GetLiveStrokeCompatiblePlayerIds()
@@ -1186,7 +1186,7 @@ namespace OpenBrush.Multiplayer
                 stream.Recipients.Remove(playerId))
             {
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV2] Player {playerId} declined stream " +
+                    $"[LiveStrokeCapacityV3] Player {playerId} declined stream " +
                     $"{streamId}; the completed stroke group will be sent instead.");
             }
         }

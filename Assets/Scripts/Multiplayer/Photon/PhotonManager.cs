@@ -516,13 +516,16 @@ namespace OpenBrush.Multiplayer
             Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
             Guid contributorId, string contributorNickname, int playerId)
         {
-            if (!CanSendLiveStrokeTo(playerId) || stroke == null || sourceTimeSession == null)
+            if (!CanSendLiveStrokeTo(playerId) || stroke == null ||
+                stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length != 1 ||
+                stroke.m_ControlPointsToDrop == null ||
+                stroke.m_ControlPointsToDrop.Length != 1 || sourceTimeSession == null)
             {
                 return false;
             }
 
             PhotonRPC.RPC_LiveStrokeStart(
-                m_Runner, streamId, new NetworkedStroke().Init(stroke),
+                m_Runner, streamId, new NetworkedLiveStrokeStart().Init(stroke),
                 contributorId, contributorNickname,
                 sourceTimeSession.StartUtcMs,
                 sourceTimeSession.StartSketchTimeMs,

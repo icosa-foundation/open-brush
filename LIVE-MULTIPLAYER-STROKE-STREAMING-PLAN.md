@@ -81,6 +81,11 @@ The proof of concept exists only to establish that a remote `BaseBrushScript` ca
 6. Source `StartSketchTimeMs`.
 7. The first control point, retaining its source timestamp.
 
+Protocol version 3 carries these fields in a dedicated one-point start structure. It does not
+reuse the completed-stroke `NetworkedStroke`, whose fixed-capacity control-point arrays are too
+large for a start RPC once clock and contributor metadata are included. Live-preview capability
+requires an exact protocol-version match; other clients remain on completed-stroke delivery.
+
 `PreviewUpdate` contains:
 
 1. The stream ID.
