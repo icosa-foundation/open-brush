@@ -57,7 +57,7 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
         Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1);
         Task<bool> RpcAdvertiseLiveStrokeSupport(
-            int protocolVersion, int maxStreamedPointers);
+            int protocolVersion, int maxStreamedPointers, int playerId = -1);
         Task<bool> RpcSetLiveStrokeRoomState(
             bool enabled, int protocolVersion, int playerId);
         bool RpcLiveStrokeStart(

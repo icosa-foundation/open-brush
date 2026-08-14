@@ -637,11 +637,20 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
+            bool isFirstAdvertisement =
+                !m_LiveStrokeProtocolVersions.ContainsKey(playerId);
             m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
             m_LiveStrokePointerCapacities[playerId] = maxStreamedPointers;
             Debug.Log(
                 $"[LiveStrokeCapacityV3] Player {playerId} advertised protocol " +
                 $"{protocolVersion} with capacity {maxStreamedPointers}.");
+            if (isFirstAdvertisement &&
+                protocolVersion == LiveStrokeProtocolVersion &&
+                m_Manager != null)
+            {
+                _ = m_Manager.RpcAdvertiseLiveStrokeSupport(
+                    LiveStrokeProtocolVersion, MaxStreamedPointers, playerId);
+            }
             if (isUserRoomOwner)
             {
                 _ = SendLiveStrokeRoomStateToPlayer(playerId);

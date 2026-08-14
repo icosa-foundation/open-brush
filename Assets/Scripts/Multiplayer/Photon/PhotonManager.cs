@@ -484,15 +484,24 @@ namespace OpenBrush.Multiplayer
         }
 
         public async Task<bool> RpcAdvertiseLiveStrokeSupport(
-            int protocolVersion, int maxStreamedPointers)
+            int protocolVersion, int maxStreamedPointers, int playerId = -1)
         {
             if (m_Runner == null || !m_Runner.IsRunning)
             {
                 return false;
             }
 
-            PhotonRPC.RPC_LiveStrokeCapability(
-                m_Runner, protocolVersion, maxStreamedPointers);
+            if (playerId < 0)
+            {
+                PhotonRPC.RPC_LiveStrokeCapability(
+                    m_Runner, protocolVersion, maxStreamedPointers);
+            }
+            else
+            {
+                PhotonRPC.RPC_LiveStrokeCapabilityTargeted(
+                    m_Runner, protocolVersion, maxStreamedPointers,
+                    PlayerRef.FromEncoded(playerId));
+            }
             await Task.Yield();
             return true;
         }

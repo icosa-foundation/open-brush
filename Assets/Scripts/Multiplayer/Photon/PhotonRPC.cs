@@ -1554,6 +1554,15 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
+        public static void RPC_LiveStrokeCapabilityTargeted(
+            NetworkRunner runner, int protocolVersion, int maxStreamedPointers,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
+                info.Source.RawEncoded, protocolVersion, maxStreamedPointers);
+        }
+
+        [Rpc(InvokeLocal = false)]
         public static void RPC_LiveStrokeRoomState(
             NetworkRunner runner, bool enabled, int protocolVersion,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
