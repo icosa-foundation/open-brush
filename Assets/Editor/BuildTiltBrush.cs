@@ -1155,15 +1155,50 @@ static class BuildTiltBrush
                 }
             }
 
+            // Keep this list aligned with the Android OpenXR feature selection validated on
+            // Android XR, Quest, and Pico. Some entries are currently enabled in the serialized
+            // project settings, but selecting them here makes both local and CI AndroidXR builds
+            // deterministic if an editor session or package refresh changes those settings.
+            //
             // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
             // Microsoft Hand Interaction profile currently publish the same feature ID, so an
             // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
+            EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
+
+            // Android XR's AR Foundation providers and display helpers are part of the tested
+            // cross-device configuration. Unsupported extensions are negotiated by each runtime.
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARAnchorFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARBoundingBoxFeature>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARCameraFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AROcclusionFeature>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARPlaneFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARRaycastFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARSessionFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.DisplayUtilitiesFeature>(
+                settings);
+
+            // Hand mesh data is used by Android XR, while XR Hands and Meta's aim extension keep
+            // the same AndroidXR artifact usable with hand tracking on other OpenXR runtimes.
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
                 settings);
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+
+            // These vendor-neutral/vendor-extension features are also part of the configuration
+            // tested on Quest and Pico. Meta Quest Support supplies Quest's loader initialization;
+            // runtimes that do not expose the Meta extensions simply leave them unavailable.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
+                settings);
+            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
         }
 
         void EnableRequiredFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
