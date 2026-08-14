@@ -1123,24 +1123,10 @@ static class BuildTiltBrush
         {
             enabledFeatures = new();
             requiredFeatures = new();
-            List<string> requiredFeatureStrings = new();
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
-            switch (tiltOptions.XrSdk)
-            {
-                case XrSdkMode.AndroidXR:
-                    requiredFeatureStrings.AddRange(new[]
-                    {
-                        "com.unity.openxr.feature.androidxr-support",
-                        "com.unity.openxr.feature.input.handtracking",
-                        "com.unity.openxr.feature.androidxr-hand-mesh-data",
-                        "com.unity.openxr.feature.input.metahandtrackingaim",
-                    });
-                    break;
-            }
-
-            if (requiredFeatureStrings.Count == 0)
+            if (tiltOptions.XrSdk != XrSdkMode.AndroidXR)
             {
                 return;
             }
@@ -1148,8 +1134,16 @@ static class BuildTiltBrush
             // Refresh the installed feature list and remember the existing state. Android XR
             // requirements are additive so other enabled interaction profiles remain available.
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
+            var settings = UnityEngine.XR.OpenXR.OpenXRSettings.GetSettingsForBuildTargetGroup(
+                m_targetGroup);
+            if (settings == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not load OpenXR settings for {m_targetGroup}.");
+            }
+
             var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
-            int featuresCount = UnityEngine.XR.OpenXR.OpenXRSettings.Instance.GetFeatures(featureList);
+            int featuresCount = settings.GetFeatures(featureList);
             if (featuresCount > 0)
             {
                 foreach (var feature in featureList)
@@ -1161,17 +1155,32 @@ static class BuildTiltBrush
                 }
             }
 
-            // Locate and enable features, fail if not found.
-            foreach (string requiredFeatureString in requiredFeatureStrings)
+            // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
+            // Microsoft Hand Interaction profile currently publish the same feature ID, so an
+            // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+        }
+
+        void EnableRequiredFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
+            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
+        {
+            var feature = settings.GetFeature<T>();
+            if (feature == null)
             {
-                var requiredFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeatureString);
-                if (requiredFeature == null)
-                {
-                    throw new BuildFailedException($"Could not find required OpenXR Feature {requiredFeatureString}. Is it installed?");
-                }
-                requiredFeatures.Add(requiredFeature);
-                requiredFeature.enabled = true;
+                throw new BuildFailedException(
+                    $"Could not find required OpenXR feature {typeof(T).FullName}. " +
+                    "Is its package installed?");
             }
+
+            requiredFeatures.Add(feature);
+            feature.enabled = true;
+            Debug.Log($"Enabled required OpenXR feature {typeof(T).FullName} for " +
+                $"this {m_targetGroup} build.");
         }
 
         public void Dispose()
