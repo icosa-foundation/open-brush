@@ -144,8 +144,12 @@ namespace OpenBrush.Multiplayer
 
             InvokePreCommands(command);
 
-            //SketchMemoryScript.m_Instance.PerformAndRecordCommand(command.Command, invoke: false);
-            SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(command.Command);
+            bool parentAlreadyProcessed =
+                command.Command.ParentGuid != Guid.Empty &&
+                SketchMemoryScript.m_Instance.FindNetworkCommand(
+                    command.Command.ParentGuid) != null;
+            SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(
+                command.Command, discard: parentAlreadyProcessed);
 
             TryProcessCommands();
         }
@@ -158,7 +162,10 @@ namespace OpenBrush.Multiplayer
             if (!parentGuid.Equals(default))
             {
                 var pendingParent = m_pendingCommands.FirstOrDefault(x => x.Guid == parentGuid);
-                pendingParent.ChildCommands.Add(pendingCommand);
+                if (!pendingParent.Guid.Equals(default))
+                {
+                    pendingParent.ChildCommands.Add(pendingCommand);
+                }
             }
 
             m_pendingCommands.Add(pendingCommand);
@@ -188,13 +195,13 @@ namespace OpenBrush.Multiplayer
 
         private static BaseCommand FindParentCommand(Guid parentGuid)
         {
-            PendingCommand pendingParent = m_pendingCommands.FirstOrDefault(x => x.Guid == parentGuid);
+            if (parentGuid.Equals(default)) return null;
 
-            if (!parentGuid.Equals(default))
-            {
-                return pendingParent.Command;
-            }
-            return null;
+            PendingCommand pendingParent =
+                m_pendingCommands.FirstOrDefault(x => x.Guid == parentGuid);
+            if (!pendingParent.Guid.Equals(default)) return pendingParent.Command;
+
+            return SketchMemoryScript.m_Instance.FindNetworkCommand(parentGuid);
         }
 
         public static void Send_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
@@ -215,7 +222,9 @@ namespace OpenBrush.Multiplayer
 
             Debug.Log($"Base command child count: {childCount}");
             var parentCommand = FindParentCommand(parentGuid);
-            var command = new BaseCommand(parent: parentCommand);
+            var command = new BaseCommand(
+                commandGuid, (int)(App.Instance.CurrentSketchTime * 1000),
+                parent: parentCommand);
 
             AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
         }
@@ -619,7 +628,7 @@ namespace OpenBrush.Multiplayer
             {
                 TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV3] Declined stream {streamId} from player " +
+                    $"[LiveStrokeCapacityV4] Declined stream {streamId} from player " +
                     $"{sourcePlayerId}; active={sourcePreviewCount}, capacity={capacity}.");
                 return;
             }

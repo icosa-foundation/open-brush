@@ -1787,24 +1787,52 @@ namespace TiltBrush
 
         public bool IsCommandInStack(Guid commandGuid)
         {
-            return IsCommandInOperationStack(commandGuid) ||
-                   IsCommandInRedoStack(commandGuid) ||
-                   IsCommandInNetworkStack(commandGuid);
+            return FindCommandInStack(m_OperationStack, commandGuid) != null ||
+                   FindCommandInStack(m_RedoStack, commandGuid) != null ||
+                   FindCommandInStack(m_NetworkStack, commandGuid) != null;
         }
 
         public bool IsCommandInOperationStack(Guid commandGuid)
         {
-            return m_OperationStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_OperationStack, commandGuid) != null;
         }
 
         public bool IsCommandInRedoStack(Guid commandGuid)
         {
-            return m_RedoStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_RedoStack, commandGuid) != null;
         }
 
         public bool IsCommandInNetworkStack(Guid commandGuid)
         {
-            return m_NetworkStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_NetworkStack, commandGuid) != null;
+        }
+
+        public BaseCommand FindNetworkCommand(Guid commandGuid)
+        {
+            return FindCommandInStack(m_NetworkStack, commandGuid);
+        }
+
+        private static BaseCommand FindCommandInStack(
+            IEnumerable<BaseCommand> stack, Guid commandGuid)
+        {
+            foreach (BaseCommand command in stack)
+            {
+                BaseCommand match = FindCommandInTree(command, commandGuid);
+                if (match != null) return match;
+            }
+            return null;
+        }
+
+        private static BaseCommand FindCommandInTree(
+            BaseCommand command, Guid commandGuid)
+        {
+            if (command.Guid == commandGuid) return command;
+            foreach (BaseCommand child in command.Children)
+            {
+                BaseCommand match = FindCommandInTree(child, commandGuid);
+                if (match != null) return match;
+            }
+            return null;
         }
 
         public void SetTimeOffsetToAllStacks(int m_NetworkOffsetTimestamp)

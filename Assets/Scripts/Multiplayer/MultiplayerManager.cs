@@ -106,7 +106,7 @@ namespace OpenBrush.Multiplayer
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
 
-        public const int LiveStrokeProtocolVersion = 3;
+        public const int LiveStrokeProtocolVersion = 4;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
         public int MaxStreamedPointers => App.UserConfig.Multiplayer.MaxStreamedPointers;
@@ -642,7 +642,7 @@ namespace OpenBrush.Multiplayer
             m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
             m_LiveStrokePointerCapacities[playerId] = maxStreamedPointers;
             Debug.Log(
-                $"[LiveStrokeCapacityV3] Player {playerId} advertised protocol " +
+                $"[LiveStrokeCapacityV4] Player {playerId} advertised protocol " +
                 $"{protocolVersion} with capacity {maxStreamedPointers}.");
             if (isFirstAdvertisement &&
                 protocolVersion == LiveStrokeProtocolVersion &&
@@ -1026,22 +1026,40 @@ namespace OpenBrush.Multiplayer
         {
             List<BrushStrokeCommand> allBrushCommands =
                 EnumerateBrushStrokeCommands(rootCommand).ToList();
-            BrushStrokeCommand firstActiveCommand = allBrushCommands.FirstOrDefault(
+            List<BrushStrokeCommand> brushCommands = allBrushCommands.Where(
                 command => command.m_Stroke != null &&
-                    m_OutgoingLiveStrokesBySeed.ContainsKey(command.m_Stroke.m_Seed));
-            if (firstActiveCommand?.m_Stroke?.m_ControlPoints == null ||
-                firstActiveCommand.m_Stroke.m_ControlPoints.Length == 0)
+                    m_OutgoingLiveStrokesBySeed.ContainsKey(command.m_Stroke.m_Seed))
+                .ToList();
+            if (brushCommands.Count == 0)
             {
                 return false;
             }
 
-            uint groupStartTimestamp =
-                firstActiveCommand.m_Stroke.m_ControlPoints[0].m_TimestampMs;
-            List<BrushStrokeCommand> brushCommands = allBrushCommands
-                .Where(command => command.m_Stroke?.m_ControlPoints != null &&
-                    command.m_Stroke.m_ControlPoints.Length > 0 &&
-                    command.m_Stroke.m_ControlPoints[0].m_TimestampMs == groupStartTimestamp)
+            var deltaCommandGuids = brushCommands
+                .Select(command => command.Guid)
+                .ToHashSet();
+            bool deltaTreeIsClosed = brushCommands.All(command =>
+                command.Children.All(child => deltaCommandGuids.Contains(child.Guid)));
+            if (!deltaTreeIsClosed)
+            {
+                foreach (BrushStrokeCommand command in brushCommands)
+                {
+                    if (m_OutgoingLiveStrokesBySeed.TryGetValue(
+                            command.m_Stroke.m_Seed, out OutgoingLiveStroke activeStream))
+                    {
+                        CancelLocalLiveStroke(activeStream.Pointer);
+                    }
+                }
+                return false;
+            }
+
+            List<BrushStrokeCommand> deltaRoots = brushCommands
+                .Where(command => command.ParentGuid == Guid.Empty ||
+                    !deltaCommandGuids.Contains(command.ParentGuid))
                 .ToList();
+            Debug.Log(
+                $"[LiveStrokeCommandDeltaV4] Completing {brushCommands.Count} command(s) " +
+                $"across {deltaRoots.Count} delta root(s).");
 
             var streams = new List<(BrushStrokeCommand Command, OutgoingLiveStroke Stream)>();
             foreach (BrushStrokeCommand command in brushCommands)
@@ -1078,6 +1096,7 @@ namespace OpenBrush.Multiplayer
 
             foreach (var item in streams)
             {
+                TagStrokeWithLocalContributor(item.Command.m_Stroke);
                 CompleteOutgoingLiveStroke(
                     item.Command, item.Stream, fullyStreamedRecipients);
             }
@@ -1086,7 +1105,10 @@ namespace OpenBrush.Multiplayer
             {
                 if (!fullyStreamedRecipients.Contains(player.PlayerId))
                 {
-                    await m_Manager.SendCommandToPlayer(rootCommand, player.PlayerId);
+                    foreach (BrushStrokeCommand deltaRoot in deltaRoots)
+                    {
+                        await m_Manager.SendCommandToPlayer(deltaRoot, player.PlayerId);
+                    }
                 }
             }
             return true;
@@ -1195,7 +1217,7 @@ namespace OpenBrush.Multiplayer
                 stream.Recipients.Remove(playerId))
             {
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV3] Player {playerId} declined stream " +
+                    $"[LiveStrokeCapacityV4] Player {playerId} declined stream " +
                     $"{streamId}; the completed stroke group will be sent instead.");
             }
         }
