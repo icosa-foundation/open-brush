@@ -596,6 +596,7 @@ namespace OpenBrush.Multiplayer
                 stroke.m_Object = null;
                 stroke.m_BatchSubset = subset;
                 subset.m_Stroke = stroke;
+                subset.m_ParentBatch.FlushMeshUpdates();
                 brush.DestroyMesh();
                 UnityEngine.Object.Destroy(brush.gameObject);
             }
