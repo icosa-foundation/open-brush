@@ -148,6 +148,16 @@ namespace OpenBrush.Multiplayer
                 command.Command.ParentGuid != Guid.Empty &&
                 SketchMemoryScript.m_Instance.FindNetworkCommand(
                     command.Command.ParentGuid) != null;
+            if (command.Command is BrushStrokeCommand ||
+                command.Command is DeleteStrokeCommand)
+            {
+                Debug.Log(
+                    $"[LiveStrokeCommandV4] Execute pending " +
+                    $"type={command.Command.GetType().Name} command={command.Command.Guid} " +
+                    $"parent={command.Command.ParentGuid} " +
+                    $"children={command.Command.ChildrenCount} " +
+                    $"attachToProcessedParent={parentAlreadyProcessed}.");
+            }
             SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(
                 command.Command, discard: parentAlreadyProcessed);
 
@@ -199,9 +209,19 @@ namespace OpenBrush.Multiplayer
 
             PendingCommand pendingParent =
                 m_pendingCommands.FirstOrDefault(x => x.Guid == parentGuid);
-            if (!pendingParent.Guid.Equals(default)) return pendingParent.Command;
+            if (!pendingParent.Guid.Equals(default))
+            {
+                Debug.Log(
+                    $"[LiveStrokeCommandV4] Parent lookup parent={parentGuid} source=pending.");
+                return pendingParent.Command;
+            }
 
-            return SketchMemoryScript.m_Instance.FindNetworkCommand(parentGuid);
+            BaseCommand processedParent =
+                SketchMemoryScript.m_Instance.FindNetworkCommand(parentGuid);
+            Debug.Log(
+                $"[LiveStrokeCommandV4] Parent lookup parent={parentGuid} " +
+                $"source={(processedParent == null ? "missing" : "processed")}.");
+            return processedParent;
         }
 
         public static void Send_BaseCommand(NetworkRunner runner, Guid commandGuid, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
@@ -731,6 +751,10 @@ namespace OpenBrush.Multiplayer
             SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
             int timestamp, Guid parentGuid, int childCount, int sourcePlayerId)
         {
+            Debug.Log(
+                $"[LiveStrokeCommandV4] Receive complete stream={streamId} " +
+                $"command={commandGuid} parent={parentGuid} children={childCount} " +
+                $"points={finalControlPointCount} source={sourcePlayerId}.");
             if (!m_IncomingLiveStrokes.TryGetValue(
                     streamId, out IncomingLiveStrokePreview preview))
             {
@@ -788,6 +812,10 @@ namespace OpenBrush.Multiplayer
                 FailLiveStrokePreview(preview, requestRepair: true, commandGuid);
                 return;
             }
+            Debug.Log(
+                $"[LiveStrokeCommandV4] Queued completed stroke stream={streamId} " +
+                $"command={commandGuid} parent={parentGuid} children={childCount} " +
+                $"seed={preview.Stroke.m_Seed}.");
 
             preview.Brush = null;
             m_IncomingLiveStrokes.Remove(streamId);
@@ -1082,12 +1110,16 @@ namespace OpenBrush.Multiplayer
 
         private static void DeleteStroke(int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
+            Debug.Log(
+                $"[LiveStrokeCommandV4] Receive delete command={commandGuid} " +
+                $"parent={parentGuid} children={childCount} seed={seed}.");
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
             // TODO : implment GUID for strokesdata.
             // The range of int is large (-2,147,483,648 to 2,147,483,647), but collisions are still possible.
             Stroke foundStroke = SketchMemoryScript.m_Instance.GetMemoryList
                 .FirstOrDefault(stroke => stroke.m_Seed == seed);
+            string strokeSource = foundStroke == null ? "missing" : "memory";
             if (foundStroke == null)
             {
                 // A delete can be a sibling of a brush command under the same compound
@@ -1098,10 +1130,17 @@ namespace OpenBrush.Multiplayer
                     .OfType<BrushStrokeCommand>()
                     .Select(command => command.m_Stroke)
                     .FirstOrDefault(stroke => stroke.m_Seed == seed);
+                if (foundStroke != null)
+                {
+                    strokeSource = "pending";
+                }
             }
 
             if (foundStroke != null)
             {
+                Debug.Log(
+                    $"[LiveStrokeCommandV4] Queue delete command={commandGuid} " +
+                    $"parent={parentGuid} seed={seed} strokeSource={strokeSource}.");
                 var parentCommand = FindParentCommand(parentGuid);
                 var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
 
@@ -1112,7 +1151,8 @@ namespace OpenBrush.Multiplayer
                 // Remote deletes are idempotent. The stroke may already have been removed or
                 // may never have been synchronized to this client.
                 Debug.LogWarning(
-                    $"[MultiplayerJoinConsistency] Ignoring delete for unavailable stroke seed {seed}, command {commandGuid}.");
+                    $"[LiveStrokeCommandV4] Ignore delete command={commandGuid} " +
+                    $"parent={parentGuid} seed={seed} strokeSource=missing.");
             }
         }
 

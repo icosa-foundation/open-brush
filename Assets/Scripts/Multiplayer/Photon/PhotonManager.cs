@@ -842,6 +842,13 @@ namespace OpenBrush.Multiplayer
 
         private bool CommandDeleteStroke(DeleteStrokeCommand command, PlayerRef playerRef = default)
         {
+            string target = playerRef == default
+                ? "broadcast"
+                : playerRef.RawEncoded.ToString();
+            Debug.Log(
+                $"[LiveStrokeCommandV4] Send delete command={command.Guid} " +
+                $"parent={command.ParentGuid} children={command.ChildrenCount} " +
+                $"seed={command.m_TargetStroke.m_Seed} target={target}.");
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.Send_DeleteStroke(m_Runner, command.m_TargetStroke.m_Seed, command.Guid, (int)command.NetworkTimestamp, command.ParentGuid, command.ChildrenCount, playerRef); });
             return true;

@@ -1058,8 +1058,8 @@ namespace OpenBrush.Multiplayer
                     !deltaCommandGuids.Contains(command.ParentGuid))
                 .ToList();
             Debug.Log(
-                $"[LiveStrokeCommandDeltaV4] Completing {brushCommands.Count} command(s) " +
-                $"across {deltaRoots.Count} delta root(s).");
+                $"[LiveStrokeCommandV4] Completing tree root={rootCommand.Guid} " +
+                $"commands={brushCommands.Count} deltaRoots={deltaRoots.Count}.");
 
             var streams = new List<(BrushStrokeCommand Command, OutgoingLiveStroke Stream)>();
             foreach (BrushStrokeCommand command in brushCommands)
@@ -1147,6 +1147,11 @@ namespace OpenBrush.Multiplayer
             foreach (int playerId in fullyStreamedRecipients
                 .Where(IsRemotePlayerStillConnected))
             {
+                Debug.Log(
+                    $"[LiveStrokeCommandV4] Send complete stream={stream.StreamId} " +
+                    $"command={command.Guid} parent={command.ParentGuid} " +
+                    $"children={command.ChildrenCount} seed={stroke.m_Seed} " +
+                    $"points={stroke.m_ControlPoints.Length} player={playerId}.");
                 m_Manager.RpcLiveStrokeComplete(
                     stream.StreamId, stroke.m_ControlPoints.Length,
                     stroke.m_Flags,
