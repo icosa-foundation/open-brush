@@ -1449,7 +1449,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8179569077979998440
 Transform:
   m_ObjectHideFlags: 0
@@ -1827,7 +1827,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326871085665939456
+      m_KeyId: 600000000000000001
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1875,7 +1875,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326871757446639616
+      m_KeyId: 600000000000000002
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2553,7 +2553,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326871085665939456
+      m_KeyId: 600000000000000003
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2601,7 +2601,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 326871757446639616
+      m_KeyId: 600000000000000004
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
