@@ -103,6 +103,18 @@
         </div>
     </section>
 
+    <section id="localAvatarCard" class="card" hidden>
+        <div class="card-body">
+            <h2 class="h5">Player avatars on this client</h2>
+            <p class="endpoint">multiplayer.hideallforme</p>
+            <p>Hide or show all remote player avatars in both the player and spectator cameras.</p>
+            <div class="button-row">
+                <button id="showPlayerAvatars" class="btn btn-outline-primary" type="button" data-command="multiplayer.hideallforme" data-value="false">Show avatars</button>
+                <button id="hidePlayerAvatars" class="btn btn-outline-secondary" type="button" data-command="multiplayer.hideallforme" data-value="true">Hide avatars</button>
+            </div>
+        </div>
+    </section>
+
     <div id="ownerRoomControls" hidden>
         <section class="card border-warning">
             <div class="card-body">
@@ -133,10 +145,10 @@
         <div class="card-body">
             <h2 class="h5">Players</h2>
             <p class="mb-2">
-                Every participant can mute a player locally. Room-wide mute, view-only, kick, and ownership transfer
-                controls are shown only to the room owner.
+                Every participant can mute a player locally. Per-player avatar visibility, room-wide mute, view-only,
+                kick, and ownership transfer controls are shown only to the room owner.
             </p>
-            <p class="endpoint">multiplayer.muteplayer, multiplayer.muteplayerall, multiplayer.viewonlyplayer, multiplayer.kickplayer, multiplayer.transferowner</p>
+            <p class="endpoint">multiplayer.muteplayer, multiplayer.hideplayer, multiplayer.muteplayerall, multiplayer.viewonlyplayer, multiplayer.kickplayer, multiplayer.transferowner</p>
             <div id="playerList" class="list-group">
                 <div class="list-group-item text-muted">Join a room to list its other players.</div>
             </div>
@@ -167,6 +179,7 @@
     const joinCard = document.getElementById("joinCard");
     const leaveCard = document.getElementById("leaveCard");
     const localVoiceCard = document.getElementById("localVoiceCard");
+    const localAvatarCard = document.getElementById("localAvatarCard");
     const leaveRoom = document.getElementById("leaveRoom");
     let lastQueryError = "";
     let initialStatusRetries = 0;
@@ -239,6 +252,7 @@
             if (player.mutedForMe) flagNames.push("muted for me");
             if (player.mutedForAll) flagNames.push("muted for room");
             if (player.viewOnly) flagNames.push("view-only");
+            if (player.hiddenForMe) flagNames.push("hidden for me");
             flags.textContent = flagNames.join(" · ") || "active";
             heading.appendChild(flags);
             item.appendChild(heading);
@@ -251,6 +265,10 @@
                 () => sendCommand("multiplayer.muteplayer", `${player.playerId},${!player.mutedForMe}`)));
 
             if (snapshot.isOwner) {
+                actions.appendChild(makeButton(
+                    player.hiddenForMe ? "Show avatar" : "Hide avatar",
+                    "btn-outline-secondary",
+                    () => sendCommand("multiplayer.hideplayer", `${player.playerId},${!player.hiddenForMe}`)));
                 actions.appendChild(makeButton(
                     player.mutedForAll ? "Unmute for room" : "Mute for room",
                     "btn-outline-secondary",
@@ -285,10 +303,13 @@
         joinCard.hidden = !canJoin || snapshot.inRoom;
         leaveCard.hidden = !snapshot.inRoom;
         localVoiceCard.hidden = !snapshot.inRoom;
+        localAvatarCard.hidden = !snapshot.inRoom;
         playerCard.hidden = !snapshot.inRoom;
 
         document.getElementById("enableLocalVoice").hidden = snapshot.localVoiceEnabled;
         document.getElementById("disableLocalVoice").hidden = !snapshot.localVoiceEnabled;
+        document.getElementById("showPlayerAvatars").hidden = !snapshot.playerAvatarsHiddenForMe;
+        document.getElementById("hidePlayerAvatars").hidden = snapshot.playerAvatarsHiddenForMe;
         if (snapshot.room) {
             document.getElementById("enableRoomVoice").hidden = snapshot.room.voiceEnabled;
             document.getElementById("disableRoomVoice").hidden = !snapshot.room.voiceEnabled;

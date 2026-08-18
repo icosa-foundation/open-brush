@@ -168,6 +168,7 @@ namespace TiltBrush
             MultiplayerViewOnlyMode = 1014,
             MultiplayerTransferRoomOwnership = 1013,
             MultiplayerKickPlayerOut = 1015,
+            MultiplayerHideForMe = 1024,
 
             MultiplayerMuteAllForMe = 1016,
             MultiplayerSetAllViewOnly = 1017,
@@ -5264,6 +5265,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                 case GlobalCommands.MultiplayerManualColocation:
                 case GlobalCommands.MultiplayerMutePlayerForMe:
+                case GlobalCommands.MultiplayerHideForMe:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerViewOnlyMode:
                 case GlobalCommands.MultiplayerMuteAllForMe:

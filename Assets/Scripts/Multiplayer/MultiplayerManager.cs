@@ -495,12 +495,33 @@ namespace OpenBrush.Multiplayer
             SetCameraLayerVisible(playerCamera, avatarMask, !hidden);
             SetCameraLayerVisible(spectatorCamera, avatarMask, !hidden);
 
+            if (!hidden)
+            {
+                foreach (RemotePlayer player in m_RemotePlayers.List)
+                {
+                    player.m_IsHiddenForMe = false;
+                    SetAvatarRenderersHidden(player, false);
+                }
+            }
+
             ArePlayerAvatarsHiddenForMe = hidden;
             Debug.Log(
                 $"[MultiplayerAvatarVisibility] hidden={hidden}, " +
                 $"playerCamera={playerCamera.name}, playerCullingMask={playerCamera.cullingMask}, " +
                 $"spectatorCamera={spectatorCamera.name}, " +
                 $"spectatorCullingMask={spectatorCamera.cullingMask}.");
+            return true;
+        }
+
+        public bool SetPlayerAvatarHiddenForMe(bool hidden, int playerId)
+        {
+            RemotePlayer player = GetPlayerById(playerId);
+            if (player == null) return false;
+
+            player.m_IsHiddenForMe = hidden;
+            SetAvatarRenderersHidden(player, hidden);
+            Debug.Log(
+                $"[MultiplayerAvatarVisibility] playerId={playerId}, hidden={hidden}.");
             return true;
         }
 
@@ -525,6 +546,18 @@ namespace OpenBrush.Multiplayer
                      player.PlayerGameObject.GetComponentsInChildren<Renderer>(true))
             {
                 renderer.gameObject.layer = avatarLayer;
+                renderer.forceRenderingOff = player.m_IsHiddenForMe;
+            }
+        }
+
+        private static void SetAvatarRenderersHidden(RemotePlayer player, bool hidden)
+        {
+            if (player?.PlayerGameObject == null) return;
+
+            foreach (Renderer renderer in
+                     player.PlayerGameObject.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.forceRenderingOff = hidden;
             }
         }
 

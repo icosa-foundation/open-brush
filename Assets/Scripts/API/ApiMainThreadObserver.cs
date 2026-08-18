@@ -92,7 +92,8 @@ public class ApiMainThreadObserver : MonoBehaviour
                     isOwner = manager.IsPlayerRoomOwner(player.PlayerId),
                     mutedForMe = player.m_IsMutedForMe,
                     mutedForAll = player.m_IsMutedForAll,
-                    viewOnly = player.m_IsViewOnly
+                    viewOnly = player.m_IsViewOnly,
+                    hiddenForMe = player.m_IsHiddenForMe
                 });
             }
         }
@@ -106,6 +107,7 @@ public class ApiMainThreadObserver : MonoBehaviour
             localNickname = manager.UserInfo.Nickname,
             isOwner = inRoom && manager.IsUserRoomOwner(),
             localVoiceEnabled = manager.IsLocalVoiceEnabled,
+            playerAvatarsHiddenForMe = manager.ArePlayerAvatarsHiddenForMe,
             voiceEnabled = manager.IsVoiceEnabled,
             room = inRoom ? new
             {

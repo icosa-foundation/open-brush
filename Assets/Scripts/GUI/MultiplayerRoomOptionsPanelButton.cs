@@ -47,6 +47,9 @@ namespace TiltBrush
                     case SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe:
                         IsToggledOn = _playerData.m_IsMutedForMe;
                         break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerHideForMe:
+                        IsToggledOn = _playerData.m_IsHiddenForMe;
+                        break;
                     case SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode:
                         IsToggledOn = _playerData.m_IsViewOnly;
                         break;

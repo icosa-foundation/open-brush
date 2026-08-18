@@ -26,6 +26,7 @@ namespace OpenBrush.Multiplayer
         public bool m_IsMutedForMe;
         public bool m_IsMutedForAll;
         public bool m_IsViewOnly;
+        public bool m_IsHiddenForMe;
 
         private string _nickname;
         public string Nickname

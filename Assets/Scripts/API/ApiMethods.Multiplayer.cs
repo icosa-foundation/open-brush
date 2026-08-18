@@ -165,6 +165,20 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "multiplayer.hideplayer",
+            "Hides or shows one remote player's avatar on this client's player and spectator cameras. Only the room owner can use this command.",
+            "0,true")]
+        public static bool MultiplayerHidePlayer(int playerId, bool hidden)
+        {
+            if (!TryGetRemotePlayer(playerId, true, out var manager))
+            {
+                return false;
+            }
+
+            return manager.SetPlayerAvatarHiddenForMe(hidden, playerId);
+        }
+
+        [ApiEndpoint(
             "multiplayer.muteplayerall",
             "Mutes or unmutes one remote player for the whole room. Only the room owner can use this command.",
             "0,true")]
