@@ -200,6 +200,9 @@ namespace TiltBrush
                         if (playerComponent) playerComponent.SetAudioToggleState(button.IsToggledOn);
                     }
                     break;
+                case SketchControlsScript.GlobalCommands.MultiplayerHideAllForMe:
+                    MultiplayerManager.m_Instance.SetPlayerAvatarsHiddenForMe(button.IsToggledOn);
+                    break;
                 case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForAll:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {

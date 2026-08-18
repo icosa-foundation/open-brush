@@ -167,6 +167,9 @@ namespace OpenBrush.Multiplayer
 
         [NonSerialized] public bool m_IsAllMutedForMe;
         [NonSerialized] public bool m_IsAllMutedForAll;
+        public bool ArePlayerAvatarsHiddenForMe { get; private set; }
+
+        private const string k_MultiplayerAvatarLayerName = "MultiplayerAvatar";
 
         public bool IsViewOnly
         {
@@ -473,6 +476,58 @@ namespace OpenBrush.Multiplayer
             MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(playerId, muted);
         }
 
+        public bool SetPlayerAvatarsHiddenForMe(bool hidden)
+        {
+            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
+            Camera playerCamera = App.VrSdk?.GetVrCamera();
+            Camera spectatorCamera = SketchControlsScript.m_Instance?
+                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
+            if (avatarLayer < 0 || playerCamera == null || spectatorCamera == null)
+            {
+                Debug.LogWarning(
+                    $"[MultiplayerAvatarVisibility] Could not set hidden={hidden}: " +
+                    $"avatarLayer={avatarLayer}, playerCameraAvailable={playerCamera != null}, " +
+                    $"spectatorCameraAvailable={spectatorCamera != null}.");
+                return false;
+            }
+
+            int avatarMask = 1 << avatarLayer;
+            SetCameraLayerVisible(playerCamera, avatarMask, !hidden);
+            SetCameraLayerVisible(spectatorCamera, avatarMask, !hidden);
+
+            ArePlayerAvatarsHiddenForMe = hidden;
+            Debug.Log(
+                $"[MultiplayerAvatarVisibility] hidden={hidden}, " +
+                $"playerCamera={playerCamera.name}, playerCullingMask={playerCamera.cullingMask}, " +
+                $"spectatorCamera={spectatorCamera.name}, " +
+                $"spectatorCullingMask={spectatorCamera.cullingMask}.");
+            return true;
+        }
+
+        private static void SetCameraLayerVisible(Camera camera, int layerMask, bool visible)
+        {
+            if (visible)
+            {
+                camera.cullingMask |= layerMask;
+            }
+            else
+            {
+                camera.cullingMask &= ~layerMask;
+            }
+        }
+
+        private static void AssignAvatarLayer(RemotePlayer player)
+        {
+            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
+            if (avatarLayer < 0 || player?.PlayerGameObject == null) return;
+
+            foreach (Renderer renderer in
+                     player.PlayerGameObject.GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.gameObject.layer = avatarLayer;
+            }
+        }
+
         public void MutePlayerForAll(bool muted, int playerId)
         {
             if (!isUserRoomOwner) return;
@@ -605,6 +660,7 @@ namespace OpenBrush.Multiplayer
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
+            AssignAvatarLayer(newRemotePlayer);
             m_RemotePlayers.AddPlayer(newRemotePlayer);
 
             if (!isUserRoomOwner) return;  //below this line is only room owner responsability 

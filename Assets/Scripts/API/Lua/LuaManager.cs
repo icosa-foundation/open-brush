@@ -945,6 +945,7 @@ namespace TiltBrush
             RegisterApiClass(script, "MatrixList", typeof(MatrixListApiWrapper));
             RegisterApiClass(script, "Model", typeof(ModelApiWrapper));
             RegisterApiClass(script, "ModelList", typeof(ModelListApiWrapper));
+            RegisterApiClass(script, "Multiplayer", typeof(MultiplayerApiWrapper));
             RegisterApiClass(script, "Path", typeof(PathApiWrapper));
             RegisterApiClass(script, "PathList", typeof(PathListApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));

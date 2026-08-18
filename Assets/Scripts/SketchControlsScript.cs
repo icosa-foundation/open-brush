@@ -172,6 +172,7 @@ namespace TiltBrush
             MultiplayerMuteAllForMe = 1016,
             MultiplayerSetAllViewOnly = 1017,
             MultiplayerMuteAllForAll = 1018,
+            MultiplayerHideAllForMe = 1023,
 
             MultiplayerSetRoomViewOnly = 1020,
             MultiplayerSetRoomSilent = 1021,
@@ -5270,6 +5271,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
+                case GlobalCommands.MultiplayerHideAllForMe:
                 case GlobalCommands.WhatIsNew:
                 case GlobalCommands.LoginToIcosa:
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:

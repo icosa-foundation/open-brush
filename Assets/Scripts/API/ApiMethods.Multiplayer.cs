@@ -148,6 +148,23 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "multiplayer.hideallforme",
+            "Hides or shows all remote player avatars on this client's player and spectator cameras.",
+            "true")]
+        public static bool MultiplayerHideAllForMe(bool hidden)
+        {
+            var manager = MultiplayerManager.m_Instance;
+            if (manager == null)
+            {
+                Debug.LogWarning(
+                    "[MultiplayerAvatarVisibility] HTTP command ignored because the multiplayer manager is not initialized.");
+                return false;
+            }
+
+            return manager.SetPlayerAvatarsHiddenForMe(hidden);
+        }
+
+        [ApiEndpoint(
             "multiplayer.muteplayerall",
             "Mutes or unmutes one remote player for the whole room. Only the room owner can use this command.",
             "0,true")]
