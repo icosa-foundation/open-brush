@@ -518,10 +518,16 @@ namespace OpenBrush.Multiplayer
             RemotePlayer player = GetPlayerById(playerId);
             if (player == null) return false;
 
+            if (!hidden && !ArePlayerAvatarsHiddenForMe)
+            {
+                SetAvatarLayerVisibleOnAvailableCameras(true);
+            }
+
             player.m_IsHiddenForMe = hidden;
-            SetAvatarRenderersHidden(player, hidden);
+            int rendererCount = SetAvatarRenderersHidden(player, hidden);
             Debug.Log(
-                $"[MultiplayerAvatarVisibility] playerId={playerId}, hidden={hidden}.");
+                $"[MultiplayerAvatarVisibility] playerId={playerId}, hidden={hidden}, " +
+                $"rendererCount={rendererCount}.");
             return true;
         }
 
@@ -537,28 +543,59 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+        private static void SetAvatarLayerVisibleOnAvailableCameras(bool visible)
+        {
+            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
+            if (avatarLayer < 0) return;
+
+            int avatarMask = 1 << avatarLayer;
+            Camera playerCamera = App.VrSdk?.GetVrCamera();
+            Camera spectatorCamera = SketchControlsScript.m_Instance?
+                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
+            if (playerCamera != null)
+            {
+                SetCameraLayerVisible(playerCamera, avatarMask, visible);
+            }
+            if (spectatorCamera != null)
+            {
+                SetCameraLayerVisible(spectatorCamera, avatarMask, visible);
+            }
+        }
+
         private static void AssignAvatarLayer(RemotePlayer player)
         {
             int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
             if (avatarLayer < 0 || player?.PlayerGameObject == null) return;
 
-            foreach (Renderer renderer in
-                     player.PlayerGameObject.GetComponentsInChildren<Renderer>(true))
+            Renderer[] renderers =
+                player.PlayerGameObject.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
             {
                 renderer.gameObject.layer = avatarLayer;
                 renderer.forceRenderingOff = player.m_IsHiddenForMe;
             }
+
+            Camera playerCamera = App.VrSdk?.GetVrCamera();
+            Camera spectatorCamera = SketchControlsScript.m_Instance?
+                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
+            Debug.Log(
+                $"[MultiplayerAvatarVisibility] initialized playerId={player.PlayerId}, " +
+                $"hidden={player.m_IsHiddenForMe}, rendererCount={renderers.Length}, " +
+                $"avatarLayer={avatarLayer}, playerCameraMask={playerCamera?.cullingMask}, " +
+                $"spectatorCameraMask={spectatorCamera?.cullingMask}.");
         }
 
-        private static void SetAvatarRenderersHidden(RemotePlayer player, bool hidden)
+        private static int SetAvatarRenderersHidden(RemotePlayer player, bool hidden)
         {
-            if (player?.PlayerGameObject == null) return;
+            if (player?.PlayerGameObject == null) return 0;
 
-            foreach (Renderer renderer in
-                     player.PlayerGameObject.GetComponentsInChildren<Renderer>(true))
+            Renderer[] renderers =
+                player.PlayerGameObject.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
             {
                 renderer.forceRenderingOff = hidden;
             }
+            return renderers.Length;
         }
 
         public void MutePlayerForAll(bool muted, int playerId)
@@ -693,6 +730,10 @@ namespace OpenBrush.Multiplayer
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
+            if (!ArePlayerAvatarsHiddenForMe)
+            {
+                SetAvatarLayerVisibleOnAvailableCameras(true);
+            }
             AssignAvatarLayer(newRemotePlayer);
             m_RemotePlayers.AddPlayer(newRemotePlayer);
 
