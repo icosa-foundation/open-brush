@@ -2455,12 +2455,14 @@ namespace TiltBrush
 
             if (CurrentBrowserMode == BrowserMode.SteamOverlay)
             {
-                if (!SteamManager.TryOpenOverlayUrl(url))
-                {
-                    Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
-                    return false;
-                }
-                return true;
+                // Looks like we don't need this any more as normal path now works on Steam Frame
+                // however I am keeping the code here for reference for a while
+                // if (!SteamManager.TryOpenOverlayUrl(url))
+                // {
+                //     Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
+                //     return false;
+                // }
+                // return true;
             }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);
