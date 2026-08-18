@@ -169,8 +169,6 @@ namespace OpenBrush.Multiplayer
         [NonSerialized] public bool m_IsAllMutedForAll;
         public bool ArePlayerAvatarsHiddenForMe { get; private set; }
 
-        private const string k_MultiplayerAvatarLayerName = "MultiplayerAvatar";
-
         public bool IsViewOnly
         {
             get
@@ -478,38 +476,19 @@ namespace OpenBrush.Multiplayer
 
         public bool SetPlayerAvatarsHiddenForMe(bool hidden)
         {
-            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
-            Camera playerCamera = App.VrSdk?.GetVrCamera();
-            Camera spectatorCamera = SketchControlsScript.m_Instance?
-                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
-            if (avatarLayer < 0 || playerCamera == null || spectatorCamera == null)
+            int rendererCount = 0;
+            foreach (RemotePlayer player in m_RemotePlayers.List)
             {
-                Debug.LogWarning(
-                    $"[MultiplayerAvatarVisibility] Could not set hidden={hidden}: " +
-                    $"avatarLayer={avatarLayer}, playerCameraAvailable={playerCamera != null}, " +
-                    $"spectatorCameraAvailable={spectatorCamera != null}.");
-                return false;
-            }
-
-            int avatarMask = 1 << avatarLayer;
-            SetCameraLayerVisible(playerCamera, avatarMask, !hidden);
-            SetCameraLayerVisible(spectatorCamera, avatarMask, !hidden);
-
-            if (!hidden)
-            {
-                foreach (RemotePlayer player in m_RemotePlayers.List)
+                if (!hidden)
                 {
                     player.m_IsHiddenForMe = false;
-                    SetAvatarRenderersHidden(player, false);
                 }
+                rendererCount += SetAvatarRenderersHidden(player, hidden);
             }
 
             ArePlayerAvatarsHiddenForMe = hidden;
             Debug.Log(
-                $"[MultiplayerAvatarVisibility] hidden={hidden}, " +
-                $"playerCamera={playerCamera.name}, playerCullingMask={playerCamera.cullingMask}, " +
-                $"spectatorCamera={spectatorCamera.name}, " +
-                $"spectatorCullingMask={spectatorCamera.cullingMask}.");
+                $"[MultiplayerAvatarVisibility] hidden={hidden}, rendererCount={rendererCount}.");
             return true;
         }
 
@@ -518,71 +497,23 @@ namespace OpenBrush.Multiplayer
             RemotePlayer player = GetPlayerById(playerId);
             if (player == null) return false;
 
-            if (!hidden && !ArePlayerAvatarsHiddenForMe)
-            {
-                SetAvatarLayerVisibleOnAvailableCameras(true);
-            }
-
             player.m_IsHiddenForMe = hidden;
-            int rendererCount = SetAvatarRenderersHidden(player, hidden);
+            bool effectivelyHidden = hidden || ArePlayerAvatarsHiddenForMe;
+            int rendererCount = SetAvatarRenderersHidden(player, effectivelyHidden);
             Debug.Log(
                 $"[MultiplayerAvatarVisibility] playerId={playerId}, hidden={hidden}, " +
-                $"rendererCount={rendererCount}.");
+                $"effectivelyHidden={effectivelyHidden}, rendererCount={rendererCount}.");
             return true;
         }
 
-        private static void SetCameraLayerVisible(Camera camera, int layerMask, bool visible)
+        private static void InitializeAvatarVisibility(RemotePlayer player, bool hidden)
         {
-            if (visible)
-            {
-                camera.cullingMask |= layerMask;
-            }
-            else
-            {
-                camera.cullingMask &= ~layerMask;
-            }
-        }
+            if (player?.PlayerGameObject == null) return;
 
-        private static void SetAvatarLayerVisibleOnAvailableCameras(bool visible)
-        {
-            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
-            if (avatarLayer < 0) return;
-
-            int avatarMask = 1 << avatarLayer;
-            Camera playerCamera = App.VrSdk?.GetVrCamera();
-            Camera spectatorCamera = SketchControlsScript.m_Instance?
-                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
-            if (playerCamera != null)
-            {
-                SetCameraLayerVisible(playerCamera, avatarMask, visible);
-            }
-            if (spectatorCamera != null)
-            {
-                SetCameraLayerVisible(spectatorCamera, avatarMask, visible);
-            }
-        }
-
-        private static void AssignAvatarLayer(RemotePlayer player)
-        {
-            int avatarLayer = LayerMask.NameToLayer(k_MultiplayerAvatarLayerName);
-            if (avatarLayer < 0 || player?.PlayerGameObject == null) return;
-
-            Renderer[] renderers =
-                player.PlayerGameObject.GetComponentsInChildren<Renderer>(true);
-            foreach (Renderer renderer in renderers)
-            {
-                renderer.gameObject.layer = avatarLayer;
-                renderer.forceRenderingOff = player.m_IsHiddenForMe;
-            }
-
-            Camera playerCamera = App.VrSdk?.GetVrCamera();
-            Camera spectatorCamera = SketchControlsScript.m_Instance?
-                .GetDropCampWidget()?.GetComponentInChildren<Camera>(true);
+            int rendererCount = SetAvatarRenderersHidden(player, hidden);
             Debug.Log(
                 $"[MultiplayerAvatarVisibility] initialized playerId={player.PlayerId}, " +
-                $"hidden={player.m_IsHiddenForMe}, rendererCount={renderers.Length}, " +
-                $"avatarLayer={avatarLayer}, playerCameraMask={playerCamera?.cullingMask}, " +
-                $"spectatorCameraMask={spectatorCamera?.cullingMask}.");
+                $"hidden={hidden}, rendererCount={rendererCount}.");
         }
 
         private static int SetAvatarRenderersHidden(RemotePlayer player, bool hidden)
@@ -730,11 +661,7 @@ namespace OpenBrush.Multiplayer
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
         {
-            if (!ArePlayerAvatarsHiddenForMe)
-            {
-                SetAvatarLayerVisibleOnAvailableCameras(true);
-            }
-            AssignAvatarLayer(newRemotePlayer);
+            InitializeAvatarVisibility(newRemotePlayer, ArePlayerAvatarsHiddenForMe);
             m_RemotePlayers.AddPlayer(newRemotePlayer);
 
             if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
