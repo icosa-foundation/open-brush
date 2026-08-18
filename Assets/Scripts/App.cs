@@ -2446,13 +2446,6 @@ namespace TiltBrush
         // OpenURL().
         public static bool OpenURL(string url)
         {
-            var isPolyUrl = (url.Contains("poly.google.com/") || url.Contains("vr.google.com"));
-            if (isPolyUrl && GoogleIdentity.LoggedIn)
-            {
-                var email = GoogleIdentity.Profile.email;
-                url = $"https://accounts.google.com/AccountChooser?Email={email}&continue={url}";
-            }
-
             if (CurrentBrowserMode == BrowserMode.SteamOverlay)
             {
                 // Looks like we don't need this any more as normal path now works on Steam Frame
