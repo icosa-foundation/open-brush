@@ -58,6 +58,9 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_GoogleNameText;
         [SerializeField] private TextMeshPro m_SketchfabNameText;
         [SerializeField] private TextMeshPro m_IcosaNameText;
+        [SerializeField] public ActionButton m_EnterLoginCodeButton;
+        [SerializeField] public ActionButton m_HideIcosaLoginButton;
+
         [SerializeField] private TextMeshPro m_ViveNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
@@ -212,6 +215,11 @@ namespace TiltBrush
             m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
         }
 
+        public void EnterCodeManually()
+        {
+            ShowKeyboard(true);
+        }
+
         public void HideIcosaLogin()
         {
             m_IcosaLoginElements.SetActive(false);
@@ -237,9 +245,26 @@ namespace TiltBrush
             m_GoogleSignedOutElements.SetActive(false);
             m_ViveSignedOutElements.SetActive(false);
             m_ViveSignedInElements.SetActive(false);
+
+            // Always allow manual code entry so don't hide keyboard button
+            // m_EnterLoginCodeButton.gameObject.SetActive(!App.OsCanReachLocalhost);
+
+            // Hide no-op "Got It" button when manual code entry is the only option
+            m_HideIcosaLoginButton.gameObject.SetActive(App.OsCanReachLocalhost);
+        }
+
+        private void ShowKeyboard(bool show)
+        {
             var kbController = m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>();
-            kbController.Clear();
-            kbController.m_KeyboardUI.gameObject.SetActive(!App.DeviceCanOpenSystemBrowser);
+            if (show)
+            {
+                kbController.Clear();
+                kbController.m_KeyboardUI.gameObject.SetActive(true);
+            }
+            else
+            {
+                kbController.m_KeyboardUI.gameObject.SetActive(false);
+            }
         }
 
         public void HandleIcosaLoginSubmit(string code)
@@ -413,7 +438,7 @@ namespace TiltBrush
                         );
                     }
                     string deviceCodeUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device";
-                    if (App.DeviceCanOpenSystemBrowser)
+                    if (App.OsCanReachLocalhost)
                     {
                         string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
                         if (!App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}"))

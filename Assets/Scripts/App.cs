@@ -421,39 +421,32 @@ namespace TiltBrush
         public bool RamLoggingActive = false;
         private InitNoHeadsetMode m_NoHeadsetInitScript;
 
-        private enum BrowserMode
-        {
-            SystemBrowser,
-            SteamOverlay,
-        }
-
-        private static BrowserMode CurrentBrowserMode
+        public static bool OsCanReachLocalhost
         {
             get
             {
-                if (Config != null && Config.ForceSteamOverlayBrowser)
+                if (Config != null && Config.CanReachLocalhostDisabled)
                 {
-                    return BrowserMode.SteamOverlay;
+                    return false;
                 }
 #if UNITY_EDITOR
                 if (Config != null)
                 {
-                    switch (Config.m_BrowserModeOverrideInEditor)
+                    switch (Config.m_OverrideIncomingHttpAllowedInEditor)
                     {
-                        case Config.BrowserModeOverride.SystemBrowser:
-                            return BrowserMode.SystemBrowser;
-                        case Config.BrowserModeOverride.SteamOverlay:
-                            return BrowserMode.SteamOverlay;
+                        case Config.IncomingHttpModeOverride.Yes:
+                            return true;
+                        case Config.IncomingHttpModeOverride.No:
+                            return false;
+                        case Config.IncomingHttpModeOverride.Auto:
+                            // Pass through to default behaviour below
+                            break;
                     }
                 }
 #endif
-                return Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam
-                    ? BrowserMode.SteamOverlay
-                    : BrowserMode.SystemBrowser;
+                return !(Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam);
             }
         }
-
-        public static bool DeviceCanOpenSystemBrowser => CurrentBrowserMode == BrowserMode.SystemBrowser;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -2446,7 +2439,7 @@ namespace TiltBrush
         // OpenURL().
         public static bool OpenURL(string url)
         {
-            if (CurrentBrowserMode == BrowserMode.SteamOverlay)
+            if (OsCanReachLocalhost)
             {
                 // Looks like we don't need this any more as normal path now works on Steam Frame
                 // however I am keeping the code here for reference for a while
