@@ -229,7 +229,6 @@ namespace TiltBrush
         public void ShowIcosaLogin()
         {
             m_IcosaLoginElements.SetActive(true);
-            m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>().Clear();
             m_IcosaSignedInElements.SetActive(false);
             m_IcosaSignedOutElements.SetActive(false);
             m_SketchfabSignedOutElements.SetActive(false);
@@ -238,6 +237,9 @@ namespace TiltBrush
             m_GoogleSignedOutElements.SetActive(false);
             m_ViveSignedOutElements.SetActive(false);
             m_ViveSignedInElements.SetActive(false);
+            var kbController = m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>();
+            kbController.Clear();
+            kbController.m_KeyboardUI.gameObject.SetActive(!App.DeviceCanOpenSystemBrowser);
         }
 
         public void HandleIcosaLoginSubmit(string code)
