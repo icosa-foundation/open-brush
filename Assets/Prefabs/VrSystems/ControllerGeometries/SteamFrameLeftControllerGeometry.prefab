@@ -865,8 +865,7 @@ MonoBehaviour:
   m_BaseAttachPoint: {fileID: 4382182833813556}
   m_GripAttachPoint: {fileID: 4515760644033864}
   m_DropperDescAttachPoint: {fileID: 4430097445729154}
-  m_MainMesh: {fileID: -7635826562936255635, guid: f50d7c9cc3ff7484c955a8d4bbe91f30,
-    type: 3}
+  m_MainMesh: {fileID: 9214281954561281479}
   m_TriggerMesh: {fileID: 1334275086873778194}
   m_OtherMeshes:
   - {fileID: 7230734639118024244}
@@ -10366,6 +10365,12 @@ PrefabInstance:
 --- !u!4 &7952536507399987521 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f50d7c9cc3ff7484c955a8d4bbe91f30,
+    type: 3}
+  m_PrefabInstance: {fileID: 7626754352138127018}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &9214281954561281479 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -7635826562936255635, guid: f50d7c9cc3ff7484c955a8d4bbe91f30,
     type: 3}
   m_PrefabInstance: {fileID: 7626754352138127018}
   m_PrefabAsset: {fileID: 0}
