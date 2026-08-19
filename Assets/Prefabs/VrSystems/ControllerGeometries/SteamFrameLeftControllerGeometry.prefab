@@ -865,7 +865,8 @@ MonoBehaviour:
   m_BaseAttachPoint: {fileID: 4382182833813556}
   m_GripAttachPoint: {fileID: 4515760644033864}
   m_DropperDescAttachPoint: {fileID: 4430097445729154}
-  m_MainMesh: {fileID: 0}
+  m_MainMesh: {fileID: -7635826562936255635, guid: f50d7c9cc3ff7484c955a8d4bbe91f30,
+    type: 3}
   m_TriggerMesh: {fileID: 1334275086873778194}
   m_OtherMeshes:
   - {fileID: 7230734639118024244}
