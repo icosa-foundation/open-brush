@@ -86,6 +86,7 @@ namespace TiltBrush
         private List<BaseButton> m_IconScriptsOnNormalPage;
         private bool m_DriveSetHasSketches;
         private bool m_ReadOnlyShown = false;
+        private bool m_InitialSketchSetSelectionPending = true;
 
         public SketchSetType CurrentSketchSetType => m_CurrentSketchSet;
 
@@ -172,6 +173,7 @@ namespace TiltBrush
             // Set the sketch set var to Liked, then function set to force state.
             m_CurrentSketchSet = SketchSetType.Liked;
             SetVisibleSketchSet(SketchSetType.User);
+            TrySelectInitialSketchSet();
 
             Action refresh = () =>
             {
@@ -415,6 +417,7 @@ namespace TiltBrush
 
         void Update()
         {
+            TrySelectInitialSketchSet();
             BaseUpdate();
             PageFlipUpdate();
 
@@ -730,6 +733,12 @@ namespace TiltBrush
         // Works specifically with GalleryButtons.
         public void ButtonPressed(GalleryButton.Type rType, BaseButton button = null)
         {
+            if (rType == GalleryButton.Type.Showcase || rType == GalleryButton.Type.Local ||
+                rType == GalleryButton.Type.Liked || rType == GalleryButton.Type.Drive)
+            {
+                m_InitialSketchSetSelectionPending = false;
+            }
+
             switch (rType)
             {
                 case GalleryButton.Type.Exit:
@@ -760,6 +769,26 @@ namespace TiltBrush
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void TrySelectInitialSketchSet()
+        {
+            if (!m_InitialSketchSetSelectionPending)
+            {
+                return;
+            }
+
+            SketchSet userSketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.User);
+            if (!userSketchSet.IsReadyForAccess)
+            {
+                return;
+            }
+
+            m_InitialSketchSetSelectionPending = false;
+            if (userSketchSet.NumSketches == 0)
+            {
+                SetVisibleSketchSet(SketchSetType.Curated);
             }
         }
 
