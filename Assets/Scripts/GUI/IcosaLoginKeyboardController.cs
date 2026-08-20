@@ -21,17 +21,14 @@ namespace TiltBrush
 {
     public class IcosaLoginKeyboardController : MonoBehaviour
     {
-        private KeyboardUI m_KeyboardUI;
+        public KeyboardUI m_KeyboardUI;
         [NonSerialized] public static string m_InitialText;
         public UnityEvent<string> OnSubmit;
-        public bool InputEnabled = true;
 
         void Awake()
         {
-            m_KeyboardUI = GetComponentInChildren<KeyboardUI>(includeInactive: true);
             m_KeyboardUI.KeyPressed += KeyPressed;
             m_KeyboardUI.AddConsoleContent(m_InitialText);
-            InputEnabled = true;
         }
 
         private void OnDestroy()
@@ -45,7 +42,6 @@ namespace TiltBrush
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
-                    InputEnabled = false; // Prevents double submit
                     OnSubmit.Invoke(m_KeyboardUI.ConsoleContent);
                     break;
             }
