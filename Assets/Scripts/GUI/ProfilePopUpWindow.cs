@@ -58,6 +58,9 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_GoogleNameText;
         [SerializeField] private TextMeshPro m_SketchfabNameText;
         [SerializeField] private TextMeshPro m_IcosaNameText;
+        [SerializeField] public ActionButton m_EnterLoginCodeButton;
+        [SerializeField] public ActionButton m_HideIcosaLoginButton;
+
         [SerializeField] private TextMeshPro m_ViveNameText;
         [SerializeField] private Texture2D m_GenericPhoto;
 
@@ -212,6 +215,11 @@ namespace TiltBrush
             m_IcosaPhoto.material.mainTexture = App.IcosaUserIcon;
         }
 
+        public void EnterCodeManually()
+        {
+            ShowKeyboard(true);
+        }
+
         public void HideIcosaLogin()
         {
             m_IcosaLoginElements.SetActive(false);
@@ -229,7 +237,6 @@ namespace TiltBrush
         public void ShowIcosaLogin()
         {
             m_IcosaLoginElements.SetActive(true);
-            m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>().Clear();
             m_IcosaSignedInElements.SetActive(false);
             m_IcosaSignedOutElements.SetActive(false);
             m_SketchfabSignedOutElements.SetActive(false);
@@ -238,6 +245,27 @@ namespace TiltBrush
             m_GoogleSignedOutElements.SetActive(false);
             m_ViveSignedOutElements.SetActive(false);
             m_ViveSignedInElements.SetActive(false);
+            ShowKeyboard(false);
+        }
+
+        private void ShowKeyboard(bool show)
+        {
+            var kbController = m_IcosaLoginElements.GetComponent<IcosaLoginKeyboardController>();
+            if (show)
+            {
+                kbController.Clear();
+                kbController.m_KeyboardUI.gameObject.SetActive(true);
+
+                // Hide the buttons on the layer behind as they interfere with the keyboard
+                m_EnterLoginCodeButton.gameObject.SetActive(false);
+                m_HideIcosaLoginButton.gameObject.SetActive(false);
+            }
+            else
+            {
+                kbController.m_KeyboardUI.gameObject.SetActive(false);
+                m_EnterLoginCodeButton.gameObject.SetActive(true);
+                m_HideIcosaLoginButton.gameObject.SetActive(App.OsCanReachLocalhost);
+            }
         }
 
         public void HandleIcosaLoginSubmit(string code)
@@ -411,8 +439,9 @@ namespace TiltBrush
                         );
                     }
                     string deviceCodeUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device";
-                    if (App.DeviceCanOpenSystemBrowser)
+                    if (App.OsCanReachLocalhost)
                     {
+                        // OS can login via localhost API call so take the user friendly path
                         string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
                         if (!App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}"))
                         {
@@ -421,6 +450,7 @@ namespace TiltBrush
                     }
                     else
                     {
+                        // Localhost api calls are blocked so user needs to enter code manually
                         if (!App.OpenURL(deviceCodeUrl))
                         {
                             break;
