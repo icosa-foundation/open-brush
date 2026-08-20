@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityGLTF;
 
 #if OCULUS_SUPPORTED
@@ -82,11 +83,11 @@ namespace TiltBrush
     ///
     public class Config : MonoBehaviour
     {
-        public enum BrowserModeOverride
+        public enum m_OsCanReachLocalhost
         {
-            Auto,
-            SystemBrowser,
-            SteamOverlay,
+            Default,
+            ForceYes,
+            ForceNo,
         }
 
         // When set, ModelWidget creation waits for Poly models to be loaded into memory.
@@ -118,7 +119,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
         [Header("Editor testing")]
         [Tooltip("Overrides URL handling in Play Mode so the Steam Frame login flow can be tested in the Editor.")]
-        public BrowserModeOverride m_BrowserModeOverrideInEditor;
+        public m_OsCanReachLocalhost OsCanReachLocalhost;
 #endif
 
         [Header("Overwritten by build process")]
@@ -147,7 +148,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData ViveSecrets => Secrets[SecretsConfig.Service.Vive];
 
         public bool DisableAccountLogins;
-        [NonSerialized] public bool ForceSteamOverlayBrowser;
+        [NonSerialized] public bool CanReachLocalhostDisabled;
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -521,7 +522,7 @@ namespace TiltBrush
                 }
                 else if (args[i] == "--forceSteamOverlayBrowser")
                 {
-                    ForceSteamOverlayBrowser = true;
+                    CanReachLocalhostDisabled = true;
                     Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
                 }
                 else if (args[i].Contains("."))
