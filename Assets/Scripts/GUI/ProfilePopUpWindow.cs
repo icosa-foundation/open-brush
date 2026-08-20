@@ -245,12 +245,7 @@ namespace TiltBrush
             m_GoogleSignedOutElements.SetActive(false);
             m_ViveSignedOutElements.SetActive(false);
             m_ViveSignedInElements.SetActive(false);
-
-            // Always allow manual code entry so don't hide keyboard button
-            // m_EnterLoginCodeButton.gameObject.SetActive(!App.OsCanReachLocalhost);
-
-            // Hide no-op "Got It" button when manual code entry is the only option
-            m_HideIcosaLoginButton.gameObject.SetActive(App.OsCanReachLocalhost);
+            ShowKeyboard(false);
         }
 
         private void ShowKeyboard(bool show)
@@ -260,10 +255,16 @@ namespace TiltBrush
             {
                 kbController.Clear();
                 kbController.m_KeyboardUI.gameObject.SetActive(true);
+
+                // Hide the buttons on the layer behind as they interfere with the keyboard
+                m_EnterLoginCodeButton.gameObject.SetActive(false);
+                m_HideIcosaLoginButton.gameObject.SetActive(false);
             }
             else
             {
                 kbController.m_KeyboardUI.gameObject.SetActive(false);
+                m_EnterLoginCodeButton.gameObject.SetActive(true);
+                m_HideIcosaLoginButton.gameObject.SetActive(App.OsCanReachLocalhost);
             }
         }
 
@@ -440,6 +441,7 @@ namespace TiltBrush
                     string deviceCodeUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device";
                     if (App.OsCanReachLocalhost)
                     {
+                        // OS can login via localhost API call so take the user friendly path
                         string secret = VrAssetService.m_Instance.GenerateDeviceCodeSecret();
                         if (!App.OpenURL($"{deviceCodeUrl}?appId=openbrush&secret={secret}"))
                         {
@@ -448,6 +450,7 @@ namespace TiltBrush
                     }
                     else
                     {
+                        // Localhost api calls are blocked so user needs to enter code manually
                         if (!App.OpenURL(deviceCodeUrl))
                         {
                             break;

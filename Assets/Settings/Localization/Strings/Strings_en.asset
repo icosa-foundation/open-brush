@@ -3828,7 +3828,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 520669196650635264
-    m_Localized: Go to https://icosa.gallery/device to get a login code
+    m_Localized: 'Visit: <b>https://icosa.gallery/device</b>
+
+      to get a login
+      code'
     m_Metadata:
       m_Items: []
   - m_Id: 522174996334338048
@@ -3937,7 +3940,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 533423339270135808
-    m_Localized: Enter Code
+    m_Localized: Enter Code Manually
     m_Metadata:
       m_Items: []
   references:

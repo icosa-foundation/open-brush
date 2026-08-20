@@ -432,18 +432,19 @@ namespace TiltBrush
 #if UNITY_EDITOR
                 if (Config != null)
                 {
-                    switch (Config.m_OverrideIncomingHttpAllowedInEditor)
+                    switch (Config.OsCanReachLocalhost)
                     {
-                        case Config.IncomingHttpModeOverride.Yes:
+                        case Config.m_OsCanReachLocalhost.ForceYes:
                             return true;
-                        case Config.IncomingHttpModeOverride.No:
+                        case Config.m_OsCanReachLocalhost.ForceNo:
                             return false;
-                        case Config.IncomingHttpModeOverride.Auto:
+                        case Config.m_OsCanReachLocalhost.Default:
                             // Pass through to default behaviour below
                             break;
                     }
                 }
 #endif
+                // Currently only Android on SteamOS is unable to access localhost
                 return !(Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam);
             }
         }
@@ -2439,17 +2440,6 @@ namespace TiltBrush
         // OpenURL().
         public static bool OpenURL(string url)
         {
-            if (OsCanReachLocalhost)
-            {
-                // Looks like we don't need this any more as normal path now works on Steam Frame
-                // however I am keeping the code here for reference for a while
-                // if (!SteamManager.TryOpenOverlayUrl(url))
-                // {
-                //     Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
-                //     return false;
-                // }
-                // return true;
-            }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);
     startInfo.UseShellExecute = true;

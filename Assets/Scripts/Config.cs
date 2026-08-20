@@ -83,11 +83,11 @@ namespace TiltBrush
     ///
     public class Config : MonoBehaviour
     {
-        public enum IncomingHttpModeOverride
+        public enum m_OsCanReachLocalhost
         {
-            Auto,
-            Yes,
-            No,
+            Default,
+            ForceYes,
+            ForceNo,
         }
 
         // When set, ModelWidget creation waits for Poly models to be loaded into memory.
@@ -119,7 +119,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
         [Header("Editor testing")]
         [Tooltip("Overrides URL handling in Play Mode so the Steam Frame login flow can be tested in the Editor.")]
-        public IncomingHttpModeOverride m_OverrideIncomingHttpAllowedInEditor;
+        public m_OsCanReachLocalhost OsCanReachLocalhost;
 #endif
 
         [Header("Overwritten by build process")]
