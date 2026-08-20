@@ -702,6 +702,10 @@ function Guide:NewSphere(transform) end
 function Guide:NewCapsule(transform) end
 
 ---@param transform Transform The transform of the Guide Widget
+---@return Guide # A new plane guide
+function Guide:NewPlane(transform) end
+
+---@param transform Transform The transform of the Guide Widget
 ---@return Guide # A new cone guide
 function Guide:NewCone(transform) end
 
