@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityGLTF;
 
 #if OCULUS_SUPPORTED
@@ -82,11 +83,11 @@ namespace TiltBrush
     ///
     public class Config : MonoBehaviour
     {
-        public enum BrowserModeOverride
+        public enum m_OsCanReachLocalhost
         {
-            Auto,
-            SystemBrowser,
-            SteamOverlay,
+            Default,
+            ForceYes,
+            ForceNo,
         }
 
         // When set, ModelWidget creation waits for Poly models to be loaded into memory.
@@ -118,7 +119,7 @@ namespace TiltBrush
 #if UNITY_EDITOR
         [Header("Editor testing")]
         [Tooltip("Overrides URL handling in Play Mode so the Steam Frame login flow can be tested in the Editor.")]
-        public BrowserModeOverride m_BrowserModeOverrideInEditor;
+        public m_OsCanReachLocalhost OsCanReachLocalhost;
 #endif
 
         [Header("Overwritten by build process")]
@@ -147,7 +148,7 @@ namespace TiltBrush
         public SecretsConfig.ServiceAuthData ViveSecrets => Secrets[SecretsConfig.Service.Vive];
 
         public bool DisableAccountLogins;
-        [NonSerialized] public bool ForceSteamOverlayBrowser;
+        [NonSerialized] public bool CanReachLocalhostDisabled;
 
         /// Return a value kinda sorta half-way between "building for Android" and "running on Android"
         /// In order of increasing strictness, here are the in-Editor semantics of various methods
@@ -340,6 +341,18 @@ namespace TiltBrush
             return original;
         }
 
+        private void ParseArgString(string argString)
+        {
+            // ParseArgs expects the executable name at index zero, matching
+            // Environment.GetCommandLineArgs(). Split quoted sections as single arguments.
+            var args = ("OpenBrush " + argString).Split('"')
+                .Select((element, index) => index % 2 == 0
+                    ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    : new string[] { element })
+                .SelectMany(element => element).ToArray();
+            ParseArgs(args);
+        }
+
         void ParseArgs(string[] args)
         {
             List<string> files = new List<string>();
@@ -509,7 +522,7 @@ namespace TiltBrush
                 }
                 else if (args[i] == "--forceSteamOverlayBrowser")
                 {
-                    ForceSteamOverlayBrowser = true;
+                    CanReachLocalhostDisabled = true;
                     Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
                 }
                 else if (args[i].Contains("."))
@@ -578,13 +591,7 @@ namespace TiltBrush
             {
                 try
                 {
-                    // This splits the arguments by spaces, excepting arguments enclosed by quotes.
-                    var args = ("TiltBrush.exe " + m_FakeCommandLineArgsInEditor).Split('"')
-                        .Select((element, index) => index % 2 == 0
-                            ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                            : new string[] { element })
-                        .SelectMany(element => element).ToArray();
-                    ParseArgs(args);
+                    ParseArgString(m_FakeCommandLineArgsInEditor);
                 }
                 catch (Exception e)
                 {
@@ -624,6 +631,13 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
                     UnityEngine.XR.XRSettings.enabled = false;
+                }
+
+                string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");
+                if (!string.IsNullOrWhiteSpace(openBrushArgs))
+                {
+                    Debug.Log("[OB_ANDROID_ARGS] Parsing OpenBrushArgs intent extra");
+                    ParseArgString(openBrushArgs);
                 }
 
                 // TODO Re-enable launch extra shortcuts. They will be useful but need a bit more thought and testing

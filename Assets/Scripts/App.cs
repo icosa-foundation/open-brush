@@ -422,39 +422,33 @@ namespace TiltBrush
         public bool RamLoggingActive = false;
         private InitNoHeadsetMode m_NoHeadsetInitScript;
 
-        private enum BrowserMode
-        {
-            SystemBrowser,
-            SteamOverlay,
-        }
-
-        private static BrowserMode CurrentBrowserMode
+        public static bool OsCanReachLocalhost
         {
             get
             {
-                if (Config != null && Config.ForceSteamOverlayBrowser)
+                if (Config != null && Config.CanReachLocalhostDisabled)
                 {
-                    return BrowserMode.SteamOverlay;
+                    return false;
                 }
 #if UNITY_EDITOR
                 if (Config != null)
                 {
-                    switch (Config.m_BrowserModeOverrideInEditor)
+                    switch (Config.OsCanReachLocalhost)
                     {
-                        case Config.BrowserModeOverride.SystemBrowser:
-                            return BrowserMode.SystemBrowser;
-                        case Config.BrowserModeOverride.SteamOverlay:
-                            return BrowserMode.SteamOverlay;
+                        case Config.m_OsCanReachLocalhost.ForceYes:
+                            return true;
+                        case Config.m_OsCanReachLocalhost.ForceNo:
+                            return false;
+                        case Config.m_OsCanReachLocalhost.Default:
+                            // Pass through to default behaviour below
+                            break;
                     }
                 }
 #endif
-                return Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam
-                    ? BrowserMode.SteamOverlay
-                    : BrowserMode.SystemBrowser;
+                // Currently only Android on SteamOS is unable to access localhost
+                return !(Application.platform == RuntimePlatform.Android && SteamManager.RunningUnderSteam);
             }
         }
-
-        public static bool DeviceCanOpenSystemBrowser => CurrentBrowserMode == BrowserMode.SystemBrowser;
 
         public void ToggleAudioReactiveModeRequest()
         {
@@ -986,6 +980,11 @@ namespace TiltBrush
                             else if (DemoManager.m_Instance.DemoModeEnabled)
                             {
                                 OnIntroComplete();
+                            }
+                            else if (UserConfig.Flags.ForceViewOnly)
+                            {
+                                OnIntroComplete(markTutorialComplete: false);
+                                PanelManager.m_Instance.ReviveFloatingPanelsForStartup();
                             }
                             else if (!VrSdk.IsHmdInitialized() ||
                                      UserConfig.Flags.SkipIntro ||
@@ -1710,14 +1709,17 @@ namespace TiltBrush
             }
         }
 
-        void OnIntroComplete()
+        void OnIntroComplete(bool markTutorialComplete = true)
         {
             SaveLoadScript.m_Instance.NewAutosaveFile();
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             SketchControlsScript.m_Instance.RequestPanelsVisibility(true);
 
-            // If the user chooses to skip the intro, assume they've done the tutorial before.
-            PlayerPrefs.SetInt(App.kPlayerPrefHasPlayedBefore, 1);
+            if (markTutorialComplete)
+            {
+                // If the user chooses to skip the intro, assume they've done the tutorial before.
+                PlayerPrefs.SetInt(App.kPlayerPrefHasPlayedBefore, 1);
+            }
 
             m_DesiredAppState = AppState.Standard;
         }
@@ -2363,6 +2365,11 @@ namespace TiltBrush
             return Path.Combine(MediaLibraryPath(), "Saved Strokes");
         }
 
+        public static string SplatPosesPath()
+        {
+            return Path.Combine(UserPath(), "SplatPoses");
+        }
+
         static public string AutosavePath()
         {
             return Path.Combine(UserPath(), "Sketches/Autosave");
@@ -2476,22 +2483,6 @@ namespace TiltBrush
         // OpenURL().
         public static bool OpenURL(string url)
         {
-            var isPolyUrl = (url.Contains("poly.google.com/") || url.Contains("vr.google.com"));
-            if (isPolyUrl && GoogleIdentity.LoggedIn)
-            {
-                var email = GoogleIdentity.Profile.email;
-                url = $"https://accounts.google.com/AccountChooser?Email={email}&continue={url}";
-            }
-
-            if (CurrentBrowserMode == BrowserMode.SteamOverlay)
-            {
-                if (!SteamManager.TryOpenOverlayUrl(url))
-                {
-                    Debug.LogWarning($"[STEAM_BROWSER] Unable to open URL in the Steam overlay: {url}");
-                    return false;
-                }
-                return true;
-            }
 #if UNITY_STANDALONE_WINDOWS
     var startInfo = new System.Diagnostics.ProcessStartInfo(url);
     startInfo.UseShellExecute = true;
