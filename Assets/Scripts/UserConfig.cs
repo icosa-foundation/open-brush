@@ -89,7 +89,13 @@ namespace TiltBrush
             public bool EnablePluginWebRequests;
             public PluginWebRequestRule[] PluginWebRequestRules;
             public bool EnablePluginClipboardAccess;
-            public bool UseDefaultPhotonCloudPorts;
+
+            private bool? m_UseDefaultPhotonCloudPorts;
+            public bool UseDefaultPhotonCloudPorts
+            {
+                get { return m_UseDefaultPhotonCloudPorts ?? true; }
+                set { m_UseDefaultPhotonCloudPorts = value; }
+            }
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
