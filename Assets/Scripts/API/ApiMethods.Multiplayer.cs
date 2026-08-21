@@ -5,6 +5,18 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        [ApiEndpoint(
+            "multiplayer.photondefaultports",
+            "Selects whether future Photon connections use Photon's default cloud ports. This changes the runtime setting without updating Open Brush.cfg.",
+            "true")]
+        public static bool MultiplayerPhotonDefaultPorts(bool enabled)
+        {
+            App.UserConfig.Flags.UseDefaultPhotonCloudPorts = enabled;
+            Debug.Log(
+                $"[MultiplayerPhotonDefaultPortsApi] UseDefaultPhotonCloudPorts set to {enabled}.");
+            return App.UserConfig.Flags.UseDefaultPhotonCloudPorts;
+        }
+
         [ApiEndpoint("multiplayer.join", "Joins a multiplayer room, creating it if it does not exist")]
         public static async void MultiplayerJoin(
             string nickname, string roomName, bool isPrivate, int maxPlayers,

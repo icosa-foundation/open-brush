@@ -109,6 +109,7 @@ public class ApiMainThreadObserver : MonoBehaviour
             localVoiceEnabled = manager.IsLocalVoiceEnabled,
             playerAvatarsHiddenForMe = manager.ArePlayerAvatarsHiddenForMe,
             voiceEnabled = manager.IsVoiceEnabled,
+            useDefaultPhotonCloudPorts = App.UserConfig.Flags.UseDefaultPhotonCloudPorts,
             room = inRoom ? new
             {
                 name = room.roomName,
