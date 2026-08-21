@@ -30,8 +30,6 @@ namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IDataConnectionHandler, INetworkRunnerCallbacks
     {
-        private const bool k_UseDefaultPhotonCloudPorts = true;
-
         private NetworkRunner m_Runner;
         private MultiplayerManager m_Manager;
         private List<PlayerRef> m_PlayersSpawning;
@@ -118,7 +116,7 @@ namespace OpenBrush.Multiplayer
             var result = await m_Runner.JoinSessionLobby(
                 SessionLobby.Shared,
                 customAppSettings: m_PhotonAppSettings,
-                useDefaultCloudPorts: k_UseDefaultPhotonCloudPorts);
+                useDefaultCloudPorts: App.UserConfig.Flags.UseDefaultPhotonCloudPorts);
 
             if (result.Ok)
             {
@@ -157,7 +155,7 @@ namespace OpenBrush.Multiplayer
                 Scene = sceneInfo, // Pass the configured NetworkSceneInfo
                 IsOpen = true,
                 IsVisible = !roomCreateData.@private,
-                UseDefaultPhotonCloudPorts = k_UseDefaultPhotonCloudPorts,
+                UseDefaultPhotonCloudPorts = App.UserConfig.Flags.UseDefaultPhotonCloudPorts,
             };
 
             var result = await m_Runner.StartGame(args);
