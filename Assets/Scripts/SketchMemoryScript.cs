@@ -658,7 +658,10 @@ namespace TiltBrush
 
             foreach (var session in sessions)
             {
-                if (session != null && !m_StrokeTimeSessions.Contains(session))
+                if (session != null && !m_StrokeTimeSessions.Any(existing =>
+                        existing.StartUtcMs == session.StartUtcMs &&
+                        existing.StartSketchTimeMs == session.StartSketchTimeMs &&
+                        existing.EndSketchTimeMs == session.EndSketchTimeMs))
                 {
                     m_StrokeTimeSessions.Add(session);
                 }
