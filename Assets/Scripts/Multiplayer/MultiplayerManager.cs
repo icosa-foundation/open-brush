@@ -883,7 +883,8 @@ namespace OpenBrush.Multiplayer
                 return App.Scene.MainCanvas;
             }
 
-            if (m_ContributorLayers.TryGetValue(contributorId, out var layer) && layer != null)
+            if (m_ContributorLayers.TryGetValue(contributorId, out var layer) &&
+                layer != null && !App.Scene.IsLayerDeleted(layer))
             {
                 return layer;
             }
