@@ -38,15 +38,18 @@ namespace OpenBrush.Multiplayer
         public static async Task<byte[]> SerializeAndCompressContributorMemoryListAsync(
             List<Stroke> memoryList)
         {
-            byte[] strokeData = await SerializeMemoryList(memoryList);
+            List<Stroke> serializableStrokes = memoryList
+                .Where(stroke => stroke.IsGeometryEnabled)
+                .ToList();
+            byte[] strokeData = await SerializeMemoryList(serializableStrokes);
             byte[] envelope;
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
             {
                 writer.Write(k_ContributorEnvelopeMagic);
                 writer.Write(k_ContributorEnvelopeVersion);
-                writer.Write(memoryList.Count);
-                foreach (var stroke in memoryList)
+                writer.Write(serializableStrokes.Count);
+                foreach (var stroke in serializableStrokes)
                 {
                     writer.Write(stroke.m_MultiplayerContributorId.ToByteArray());
                     writer.Write(stroke.m_MultiplayerContributorNickname ?? string.Empty);
@@ -56,8 +59,8 @@ namespace OpenBrush.Multiplayer
                 // Keep the version-1 envelope layout readable by existing clients. They stop
                 // after strokeData; compatible clients can consume this optional trailer.
                 writer.Write(k_StrokeClockTrailerMagic);
-                writer.Write(memoryList.Count);
-                foreach (var stroke in memoryList)
+                writer.Write(serializableStrokes.Count);
+                foreach (var stroke in serializableStrokes)
                 {
                     bool hasTimeSession = SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(
                         stroke, out StrokeTimeSessionMetadata timeSession);
