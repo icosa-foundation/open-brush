@@ -288,6 +288,9 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
+            m_IsRoomVoiceEnabled = !RoomData.voiceDisabled;
+            m_IsVoiceEnabled = m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled;
+
             if (State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED)
             {
                 if (!await Connect())
