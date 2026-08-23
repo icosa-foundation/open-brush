@@ -549,12 +549,15 @@ namespace OpenBrush.Multiplayer
                     Debug.LogWarning(
                         $"[MultiplayerStrokeClockV1] Could not map stroke {stroke.m_Guid} " +
                         "from its source clock; using legacy receipt-time rebasing.");
-                    RebaseStrokeTimestampsToReceiver(stroke);
+                    if (!RebaseStrokeTimestampsToReceiver(stroke))
+                    {
+                        return false;
+                    }
                 }
             }
-            else if (rebaseTimestamps)
+            else if (rebaseTimestamps && !RebaseStrokeTimestampsToReceiver(stroke))
             {
-                RebaseStrokeTimestampsToReceiver(stroke);
+                return false;
             }
 
             Action preAction = () =>
@@ -1029,11 +1032,11 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        private static void RebaseStrokeTimestampsToReceiver(Stroke stroke)
+        private static bool RebaseStrokeTimestampsToReceiver(Stroke stroke)
         {
             if (stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length == 0)
             {
-                return;
+                return false;
             }
 
             long receiverTailMs = (long)(App.Instance.CurrentSketchTime * 1000);
@@ -1046,7 +1049,7 @@ namespace OpenBrush.Multiplayer
                 {
                     Debug.LogWarning(
                         $"[MultiplayerStrokeTime] Cannot rebase stroke {stroke.m_Guid}; timestamps would overflow.");
-                    return;
+                    return false;
                 }
             }
 
@@ -1056,6 +1059,7 @@ namespace OpenBrush.Multiplayer
                 controlPoint.m_TimestampMs = (uint)(controlPoint.m_TimestampMs + offsetMs);
                 stroke.m_ControlPoints[i] = controlPoint;
             }
+            return true;
         }
 
         public static void Send_DeleteStroke(NetworkRunner runner, int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0, [RpcTarget] PlayerRef targetPlayer = default)
