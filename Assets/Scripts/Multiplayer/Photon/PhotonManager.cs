@@ -752,7 +752,7 @@ namespace OpenBrush.Multiplayer
                     PhotonRPCBatcher.EnqueueRPC(() =>
                     { PhotonRPC.Send_BrushStrokeFull(
                         m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
-                        (int)command.NetworkTimestamp, rebaseTimestamps, command.ParentGuid,
+                        (int)command.NetworkTimestamp, command.ParentGuid,
                         command.ChildrenCount, playerRef); });
                 }
                 return true;
@@ -824,7 +824,7 @@ namespace OpenBrush.Multiplayer
                 PhotonRPCBatcher.EnqueueRPC(() =>
                 { PhotonRPC.Send_BrushStrokeComplete(
                     m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp,
-                    rebaseTimestamps, command.ParentGuid, command.ChildrenCount, playerRef); });
+                    command.ParentGuid, command.ChildrenCount, playerRef); });
             }
 
             return true;
