@@ -1060,17 +1060,27 @@ namespace OpenBrush.Multiplayer
             }
 
             long receiverTailMs = (long)(App.Instance.CurrentSketchTime * 1000);
-            long offsetMs = receiverTailMs - stroke.TailTimestampMs;
-
-            foreach (var controlPoint in stroke.m_ControlPoints)
+            long requestedOffsetMs = receiverTailMs - stroke.TailTimestampMs;
+            uint minimumTimestampMs = uint.MaxValue;
+            uint maximumTimestampMs = uint.MinValue;
+            foreach (PointerManager.ControlPoint controlPoint in stroke.m_ControlPoints)
             {
-                long timestampMs = controlPoint.m_TimestampMs + offsetMs;
-                if (timestampMs < uint.MinValue || timestampMs > uint.MaxValue)
-                {
-                    Debug.LogWarning(
-                        $"[MultiplayerStrokeTime] Cannot rebase stroke {stroke.m_Guid}; timestamps would overflow.");
-                    return false;
-                }
+                minimumTimestampMs = Math.Min(
+                    minimumTimestampMs, controlPoint.m_TimestampMs);
+                maximumTimestampMs = Math.Max(
+                    maximumTimestampMs, controlPoint.m_TimestampMs);
+            }
+
+            long minimumOffsetMs = -(long)minimumTimestampMs;
+            long maximumOffsetMs = uint.MaxValue - (long)maximumTimestampMs;
+            long offsetMs = Math.Max(
+                minimumOffsetMs, Math.Min(requestedOffsetMs, maximumOffsetMs));
+            if (offsetMs != requestedOffsetMs)
+            {
+                Debug.LogWarning(
+                    $"[MultiplayerStrokeTime] Could not align stroke {stroke.m_Guid} " +
+                    $"to receiver time without overflow; using offset {offsetMs} ms " +
+                    $"instead of {requestedOffsetMs} ms.");
             }
 
             for (int i = 0; i < stroke.m_ControlPoints.Length; ++i)
