@@ -805,6 +805,12 @@ namespace OpenBrush.Multiplayer
             preview.Stroke.m_ControlPointsToDrop = new bool[finalControlPointCount];
             preview.Stroke.m_Flags = strokeFlags;
             preview.HasProvisionalTail = false;
+            if (preview.HasRenderedProvisionalTail &&
+                !UpdateLiveStrokePreview(preview))
+            {
+                FailLiveStrokePreview(preview, requestRepair: true, commandGuid);
+                return;
+            }
 
             if (!CreateBrushStroke(
                 preview.Stroke, commandGuid, timestamp,
@@ -883,6 +889,20 @@ namespace OpenBrush.Multiplayer
 
             bool confirmedPointsChanged =
                 preview.RenderedConfirmedPointCount != preview.ConfirmedPoints.Count;
+            bool provisionalTailChanged = preview.HasRenderedProvisionalTail &&
+                (confirmedPointsChanged ||
+                 !preview.HasProvisionalTail ||
+                 !ControlPointsEqual(
+                     preview.ProvisionalTail,
+                     preview.RenderedProvisionalTail));
+            if (provisionalTailChanged)
+            {
+                DestroyLiveStrokePreview(preview);
+                preview.RenderedConfirmedPointCount = 0;
+                preview.HasRenderedProvisionalTail = false;
+                return UpdateLiveStrokePreview(preview);
+            }
+
             if (preview.HasProvisionalTail &&
                 (confirmedPointsChanged ||
                  !preview.HasRenderedProvisionalTail ||
