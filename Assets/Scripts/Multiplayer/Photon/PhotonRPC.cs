@@ -40,12 +40,8 @@ namespace OpenBrush.Multiplayer
             public Stroke Stroke;
             public StrokeTimeSessionMetadata SourceTimeSession;
             public List<PointerManager.ControlPoint> ConfirmedPoints;
-            public bool HasProvisionalTail;
-            public PointerManager.ControlPoint ProvisionalTail;
             public BaseBrushScript Brush;
             public int RenderedConfirmedPointCount;
-            public bool HasRenderedProvisionalTail;
-            public PointerManager.ControlPoint RenderedProvisionalTail;
             public float LastUpdateTime;
             public bool VisualUpdatePending;
         }
@@ -741,12 +737,6 @@ namespace OpenBrush.Multiplayer
                 preview.ConfirmedPoints.Add(
                     NetworkedControlPoint.ToControlPoint(networkedPoint));
             }
-            preview.HasProvisionalTail = hasProvisionalTail;
-            if (hasProvisionalTail)
-            {
-                preview.ProvisionalTail =
-                    NetworkedControlPoint.ToControlPoint(provisionalTail);
-            }
             preview.LastUpdateTime = Time.realtimeSinceStartup;
             preview.VisualUpdatePending = true;
         }
@@ -806,13 +796,6 @@ namespace OpenBrush.Multiplayer
             preview.Stroke.m_ControlPoints = preview.ConfirmedPoints.ToArray();
             preview.Stroke.m_ControlPointsToDrop = new bool[finalControlPointCount];
             preview.Stroke.m_Flags = strokeFlags;
-            preview.HasProvisionalTail = false;
-            if (preview.HasRenderedProvisionalTail &&
-                !UpdateLiveStrokePreview(preview))
-            {
-                FailLiveStrokePreview(preview, requestRepair: true, commandGuid);
-                return;
-            }
 
             if (!CreateBrushStroke(
                 preview.Stroke, commandGuid, timestamp,
@@ -889,59 +872,13 @@ namespace OpenBrush.Multiplayer
                 geometryChanged = true;
             }
 
-            bool confirmedPointsChanged =
-                preview.RenderedConfirmedPointCount != preview.ConfirmedPoints.Count;
-            bool provisionalTailChanged = preview.HasRenderedProvisionalTail &&
-                (confirmedPointsChanged ||
-                 !preview.HasProvisionalTail ||
-                 !ControlPointsEqual(
-                     preview.ProvisionalTail,
-                     preview.RenderedProvisionalTail));
-            if (provisionalTailChanged)
-            {
-                DestroyLiveStrokePreview(preview);
-                preview.RenderedConfirmedPointCount = 0;
-                preview.HasRenderedProvisionalTail = false;
-                return UpdateLiveStrokePreview(preview);
-            }
-
-            if (preview.HasProvisionalTail &&
-                (confirmedPointsChanged ||
-                 !preview.HasRenderedProvisionalTail ||
-                 !ControlPointsEqual(
-                     preview.ProvisionalTail,
-                     preview.RenderedProvisionalTail)))
-            {
-                PointerManager.ControlPoint point = preview.ProvisionalTail;
-                preview.Brush.UpdatePosition_LS(
-                    TrTransform.TRS(
-                        point.m_Pos, point.m_Orient, preview.Stroke.m_BrushScale),
-                    point.m_Pressure);
-                geometryChanged = true;
-            }
-
             if (geometryChanged)
             {
                 preview.Brush.ApplyChangesToVisuals();
             }
 
             preview.RenderedConfirmedPointCount = preview.ConfirmedPoints.Count;
-            preview.HasRenderedProvisionalTail = preview.HasProvisionalTail;
-            if (preview.HasProvisionalTail)
-            {
-                preview.RenderedProvisionalTail = preview.ProvisionalTail;
-            }
             return true;
-        }
-
-        private static bool ControlPointsEqual(
-            PointerManager.ControlPoint left,
-            PointerManager.ControlPoint right)
-        {
-            return left.m_Pos.Equals(right.m_Pos) &&
-                left.m_Orient.Equals(right.m_Orient) &&
-                left.m_Pressure.Equals(right.m_Pressure) &&
-                left.m_TimestampMs == right.m_TimestampMs;
         }
 
         private static void FailLiveStrokePreview(
