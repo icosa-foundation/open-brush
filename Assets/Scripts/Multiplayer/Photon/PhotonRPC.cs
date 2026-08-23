@@ -487,27 +487,27 @@ namespace OpenBrush.Multiplayer
 
         public static void Send_BrushStrokeCompleteClockV1(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
+            bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (targetPlayer == default)
             {
                 RPC_BrushStrokeCompleteClockV1(
-                    runner, id, commandGuid, timestamp, sourceStartUtcMs,
+                    runner, id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount);
             }
             else
             {
                 RPC_BrushStrokeCompleteClockV1(
-                    runner, id, commandGuid, timestamp, sourceStartUtcMs,
+                    runner, id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount, targetPlayer);
             }
         }
 
         private static void BrushStrokeCompleteClockV1(
             Guid id, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
+            bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
@@ -525,7 +525,7 @@ namespace OpenBrush.Multiplayer
                 StartSketchTimeMs = sourceStartSketchTimeMs,
             };
             CreateBrushStroke(
-                stroke, commandGuid, timestamp, rebaseTimestamps: true,
+                stroke, commandGuid, timestamp, rebaseTimestamps,
                 parentGuid, childCount, sourceTimeSession);
             m_inProgressStrokes.Remove(id);
         }
@@ -1516,23 +1516,23 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         private static void RPC_BrushStrokeCompleteClockV1(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
+            bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
             BrushStrokeCompleteClockV1(
-                id, commandGuid, timestamp, sourceStartUtcMs,
+                id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
         private static void RPC_BrushStrokeCompleteClockV1(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
+            bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
         {
             BrushStrokeCompleteClockV1(
-                id, commandGuid, timestamp, sourceStartUtcMs,
+                id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
 

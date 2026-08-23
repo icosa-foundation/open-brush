@@ -815,7 +815,8 @@ namespace OpenBrush.Multiplayer
                 PhotonRPCBatcher.EnqueueRPC(() =>
                 { PhotonRPC.Send_BrushStrokeCompleteClockV1(
                     m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp,
-                    sourceTimeSession.StartUtcMs, sourceTimeSession.StartSketchTimeMs,
+                    rebaseTimestamps, sourceTimeSession.StartUtcMs,
+                    sourceTimeSession.StartSketchTimeMs,
                     command.ParentGuid, command.ChildrenCount, playerRef); });
             }
             else
