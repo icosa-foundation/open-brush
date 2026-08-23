@@ -816,8 +816,8 @@ namespace TiltBrush
                 else
                 {
                     long currentSketchTimeMs = (long)(App.Instance.CurrentSketchTime * 1000);
-                    long elapsedSinceStrokeStartMs = Math.Max(
-                        0, currentSketchTimeMs - stroke.HeadTimestampMs);
+                    long elapsedSinceStrokeStartMs =
+                        currentSketchTimeMs - stroke.HeadTimestampMs;
                     m_CurrentStrokeTimeSession = new StrokeTimeSessionMetadata
                     {
                         StartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() -
