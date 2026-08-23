@@ -1154,6 +1154,12 @@ namespace OpenBrush.Multiplayer
             {
                 fullyStreamedRecipients.IntersectWith(item.Stream.Recipients);
             }
+            if (streams.Any(item =>
+                    item.Command.m_Stroke.m_ControlPointsToDrop != null &&
+                    item.Command.m_Stroke.m_ControlPointsToDrop.Any(drop => drop)))
+            {
+                fullyStreamedRecipients.Clear();
+            }
 
             foreach (var item in streams)
             {
