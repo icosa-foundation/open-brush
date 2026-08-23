@@ -806,6 +806,7 @@ namespace TiltBrush
 
                 if (bAdditive)
                 {
+                    SketchMemoryScript.m_Instance.EndCurrentStrokeTimeSession();
                     additiveStrokeTimeSessions = SketchMemoryScript.m_Instance
                         .AddAdditiveStrokeTimeSessions(
                             jsonData.StrokeTimeSessions, timestampOffset);

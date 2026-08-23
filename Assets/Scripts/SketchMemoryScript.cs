@@ -779,6 +779,12 @@ namespace TiltBrush
             };
         }
 
+        internal void EndCurrentStrokeTimeSession()
+        {
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
+        }
+
         public void RecordStrokeInCurrentTimeSession(Stroke stroke)
         {
             if (stroke == null || stroke.m_ControlPoints == null ||
