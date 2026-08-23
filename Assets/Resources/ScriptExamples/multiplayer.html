@@ -275,12 +275,12 @@
                 player.mutedForMe ? "Unmute for me" : "Mute for me",
                 "btn-outline-secondary",
                 () => sendCommand("multiplayer.muteplayer", `${player.playerId},${!player.mutedForMe}`)));
+            actions.appendChild(makeButton(
+                player.hiddenForMe ? "Show avatar" : "Hide avatar",
+                "btn-outline-secondary",
+                () => sendCommand("multiplayer.hideplayer", `${player.playerId},${!player.hiddenForMe}`)));
 
             if (snapshot.isOwner) {
-                actions.appendChild(makeButton(
-                    player.hiddenForMe ? "Show avatar" : "Hide avatar",
-                    "btn-outline-secondary",
-                    () => sendCommand("multiplayer.hideplayer", `${player.playerId},${!player.hiddenForMe}`)));
                 actions.appendChild(makeButton(
                     player.mutedForAll ? "Unmute for room" : "Mute for room",
                     "btn-outline-secondary",
