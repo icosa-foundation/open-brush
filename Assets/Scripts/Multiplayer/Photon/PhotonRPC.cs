@@ -1243,6 +1243,19 @@ namespace OpenBrush.Multiplayer
             MultiplayerManager.m_Instance.IsViewOnly = isEnabled;
         }
 
+        private static void SetRoomVoiceEnabled(bool enabled, PlayerRef source)
+        {
+            MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+            int sourcePlayerId = source.RawEncoded;
+            if (multiplayer == null || !multiplayer.IsPlayerRoomOwner(sourcePlayerId))
+            {
+                Debug.LogWarning($"[RoomVoiceOwnerValidation] Rejected voice state from player {sourcePlayerId}; sender is not the room owner.");
+                return;
+            }
+
+            multiplayer.ApplyRoomVoiceEnabled(enabled);
+        }
+
         private static void ReceiveManualColocationReference(
             NetworkManualColocationReference networkReference,
             PlayerRef source,
@@ -1696,15 +1709,17 @@ namespace OpenBrush.Multiplayer
 
         [Rpc(InvokeLocal = false)]
         public static void RPC_SetRoomVoiceEnabled(
-            NetworkRunner runner, bool enabled, [RpcTarget] PlayerRef targetPlayer)
+            NetworkRunner runner, bool enabled, [RpcTarget] PlayerRef targetPlayer,
+            RpcInfo info = default)
         {
-            MultiplayerManager.m_Instance.ApplyRoomVoiceEnabled(enabled);
+            SetRoomVoiceEnabled(enabled, info.Source);
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_SetRoomVoiceEnabled(NetworkRunner runner, bool enabled)
+        public static void RPC_SetRoomVoiceEnabled(
+            NetworkRunner runner, bool enabled, RpcInfo info = default)
         {
-            MultiplayerManager.m_Instance.ApplyRoomVoiceEnabled(enabled);
+            SetRoomVoiceEnabled(enabled, info.Source);
         }
 
         [Rpc(InvokeLocal = false)]
