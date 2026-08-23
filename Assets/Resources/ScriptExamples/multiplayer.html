@@ -76,6 +76,10 @@
                             <input id="liveStrokeStreaming" class="form-check-input" type="checkbox">
                             <label for="liveStrokeStreaming" class="form-check-label">Live stroke streaming</label>
                         </div>
+                        <div class="form-check">
+                            <input id="useDefaultPhotonCloudPorts" class="form-check-input" type="checkbox" checked>
+                            <label for="useDefaultPhotonCloudPorts" class="form-check-label">Use default Photon cloud ports</label>
+                        </div>
                     </div>
                 </div>
                 <button class="btn btn-primary mt-3" type="submit">Join or create</button>
@@ -183,6 +187,7 @@
     const leaveRoom = document.getElementById("leaveRoom");
     let lastQueryError = "";
     let initialStatusRetries = 0;
+    let photonPortSettingInitialized = false;
 
     function log(message) {
         const timestamp = new Date().toLocaleTimeString();
@@ -190,9 +195,12 @@
         commandLog.scrollTop = commandLog.scrollHeight;
     }
 
-    async function sendCommand(command, value) {
-        const commandText = value === undefined ? command : `${command}=${value}`;
-        const url = `/api/v1?${command}${value === undefined ? "" : `=${encodeURIComponent(value)}`}`;
+    async function sendCommands(commands) {
+        const commandTexts = commands.map(({ command, value }) =>
+            value === undefined ? command : `${command}=${value}`);
+        const url = `/api/v1?${commands.map(({ command, value }) =>
+            `${command}${value === undefined ? "" : `=${encodeURIComponent(value)}`}`).join("&")}`;
+        const commandText = commandTexts.join("; ");
         status.textContent = `Sending ${commandText}...`;
         log(commandText);
 
@@ -201,12 +209,16 @@
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
             }
-            status.textContent = `Queued ${command}.`;
+            status.textContent = `Queued ${commandTexts.join(", ")}.`;
             window.setTimeout(queryMultiplayerStatus, 400);
         } catch (error) {
-            status.textContent = `Could not send ${command}: ${error.message}`;
+            status.textContent = `Could not send ${commandText}: ${error.message}`;
             log(`ERROR: ${error.message}`);
         }
+    }
+
+    function sendCommand(command, value) {
+        return sendCommands([{ command, value }]);
     }
 
     function makeButton(label, className, handler) {
@@ -296,6 +308,12 @@
 
     function renderMultiplayerStatus(snapshot) {
         const canJoin = ["INITIALIZED", "DISCONNECTED", "IN_LOBBY"].includes(snapshot.state);
+        if (!photonPortSettingInitialized &&
+            typeof snapshot.useDefaultPhotonCloudPorts === "boolean") {
+            document.getElementById("useDefaultPhotonCloudPorts").checked =
+                snapshot.useDefaultPhotonCloudPorts;
+            photonPortSettingInitialized = true;
+        }
         connectionState.textContent = snapshot.state;
         connectionState.className = `badge ${snapshot.inRoom ? "bg-success" : "bg-secondary"}`;
         ownerBadge.hidden = !snapshot.isOwner;
@@ -386,7 +404,13 @@
             checkedValue("viewOnlyRoom"),
             checkedValue("liveStrokeStreaming")
         ].join(",");
-        sendCommand("multiplayer.join", parameters);
+        sendCommands([
+            {
+                command: "multiplayer.photondefaultports",
+                value: checkedValue("useDefaultPhotonCloudPorts")
+            },
+            { command: "multiplayer.join", value: parameters }
+        ]);
     });
 
     leaveRoom.addEventListener("click", () => sendCommand("multiplayer.leave"));
