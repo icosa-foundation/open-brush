@@ -539,9 +539,9 @@ namespace OpenBrush.Multiplayer
             BaseBrushScript completedPreviewBrush = null,
             bool requireSourceTimeConversion = false)
         {
-            bool convertSourceTimeSession = sourceTimeSession != null &&
-                (rebaseTimestamps || requireSourceTimeConversion);
-            bool recordStrokeTimeSession = rebaseTimestamps || requireSourceTimeConversion;
+            bool convertSourceTimeSession = sourceTimeSession != null;
+            bool recordStrokeTimeSession = rebaseTimestamps ||
+                requireSourceTimeConversion || sourceTimeSession != null;
             if (convertSourceTimeSession)
             {
                 if (!RewriteStrokeTimestampsFromSourceSession(stroke, sourceTimeSession))
