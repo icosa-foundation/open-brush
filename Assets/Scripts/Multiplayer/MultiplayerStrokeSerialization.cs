@@ -96,7 +96,7 @@ namespace OpenBrush.Multiplayer
             }
 
             List<Stroke> strokes = await DeserializeMemoryList(
-                strokeData, squashLayers: true);
+                strokeData, squashLayers: false);
             if (strokes == null || strokes.Count != contributorIds.Count)
             {
                 throw new InvalidDataException(
