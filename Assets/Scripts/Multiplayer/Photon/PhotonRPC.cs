@@ -125,7 +125,14 @@ namespace OpenBrush.Multiplayer
                 return;
             }
 
-            var command = m_pendingCommands[0];
+            PendingCommand command = m_pendingCommands.FirstOrDefault(pending =>
+                pending.ParentGuid == Guid.Empty ||
+                SketchMemoryScript.m_Instance.FindNetworkCommand(
+                    pending.ParentGuid) != null);
+            if (command.Guid == Guid.Empty)
+            {
+                return;
+            }
 
             bool stillPending = CheckifChildStillPending(command);
 
@@ -136,7 +143,7 @@ namespace OpenBrush.Multiplayer
 
             // All children present, begin execution
 
-            m_pendingCommands.RemoveAt(0);
+            m_pendingCommands.Remove(command);
 
             InvokePreCommands(command);
 
@@ -163,7 +170,8 @@ namespace OpenBrush.Multiplayer
         private static void AddPendingCommand(Action preAction, Guid commandGuid, Guid parentGuid, BaseCommand command, int childCount)
         {
 
-            PendingCommand pendingCommand = new PendingCommand(commandGuid, command, preAction, childCount);
+            PendingCommand pendingCommand = new PendingCommand(
+                commandGuid, parentGuid, command, preAction, childCount);
 
             if (!parentGuid.Equals(default))
             {
@@ -174,13 +182,25 @@ namespace OpenBrush.Multiplayer
                 }
             }
 
+            foreach (PendingCommand orphan in m_pendingCommands
+                .Where(pending => pending.ParentGuid == commandGuid)
+                .ToList())
+            {
+                if (orphan.Command.ParentGuid == Guid.Empty)
+                {
+                    orphan.Command.SetParent(command);
+                }
+                pendingCommand.ChildCommands.Add(orphan);
+            }
+
             m_pendingCommands.Add(pendingCommand);
         }
 
         private static bool CheckifCommandGuidIsInStack(Guid commandGuid)
         {
 
-            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid))
+            if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid) ||
+                m_pendingCommands.Any(pending => pending.Guid == commandGuid))
             {
                 //Debug.Log($"Command with Guid {commandGuid} already in stack.");
                 return true;

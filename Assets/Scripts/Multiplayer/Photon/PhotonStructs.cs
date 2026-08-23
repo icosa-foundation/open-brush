@@ -27,13 +27,16 @@ namespace OpenBrush.Multiplayer
         public int TotalExpectedChildren;
 
         public Guid Guid;
+        public Guid ParentGuid;
         public BaseCommand Command;
         public Action PreCommandAction;
         public List<PendingCommand> ChildCommands;
 
-        public PendingCommand(Guid guid, BaseCommand command, Action action, int count)
+        public PendingCommand(
+            Guid guid, Guid parentGuid, BaseCommand command, Action action, int count)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
             Command = command;
             PreCommandAction = action;
             TotalExpectedChildren = count;
