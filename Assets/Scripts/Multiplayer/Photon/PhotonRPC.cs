@@ -1243,10 +1243,16 @@ namespace OpenBrush.Multiplayer
             else
             {
                 // Remote deletes are idempotent. The stroke may already have been removed or
-                // may never have been synchronized to this client.
+                // may never have been synchronized to this client. Keep a no-op command in the
+                // received command tree so its parent does not wait forever for this child.
                 Debug.LogWarning(
-                    $"[LiveStrokeCommand] Ignore delete command={commandGuid} " +
+                    $"[LiveStrokeCommand] Queue no-op delete command={commandGuid} " +
                     $"parent={parentGuid} seed={seed} strokeSource=missing.");
+                var parentCommand = FindParentCommand(parentGuid);
+                var placeholder = new BaseCommand(
+                    commandGuid, timestamp, parent: parentCommand);
+                AddPendingCommand(
+                    () => { }, commandGuid, parentGuid, placeholder, childCount);
             }
         }
 
