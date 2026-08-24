@@ -72,6 +72,8 @@ namespace OpenBrush.Multiplayer
             new Dictionary<Guid, CanvasScript>();
         private readonly HashSet<int> m_LiveStrokeCapablePlayers =
             new HashSet<int>();
+        private readonly HashSet<int> m_PendingSceneSyncPlayerIds =
+            new HashSet<int>();
         private readonly Dictionary<int, int> m_LiveStrokePointerCapacities =
             new Dictionary<int, int>();
 
@@ -106,6 +108,7 @@ namespace OpenBrush.Multiplayer
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
+        private const int k_CapabilityDiscoveryTimeoutMs = 2000;
 
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
@@ -661,7 +664,6 @@ namespace OpenBrush.Multiplayer
 
             if (!isUserRoomOwner) return;  //below this line is only room owner responsability 
 
-            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(newRemotePlayer.PlayerId);
             if (ManualColocationManager.m_Instance != null &&
                 ManualColocationManager.m_Instance.HasReference)
             {
@@ -677,6 +679,7 @@ namespace OpenBrush.Multiplayer
                     !CurrentRoomData.voiceDisabled, newRemotePlayer.PlayerId);
                 _ = SendLiveStrokeRoomStateToPlayer(newRemotePlayer.PlayerId);
             }
+            ScheduleInitialSceneSync(newRemotePlayer.PlayerId);
         }
 
         public void ReceiveLiveStrokeCapability(
@@ -704,7 +707,40 @@ namespace OpenBrush.Multiplayer
                 _ = m_Manager.RpcSetRoomVoiceEnabled(
                     !CurrentRoomData.voiceDisabled, playerId);
                 _ = SendLiveStrokeRoomStateToPlayer(playerId);
+                CompletePendingSceneSync(playerId, "capability advertisement");
             }
+        }
+
+        private void ScheduleInitialSceneSync(int playerId)
+        {
+            m_PendingSceneSyncPlayerIds.Add(playerId);
+            if (IsPlayerLiveStrokeCompatible(playerId))
+            {
+                CompletePendingSceneSync(playerId, "known capability");
+                return;
+            }
+            _ = CompletePendingSceneSyncAfterTimeout(playerId);
+        }
+
+        private async Task CompletePendingSceneSyncAfterTimeout(int playerId)
+        {
+            await Task.Delay(k_CapabilityDiscoveryTimeoutMs);
+            CompletePendingSceneSync(playerId, "compatibility timeout");
+        }
+
+        private void CompletePendingSceneSync(int playerId, string reason)
+        {
+            if (!m_PendingSceneSyncPlayerIds.Remove(playerId) ||
+                !isUserRoomOwner ||
+                !IsRemotePlayerStillConnected(playerId))
+            {
+                return;
+            }
+
+            Debug.Log(
+                $"[LiveStrokeCapabilitySync] Starting scene sync for player {playerId}; " +
+                $"reason={reason}, enriched={IsPlayerLiveStrokeCompatible(playerId)}.");
+            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(playerId);
         }
 
         public bool IsPlayerLiveStrokeCompatible(int playerId)
@@ -1306,6 +1342,7 @@ namespace OpenBrush.Multiplayer
         void OnPlayerLeft(int id)
         {
             m_LiveStrokeCapablePlayers.Remove(id);
+            m_PendingSceneSyncPlayerIds.Remove(id);
             m_LiveStrokePointerCapacities.Remove(id);
             m_Manager?.RemoveLiveStrokePreviewsForPlayer(id);
             foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values)
@@ -1501,6 +1538,7 @@ namespace OpenBrush.Multiplayer
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeCapablePlayers.Clear();
+            m_PendingSceneSyncPlayerIds.Clear();
             m_LiveStrokePointerCapacities.Clear();
             IsLiveStrokeStreamingEnabled = false;
             IsLiveStrokeRoomStateReady = false;
