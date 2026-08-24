@@ -540,11 +540,9 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public bool RpcLiveStrokeUpdate(
+        public bool RpcLiveStrokeConfirmed(
             Guid streamId, int firstControlPointIndex,
-            PointerManager.ControlPoint[] confirmedControlPoints,
-            bool hasProvisionalTail, PointerManager.ControlPoint provisionalTail,
-            int playerId)
+            PointerManager.ControlPoint[] confirmedControlPoints, int playerId)
         {
             if (!CanSendLiveStrokeTo(playerId))
             {
@@ -554,10 +552,24 @@ namespace OpenBrush.Multiplayer
             var networkedPoints = confirmedControlPoints
                 .Select(point => new NetworkedControlPoint().Init(point))
                 .ToArray();
-            var networkedTail = new NetworkedControlPoint().Init(provisionalTail);
-            PhotonRPC.RPC_LiveStrokeUpdate(
+            PhotonRPC.RPC_LiveStrokeConfirmedV5(
                 m_Runner, streamId, firstControlPointIndex, networkedPoints,
-                hasProvisionalTail, networkedTail,
+                PlayerRef.FromEncoded(playerId));
+            return true;
+        }
+
+        public bool RpcLiveStrokeProvisionalTail(
+            Guid streamId, uint sequence, int confirmedControlPointCount,
+            PointerManager.ControlPoint provisionalTail, int playerId)
+        {
+            if (!CanSendLiveStrokeTo(playerId))
+            {
+                return false;
+            }
+
+            PhotonRPC.RPC_LiveStrokeProvisionalTailV5(
+                m_Runner, streamId, sequence, confirmedControlPointCount,
+                new NetworkedControlPoint().Init(provisionalTail),
                 PlayerRef.FromEncoded(playerId));
             return true;
         }
@@ -845,7 +857,7 @@ namespace OpenBrush.Multiplayer
                 ? "broadcast"
                 : playerRef.RawEncoded.ToString();
             Debug.Log(
-                $"[LiveStrokeCommandV4] Send delete command={command.Guid} " +
+                $"[LiveStrokeCommandV5] Send delete command={command.Guid} " +
                 $"parent={command.ParentGuid} children={command.ChildrenCount} " +
                 $"seed={command.m_TargetStroke.m_Seed} target={target}.");
             PhotonRPCBatcher.EnqueueRPC(() =>

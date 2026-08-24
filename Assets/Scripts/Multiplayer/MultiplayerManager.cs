@@ -83,6 +83,7 @@ namespace OpenBrush.Multiplayer
             public StrokeTimeSessionMetadata SourceTimeSession;
             public HashSet<int> Recipients;
             public int SentConfirmedPointCount;
+            public uint NextProvisionalSequence;
             public float NextUpdateTime;
             public bool StartSent;
         }
@@ -106,7 +107,7 @@ namespace OpenBrush.Multiplayer
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
 
-        public const int LiveStrokeProtocolVersion = 4;
+        public const int LiveStrokeProtocolVersion = 5;
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
         public int MaxStreamedPointers => App.UserConfig.Multiplayer.MaxStreamedPointers;
@@ -702,7 +703,7 @@ namespace OpenBrush.Multiplayer
             m_LiveStrokeProtocolVersions[playerId] = protocolVersion;
             m_LiveStrokePointerCapacities[playerId] = maxStreamedPointers;
             Debug.Log(
-                $"[LiveStrokeCapacityV4] Player {playerId} advertised protocol " +
+                $"[LiveStrokeCapacityV5] Player {playerId} advertised protocol " +
                 $"{protocolVersion} with capacity {maxStreamedPointers}.");
             if (isFirstAdvertisement &&
                 protocolVersion == LiveStrokeProtocolVersion &&
@@ -1059,23 +1060,20 @@ namespace OpenBrush.Multiplayer
                         NetworkingConstants.MaxControlPointsPerChunk,
                         confirmedCount - nextIndex);
                     var confirmed = points.Skip(nextIndex).Take(count).ToArray();
-                    bool includeTail = hasTail && nextIndex + count == confirmedCount;
                     foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
                     {
-                        m_Manager.RpcLiveStrokeUpdate(
-                            stream.StreamId, nextIndex, confirmed,
-                            includeTail, tail, playerId);
+                        m_Manager.RpcLiveStrokeConfirmed(
+                            stream.StreamId, nextIndex, confirmed, playerId);
                     }
                     nextIndex += count;
                 }
-                if (nextIndex == stream.SentConfirmedPointCount && hasTail)
+                if (hasTail)
                 {
+                    uint sequence = ++stream.NextProvisionalSequence;
                     foreach (int playerId in stream.Recipients.Where(IsRemotePlayerStillConnected))
                     {
-                        m_Manager.RpcLiveStrokeUpdate(
-                            stream.StreamId, nextIndex,
-                            Array.Empty<PointerManager.ControlPoint>(),
-                            hasProvisionalTail: true, tail, playerId);
+                        m_Manager.RpcLiveStrokeProvisionalTail(
+                            stream.StreamId, sequence, confirmedCount, tail, playerId);
                     }
                 }
                 stream.SentConfirmedPointCount = confirmedCount;
@@ -1119,7 +1117,7 @@ namespace OpenBrush.Multiplayer
                     !deltaCommandGuids.Contains(command.ParentGuid))
                 .ToList();
             Debug.Log(
-                $"[LiveStrokeCommandV4] Completing tree root={rootCommand.Guid} " +
+                $"[LiveStrokeCommandV5] Completing tree root={rootCommand.Guid} " +
                 $"commands={brushCommands.Count} deltaRoots={deltaRoots.Count}.");
 
             var streams = new List<(BrushStrokeCommand Command, OutgoingLiveStroke Stream)>();
@@ -1203,9 +1201,8 @@ namespace OpenBrush.Multiplayer
                 foreach (int playerId in fullyStreamedRecipients
                     .Where(IsRemotePlayerStillConnected))
                 {
-                    m_Manager.RpcLiveStrokeUpdate(
-                        stream.StreamId, nextIndex, points,
-                        hasProvisionalTail: false, default, playerId);
+                    m_Manager.RpcLiveStrokeConfirmed(
+                        stream.StreamId, nextIndex, points, playerId);
                 }
                 nextIndex += count;
             }
@@ -1215,7 +1212,7 @@ namespace OpenBrush.Multiplayer
                 .Where(IsRemotePlayerStillConnected))
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV4] Send complete stream={stream.StreamId} " +
+                    $"[LiveStrokeCommandV5] Send complete stream={stream.StreamId} " +
                     $"command={command.Guid} parent={command.ParentGuid} " +
                     $"children={command.ChildrenCount} seed={stroke.m_Seed} " +
                     $"points={stroke.m_ControlPoints.Length} player={playerId}.");
@@ -1289,7 +1286,7 @@ namespace OpenBrush.Multiplayer
                 stream.Recipients.Remove(playerId))
             {
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV4] Player {playerId} declined stream " +
+                    $"[LiveStrokeCapacityV5] Player {playerId} declined stream " +
                     $"{streamId}; the completed stroke group will be sent instead.");
             }
         }

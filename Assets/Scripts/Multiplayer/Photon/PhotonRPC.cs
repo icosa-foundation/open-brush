@@ -44,6 +44,8 @@ namespace OpenBrush.Multiplayer
             public BaseBrushScript ProvisionalTailBrush;
             public bool HasProvisionalTail;
             public PointerManager.ControlPoint ProvisionalTail;
+            public bool HasReceivedProvisionalSequence;
+            public uint LastProvisionalSequence;
             public int RenderedConfirmedPointCount;
             public float LastUpdateTime;
             public bool VisualUpdatePending;
@@ -158,7 +160,7 @@ namespace OpenBrush.Multiplayer
                 command.Command is DeleteStrokeCommand)
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV4] Execute pending " +
+                    $"[LiveStrokeCommandV5] Execute pending " +
                     $"type={command.Command.GetType().Name} command={command.Command.Guid} " +
                     $"parent={command.Command.ParentGuid} " +
                     $"children={command.Command.ChildrenCount} " +
@@ -231,14 +233,14 @@ namespace OpenBrush.Multiplayer
             if (!pendingParent.Guid.Equals(default))
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV4] Parent lookup parent={parentGuid} source=pending.");
+                    $"[LiveStrokeCommandV5] Parent lookup parent={parentGuid} source=pending.");
                 return pendingParent.Command;
             }
 
             BaseCommand processedParent =
                 SketchMemoryScript.m_Instance.FindNetworkCommand(parentGuid);
             Debug.Log(
-                $"[LiveStrokeCommandV4] Parent lookup parent={parentGuid} " +
+                $"[LiveStrokeCommandV5] Parent lookup parent={parentGuid} " +
                 $"source={(processedParent == null ? "missing" : "processed")}.");
             return processedParent;
         }
@@ -675,7 +677,7 @@ namespace OpenBrush.Multiplayer
             {
                 TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV4] Declined stream {streamId} from player " +
+                    $"[LiveStrokeCapacityV5] Declined stream {streamId} from player " +
                     $"{sourcePlayerId}; active={sourcePreviewCount}, capacity={capacity}.");
                 return;
             }
@@ -730,10 +732,9 @@ namespace OpenBrush.Multiplayer
                 streamId, sourcePlayerId);
         }
 
-        private static void LiveStrokeUpdate(
+        private static void LiveStrokeConfirmed(
             Guid streamId, int firstControlPointIndex,
             NetworkedControlPoint[] confirmedControlPoints,
-            bool hasProvisionalTail, NetworkedControlPoint provisionalTail,
             int sourcePlayerId)
         {
             if (!m_IncomingLiveStrokes.TryGetValue(
@@ -763,12 +764,30 @@ namespace OpenBrush.Multiplayer
                 preview.ConfirmedPoints.Add(
                     NetworkedControlPoint.ToControlPoint(networkedPoint));
             }
-            preview.HasProvisionalTail = hasProvisionalTail;
-            if (hasProvisionalTail)
+            preview.HasProvisionalTail = false;
+            preview.LastUpdateTime = Time.realtimeSinceStartup;
+            preview.VisualUpdatePending = true;
+        }
+
+        private static void LiveStrokeProvisionalTail(
+            Guid streamId, uint sequence, int confirmedControlPointCount,
+            NetworkedControlPoint provisionalTail, int sourcePlayerId)
+        {
+            if (!m_IncomingLiveStrokes.TryGetValue(
+                    streamId, out IncomingLiveStrokePreview preview) ||
+                preview.SourcePlayerId != sourcePlayerId ||
+                confirmedControlPointCount != preview.ConfirmedPoints.Count ||
+                (preview.HasReceivedProvisionalSequence &&
+                    sequence <= preview.LastProvisionalSequence))
             {
-                preview.ProvisionalTail = NetworkedControlPoint.ToControlPoint(
-                    provisionalTail);
+                return;
             }
+
+            preview.HasReceivedProvisionalSequence = true;
+            preview.LastProvisionalSequence = sequence;
+            preview.HasProvisionalTail = true;
+            preview.ProvisionalTail = NetworkedControlPoint.ToControlPoint(
+                provisionalTail);
             preview.LastUpdateTime = Time.realtimeSinceStartup;
             preview.VisualUpdatePending = true;
         }
@@ -779,7 +798,7 @@ namespace OpenBrush.Multiplayer
             int timestamp, Guid parentGuid, int childCount, int sourcePlayerId)
         {
             Debug.Log(
-                $"[LiveStrokeCommandV4] Receive complete stream={streamId} " +
+                $"[LiveStrokeCommandV5] Receive complete stream={streamId} " +
                 $"command={commandGuid} parent={parentGuid} children={childCount} " +
                 $"points={finalControlPointCount} source={sourcePlayerId}.");
             if (!m_IncomingLiveStrokes.TryGetValue(
@@ -840,7 +859,7 @@ namespace OpenBrush.Multiplayer
                 return;
             }
             Debug.Log(
-                $"[LiveStrokeCommandV4] Queued completed stroke stream={streamId} " +
+                $"[LiveStrokeCommandV5] Queued completed stroke stream={streamId} " +
                 $"command={commandGuid} parent={parentGuid} children={childCount} " +
                 $"seed={preview.Stroke.m_Seed}.");
 
@@ -1167,7 +1186,7 @@ namespace OpenBrush.Multiplayer
         private static void DeleteStroke(int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
             Debug.Log(
-                $"[LiveStrokeCommandV4] Receive delete command={commandGuid} " +
+                $"[LiveStrokeCommandV5] Receive delete command={commandGuid} " +
                 $"parent={parentGuid} children={childCount} seed={seed}.");
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -1195,7 +1214,7 @@ namespace OpenBrush.Multiplayer
             if (foundStroke != null)
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV4] Queue delete command={commandGuid} " +
+                    $"[LiveStrokeCommandV5] Queue delete command={commandGuid} " +
                     $"parent={parentGuid} seed={seed} strokeSource={strokeSource}.");
                 var parentCommand = FindParentCommand(parentGuid);
                 var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
@@ -1207,7 +1226,7 @@ namespace OpenBrush.Multiplayer
                 // Remote deletes are idempotent. The stroke may already have been removed or
                 // may never have been synchronized to this client.
                 Debug.LogWarning(
-                    $"[LiveStrokeCommandV4] Ignore delete command={commandGuid} " +
+                    $"[LiveStrokeCommandV5] Ignore delete command={commandGuid} " +
                     $"parent={parentGuid} seed={seed} strokeSource=missing.");
             }
         }
@@ -1702,6 +1721,8 @@ namespace OpenBrush.Multiplayer
                 info.Source.RawEncoded);
         }
 
+        // Protocol-v4 compatibility entry point. Version 5 sends confirmed points and
+        // provisional tails through separate RPCs below.
         [Rpc(InvokeLocal = false)]
         public static void RPC_LiveStrokeUpdate(
             NetworkRunner runner, Guid streamId, int firstControlPointIndex,
@@ -1709,9 +1730,40 @@ namespace OpenBrush.Multiplayer
             bool hasProvisionalTail, NetworkedControlPoint provisionalTail,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
         {
-            LiveStrokeUpdate(
+            LiveStrokeConfirmed(
                 streamId, firstControlPointIndex, confirmedControlPoints,
-                hasProvisionalTail, provisionalTail, info.Source.RawEncoded);
+                info.Source.RawEncoded);
+            if (hasProvisionalTail)
+            {
+                LiveStrokeProvisionalTail(
+                    streamId, sequence: 0,
+                    firstControlPointIndex + (confirmedControlPoints?.Length ?? 0),
+                    provisionalTail, info.Source.RawEncoded);
+            }
+        }
+
+        [Rpc(InvokeLocal = false)]
+        public static void RPC_LiveStrokeConfirmedV5(
+            NetworkRunner runner, Guid streamId, int firstControlPointIndex,
+            NetworkedControlPoint[] confirmedControlPoints,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            LiveStrokeConfirmed(
+                streamId, firstControlPointIndex, confirmedControlPoints,
+                info.Source.RawEncoded);
+        }
+
+        [Rpc(
+            InvokeLocal = false, Channel = RpcChannel.Unreliable,
+            TickAligned = false)]
+        public static void RPC_LiveStrokeProvisionalTailV5(
+            NetworkRunner runner, Guid streamId, uint sequence,
+            int confirmedControlPointCount, NetworkedControlPoint provisionalTail,
+            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
+        {
+            LiveStrokeProvisionalTail(
+                streamId, sequence, confirmedControlPointCount,
+                provisionalTail, info.Source.RawEncoded);
         }
 
         [Rpc(InvokeLocal = false)]

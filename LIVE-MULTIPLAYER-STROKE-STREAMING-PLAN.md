@@ -61,7 +61,8 @@ The proof of concept exists only to establish that a remote `BaseBrushScript` ca
    1. A parametric creator is active.
    2. Straightedge drawing is active.
    3. More than one pointer is producing the stroke.
-4. Use reliable, ordered Photon RPCs.
+4. Use reliable, ordered Photon RPCs for authoritative data and an unreliable RPC for the
+   replaceable provisional tail.
 5. Send updates at a fixed low rate, initially 10 Hz.
 6. Reuse the existing RPC batcher unless it prevents the experiment from functioning.
 7. Assume both proof-of-concept clients run the same build.
@@ -81,16 +82,22 @@ The proof of concept exists only to establish that a remote `BaseBrushScript` ca
 6. Source `StartSketchTimeMs`.
 7. The first control point, retaining its source timestamp.
 
-Protocol version 4 carries these fields in a dedicated one-point start structure. It does not
+Protocol version 5 carries these fields in a dedicated one-point start structure. It does not
 reuse the completed-stroke `NetworkedStroke`, whose fixed-capacity control-point arrays are too
 large for a start RPC once clock and contributor metadata are included. Live-preview capability
 requires an exact protocol-version match; other clients remain on completed-stroke delivery.
 
-`PreviewUpdate` contains:
+`PreviewConfirmed` contains reliable authoritative data:
 
 1. The stream ID.
 2. The index of the first included control point.
 3. New confirmed control points, retaining their source timestamps.
+
+`PreviewTail` contains replaceable unreliable data:
+
+1. The stream ID.
+2. A monotonically increasing sequence number.
+3. The confirmed-point count on which the tail is based.
 4. The current provisional tail point.
 
 `PreviewComplete` contains:
@@ -110,7 +117,8 @@ requires an exact protocol-version match; other clients remain on completed-stro
 2. Obtain the active source stroke-session anchor when the stream starts. If no valid anchor is available, use the completed-stroke path instead of inventing one.
 3. Attach the existing runtime-only contributor token and nickname to `PreviewStart`.
 4. After `SetControlPoint()` changes the local list, expose enough state for multiplayer to distinguish confirmed points from the provisional tail.
-5. At the fixed send interval, send newly confirmed points and the latest provisional tail.
+5. At the fixed send interval, send newly confirmed points reliably and the latest provisional
+   tail unreliably.
 6. Preserve the original source timestamps in all preview messages.
 7. On discard, send `PreviewCancel`.
 8. On normal detach, send `PreviewComplete` instead of sending the complete control-point payload again.
@@ -123,14 +131,17 @@ requires an exact protocol-version match; other clients remain on completed-stro
 3. Create the transient `BaseBrushScript` on that contributor layer using the supplied brush metadata.
 4. Retain the contributor token, nickname, source clock anchor, and raw source timestamps with the transient preview.
 5. Keep that brush instance alive and drive it through the same incremental `UpdatePosition_LS()` and `ApplyChangesToVisuals()` lifecycle used by a local in-progress stroke.
-6. On `PreviewUpdate`, feed only newly confirmed points into the existing brush and update its current provisional tail in place.
-7. Do not destroy, recreate, or replay the complete brush from its first control point for each network update.
-8. Skip visual work when an update contains neither new confirmed points nor a changed provisional tail.
-9. Keep the preview outside `SketchMemoryScript` and the undo stack.
-10. On `PreviewComplete`, validate the point count, convert the assembled timestamps exactly once, and create the normal authoritative `Stroke` and `BrushStrokeCommand` on the same contributor layer.
-11. Finalize the existing preview brush into the authoritative stroke rather than creating duplicate geometry.
-12. Add the completed stroke to sketch memory using the existing network-command path.
-13. On `PreviewCancel`, destroy the preview.
+6. On `PreviewConfirmed`, feed only newly confirmed points into the existing brush.
+7. On `PreviewTail`, retain only a newer tail whose confirmed-point count matches the receiver,
+   and render it with a separate reusable preview brush.
+8. Do not destroy, recreate, or replay the complete brush from its first control point for each network update.
+9. Skip visual work when an update contains neither new confirmed points nor a changed provisional tail.
+10. Keep the preview outside `SketchMemoryScript` and the undo stack.
+11. On `PreviewComplete`, validate the point count, convert the assembled timestamps exactly once, and create the normal authoritative `Stroke` and `BrushStrokeCommand` on the same contributor layer.
+12. Destroy the provisional-tail brush, then finalize the confirmed preview brush into the
+    authoritative stroke rather than creating duplicate geometry.
+13. Add the completed stroke to sketch memory using the existing network-command path.
+14. On `PreviewCancel`, destroy the preview.
 
 ### Timestamp handling
 

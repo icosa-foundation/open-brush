@@ -63,11 +63,12 @@ namespace OpenBrush.Multiplayer
         bool RpcLiveStrokeStart(
             Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
             Guid contributorId, string contributorNickname, int playerId);
-        bool RpcLiveStrokeUpdate(
+        bool RpcLiveStrokeConfirmed(
             Guid streamId, int firstControlPointIndex,
-            PointerManager.ControlPoint[] confirmedControlPoints,
-            bool hasProvisionalTail, PointerManager.ControlPoint provisionalTail,
-            int playerId);
+            PointerManager.ControlPoint[] confirmedControlPoints, int playerId);
+        bool RpcLiveStrokeProvisionalTail(
+            Guid streamId, uint sequence, int confirmedControlPointCount,
+            PointerManager.ControlPoint provisionalTail, int playerId);
         bool RpcLiveStrokeComplete(
             Guid streamId, int finalControlPointCount,
             SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
