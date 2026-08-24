@@ -24,7 +24,7 @@ namespace TiltBrush
         public void ReshapePrefabRegistersEverySubToolIdentifierOnce()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/Prefabs/PushPullTool.prefab");
+                "Assets/Prefabs/ReshapeTool.prefab");
             Assert.IsNotNull(prefab);
 
             BaseSculptSubTool[] subTools =
