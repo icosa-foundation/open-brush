@@ -32,10 +32,8 @@ namespace TiltBrush
         {
             Vector3 localPoint = m_BoxCollider.transform.InverseTransformPoint(canvasPose * vertex);
             Vector3 offset = localPoint - m_BoxCollider.center;
-            Vector3 halfSize = m_BoxCollider.size * 0.5f;
-            return Mathf.Abs(offset.x) <= halfSize.x &&
-                Mathf.Abs(offset.y) <= halfSize.y &&
-                Mathf.Abs(offset.z) <= halfSize.z;
+            float halfLength = m_BoxCollider.size.z * 0.5f;
+            return Mathf.Abs(offset.z) <= halfLength;
         }
 
         public override float CalculateStrength(
