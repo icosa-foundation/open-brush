@@ -29,6 +29,8 @@ namespace OpenBrush.Multiplayer
 {
     public class PhotonRPC : SimulationBehaviour
     {
+        private const string k_LiveStrokeCapabilityCommand =
+            "OpenBrush.Multiplayer.LiveStrokeCapability";
         private static Dictionary<Guid, Stroke> m_inProgressStrokes;
         private static List<PendingCommand> m_pendingCommands;
         private static Dictionary<Guid, TaskCompletionSource<bool>> m_acknowledgments;
@@ -160,7 +162,7 @@ namespace OpenBrush.Multiplayer
                 command.Command is DeleteStrokeCommand)
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV5] Execute pending " +
+                    $"[LiveStrokeCommand] Execute pending " +
                     $"type={command.Command.GetType().Name} command={command.Command.Guid} " +
                     $"parent={command.Command.ParentGuid} " +
                     $"children={command.Command.ChildrenCount} " +
@@ -233,14 +235,14 @@ namespace OpenBrush.Multiplayer
             if (!pendingParent.Guid.Equals(default))
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV5] Parent lookup parent={parentGuid} source=pending.");
+                    $"[LiveStrokeCommand] Parent lookup parent={parentGuid} source=pending.");
                 return pendingParent.Command;
             }
 
             BaseCommand processedParent =
                 SketchMemoryScript.m_Instance.FindNetworkCommand(parentGuid);
             Debug.Log(
-                $"[LiveStrokeCommandV5] Parent lookup parent={parentGuid} " +
+                $"[LiveStrokeCommand] Parent lookup parent={parentGuid} " +
                 $"source={(processedParent == null ? "missing" : "processed")}.");
             return processedParent;
         }
@@ -268,6 +270,14 @@ namespace OpenBrush.Multiplayer
                 parent: parentCommand);
 
             AddPendingCommand(() => { }, commandGuid, parentGuid, command, childCount);
+        }
+
+        public static void Send_LiveStrokeCapability(
+            NetworkRunner runner, int playerId, int maxStreamedPointers)
+        {
+            RPC_PerformCommand(
+                runner, k_LiveStrokeCapabilityCommand, playerId.ToString(),
+                new[] { maxStreamedPointers.ToString() });
         }
 
         public static void Send_BrushStrokeFull(
@@ -301,7 +311,7 @@ namespace OpenBrush.Multiplayer
                 parentGuid, childCount);
         }
 
-        public static void Send_BrushStrokeFullClockV2(
+        public static void Send_BrushStrokeFullClock(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
@@ -309,39 +319,21 @@ namespace OpenBrush.Multiplayer
         {
             if (targetPlayer == default)
             {
-                RPC_BrushStrokeFullClockV2(
+                RPC_BrushStrokeFullClock(
                     runner, strokeData, commandGuid, timestamp, rebaseTimestamps,
                     sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount);
             }
             else
             {
-                RPC_BrushStrokeFullClockV2(
+                RPC_BrushStrokeFullClock(
                     runner, strokeData, commandGuid, timestamp, rebaseTimestamps,
                     sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount, targetPlayer);
             }
         }
 
-        private static void BrushStrokeFullClockV1(
-            NetworkedStroke strokeData, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
-            Guid parentGuid = default, int childCount = 0)
-        {
-            if (CheckifCommandGuidIsInStack(commandGuid)) return;
-
-            var decode = NetworkedStroke.ToStroke(strokeData);
-            var sourceTimeSession = new StrokeTimeSessionMetadata
-            {
-                StartUtcMs = sourceStartUtcMs,
-                StartSketchTimeMs = sourceStartSketchTimeMs,
-            };
-            CreateBrushStroke(
-                decode, commandGuid, timestamp, rebaseTimestamps: true,
-                parentGuid, childCount, sourceTimeSession);
-        }
-
-        private static void BrushStrokeFullClockV2(
+        private static void BrushStrokeFullClock(
             NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
@@ -359,7 +351,7 @@ namespace OpenBrush.Multiplayer
                 parentGuid, childCount, sourceTimeSession);
         }
 
-        public static void Send_BrushStrokeFullContributorV1(
+        public static void Send_BrushStrokeFullContributor(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, Guid contributorId, string contributorNickname,
             bool hasSourceTimeSession, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
@@ -368,14 +360,14 @@ namespace OpenBrush.Multiplayer
         {
             if (targetPlayer == default)
             {
-                RPC_BrushStrokeFullContributorV1(
+                RPC_BrushStrokeFullContributor(
                     runner, strokeData, commandGuid, timestamp, rebaseTimestamps,
                     contributorId, contributorNickname, hasSourceTimeSession,
                     sourceStartUtcMs, sourceStartSketchTimeMs, parentGuid, childCount);
             }
             else
             {
-                RPC_BrushStrokeFullContributorV1(
+                RPC_BrushStrokeFullContributor(
                     runner, strokeData, commandGuid, timestamp, rebaseTimestamps,
                     contributorId, contributorNickname, hasSourceTimeSession,
                     sourceStartUtcMs, sourceStartSketchTimeMs, parentGuid, childCount,
@@ -383,7 +375,7 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        private static void BrushStrokeFullContributorV1(
+        private static void BrushStrokeFullContributor(
             NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, Guid contributorId, string contributorNickname,
             bool hasSourceTimeSession, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
@@ -418,20 +410,20 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        public static void Send_BrushStrokeBeginContributorV1(
+        public static void Send_BrushStrokeBeginContributor(
             NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength,
             Guid contributorId, string contributorNickname,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
             if (targetPlayer == default)
             {
-                RPC_BrushStrokeBeginContributorV1(
+                RPC_BrushStrokeBeginContributor(
                     runner, id, strokeData, finalLength, contributorId,
                     contributorNickname);
             }
             else
             {
-                RPC_BrushStrokeBeginContributorV1(
+                RPC_BrushStrokeBeginContributor(
                     runner, id, strokeData, finalLength, contributorId,
                     contributorNickname, targetPlayer);
             }
@@ -528,7 +520,7 @@ namespace OpenBrush.Multiplayer
             m_inProgressStrokes.Remove(id);
         }
 
-        public static void Send_BrushStrokeCompleteClockV1(
+        public static void Send_BrushStrokeCompleteClock(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
@@ -536,19 +528,19 @@ namespace OpenBrush.Multiplayer
         {
             if (targetPlayer == default)
             {
-                RPC_BrushStrokeCompleteClockV1(
+                RPC_BrushStrokeCompleteClock(
                     runner, id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount);
             }
             else
             {
-                RPC_BrushStrokeCompleteClockV1(
+                RPC_BrushStrokeCompleteClock(
                     runner, id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                     sourceStartSketchTimeMs, parentGuid, childCount, targetPlayer);
             }
         }
 
-        private static void BrushStrokeCompleteClockV1(
+        private static void BrushStrokeCompleteClock(
             Guid id, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
@@ -557,7 +549,7 @@ namespace OpenBrush.Multiplayer
 
             if (!m_inProgressStrokes.ContainsKey(id))
             {
-                Debug.LogError("[MultiplayerStrokeClockV1] Missing chunked stroke at completion.");
+                Debug.LogError("[MultiplayerStrokeClock] Missing chunked stroke at completion.");
                 return;
             }
 
@@ -594,7 +586,7 @@ namespace OpenBrush.Multiplayer
                         return false;
                     }
                     Debug.LogWarning(
-                        $"[MultiplayerStrokeClockV1] Could not map stroke {stroke.m_Guid} " +
+                        $"[MultiplayerStrokeClock] Could not map stroke {stroke.m_Guid} " +
                         "from its source clock; using legacy receipt-time rebasing.");
                     if (!RebaseStrokeTimestampsToReceiver(stroke))
                     {
@@ -704,7 +696,7 @@ namespace OpenBrush.Multiplayer
             {
                 TrackFailedLiveStrokeStart(streamId, sourcePlayerId);
                 Debug.LogWarning(
-                    $"[LiveStrokeCapacityV5] Declined stream {streamId} from player " +
+                    $"[LiveStrokeCapacity] Declined stream {streamId} from player " +
                     $"{sourcePlayerId}; active={sourcePreviewCount}, capacity={capacity}.");
                 return;
             }
@@ -825,7 +817,7 @@ namespace OpenBrush.Multiplayer
             int timestamp, Guid parentGuid, int childCount, int sourcePlayerId)
         {
             Debug.Log(
-                $"[LiveStrokeCommandV5] Receive complete stream={streamId} " +
+                $"[LiveStrokeCommand] Receive complete stream={streamId} " +
                 $"command={commandGuid} parent={parentGuid} children={childCount} " +
                 $"points={finalControlPointCount} source={sourcePlayerId}.");
             if (!m_IncomingLiveStrokes.TryGetValue(
@@ -886,7 +878,7 @@ namespace OpenBrush.Multiplayer
                 return;
             }
             Debug.Log(
-                $"[LiveStrokeCommandV5] Queued completed stroke stream={streamId} " +
+                $"[LiveStrokeCommand] Queued completed stroke stream={streamId} " +
                 $"command={commandGuid} parent={parentGuid} children={childCount} " +
                 $"seed={preview.Stroke.m_Seed}.");
 
@@ -1213,7 +1205,7 @@ namespace OpenBrush.Multiplayer
         private static void DeleteStroke(int seed, Guid commandGuid, int timestamp, Guid parentGuid = default, int childCount = 0)
         {
             Debug.Log(
-                $"[LiveStrokeCommandV5] Receive delete command={commandGuid} " +
+                $"[LiveStrokeCommand] Receive delete command={commandGuid} " +
                 $"parent={parentGuid} children={childCount} seed={seed}.");
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
@@ -1241,7 +1233,7 @@ namespace OpenBrush.Multiplayer
             if (foundStroke != null)
             {
                 Debug.Log(
-                    $"[LiveStrokeCommandV5] Queue delete command={commandGuid} " +
+                    $"[LiveStrokeCommand] Queue delete command={commandGuid} " +
                     $"parent={parentGuid} seed={seed} strokeSource={strokeSource}.");
                 var parentCommand = FindParentCommand(parentGuid);
                 var command = new DeleteStrokeCommand(foundStroke, commandGuid, timestamp, parent: parentCommand);
@@ -1253,7 +1245,7 @@ namespace OpenBrush.Multiplayer
                 // Remote deletes are idempotent. The stroke may already have been removed or
                 // may never have been synchronized to this client.
                 Debug.LogWarning(
-                    $"[LiveStrokeCommandV5] Ignore delete command={commandGuid} " +
+                    $"[LiveStrokeCommand] Ignore delete command={commandGuid} " +
                     $"parent={parentGuid} seed={seed} strokeSource=missing.");
             }
         }
@@ -1331,10 +1323,7 @@ namespace OpenBrush.Multiplayer
 
             currentRoomData.maxPlayers = roomData.m_MaxPlayers;
             currentRoomData.silentRoom = roomData.m_IsSilentRoom;
-            currentRoomData.voiceDisabled = roomData.m_IsVoiceDisabled;
             currentRoomData.viewOnlyRoom = roomData.m_IsViewOnlyRoom;
-            currentRoomData.liveStrokeStreaming = roomData.m_LiveStrokeStreaming;
-            currentRoomData.liveStrokeProtocolVersion = roomData.m_LiveStrokeProtocolVersion;
             
             MultiplayerManager.m_Instance.RoomOwnershipReceived(remoteSettings, currentRoomData);
         }
@@ -1439,6 +1428,18 @@ namespace OpenBrush.Multiplayer
         {
             Debug.Log($"Command recieved: {commandName}");
 
+            if (commandName == k_LiveStrokeCapabilityCommand)
+            {
+                if (int.TryParse(guid, out int playerId) &&
+                    data != null && data.Length == 1 &&
+                    int.TryParse(data[0], out int maxStreamedPointers))
+                {
+                    MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
+                        playerId, maxStreamedPointers);
+                }
+                return;
+            }
+
             if (commandName.Equals("TiltBrush.BrushStrokeCommand"))
             {
                 var asString = string.Join(string.Empty, data);
@@ -1501,74 +1502,51 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullClockV1(
-            NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
-            Guid parentGuid = default, int childCount = 0,
-            [RpcTarget] PlayerRef targetPlayer = default)
-        {
-            BrushStrokeFullClockV1(
-                strokeData, commandGuid, timestamp, sourceStartUtcMs,
-                sourceStartSketchTimeMs, parentGuid, childCount);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullClockV2(
+        private static void RPC_BrushStrokeFullClock(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
-            BrushStrokeFullClockV2(
+            BrushStrokeFullClock(
                 strokeData, commandGuid, timestamp, rebaseTimestamps,
                 sourceStartUtcMs, sourceStartSketchTimeMs, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullContributorV1(
+        private static void RPC_BrushStrokeFullContributor(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, Guid contributorId, string contributorNickname,
             bool hasSourceTimeSession, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
-            BrushStrokeFullContributorV1(
+            BrushStrokeFullContributor(
                 strokeData, commandGuid, timestamp, rebaseTimestamps, contributorId,
                 contributorNickname, hasSourceTimeSession, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullContributorV1(
+        private static void RPC_BrushStrokeFullContributor(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, Guid contributorId, string contributorNickname,
             bool hasSourceTimeSession, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
         {
-            BrushStrokeFullContributorV1(
+            BrushStrokeFullContributor(
                 strokeData, commandGuid, timestamp, rebaseTimestamps, contributorId,
                 contributorNickname, hasSourceTimeSession, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullClockV1(
-            NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
-            long sourceStartUtcMs, uint sourceStartSketchTimeMs,
-            Guid parentGuid = default, int childCount = 0)
-        {
-            BrushStrokeFullClockV1(
-                strokeData, commandGuid, timestamp, sourceStartUtcMs,
-                sourceStartSketchTimeMs, parentGuid, childCount);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeFullClockV2(
+        private static void RPC_BrushStrokeFullClock(
             NetworkRunner runner, NetworkedStroke strokeData, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
         {
-            BrushStrokeFullClockV2(
+            BrushStrokeFullClock(
                 strokeData, commandGuid, timestamp, rebaseTimestamps,
                 sourceStartUtcMs, sourceStartSketchTimeMs, parentGuid, childCount);
         }
@@ -1595,7 +1573,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeBeginContributorV1(
+        private static void RPC_BrushStrokeBeginContributor(
             NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength,
             Guid contributorId, string contributorNickname,
             [RpcTarget] PlayerRef targetPlayer = default)
@@ -1605,7 +1583,7 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeBeginContributorV1(
+        private static void RPC_BrushStrokeBeginContributor(
             NetworkRunner runner, Guid id, NetworkedStroke strokeData, int finalLength,
             Guid contributorId, string contributorNickname)
         {
@@ -1636,24 +1614,24 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeCompleteClockV1(
+        private static void RPC_BrushStrokeCompleteClock(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0,
             [RpcTarget] PlayerRef targetPlayer = default)
         {
-            BrushStrokeCompleteClockV1(
+            BrushStrokeCompleteClock(
                 id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
 
         [Rpc(InvokeLocal = false)]
-        private static void RPC_BrushStrokeCompleteClockV1(
+        private static void RPC_BrushStrokeCompleteClock(
             NetworkRunner runner, Guid id, Guid commandGuid, int timestamp,
             bool rebaseTimestamps, long sourceStartUtcMs, uint sourceStartSketchTimeMs,
             Guid parentGuid = default, int childCount = 0)
         {
-            BrushStrokeCompleteClockV1(
+            BrushStrokeCompleteClock(
                 id, commandGuid, timestamp, rebaseTimestamps, sourceStartUtcMs,
                 sourceStartSketchTimeMs, parentGuid, childCount);
         }
@@ -1732,30 +1710,12 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_LiveStrokeCapability(
-            NetworkRunner runner, int protocolVersion, int maxStreamedPointers,
-            RpcInfo info = default)
-        {
-            MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
-                info.Source.RawEncoded, protocolVersion, maxStreamedPointers);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_LiveStrokeCapabilityTargeted(
-            NetworkRunner runner, int protocolVersion, int maxStreamedPointers,
-            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
-        {
-            MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
-                info.Source.RawEncoded, protocolVersion, maxStreamedPointers);
-        }
-
-        [Rpc(InvokeLocal = false)]
         public static void RPC_LiveStrokeRoomState(
-            NetworkRunner runner, bool enabled, int protocolVersion,
+            NetworkRunner runner, bool enabled,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
         {
             MultiplayerManager.m_Instance?.ApplyLiveStrokeRoomState(
-                enabled, protocolVersion, info.Source.RawEncoded);
+                enabled, info.Source.RawEncoded);
         }
 
         [Rpc(InvokeLocal = false)]
@@ -1771,29 +1731,8 @@ namespace OpenBrush.Multiplayer
                 info.Source.RawEncoded);
         }
 
-        // Protocol-v4 compatibility entry point. Version 5 sends confirmed points and
-        // provisional tails through separate RPCs below.
         [Rpc(InvokeLocal = false)]
-        public static void RPC_LiveStrokeUpdate(
-            NetworkRunner runner, Guid streamId, int firstControlPointIndex,
-            NetworkedControlPoint[] confirmedControlPoints,
-            bool hasProvisionalTail, NetworkedControlPoint provisionalTail,
-            [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
-        {
-            LiveStrokeConfirmed(
-                streamId, firstControlPointIndex, confirmedControlPoints,
-                info.Source.RawEncoded);
-            if (hasProvisionalTail)
-            {
-                LiveStrokeProvisionalTail(
-                    streamId, sequence: 0,
-                    firstControlPointIndex + (confirmedControlPoints?.Length ?? 0),
-                    provisionalTail, info.Source.RawEncoded);
-            }
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_LiveStrokeConfirmedV5(
+        public static void RPC_LiveStrokeConfirmed(
             NetworkRunner runner, Guid streamId, int firstControlPointIndex,
             NetworkedControlPoint[] confirmedControlPoints,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
@@ -1806,7 +1745,7 @@ namespace OpenBrush.Multiplayer
         [Rpc(
             InvokeLocal = false, Channel = RpcChannel.Unreliable,
             TickAligned = false)]
-        public static void RPC_LiveStrokeProvisionalTailV5(
+        public static void RPC_LiveStrokeProvisionalTail(
             NetworkRunner runner, Guid streamId, uint sequence,
             int confirmedControlPointCount, NetworkedControlPoint provisionalTail,
             [RpcTarget] PlayerRef targetPlayer, RpcInfo info = default)
@@ -1868,13 +1807,6 @@ namespace OpenBrush.Multiplayer
         public static void RPC_SetRoomVoiceEnabled(
             NetworkRunner runner, bool enabled, [RpcTarget] PlayerRef targetPlayer,
             RpcInfo info = default)
-        {
-            SetRoomVoiceEnabled(enabled, info.Source);
-        }
-
-        [Rpc(InvokeLocal = false)]
-        public static void RPC_SetRoomVoiceEnabled(
-            NetworkRunner runner, bool enabled, RpcInfo info = default)
         {
             SetRoomVoiceEnabled(enabled, info.Source);
         }

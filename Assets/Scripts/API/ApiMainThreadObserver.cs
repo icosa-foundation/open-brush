@@ -116,8 +116,7 @@ public class ApiMainThreadObserver : MonoBehaviour
                 voiceEnabled = manager.IsRoomVoiceEnabled,
                 silent = room.silentRoom,
                 viewOnly = room.viewOnlyRoom,
-                liveStrokeStreaming = room.liveStrokeStreaming,
-                liveStrokeProtocolVersion = room.liveStrokeProtocolVersion
+                liveStrokeStreaming = room.liveStrokeStreaming
             } : null,
             players
         });

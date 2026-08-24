@@ -38,10 +38,7 @@ namespace TiltBrush
                 maxPlayers = maxPlayers,
                 silentRoom = silentRoom,
                 viewOnlyRoom = viewOnlyRoom,
-                liveStrokeStreaming = liveStrokeStreaming,
-                liveStrokeProtocolVersion = liveStrokeStreaming
-                    ? MultiplayerManager.LiveStrokeProtocolVersion
-                    : 0
+                liveStrokeStreaming = liveStrokeStreaming
             };
             Debug.Log($"[MultiplayerHttpAsync] Joining or creating room '{roomName}'.");
             try

@@ -325,14 +325,33 @@ namespace OpenBrush.Multiplayer
         public async Task<bool> PerformCommand(BaseCommand command)
         {
             await Task.Yield();
-            return ProcessCommand(command, rebaseTimestamps: true);
+            if (m_Runner == null || !m_Runner.IsRunning)
+            {
+                return false;
+            }
+
+            bool success = true;
+            foreach (PlayerRef playerRef in m_Runner.ActivePlayers
+                .Where(player => player != m_Runner.LocalPlayer))
+            {
+                bool useEnrichedStrokeTransport =
+                    m_Manager.IsPlayerLiveStrokeCompatible(playerRef.RawEncoded);
+                success &= ProcessCommand(
+                    command, playerRef, rebaseTimestamps: true,
+                    useEnrichedStrokeTransport);
+            }
+            return success;
         }
 
         public async Task<bool> SendCommandToPlayer(BaseCommand command, int playerId)
         {
             await Task.Yield();
             PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
-            return ProcessCommand(command, playerRef, rebaseTimestamps: false);
+            bool useEnrichedStrokeTransport =
+                m_Manager.IsPlayerLiveStrokeCompatible(playerId);
+            return ProcessCommand(
+                command, playerRef, rebaseTimestamps: false,
+                useEnrichedStrokeTransport);
         }
 
         public bool RpcSyncSketchTimeToPlayer(uint sketchTimeMs, int playerId)
@@ -464,48 +483,33 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1)
+        public async Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId)
         {
-            if (playerId < 0)
-            {
-                PhotonRPCBatcher.EnqueueRPC(() =>
-                { PhotonRPC.RPC_SetRoomVoiceEnabled(m_Runner, enabled); });
-            }
-            else
-            {
-                PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
-                PhotonRPCBatcher.EnqueueRPC(() =>
-                { PhotonRPC.RPC_SetRoomVoiceEnabled(m_Runner, enabled, targetPlayer); });
-            }
+            PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
+            PhotonRPCBatcher.EnqueueRPC(() =>
+            { PhotonRPC.RPC_SetRoomVoiceEnabled(m_Runner, enabled, targetPlayer); });
             await Task.Yield();
             return true;
         }
 
-        public async Task<bool> RpcAdvertiseLiveStrokeSupport(
-            int protocolVersion, int maxStreamedPointers, int playerId = -1)
+        public async Task<bool> RpcAdvertiseLiveStrokeSupport(int maxStreamedPointers)
         {
             if (m_Runner == null || !m_Runner.IsRunning)
             {
                 return false;
             }
 
-            if (playerId < 0)
-            {
-                PhotonRPC.RPC_LiveStrokeCapability(
-                    m_Runner, protocolVersion, maxStreamedPointers);
-            }
-            else
-            {
-                PhotonRPC.RPC_LiveStrokeCapabilityTargeted(
-                    m_Runner, protocolVersion, maxStreamedPointers,
-                    PlayerRef.FromEncoded(playerId));
-            }
+            // Capability discovery uses a pre-streaming RPC. Older clients safely ignore
+            // the unknown command name instead of receiving an RPC they cannot resolve.
+            PhotonRPC.Send_LiveStrokeCapability(
+                m_Runner, m_Runner.LocalPlayer.RawEncoded,
+                maxStreamedPointers);
             await Task.Yield();
             return true;
         }
 
         public async Task<bool> RpcSetLiveStrokeRoomState(
-            bool enabled, int protocolVersion, int playerId)
+            bool enabled, int playerId)
         {
             if (m_Runner == null || !m_Runner.IsRunning || playerId < 0)
             {
@@ -513,8 +517,7 @@ namespace OpenBrush.Multiplayer
             }
 
             PhotonRPC.RPC_LiveStrokeRoomState(
-                m_Runner, enabled, protocolVersion,
-                PlayerRef.FromEncoded(playerId));
+                m_Runner, enabled, PlayerRef.FromEncoded(playerId));
             await Task.Yield();
             return true;
         }
@@ -552,7 +555,7 @@ namespace OpenBrush.Multiplayer
             var networkedPoints = confirmedControlPoints
                 .Select(point => new NetworkedControlPoint().Init(point))
                 .ToArray();
-            PhotonRPC.RPC_LiveStrokeConfirmedV5(
+            PhotonRPC.RPC_LiveStrokeConfirmed(
                 m_Runner, streamId, firstControlPointIndex, networkedPoints,
                 PlayerRef.FromEncoded(playerId));
             return true;
@@ -567,7 +570,7 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
 
-            PhotonRPC.RPC_LiveStrokeProvisionalTailV5(
+            PhotonRPC.RPC_LiveStrokeProvisionalTail(
                 m_Runner, streamId, sequence, confirmedControlPointCount,
                 new NetworkedControlPoint().Init(provisionalTail),
                 PlayerRef.FromEncoded(playerId));
@@ -665,7 +668,8 @@ namespace OpenBrush.Multiplayer
 
         #region Command Methods
         private bool ProcessCommand(
-            BaseCommand command, PlayerRef playerRef = default, bool rebaseTimestamps = true)
+            BaseCommand command, PlayerRef playerRef, bool rebaseTimestamps,
+            bool useEnrichedStrokeTransport)
         {
             bool success = true;
 
@@ -673,7 +677,8 @@ namespace OpenBrush.Multiplayer
             {
                 case BrushStrokeCommand:
                     success &= CommandBrushStroke(
-                        command as BrushStrokeCommand, playerRef, rebaseTimestamps);
+                        command as BrushStrokeCommand, playerRef, rebaseTimestamps,
+                        useEnrichedStrokeTransport);
                     break;
                 case DeleteStrokeCommand:
                     success &= CommandDeleteStroke(command as DeleteStrokeCommand, playerRef);
@@ -713,7 +718,9 @@ namespace OpenBrush.Multiplayer
                     {
                         child.SetParent(command);
                     }
-                    success &= ProcessCommand(child, playerRef, rebaseTimestamps);
+                    success &= ProcessCommand(
+                        child, playerRef, rebaseTimestamps,
+                        useEnrichedStrokeTransport);
                 }
             }
 
@@ -721,7 +728,8 @@ namespace OpenBrush.Multiplayer
         }
 
         private bool CommandBrushStroke(
-            BrushStrokeCommand command, PlayerRef playerRef, bool rebaseTimestamps)
+            BrushStrokeCommand command, PlayerRef playerRef, bool rebaseTimestamps,
+            bool useEnrichedStrokeTransport)
         {
             var stroke = command.m_Stroke;
             bool hasSourceTimeSession = SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(
@@ -737,10 +745,11 @@ namespace OpenBrush.Multiplayer
             if (numberOfChunks == 1)
             {
                 // Send it all at once as a full stroke
-                if (stroke.m_MultiplayerContributorId != Guid.Empty)
+                if (useEnrichedStrokeTransport &&
+                    stroke.m_MultiplayerContributorId != Guid.Empty)
                 {
                     PhotonRPCBatcher.EnqueueRPC(() =>
-                    { PhotonRPC.Send_BrushStrokeFullContributorV1(
+                    { PhotonRPC.Send_BrushStrokeFullContributor(
                         m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
                         (int)command.NetworkTimestamp, rebaseTimestamps,
                         stroke.m_MultiplayerContributorId,
@@ -750,10 +759,10 @@ namespace OpenBrush.Multiplayer
                         sourceTimeSession?.StartSketchTimeMs ?? 0,
                         command.ParentGuid, command.ChildrenCount, playerRef); });
                 }
-                else if (hasSourceTimeSession)
+                else if (useEnrichedStrokeTransport && hasSourceTimeSession)
                 {
                     PhotonRPCBatcher.EnqueueRPC(() =>
-                    { PhotonRPC.Send_BrushStrokeFullClockV2(
+                    { PhotonRPC.Send_BrushStrokeFullClock(
                         m_Runner, new NetworkedStroke().Init(stroke), command.Guid,
                         (int)command.NetworkTimestamp, rebaseTimestamps,
                         sourceTimeSession.StartUtcMs,
@@ -785,10 +794,11 @@ namespace OpenBrush.Multiplayer
             var strokeGuid = Guid.NewGuid();
 
             // Send the initial Begin call
-            if (stroke.m_MultiplayerContributorId != Guid.Empty)
+            if (useEnrichedStrokeTransport &&
+                stroke.m_MultiplayerContributorId != Guid.Empty)
             {
                 PhotonRPCBatcher.EnqueueRPC(() =>
-                { PhotonRPC.Send_BrushStrokeBeginContributorV1(
+                { PhotonRPC.Send_BrushStrokeBeginContributor(
                     m_Runner, strokeGuid, netStroke, totalPoints,
                     stroke.m_MultiplayerContributorId,
                     stroke.m_MultiplayerContributorNickname, playerRef); });
@@ -823,10 +833,10 @@ namespace OpenBrush.Multiplayer
             }
 
             // After all chunks have been sent, send the Complete call
-            if (hasSourceTimeSession)
+            if (useEnrichedStrokeTransport && hasSourceTimeSession)
             {
                 PhotonRPCBatcher.EnqueueRPC(() =>
-                { PhotonRPC.Send_BrushStrokeCompleteClockV1(
+                { PhotonRPC.Send_BrushStrokeCompleteClock(
                     m_Runner, strokeGuid, command.Guid, (int)command.NetworkTimestamp,
                     rebaseTimestamps, sourceTimeSession.StartUtcMs,
                     sourceTimeSession.StartSketchTimeMs,
@@ -858,7 +868,7 @@ namespace OpenBrush.Multiplayer
                 ? "broadcast"
                 : playerRef.RawEncoded.ToString();
             Debug.Log(
-                $"[LiveStrokeCommandV5] Send delete command={command.Guid} " +
+                $"[LiveStrokeCommand] Send delete command={command.Guid} " +
                 $"parent={command.ParentGuid} children={command.ChildrenCount} " +
                 $"seed={command.m_TargetStroke.m_Seed} target={target}.");
             PhotonRPCBatcher.EnqueueRPC(() =>

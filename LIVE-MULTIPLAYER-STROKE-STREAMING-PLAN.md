@@ -82,10 +82,11 @@ The proof of concept exists only to establish that a remote `BaseBrushScript` ca
 6. Source `StartSketchTimeMs`.
 7. The first control point, retaining its source timestamp.
 
-Protocol version 5 carries these fields in a dedicated one-point start structure. It does not
+The live protocol carries these fields in a dedicated one-point start structure. It does not
 reuse the completed-stroke `NetworkedStroke`, whose fixed-capacity control-point arrays are too
-large for a start RPC once clock and contributor metadata are included. Live-preview capability
-requires an exact protocol-version match; other clients remain on completed-stroke delivery.
+large for a start RPC once clock and contributor metadata are included. Live streaming has one
+current wire format; there is no compatibility contract between revisions of this experimental
+protocol.
 
 `PreviewConfirmed` contains reliable authoritative data:
 
@@ -224,12 +225,15 @@ The NVP turns the proof of concept into an optional feature that fails safely ba
 
 ### Room ownership and setting propagation
 
-1. Include the live-preview setting in room creation data and the synchronized room state.
+1. Keep the live-preview setting as current-client runtime state, synchronized only between
+   clients that advertise live-streaming support. Do not change the pre-streaming room-settings
+   wire structure.
 2. Only the current room owner can change the setting.
 3. Broadcast an accepted change to every joined client before it takes effect for new strokes.
 4. Fix the delivery mode for an in-progress stroke when that stroke begins. A room-setting change affects the next stroke rather than switching transport halfway through an active stroke.
 5. Preserve the setting when room ownership transfers. The new owner inherits the current value and may subsequently change it.
-6. Include the setting in ownership-transfer and late-join room-state synchronization.
+6. Send the current setting directly to a capable client after capability discovery and after
+   ownership transfer.
 7. Allow the owner to enable streaming while incompatible clients remain in the room. Those clients continue using completed-stroke delivery.
 8. Require every compatible client to follow an enabled setting; compatible clients have no completed-stroke-only preference or local override.
 9. If the owner disables streaming, all subsequent strokes immediately use the current completed-stroke path.
@@ -237,16 +241,22 @@ The NVP turns the proof of concept into an optional feature that fails safely ba
 
 ### Capability fallback
 
-1. Advertise the live-preview protocol version and the client's effective incoming-pointer capacity when joining a room.
-2. Publish the required preview protocol version with the authoritative room setting.
+1. Advertise live-preview support and the client's effective incoming-pointer capacity through
+   the pre-existing generic command RPC. Clients without this feature safely ignore the unknown
+   command name.
+2. Treat capability as binary. The live-streaming wire format has no negotiated internal version.
 3. Allow an incompatible client to join a streaming-enabled room and use completed-stroke delivery.
 4. Stream between compatible participants according to the owner-selected room setting, routing a logical pointer group only to recipients that advertised enough capacity for the entire group.
 5. Ensure compatible clients continue to receive completed strokes sent by incompatible participants.
 6. Ensure incompatible clients receive authoritative completed strokes for drawing actions that compatible clients preview live. The live preview remains optional presentation data; the completed protocol remains the compatibility path.
 7. Do not expose capability fallback as a local setting. A compatible client must obey the room mode.
-8. Keep all existing legacy and current completed-stroke receive paths unchanged.
+8. Send clients without live-streaming capability only the unchanged pre-streaming completed-stroke
+   and scene-sync formats. Send clock-, contributor-, preview-, room-state-, and related new RPCs
+   only to clients that advertised capability.
 9. If a receiver cannot create or retain any preview in a logical pointer group, have it decline that stream immediately. The sender then cancels the recipient's other previews in the group and sends the normal completed command tree instead.
-10. Treat broader mixed-version protocol negotiation beyond this feature as a separate concern.
+10. The only supported mixed-build boundary is between builds with live stroke streaming and builds
+    without it. Any future requirement to support multiple live-protocol revisions must be discussed
+    and designed explicitly before implementation.
 
 ### Simple resource-pressure fallback
 
@@ -373,7 +383,7 @@ Each item below is independent and should be justified by observed behaviour bef
 
 ### Protocol and diagnostics
 
-1. Extend capability negotiation if multiple preview protocol versions must coexist.
+1. Do not add live-protocol revision negotiation unless a new compatibility requirement is agreed.
 2. Add development metrics for active streams, update rate, bytes sent, queue age, fallbacks, and repairs.
 3. Add rate limiting and stricter validation for hostile or malfunctioning clients.
 

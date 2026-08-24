@@ -55,11 +55,10 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
-        Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId = -1);
-        Task<bool> RpcAdvertiseLiveStrokeSupport(
-            int protocolVersion, int maxStreamedPointers, int playerId = -1);
+        Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId);
+        Task<bool> RpcAdvertiseLiveStrokeSupport(int maxStreamedPointers);
         Task<bool> RpcSetLiveStrokeRoomState(
-            bool enabled, int protocolVersion, int playerId);
+            bool enabled, int playerId);
         bool RpcLiveStrokeStart(
             Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
             Guid contributorId, string contributorNickname, int playerId);
