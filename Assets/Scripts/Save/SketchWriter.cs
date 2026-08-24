@@ -612,7 +612,7 @@ namespace TiltBrush
                                     rControlPoint.m_Pressure = reader.Float();
                                     break;
                                 case ControlPointExtension.Timestamp:
-                                    rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
+                                    rControlPoint.m_TimestampMs = reader.UInt32();
                                     break;
                                 default:
                                     // skip unknown extension
@@ -621,6 +621,20 @@ namespace TiltBrush
                             }
                         }
                         stroke.m_ControlPoints[j] = rControlPoint;
+                    }
+                }
+
+                // Apply additive-load rebasing after either deserialization path. The fast path
+                // copies timestamps directly from the file and must receive the same offset as
+                // the field-by-field path.
+                if (timestampOffset != 0)
+                {
+                    for (int j = 0; j < nControlPoints; ++j)
+                    {
+                        PointerManager.ControlPoint controlPoint = stroke.m_ControlPoints[j];
+                        controlPoint.m_TimestampMs = unchecked(
+                            controlPoint.m_TimestampMs + timestampOffset);
+                        stroke.m_ControlPoints[j] = controlPoint;
                     }
                 }
 
