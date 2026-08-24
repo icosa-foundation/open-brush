@@ -491,7 +491,8 @@ namespace TiltBrush
                 }
                 PointerManager.ControlPoint controlPoint = stroke.m_ControlPoints[index];
                 float distance = Vector3.Distance(controlPoint.m_Pos, toolPosition);
-                if (StrokeSculptInfluence.CalculateRadialWeight(distance, radius) > 0f &&
+                if (m_ActiveSubTool.CalculateInfluence(
+                        controlPoint.m_Pos, toolPosition, radius, canvasPose) > 0f &&
                     m_ActiveSubTool.CalculateStrength(
                         controlPoint.m_Pos, distance, radius, canvasPose, m_bIsPushing) != 0 &&
                     m_ActiveSubTool.IsInReach(controlPoint.m_Pos, canvasPose))
