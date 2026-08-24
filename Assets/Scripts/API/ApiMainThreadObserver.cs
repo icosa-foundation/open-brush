@@ -13,7 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using OpenBrush.Multiplayer;
 using TiltBrush;
@@ -35,13 +38,18 @@ public class ApiMainThreadObserver : MonoBehaviour
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
     [NonSerialized] public Quaternion SpectatorCamRotation;
     [NonSerialized] public volatile string MultiplayerStatusJson = @"{""state"":""UNAVAILABLE"",""inRoom"":false,""players"":[]}";
-    private volatile bool m_MultiplayerStatusRequested;
+    private readonly ConcurrentQueue<TaskCompletionSource<string>>
+        m_MultiplayerStatusRequests =
+            new ConcurrentQueue<TaskCompletionSource<string>>();
+    private int m_MainThreadId;
+    private const int k_MultiplayerStatusTimeoutMs = 2000;
 
     public Transform SpectatorCamTarget;
 
     void Awake()
     {
         m_Instance = this;
+        m_MainThreadId = Thread.CurrentThread.ManagedThreadId;
     }
 
     public static ApiMainThreadObserver Instance => m_Instance;
@@ -55,10 +63,13 @@ public class ApiMainThreadObserver : MonoBehaviour
         SpectatorCamPosition = spectatorTr.position;
         SpectatorCamRotation = spectatorTr.rotation;
         SpectatorCamTargetPosition = SpectatorCamTarget.position;
-        if (m_MultiplayerStatusRequested)
+        if (!m_MultiplayerStatusRequests.IsEmpty)
         {
-            m_MultiplayerStatusRequested = false;
             MultiplayerStatusJson = BuildMultiplayerStatusJson();
+            while (m_MultiplayerStatusRequests.TryDequeue(out var request))
+            {
+                request.TrySetResult(MultiplayerStatusJson);
+            }
         }
         //     m_Status = StatusTypes.Ready;
         // }
@@ -67,8 +78,35 @@ public class ApiMainThreadObserver : MonoBehaviour
 
     public string RequestMultiplayerStatus()
     {
-        m_MultiplayerStatusRequested = true;
+        if (Thread.CurrentThread.ManagedThreadId == m_MainThreadId)
+        {
+            MultiplayerStatusJson = BuildMultiplayerStatusJson();
+            return MultiplayerStatusJson;
+        }
+
+        var request = new TaskCompletionSource<string>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        m_MultiplayerStatusRequests.Enqueue(request);
+        if (request.Task.Wait(k_MultiplayerStatusTimeoutMs))
+        {
+            return request.Task.Result;
+        }
+
+        Debug.LogWarning(
+            "[MultiplayerApiSnapshot] Timed out waiting for the Unity main thread; returning the most recent snapshot.");
         return MultiplayerStatusJson;
+    }
+
+    void OnDestroy()
+    {
+        while (m_MultiplayerStatusRequests.TryDequeue(out var request))
+        {
+            request.TrySetResult(MultiplayerStatusJson);
+        }
+        if (m_Instance == this)
+        {
+            m_Instance = null;
+        }
     }
 
     private static string BuildMultiplayerStatusJson()
