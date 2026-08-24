@@ -273,10 +273,10 @@ namespace OpenBrush.Multiplayer
         }
 
         public static void Send_LiveStrokeCapability(
-            NetworkRunner runner, int playerId, int maxStreamedPointers)
+            NetworkRunner runner, int maxStreamedPointers)
         {
             RPC_PerformCommand(
-                runner, k_LiveStrokeCapabilityCommand, playerId.ToString(),
+                runner, k_LiveStrokeCapabilityCommand, string.Empty,
                 new[] { maxStreamedPointers.ToString() });
         }
 
@@ -1430,18 +1430,20 @@ namespace OpenBrush.Multiplayer
         }
 
         [Rpc(InvokeLocal = false)]
-        public static void RPC_PerformCommand(NetworkRunner runner, string commandName, string guid, string[] data)
+        public static void RPC_PerformCommand(
+            NetworkRunner runner, string commandName, string guid, string[] data,
+            RpcInfo info = default)
         {
             Debug.Log($"Command recieved: {commandName}");
 
             if (commandName == k_LiveStrokeCapabilityCommand)
             {
-                if (int.TryParse(guid, out int playerId) &&
+                if (info.Source != PlayerRef.None &&
                     data != null && data.Length == 1 &&
                     int.TryParse(data[0], out int maxStreamedPointers))
                 {
                     MultiplayerManager.m_Instance?.ReceiveLiveStrokeCapability(
-                        playerId, maxStreamedPointers);
+                        info.Source.RawEncoded, maxStreamedPointers);
                 }
                 return;
             }

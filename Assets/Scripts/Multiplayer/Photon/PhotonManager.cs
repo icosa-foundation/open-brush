@@ -502,8 +502,7 @@ namespace OpenBrush.Multiplayer
             // Capability discovery uses a pre-streaming RPC. Older clients safely ignore
             // the unknown command name instead of receiving an RPC they cannot resolve.
             PhotonRPC.Send_LiveStrokeCapability(
-                m_Runner, m_Runner.LocalPlayer.RawEncoded,
-                maxStreamedPointers);
+                m_Runner, maxStreamedPointers);
             await Task.Yield();
             return true;
         }
