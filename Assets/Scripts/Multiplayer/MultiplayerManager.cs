@@ -1390,9 +1390,13 @@ namespace OpenBrush.Multiplayer
         {
             if (State == ConnectionState.IN_ROOM)
             {
+                foreach (BrushStrokeCommand brushCommand in
+                    EnumerateBrushStrokeCommands(command))
+                {
+                    TagStrokeWithLocalContributor(brushCommand.m_Stroke);
+                }
                 if (command is BrushStrokeCommand brushStrokeCommand)
                 {
-                    TagStrokeWithLocalContributor(brushStrokeCommand.m_Stroke);
                     if (await TryCompleteOutgoingLiveStrokeTree(brushStrokeCommand))
                     {
                         return;
