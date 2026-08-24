@@ -146,7 +146,6 @@ namespace TiltBrush
                 stroke.m_Stroke.m_Flags.HasFlag(SketchMemoryScript.StrokeFlags.IsGroupContinue))
             {
                 stroke.SetParent(this);
-                m_Children.Add(stroke);
                 if (m_Widget)
                 {
                     m_LineLength_CS += stroke.m_LineLength_CS;
