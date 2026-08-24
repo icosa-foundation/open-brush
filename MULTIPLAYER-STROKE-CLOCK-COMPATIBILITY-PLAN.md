@@ -68,17 +68,23 @@ Keep all existing legacy stroke RPCs unchanged. Add versioned anchored equivalen
    2. Existing command and grouping data.
    3. `sourceStartUtcMs`.
    4. `sourceStartSketchTimeMs`.
-2. `BrushStrokeCompleteClockV1`
+2. `BrushStrokeFullClockV2`
+   1. The V1 payload.
+   2. `rebaseTimestamps`, so targeted history and repair delivery can retain the sender's
+      timestamp domain.
+3. `BrushStrokeCompleteClockV1`
    1. Existing chunk-transfer ID and completion data.
-   2. `sourceStartUtcMs`.
-   3. `sourceStartSketchTimeMs`.
-3. Chunk begin and continue packets remain unchanged because the clock anchor is needed only when the completed stroke is materialized.
+   2. `rebaseTimestamps`.
+   3. `sourceStartUtcMs`.
+   4. `sourceStartSketchTimeMs`.
+4. Chunk begin and continue packets remain unchanged because the clock anchor is needed only when the completed stroke is materialized.
 
-The additional timing payload is 12 bytes per stroke before protocol alignment and RPC overhead.
+The additional timing payload is 13 bytes per stroke before protocol alignment and RPC overhead.
 
 ## Protocol selection
 
-1. A stroke with a valid source session anchor uses the clock V1 RPC.
+1. A stroke with a valid source session anchor uses the full clock V2 RPC or the chunked
+   completion clock V1 RPC.
 2. A stroke without a valid source session anchor uses the unchanged legacy RPC.
 3. Both receive paths remain present in current clients.
 4. No field is added to `NetworkedStroke`, so legacy stroke data retains its existing wire layout.
@@ -110,16 +116,20 @@ The current large-data scene synchronization format remains legacy unless it is 
 
 ## Receiver changes
 
-Create one stroke-materialization function that accepts an optional source anchor:
+Create one stroke-materialization function that accepts an optional source anchor and a
+timestamp-rebasing policy:
 
-1. If the source anchor exists:
+1. For live broadcast delivery with a source anchor:
    1. Convert every source point to UTC using the source anchor.
    2. Ensure a receiver session mapping exists.
    3. Convert every point UTC into receiver sketch milliseconds.
    4. Validate every converted timestamp before mutating the stroke.
-2. If the source anchor is absent:
+2. For targeted history or repair delivery with a source anchor:
+   1. Preserve the sender-domain point timestamps.
+   2. Restore and extend a deduplicated source session covering those points.
+3. If the source anchor is absent and rebasing is requested:
    1. Run the existing receipt-time tail rebasing function unchanged.
-3. Recreate the stroke, add it to sketch memory, and record its receiver-side session range as today.
+4. Recreate the stroke and add it to sketch memory.
 
 The anchored path must never apply receipt-time tail rebasing after UTC conversion.
 

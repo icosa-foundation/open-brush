@@ -668,6 +668,33 @@ namespace TiltBrush
             }
         }
 
+        internal void RestoreTargetedStrokeTimeSession(
+            StrokeTimeSessionMetadata session, Stroke stroke)
+        {
+            if (session == null || stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return;
+            }
+
+            StrokeTimeSessionMetadata existing = m_StrokeTimeSessions.FirstOrDefault(candidate =>
+                candidate.StartUtcMs == session.StartUtcMs &&
+                candidate.StartSketchTimeMs == session.StartSketchTimeMs);
+            if (existing != null)
+            {
+                existing.EndSketchTimeMs = Math.Max(
+                    existing.EndSketchTimeMs, stroke.TailTimestampMs);
+                return;
+            }
+
+            m_StrokeTimeSessions.Add(new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = stroke.TailTimestampMs,
+            });
+        }
+
         internal void RemoveStrokeTimeSessions(
             IEnumerable<StrokeTimeSessionMetadata> sessions)
         {
