@@ -212,12 +212,16 @@ namespace TiltBrush
             float now = Time.realtimeSinceStartup;
             m_SculptContacts.TryGetValue(stroke, out SculptContactState contactState);
             float continuousStrengthScale = 1f;
+            float nextApplicationTime = now;
             if (m_ActiveSubTool.UsesContinuousStrength)
             {
-                float elapsed = contactState != null
-                    ? Mathf.Clamp(
-                        now - contactState.LastApplicationTime, 0f, k_MaxContinuousStepSeconds)
-                    : Mathf.Min(Time.unscaledDeltaTime, k_MaxContinuousStepSeconds);
+                float previousApplicationTime = contactState != null
+                    ? contactState.LastApplicationTime
+                    : now - Time.unscaledDeltaTime;
+                float elapsed = Mathf.Clamp(
+                    now - previousApplicationTime, 0f, k_MaxContinuousStepSeconds);
+                // Advance only by the time applied so any excess remains for later updates.
+                nextApplicationTime = previousApplicationTime + elapsed;
                 continuousStrengthScale = elapsed * k_ReferenceUpdatesPerSecond;
             }
             contactState ??= new SculptContactState();
@@ -296,7 +300,7 @@ namespace TiltBrush
                 StrokeSculptInfluence.TransportOrientations(
                     stroke.m_ControlPoints, newControlPoints);
                 ApplyStrokeModification(stroke, newControlPoints);
-                contactState.LastApplicationTime = now;
+                contactState.LastApplicationTime = nextApplicationTime;
                 m_SculptContacts[stroke] = contactState;
             }
             else
