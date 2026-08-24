@@ -107,6 +107,7 @@ namespace TiltBrush
                 // Signed modes should start in their primary state instead of inheriting the
                 // previous mode's alternate state.
                 m_bIsPushing = true;
+                UpdateMesh();
             }
         }
 
