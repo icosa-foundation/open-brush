@@ -41,6 +41,9 @@ namespace OpenBrush.Multiplayer
             public StrokeTimeSessionMetadata SourceTimeSession;
             public List<PointerManager.ControlPoint> ConfirmedPoints;
             public BaseBrushScript Brush;
+            public BaseBrushScript ProvisionalTailBrush;
+            public bool HasProvisionalTail;
+            public PointerManager.ControlPoint ProvisionalTail;
             public int RenderedConfirmedPointCount;
             public float LastUpdateTime;
             public bool VisualUpdatePending;
@@ -760,6 +763,12 @@ namespace OpenBrush.Multiplayer
                 preview.ConfirmedPoints.Add(
                     NetworkedControlPoint.ToControlPoint(networkedPoint));
             }
+            preview.HasProvisionalTail = hasProvisionalTail;
+            if (hasProvisionalTail)
+            {
+                preview.ProvisionalTail = NetworkedControlPoint.ToControlPoint(
+                    provisionalTail);
+            }
             preview.LastUpdateTime = Time.realtimeSinceStartup;
             preview.VisualUpdatePending = true;
         }
@@ -819,6 +828,7 @@ namespace OpenBrush.Multiplayer
             preview.Stroke.m_ControlPoints = preview.ConfirmedPoints.ToArray();
             preview.Stroke.m_ControlPointsToDrop = new bool[finalControlPointCount];
             preview.Stroke.m_Flags = strokeFlags;
+            DestroyLiveStrokeBrush(ref preview.ProvisionalTailBrush);
 
             if (!CreateBrushStroke(
                 preview.Stroke, commandGuid, timestamp,
@@ -901,6 +911,46 @@ namespace OpenBrush.Multiplayer
             }
 
             preview.RenderedConfirmedPointCount = preview.ConfirmedPoints.Count;
+            return UpdateLiveStrokeProvisionalTail(preview);
+        }
+
+        private static bool UpdateLiveStrokeProvisionalTail(
+            IncomingLiveStrokePreview preview)
+        {
+            if (!preview.HasProvisionalTail)
+            {
+                DestroyLiveStrokeBrush(ref preview.ProvisionalTailBrush);
+                return true;
+            }
+
+            PointerManager.ControlPoint start =
+                preview.ConfirmedPoints[preview.ConfirmedPoints.Count - 1];
+            TrTransform startTransform = TrTransform.TRS(
+                start.m_Pos, start.m_Orient, preview.Stroke.m_BrushScale);
+            if (preview.ProvisionalTailBrush == null)
+            {
+                BrushDescriptor descriptor = BrushCatalog.m_Instance.GetBrush(
+                    preview.Stroke.m_BrushGuid);
+                CanvasScript canvas = preview.Stroke.m_IntendedCanvas ?? App.Scene.MainCanvas;
+                if (descriptor == null || canvas == null)
+                {
+                    return false;
+                }
+
+                preview.ProvisionalTailBrush = BaseBrushScript.Create(
+                    canvas.transform, startTransform, descriptor,
+                    preview.Stroke.m_Color, preview.Stroke.m_BrushSize);
+                preview.ProvisionalTailBrush.RandomSeed = preview.Stroke.m_Seed;
+                preview.ProvisionalTailBrush.SetPreviewMode();
+            }
+
+            preview.ProvisionalTailBrush.ResetBrushForPreview(startTransform);
+            PointerManager.ControlPoint tail = preview.ProvisionalTail;
+            preview.ProvisionalTailBrush.UpdatePosition_LS(
+                TrTransform.TRS(
+                    tail.m_Pos, tail.m_Orient, preview.Stroke.m_BrushScale),
+                tail.m_Pressure);
+            preview.ProvisionalTailBrush.ApplyChangesToVisuals();
             return true;
         }
 
@@ -935,13 +985,23 @@ namespace OpenBrush.Multiplayer
 
         private static void DestroyLiveStrokePreview(IncomingLiveStrokePreview preview)
         {
-            if (preview?.Brush == null)
+            if (preview == null)
             {
                 return;
             }
-            preview.Brush.DestroyMesh();
-            UnityEngine.Object.Destroy(preview.Brush.gameObject);
-            preview.Brush = null;
+            DestroyLiveStrokeBrush(ref preview.ProvisionalTailBrush);
+            DestroyLiveStrokeBrush(ref preview.Brush);
+        }
+
+        private static void DestroyLiveStrokeBrush(ref BaseBrushScript brush)
+        {
+            if (brush == null)
+            {
+                return;
+            }
+            brush.DestroyMesh();
+            UnityEngine.Object.Destroy(brush.gameObject);
+            brush = null;
         }
 
         private static void ExpireLiveStrokePreviews()
