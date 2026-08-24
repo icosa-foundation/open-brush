@@ -226,6 +226,13 @@ namespace TiltBrush
             return Vector3.Dot(twistAxis, normalizedAxis) < 0f ? -angle : angle;
         }
 
+        /// Returns the equivalent of wrappedAngle nearest to previousAngle, allowing callers
+        /// sampling a wrapped angle over time to preserve complete rotations.
+        public static float UnwrapAngle(float previousAngle, float wrappedAngle)
+        {
+            return previousAngle + Mathf.DeltaAngle(previousAngle, wrappedAngle);
+        }
+
         /// Applies a captured soft transform. Translation and rotation both fade by the captured
         /// control-point weight, and orientation follows the same rotation as position.
         public static void ApplyCapturedTransform(

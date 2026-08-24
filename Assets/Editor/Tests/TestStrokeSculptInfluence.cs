@@ -286,6 +286,16 @@ namespace TiltBrush
             Assert.AreEqual(45f, angle, 0.0001f);
         }
 
+        [TestCase(179f, -179f, 181f)]
+        [TestCase(-179f, 179f, -181f)]
+        [TestCase(539f, -179f, 541f)]
+        public void UnwrapAnglePreservesContinuousRotation(
+            float previousAngle, float wrappedAngle, float expected)
+        {
+            Assert.AreEqual(
+                expected, StrokeSculptInfluence.UnwrapAngle(previousAngle, wrappedAngle));
+        }
+
         [Test]
         public void GrabTwistPreservesRadiusAndRotatesOrientation()
         {

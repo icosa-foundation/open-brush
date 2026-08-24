@@ -49,6 +49,7 @@ namespace TiltBrush
         private Vector3 m_TransformStartToolPosition;
         private Quaternion m_TransformStartToolRotation;
         private Vector3 m_TwistAxis;
+        private float m_TransformTwistAngle;
         private bool m_WaitingForTriggerRelease;
         /// Determines whether the tool is in push mode or pull mode.
         /// Corresponds to the On/Off state
@@ -141,6 +142,7 @@ namespace TiltBrush
                 m_TransformStartToolRotation = m_ToolTransform.rotation;
                 m_TwistAxis =
                     (Quaternion.Inverse(canvas.Pose.rotation) * m_ToolTransform.forward).normalized;
+                m_TransformTwistAngle = 0f;
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -155,6 +157,12 @@ namespace TiltBrush
             {
                 m_ActiveSculptCommands.Clear();
                 m_SculptContacts.Clear();
+            }
+
+            if (IsCapturedTransformMode &&
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                UpdateCapturedTransformAngle();
             }
 
             if (IsCapturedTransformMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
@@ -387,22 +395,28 @@ namespace TiltBrush
             m_SculptContacts.Add(stroke, contactState);
         }
 
+        private void UpdateCapturedTransformAngle()
+        {
+            float wrappedAngle = StrokeSculptInfluence.CalculateTwistAngle(
+                m_TransformStartToolRotation, m_ToolTransform.rotation,
+                m_TransformStartToolRotation * Vector3.forward);
+            m_TransformTwistAngle = StrokeSculptInfluence.UnwrapAngle(
+                m_TransformTwistAngle, wrappedAngle);
+        }
+
         private void UpdateCapturedTransformStrokes()
         {
             Vector3 toolPosition = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
             Vector3 translation = toolPosition - m_TransformStartToolPosition;
-            float twistAngle = StrokeSculptInfluence.CalculateTwistAngle(
-                m_TransformStartToolRotation, m_ToolTransform.rotation,
-                m_TransformStartToolRotation * Vector3.forward);
             bool anyStrokeModified = false;
             foreach (KeyValuePair<Stroke, SculptContactState> contact in m_SculptContacts)
             {
                 SculptContactState state = contact.Value;
                 bool poseIsUnchanged = state.HasAppliedTransformPose &&
                     state.LastTransformTranslation == translation &&
-                    Mathf.Approximately(state.LastTransformAngle, twistAngle);
+                    Mathf.Approximately(state.LastTransformAngle, m_TransformTwistAngle);
                 bool poseIsAtStart = !state.HasAppliedTransformPose &&
-                    translation == Vector3.zero && Mathf.Approximately(twistAngle, 0f);
+                    translation == Vector3.zero && Mathf.Approximately(m_TransformTwistAngle, 0f);
                 if (poseIsUnchanged || poseIsAtStart)
                 {
                     continue;
@@ -414,11 +428,12 @@ namespace TiltBrush
                     (state.NextTransformResultBuffer + 1) % state.TransformResultBuffers.Length;
                 StrokeSculptInfluence.ApplyCapturedTransform(
                     state.TransformStartPoints, state.TransformWeights,
-                    m_TransformStartToolPosition, translation, m_TwistAxis, twistAngle,
+                    m_TransformStartToolPosition, translation, m_TwistAxis,
+                    m_TransformTwistAngle,
                     newControlPoints);
                 ApplyStrokeModification(contact.Key, newControlPoints);
                 state.LastTransformTranslation = translation;
-                state.LastTransformAngle = twistAngle;
+                state.LastTransformAngle = m_TransformTwistAngle;
                 state.HasAppliedTransformPose = true;
                 anyStrokeModified = true;
             }
