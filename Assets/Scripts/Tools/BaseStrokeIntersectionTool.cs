@@ -242,7 +242,8 @@ namespace TiltBrush
                         255,
                         intersectionLayer);
             }
-            else if (m_GpuFutureResult.IsReady)
+            else if (m_GpuFutureResult.IsReady &&
+                m_GpuConsumedResults >= m_GpuOldResultList.Count)
             {
                 // We could go use GpuResultList, but as we're swapping the buffers here, it feels better
                 // to be explicit about which buffers we're swapping.
@@ -250,7 +251,6 @@ namespace TiltBrush
                 // TODO: use m_GpuFutureResult.GetResults() instead
                 List<GpuIntersector.BatchResult> results = m_GpuFutureResultList;
                 m_GpuFutureResultList = m_GpuOldResultList;
-                // Note that this throws away any results that have yet to be consumed.
                 m_GpuOldResultList = results;
                 m_GpuConsumedResults = 0;
 
