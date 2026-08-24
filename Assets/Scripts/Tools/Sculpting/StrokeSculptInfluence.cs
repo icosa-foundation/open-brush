@@ -105,7 +105,7 @@ namespace TiltBrush
             PointerManager.ControlPoint[] result)
         {
             if (startPoints == null || weights == null || result == null ||
-                startPoints.Length != weights.Length || startPoints.Length != result.Length)
+                weights.Length < startPoints.Length || startPoints.Length != result.Length)
             {
                 return false;
             }

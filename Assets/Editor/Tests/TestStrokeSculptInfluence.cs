@@ -207,6 +207,24 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SmoothAcceptsLargerReusableWeightBuffer()
+        {
+            var startPoints = new[]
+            {
+                ControlPointAt(0f, 0f),
+                ControlPointAt(1f, 1f),
+                ControlPointAt(2f, 0f),
+            };
+            var result = new PointerManager.ControlPoint[3];
+
+            bool modified = StrokeSculptInfluence.ApplySmooth(
+                startPoints, new[] { 1f, 1f, 1f, 0f, 0f }, 0.5f, result);
+
+            Assert.IsTrue(modified);
+            Assert.AreEqual(new Vector3(1f, 0.5f, 0f), result[1].m_Pos);
+        }
+
+        [Test]
         public void SmoothUsesSegmentLengthsForUnevenSpacing()
         {
             var startPoints = new[]
