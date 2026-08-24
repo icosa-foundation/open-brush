@@ -164,10 +164,25 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "load.named",
-            "Loads a sketch filename from the user's Sketches folder. Set realTime to true to play it using recorded wall-clock timing; sketches without complete wall-clock metadata fall back to ordinary timestamp playback. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
-            "Untitled_1,false"
+            "Loads a sketch filename from the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "Untitled_1"
         )]
-        public static void LoadNamedFile(string filename, bool realTime = false)
+        public static void LoadNamedFile(string filename)
+        {
+            LoadNamedFile(filename, realTime: false);
+        }
+
+        [ApiEndpoint(
+            "load.realtime",
+            "Loads a sketch filename from the user's Sketches folder using recorded wall-clock timing. Sketches without complete wall-clock metadata fall back to ordinary timestamp playback. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "Untitled_1"
+        )]
+        public static void LoadNamedFileRealTime(string filename)
+        {
+            LoadNamedFile(filename, realTime: true);
+        }
+
+        private static void LoadNamedFile(string filename, bool realTime)
         {
             if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
             {
