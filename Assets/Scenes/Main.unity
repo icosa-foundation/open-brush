@@ -5889,7 +5889,7 @@ PrefabInstance:
     - target: {fileID: 3491021130848758591, guid: 9515dfdefc9ac3045ab77450def48e00,
         type: 3}
       propertyPath: m_Name
-      value: PushPullTool
+      value: ReshapeTool
       objectReference: {fileID: 0}
     - target: {fileID: 3491021130848758591, guid: 9515dfdefc9ac3045ab77450def48e00,
         type: 3}
