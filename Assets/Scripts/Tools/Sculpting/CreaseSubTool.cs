@@ -61,6 +61,16 @@ namespace TiltBrush
             return (bPushing ? 1f : -1f) * direction.normalized;
         }
 
+        public override float ScaleDisplacementForReferenceUpdates(
+            Vector3 vertex, float displacement, float referenceUpdates,
+            TrTransform canvasPose, bool bPushing)
+        {
+            float distanceToLine =
+                CalculateWorldLineOffset(vertex, canvasPose).magnitude / canvasPose.scale;
+            return StrokeSculptInfluence.ScaleProportionalDisplacement(
+                distanceToLine, displacement, referenceUpdates, towardTarget: bPushing);
+        }
+
         private Vector3 CalculateWorldLineOffset(Vector3 vertex, TrTransform canvasPose)
         {
             Vector3 linePoint = m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);

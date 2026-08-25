@@ -56,6 +56,15 @@ namespace TiltBrush
             return displacement;
         }
 
+        /// Scales one reference update's displacement for an elapsed number of reference updates.
+        /// Constant-speed tools use linear scaling; proportional tools override this.
+        public virtual float ScaleDisplacementForReferenceUpdates(
+            Vector3 vertex, float displacement, float referenceUpdates,
+            TrTransform canvasPose, bool bPushing)
+        {
+            return displacement * referenceUpdates;
+        }
+
         public abstract Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup);
     }
 } //namespace TiltBrush

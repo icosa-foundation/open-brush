@@ -104,6 +104,14 @@ namespace TiltBrush
             PointerManager.ControlPoint[] startPoints, float[] weights, float amount,
             PointerManager.ControlPoint[] result)
         {
+            return ApplySmooth(startPoints, weights, amount, 1f, result);
+        }
+
+        public static bool ApplySmooth(
+            PointerManager.ControlPoint[] startPoints, float[] weights,
+            float amountPerReferenceUpdate, float referenceUpdates,
+            PointerManager.ControlPoint[] result)
+        {
             if (startPoints == null || weights == null || result == null ||
                 weights.Length < startPoints.Length || startPoints.Length != result.Length)
             {
@@ -123,7 +131,9 @@ namespace TiltBrush
                 float nextLength = Vector3.Distance(
                     startPoints[i].m_Pos, startPoints[i + 1].m_Pos);
                 float combinedLength = previousLength + nextLength;
-                float pointAmount = Mathf.Clamp01(amount * weights[i]);
+                float pointAmount = ScaleProportionalAmount(
+                    amountPerReferenceUpdate * weights[i], referenceUpdates,
+                    towardTarget: true);
                 if (combinedLength <= Mathf.Epsilon || pointAmount <= 0f)
                 {
                     continue;
@@ -141,6 +151,37 @@ namespace TiltBrush
                 }
             }
             return modified;
+        }
+
+        /// Converts a per-reference-update proportional amount to the equivalent amount after
+        /// referenceUpdates repeated applications.
+        public static float ScaleProportionalAmount(
+            float amountPerReferenceUpdate, float referenceUpdates, bool towardTarget)
+        {
+            if (amountPerReferenceUpdate <= 0f || referenceUpdates <= 0f)
+            {
+                return 0f;
+            }
+
+            float amount = Mathf.Clamp01(amountPerReferenceUpdate);
+            return towardTarget
+                ? 1f - Mathf.Pow(1f - amount, referenceUpdates)
+                : Mathf.Pow(1f + amount, referenceUpdates) - 1f;
+        }
+
+        public static float ScaleProportionalDisplacement(
+            float distanceToTarget, float displacementPerReferenceUpdate,
+            float referenceUpdates, bool towardTarget)
+        {
+            if (distanceToTarget <= Mathf.Epsilon)
+            {
+                return 0f;
+            }
+
+            float amountPerReferenceUpdate =
+                displacementPerReferenceUpdate / distanceToTarget;
+            return distanceToTarget * ScaleProportionalAmount(
+                amountPerReferenceUpdate, referenceUpdates, towardTarget);
         }
 
         /// Returns the shortest vector from a point to a plane. The plane normal need not be

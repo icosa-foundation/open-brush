@@ -252,7 +252,7 @@ namespace TiltBrush
             {
                 strokeIsModified = StrokeSculptInfluence.ApplySmooth(
                     stroke.m_ControlPoints, m_InfluenceWeights,
-                    k_SmoothAmountPerReferenceUpdate * pressure * continuousStrengthScale,
+                    k_SmoothAmountPerReferenceUpdate * pressure, continuousStrengthScale,
                     newControlPoints);
                 if (strokeIsModified)
                 {
@@ -284,9 +284,12 @@ namespace TiltBrush
                             Vector3 direction = m_ActiveSubTool.CalculateDirection(
                                 newControlPoint.m_Pos, m_ToolTransform, m_CurrentCanvas.Pose,
                                 m_bIsPushing, rGroup);
-                            float displacement = m_ActiveSubTool.ConstrainDisplacement(
-                                strength * influence * pressure * continuousStrengthScale,
-                                distance, m_bIsPushing);
+                            float displacement = strength * influence * pressure;
+                            displacement = m_ActiveSubTool.ScaleDisplacementForReferenceUpdates(
+                                newControlPoint.m_Pos, displacement, continuousStrengthScale,
+                                m_CurrentCanvas.Pose, m_bIsPushing);
+                            displacement = m_ActiveSubTool.ConstrainDisplacement(
+                                displacement, distance, m_bIsPushing);
                             newControlPoint.m_Pos += direction * displacement;
                             strokeIsModified = true;
                             newControlPoints[i] = newControlPoint;

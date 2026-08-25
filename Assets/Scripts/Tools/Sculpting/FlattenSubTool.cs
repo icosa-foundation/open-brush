@@ -60,6 +60,16 @@ namespace TiltBrush
             return (Quaternion.Inverse(canvasPose.rotation) * planeOffset).normalized;
         }
 
+        public override float ScaleDisplacementForReferenceUpdates(
+            Vector3 vertex, float displacement, float referenceUpdates,
+            TrTransform canvasPose, bool bPushing)
+        {
+            float distanceToPlane =
+                CalculateWorldPlaneOffset(vertex, canvasPose).magnitude / canvasPose.scale;
+            return StrokeSculptInfluence.ScaleProportionalDisplacement(
+                distanceToPlane, displacement, referenceUpdates, towardTarget: true);
+        }
+
         private Vector3 CalculateWorldPlaneOffset(Vector3 vertex, TrTransform canvasPose)
         {
             Vector3 planePoint = m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);

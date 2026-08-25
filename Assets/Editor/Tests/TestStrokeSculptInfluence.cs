@@ -248,6 +248,42 @@ namespace TiltBrush
             Assert.AreEqual(expected, result[1].m_Pos);
         }
 
+        [Test]
+        public void ProportionalAmountMatchesRepeatedReferenceUpdates()
+        {
+            float scaledAmount = StrokeSculptInfluence.ScaleProportionalAmount(
+                0.1f, 9f, towardTarget: true);
+
+            Assert.AreEqual(1f - Mathf.Pow(0.9f, 9f), scaledAmount, 0.00001f);
+            Assert.Less(scaledAmount, 0.9f);
+        }
+
+        [Test]
+        public void SmoothUsesRepeatedReferenceUpdateScaling()
+        {
+            var startPoints = new[]
+            {
+                ControlPointAt(0f, 0f),
+                ControlPointAt(1f, 1f),
+                ControlPointAt(2f, 0f),
+            };
+            var result = new PointerManager.ControlPoint[3];
+
+            StrokeSculptInfluence.ApplySmooth(
+                startPoints, new[] { 1f, 1f, 1f }, 0.1f, 9f, result);
+
+            Assert.AreEqual(Mathf.Pow(0.9f, 9f), result[1].m_Pos.y, 0.00001f);
+        }
+
+        [Test]
+        public void ProportionalSpreadMatchesRepeatedReferenceUpdates()
+        {
+            float displacement = StrokeSculptInfluence.ScaleProportionalDisplacement(
+                2f, 0.2f, 9f, towardTarget: false);
+
+            Assert.AreEqual(2f * (Mathf.Pow(1.1f, 9f) - 1f), displacement, 0.00001f);
+        }
+
         [TestCase(2f, -2f)]
         [TestCase(-3f, 3f)]
         [TestCase(0f, 0f)]
