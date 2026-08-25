@@ -35,7 +35,7 @@ Shader "Custom/ToolGhost"
       Pass
       {
         Blend One One
-        Lighting Off Cull Back ZTest Always ZWrite Off Fog
+        Lighting Off Cull Off ZTest Always ZWrite Off Fog
         {
           Mode Off
         }
