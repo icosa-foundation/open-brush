@@ -319,6 +319,11 @@ namespace TiltBrush
                         255,
                         intersectionLayer);
             }
+            // Finish the older result set before swapping in a newer one. Each query samples an
+            // earlier position in the same active trigger gesture, so controller movement does
+            // not make those requested operations stale. Replacing unfinished results would leave
+            // holes in fast or dense erase, select, and repaint gestures. ResetDetection clears
+            // both result sets when the gesture ends or the tool otherwise becomes inactive.
             else if (m_GpuFutureResult.IsReady &&
                 m_GpuConsumedResults >= m_GpuOldResultList.Count)
             {
