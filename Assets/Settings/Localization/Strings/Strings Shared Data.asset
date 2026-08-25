@@ -3783,6 +3783,10 @@ MonoBehaviour:
     m_Key: BUTTON_ACCOUNTS_ENTER_CODE
     m_Metadata:
       m_Items: []
+  - m_Id: 535607692813230080
+    m_Key: MULTIPLAYER_TOGGLE_REALTIME
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
