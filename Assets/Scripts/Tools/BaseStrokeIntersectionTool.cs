@@ -48,6 +48,9 @@ namespace TiltBrush
         // Indicates the range of m_GpuOldResultList values that have yet to be processed.
         private int m_GpuConsumedResults;
 
+        private List<Stroke> m_CustomIntersectionStrokes;
+        private int m_CustomIntersectionStrokeIndex;
+
         // If not null, only intersections for strokes within this particular canvas will be handled.
         // Otherwise, if null, intersections with *any* canvas' strokes will be handled.
         protected CanvasScript m_CurrentCanvas;
@@ -108,6 +111,9 @@ namespace TiltBrush
             m_BatchObjectIndex = 0;
             m_BatchVertGroupIndex = 0;
             m_BatchTriIndexIndex = 0;
+
+            m_CustomIntersectionStrokes = null;
+            m_CustomIntersectionStrokeIndex = 0;
 
             ClearGpuFutureLists();
         }
@@ -171,6 +177,18 @@ namespace TiltBrush
             return 0;
         }
 
+        /// Allows a subclass to replace triangle-sphere broad-phase detection with a custom
+        /// stroke-level volume test. Custom detection is time-sliced but does not use the GPU.
+        virtual protected bool UsesCustomStrokeIntersection()
+        {
+            return false;
+        }
+
+        virtual protected bool StrokeIntersectsCustomDetectionVolume(Stroke stroke)
+        {
+            return false;
+        }
+
         virtual protected bool HandleNonGpuWidgetIntersections(Vector3 vDetectionCenter_GS, float size_GS)
         {
             return false;
@@ -191,6 +209,61 @@ namespace TiltBrush
                     m_TimesUp = true;
                     break;
             }
+        }
+
+        private void UpdateCustomStrokeIntersection()
+        {
+            if (m_CustomIntersectionStrokes == null)
+            {
+                m_CustomIntersectionStrokes =
+                    SketchMemoryScript.m_Instance.GetAllActiveStrokes(m_CurrentCanvas);
+                m_CustomIntersectionStrokeIndex = 0;
+            }
+
+            m_DetectionStopwatch.Reset();
+            m_DetectionStopwatch.Start();
+            bool intersectionHappened = false;
+            while (m_CustomIntersectionStrokeIndex < m_CustomIntersectionStrokes.Count)
+            {
+                Stroke stroke = m_CustomIntersectionStrokes[m_CustomIntersectionStrokeIndex++];
+                if (stroke.IsGeometryEnabled && stroke.Canvas == m_CurrentCanvas &&
+                    StrokeIntersectsCustomDetectionVolume(stroke))
+                {
+                    switch (stroke.m_Type)
+                    {
+                        case Stroke.Type.BatchedBrushStroke:
+                            if (stroke.m_BatchSubset?.m_ParentBatch != null &&
+                                HandleIntersectionWithBatchedStroke(stroke.m_BatchSubset))
+                            {
+                                intersectionHappened = true;
+                            }
+                            break;
+                        case Stroke.Type.BrushStroke:
+                            if (stroke.m_Object != null &&
+                                HandleIntersectionWithSolitaryObject(stroke.m_Object))
+                            {
+                                intersectionHappened = true;
+                            }
+                            break;
+                    }
+                }
+
+                if (m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks)
+                {
+                    break;
+                }
+            }
+
+            if (m_CustomIntersectionStrokeIndex >= m_CustomIntersectionStrokes.Count)
+            {
+                m_CustomIntersectionStrokes = null;
+                m_CustomIntersectionStrokeIndex = 0;
+            }
+            if (intersectionHappened)
+            {
+                IntersectionHappenedThisFrame();
+            }
+            m_DetectionStopwatch.Stop();
         }
 
         protected void ClearGpuFutureLists()
@@ -353,7 +426,14 @@ namespace TiltBrush
 
             TrTransform canvasPose = m_CurrentCanvas.Pose;
             Vector3 vDetectionCenter_CS = canvasPose.inverse * vDetectionCenter_GS;
+            bool useCustomStrokeIntersection = UsesCustomStrokeIntersection();
             m_TimesUp = false;
+
+            if (useCustomStrokeIntersection)
+            {
+                UpdateCustomStrokeIntersection();
+                return;
+            }
 
             // Reset detection if we've moved or adjusted our size
             float fDetectionRadius_CS = GetSize() / canvasPose.scale;
@@ -570,8 +650,15 @@ namespace TiltBrush
             Vector3 vDetectionCenter_CS = canvasPose.inverse * vDetectionCenter_GS;
             Transform rCanvas = m_CurrentCanvas.transform;
             int iNumCanvasChildren = rCanvas.childCount;
+            bool useCustomStrokeIntersection = UsesCustomStrokeIntersection();
 
             m_TimesUp = false;
+
+            if (useCustomStrokeIntersection)
+            {
+                UpdateCustomStrokeIntersection();
+                return;
+            }
 
             //reset detection if we've moved or adjusted our size
             float fDetectionRadius = GetSize();
@@ -593,80 +680,95 @@ namespace TiltBrush
                     Transform rChild = rCanvas.GetChild(m_DetectionObjectIndex);
                     if (rChild.gameObject.activeSelf)
                     {
-                        MeshFilter rMeshFilter = rChild.GetComponent<MeshFilter>();
-                        if (rMeshFilter)
                         {
-                            Bounds rMeshBounds = rMeshFilter.mesh.bounds;
-                            rMeshBounds.Expand(fDetectionRadius);
-                            Vector3 vTransformedCenter = rChild.InverseTransformPoint(vDetectionCenter_CS);
-
-                            if (rMeshBounds.Contains(vTransformedCenter))
+                            MeshFilter rMeshFilter = rChild.GetComponent<MeshFilter>();
+                            if (rMeshFilter)
                             {
-                                //bounds valid, check triangle intersections with sphere
-                                int iMeshVertCount = rMeshFilter.mesh.vertexCount;
-                                Vector3[] aVerts = rMeshFilter.mesh.vertices;
-                                Vector3[] aNorms = rMeshFilter.mesh.normals;
-                                while (m_DetectionVertIndex < iMeshVertCount - 2)
+                                Bounds rMeshBounds = rMeshFilter.mesh.bounds;
+                                rMeshBounds.Expand(fDetectionRadius);
+                                Vector3 vTransformedCenter =
+                                    rChild.InverseTransformPoint(vDetectionCenter_CS);
+
+                                if (rMeshBounds.Contains(vTransformedCenter))
                                 {
-                                    //check to see if we're within the sphere radius to the plane of this triangle
-                                    Vector3 vVert = aVerts[m_DetectionVertIndex];
-                                    Vector3 vNorm = aNorms[m_DetectionVertIndex];
-                                    rTestPlane.SetNormalAndPosition(vNorm, vVert);
-                                    float fDistToPlane = rTestPlane.GetDistanceToPoint(vTransformedCenter);
-                                    if (Mathf.Abs(fDistToPlane) < fDetectionRadius)
+                                    //bounds valid, check triangle intersections with sphere
+                                    int iMeshVertCount = rMeshFilter.mesh.vertexCount;
+                                    Vector3[] aVerts = rMeshFilter.mesh.vertices;
+                                    Vector3[] aNorms = rMeshFilter.mesh.normals;
+                                    while (m_DetectionVertIndex < iMeshVertCount - 2)
                                     {
-                                        //we're within the radius to this triangle's plane, find the point projected on to the plane
-                                        fDistToPlane *= -1.0f;
-                                        Vector3 vPlaneOffsetVector = vNorm * fDistToPlane;
-                                        Vector3 vPlaneIntersection = vTransformedCenter - vPlaneOffsetVector;
-
-                                        Vector3 vVert2 = aVerts[m_DetectionVertIndex + 1];
-                                        Vector3 vVert3 = aVerts[m_DetectionVertIndex + 2];
-
-                                        //walk the projected point toward the triangle center to find the triangle test position
-                                        Vector3 vTriCenter = (vVert + vVert2 + vVert3) * 0.33333f;
-
-                                        bool bIntersecting = false;
-                                        Vector3 vPointToTriCenter = vTriCenter - vTransformedCenter;
-                                        if (vPointToTriCenter.sqrMagnitude < fDetectionRadiusSq)
+                                        //check to see if we're within the sphere radius to the plane of this triangle
+                                        Vector3 vVert = aVerts[m_DetectionVertIndex];
+                                        Vector3 vNorm = aNorms[m_DetectionVertIndex];
+                                        rTestPlane.SetNormalAndPosition(vNorm, vVert);
+                                        float fDistToPlane =
+                                            rTestPlane.GetDistanceToPoint(vTransformedCenter);
+                                        if (Mathf.Abs(fDistToPlane) < fDetectionRadius)
                                         {
-                                            //if the triangle center is within the detection distance, we're definitely intersecting
-                                            bIntersecting = true;
-                                        }
-                                        else
-                                        {
-                                            //figure out how far we have left to move toward the tri-center
-                                            float fNormAngle = Mathf.Acos(Mathf.Abs(fDistToPlane) / fDetectionRadius);
-                                            float fDistLeft = Mathf.Sin(fNormAngle) * fDetectionRadius;
+                                            //we're within the radius to this triangle's plane, find the point projected on to the plane
+                                            fDistToPlane *= -1.0f;
+                                            Vector3 vPlaneOffsetVector = vNorm * fDistToPlane;
+                                            Vector3 vPlaneIntersection =
+                                                vTransformedCenter - vPlaneOffsetVector;
 
-                                            Vector3 vToTriCenter = vTriCenter - vPlaneIntersection;
-                                            vToTriCenter.Normalize();
-                                            vToTriCenter *= fDistLeft;
-                                            vPlaneIntersection += vToTriCenter;
+                                            Vector3 vVert2 = aVerts[m_DetectionVertIndex + 1];
+                                            Vector3 vVert3 = aVerts[m_DetectionVertIndex + 2];
 
-                                            //see if this projected point is in the triangle
-                                            if (PointInTriangle(ref vPlaneIntersection, ref vVert, ref vVert2, ref vVert3))
+                                            //walk the projected point toward the triangle center to find the triangle test position
+                                            Vector3 vTriCenter =
+                                                (vVert + vVert2 + vVert3) * 0.33333f;
+
+                                            bool bIntersecting = false;
+                                            Vector3 vPointToTriCenter =
+                                                vTriCenter - vTransformedCenter;
+                                            if (vPointToTriCenter.sqrMagnitude <
+                                                fDetectionRadiusSq)
                                             {
+                                                //if the triangle center is within the detection distance, we're definitely intersecting
                                                 bIntersecting = true;
                                             }
-                                        }
-
-                                        if (bIntersecting)
-                                        {
-                                            if (HandleIntersectionWithSolitaryObject(rChild.gameObject))
+                                            else
                                             {
-                                                DoIntersectionResets();
-                                                break;
+                                                //figure out how far we have left to move toward the tri-center
+                                                float fNormAngle = Mathf.Acos(
+                                                    Mathf.Abs(fDistToPlane) / fDetectionRadius);
+                                                float fDistLeft =
+                                                    Mathf.Sin(fNormAngle) * fDetectionRadius;
+
+                                                Vector3 vToTriCenter =
+                                                    vTriCenter - vPlaneIntersection;
+                                                vToTriCenter.Normalize();
+                                                vToTriCenter *= fDistLeft;
+                                                vPlaneIntersection += vToTriCenter;
+
+                                                //see if this projected point is in the triangle
+                                                if (PointInTriangle(
+                                                    ref vPlaneIntersection, ref vVert,
+                                                    ref vVert2, ref vVert3))
+                                                {
+                                                    bIntersecting = true;
+                                                }
+                                            }
+
+                                            if (bIntersecting)
+                                            {
+                                                if (HandleIntersectionWithSolitaryObject(
+                                                    rChild.gameObject))
+                                                {
+                                                    DoIntersectionResets();
+                                                    break;
+                                                }
                                             }
                                         }
-                                    }
 
-                                    //after each triangle, check our time
-                                    m_DetectionVertIndex += 3;
-                                    m_TimesUp = m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks;
-                                    if (m_TimesUp)
-                                    {
-                                        break;
+                                        //after each triangle, check our time
+                                        m_DetectionVertIndex += 3;
+                                        m_TimesUp = m_DetectionStopwatch.ElapsedTicks >
+                                            m_TimeSliceInTicks;
+                                        if (m_TimesUp)
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
                             }

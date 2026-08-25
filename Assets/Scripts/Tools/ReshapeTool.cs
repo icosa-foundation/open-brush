@@ -105,6 +105,7 @@ namespace TiltBrush
             m_SculptContacts.Clear();
             if (modeChanged)
             {
+                ResetDetection();
                 // Signed modes should start in their primary state instead of inheriting the
                 // previous mode's alternate state.
                 m_bIsPushing = true;
@@ -344,6 +345,33 @@ namespace TiltBrush
 
         private bool IsSmoothMode =>
             m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Smooth;
+
+        protected override bool UsesCustomStrokeIntersection()
+        {
+            return m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Flatten;
+        }
+
+        protected override bool StrokeIntersectsCustomDetectionVolume(Stroke stroke)
+        {
+            if (stroke?.m_ControlPoints == null || m_CurrentCanvas == null)
+            {
+                return false;
+            }
+
+            TrTransform canvasPose = m_CurrentCanvas.Pose;
+            Vector3 toolPosition = canvasPose.inverse * m_ToolTransform.position;
+            float radius = GetSize() / canvasPose.scale;
+            foreach (PointerManager.ControlPoint controlPoint in stroke.m_ControlPoints)
+            {
+                if (m_ActiveSubTool.CalculateInfluence(
+                        controlPoint.m_Pos, toolPosition, radius, canvasPose) > 0f &&
+                    m_ActiveSubTool.IsInReach(controlPoint.m_Pos, canvasPose))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private void CaptureTransformContact(Stroke stroke)
         {
