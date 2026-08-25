@@ -308,6 +308,29 @@ namespace TiltBrush
         }
 
         [Test]
+        public void FlattenInfluenceStopsAtSphericalBoundary()
+        {
+            var gameObject = new GameObject("FlattenSubTool test");
+            try
+            {
+                gameObject.AddComponent<BoxCollider>();
+                var subTool = gameObject.AddComponent<FlattenSubTool>();
+
+                float inside = subTool.CalculateInfluence(
+                    new Vector3(0f, 0.5f, 0f), Vector3.zero, 1f, TrTransform.identity);
+                float outside = subTool.CalculateInfluence(
+                    new Vector3(0f, 2f, 0f), Vector3.zero, 1f, TrTransform.identity);
+
+                Assert.That(inside, Is.GreaterThan(0f));
+                Assert.AreEqual(0f, outside);
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
         public void LineOffsetMovesPointPerpendicularlyOntoSharedLine()
         {
             Vector3 offset = StrokeSculptInfluence.CalculateLineOffset(

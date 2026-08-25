@@ -46,12 +46,10 @@ namespace TiltBrush
         public override float CalculateInfluence(
             Vector3 vertex, Vector3 toolPosition, float radius, TrTransform canvasPose)
         {
-            Vector3 planePoint = canvasPose.inverse *
-                m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
-            Vector3 planeNormal = Quaternion.Inverse(canvasPose.rotation) *
-                m_BoxCollider.transform.up;
-            return StrokeSculptInfluence.CalculatePlaneWeight(
-                vertex, planePoint, planeNormal, radius);
+            // The target is an infinite plane, but the visible reshape sphere still defines
+            // which control points are affected.
+            return StrokeSculptInfluence.CalculateRadialWeight(
+                Vector3.Distance(vertex, toolPosition), radius);
         }
 
         public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)
