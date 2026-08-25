@@ -22,6 +22,7 @@ namespace TiltBrush
         public bool m_InitialToggleState = false;
         public Texture2D m_TextureOn;
         public Texture2D m_TextureOff;
+        private bool m_HasPendingToggleState;
 
         public bool ToggleState
         {
@@ -32,15 +33,23 @@ namespace TiltBrush
             set
             {
                 m_ToggleActive = value;
+                if (m_ButtonRenderer == null)
+                {
+                    m_HasPendingToggleState = true;
+                    return;
+                }
                 SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
             }
         }
 
         override protected void Awake()
         {
+            bool initialState = m_HasPendingToggleState
+                ? m_ToggleActive
+                : m_InitialToggleState;
             base.Awake();
-            m_ToggleActive = m_InitialToggleState;
-            ToggleState = m_ToggleActive;
+            m_HasPendingToggleState = false;
+            ToggleState = initialState;
         }
 
         protected override void OnButtonPressed()
