@@ -78,6 +78,15 @@ namespace TiltBrush
             if (bHide)
             {
                 EndOwnedUndoGroup();
+                // Hiding interrupts the current gesture and clears its captured contacts. If the
+                // trigger remains held when the tool is shown again, GetCommandDown will not run
+                // to establish a new Grab origin. Waiting for release prevents new contacts from
+                // being transformed relative to the interrupted gesture's stale origin.
+                if (InputManager.m_Instance != null &&
+                    InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                {
+                    m_WaitingForTriggerRelease = true;
+                }
             }
             m_ActiveSubTool.gameObject.SetActive(!bHide);
             base.HideTool(bHide);
