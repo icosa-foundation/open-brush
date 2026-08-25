@@ -50,10 +50,6 @@ namespace TiltBrush
 
         private List<Stroke> m_CustomIntersectionStrokes;
         private int m_CustomIntersectionStrokeIndex;
-        private bool m_HasCustomIntersectionVolume;
-        private Vector3 m_CustomIntersectionPosition;
-        private Quaternion m_CustomIntersectionRotation;
-        private float m_CustomIntersectionSize;
 
         // If not null, only intersections for strokes within this particular canvas will be handled.
         // Otherwise, if null, intersections with *any* canvas' strokes will be handled.
@@ -118,7 +114,6 @@ namespace TiltBrush
 
             m_CustomIntersectionStrokes = null;
             m_CustomIntersectionStrokeIndex = 0;
-            m_HasCustomIntersectionVolume = false;
 
             ClearGpuFutureLists();
         }
@@ -194,11 +189,6 @@ namespace TiltBrush
             return false;
         }
 
-        virtual protected Quaternion GetCustomDetectionVolumeRotation()
-        {
-            return Quaternion.identity;
-        }
-
         virtual protected bool HandleNonGpuWidgetIntersections(Vector3 vDetectionCenter_GS, float size_GS)
         {
             return false;
@@ -221,40 +211,8 @@ namespace TiltBrush
             }
         }
 
-        private void UpdateCustomStrokeIntersection(Vector3 detectionPosition)
+        private void UpdateCustomStrokeIntersection()
         {
-            Quaternion detectionRotation = GetCustomDetectionVolumeRotation();
-            float detectionSize = GetSize();
-            if (!m_HasCustomIntersectionVolume)
-            {
-                m_HasCustomIntersectionVolume = true;
-                m_CustomIntersectionPosition = detectionPosition;
-                m_CustomIntersectionRotation = detectionRotation;
-                m_CustomIntersectionSize = detectionSize;
-            }
-            else
-            {
-                float changeThreshold = Mathf.Max(
-                    Mathf.Min(detectionSize, m_CustomIntersectionSize) * 0.05f, 0.001f);
-                bool positionChanged =
-                    (detectionPosition - m_CustomIntersectionPosition).sqrMagnitude >
-                    changeThreshold * changeThreshold;
-                bool sizeChanged =
-                    Mathf.Abs(detectionSize - m_CustomIntersectionSize) > changeThreshold;
-                bool rotationChanged =
-                    Quaternion.Angle(detectionRotation, m_CustomIntersectionRotation) > 5f;
-                if (positionChanged || sizeChanged || rotationChanged)
-                {
-                    // Keep the snapshot, but revisit it from the start using the new volume.
-                    // Small tracking changes are ignored so continuous motion cannot reset the
-                    // scan every frame before it reaches later strokes.
-                    m_CustomIntersectionStrokeIndex = 0;
-                    m_CustomIntersectionPosition = detectionPosition;
-                    m_CustomIntersectionRotation = detectionRotation;
-                    m_CustomIntersectionSize = detectionSize;
-                }
-            }
-
             if (m_CustomIntersectionStrokes == null)
             {
                 m_CustomIntersectionStrokes =
@@ -300,7 +258,6 @@ namespace TiltBrush
             {
                 m_CustomIntersectionStrokes = null;
                 m_CustomIntersectionStrokeIndex = 0;
-                m_HasCustomIntersectionVolume = false;
             }
             if (intersectionHappened)
             {
@@ -474,7 +431,11 @@ namespace TiltBrush
 
             if (useCustomStrokeIntersection)
             {
-                UpdateCustomStrokeIntersection(vDetectionCenter_GS);
+                // Preserve forward progress while the controller moves. Restarting a time-sliced
+                // scan on every pose or size change can indefinitely starve strokes later in the
+                // list. Each stroke is tested against the current volume when reached; a stroke
+                // already visited may therefore wait until the next complete pass after a move.
+                UpdateCustomStrokeIntersection();
                 return;
             }
 
@@ -699,7 +660,8 @@ namespace TiltBrush
 
             if (useCustomStrokeIntersection)
             {
-                UpdateCustomStrokeIntersection(vDetectionCenter_GS);
+                // See UpdateBatchedBrushDetection for why movement does not restart this scan.
+                UpdateCustomStrokeIntersection();
                 return;
             }
 

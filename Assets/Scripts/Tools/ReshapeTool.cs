@@ -354,11 +354,6 @@ namespace TiltBrush
             return m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Flatten;
         }
 
-        protected override Quaternion GetCustomDetectionVolumeRotation()
-        {
-            return m_ToolTransform.rotation;
-        }
-
         protected override bool StrokeIntersectsCustomDetectionVolume(Stroke stroke)
         {
             if (stroke?.m_ControlPoints == null || m_CurrentCanvas == null)
