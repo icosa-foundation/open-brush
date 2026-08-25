@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,9 +12,9 @@ namespace TiltBrush
 
         private Dictionary<SubTool, BaseSculptSubTool> m_SubTools;
 
-        [FormerlySerializedAs("m_PushPullTool")]
+        [FormerlySerializedAs("mReshapeTool")]
         [SerializeField]
-        private ReshapeTool mReshapeTool;
+        private ReshapeTool m_ReshapeTool;
 
         // These explicit values preserve existing serialized prefab values.
         public enum SubTool
@@ -52,7 +52,7 @@ namespace TiltBrush
         {
             if (m_SubTools.TryGetValue(subTool, out BaseSculptSubTool selectedSubTool))
             {
-                mReshapeTool.SetSubTool(selectedSubTool);
+                m_ReshapeTool.SetSubTool(selectedSubTool);
             }
             else
             {
@@ -60,7 +60,7 @@ namespace TiltBrush
             }
         }
 
-        public SubTool ActiveSubTool => mReshapeTool.m_ActiveSubTool.SubToolIdentifier;
+        public SubTool ActiveSubTool => m_ReshapeTool.m_ActiveSubTool.SubToolIdentifier;
 
         public FlattenSubTool.InfluenceMode FlattenInfluenceMode
         {
@@ -76,7 +76,7 @@ namespace TiltBrush
 
         public bool TryToggleFlattenInfluenceMode()
         {
-            return mReshapeTool.TryToggleFlattenInfluenceMode();
+            return m_ReshapeTool.TryToggleFlattenInfluenceMode();
         }
     }
 } // namespace TiltBrush
