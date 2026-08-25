@@ -61,5 +61,22 @@ namespace TiltBrush
         }
 
         public SubTool ActiveSubTool => mReshapeTool.m_ActiveSubTool.SubToolIdentifier;
+
+        public FlattenSubTool.InfluenceMode FlattenInfluenceMode
+        {
+            get
+            {
+                return m_SubTools != null &&
+                    m_SubTools.TryGetValue(SubTool.Flatten, out BaseSculptSubTool subTool) &&
+                    subTool is FlattenSubTool flatten
+                        ? flatten.Mode
+                        : FlattenSubTool.InfluenceMode.Sphere;
+            }
+        }
+
+        public bool TryToggleFlattenInfluenceMode()
+        {
+            return mReshapeTool.TryToggleFlattenInfluenceMode();
+        }
     }
 } // namespace TiltBrush

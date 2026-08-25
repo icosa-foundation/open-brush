@@ -88,6 +88,28 @@ namespace TiltBrush
             return m_bIsPushing;
         }
 
+        public bool TryToggleFlattenInfluenceMode()
+        {
+            if (!(m_ActiveSubTool is FlattenSubTool flatten) ||
+                m_OwnsUndoGroup || m_WaitingForTriggerRelease ||
+                (InputManager.m_Instance != null && InputManager.m_Instance.GetCommand(
+                    InputManager.SketchCommands.Activate)))
+            {
+                return false;
+            }
+
+            // Apply the mode and its preview immediately. Deferring the switch through the
+            // standard toggle animation could allow a newly started gesture to change modes at
+            // the animation midpoint.
+            ResetToggleAnimation();
+            flatten.ToggleInfluenceMode();
+            m_SculptContacts.Clear();
+            ResetDetection();
+            UpdateMesh();
+            OnAnimationSwitch();
+            return true;
+        }
+
         public void SetSubTool(BaseSculptSubTool subTool)
         {
             bool modeChanged = m_ActiveSubTool != subTool;
@@ -173,13 +195,15 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
-                if (m_ActiveSubTool.SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                    !IsCapturedTransformMode && !IsSmoothMode)
+                if (m_ActiveSubTool.SubToolIdentifier == SculptSubToolManager.SubTool.Flatten)
+                {
+                    TryToggleFlattenInfluenceMode();
+                }
+                else if (!IsCapturedTransformMode && !IsSmoothMode)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
                 }
-                // CTODO: custom feature for Flattening?
             }
 
             if (!IsCapturedTransformMode && m_CurrentlyHot && m_SculptContacts.Count > 0)
@@ -317,10 +341,27 @@ namespace TiltBrush
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (m_ActiveSubTool.SubToolIdentifier != SculptSubToolManager.SubTool.Flatten &&
-                !IsCapturedTransformMode && !IsSmoothMode)
+            if (m_ActiveSubTool is FlattenSubTool flatten)
+            {
+                InputManager.Brush.Geometry.ShowSculptToggle(
+                    flatten.Mode == FlattenSubTool.InfluenceMode.Sphere);
+            }
+            else if (!IsCapturedTransformMode && !IsSmoothMode)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
+            }
+        }
+
+        protected override void UpdateMesh()
+        {
+            base.UpdateMesh();
+            if (m_ActiveSubTool is FlattenSubTool flatten &&
+                flatten.Mode == FlattenSubTool.InfluenceMode.PlaneProjected)
+            {
+                // Plane-projected influence extends through the target plane, so the sphere is
+                // not its boundary. Leave the subtool's disc visible as the mode preview instead.
+                m_OnMesh.gameObject.SetActive(false);
+                m_OffMesh.gameObject.SetActive(false);
             }
         }
 

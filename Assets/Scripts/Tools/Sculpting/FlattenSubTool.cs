@@ -17,10 +17,18 @@ namespace TiltBrush
 {
     public class FlattenSubTool : BaseSculptSubTool
     {
+        public enum InfluenceMode
+        {
+            Sphere,
+            PlaneProjected,
+        }
+
         private BoxCollider m_BoxCollider;
+        [SerializeField] private InfluenceMode m_InfluenceMode = InfluenceMode.Sphere;
 
         public override SculptSubToolManager.SubTool SubToolIdentifier =>
             SculptSubToolManager.SubTool.Flatten;
+        public InfluenceMode Mode => m_InfluenceMode;
 
         private void Awake()
         {
@@ -46,10 +54,25 @@ namespace TiltBrush
         public override float CalculateInfluence(
             Vector3 vertex, Vector3 toolPosition, float radius, TrTransform canvasPose)
         {
-            // The target is an infinite plane, but the visible reshape sphere still defines
-            // which control points are affected.
-            return StrokeSculptInfluence.CalculateRadialWeight(
-                Vector3.Distance(vertex, toolPosition), radius);
+            if (m_InfluenceMode == InfluenceMode.Sphere)
+            {
+                return StrokeSculptInfluence.CalculateRadialWeight(
+                    Vector3.Distance(vertex, toolPosition), radius);
+            }
+
+            Vector3 planePoint = canvasPose.inverse *
+                m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
+            Vector3 planeNormal = Quaternion.Inverse(canvasPose.rotation) *
+                m_BoxCollider.transform.up;
+            return StrokeSculptInfluence.CalculatePlaneWeight(
+                vertex, planePoint, planeNormal, radius);
+        }
+
+        internal void ToggleInfluenceMode()
+        {
+            m_InfluenceMode = m_InfluenceMode == InfluenceMode.Sphere
+                ? InfluenceMode.PlaneProjected
+                : InfluenceMode.Sphere;
         }
 
         public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)

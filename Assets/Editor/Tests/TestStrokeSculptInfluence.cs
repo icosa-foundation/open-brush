@@ -331,6 +331,30 @@ namespace TiltBrush
         }
 
         [Test]
+        public void FlattenPlaneProjectedInfluenceExtendsPerpendicularToPlane()
+        {
+            var gameObject = new GameObject("FlattenSubTool test");
+            try
+            {
+                gameObject.AddComponent<BoxCollider>();
+                var subTool = gameObject.AddComponent<FlattenSubTool>();
+                var serializedSubTool = new SerializedObject(subTool);
+                serializedSubTool.FindProperty("m_InfluenceMode").enumValueIndex =
+                    (int)FlattenSubTool.InfluenceMode.PlaneProjected;
+                serializedSubTool.ApplyModifiedPropertiesWithoutUndo();
+
+                float influence = subTool.CalculateInfluence(
+                    new Vector3(0f, 2f, 0f), Vector3.zero, 1f, TrTransform.identity);
+
+                Assert.AreEqual(1f, influence);
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
         public void LineOffsetMovesPointPerpendicularlyOntoSharedLine()
         {
             Vector3 offset = StrokeSculptInfluence.CalculateLineOffset(
