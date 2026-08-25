@@ -48,8 +48,8 @@ namespace TiltBrush
         // Indicates the range of m_GpuOldResultList values that have yet to be processed.
         private int m_GpuConsumedResults;
 
-        private List<Stroke> m_CustomIntersectionStrokes;
-        private int m_CustomIntersectionStrokeIndex;
+        private SketchMemoryScript.MemoryListCursor m_CustomIntersectionCursor;
+        private bool m_CustomIntersectionScanActive;
 
         // If not null, only intersections for strokes within this particular canvas will be handled.
         // Otherwise, if null, intersections with *any* canvas' strokes will be handled.
@@ -112,8 +112,8 @@ namespace TiltBrush
             m_BatchVertGroupIndex = 0;
             m_BatchTriIndexIndex = 0;
 
-            m_CustomIntersectionStrokes = null;
-            m_CustomIntersectionStrokeIndex = 0;
+            m_CustomIntersectionCursor = default(SketchMemoryScript.MemoryListCursor);
+            m_CustomIntersectionScanActive = false;
 
             ClearGpuFutureLists();
         }
@@ -213,19 +213,22 @@ namespace TiltBrush
 
         private void UpdateCustomStrokeIntersection()
         {
-            if (m_CustomIntersectionStrokes == null)
+            if (!m_CustomIntersectionScanActive)
             {
-                m_CustomIntersectionStrokes =
-                    SketchMemoryScript.m_Instance.GetAllActiveStrokes(m_CurrentCanvas);
-                m_CustomIntersectionStrokeIndex = 0;
+                m_CustomIntersectionCursor = default(SketchMemoryScript.MemoryListCursor);
+                m_CustomIntersectionScanActive = true;
             }
 
             m_DetectionStopwatch.Reset();
             m_DetectionStopwatch.Start();
             bool intersectionHappened = false;
-            while (m_CustomIntersectionStrokeIndex < m_CustomIntersectionStrokes.Count)
+            bool scanComplete = true;
+            Stroke stroke;
+            // Advance one memory-list node at a time so filtering and enumeration both remain
+            // inside the same frame budget; do not materialize the full active-stroke list here.
+            while (SketchMemoryScript.m_Instance.TryGetNextStroke(
+                       ref m_CustomIntersectionCursor, out stroke))
             {
-                Stroke stroke = m_CustomIntersectionStrokes[m_CustomIntersectionStrokeIndex++];
                 if (stroke.IsGeometryEnabled && stroke.Canvas == m_CurrentCanvas &&
                     StrokeIntersectsCustomDetectionVolume(stroke))
                 {
@@ -250,14 +253,15 @@ namespace TiltBrush
 
                 if (m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks)
                 {
+                    scanComplete = false;
                     break;
                 }
             }
 
-            if (m_CustomIntersectionStrokeIndex >= m_CustomIntersectionStrokes.Count)
+            if (scanComplete)
             {
-                m_CustomIntersectionStrokes = null;
-                m_CustomIntersectionStrokeIndex = 0;
+                m_CustomIntersectionCursor = default(SketchMemoryScript.MemoryListCursor);
+                m_CustomIntersectionScanActive = false;
             }
             if (intersectionHappened)
             {
