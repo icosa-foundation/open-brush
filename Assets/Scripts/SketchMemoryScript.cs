@@ -104,12 +104,10 @@ namespace TiltBrush
         //    * edit case:  update current position in sequence-time list every frame (same as playback)
         //      so we're always ready to insert new strokes
         private LinkedList<Stroke> m_MemoryList = new LinkedList<Stroke>();
-        private int m_MemoryListVersion;
 
         public struct MemoryListCursor
         {
             internal LinkedListNode<Stroke> Next;
-            internal int Version;
             internal bool IsInitialized;
         }
         // Used as a starting point for any search by time.  Either null or a node contained in
@@ -205,15 +203,17 @@ namespace TiltBrush
             get { return m_MemoryList; }
         }
 
-        /// Returns one stroke at a time without allocating a snapshot of the memory list.
-        /// If the list is structurally modified between calls, the cursor safely starts a new pass.
+        /// Returns one stroke at a time without allocating a snapshot of the memory list. The
+        /// cursor keeps its position across unrelated insertions and removals. If its saved next
+        /// node is removed, it safely starts a new pass; strokes inserted before a valid cursor
+        /// are intentionally deferred until the next pass so continuous additions cannot starve
+        /// later strokes.
         public bool TryGetNextStroke(ref MemoryListCursor cursor, out Stroke stroke)
         {
-            if (!cursor.IsInitialized || cursor.Version != m_MemoryListVersion ||
+            if (!cursor.IsInitialized ||
                 (cursor.Next != null && cursor.Next.List != m_MemoryList))
             {
                 cursor.Next = m_MemoryList.First;
-                cursor.Version = m_MemoryListVersion;
                 cursor.IsInitialized = true;
             }
 
@@ -581,7 +581,6 @@ namespace TiltBrush
                 m_MemoryList.AddAfter(addAfter, node);
             }
             m_CurrentNodeByTime = node;
-            ++m_MemoryListVersion;
 
             // add to scene playback
             if (m_ScenePlayback != null)
@@ -831,7 +830,6 @@ namespace TiltBrush
                     m_CurrentNodeByTime = nodeByTime.Previous;
                 }
                 m_MemoryList.Remove(nodeByTime); // O(1)
-                ++m_MemoryListVersion;
                 if (m_ScenePlayback != null)
                 {
                     m_ScenePlayback.RemoveStroke(stroke);
@@ -854,7 +852,6 @@ namespace TiltBrush
                     node.Value.m_BatchSubset.m_VertLength == 0)
                 {
                     m_MemoryList.Remove(node);
-                    ++m_MemoryListVersion;
                 }
                 node = nextNode;
             }
@@ -935,7 +932,6 @@ namespace TiltBrush
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
-            ++m_MemoryListVersion;
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
             m_CurrentNodeByTime = null;
@@ -1201,7 +1197,6 @@ namespace TiltBrush
             {
                 m_MemoryList.AddLast(obj.m_NodeByTime);
             }
-            ++m_MemoryListVersion;
         }
 
         // Redraw scene instantly and optionally re-sort by timestamp-- will drop frames and thrash mem.
