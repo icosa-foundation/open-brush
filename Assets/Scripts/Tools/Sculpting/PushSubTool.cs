@@ -19,17 +19,19 @@ namespace TiltBrush
     public class PushSubTool : BaseSculptSubTool
     {
 
-        private void Awake()
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Push;
+
+        public override float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
         {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Push;
+            return m_DefaultStrength * radius;
         }
 
-        public override float CalculateStrength(Vector3 vertex, float distance, TrTransform canvasPose, bool bPushing)
+        public override float ConstrainDisplacement(
+            float displacement, float distance, bool bPushing)
         {
-            if (!bPushing) // special calculation to reduce spikyness
-                return m_DefaultStrength * Mathf.Pow(distance, 2);
-            else
-                return m_DefaultStrength;
+            return bPushing ? displacement : Mathf.Min(displacement, distance);
         }
 
         public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)

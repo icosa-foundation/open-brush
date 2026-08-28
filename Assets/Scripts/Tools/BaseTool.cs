@@ -48,7 +48,7 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
-            PushPullTool = 5100,
+            ReshapeTool = 5100,
             TintColorTool = 5101,
             ManualColocationTool = 1022,
             ScriptedTool = 6001,
