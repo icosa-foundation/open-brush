@@ -18,7 +18,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class PushPullToolMenu : UIComponent
+    public class ReshapeToolTray : UIComponent
     {
         [SerializeField] private GameObject m_Mesh;
         [SerializeField] private Renderer m_Border;
@@ -126,7 +126,7 @@ namespace TiltBrush
         void OnToolChanged()
         {
             bool isPushPullTool = SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
-                                   BaseTool.ToolType.PushPullTool;
+                                   BaseTool.ToolType.ReshapeTool;
             if (isPushPullTool != m_AnimateIn)
             {
                 if (m_AnimationCoroutine != null)

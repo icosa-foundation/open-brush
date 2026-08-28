@@ -105,11 +105,11 @@ namespace TiltBrush
         [LuaDocsReturnValue("A new capsule guide")]
         public static GuideApiWrapper NewCapsule(TrTransform transform) => _Add(StencilType.Capsule, transform);
 
-        [LuaDocsDescription("Creates a new cone guide with a default size using the transform for position and orientation")]
-        [LuaDocsExample("myGuide = Guide:NewCone(Transform:New(0, 5, 2))")]
+        [LuaDocsDescription("Creates a new plane guide with a default size using the transform for position and orientation")]
+        [LuaDocsExample("myGuide = Guide:NewPlane(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]
-        [LuaDocsReturnValue("A new cone guide")]
-        public static GuideApiWrapper NewCone(TrTransform transform) => _Add(StencilType.Cone, transform);
+        [LuaDocsReturnValue("A new plane guide")]
+        public static GuideApiWrapper NewPlane(TrTransform transform) => _Add(StencilType.Plane, transform);
 
         [LuaDocsDescription("Creates a new ellipsoid guide with a default size using the transform for position and orientation")]
         [LuaDocsExample("myGuide = Guide:NewEllipsoid(Transform:New(0, 5, 2))")]

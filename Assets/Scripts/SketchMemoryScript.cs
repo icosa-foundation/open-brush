@@ -104,6 +104,12 @@ namespace TiltBrush
         //    * edit case:  update current position in sequence-time list every frame (same as playback)
         //      so we're always ready to insert new strokes
         private LinkedList<Stroke> m_MemoryList = new LinkedList<Stroke>();
+
+        public struct MemoryListCursor
+        {
+            internal LinkedListNode<Stroke> Next;
+            internal bool IsInitialized;
+        }
         // Used as a starting point for any search by time.  Either null or a node contained in
         // m_MemoryList.
         // TODO: Have Update() advance this position to match current sketch time so that we
@@ -195,6 +201,32 @@ namespace TiltBrush
         public LinkedList<Stroke> GetMemoryList
         {
             get { return m_MemoryList; }
+        }
+
+        /// Returns one stroke at a time without allocating a snapshot of the memory list. The
+        /// cursor keeps its position across unrelated insertions and removals. If its saved next
+        /// node is removed, it safely starts a new pass; strokes inserted before a valid cursor
+        /// are intentionally deferred until the next pass so continuous additions cannot starve
+        /// later strokes.
+        public bool TryGetNextStroke(ref MemoryListCursor cursor, out Stroke stroke)
+        {
+            if (!cursor.IsInitialized ||
+                (cursor.Next != null && cursor.Next.List != m_MemoryList))
+            {
+                cursor.Next = m_MemoryList.First;
+                cursor.IsInitialized = true;
+            }
+
+            if (cursor.Next == null)
+            {
+                stroke = null;
+                return false;
+            }
+
+            LinkedListNode<Stroke> current = cursor.Next;
+            cursor.Next = current.Next;
+            stroke = current.Value;
+            return true;
         }
 
         public IEnumerable<BaseCommand> GetAllOperations()

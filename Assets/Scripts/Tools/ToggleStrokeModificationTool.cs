@@ -165,7 +165,7 @@ namespace TiltBrush
 
         virtual protected void OnAnimationSwitch() { }
 
-        protected void UpdateMesh()
+        protected virtual void UpdateMesh()
         {
             bool on = IsOn();
             m_OnMesh.gameObject.SetActive(on);

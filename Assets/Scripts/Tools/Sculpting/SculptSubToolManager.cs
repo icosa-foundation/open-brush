@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -11,31 +10,73 @@ namespace TiltBrush
 
         public static SculptSubToolManager m_Instance;
 
-        private List<BaseSculptSubTool> m_SubTools;
+        private Dictionary<SubTool, BaseSculptSubTool> m_SubTools;
 
+        [FormerlySerializedAs("mReshapeTool")]
         [SerializeField]
-        private PushPullTool m_PushPullTool;
+        private ReshapeTool m_ReshapeTool;
 
-        /// Do not change the order of these items
+        // These explicit values preserve existing serialized prefab values.
         public enum SubTool
         {
-            Push,
-            Crease,
-            Flatten,
-            Rotate
+            Push = 0,
+            Pinch = 1,
+            Flatten = 2,
+            Grab = 4,
+            Smooth = 5
         }
 
         private void Awake()
         {
             m_Instance = this;
-            m_SubTools = new List<BaseSculptSubTool>();
+            m_SubTools = new Dictionary<SubTool, BaseSculptSubTool>();
             foreach (Transform child in transform)
-                m_SubTools.Add(child.gameObject.GetComponent<BaseSculptSubTool>());
+            {
+                BaseSculptSubTool subTool = child.GetComponent<BaseSculptSubTool>();
+                if (subTool == null)
+                {
+                    continue;
+                }
+
+                SubTool identifier = subTool.SubToolIdentifier;
+                if (m_SubTools.ContainsKey(identifier))
+                {
+                    Debug.LogError($"Multiple reshape subtools use identifier {identifier}.", child);
+                    continue;
+                }
+                m_SubTools.Add(identifier, subTool);
+            }
         }
 
         public void SetSubTool(SubTool subTool)
         {
-            m_PushPullTool.SetSubTool(m_SubTools[(int)subTool]);
+            if (m_SubTools.TryGetValue(subTool, out BaseSculptSubTool selectedSubTool))
+            {
+                m_ReshapeTool.SetSubTool(selectedSubTool);
+            }
+            else
+            {
+                Debug.LogError($"No reshape subtool is registered for {subTool}.", this);
+            }
+        }
+
+        public SubTool ActiveSubTool => m_ReshapeTool.m_ActiveSubTool.SubToolIdentifier;
+
+        public FlattenSubTool.InfluenceMode FlattenInfluenceMode
+        {
+            get
+            {
+                return m_SubTools != null &&
+                    m_SubTools.TryGetValue(SubTool.Flatten, out BaseSculptSubTool subTool) &&
+                    subTool is FlattenSubTool flatten
+                        ? flatten.Mode
+                        : FlattenSubTool.InfluenceMode.Sphere;
+            }
+        }
+
+        public bool TryToggleFlattenInfluenceMode()
+        {
+            return m_ReshapeTool.TryToggleFlattenInfluenceMode();
         }
     }
 } // namespace TiltBrush
