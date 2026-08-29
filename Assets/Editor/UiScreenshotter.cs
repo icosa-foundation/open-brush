@@ -26,9 +26,11 @@ namespace TiltBrush
     public class UiScreenshotter : Editor
     {
         private const float kBrushScreenshotTime = 0.5f;
+        private const float kBrushMeshFixtureSize = 0.1125f;
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
+        private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
 
         private enum BrushScreenshotRenderMode
         {
@@ -90,11 +92,38 @@ namespace TiltBrush
             GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Wireframe);
         }
 
+        // Run in Play Mode. Writes one brush-<durable-name>.mesh.json fixture and,
+        // when the stroke has geometry, one GLB per catalog brush to
+        // Support/BrushFixtures. Each JSON file records the deterministic stroke
+        // input, vertex layout, material state, finalized live mesh, and the mesh
+        // after the configured BrushBaker mapping. The live mesh is the realtime
+        // and .tilt reference; the actual UnityGLTF GLB is the end-to-end import
+        // reference; the post-BrushBaker JSON is only a diagnostic intermediate.
+        // Empty meshes are recorded as skipped and any stale GLB is removed.
+        [MenuItem("Open Brush/Screenshots/Generate Brush Mesh Fixtures")]
+        static void GenerateBrushMeshFixtures()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.Material,
+                captureScreenshots: false,
+                captureMeshFixtures: true);
+        }
+
         private static void GenerateBrushScreenShots(
             bool enablePostProcessing,
-            BrushScreenshotRenderMode renderMode)
+            BrushScreenshotRenderMode renderMode,
+            bool captureScreenshots = true,
+            bool captureMeshFixtures = false)
         {
             if (!IsPlaying()) return;
+
+            if (captureMeshFixtures && BrushBaker.m_Instance == null)
+            {
+                Debug.LogError(
+                    "[BrushMeshFixture] BrushBaker is not available in the active scene.");
+                return;
+            }
 
             if (renderMode == BrushScreenshotRenderMode.Wireframe)
             {
@@ -103,7 +132,11 @@ namespace TiltBrush
 
             SetupBlackEnvironment();
 
-            DelayedGenerateBrushScreenShots(enablePostProcessing, renderMode);
+            DelayedGenerateBrushScreenShots(
+                enablePostProcessing,
+                renderMode,
+                captureScreenshots,
+                captureMeshFixtures);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -159,10 +192,12 @@ namespace TiltBrush
 
         async static void DelayedGenerateBrushScreenShots(
             bool enablePostProcessing,
-            BrushScreenshotRenderMode renderMode)
+            BrushScreenshotRenderMode renderMode,
+            bool captureScreenshots,
+            bool captureMeshFixtures)
         {
             await Task.Delay(3000);
-            var cam = InitScreenshotCamera();
+            var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
             var path = new List<TrTransform>();
             var origin = new Vector3(-1.25f, 100, 4);
@@ -192,26 +227,46 @@ namespace TiltBrush
                     List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
                         ? new List<Color> { Color.white }
                         : null;
+                    float? brushSize = captureMeshFixtures
+                        ? Mathf.Clamp(
+                            kBrushMeshFixtureSize,
+                            brush.m_BrushSizeRange.x,
+                            brush.m_BrushSizeRange.y)
+                        : null;
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
                         TrTransform.T(origin),
-                        colors);
-                    SetFixedShaderTime(strokes, kBrushScreenshotTime);
-                    batchManager.FlushMeshUpdates();
+                        colors,
+                        brush: brush,
+                        brushSize: brushSize);
                     List<MaterialColorOverride> colorOverrides = null;
                     try
                     {
-                        if (renderMode == BrushScreenshotRenderMode.Wireframe)
+                        SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                        batchManager.FlushMeshUpdates();
+                        if (captureMeshFixtures)
+                        {
+                            BrushMeshFixtureWriter.WriteBrushFixture(
+                                brush,
+                                strokes,
+                                kMeshFixtureOutputDirectory,
+                                kBrushScreenshotTime,
+                                BrushBaker.m_Instance);
+                        }
+                        if (captureScreenshots && renderMode == BrushScreenshotRenderMode.Wireframe)
                         {
                             colorOverrides = SetBrushMaterialColors(strokes, Color.white);
                         }
-                        SaveCurrentView(
-                            cam,
-                            GetBrushScreenshotFileName(brush, renderMode),
-                            1024,
-                            1024,
-                            enablePostProcessing,
-                            renderMode == BrushScreenshotRenderMode.Wireframe);
+                        if (captureScreenshots)
+                        {
+                            SaveCurrentView(
+                                cam,
+                                GetBrushScreenshotFileName(brush, renderMode),
+                                1024,
+                                1024,
+                                enablePostProcessing,
+                                renderMode == BrushScreenshotRenderMode.Wireframe);
+                        }
                     }
                     finally
                     {
