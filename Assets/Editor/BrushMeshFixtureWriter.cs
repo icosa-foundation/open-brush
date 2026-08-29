@@ -33,6 +33,17 @@ namespace TiltBrush
     {
         private const int kSchemaVersion = 1;
         private const string kLogPrefix = "[BrushMeshFixture]";
+        private const float kHullPointTolerance = 1e-5f;
+        private const float kHullPlaneTolerance = 1e-5f;
+        private const float kHullNormalDotTolerance = 1f - 1e-6f;
+
+        private sealed class HullTriangle
+        {
+            internal Vector3 Normal;
+            internal float PlaneDistance;
+            internal Vector3[] Vertices;
+            internal string[] VertexKeys;
+        }
 
         internal static string WriteBrushFixture(
             BrushDescriptor brush,
@@ -100,7 +111,7 @@ namespace TiltBrush
                         glbFileName,
                         brushGuid);
 
-                    strokeFixtures.Add(new JObject
+                    var strokeFixture = new JObject
                     {
                         ["input"] = BuildStrokeInput(stroke),
                         ["vertexLayout"] = BuildVertexLayout(layout),
@@ -113,7 +124,12 @@ namespace TiltBrush
                         ["live"] = BuildMeshStage(liveMesh, layout),
                         ["postBrushBaker"] = BuildMeshStage(postBrushBakerMesh, layout),
                         ["exportedGlb"] = exportedGlb,
-                    });
+                    };
+                    if (IsHullBrush(brush))
+                    {
+                        strokeFixture["polygonFaces"] = BuildHullPolygonFaces(liveMesh);
+                    }
+                    strokeFixtures.Add(strokeFixture);
                 }
                 finally
                 {
@@ -183,6 +199,216 @@ namespace TiltBrush
             GeometryPool.VertexLayout layout)
         {
             return BuildMeshStage(mesh, layout);
+        }
+
+        internal static JObject BuildHullPolygonFacesForTesting(Mesh mesh)
+        {
+            return BuildHullPolygonFaces(mesh);
+        }
+
+        private static bool IsHullBrush(BrushDescriptor brush)
+        {
+            if (brush.m_BrushPrefab == null) return false;
+            return brush.m_BrushPrefab.GetComponent<HullBrush>() != null ||
+                brush.m_BrushPrefab.GetComponent<ConcaveHullBrush>() != null;
+        }
+
+        private static JObject BuildHullPolygonFaces(Mesh mesh)
+        {
+            Vector3[] meshVertices = mesh.vertices;
+            int[] indices = mesh.triangles;
+            Vector3 center = mesh.bounds.center;
+            var triangles = new List<HullTriangle>();
+            var edgeTriangles = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+
+            for (int index = 0; index + 2 < indices.Length; index += 3)
+            {
+                Vector3 p0 = meshVertices[indices[index]];
+                Vector3 p1 = meshVertices[indices[index + 1]];
+                Vector3 p2 = meshVertices[indices[index + 2]];
+                Vector3 normal = Vector3.Cross(p1 - p0, p2 - p0);
+                if (normal.sqrMagnitude <= 1e-12f) continue;
+                normal.Normalize();
+                if (Vector3.Dot(normal, center - p0) > 0f) normal = -normal;
+
+                var vertexKeys = new[]
+                {
+                    HullPointKey(p0),
+                    HullPointKey(p1),
+                    HullPointKey(p2),
+                };
+                int triangleIndex = triangles.Count;
+                triangles.Add(new HullTriangle
+                {
+                    Normal = normal,
+                    PlaneDistance = Vector3.Dot(normal, p0),
+                    Vertices = new[] { p0, p1, p2 },
+                    VertexKeys = vertexKeys,
+                });
+                AddHullEdge(edgeTriangles, vertexKeys[0], vertexKeys[1], triangleIndex);
+                AddHullEdge(edgeTriangles, vertexKeys[1], vertexKeys[2], triangleIndex);
+                AddHullEdge(edgeTriangles, vertexKeys[2], vertexKeys[0], triangleIndex);
+            }
+
+            var adjacency = new List<HashSet<int>>(triangles.Count);
+            for (int index = 0; index < triangles.Count; ++index)
+            {
+                adjacency.Add(new HashSet<int>());
+            }
+            foreach (List<int> edgeMembers in edgeTriangles.Values)
+            {
+                for (int first = 0; first < edgeMembers.Count; ++first)
+                {
+                    for (int second = first + 1; second < edgeMembers.Count; ++second)
+                    {
+                        int a = edgeMembers[first];
+                        int b = edgeMembers[second];
+                        if (!HullTrianglesAreCoplanar(triangles[a], triangles[b])) continue;
+                        adjacency[a].Add(b);
+                        adjacency[b].Add(a);
+                    }
+                }
+            }
+
+            var faces = new List<JObject>();
+            var visited = new bool[triangles.Count];
+            for (int start = 0; start < triangles.Count; ++start)
+            {
+                if (visited[start]) continue;
+                var pending = new Stack<int>();
+                var component = new List<int>();
+                pending.Push(start);
+                visited[start] = true;
+                while (pending.Count > 0)
+                {
+                    int current = pending.Pop();
+                    component.Add(current);
+                    foreach (int neighbor in adjacency[current])
+                    {
+                        if (visited[neighbor]) continue;
+                        visited[neighbor] = true;
+                        pending.Push(neighbor);
+                    }
+                }
+
+                HullTriangle firstTriangle = triangles[component[0]];
+                var uniqueVertices = new Dictionary<string, Vector3>(StringComparer.Ordinal);
+                var componentEdges = new Dictionary<string, Tuple<string, string, int>>(
+                    StringComparer.Ordinal);
+                foreach (int triangleIndex in component)
+                {
+                    HullTriangle triangle = triangles[triangleIndex];
+                    for (int vertex = 0; vertex < 3; ++vertex)
+                    {
+                        uniqueVertices[triangle.VertexKeys[vertex]] = triangle.Vertices[vertex];
+                    }
+                    CountHullBoundaryEdge(componentEdges, triangle.VertexKeys[0], triangle.VertexKeys[1]);
+                    CountHullBoundaryEdge(componentEdges, triangle.VertexKeys[1], triangle.VertexKeys[2]);
+                    CountHullBoundaryEdge(componentEdges, triangle.VertexKeys[2], triangle.VertexKeys[0]);
+                }
+                var boundaryVertexKeys = new HashSet<string>(StringComparer.Ordinal);
+                foreach (Tuple<string, string, int> edge in componentEdges.Values)
+                {
+                    if (edge.Item3 != 1) continue;
+                    boundaryVertexKeys.Add(edge.Item1);
+                    boundaryVertexKeys.Add(edge.Item2);
+                }
+                List<Vector3> faceVertices = boundaryVertexKeys
+                    .Select(key => uniqueVertices[key])
+                    .ToList();
+                faceVertices.Sort(CompareHullPoints);
+                faces.Add(new JObject
+                {
+                    ["normal"] = Vector3Array(firstTriangle.Normal),
+                    ["planeDistance"] = firstTriangle.PlaneDistance,
+                    ["vertices"] = new JArray(faceVertices.Select(Vector3Array)),
+                    ["sourceTriangleCount"] = component.Count,
+                });
+            }
+
+            faces.Sort((a, b) => StringComparer.Ordinal.Compare(
+                HullFaceSortKey(a), HullFaceSortKey(b)));
+            return new JObject
+            {
+                ["definition"] =
+                    "edge-connected coplanar components of the finalized live hull mesh",
+                ["pointTolerance"] = kHullPointTolerance,
+                ["planeTolerance"] = kHullPlaneTolerance,
+                ["normalDotTolerance"] = kHullNormalDotTolerance,
+                ["faceCount"] = faces.Count,
+                ["faces"] = new JArray(faces),
+            };
+        }
+
+        private static void AddHullEdge(
+            Dictionary<string, List<int>> edgeTriangles,
+            string first,
+            string second,
+            int triangleIndex)
+        {
+            string edgeKey = StringComparer.Ordinal.Compare(first, second) <= 0
+                ? $"{first}|{second}"
+                : $"{second}|{first}";
+            if (!edgeTriangles.TryGetValue(edgeKey, out List<int> members))
+            {
+                members = new List<int>();
+                edgeTriangles.Add(edgeKey, members);
+            }
+            members.Add(triangleIndex);
+        }
+
+        private static void CountHullBoundaryEdge(
+            Dictionary<string, Tuple<string, string, int>> edges,
+            string first,
+            string second)
+        {
+            string low;
+            string high;
+            if (StringComparer.Ordinal.Compare(first, second) <= 0)
+            {
+                low = first;
+                high = second;
+            }
+            else
+            {
+                low = second;
+                high = first;
+            }
+            string edgeKey = $"{low}|{high}";
+            if (edges.TryGetValue(edgeKey, out Tuple<string, string, int> edge))
+            {
+                edges[edgeKey] = Tuple.Create(edge.Item1, edge.Item2, edge.Item3 + 1);
+            }
+            else
+            {
+                edges.Add(edgeKey, Tuple.Create(low, high, 1));
+            }
+        }
+
+        private static bool HullTrianglesAreCoplanar(HullTriangle first, HullTriangle second)
+        {
+            return Vector3.Dot(first.Normal, second.Normal) >= kHullNormalDotTolerance &&
+                Mathf.Abs(first.PlaneDistance - second.PlaneDistance) <= kHullPlaneTolerance;
+        }
+
+        private static string HullPointKey(Vector3 point)
+        {
+            return $"{Mathf.RoundToInt(point.x / kHullPointTolerance)}:" +
+                $"{Mathf.RoundToInt(point.y / kHullPointTolerance)}:" +
+                $"{Mathf.RoundToInt(point.z / kHullPointTolerance)}";
+        }
+
+        private static int CompareHullPoints(Vector3 first, Vector3 second)
+        {
+            int x = first.x.CompareTo(second.x);
+            if (x != 0) return x;
+            int y = first.y.CompareTo(second.y);
+            return y != 0 ? y : first.z.CompareTo(second.z);
+        }
+
+        private static string HullFaceSortKey(JObject face)
+        {
+            return face.ToString(Formatting.None);
         }
 
         private static GeometryPool.VertexLayout GetVertexLayout(
