@@ -220,6 +220,7 @@ namespace TiltBrush
             Vector3 center = mesh.bounds.center;
             var triangles = new List<HullTriangle>();
             var edgeTriangles = new Dictionary<string, List<int>>(StringComparer.Ordinal);
+            var triangleKeys = new HashSet<string>(StringComparer.Ordinal);
 
             for (int index = 0; index + 2 < indices.Length; index += 3)
             {
@@ -237,6 +238,10 @@ namespace TiltBrush
                     HullPointKey(p1),
                     HullPointKey(p2),
                 };
+                string[] sortedVertexKeys = (string[])vertexKeys.Clone();
+                Array.Sort(sortedVertexKeys, StringComparer.Ordinal);
+                string triangleKey = string.Join("|", sortedVertexKeys);
+                if (!triangleKeys.Add(triangleKey)) continue;
                 int triangleIndex = triangles.Count;
                 triangles.Add(new HullTriangle
                 {
