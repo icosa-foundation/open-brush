@@ -199,12 +199,10 @@ namespace TiltBrush
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
-            var path = new List<TrTransform>();
+            var path = captureMeshFixtures
+                ? CreateMeshFixtureSpatialPath()
+                : CreateBrushScreenshotPath();
             var origin = new Vector3(-1.25f, 100, 4);
-            for (float i = 0; i < 3; i += 0.1f)
-            {
-                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
-            }
 
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
             bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
@@ -284,6 +282,47 @@ namespace TiltBrush
                 }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
+        }
+
+        private static List<TrTransform> CreateBrushScreenshotPath()
+        {
+            var path = new List<TrTransform>();
+            for (float i = 0; i < 3; i += 0.1f)
+            {
+                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
+            }
+            return path;
+        }
+
+        private static List<TrTransform> CreateMeshFixtureSpatialPath()
+        {
+            const int pointCount = 36;
+            var path = new List<TrTransform>(pointCount);
+            for (int index = 0; index < pointCount; ++index)
+            {
+                float t = index / (pointCount - 1f);
+                float x = index <= 22
+                    ? index * 0.1f
+                    : 2.2f - (index - 22) * 0.075f;
+                var position = new Vector3(
+                    x,
+                    0.55f * Mathf.Sin(index * 0.47f) + 0.012f * index,
+                    0.38f * Mathf.Sin(index * 0.31f) + 0.009f * index);
+                if (index == 10)
+                {
+                    position = path[path.Count - 1].translation +
+                        new Vector3(0.00001f, 0.00004f, -0.00002f);
+                }
+
+                var orientation = Quaternion.Euler(
+                    28f * Mathf.Sin(index * 0.23f),
+                    65f * t,
+                    140f * t + 18f * Mathf.Sin(index * 0.41f));
+                float pressure = 0.25f + 0.75f *
+                    (0.5f + 0.5f * Mathf.Sin(index * 0.37f - Mathf.PI * 0.5f));
+                path.Add(TrTransform.TRS(position, orientation, pressure));
+            }
+            return path;
         }
 
         private static string GetBrushScreenshotFileName(
