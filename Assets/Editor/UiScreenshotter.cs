@@ -31,6 +31,8 @@ namespace TiltBrush
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
+        private static readonly Color kBrushMeshFixtureColor =
+            new Color32(51, 51, 230, 255);
 
         private enum BrushScreenshotRenderMode
         {
@@ -222,9 +224,11 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
-                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
-                        ? new List<Color> { Color.white }
-                        : null;
+                    List<Color> colors = captureMeshFixtures
+                        ? new List<Color> { kBrushMeshFixtureColor }
+                        : renderMode == BrushScreenshotRenderMode.Wireframe
+                            ? new List<Color> { Color.white }
+                            : null;
                     float? brushSize = captureMeshFixtures
                         ? Mathf.Clamp(
                             kBrushMeshFixtureSize,
