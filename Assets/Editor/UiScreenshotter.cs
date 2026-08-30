@@ -247,6 +247,7 @@ namespace TiltBrush
                         colors,
                         brush: brush,
                         brushSize: brushSize);
+                    await Task.Yield();
                     List<MaterialColorOverride> colorOverrides = null;
                     try
                     {
