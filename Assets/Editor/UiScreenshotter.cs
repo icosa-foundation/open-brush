@@ -30,6 +30,9 @@ namespace TiltBrush
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
+        private const string kPostEffectsDisabledDirectory = "brushes-postfx-disabled";
+        private const string kPostEffectsEnabledDirectory = "brushes-postfx-enabled";
+        private const string kWireframeDirectory = "brushes-wireframe";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
@@ -201,6 +204,17 @@ namespace TiltBrush
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
+            if (captureScreenshots)
+            {
+                string screenshotDirectory = GetBrushScreenshotDirectory(
+                    enablePostProcessing,
+                    renderMode);
+                Debug.Log(
+                    $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
+                    $"{screenshotDirectory} with post effects " +
+                    $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+            }
+
             var path = CreateBrushReferencePath();
             var origin = new Vector3(-1.25f, 100, 4);
 
@@ -255,11 +269,14 @@ namespace TiltBrush
                         {
                             SaveCurrentView(
                                 cam,
-                                GetBrushScreenshotFileName(brush, renderMode),
+                                GetBrushScreenshotFileName(brush),
                                 1024,
                                 1024,
                                 enablePostProcessing,
-                                renderMode == BrushScreenshotRenderMode.Wireframe);
+                                renderMode == BrushScreenshotRenderMode.Wireframe,
+                                GetBrushScreenshotDirectory(
+                                    enablePostProcessing,
+                                    renderMode));
                         }
                     }
                     finally
@@ -313,14 +330,22 @@ namespace TiltBrush
             return path;
         }
 
-        private static string GetBrushScreenshotFileName(
-            BrushDescriptor brush,
+        private static string GetBrushScreenshotFileName(BrushDescriptor brush)
+        {
+            return $"brush-{brush.DurableName}.png";
+        }
+
+        private static string GetBrushScreenshotDirectory(
+            bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode)
         {
-            string suffix = renderMode == BrushScreenshotRenderMode.Wireframe
-                ? "-wireframe"
-                : "";
-            return $"brush-{brush.DurableName}{suffix}.png";
+            if (renderMode == BrushScreenshotRenderMode.Wireframe)
+            {
+                return kWireframeDirectory;
+            }
+            return enablePostProcessing
+                ? kPostEffectsEnabledDirectory
+                : kPostEffectsDisabledDirectory;
         }
 
         private static List<MaterialColorOverride> SetBrushMaterialColors(
@@ -543,7 +568,8 @@ namespace TiltBrush
             int resWidth,
             int resHeight,
             bool? enablePostProcessing = null,
-            bool renderWireframe = false)
+            bool renderWireframe = false,
+            string outputSubdirectory = null)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
@@ -587,6 +613,12 @@ namespace TiltBrush
                 string outputDirectory = Path.Combine(
                     Directory.GetCurrentDirectory(),
                     kScreenshotOutputDirectory);
+                if (!string.IsNullOrEmpty(outputSubdirectory))
+                {
+                    outputDirectory = Path.Combine(
+                        outputDirectory,
+                        outputSubdirectory);
+                }
                 Directory.CreateDirectory(outputDirectory);
                 string filePath = Path.Combine(outputDirectory, fileName);
                 File.WriteAllBytes(filePath, bytes);
