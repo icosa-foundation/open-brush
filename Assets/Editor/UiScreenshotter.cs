@@ -25,13 +25,13 @@ namespace TiltBrush
 {
     public class UiScreenshotter : Editor
     {
-        private const float kBrushScreenshotTime = 0.5f;
-        private const float kBrushMeshFixtureSize = 0.1125f;
+        private const float kBrushReferenceTime = 0.5f;
+        private const float kBrushReferenceSize = 0.1125f;
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
-        private static readonly Color kBrushMeshFixtureColor =
+        private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
 
         private enum BrushScreenshotRenderMode
@@ -201,9 +201,7 @@ namespace TiltBrush
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
-            var path = captureMeshFixtures
-                ? CreateMeshFixtureSpatialPath()
-                : CreateBrushScreenshotPath();
+            var path = CreateBrushReferencePath();
             var origin = new Vector3(-1.25f, 100, 4);
 
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
@@ -224,17 +222,11 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
-                    List<Color> colors = captureMeshFixtures
-                        ? new List<Color> { kBrushMeshFixtureColor }
-                        : renderMode == BrushScreenshotRenderMode.Wireframe
-                            ? new List<Color> { Color.white }
-                            : null;
-                    float? brushSize = captureMeshFixtures
-                        ? Mathf.Clamp(
-                            kBrushMeshFixtureSize,
-                            brush.m_BrushSizeRange.x,
-                            brush.m_BrushSizeRange.y)
-                        : null;
+                    var colors = new List<Color> { kBrushReferenceColor };
+                    float brushSize = Mathf.Clamp(
+                        kBrushReferenceSize,
+                        brush.m_BrushSizeRange.x,
+                        brush.m_BrushSizeRange.y);
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
                         TrTransform.T(origin),
@@ -244,7 +236,7 @@ namespace TiltBrush
                     List<MaterialColorOverride> colorOverrides = null;
                     try
                     {
-                        SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                        SetFixedShaderTime(strokes, kBrushReferenceTime);
                         batchManager.FlushMeshUpdates();
                         if (captureMeshFixtures)
                         {
@@ -252,7 +244,7 @@ namespace TiltBrush
                                 brush,
                                 strokes,
                                 kMeshFixtureOutputDirectory,
-                                kBrushScreenshotTime,
+                                kBrushReferenceTime,
                                 BrushBaker.m_Instance);
                         }
                         if (captureScreenshots && renderMode == BrushScreenshotRenderMode.Wireframe)
@@ -288,17 +280,9 @@ namespace TiltBrush
             }
         }
 
-        private static List<TrTransform> CreateBrushScreenshotPath()
-        {
-            var path = new List<TrTransform>();
-            for (float i = 0; i < 3; i += 0.1f)
-            {
-                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
-            }
-            return path;
-        }
-
-        private static List<TrTransform> CreateMeshFixtureSpatialPath()
+        // Screenshots and mesh fixtures must use the same stroke input so the
+        // rendered reference image corresponds to the captured fixture geometry.
+        private static List<TrTransform> CreateBrushReferencePath()
         {
             const int pointCount = 36;
             var path = new List<TrTransform>(pointCount);
