@@ -217,6 +217,7 @@ namespace TiltBrush
                         colors,
                         brush: brush,
                         brushSize: brushSize);
+                    await Task.Yield();
                     SetFixedShaderTime(strokes, kBrushReferenceTime);
                     batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;
