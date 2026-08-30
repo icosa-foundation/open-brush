@@ -451,7 +451,7 @@ namespace TiltBrush
                             {
                                 activePopUp.SetPopupCommandParameters(btn.m_CommandParam, btn.m_CommandParam2);
                             }
-                            catch (NullReferenceException e) { }
+                            catch (NullReferenceException) { }
                             SaveCurrentView(cam, $"panel-{panelType}_{btn.m_Command}.png", 1600, 1600);
                             go.transform.position = new Vector3(-100, 0, 0);
                             Destroy(go);
