@@ -26,12 +26,18 @@ namespace TiltBrush
 {
     public class UiScreenshotter : Editor
     {
-        private const float kBrushScreenshotTime = 0.5f;
+        private const float kBrushReferenceTime = 0.5f;
+        private const float kBrushReferenceSize = 0.1125f;
         private const int kScreenshotSupersampling = 2;
         private const int kScreenshotMsaaSamples = 4;
         private const string kScreenshotOutputDirectory = "Support/Screenshots";
+        private const string kPostEffectsDisabledDirectory = "brushes-postfx-disabled";
+        private const string kPostEffectsEnabledDirectory = "brushes-postfx-enabled";
+        private const string kWireframeDirectory = "brushes-wireframe";
         private const string kLogPrefix = "_ui_screenshotter_20260520_";
         private const string kUrpPostLogPrefix = "[OB_URP_POST]";
+        private static readonly Color kBrushReferenceColor =
+            new Color32(51, 51, 230, 255);
 
         private enum BrushScreenshotRenderMode
         {
@@ -167,12 +173,16 @@ namespace TiltBrush
             await Task.Delay(3000);
             var cam = InitScreenshotCamera();
 
-            var path = new List<TrTransform>();
+            string screenshotDirectory = GetBrushScreenshotDirectory(
+                enablePostProcessing,
+                renderMode);
+            Debug.Log(
+                $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
+                $"{screenshotDirectory} with post effects " +
+                $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+
+            var path = CreateBrushReferencePath();
             var origin = new Vector3(-1.25f, 100, 4);
-            for (float i = 0; i < 3; i += 0.1f)
-            {
-                path.Add(TrTransform.T(new Vector3(i, Mathf.Sin(i * 5f) * (1 - i / 3), 0)));
-            }
 
             var batchManager = App.Scene.ActiveCanvas.BatchManager;
             bool wasOneStrokePerBatch = batchManager.OneStrokePerBatch;
@@ -196,14 +206,18 @@ namespace TiltBrush
                     }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
-                    List<Color> colors = renderMode == BrushScreenshotRenderMode.Wireframe
-                        ? new List<Color> { Color.white }
-                        : null;
+                    var colors = new List<Color> { kBrushReferenceColor };
+                    float brushSize = Mathf.Clamp(
+                        kBrushReferenceSize,
+                        brush.m_BrushSizeRange.x,
+                        brush.m_BrushSizeRange.y);
                     var strokes = DrawStrokes.DrawNestedTrList(
                         new List<IEnumerable<TrTransform>> { path },
                         TrTransform.T(origin),
-                        colors);
-                    SetFixedShaderTime(strokes, kBrushScreenshotTime);
+                        colors,
+                        brush: brush,
+                        brushSize: brushSize);
+                    SetFixedShaderTime(strokes, kBrushReferenceTime);
                     batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;
                     try
@@ -212,13 +226,14 @@ namespace TiltBrush
                         {
                             colorOverrides = SetBrushMaterialColors(strokes, Color.white);
                         }
-                        SaveCurrentView(
-                            cam,
-                            GetBrushScreenshotFileName(brush, renderMode),
-                            1024,
-                            1024,
-                            enablePostProcessing,
-                            renderMode == BrushScreenshotRenderMode.Wireframe);
+                            SaveCurrentView(
+                                cam,
+                                GetBrushScreenshotFileName(brush),
+                                1024,
+                                1024,
+                                enablePostProcessing,
+                                renderMode == BrushScreenshotRenderMode.Wireframe,
+                                screenshotDirectory);
                     }
                     finally
                     {
@@ -236,6 +251,39 @@ namespace TiltBrush
                 }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
             }
+        }
+
+        // Matches the reference stroke used by the current Open Brush screenshot
+        // and mesh-fixture generators.
+        private static List<TrTransform> CreateBrushReferencePath()
+        {
+            const int pointCount = 36;
+            var path = new List<TrTransform>(pointCount);
+            for (int index = 0; index < pointCount; ++index)
+            {
+                float t = index / (pointCount - 1f);
+                float x = index <= 22
+                    ? index * 0.1f
+                    : 2.2f - (index - 22) * 0.075f;
+                var position = new Vector3(
+                    x,
+                    0.55f * Mathf.Sin(index * 0.47f) + 0.012f * index,
+                    0.38f * Mathf.Sin(index * 0.31f) + 0.009f * index);
+                if (index == 10)
+                {
+                    position = path[path.Count - 1].translation +
+                        new Vector3(0.00001f, 0.00004f, -0.00002f);
+                }
+
+                var orientation = Quaternion.Euler(
+                    28f * Mathf.Sin(index * 0.23f),
+                    65f * t,
+                    140f * t + 18f * Mathf.Sin(index * 0.41f));
+                float pressure = 0.25f + 0.75f *
+                    (0.5f + 0.5f * Mathf.Sin(index * 0.37f - Mathf.PI * 0.5f));
+                path.Add(TrTransform.TRS(position, orientation, pressure));
+            }
+            return path;
         }
 
         private static bool CanGenerateBrushScreenshot(BrushDescriptor brush)
@@ -268,14 +316,22 @@ namespace TiltBrush
             return true;
         }
 
-        private static string GetBrushScreenshotFileName(
-            BrushDescriptor brush,
+        private static string GetBrushScreenshotFileName(BrushDescriptor brush)
+        {
+            return $"brush-{brush.DurableName}.png";
+        }
+
+        private static string GetBrushScreenshotDirectory(
+            bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode)
         {
-            string suffix = renderMode == BrushScreenshotRenderMode.Wireframe
-                ? "-wireframe"
-                : "";
-            return $"brush-{brush.DurableName}{suffix}.png";
+            if (renderMode == BrushScreenshotRenderMode.Wireframe)
+            {
+                return kWireframeDirectory;
+            }
+            return enablePostProcessing
+                ? kPostEffectsEnabledDirectory
+                : kPostEffectsDisabledDirectory;
         }
 
         private static List<MaterialColorOverride> SetBrushMaterialColors(
@@ -444,7 +500,8 @@ namespace TiltBrush
             int resWidth,
             int resHeight,
             bool? enablePostProcessing = null,
-            bool renderWireframe = false)
+            bool renderWireframe = false,
+            string outputSubdirectory = null)
         {
             int renderWidth = resWidth * kScreenshotSupersampling;
             int renderHeight = resHeight * kScreenshotSupersampling;
@@ -505,6 +562,12 @@ namespace TiltBrush
                 string outputDirectory = Path.Combine(
                     Directory.GetCurrentDirectory(),
                     kScreenshotOutputDirectory);
+                if (!string.IsNullOrEmpty(outputSubdirectory))
+                {
+                    outputDirectory = Path.Combine(
+                        outputDirectory,
+                        outputSubdirectory);
+                }
                 Directory.CreateDirectory(outputDirectory);
                 string filePath = Path.Combine(outputDirectory, fileName);
                 File.WriteAllBytes(filePath, bytes);
