@@ -36,6 +36,7 @@ namespace TiltBrush
         private const string kWireframeDirectory = "brushes-wireframe";
         private const string kLogPrefix = "_ui_screenshotter_20260520_";
         private const string kUrpPostLogPrefix = "[OB_URP_POST]";
+        private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
 
@@ -99,11 +100,38 @@ namespace TiltBrush
             GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Wireframe);
         }
 
+        // Run in Play Mode. Writes one brush-<durable-name>.mesh.json fixture and,
+        // when the stroke has geometry, one GLB per catalog brush to
+        // Support/BrushFixtures. Each JSON file records the deterministic stroke
+        // input, vertex layout, material state, finalized live mesh, and the mesh
+        // after the configured BrushBaker mapping. The live mesh is the realtime
+        // and .tilt reference; the actual UnityGLTF GLB is the end-to-end import
+        // reference; the post-BrushBaker JSON is only a diagnostic intermediate.
+        // Empty meshes are recorded as skipped and any stale GLB is removed.
+        [MenuItem("Open Brush/Screenshots/Generate Brush Mesh Fixtures")]
+        static void GenerateBrushMeshFixtures()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.Material,
+                captureScreenshots: false,
+                captureMeshFixtures: true);
+        }
+
         private static void GenerateBrushScreenShots(
             bool enablePostProcessing,
-            BrushScreenshotRenderMode renderMode)
+            BrushScreenshotRenderMode renderMode,
+            bool captureScreenshots = true,
+            bool captureMeshFixtures = false)
         {
             if (!IsPlaying()) return;
+
+            if (captureMeshFixtures && BrushBaker.m_Instance == null)
+            {
+                Debug.LogError(
+                    "[BrushMeshFixture] BrushBaker is not available in the active scene.");
+                return;
+            }
 
             if (renderMode == BrushScreenshotRenderMode.Wireframe)
             {
@@ -112,7 +140,11 @@ namespace TiltBrush
 
             SetupBlackEnvironment();
 
-            DelayedGenerateBrushScreenShots(enablePostProcessing, renderMode);
+            DelayedGenerateBrushScreenShots(
+                enablePostProcessing,
+                renderMode,
+                captureScreenshots,
+                captureMeshFixtures);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -168,18 +200,24 @@ namespace TiltBrush
 
         async static void DelayedGenerateBrushScreenShots(
             bool enablePostProcessing,
-            BrushScreenshotRenderMode renderMode)
+            BrushScreenshotRenderMode renderMode,
+            bool captureScreenshots,
+            bool captureMeshFixtures)
         {
             await Task.Delay(3000);
-            var cam = InitScreenshotCamera();
+            var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
-            string screenshotDirectory = GetBrushScreenshotDirectory(
-                enablePostProcessing,
-                renderMode);
-            Debug.Log(
-                $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
-                $"{screenshotDirectory} with post effects " +
-                $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+            string screenshotDirectory = null;
+            if (captureScreenshots)
+            {
+                screenshotDirectory = GetBrushScreenshotDirectory(
+                    enablePostProcessing,
+                    renderMode);
+                Debug.Log(
+                    $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
+                    $"{screenshotDirectory} with post effects " +
+                    $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+            }
 
             var path = CreateBrushReferencePath();
             var origin = new Vector3(-1.25f, 100, 4);
@@ -218,15 +256,26 @@ namespace TiltBrush
                         brush: brush,
                         brushSize: brushSize);
                     await Task.Yield();
-                    SetFixedShaderTime(strokes, kBrushReferenceTime);
-                    batchManager.FlushMeshUpdates();
                     List<MaterialColorOverride> colorOverrides = null;
                     try
                     {
-                        if (renderMode == BrushScreenshotRenderMode.Wireframe)
+                        SetFixedShaderTime(strokes, kBrushReferenceTime);
+                        batchManager.FlushMeshUpdates();
+                        if (captureMeshFixtures)
+                        {
+                            BrushMeshFixtureWriter.WriteBrushFixture(
+                                brush,
+                                strokes,
+                                kMeshFixtureOutputDirectory,
+                                kBrushReferenceTime,
+                                BrushBaker.m_Instance);
+                        }
+                        if (captureScreenshots && renderMode == BrushScreenshotRenderMode.Wireframe)
                         {
                             colorOverrides = SetBrushMaterialColors(strokes, Color.white);
                         }
+                        if (captureScreenshots)
+                        {
                             SaveCurrentView(
                                 cam,
                                 GetBrushScreenshotFileName(brush),
@@ -235,6 +284,7 @@ namespace TiltBrush
                                 enablePostProcessing,
                                 renderMode == BrushScreenshotRenderMode.Wireframe,
                                 screenshotDirectory);
+                        }
                     }
                     finally
                     {
@@ -254,8 +304,8 @@ namespace TiltBrush
             }
         }
 
-        // Matches the reference stroke used by the current Open Brush screenshot
-        // and mesh-fixture generators.
+        // Screenshots and mesh fixtures must use the same stroke input so the
+        // rendered reference image corresponds to the captured fixture geometry.
         private static List<TrTransform> CreateBrushReferencePath()
         {
             const int pointCount = 36;
@@ -438,7 +488,7 @@ namespace TiltBrush
                             {
                                 activePopUp.SetPopupCommandParameters(btn.m_CommandParam, btn.m_CommandParam2);
                             }
-                            catch (NullReferenceException e) { }
+                            catch (NullReferenceException) { }
                             SaveCurrentView(cam, $"panel-{panelType}_{btn.m_Command}.png", 1600, 1600);
                             go.transform.position = new Vector3(-100, 0, 0);
                             Destroy(go);
