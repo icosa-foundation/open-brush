@@ -1,0 +1,1345 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!200 &20000000
+ShaderVariantCollection:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: OpenBrushBrushVariants
+  m_Shaders:
+  - first: {fileID: -6465566751694194690, guid: b698f21caf81c6544a789e7f49527c11,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: fc163d24473ddd04881e4fc188ed5802, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+  - first: {fileID: 4800000, guid: 2ff11252cfff6694db314e548417a3f3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+  - first: {fileID: 4800000, guid: 561cd39ab4e063843a09f5c11c3a8531, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+  - first: {fileID: -6465566751694194690, guid: b3844b15c535ed04db7b9b8e6c07ce3b,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 286c16fdd0381854cb875392608b62df,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: aed6c5abd15318e448cc6f01d2ac0dd1, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 2a80dce37f4d57349b4d98e7fcdf60d2,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 66d9ab24e044638439b322295d3afa8e, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+  - first: {fileID: 4800000, guid: e12e59eb54a018044abc88e7ccf3d195, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 3ee4d5b2d39172d49a8ff37c131b37b3,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 7155064e818d84a48b337a74a6c48767,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+  - first: {fileID: 4800000, guid: 096108490caa83c46b96a1e171214c8b, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: bed5c8c09a625664488d59b68d51690d,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a1537ea5abf7c7f4198075ddfd323ab4,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: dd78e84a130ff004f9981de54cc47a4f,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 4712a5a85cfe9144190e6dbb83cbb62e, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+  - first: {fileID: 4800000, guid: fb1ab3f9ab465f54eb58155e74965fd3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+  - first: {fileID: 4800000, guid: d3f113ebb941b344eab871b7ff555989, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 6abb5ba876659de42821546dafac4bed,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 9f5c12f3acbb626408e96c20bb9f072a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: f739a59e6abd4484aa43b4ab6501c0f3,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: fbaf2ed539242ce4cb715100b3cdf4cf, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 8162ad84995fada49b47b674f1fed4a7,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 783cbf4081d995842a2c6e46b24e6b55,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: ceb199b0f4e9d4be4a55978cfb864132, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: 
+        passType: 5
+  - first: {fileID: 4800000, guid: 62214494f4cd16a4db9c53337309f0e6, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: 698f6f8dc012a8b4e9d6f36db04f0dd3, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 14968e66fc8cfe441b31a7c23a07897c, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 1a9f040da59157d488be5a827e2d4612,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 5dfdc2c5c51e4de7b6dd15f196607315, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: b95218752580b4140aa9ca29544d1c68,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 387f4f61bc82c4e5f813ad7caa1f394a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: 
+        passType: 5
+  - first: {fileID: -6465566751694194690, guid: c6d2c472771b2dd4db15475fb4946a96,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: d1e570f96a7a4f54fb9dc544cbfa5cbf, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: 63ee81a0fbf19bc44bec7e2ca3ba73e1, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 378dd8a90f17baf4aae7a033627296b4,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: c8def03accc4e8341b9fa2db8eb6ff87, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 4dd819de1c7160145bf58bcf060e35d5,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: _ISBAKEDEXPORT
+        passType: 13
+  - first: {fileID: 4800000, guid: bfa82537bb6dcf94a8d673eb2ac036f0, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 74e761c433fdc564b898ed8d2b34fe56,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: a2fa29912c23a774898a1b8b236ed79d, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: 2de056245b8dd70408172b79566d3716,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: 4800000, guid: 9296f4d6e8a59fa4b86aa34b80d895ba, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: 0417065cc2dc3244588be4534f9bbd91, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: c05db7dbe3ea3c74a9558c204e8aed41,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: _ISBAKEDEXPORT
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 670d33baa4122f443822bdc77253d8b7,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 47d57b935b2e03247b66525cd9653e4a,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: _ISBAKEDEXPORT
+        passType: 13
+  - first: {fileID: 4800000, guid: e412fb1c98a347b4ab08429cbf1d0894, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: 4800000, guid: b8dd2d296c760ad4dba8f0d9ec26d921, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: e641a359896eeec4c9a6df6a51332d04,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: bfbad5c8c0f6e8447aaeeebf21dc2e97,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 2689d2eb10ab78a4b9cfffbc76df3363,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a491026fdcd62ae429dacacb5683abca,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: d34197ac591341c48bb2d40f81e0f202,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 919b9134ed875654aa41cdcc7bc89593,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: AUDIO_REACTIVE _BAKED_VERTEX_SHADER_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 0
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: AUDIO_REACTIVE _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: AUDIO_REACTIVE _BAKED_VERTEX_SHADER_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 13
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 065e4d0b5350f7441843b8cf64bbceb9,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 23a643ccf33c8664ab3554a22f27c277,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: e15818c071abb264cb48f1eaa442ac62,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a28a1f284037e374ba0b15dd7c0112e3,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 4f9baf9861d335c4d8839a51943a13a0,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 01429d4ad6ce34d42aaa27fd4857a278,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 36238908d0b4c4441b3c379d51440b96,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 20ac29e1e12ac614abfd7cf0ea391900,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 8ebaa9db7ccea784ca52a871428e2300,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 49dbb2c4804d08d4990c8574cdf6011f,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: b2b04f82dbbf9c24cb61c91d57ba8c3c,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: e798b8640ec2f9f4b9bf4d22b25b718c,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a30aeeecfb8d6c74ca292b8773168d20,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 2f7a6000e87c1b94996f1cb79aa5f3b5,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 25db9a6cd7679ae48bf0b8a7b09c0c88,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 080f1b64c1b1fe74aae01545ed26d55b,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 4e7fb45668b386748bf89c5aab99b6c5,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: bbe745735a56aba47a6b7d7260aac547,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 0
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON _BAKED_VERTEX_SHADER_ON
+        passType: 13
+      - keywords: _BAKED_VERTEX_SHADER_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 9d25c95d3b8f5c04f98a619d3abd3ffd,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 49c9fd0d2ebe1fd4ab1928ae0dbe46e6,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 4d8ea5521bcdfe44b945331eccbb435a,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 036d3ec2c7a6345448f89be0d26fa632,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a67443de2c4f9d84a828d8b4b615d463,
+      type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
