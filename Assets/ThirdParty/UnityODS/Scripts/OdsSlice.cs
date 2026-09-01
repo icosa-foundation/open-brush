@@ -11,6 +11,12 @@ public class OdsSlice : OdsRenderer {
   public RenderTexture cameraTexture = null;
   public Material warp = null;
 
+  private static void ClearOdsShaderState() {
+    Shader.DisableKeyword("ODS_RENDER");
+    Shader.SetGlobalVector("ODS_EyeOffset", Vector4.zero);
+    Shader.SetGlobalVector("ODS_CameraPos", Vector4.zero);
+  }
+
   private enum Eye {
     Right = 0,
     Left = 1
@@ -111,8 +117,10 @@ public class OdsSlice : OdsRenderer {
           renderCount++;
           if (renderCount >= MaxRenders) {
 #if UNITY_ANDROID || UNITY_IOS
-            // Resume on the next frame so Unity submits this bounded batch to the mobile driver.
+            // Ordinary cameras render before the next batch, so do not expose ODS shader state.
+            ClearOdsShaderState();
             yield return null;
+            Shader.EnableKeyword("ODS_RENDER");
 #else
             yield return new WaitForEndOfFrame();
 #endif
@@ -130,7 +138,7 @@ public class OdsSlice : OdsRenderer {
         } // for each angular slice
       } // for each elevation
     } // for each eye image
-    Shader.DisableKeyword("ODS_RENDER");
+    ClearOdsShaderState();
   }
 } // class OdsSlice
 
