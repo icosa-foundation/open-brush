@@ -166,6 +166,8 @@ SubShader {
   //   GltfCull Back
   Cull Back
   Pass{
+    Name "Forward"
+    Tags { "LightMode" = "UniversalForward" }
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma vertex vert
@@ -175,6 +177,8 @@ SubShader {
 
   Cull Front
   Pass{
+    Name "Outline"
+    Tags { "LightMode" = "SRPDefaultUnlit" }
     CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
     #pragma vertex vertEdge
