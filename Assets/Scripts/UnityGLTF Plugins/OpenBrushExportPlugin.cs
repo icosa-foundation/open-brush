@@ -27,6 +27,7 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private static int s_MeshFixtureExportDepth;
+        private static BrushDescriptor s_MeshFixtureBrush;
 
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
@@ -39,22 +40,32 @@ namespace TiltBrush
 
         private const string kTimestampAttribute = "_TB_TIMESTAMP";
 
-        public static IDisposable BeginIsolatedMeshFixtureExport()
+        public static IDisposable BeginIsolatedMeshFixtureExport(BrushDescriptor brush)
         {
+            if (brush == null) throw new ArgumentNullException(nameof(brush));
+            BrushDescriptor previousBrush = s_MeshFixtureBrush;
             ++s_MeshFixtureExportDepth;
-            return new MeshFixtureExportScope();
+            s_MeshFixtureBrush = brush;
+            return new MeshFixtureExportScope(previousBrush);
         }
 
         private static bool IsIsolatedMeshFixtureExport => s_MeshFixtureExportDepth > 0;
 
         private sealed class MeshFixtureExportScope : IDisposable
         {
+            private readonly BrushDescriptor m_PreviousBrush;
             private bool m_Disposed;
+
+            public MeshFixtureExportScope(BrushDescriptor previousBrush)
+            {
+                m_PreviousBrush = previousBrush;
+            }
 
             public void Dispose()
             {
                 if (m_Disposed) return;
                 m_Disposed = true;
+                s_MeshFixtureBrush = m_PreviousBrush;
                 --s_MeshFixtureExportDepth;
                 Debug.Assert(s_MeshFixtureExportDepth >= 0);
             }
@@ -630,26 +641,38 @@ namespace TiltBrush
 
             if (shaderName.StartsWith("Brush/"))
             {
-
-                // TODO - This assumes that every brush material has a unique name
-                // (or at least if two brush materials have the same name then they are interchangeable)
-                // Currently, the former is true, but this may not always be the case
-                var brushes = BrushCatalog.m_Instance.AllBrushes
-                    .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
-                    .ToList();
-
-                switch (brushes.Count)
+                BrushDescriptor manifest;
+                if (IsIsolatedMeshFixtureExport)
                 {
-                    case 0:
-                        Debug.LogError($"No matching brush found for material {material.name}");
+                    manifest = s_MeshFixtureBrush;
+                    if (manifest == null)
+                    {
+                        Debug.LogError($"No brush supplied for isolated mesh fixture material {material.name}");
                         return;
-                    case > 1:
-                        Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
-                        break;
+                    }
                 }
+                else
+                {
+                    // TODO - This assumes that every brush material has a unique name
+                    // (or at least if two brush materials have the same name then they are interchangeable)
+                    // Currently, the former is true, but this may not always be the case
+                    var brushes = BrushCatalog.m_Instance.AllBrushes
+                        .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
+                        .ToList();
 
-                var brush = brushes[0];
-                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                    switch (brushes.Count)
+                    {
+                        case 0:
+                            Debug.LogError($"No matching brush found for material {material.name}");
+                            return;
+                        case > 1:
+                            Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                            break;
+                    }
+
+                    var brush = brushes[0];
+                    manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                }
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 // Do we need to override the regular UnityGLTF logic here?

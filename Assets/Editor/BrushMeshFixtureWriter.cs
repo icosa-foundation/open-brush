@@ -176,7 +176,8 @@ namespace TiltBrush
                 exportRoot.AddComponent<MeshRenderer>().sharedMaterial = material;
                 var context = new ExportContext(App.Config.m_UnityGLTFSettings);
                 var exporter = new GLTFSceneExporter(exportRoot.transform, context);
-                using (OpenBrushExportPluginConfig.BeginIsolatedMeshFixtureExport())
+                using (OpenBrushExportPluginConfig.BeginIsolatedMeshFixtureExport(
+                    BrushCatalog.m_Instance.GetBrush(new Guid(brushGuid))))
                 {
                     exporter.SaveGLB(outputDirectory, fileName);
                 }
