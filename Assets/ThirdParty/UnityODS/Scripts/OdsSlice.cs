@@ -110,7 +110,12 @@ public class OdsSlice : OdsRenderer {
           renderCamera.Render();
           renderCount++;
           if (renderCount >= MaxRenders) {
+#if UNITY_ANDROID || UNITY_IOS
+            // Resume on the next frame so Unity submits this bounded batch to the mobile driver.
+            yield return null;
+#else
             yield return new WaitForEndOfFrame();
+#endif
             renderCount = 0;
           }
 

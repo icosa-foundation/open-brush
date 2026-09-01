@@ -20,6 +20,11 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
+#if UNITY_ANDROID || UNITY_IOS
+  // The slice renderer issues one Camera.Render per angular slice. Large batches can overflow the
+  // mobile Vulkan driver's practical render-pass limit before Unity submits the frame.
+  const int MaxMobileRendersPerFrame = 16;
+#endif
   const int MaxImageWidth = 8192;
   // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
   // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
@@ -258,13 +263,23 @@ public class HybridCamera : MonoBehaviour {
 #endif
 
     isRendering = true;
+    int maxRendersPerFrame = MaxRenders;
+#if UNITY_ANDROID || UNITY_IOS
+    maxRendersPerFrame = MaxMobileRendersPerFrame;
+    Debug.Log($"[Snapshot360Mobile] Starting {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}, capped at {maxRendersPerFrame} renders per frame.");
+#endif
     //This suspends the execution of this function while running the odsRenderer.Render() function 
     //as a coroutine and will then resume execution when it is done.
     yield return StartCoroutine( 
       odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
-                         MaxRenders)
+                         maxRendersPerFrame)
     );
     isRendering = false;
+#if UNITY_ANDROID || UNITY_IOS
+    Debug.Log($"[Snapshot360Mobile] Finished {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}.");
+#endif
 
 #if ENABLE_TIMING
     double deltaMs = timerStop();
