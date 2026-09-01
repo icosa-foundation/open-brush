@@ -43,6 +43,8 @@ namespace TiltBrush
             "brushes-postfx-disabled-aa-rainbow-lod-unlimited";
         private const string kAaDiagnosticLogPrefix = "_brush_aa_diagnostic_20260901_";
         private const string kParityCaptureLogPrefix = "_brush_parity_capture_20260901_";
+        private const string kToonOutlineLogPrefix = "_toon_outline_diagnostic_20260901_";
+        private const string kToonOutlineDirectory = "brushes-toon-outline-diagnostic";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
@@ -52,11 +54,17 @@ namespace TiltBrush
             "Marker",
             "Rainbow"
         };
+        private static readonly HashSet<string> kToonOutlineDiagnosticBrushes = new HashSet<string>
+        {
+            "Toon",
+            "TubeToonInverted"
+        };
 
         private enum BrushScreenshotRenderMode
         {
             Material,
-            Wireframe
+            Wireframe,
+            ToonOutlineDiagnostic
         }
 
         private static readonly string[] kWireframeWhiteColorProperties =
@@ -120,6 +128,14 @@ namespace TiltBrush
                 enablePostProcessing: false,
                 BrushScreenshotRenderMode.Material,
                 captureAaDiagnostics: true);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Toon Outline Diagnostic Screenshots")]
+        static void GenerateToonOutlineDiagnosticScreenShots()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.ToonOutlineDiagnostic);
         }
 
         // Run in Play Mode. Writes one brush-<durable-name>.mesh.json fixture and,
@@ -231,6 +247,17 @@ namespace TiltBrush
         {
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
+            bool overrideCameraBackground =
+                cam != null && renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic;
+            CameraClearFlags previousClearFlags = default;
+            Color previousBackgroundColor = default;
+            if (overrideCameraBackground)
+            {
+                previousClearFlags = cam.clearFlags;
+                previousBackgroundColor = cam.backgroundColor;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color32(128, 128, 128, 255);
+            }
 
             if (captureScreenshots)
             {
@@ -247,13 +274,16 @@ namespace TiltBrush
                         renderMode);
                     bool useParityCapture =
                         !enablePostProcessing &&
-                        renderMode == BrushScreenshotRenderMode.Material;
+                        renderMode != BrushScreenshotRenderMode.Wireframe;
                     string captureSettings = useParityCapture
                         ? "1x resolution and 1x MSAA"
                         : $"{kScreenshotSupersampling}x resolution and " +
                           $"{kScreenshotMsaaSamples}x MSAA";
+                    string logPrefix = renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic
+                        ? kToonOutlineLogPrefix
+                        : kParityCaptureLogPrefix;
                     Debug.Log(
-                        $"{kParityCaptureLogPrefix} Generating {renderMode} screenshots in " +
+                        $"{logPrefix} Generating {renderMode} screenshots in " +
                         $"{screenshotDirectory} with post effects " +
                         $"{(enablePostProcessing ? "enabled" : "disabled")}, using " +
                         $"{captureSettings}.");
@@ -281,6 +311,11 @@ namespace TiltBrush
                 {
                     if (captureAaDiagnostics &&
                         !kAaDiagnosticBrushes.Contains(brush.DurableName))
+                    {
+                        continue;
+                    }
+                    if (renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic &&
+                        !kToonOutlineDiagnosticBrushes.Contains(brush.DurableName))
                     {
                         continue;
                     }
@@ -330,7 +365,7 @@ namespace TiltBrush
                             {
                                 bool useParityCapture =
                                     !enablePostProcessing &&
-                                    renderMode == BrushScreenshotRenderMode.Material;
+                                    renderMode != BrushScreenshotRenderMode.Wireframe;
                                 SaveCurrentView(
                                     cam,
                                     GetBrushScreenshotFileName(brush),
@@ -365,6 +400,11 @@ namespace TiltBrush
                     CameraConfig.PostEffects = wasPostEffects;
                 }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
+                if (overrideCameraBackground)
+                {
+                    cam.clearFlags = previousClearFlags;
+                    cam.backgroundColor = previousBackgroundColor;
+                }
             }
         }
 
@@ -413,6 +453,10 @@ namespace TiltBrush
             if (renderMode == BrushScreenshotRenderMode.Wireframe)
             {
                 return kWireframeDirectory;
+            }
+            if (renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic)
+            {
+                return kToonOutlineDirectory;
             }
             return enablePostProcessing
                 ? kPostEffectsEnabledDirectory
