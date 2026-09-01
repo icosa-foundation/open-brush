@@ -212,11 +212,13 @@ Category {
 
   ENDCG
 
-  // PC (Uses 'Add' blend mode for RGB)
+  // Unity 6 can select this pass where the old branch selected LOD 150.
+  // Use the same Max blend operation so overlapping ribbon geometry retains
+  // the established brush appearance across both versions.
   SubShader {
     LOD 201
     Pass {
-      BlendOp Add, Min
+      BlendOp Max, Min
 
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON

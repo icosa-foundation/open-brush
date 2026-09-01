@@ -230,6 +230,7 @@ Shader "Brush/StandardSingleSided" {
         #pragma multi_compile __ SELECTION_ON
         #pragma multi_compile_fog
 
+        #include "Assets/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
         #include "Assets/Shaders/Include/MobileSelection.cginc"
