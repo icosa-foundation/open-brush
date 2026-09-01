@@ -33,9 +33,20 @@ namespace TiltBrush
         private const string kPostEffectsDisabledDirectory = "brushes-postfx-disabled";
         private const string kPostEffectsEnabledDirectory = "brushes-postfx-enabled";
         private const string kWireframeDirectory = "brushes-wireframe";
+        private const string kAaRawDirectory = "brushes-postfx-disabled-aa-raw";
+        private const string kAaSupersampledDirectory =
+            "brushes-postfx-disabled-aa-supersampled";
+        private const string kAaFullDirectory = "brushes-postfx-disabled-aa-full";
+        private const string kAaDiagnosticLogPrefix = "_brush_aa_diagnostic_20260901_";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
+        private static readonly HashSet<string> kAaDiagnosticBrushes = new HashSet<string>
+        {
+            "Electricity",
+            "Marker",
+            "Rainbow"
+        };
 
         private enum BrushScreenshotRenderMode
         {
@@ -97,6 +108,15 @@ namespace TiltBrush
             GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Wireframe);
         }
 
+        [MenuItem("Open Brush/Screenshots/Generate Brush AA Diagnostic Screenshots")]
+        static void GenerateBrushAaDiagnosticScreenShots()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.Material,
+                captureAaDiagnostics: true);
+        }
+
         // Run in Play Mode. Writes one brush-<durable-name>.mesh.json fixture and,
         // when the stroke has geometry, one GLB per catalog brush to
         // Support/BrushFixtures. Each JSON file records the deterministic stroke
@@ -119,7 +139,8 @@ namespace TiltBrush
             bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode,
             bool captureScreenshots = true,
-            bool captureMeshFixtures = false)
+            bool captureMeshFixtures = false,
+            bool captureAaDiagnostics = false)
         {
             if (!IsPlaying()) return;
 
@@ -141,7 +162,8 @@ namespace TiltBrush
                 enablePostProcessing,
                 renderMode,
                 captureScreenshots,
-                captureMeshFixtures);
+                captureMeshFixtures,
+                captureAaDiagnostics);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -199,20 +221,30 @@ namespace TiltBrush
             bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode,
             bool captureScreenshots,
-            bool captureMeshFixtures)
+            bool captureMeshFixtures,
+            bool captureAaDiagnostics)
         {
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
 
             if (captureScreenshots)
             {
-                string screenshotDirectory = GetBrushScreenshotDirectory(
-                    enablePostProcessing,
-                    renderMode);
-                Debug.Log(
-                    $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
-                    $"{screenshotDirectory} with post effects " +
-                    $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+                if (captureAaDiagnostics)
+                {
+                    Debug.Log(
+                        $"{kAaDiagnosticLogPrefix} Generating raw, supersampled, and full-AA " +
+                        "screenshots for Electricity, Marker, and Rainbow.");
+                }
+                else
+                {
+                    string screenshotDirectory = GetBrushScreenshotDirectory(
+                        enablePostProcessing,
+                        renderMode);
+                    Debug.Log(
+                        $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
+                        $"{screenshotDirectory} with post effects " +
+                        $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+                }
             }
 
             var path = CreateBrushReferencePath();
@@ -234,6 +266,11 @@ namespace TiltBrush
             {
                 foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
                 {
+                    if (captureAaDiagnostics &&
+                        !kAaDiagnosticBrushes.Contains(brush.DurableName))
+                    {
+                        continue;
+                    }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
                     var colors = new List<Color> { kBrushReferenceColor };
@@ -268,16 +305,27 @@ namespace TiltBrush
                         }
                         if (captureScreenshots)
                         {
-                            SaveCurrentView(
-                                cam,
-                                GetBrushScreenshotFileName(brush),
-                                1024,
-                                1024,
-                                enablePostProcessing,
-                                renderMode == BrushScreenshotRenderMode.Wireframe,
-                                GetBrushScreenshotDirectory(
+                            if (captureAaDiagnostics)
+                            {
+                                SaveBrushAaDiagnosticViews(
+                                    cam,
+                                    brush,
                                     enablePostProcessing,
-                                    renderMode));
+                                    renderMode == BrushScreenshotRenderMode.Wireframe);
+                            }
+                            else
+                            {
+                                SaveCurrentView(
+                                    cam,
+                                    GetBrushScreenshotFileName(brush),
+                                    1024,
+                                    1024,
+                                    enablePostProcessing,
+                                    renderMode == BrushScreenshotRenderMode.Wireframe,
+                                    GetBrushScreenshotDirectory(
+                                        enablePostProcessing,
+                                        renderMode));
+                            }
                         }
                     }
                     finally
@@ -508,6 +556,45 @@ namespace TiltBrush
             }
         }
 
+        private static void SaveBrushAaDiagnosticViews(
+            Camera cameraToCapture,
+            BrushDescriptor brush,
+            bool enablePostProcessing,
+            bool renderWireframe)
+        {
+            string fileName = GetBrushScreenshotFileName(brush);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaRawDirectory,
+                supersampling: 1,
+                msaaSamples: 1);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaSupersampledDirectory,
+                supersampling: 2,
+                msaaSamples: 1);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaFullDirectory,
+                supersampling: 2,
+                msaaSamples: 4);
+        }
+
         private static readonly Type[] kBuiltInPostEffectComponents =
         {
             typeof(RenderWrapper),
@@ -570,19 +657,23 @@ namespace TiltBrush
             int resHeight,
             bool? enablePostProcessing = null,
             bool renderWireframe = false,
-            string outputSubdirectory = null)
+            string outputSubdirectory = null,
+            int supersampling = kScreenshotSupersampling,
+            int msaaSamples = kScreenshotMsaaSamples)
         {
-            int renderWidth = resWidth * kScreenshotSupersampling;
-            int renderHeight = resHeight * kScreenshotSupersampling;
+            int renderWidth = resWidth * supersampling;
+            int renderHeight = resHeight * supersampling;
             RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
             {
-                antiAliasing = kScreenshotMsaaSamples,
+                antiAliasing = msaaSamples,
                 filterMode = FilterMode.Bilinear
             };
-            RenderTexture downsampledRt = new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
-            {
-                filterMode = FilterMode.Bilinear
-            };
+            RenderTexture downsampledRt = supersampling > 1
+                ? new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
+                {
+                    filterMode = FilterMode.Bilinear
+                }
+                : null;
             Texture2D screenShot = null;
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
@@ -603,12 +694,15 @@ namespace TiltBrush
                     }
                 }
 
-                cameraToCapture.allowMSAA = true;
+                cameraToCapture.allowMSAA = msaaSamples > 1;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
                 RenderScreenshotCamera(cameraToCapture, renderWidth, renderHeight, renderWireframe);
-                Graphics.Blit(rt, downsampledRt);
-                RenderTexture.active = downsampledRt;
+                if (downsampledRt != null)
+                {
+                    Graphics.Blit(rt, downsampledRt);
+                }
+                RenderTexture.active = downsampledRt != null ? downsampledRt : rt;
                 screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
                 byte[] bytes = screenShot.EncodeToPNG();
                 string outputDirectory = Path.Combine(
@@ -640,7 +734,10 @@ namespace TiltBrush
                     Destroy(screenShot);
                 }
                 Destroy(rt);
-                Destroy(downsampledRt);
+                if (downsampledRt != null)
+                {
+                    Destroy(downsampledRt);
+                }
             }
         }
 
