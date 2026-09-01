@@ -232,6 +232,9 @@ public class HybridCamera : MonoBehaviour {
     }
 
     renderCamera.CopyFrom( parentCamera );
+    // ODS renders this camera manually. Keep Unity from rendering it during mobile batch yields and
+    // overwriting the last slice before OdsSlice copies that slice into the output texture.
+    renderCamera.enabled = false;
     renderCamera.cullingMask = parentCamera.cullingMask;
     renderCamera.name = "Hybrid ODS Camera";
     renderCamera.fieldOfView = 90.0f;
