@@ -37,7 +37,12 @@ namespace TiltBrush
         private const string kAaSupersampledDirectory =
             "brushes-postfx-disabled-aa-supersampled";
         private const string kAaFullDirectory = "brushes-postfx-disabled-aa-full";
+        private const string kRainbowLod150Directory =
+            "brushes-postfx-disabled-aa-rainbow-lod150";
+        private const string kRainbowLodUnlimitedDirectory =
+            "brushes-postfx-disabled-aa-rainbow-lod-unlimited";
         private const string kAaDiagnosticLogPrefix = "_brush_aa_diagnostic_20260901_";
+        private const string kParityCaptureLogPrefix = "_brush_parity_capture_20260901_";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
@@ -240,10 +245,18 @@ namespace TiltBrush
                     string screenshotDirectory = GetBrushScreenshotDirectory(
                         enablePostProcessing,
                         renderMode);
+                    bool useParityCapture =
+                        !enablePostProcessing &&
+                        renderMode == BrushScreenshotRenderMode.Material;
+                    string captureSettings = useParityCapture
+                        ? "1x resolution and 1x MSAA"
+                        : $"{kScreenshotSupersampling}x resolution and " +
+                          $"{kScreenshotMsaaSamples}x MSAA";
                     Debug.Log(
-                        $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
+                        $"{kParityCaptureLogPrefix} Generating {renderMode} screenshots in " +
                         $"{screenshotDirectory} with post effects " +
-                        $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+                        $"{(enablePostProcessing ? "enabled" : "disabled")}, using " +
+                        $"{captureSettings}.");
                 }
             }
 
@@ -315,6 +328,9 @@ namespace TiltBrush
                             }
                             else
                             {
+                                bool useParityCapture =
+                                    !enablePostProcessing &&
+                                    renderMode == BrushScreenshotRenderMode.Material;
                                 SaveCurrentView(
                                     cam,
                                     GetBrushScreenshotFileName(brush),
@@ -324,7 +340,13 @@ namespace TiltBrush
                                     renderMode == BrushScreenshotRenderMode.Wireframe,
                                     GetBrushScreenshotDirectory(
                                         enablePostProcessing,
-                                        renderMode));
+                                        renderMode),
+                                    supersampling: useParityCapture
+                                        ? 1
+                                        : kScreenshotSupersampling,
+                                    msaaSamples: useParityCapture
+                                        ? 1
+                                        : kScreenshotMsaaSamples);
                             }
                         }
                     }
@@ -532,13 +554,9 @@ namespace TiltBrush
                     {
                         continue;
                     }
-                    stroke.SetShaderFloat("_TimeBlend", 1f);
-                    stroke.SetShaderVector(
-                        "_TimeOverrideValue",
-                        timeValue.x,
-                        timeValue.y,
-                        timeValue.z,
-                        timeValue.w);
+                    material.EnableKeyword("SHADER_SCRIPTING_ON");
+                    material.SetFloat("_TimeBlend", 1f);
+                    material.SetVector("_TimeOverrideValue", timeValue);
                 }
                 catch (StrokeShaderModifierException)
                 {
@@ -593,6 +611,42 @@ namespace TiltBrush
                 kAaFullDirectory,
                 supersampling: 2,
                 msaaSamples: 4);
+
+            if (brush.DurableName == "Rainbow")
+            {
+                int previousMaximumLod = Shader.globalMaximumLOD;
+                try
+                {
+                    Debug.Log($"{kAaDiagnosticLogPrefix} Rainbow current global maximum LOD: {previousMaximumLod}. Capturing forced LOD 150 and unrestricted LOD.");
+                    Shader.globalMaximumLOD = 150;
+                    SaveCurrentView(
+                        cameraToCapture,
+                        fileName,
+                        1024,
+                        1024,
+                        enablePostProcessing,
+                        renderWireframe,
+                        kRainbowLod150Directory,
+                        supersampling: 1,
+                        msaaSamples: 1);
+
+                    Shader.globalMaximumLOD = 99999999;
+                    SaveCurrentView(
+                        cameraToCapture,
+                        fileName,
+                        1024,
+                        1024,
+                        enablePostProcessing,
+                        renderWireframe,
+                        kRainbowLodUnlimitedDirectory,
+                        supersampling: 1,
+                        msaaSamples: 1);
+                }
+                finally
+                {
+                    Shader.globalMaximumLOD = previousMaximumLod;
+                }
+            }
         }
 
         private static readonly Type[] kBuiltInPostEffectComponents =
