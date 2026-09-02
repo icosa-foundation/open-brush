@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Polyhydra.Core;
 using ControllerName = TiltBrush.InputManager.ControllerName;
 using Random = UnityEngine.Random;
 
@@ -249,6 +250,12 @@ namespace TiltBrush
         private List<Color> m_SymmetryPointerColors;
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
+
+        // Used for Polyhydra Symmetry
+        private TrTransform m_bestface_OS;
+        private int m_BestFaceIndex = -1;
+        private PolyMesh m_CustomSymmetryPoly;
+        private PolyMeshSurfaceProjector m_CustomSymmetrySurfaceProjector;
 
         // ---- events
 
@@ -1439,7 +1446,13 @@ namespace TiltBrush
         public void SetSymmetryMode(SymmetryMode mode, bool recordCommand = true)
         {
             // Early out if we're already in the requested mode (but allow None for initial hide of widget)
-            if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
+            bool refreshCustomSymmetry =
+                mode == SymmetryMode.CustomSymmetryMode && m_CurrentSymmetryMode == mode;
+            if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode &&
+                !refreshCustomSymmetry)
+            {
+                return;
+            }
 
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
@@ -1447,6 +1460,7 @@ namespace TiltBrush
                 ResetScriptedPointerPaintData();
             }
 
+            PreviewPolyhedron vrPoly = null;
             int active = m_NumActivePointers;
             switch (mode)
             {
@@ -1470,25 +1484,43 @@ namespace TiltBrush
                     GenerateScriptedPointerTransforms();
                     active = m_ScriptedTransforms.Count;
                     break;
+                case SymmetryMode.CustomSymmetryMode:
+                    vrPoly = PreviewPolyhedron.m_Instance;
+                    active = vrPoly.m_PolyMesh.Faces.Count;
+                    break;
                 case SymmetryMode.DebugMultiple:
                     active = DEBUG_MULTIPLE_NUM_POINTERS;
                     break;
             }
-            if (m_NumActivePointers != active)
+            if (m_NumActivePointers != active || refreshCustomSymmetry)
             {
                 ChangeNumActivePointers(active);
+            }
+
+            if (refreshCustomSymmetry)
+            {
+                m_CustomSymmetryPoly = null;
+                m_CustomSymmetrySurfaceProjector = null;
+                m_BestFaceIndex = -1;
             }
 
             var previousMode = m_CurrentSymmetryMode;
             m_CurrentSymmetryMode = mode;
             m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
-            if (recordCommand)
+            if (recordCommand && !refreshCustomSymmetry)
             {
                 SketchMemoryScript.m_Instance.RecordCommand(
                     new SymmetryWidgetVisibleCommand(mode, previousMode));
             }
 
+            // Get a max face size to use as a scaling factor later.
+            // float faceMax = 1;
+            // if (vrPoly != null && vrPoly._conwayPoly!=null)
+            // {
+            //   var faceSizes = vrPoly._conwayPoly.Faces.Select(x => (x.Centroid - x.GetBestEdge().Midpoint).magnitude);
+            //   faceMax = Mathf.Max(faceSizes.ToArray());
+            // }
         }
 
         private void ChangeNumActivePointers(int num)
@@ -1510,7 +1542,33 @@ namespace TiltBrush
                 {
                     pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
                 }
+                if (CurrentSymmetryMode == SymmetryMode.CustomSymmetryMode)
+                {
+                    var vrPoly = PreviewPolyhedron.m_Instance;
+                    if (vrPoly != null && vrPoly.m_PolyMesh != null)
+                    {
+                        if (i < vrPoly.m_PolyMesh.Faces.Count)
+                        {
+                            var face = vrPoly.m_PolyMesh.Faces[i];
+                            // We could scale brushes by face size?
+                            // pointer.m_Script.BrushSizeAbsolute *= (faceMax * (face.Centroid - face.GetBestEdge().Midpoint).magnitude);
+                            if (vrPoly)
+                            {
+                                var color = vrPoly.GetFaceColorForStrokes(i);
+                                pointer.m_Script.SetColor(color);
+                            }
+                        }
+                    }
+                }
             }
+            // Custom symmetry mode overrides main pointer color as well
+            // TODO Disabled this because it overwrites the current main brush color.
+            // Need some way to "save and restore"
+            // if (mode == SymmetryMode.CustomSymmetryMode)
+            // {
+            //     var color = vrPoly.GetFaceColor(0);
+            //     m_Pointers[0].m_Script.SetColor(color);
+            // }
 
             App.Switchboard.TriggerMirrorVisibilityChanged();
         }
@@ -1563,6 +1621,8 @@ namespace TiltBrush
                         }
                         return tr * xfMain * trAndFix.Item1;
                     }
+                case SymmetryMode.CustomSymmetryMode:
+                    return GetCustomSymmetryTransform(child, xfMain, updateBestFace: false);
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
                         TrTransform scriptedTr;
@@ -1587,6 +1647,73 @@ namespace TiltBrush
                 default:
                     return xfMain;
             }
+        }
+
+        private static TrTransform GetFaceFrame(Face face, float meshScale)
+        {
+            Vector3 position = face.Centroid * meshScale;
+            Vector3 faceVector =
+                (face.GetBestEdge().Midpoint - face.Centroid) * meshScale;
+            return TrTransform.TRS(
+                position,
+                Quaternion.LookRotation(face.Normal, faceVector),
+                1f);
+        }
+
+        private PolyMeshSurfaceProjector GetCustomSymmetrySurfaceProjector(PolyMesh poly)
+        {
+            if (!ReferenceEquals(m_CustomSymmetryPoly, poly))
+            {
+                m_CustomSymmetryPoly = poly;
+                m_CustomSymmetrySurfaceProjector = new PolyMeshSurfaceProjector(poly);
+                m_BestFaceIndex = -1;
+            }
+            return m_CustomSymmetrySurfaceProjector;
+        }
+
+        private TrTransform GetCustomSymmetryTransform(
+            int child, TrTransform xfMain, bool updateBestFace)
+        {
+            PreviewPolyhedron preview = PreviewPolyhedron.m_Instance;
+            if (preview == null || preview.m_PolyMesh == null ||
+                preview.m_PolyMesh.Faces.Count == 0)
+            {
+                return xfMain;
+            }
+
+            var faces = preview.m_PolyMesh.Faces;
+            float meshScale = preview.m_PolyMesh.ScalingFactor;
+            TrTransform xfWidget = TrTransform.FromTransform(m_SymmetryWidget);
+            if (updateBestFace || m_BestFaceIndex < 0 || m_BestFaceIndex >= faces.Count)
+            {
+                Vector3 pointerPosition_OS = (xfWidget.inverse * xfMain).translation;
+                if (Mathf.Abs(meshScale) > Mathf.Epsilon)
+                {
+                    pointerPosition_OS /= meshScale;
+                }
+                m_BestFaceIndex = GetCustomSymmetrySurfaceProjector(preview.m_PolyMesh)
+                    .FindClosestFace(pointerPosition_OS, out _);
+                m_bestface_OS = GetFaceFrame(faces[m_BestFaceIndex], meshScale);
+            }
+
+            if (child == 0)
+            {
+                return xfMain;
+            }
+
+            // Pointer zero represents the nearest face. Map the remaining pointer indices
+            // to every other face without duplicating that nearest face.
+            int targetFaceIndex = child <= m_BestFaceIndex ? child - 1 : child;
+            if (targetFaceIndex < 0 || targetFaceIndex >= faces.Count)
+            {
+                return xfMain;
+            }
+
+            TrTransform targetFace_OS = GetFaceFrame(faces[targetFaceIndex], meshScale);
+            TrTransform targetFromBest_OS = targetFace_OS * m_bestface_OS.inverse;
+            TrTransform targetFromBest_GS =
+                xfWidget * targetFromBest_OS * xfWidget.inverse;
+            return targetFromBest_GS * xfMain;
         }
 
         public void CalculateMirrors()
@@ -1715,6 +1842,20 @@ namespace TiltBrush
                             tmp.ToTransform(m_Pointers[i].m_Script.transform);
                             float scaledSize = m_Pointers[0].m_Script.BrushSize01 * Mathf.Abs(m_CustomMirrorMatrices[i].lossyScale.x);
                             m_Pointers[i].m_Script.BrushSize01 = scaledSize;
+                        }
+                        break;
+                    }
+                case SymmetryMode.CustomSymmetryMode:
+                    {
+                        TrTransform pointer0 =
+                            TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                        bool updateBestFace = !MainPointer.IsCreatingStroke();
+                        for (int i = 1; i < m_NumActivePointers; ++i)
+                        {
+                            TrTransform pointerTransform = GetCustomSymmetryTransform(
+                                i, pointer0, updateBestFace);
+                            updateBestFace = false;
+                            pointerTransform.ToTransform(m_Pointers[i].m_Script.transform);
                         }
                         break;
                     }

@@ -900,7 +900,7 @@ PlayerSettings:
   webGLPowerPreference: 2
   scriptingDefineSymbols:
     Android: TILT_BRUSH
-    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;
+    Standalone: TILT_BRUSH;USD_SUPPORTED;FBX_SUPPORTED;FBXSDK_RUNTIME;STEAMWORKS_NET
     Windows Store Apps: TILT_BRUSH;USD_SUPPORTED
     iPhone: TILT_BRUSH
   additionalCompilerArguments: {}

@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using TiltBrush.MeshEditing;
 #if FBX_SUPPORTED
 using Autodesk.Fbx;
 #endif
@@ -37,6 +38,8 @@ namespace TiltBrush
         private Dictionary<Material, IExportableMaterial> m_MaterialToIem =
             new Dictionary<Material, IExportableMaterial>();
         private int m_numAdded = 0;
+        private static readonly int Metallic = Shader.PropertyToID("_Metallic");
+        private static readonly int Glossiness = Shader.PropertyToID("_Glossiness");
 
         // Pass:
         //   randomSeed -
@@ -202,6 +205,16 @@ namespace TiltBrush
             if (iem != null)
             {
                 m_MaterialToIem.Add(um.material, iem);
+            }
+        }
+
+        // Used for generated models
+        public void AddAllEditableModelMaterials()
+        {
+            var dict = EditableModelManager.m_Instance.m_ExportableMaterials;
+            foreach (var key in dict.Keys)
+            {
+                m_MaterialToIem.Add(key, dict[key]);
             }
         }
 

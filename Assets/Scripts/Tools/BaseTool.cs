@@ -49,6 +49,7 @@ namespace TiltBrush
             CameraPathTool,
             FlyTool,
             ManualColocationTool = 1022,
+            PolyhydraTool = 5000,
             ScriptedTool = 6001,
             SnipTool = 11000,
             JoinTool = 11001

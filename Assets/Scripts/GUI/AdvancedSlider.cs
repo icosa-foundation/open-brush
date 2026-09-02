@@ -154,9 +154,16 @@ namespace TiltBrush
 
         public void UpdateValueAbsolute(float fValue)
         {
-            // Set m_SafeLimits on if we are within the range, off we are outside the range
-            if (m_SafeLimits && (fValue < Min || fValue > Max)) { HandleChangeLimits(); }
-            if (!m_SafeLimits && (fValue >= Min && fValue <= Max)) { HandleChangeLimits(); }
+            // Select the safe range only when the requested value fits inside it.
+            // Do not call HandleChangeLimits here: it emits an intermediate value,
+            // and its active Min/Max change as soon as the range is toggled.
+            bool useSafeLimits = fValue >= m_safeMin && fValue <= m_safeMax;
+            if (m_SafeLimits != useSafeLimits)
+            {
+                m_SafeLimits = useSafeLimits;
+                minText.text = FormatValue(Min);
+                maxText.text = FormatValue(Max);
+            }
             _UpdateValueAbsolute(fValue);
         }
 

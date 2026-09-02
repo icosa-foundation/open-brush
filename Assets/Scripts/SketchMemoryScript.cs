@@ -589,6 +589,7 @@ namespace TiltBrush
                 invoke: isFinalStroke
             );
 
+
             if (m_SanityCheckStrokes)
             {
                 SanityCheckGeometryGeneration(rNewStroke);
