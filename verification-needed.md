@@ -1,0 +1,83 @@
+# HTTP API Test Coverage Checklist
+
+## Implemented in TestHttpApiCommands
+- debug.brush
+- strokes.debug
+- brush.home.reset
+- brush.home.set
+- brush.transform.push
+- brush.transform.pop
+- brush.move.to
+- brush.move.by
+- brush.move
+- brush.draw
+- brush.new.stroke
+- brush.turn.y
+- brush.turn.x
+- brush.turn.z
+- brush.look.forwards
+- brush.look.up
+- brush.look.down
+- brush.look.left
+- brush.look.right
+- brush.look.backwards
+- brush.look.at
+- brush.move.to.hand
+- draw.path
+- draw.stroke
+- draw.polygon
+- draw.text
+- draw.paths
+- draw.svg.path
+- draw.svg
+- user.move.to
+- user.move.by
+- user.turn.y
+- user.direction (monoscopic only)
+- user.look.at
+- scene.scale.to
+- scene.scale.by
+- spectator.on
+- spectator.off
+- spectator.toggle
+- spectator.move.to
+- spectator.move.by
+- spectator.turn.y
+- spectator.turn.x
+- spectator.turn.z
+- spectator.direction
+- spectator.look.at
+- spectator.mode (stationary, wobble, circular, slowFollow)
+- spectator.hide (panels, widgets, strokes, selection, headset, ui, usertools)
+
+## Pending verification / needs tests
+- draw.opentypetext (needs font path)
+- draw.camerapath (needs camera path setup & index)
+- brush.pathsmoothing
+- brush.type
+- brush.size.set
+- brush.size.add
+- color.add.hsv
+- color.add.rgb
+- color.set.rgb
+- color.set.hsv
+- color.set.html
+- environment.type
+- panel.open
+- panel.close
+- panel.position
+- panel.rotation
+- panel.attach
+- panel.detach
+- layer.add
+- layer.clear
+- layer.delete
+- layer.squash
+- layer.activate
+- layer.show
+- layer.hide
+- layer.toggle
+
+## Deferred
+- user.turn.x (monoscopic-only)
+- user.turn.z (monoscopic-only)
