@@ -265,7 +265,7 @@ namespace TiltBrush
                 ChapterIndex = chapterIndex,
             };
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadQuillFile, 0, 0);
+                SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
         }
 
         public void OnMergeButtonPressed()
