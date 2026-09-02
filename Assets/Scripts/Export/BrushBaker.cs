@@ -8,6 +8,9 @@ public class BrushBaker : MonoBehaviour
     private static readonly bool kDropUnusedWideUvComponentsForGltf = false;
 
     public List<ComputeShaderMapping> computeShaders;
+    public List<ComputeShaderMapping> staticComputeShaders;
+    public List<StaticMeshPolicyMapping> staticMeshPolicies;
+    public List<TextureBakePolicyMapping> textureBakePolicies;
     public float squeezeAmount = 1.0f; // Set this to your desired squeeze amount
     public static BrushBaker m_Instance;
 
@@ -25,6 +28,42 @@ public class BrushBaker : MonoBehaviour
         public bool ModifyUv2;
     }
 
+    public enum StaticMeshBakeMode
+    {
+        None,
+        FacetedFaceColors,
+        ToonVertexShading,
+    }
+
+    [Serializable]
+    public struct StaticMeshPolicyMapping
+    {
+        public string name;
+        public string brushGuid;
+        public StaticMeshBakeMode Mode;
+    }
+
+    public enum TextureBakeMode
+    {
+        None,
+        UvBaseColor,
+        UvUnlit,
+        UvEmission,
+        Unsupported,
+        PetalGradient,
+    }
+
+    [Serializable]
+    public struct TextureBakePolicyMapping
+    {
+        public string name;
+        public string brushGuid;
+        public TextureBakeMode Mode;
+        public int BakePass;
+        public bool ForceUnlit;
+        public string Reason;
+    }
+
     void Start()
     {
         m_Instance = this;
@@ -32,9 +71,36 @@ public class BrushBaker : MonoBehaviour
 
     public bool TryGetMapping(string brushGuid, out ComputeShaderMapping mapping)
     {
+        return TryGetMapping(computeShaders, brushGuid, out mapping);
+    }
+
+    public bool TryGetStaticMapping(string brushGuid, out ComputeShaderMapping mapping)
+    {
+        return TryGetMapping(staticComputeShaders, brushGuid, out mapping);
+    }
+
+    public bool TryGetStaticMeshPolicy(
+        string brushGuid, out StaticMeshPolicyMapping policy)
+    {
+        policy = default;
+        if (staticMeshPolicies == null) return false;
+        foreach (StaticMeshPolicyMapping candidate in staticMeshPolicies)
+        {
+            if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                policy = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool TryGetMapping(
+        List<ComputeShaderMapping> mappings, string brushGuid, out ComputeShaderMapping mapping)
+    {
         mapping = default;
-        if (computeShaders == null) return false;
-        foreach (ComputeShaderMapping candidate in computeShaders)
+        if (mappings == null) return false;
+        foreach (ComputeShaderMapping candidate in mappings)
         {
             if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
             {
@@ -50,6 +116,27 @@ public class BrushBaker : MonoBehaviour
         get { return computeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
     }
 
+    public IEnumerable<ComputeShaderMapping> StaticMappings
+    {
+        get { return staticComputeShaders ?? Enumerable.Empty<ComputeShaderMapping>(); }
+    }
+
+    public bool TryGetTextureBakePolicy(
+        string brushGuid, out TextureBakePolicyMapping policy)
+    {
+        policy = default;
+        if (textureBakePolicies == null) return false;
+        foreach (TextureBakePolicyMapping candidate in textureBakePolicies)
+        {
+            if (string.Equals(candidate.brushGuid, brushGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                policy = candidate;
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Mesh ProcessMesh(Mesh mesh, string brushGuid)
     {
         if (mesh == null) return null;
@@ -60,6 +147,243 @@ public class BrushBaker : MonoBehaviour
             Debug.LogWarning($"No mapping found for brushGuid {brushGuid}");
             return mesh;
         }
+
+        return ProcessMesh(mesh, mapping);
+    }
+
+    public Mesh ProcessMeshForStaticExport(
+        Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix)
+    {
+        int[] ignoredSourceVertexIndices;
+        return ProcessMeshForStaticExport(
+            mesh, brushGuid, material, localToWorldMatrix, out ignoredSourceVertexIndices);
+    }
+
+    public Mesh ProcessMeshForStaticExport(
+        Mesh mesh, string brushGuid, Material material, Matrix4x4 localToWorldMatrix,
+        out int[] sourceVertexIndices)
+    {
+        sourceVertexIndices = null;
+        bool foundMapping = false;
+        if (TryGetStaticMapping(brushGuid, out var staticMapping))
+        {
+            Debug.Log(
+                $"[OB_STATIC_MESH] Applying static override {staticMapping.name} to brush {brushGuid}");
+            mesh = ProcessMesh(
+                mesh, staticMapping, localToWorldMatrix, localToWorldMatrix.inverse);
+            foundMapping = true;
+        }
+        else if (TryGetMapping(brushGuid, out var commonMapping))
+        {
+            mesh = ProcessMesh(
+                mesh, commonMapping, localToWorldMatrix, localToWorldMatrix.inverse);
+            foundMapping = true;
+        }
+
+        if (TryGetStaticMeshPolicy(brushGuid, out var staticPolicy))
+        {
+            Debug.Log($"[OB_STATIC_MESH] Applying {staticPolicy.name} to brush {brushGuid}");
+            mesh = ApplyStaticMeshPolicy(
+                mesh, material, localToWorldMatrix, staticPolicy.Mode,
+                out sourceVertexIndices);
+            foundMapping = true;
+        }
+
+        if (!foundMapping)
+        {
+            Debug.LogWarning($"[OB_STATIC_MESH] No mapping found for brush {brushGuid}");
+        }
+        return mesh;
+    }
+
+    private static Mesh ApplyStaticMeshPolicy(
+        Mesh mesh, Material material, Matrix4x4 localToWorldMatrix,
+        StaticMeshBakeMode mode, out int[] sourceVertexIndices)
+    {
+        sourceVertexIndices = null;
+        switch (mode)
+        {
+            case StaticMeshBakeMode.FacetedFaceColors:
+                return BakeFacetedFaceColors(
+                    mesh, material, localToWorldMatrix, out sourceVertexIndices);
+            case StaticMeshBakeMode.ToonVertexShading:
+                return BakeToonVertexShading(mesh, localToWorldMatrix);
+            default:
+                return mesh;
+        }
+    }
+
+    private static Mesh BakeToonVertexShading(Mesh mesh, Matrix4x4 localToWorldMatrix)
+    {
+        Vector3[] normals = mesh.normals;
+        if (normals.Length != mesh.vertexCount)
+        {
+            Debug.LogWarning($"[OB_STATIC_MESH] Toon mesh {mesh.name} has no vertex normals");
+            return mesh;
+        }
+
+        Color[] colors = mesh.colors;
+        if (colors.Length != mesh.vertexCount)
+        {
+            colors = Enumerable.Repeat(Color.white, mesh.vertexCount).ToArray();
+        }
+
+        Matrix4x4 normalMatrix = localToWorldMatrix.inverse.transpose;
+        for (int i = 0; i < colors.Length; i++)
+        {
+            float light = normalMatrix.MultiplyVector(normals[i]).normalized.y * 0.2f;
+            Color color = colors[i];
+            color.r = Mathf.Clamp01(color.r + light);
+            color.g = Mathf.Clamp01(color.g + light);
+            color.b = Mathf.Clamp01(color.b + light);
+            colors[i] = color;
+        }
+        mesh.colors = colors;
+        Debug.Log($"[OB_STATIC_MESH] Baked Toon vertex shading into {colors.Length} vertices");
+        return mesh;
+    }
+
+    private static Mesh BakeFacetedFaceColors(
+        Mesh mesh, Material material, Matrix4x4 localToWorldMatrix,
+        out int[] sourceVertexIndices)
+    {
+        sourceVertexIndices = null;
+        if (material == null || !material.HasProperty("_ColorX") ||
+            !material.HasProperty("_ColorY") || !material.HasProperty("_ColorZ"))
+        {
+            Debug.LogWarning(
+                $"[OB_STATIC_MESH] Faceted material properties are unavailable on {material?.name}");
+            return mesh;
+        }
+
+        var sourceVertices = mesh.vertices;
+        var sourceNormals = mesh.normals;
+        var sourceTangents = mesh.tangents;
+        var sourceColors = mesh.colors;
+        var sourceUvs = new List<Vector4>[8];
+        for (int channel = 0; channel < sourceUvs.Length; channel++)
+        {
+            sourceUvs[channel] = new List<Vector4>();
+            mesh.GetUVs(channel, sourceUvs[channel]);
+        }
+
+        var vertices = new List<Vector3>();
+        var normals = new List<Vector3>();
+        var tangents = new List<Vector4>();
+        var colors = new List<Color>();
+        var uvs = Enumerable.Range(0, 8).Select(_ => new List<Vector4>()).ToArray();
+        var submeshTriangles = new List<int>[mesh.subMeshCount];
+        var destinationSources = new List<int>();
+
+        Color colorX = material.GetColor("_ColorX");
+        Color colorY = material.GetColor("_ColorY");
+        Color colorZ = material.GetColor("_ColorZ");
+        Matrix4x4 normalMatrix = localToWorldMatrix.inverse.transpose;
+
+        for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+        {
+            int[] sourceTriangles = mesh.GetTriangles(submesh);
+            var triangles = new List<int>(sourceTriangles.Length);
+            submeshTriangles[submesh] = triangles;
+            for (int triangle = 0; triangle < sourceTriangles.Length; triangle += 3)
+            {
+                int index0 = sourceTriangles[triangle];
+                int index1 = sourceTriangles[triangle + 1];
+                int index2 = sourceTriangles[triangle + 2];
+                Vector3 edge1 = sourceVertices[index1] - sourceVertices[index0];
+                Vector3 edge2 = sourceVertices[index2] - sourceVertices[index0];
+                Vector3 faceNormal = Vector3.Cross(edge1, edge2).normalized;
+                if (sourceNormals.Length == sourceVertices.Length)
+                {
+                    Vector3 averageNormal =
+                        sourceNormals[index0] + sourceNormals[index1] + sourceNormals[index2];
+                    if (Vector3.Dot(faceNormal, averageNormal) < 0)
+                    {
+                        faceNormal = -faceNormal;
+                    }
+                }
+                Vector3 worldNormal = normalMatrix.MultiplyVector(faceNormal).normalized;
+                Color faceColor = new Color(
+                    Mathf.Clamp01(colorX.r * worldNormal.x + colorY.r * worldNormal.y +
+                        colorZ.r * worldNormal.z),
+                    Mathf.Clamp01(colorX.g * worldNormal.x + colorY.g * worldNormal.y +
+                        colorZ.g * worldNormal.z),
+                    Mathf.Clamp01(colorX.b * worldNormal.x + colorY.b * worldNormal.y +
+                        colorZ.b * worldNormal.z),
+                    1);
+
+                AppendFacetedVertex(index0, faceColor, triangles);
+                AppendFacetedVertex(index1, faceColor, triangles);
+                AppendFacetedVertex(index2, faceColor, triangles);
+            }
+        }
+
+        string meshName = mesh.name;
+        mesh.Clear();
+        mesh.name = meshName;
+        mesh.indexFormat = vertices.Count > ushort.MaxValue
+            ? UnityEngine.Rendering.IndexFormat.UInt32
+            : UnityEngine.Rendering.IndexFormat.UInt16;
+        mesh.SetVertices(vertices);
+        if (normals.Count == vertices.Count) mesh.SetNormals(normals);
+        if (tangents.Count == vertices.Count) mesh.SetTangents(tangents);
+        mesh.SetColors(colors);
+        for (int channel = 0; channel < uvs.Length; channel++)
+        {
+            if (uvs[channel].Count == vertices.Count)
+            {
+                mesh.SetUVs(channel, uvs[channel]);
+            }
+        }
+        mesh.subMeshCount = submeshTriangles.Length;
+        for (int submesh = 0; submesh < submeshTriangles.Length; submesh++)
+        {
+            mesh.SetTriangles(submeshTriangles[submesh], submesh, false);
+        }
+        mesh.RecalculateBounds();
+        sourceVertexIndices = destinationSources.ToArray();
+        Debug.Log($"[OB_STATIC_MESH] Baked faceted colors: {sourceVertices.Length} source vertices, {vertices.Count} split vertices");
+        return mesh;
+
+        void AppendFacetedVertex(
+            int sourceIndex, Color faceColor, List<int> destinationTriangles)
+        {
+            int destinationIndex = vertices.Count;
+            vertices.Add(sourceVertices[sourceIndex]);
+            destinationSources.Add(sourceIndex);
+            destinationTriangles.Add(destinationIndex);
+            if (sourceNormals.Length == sourceVertices.Length)
+            {
+                normals.Add(sourceNormals[sourceIndex]);
+            }
+            if (sourceTangents.Length == sourceVertices.Length)
+            {
+                tangents.Add(sourceTangents[sourceIndex]);
+            }
+            float alpha = sourceColors.Length == sourceVertices.Length
+                ? sourceColors[sourceIndex].a : 1;
+            faceColor.a = alpha;
+            colors.Add(faceColor);
+            for (int channel = 0; channel < sourceUvs.Length; channel++)
+            {
+                if (sourceUvs[channel].Count == sourceVertices.Length)
+                {
+                    uvs[channel].Add(sourceUvs[channel][sourceIndex]);
+                }
+            }
+        }
+    }
+
+    private Mesh ProcessMesh(Mesh mesh, ComputeShaderMapping mapping)
+    {
+        return ProcessMesh(
+            mesh, mapping, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+    }
+
+    private Mesh ProcessMesh(
+        Mesh mesh, ComputeShaderMapping mapping,
+        Matrix4x4 localToWorldMatrix, Matrix4x4 worldToLocalMatrix)
+    {
 
         ComputeShader computeShader = mapping.computeShader;
         if (computeShader == null) return mesh;
@@ -104,8 +428,8 @@ public class BrushBaker : MonoBehaviour
 
         try
         {
-            computeShader.SetMatrix("TransformObjectToWorld", transform.localToWorldMatrix);
-            computeShader.SetMatrix("TransformWorldToObject", transform.worldToLocalMatrix);
+            computeShader.SetMatrix("TransformObjectToWorld", localToWorldMatrix);
+            computeShader.SetMatrix("TransformWorldToObject", worldToLocalMatrix);
 
             vertexBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
             vertexBuffer.SetData(verticesArray);

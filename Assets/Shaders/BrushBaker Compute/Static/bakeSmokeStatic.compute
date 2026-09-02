@@ -1,0 +1,74 @@
+#pragma kernel CSMain
+
+#include "../../../ThirdParty/Shaders/Noise.cginc"
+
+uniform float4x4 TransformObjectToWorld;
+uniform float4x4 TransformWorldToObject;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+RWStructuredBuffer<float4> uv1Buffer;
+
+uint _VertexCount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+static const float kSmokeExportTime = 0.0;
+static const float kSmokeCurlScale = 5.0;
+static const float kDecimetersToWorldUnits = 1.0;
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _VertexCount) return;
+
+    float3 vertex = vertexBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    float4 originWS = mul(TransformObjectToWorld, float4(uv1.xyz, 1.0));
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (6 * uv0.x + 10 * uv0.y == 0 or 6 or 10 or 16) then (length, length, 0)
+    // if (uv0.x + uv0.y == 8) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 3 or 13) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 5 or 11) then (-length, length, 0)
+
+    float uv0Sum = 6 * uv0.x + 10 * uv0.y;
+
+    float3 preBillboard = float3(length, -length, 0);
+
+    if (uv0Sum == 5 || uv0Sum == 11)
+    {
+        preBillboard = float3(-length, length, 0);
+    }
+    else if (uv0Sum == 8)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 0 || uv0Sum == 6 || uv0Sum == 10 || uv0Sum == 16)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Sum == 3 || uv0Sum == 13)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // Bake a fixed-time snapshot of Smoke's animated curl displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float d = 30;
+    float freq = 0.1;
+    float3 disp = float3(1, 0, 0) * curlX(originWS.xyz * freq + kSmokeExportTime, d);
+    disp += float3(0, 1, 0) * curlY(originWS.xyz * freq + kSmokeExportTime, d);
+    disp += float3(0, 0, 1) * curlZ(originWS.xyz * freq + kSmokeExportTime, d);
+    originWS.xyz += disp * kSmokeCurlScale * kDecimetersToWorldUnits;
+
+    vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
+    vertexBuffer[id.x] = vertex;
+
+    uv1.x = uv0.z;
+    uv1Buffer[id.x] = uv1;
+}

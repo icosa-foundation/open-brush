@@ -1,0 +1,80 @@
+#pragma kernel CSMain
+
+uniform float4x4 TransformObjectToWorld;
+uniform float4x4 TransformWorldToObject;
+
+RWStructuredBuffer<float3> vertexBuffer;
+StructuredBuffer<float3> normalBuffer;
+StructuredBuffer<float4> colorBuffer;
+StructuredBuffer<float3> uvBuffer;
+StructuredBuffer<float4> uv1Buffer;
+
+uint _VertexCount;
+
+float _SqueezeAmount;
+
+static const float kRecipSquareRootOfTwo = 0.70710678;
+static const float kRisingBubblesExportTime = 0.0;
+static const float kScrollRate = 0.1;
+static const float kScrollJitterIntensity = 0.2;
+static const float kScrollJitterFrequency = 5.0;
+static const float3 kScrollDistance = float3(0.5, 5.0, 0.0);
+static const float kDecimetersToWorldUnits = 1.0;
+
+
+[numthreads(8, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= _VertexCount) return;
+
+    float3 vertex = vertexBuffer[id.x];
+    float3 normal = normalBuffer[id.x];
+    float4 color = colorBuffer[id.x];
+    float3 uv0 = uvBuffer[id.x];
+    float4 uv1 = uv1Buffer[id.x];
+
+    // according to paricles.cginc, the originWS for ParticleVertexWithSpread_t
+    // is the normal.xyz instead of uv1
+    float4 originWS = mul(TransformObjectToWorld, float4(normal.xyz, 1.0));
+    // float4 originWS = mul(TransformObjectToWorld, float4(uv1, 1.0));
+
+    float4 posWS = mul(TransformObjectToWorld, float4(vertex, 1.0));
+    float length = distance(originWS.xyz, posWS.xyz);
+    length *= kRecipSquareRootOfTwo;
+
+    // if (uv0.x + uv0.y == 0) then (-length, -length, 0)
+    // if (uv0.x + uv0.y == 2) then (length, length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == -1) then (length, -length, 0)
+    // if (uv0.x + uv0.y == 1 && uv0.x - uv0.y == 1) then (-length, length, 0)
+
+    float uv0Sum = uv0.x + uv0.y;
+    float uv0Dif = uv0.x - uv0.y;
+
+    float3 preBillboard = float3(-length, length, 0);
+
+    if (uv0Sum == 0)
+    {
+        preBillboard = float3(-length, -length, 0);
+    }
+    else if (uv0Sum == 2)
+    {
+        preBillboard = float3(length, length, 0);
+    }
+    else if (uv0Dif == -1)
+    {
+        preBillboard = float3(length, -length, 0);
+    }
+
+    // Bake a fixed-time snapshot of Rising Bubbles' animated center displacement.
+    // The runtime shader animates this with GetTime(); export uses time 0 as a static mesh substitute.
+    float seed = color.a;
+    float t01 = fmod(kRisingBubblesExportTime * kScrollRate + seed * 10.0, 1.0);
+    float t2 = kRisingBubblesExportTime / 3.0;
+    float3 disp = kScrollDistance * t01;
+    disp.x += sin(t01 * kScrollJitterFrequency + seed * 10.0 + t2 + originWS.z) * kScrollJitterIntensity;
+    disp.y += (fmod(seed * 100.0, 1.0) - 0.5) * kScrollDistance.y * t01;
+    disp.z += cos(t01 * kScrollJitterFrequency + seed * 7.0 + t2 + originWS.x) * kScrollJitterIntensity;
+    originWS.xyz += disp * kDecimetersToWorldUnits;
+
+    vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
+    vertexBuffer[id.x] = vertex;
+}
