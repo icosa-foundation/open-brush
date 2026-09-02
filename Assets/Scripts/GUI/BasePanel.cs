@@ -108,6 +108,7 @@ namespace TiltBrush
             BrushLab,
             Multiplayer,
             WebcamPanel = 5200,
+            InspectorPanel = 5700,
             Scripts = 6000,
             SnapSettings = 8000,
             StencilSettings = 20200,
