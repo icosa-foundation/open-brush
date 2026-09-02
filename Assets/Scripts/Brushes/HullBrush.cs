@@ -138,8 +138,8 @@ namespace TiltBrush
         override public bool ShouldCurrentLineEnd()
         {
             // Reminder: it's ok for this method to be nondeterministic.
-            int localMaxKnotCount = App.PlatformConfig.HullBrushMaxKnots;
-            int maxVertInputCount = App.PlatformConfig.HullBrushMaxVertInputs;
+            int localMaxKnotCount = UserConfig.PerformanceOverrides.HullBrushMaxKnots;
+            int maxVertInputCount = UserConfig.PerformanceOverrides.HullBrushMaxVertInputs;
             int hullInputSize = m_AllVertices.Count(v => !v.DefinitelyInterior);
 
             // For Hull Brush, the limiting factor is the number of points we send to the hull

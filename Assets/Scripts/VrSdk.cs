@@ -941,6 +941,27 @@ namespace TiltBrush
 #endif // OCULUS_SUPPORTED
         }
 
+        public void SetDynamicFoveation(bool enabled)
+        {
+#if OCULUS_SUPPORTED
+            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
+            {
+                OVRManager.useDynamicFoveatedRendering = enabled;
+            }
+#endif // OCULUS_SUPPORTED
+        }
+
+        public void SetDynamicResolution(bool enabled)
+        {
+#if OCULUS_SUPPORTED
+            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware &&
+                OVRManager.instance != null)
+            {
+                OVRManager.instance.enableDynamicResolution = enabled;
+            }
+#endif // OCULUS_SUPPORTED
+        }
+
         /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
         public float GetGpuUtilization()
         {

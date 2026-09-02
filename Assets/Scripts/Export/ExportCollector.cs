@@ -331,7 +331,7 @@ namespace TiltBrush
                         ExportUtils.ReverseTriangleWinding(geometry, 1, 2);
                     }
 
-                    if (App.PlatformConfig.EnableExportMemoryOptimization &&
+                    if (UserConfig.PerformanceOverrides.EnableExportMemoryOptimization &&
                         payload.temporaryDirectory != null)
                     {
                         string filename = Path.Combine(
