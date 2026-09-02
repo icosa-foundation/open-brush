@@ -423,6 +423,15 @@
       "dependencies": {},
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
+    "jp.keijiro.klak.ndi": {
+      "version": "2.1.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.screencapture": "1.0.0"
+      },
+      "url": "https://registry.npmjs.com"
+    },
     "org.khronos.unitygltf": {
       "version": "https://github.com/icosa-mirror/UnityGLTF.git#open-brush/plugin-settings-dedupe",
       "depth": 0,
