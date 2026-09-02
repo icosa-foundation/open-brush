@@ -169,7 +169,11 @@ namespace TiltBrush
             var endPoint = Vector3.up + Vector3.one;
             LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptVector}", endPoint - startPoint);
             LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(endPoint - startPoint));
-            LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.T(endPoint));
+            var executionResult = LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.T(endPoint));
+            if (executionResult != null)
+            {
+                LuaManager.Instance.DrawToolScriptResult(executionResult);
+            }
         }
     }
 
