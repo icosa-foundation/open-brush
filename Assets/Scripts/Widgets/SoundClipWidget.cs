@@ -479,19 +479,31 @@ namespace TiltBrush
         /// and falling back to m_InitialState or defaults otherwise.
         public (float volume, bool loop, float spatialBlend, float minDistance, float maxDistance) GetAudioExportSettings()
         {
+            var state = GetAudioSaveState();
+            return (state.volume, state.loop, state.spatialBlend,
+                state.minDistance, state.maxDistance);
+        }
+
+        /// Returns the complete serializable audio state, including values that are waiting for
+        /// asynchronous controller initialization.
+        public (bool paused, float time, float volume, bool loop, float spatialBlend,
+            float minDistance, float maxDistance) GetAudioSaveState()
+        {
             if (SoundClipController != null && SoundClipController.Initialized)
             {
-                return (SoundClipController.Volume, SoundClipController.Loop,
+                return (!SoundClipController.Playing, SoundClipController.Time,
+                    SoundClipController.Volume, SoundClipController.Loop,
                     SoundClipController.SpatialBlend, SoundClipController.MinDistance,
                     SoundClipController.MaxDistance);
             }
             if (m_InitialState != null)
             {
-                return (m_InitialState.Volume, m_InitialState.Loop,
+                return (m_InitialState.Paused, m_InitialState.Time ?? 0f,
+                    m_InitialState.Volume, m_InitialState.Loop,
                     m_InitialState.SpatialBlend, m_InitialState.MinDistance,
                     m_InitialState.MaxDistance);
             }
-            return (1f, true, 0f, 1f, 500f);
+            return (false, 0f, 1f, true, 0f, 1f, 500f);
         }
     }
 } // namespace TiltBrush
