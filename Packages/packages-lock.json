@@ -6,6 +6,13 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.esprogram.inkpainter": {
+      "version": "https://github.com/icosa-mirror/InkPainter.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "1d990c55323f8948e4fd28f3c0b34999461706dc"
+    },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
       "depth": 0,

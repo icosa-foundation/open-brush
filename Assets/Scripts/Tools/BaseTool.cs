@@ -49,6 +49,7 @@ namespace TiltBrush
             CameraPathTool,
             FlyTool,
             ManualColocationTool = 1022,
+            TexturePaintTool = 5900,
             ScriptedTool = 6001,
             SnipTool = 11000,
             JoinTool = 11001

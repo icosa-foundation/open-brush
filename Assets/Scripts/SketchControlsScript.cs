@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Es.InkPainter;
 using OpenBrush.Multiplayer;
 using System;
 using System.Collections;
@@ -187,6 +188,9 @@ namespace TiltBrush
             OpenSketchbookPanelSearchPopup = 5604,
             OpenSketchbookPanelFilterPopup = 5605,
             OpenDirectorChooserPopup = 5800,
+            EnableTexturePainting = 5900,
+            OpenUvMappingPopup = 5901,
+            OpenTextureBrushSettingsPopup = 5902,
             OpenScriptsCommandsList = 6000,
             OpenScriptsList = 6001,
             OpenExampleScriptsList = 6002,
@@ -513,6 +517,7 @@ namespace TiltBrush
         private int m_WidgetGpuIntersectionLayer;
 
         private GrabWidget m_CurrentGrabWidget;
+        private GrabWidget m_LastGrabWidget;
         private GrabWidget m_MaybeDriftingGrabWidget; // use only to clear drift
 
         // References to widgets, cached in the UpdateGrab_None, to be used by helper functions
@@ -780,6 +785,7 @@ namespace TiltBrush
             return m_CurrentGazeObject > -1 &&
                 m_PanelManager.GetAllPanels()[m_CurrentGazeObject].m_Panel == panel;
         }
+        public GrabWidget LastGrabWidget => m_LastGrabWidget;
 
         public SaveIconTool GetSaveIconTool()
         {
@@ -1859,6 +1865,7 @@ namespace TiltBrush
                         if (!m_GrabBrush.eatInput && InputManager.Brush.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetBrush;
+                            m_LastGrabWidget = m_CurrentGrabWidget;
                             if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
                             {
                                 m_GrabBrush.grabbingGroup = true;
@@ -1900,6 +1907,7 @@ namespace TiltBrush
                         if (!m_GrabWand.eatInput && InputManager.Wand.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetWand;
+                            m_LastGrabWidget = m_CurrentGrabWidget;
                             if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
                             {
                                 m_GrabWand.grabbingGroup = true;
@@ -1960,6 +1968,7 @@ namespace TiltBrush
             {
                 // Keep holding on to our widget.
                 m_CurrentGrabWidget = rPrevGrabWidget;
+                m_LastGrabWidget = m_CurrentGrabWidget;
                 m_CurrentGrabWidget.Activate(true);
                 m_CurrentGrabWidget.UserInteracting(true, m_GrabWidgetOneHandInfo.m_Name);
 
@@ -2066,6 +2075,7 @@ namespace TiltBrush
         {
             //keep holding on to our widget
             m_CurrentGrabWidget = rPrevGrabWidget;
+            m_LastGrabWidget = m_CurrentGrabWidget;
             m_CurrentGrabWidget.Activate(true);
             m_CurrentGrabWidget.UserInteracting(true, m_GrabWidgetOneHandInfo.m_Name);
 
@@ -4848,6 +4858,13 @@ namespace TiltBrush
                         DismissPopupOnCurrentGazeObject(false);
                         break;
                     }
+                case GlobalCommands.EnableTexturePainting:
+                    var cmd = new EnableTexturePaintingCommand(LastGrabWidget);
+                    if (cmd.Widget != null)
+                    {
+                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                    }
+                    break;
                 case GlobalCommands.EditMultiplayerRoomName:
                     {
                         var panel = (MultiplayerPanel)m_PanelManager.GetActivePanelByType(BasePanel.PanelType.Multiplayer);
@@ -5418,6 +5435,9 @@ namespace TiltBrush
                     return App.DriveSync.IsFolderOfTypeSynced((DriveSync.SyncedFolderType)iParam);
                 case GlobalCommands.GoogleDriveSync: return App.DriveSync.SyncEnabled;
                 case GlobalCommands.RecordCameraPath: return VideoRecorderUtils.ActiveVideoRecording != null;
+                case GlobalCommands.EnableTexturePainting:
+                    return LastGrabWidget != null &&
+                        LastGrabWidget.GetComponentInChildren<InkCanvas>() != null;
             }
             return false;
         }
@@ -5571,6 +5591,8 @@ namespace TiltBrush
                     return m_WidgetManager.AnyActivePathHasAKnot();
                 case GlobalCommands.GoogleDriveSync:
                     return App.GoogleIdentity.LoggedIn;
+                case GlobalCommands.EnableTexturePainting:
+                    return LastGrabWidget != null && TexturePainterManager.m_Instance.CanBeMadePaintable(LastGrabWidget);
                 case GlobalCommands.RecordCameraPath:
                     return m_WidgetManager.CameraPathsVisible;
 

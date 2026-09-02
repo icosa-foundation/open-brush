@@ -281,7 +281,8 @@ namespace TiltBrush
         {
             if (ActiveTool.m_Type != BaseTool.ToolType.RepaintTool &&
                 ActiveTool.m_Type != BaseTool.ToolType.RecolorTool &&
-                ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool)
+                ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool &&
+                ActiveTool.m_Type != BaseTool.ToolType.TexturePaintTool)
             {
                 EnableDefaultTool();
             }
