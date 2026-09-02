@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -434,6 +435,9 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public List<string> NotSplittableMeshPaths { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] FrameIds { get; set; }
     }
 
     [Serializable]
@@ -603,6 +607,19 @@ namespace TiltBrush
         public CameraPathRotationKnotMetadata[] RotationKnots { get; set; }
         public CameraPathSpeedKnotMetadata[] SpeedKnots { get; set; }
         public CameraPathFovKnotMetadata[] FovKnots { get; set; }
+
+        public bool belongsAnimation;
+        public (int, int) timelineLoc;
+    }
+
+    [Serializable]
+    public class AnimationPathMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public CameraPathPositionKnotMetadata[] PathKnots { get; set; }
+        public CameraPathRotationKnotMetadata[] RotationKnots { get; set; }
+        public CameraPathSpeedKnotMetadata[] SpeedKnots { get; set; }
+        public CameraPathFovKnotMetadata[] FovKnots { get; set; }
     }
 
     [Serializable]
@@ -615,6 +632,52 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform Transform { get; set; }
     }
+
+
+    //  [Serializable]
+    // public class AnimationFrameMetadata
+    // {
+    //     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    //     public string Name;
+    //     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+
+    //     public List<int> frameLengths
+    //     public bool Visible;
+    // }
+
+    [Serializable]
+    public class AnimationSpanMetadata
+    {
+        public int Duration;
+    }
+
+    [Serializable]
+    public class AnimationTrackMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string Name;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+
+        // Legacy animation-branch metadata. Read-only compatibility: new sketches write Spans.
+        public List<int> frameLengths;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<AnimationSpanMetadata> Spans;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool Visible;
+    }
+    [Serializable]
+    public class AnimationMetadata
+    {
+        public const int CurrentVersion = 2;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int Version;
+        public AnimationTrackMetadata[] Tracks;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int numFrames;
+    }
+
 
     // TODO: deprecate (7.5b-only)
     // Left just to avoid breaking trusted testers' art
@@ -656,6 +719,7 @@ namespace TiltBrush
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
@@ -678,6 +742,8 @@ namespace TiltBrush
         public uint[] GroupIds { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int[] LayerIds { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] FrameIds { get; set; }
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
@@ -717,7 +783,28 @@ namespace TiltBrush
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
         public bool TwoSided { get; set; }
+    }
+
+    [Serializable]
+    public class TiltSoundClip
+    {
+        public string FilePath { get; set; } // relative to Media Library folder
+        public float AspectRatio { get; set; }
+        public bool Pinned;
+        public TrTransform Transform;
+        public bool Paused { get; set; }
+        public float Time { get; set; }
+        public float Volume { get; set; }
+        public bool Loop { get; set; } = true;
+        public float SpatialBlend { get; set; }
+        public float MinDistance { get; set; } = 1f;
+        public float MaxDistance { get; set; } = 500f;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
@@ -729,6 +816,7 @@ namespace TiltBrush
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
@@ -750,6 +838,7 @@ namespace TiltBrush
         public bool Pinned { get; set; }
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
+        public int FrameId { get; set; }
     }
 
     [Serializable]
@@ -777,6 +866,7 @@ namespace TiltBrush
         {
             return SceneTransformInRoomSpace != TrTransform.identity;
         }
+
         // This was the old name of ThumbnailCameraTransformInRoomSpace.
         [Serializable]
         public struct UnusedSketchTransform
@@ -860,7 +950,12 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public LayerMetadata[] Layers { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+
+        public AnimationMetadata AnimationTracks { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public CameraPathMetadata[] AnimationPaths { get; set; }
 
         // Added for 24.0b Open-source edition
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -870,6 +965,8 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltText[] TextWidgets { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltSoundClip[] SoundClips { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltPortal[] Portals { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

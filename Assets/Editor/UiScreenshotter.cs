@@ -1,4 +1,4 @@
-﻿// Copyright 2023 The Tilt Brush Authors
+// Copyright 2023 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -33,14 +34,36 @@ namespace TiltBrush
         private const string kPostEffectsDisabledDirectory = "brushes-postfx-disabled";
         private const string kPostEffectsEnabledDirectory = "brushes-postfx-enabled";
         private const string kWireframeDirectory = "brushes-wireframe";
+        private const string kAaRawDirectory = "brushes-postfx-disabled-aa-raw";
+        private const string kAaSupersampledDirectory =
+            "brushes-postfx-disabled-aa-supersampled";
+        private const string kAaFullDirectory = "brushes-postfx-disabled-aa-full";
+        private const string kLogPrefix = "_ui_screenshotter_20260520_";
+        private const string kAaDiagnosticLogPrefix = "_brush_aa_diagnostic_20260901_";
+        private const string kParityCaptureLogPrefix = "_brush_parity_capture_20260901_";
+        private const string kToonOutlineLogPrefix = "_toon_outline_diagnostic_20260901_";
+        private const string kToonOutlineDirectory = "brushes-toon-outline-diagnostic";
+        private const string kUrpPostLogPrefix = "[OB_URP_POST]";
         private const string kMeshFixtureOutputDirectory = "Support/BrushFixtures";
         private static readonly Color kBrushReferenceColor =
             new Color32(51, 51, 230, 255);
+        private static readonly HashSet<string> kAaDiagnosticBrushes = new HashSet<string>
+        {
+            "Electricity",
+            "Marker",
+            "Rainbow"
+        };
+        private static readonly HashSet<string> kToonOutlineDiagnosticBrushes = new HashSet<string>
+        {
+            "Toon",
+            "TubeToonInverted"
+        };
 
         private enum BrushScreenshotRenderMode
         {
             Material,
-            Wireframe
+            Wireframe,
+            ToonOutlineDiagnostic
         }
 
         private static readonly string[] kWireframeWhiteColorProperties =
@@ -97,6 +120,23 @@ namespace TiltBrush
             GenerateBrushScreenShots(enablePostProcessing: false, BrushScreenshotRenderMode.Wireframe);
         }
 
+        [MenuItem("Open Brush/Screenshots/Generate Brush AA Diagnostic Screenshots")]
+        static void GenerateBrushAaDiagnosticScreenShots()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.Material,
+                captureAaDiagnostics: true);
+        }
+
+        [MenuItem("Open Brush/Screenshots/Generate Toon Outline Diagnostic Screenshots")]
+        static void GenerateToonOutlineDiagnosticScreenShots()
+        {
+            GenerateBrushScreenShots(
+                enablePostProcessing: false,
+                BrushScreenshotRenderMode.ToonOutlineDiagnostic);
+        }
+
         // Run in Play Mode. Writes one brush-<durable-name>.mesh.json fixture and,
         // when the stroke has geometry, one GLB per catalog brush to
         // Support/BrushFixtures. Each JSON file records the deterministic stroke
@@ -119,7 +159,8 @@ namespace TiltBrush
             bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode,
             bool captureScreenshots = true,
-            bool captureMeshFixtures = false)
+            bool captureMeshFixtures = false,
+            bool captureAaDiagnostics = false)
         {
             if (!IsPlaying()) return;
 
@@ -141,7 +182,8 @@ namespace TiltBrush
                 enablePostProcessing,
                 renderMode,
                 captureScreenshots,
-                captureMeshFixtures);
+                captureMeshFixtures,
+                captureAaDiagnostics);
         }
 
         [MenuItem("Open Brush/Screenshots/Generate Environment Screenshots")]
@@ -199,20 +241,53 @@ namespace TiltBrush
             bool enablePostProcessing,
             BrushScreenshotRenderMode renderMode,
             bool captureScreenshots,
-            bool captureMeshFixtures)
+            bool captureMeshFixtures,
+            bool captureAaDiagnostics)
         {
             await Task.Delay(3000);
             var cam = captureScreenshots ? InitScreenshotCamera() : null;
+            bool overrideCameraBackground =
+                cam != null && renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic;
+            CameraClearFlags previousClearFlags = default;
+            Color previousBackgroundColor = default;
+            if (overrideCameraBackground)
+            {
+                previousClearFlags = cam.clearFlags;
+                previousBackgroundColor = cam.backgroundColor;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color32(128, 128, 128, 255);
+            }
 
+            string screenshotDirectory = null;
             if (captureScreenshots)
             {
-                string screenshotDirectory = GetBrushScreenshotDirectory(
-                    enablePostProcessing,
-                    renderMode);
-                Debug.Log(
-                    $"[BrushScreenshotCapture] Generating {renderMode} screenshots in " +
-                    $"{screenshotDirectory} with post effects " +
-                    $"{(enablePostProcessing ? "enabled" : "disabled")}.");
+                if (captureAaDiagnostics)
+                {
+                    Debug.Log(
+                        $"{kAaDiagnosticLogPrefix} Generating raw, supersampled, and full-AA " +
+                        "screenshots for Electricity, Marker, and Rainbow.");
+                }
+                else
+                {
+                    screenshotDirectory = GetBrushScreenshotDirectory(
+                        enablePostProcessing,
+                        renderMode);
+                    bool useParityCapture =
+                        !enablePostProcessing &&
+                        renderMode != BrushScreenshotRenderMode.Wireframe;
+                    string captureSettings = useParityCapture
+                        ? "1x resolution and 1x MSAA"
+                        : $"{kScreenshotSupersampling}x resolution and " +
+                          $"{kScreenshotMsaaSamples}x MSAA";
+                    string logPrefix = renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic
+                        ? kToonOutlineLogPrefix
+                        : kParityCaptureLogPrefix;
+                    Debug.Log(
+                        $"{logPrefix} Generating {renderMode} screenshots in " +
+                        $"{screenshotDirectory} with post effects " +
+                        $"{(enablePostProcessing ? "enabled" : "disabled")}, using " +
+                        $"{captureSettings}.");
+                }
             }
 
             var path = CreateBrushReferencePath();
@@ -234,6 +309,20 @@ namespace TiltBrush
             {
                 foreach (var brush in BrushCatalog.m_Instance.GetTagFilteredBrushList())
                 {
+                    if (captureAaDiagnostics &&
+                        !kAaDiagnosticBrushes.Contains(brush.DurableName))
+                    {
+                        continue;
+                    }
+                    if (renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic &&
+                        !kToonOutlineDiagnosticBrushes.Contains(brush.DurableName))
+                    {
+                        continue;
+                    }
+                    if (!CanGenerateBrushScreenshot(brush))
+                    {
+                        continue;
+                    }
                     PointerManager.m_Instance.SetBrushForAllPointers(brush);
                     await Task.Delay(100);
                     var colors = new List<Color> { kBrushReferenceColor };
@@ -268,16 +357,35 @@ namespace TiltBrush
                         }
                         if (captureScreenshots)
                         {
-                            SaveCurrentView(
-                                cam,
-                                GetBrushScreenshotFileName(brush),
-                                1024,
-                                1024,
-                                enablePostProcessing,
-                                renderMode == BrushScreenshotRenderMode.Wireframe,
-                                GetBrushScreenshotDirectory(
+                            if (captureAaDiagnostics)
+                            {
+                                SaveBrushAaDiagnosticViews(
+                                    cam,
+                                    brush,
                                     enablePostProcessing,
-                                    renderMode));
+                                    renderMode == BrushScreenshotRenderMode.Wireframe);
+                            }
+                            else
+                            {
+                                bool useParityCapture =
+                                    !enablePostProcessing &&
+                                    renderMode != BrushScreenshotRenderMode.Wireframe;
+                                SaveCurrentView(
+                                    cam,
+                                    GetBrushScreenshotFileName(brush),
+                                    1024,
+                                    1024,
+                                    enablePostProcessing,
+                                    renderMode == BrushScreenshotRenderMode.Wireframe,
+                                    screenshotDirectory,
+                                    supersampling: useParityCapture
+                                        ? 1
+                                        : kScreenshotSupersampling,
+                                    msaaSamples: useParityCapture
+                                        ? 1
+                                        : kScreenshotMsaaSamples,
+                                    overrideUrpPipelineMsaa: useParityCapture);
+                            }
                         }
                     }
                     finally
@@ -295,6 +403,11 @@ namespace TiltBrush
                     CameraConfig.PostEffects = wasPostEffects;
                 }
                 batchManager.OneStrokePerBatch = wasOneStrokePerBatch;
+                if (overrideCameraBackground)
+                {
+                    cam.clearFlags = previousClearFlags;
+                    cam.backgroundColor = previousBackgroundColor;
+                }
             }
         }
 
@@ -331,6 +444,36 @@ namespace TiltBrush
             return path;
         }
 
+        private static bool CanGenerateBrushScreenshot(BrushDescriptor brush)
+        {
+            if (brush == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Skipping null brush descriptor.");
+                return false;
+            }
+
+            try
+            {
+                Material material = brush.Material;
+                if (material == null || !material)
+                {
+                    Debug.LogWarning(
+                        $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                        "because its material is missing.");
+                    return false;
+                }
+            }
+            catch (MissingReferenceException exception)
+            {
+                Debug.LogWarning(
+                    $"{kLogPrefix} Skipping brush '{brush.name}' ({brush.m_DurableName}, {brush.m_Guid}) " +
+                    $"because its material reference is invalid: {exception.Message}");
+                return false;
+            }
+
+            return true;
+        }
+
         private static string GetBrushScreenshotFileName(BrushDescriptor brush)
         {
             return $"brush-{brush.DurableName}.png";
@@ -343,6 +486,10 @@ namespace TiltBrush
             if (renderMode == BrushScreenshotRenderMode.Wireframe)
             {
                 return kWireframeDirectory;
+            }
+            if (renderMode == BrushScreenshotRenderMode.ToonOutlineDiagnostic)
+            {
+                return kToonOutlineDirectory;
             }
             return enablePostProcessing
                 ? kPostEffectsEnabledDirectory
@@ -484,13 +631,9 @@ namespace TiltBrush
                     {
                         continue;
                     }
-                    stroke.SetShaderFloat("_TimeBlend", 1f);
-                    stroke.SetShaderVector(
-                        "_TimeOverrideValue",
-                        timeValue.x,
-                        timeValue.y,
-                        timeValue.z,
-                        timeValue.w);
+                    material.EnableKeyword("SHADER_SCRIPTING_ON");
+                    material.SetFloat("_TimeBlend", 1f);
+                    material.SetVector("_TimeOverrideValue", timeValue);
                 }
                 catch (StrokeShaderModifierException)
                 {
@@ -508,59 +651,46 @@ namespace TiltBrush
             }
         }
 
-        private static readonly Type[] kBuiltInPostEffectComponents =
+        private static void SaveBrushAaDiagnosticViews(
+            Camera cameraToCapture,
+            BrushDescriptor brush,
+            bool enablePostProcessing,
+            bool renderWireframe)
         {
-            typeof(RenderWrapper),
-            typeof(MobileBloom),
-            typeof(SENaturalBloomAndDirtyLens),
-            typeof(TiltShift),
-            typeof(Kino.Vignette)
-        };
-
-        private static List<KeyValuePair<Behaviour, bool>> SetBuiltInPostEffectsEnabled(
-            Camera cameraToCapture, bool enabled)
-        {
-            var previousStates = new List<KeyValuePair<Behaviour, bool>>();
-            if (cameraToCapture == null)
-            {
-                return previousStates;
-            }
-
-            foreach (Type componentType in kBuiltInPostEffectComponents)
-            {
-                var component = cameraToCapture.GetComponent(componentType) as Behaviour;
-                if (component == null)
-                {
-                    continue;
-                }
-                previousStates.Add(new KeyValuePair<Behaviour, bool>(component, component.enabled));
-                component.enabled = enabled;
-            }
-            return previousStates;
-        }
-
-        private static void RestoreBuiltInPostEffects(
-            IEnumerable<KeyValuePair<Behaviour, bool>> previousStates)
-        {
-            foreach (var previousState in previousStates)
-            {
-                if (previousState.Key != null)
-                {
-                    previousState.Key.enabled = previousState.Value;
-                }
-            }
-        }
-
-        private static void SetKeyword(string keyword, bool enabled)
-        {
-            if (enabled)
-            {
-                Shader.EnableKeyword(keyword);
-            }
-            else
-            {
-                Shader.DisableKeyword(keyword);
-            }
+            string fileName = GetBrushScreenshotFileName(brush);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaRawDirectory,
+                supersampling: 1,
+                msaaSamples: 1,
+                overrideUrpPipelineMsaa: true);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaSupersampledDirectory,
+                supersampling: 2,
+                msaaSamples: 1,
+                overrideUrpPipelineMsaa: true);
+            SaveCurrentView(
+                cameraToCapture,
+                fileName,
+                1024,
+                1024,
+                enablePostProcessing,
+                renderWireframe,
+                kAaFullDirectory,
+                supersampling: 2,
+                msaaSamples: 4,
+                overrideUrpPipelineMsaa: true);
         }
 
         static void SaveCurrentView(
@@ -570,45 +700,82 @@ namespace TiltBrush
             int resHeight,
             bool? enablePostProcessing = null,
             bool renderWireframe = false,
-            string outputSubdirectory = null)
+            string outputSubdirectory = null,
+            int supersampling = kScreenshotSupersampling,
+            int msaaSamples = kScreenshotMsaaSamples,
+            bool overrideUrpPipelineMsaa = false)
         {
-            int renderWidth = resWidth * kScreenshotSupersampling;
-            int renderHeight = resHeight * kScreenshotSupersampling;
-            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, RenderTextureFormat.ARGB32)
+            int renderWidth = resWidth * supersampling;
+            int renderHeight = resHeight * supersampling;
+            RenderTextureFormat sourceFormat = enablePostProcessing == true
+                ? RenderTextureFormat.DefaultHDR
+                : RenderTextureFormat.ARGB32;
+            RenderTexture rt = new RenderTexture(renderWidth, renderHeight, 24, sourceFormat)
             {
-                antiAliasing = kScreenshotMsaaSamples,
+                antiAliasing = msaaSamples,
                 filterMode = FilterMode.Bilinear
             };
-            RenderTexture downsampledRt = new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
-            {
-                filterMode = FilterMode.Bilinear
-            };
+            RenderTexture downsampledRt = supersampling > 1
+                ? new RenderTexture(resWidth, resHeight, 0, RenderTextureFormat.ARGB32)
+                {
+                    filterMode = FilterMode.Bilinear
+                }
+                : null;
             Texture2D screenShot = null;
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture previousTarget = cameraToCapture.targetTexture;
             bool previousAllowMsaa = cameraToCapture.allowMSAA;
-            bool previousHdrSimple = Shader.IsKeywordEnabled("HDR_SIMPLE");
-            bool previousHdrEmulated = Shader.IsKeywordEnabled("HDR_EMULATED");
-            List<KeyValuePair<Behaviour, bool>> previousPostEffectStates = null;
+            bool previousAllowHdr = cameraToCapture.allowHDR;
+            UniversalRenderPipelineAsset pipelineAsset = UniversalRenderPipeline.asset;
+            int previousPipelineMsaa = pipelineAsset != null
+                ? pipelineAsset.msaaSampleCount
+                : 1;
+            UniversalAdditionalCameraData cameraData =
+                cameraToCapture.GetComponent<UniversalAdditionalCameraData>();
+            bool hadCameraData = cameraData != null;
+            bool previousRenderPostProcessing = false;
+            Transform previousVolumeTrigger = null;
+            LayerMask previousVolumeLayerMask = default;
             try
             {
-                if (enablePostProcessing.HasValue)
+                if (overrideUrpPipelineMsaa && pipelineAsset != null)
                 {
-                    previousPostEffectStates = SetBuiltInPostEffectsEnabled(
-                        cameraToCapture, enablePostProcessing.Value);
-                    if (!enablePostProcessing.Value)
+                    pipelineAsset.msaaSampleCount = msaaSamples;
+                    Debug.Log(
+                        $"{kAaDiagnosticLogPrefix} Capturing {outputSubdirectory} with " +
+                        $"{supersampling}x supersampling and {msaaSamples}x MSAA.");
+                }
+
+                if (enablePostProcessing == true && cameraData == null)
+                {
+                    cameraData = cameraToCapture.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    Debug.Log(
+                        $"{kUrpPostLogPrefix} Added UniversalAdditionalCameraData to brush screenshot camera.");
+                }
+
+                if (cameraData != null && enablePostProcessing.HasValue)
+                {
+                    previousRenderPostProcessing = cameraData.renderPostProcessing;
+                    previousVolumeTrigger = cameraData.volumeTrigger;
+                    previousVolumeLayerMask = cameraData.volumeLayerMask;
+                    cameraData.renderPostProcessing = enablePostProcessing.Value;
+                    if (enablePostProcessing.Value)
                     {
-                        Shader.DisableKeyword("HDR_SIMPLE");
-                        Shader.DisableKeyword("HDR_EMULATED");
+                        cameraData.volumeTrigger = cameraToCapture.transform;
+                        cameraData.volumeLayerMask = ~0;
                     }
                 }
 
-                cameraToCapture.allowMSAA = true;
+                cameraToCapture.allowMSAA = msaaSamples > 1;
+                cameraToCapture.allowHDR = enablePostProcessing == true || previousAllowHdr;
                 cameraToCapture.targetTexture = rt;
                 screenShot = new Texture2D(resWidth, resHeight, TextureFormat.RGB24, false);
                 RenderScreenshotCamera(cameraToCapture, renderWidth, renderHeight, renderWireframe);
-                Graphics.Blit(rt, downsampledRt);
-                RenderTexture.active = downsampledRt;
+                if (downsampledRt != null)
+                {
+                    Graphics.Blit(rt, downsampledRt);
+                }
+                RenderTexture.active = downsampledRt != null ? downsampledRt : rt;
                 screenShot.ReadPixels(new Rect(0, 0, resWidth, resHeight), 0, 0);
                 byte[] bytes = screenShot.EncodeToPNG();
                 string outputDirectory = Path.Combine(
@@ -628,19 +795,31 @@ namespace TiltBrush
             {
                 cameraToCapture.targetTexture = previousTarget;
                 cameraToCapture.allowMSAA = previousAllowMsaa;
-                if (previousPostEffectStates != null)
+                cameraToCapture.allowHDR = previousAllowHdr;
+                if (overrideUrpPipelineMsaa && pipelineAsset != null)
                 {
-                    RestoreBuiltInPostEffects(previousPostEffectStates);
+                    pipelineAsset.msaaSampleCount = previousPipelineMsaa;
                 }
-                SetKeyword("HDR_SIMPLE", previousHdrSimple);
-                SetKeyword("HDR_EMULATED", previousHdrEmulated);
+                if (cameraData != null && enablePostProcessing.HasValue)
+                {
+                    cameraData.renderPostProcessing = previousRenderPostProcessing;
+                    cameraData.volumeTrigger = previousVolumeTrigger;
+                    cameraData.volumeLayerMask = previousVolumeLayerMask;
+                    if (!hadCameraData)
+                    {
+                        Destroy(cameraData);
+                    }
+                }
                 RenderTexture.active = previousActive;
                 if (screenShot != null)
                 {
                     Destroy(screenShot);
                 }
                 Destroy(rt);
-                Destroy(downsampledRt);
+                if (downsampledRt != null)
+                {
+                    Destroy(downsampledRt);
+                }
             }
         }
 

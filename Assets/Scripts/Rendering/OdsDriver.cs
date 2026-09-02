@@ -110,6 +110,7 @@ namespace TiltBrush
 
                     m_odsCamera.outputFolder = outDir;
                     m_odsCamera.basename = m_outputBasename;
+                    m_odsCamera.includePostProcessing = CameraConfig.PostEffects;
 
                     // Touch the destination folder.
                     Directory.CreateDirectory(outDir);
@@ -141,7 +142,7 @@ namespace TiltBrush
                     m_PathSerializer = null;
                 }
 #else
-                throw new System.NotImplementedException("CameraPath requires USD support");
+                throw new System.NotImplementedException("MovementPath requires USD support");
 #endif
             }
 

@@ -20,13 +20,13 @@ Shader "Custom/AudioReactiveIcon" {
     _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
       Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
       #pragma multi_compile __ AUDIO_REACTIVE
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
@@ -52,6 +52,8 @@ Shader "Custom/AudioReactiveIcon" {
         float4 vertex : POSITION;
         float2 texcoord : TEXCOORD0;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
@@ -61,6 +63,7 @@ Shader "Custom/AudioReactiveIcon" {
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
 #ifdef AUDIO_REACTIVE
@@ -75,6 +78,7 @@ Shader "Custom/AudioReactiveIcon" {
 
       fixed4 frag (v2f i) : COLOR
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         fixed4 c;
         if( _Activated > 0.5f )
         {
@@ -116,4 +120,5 @@ Shader "Custom/AudioReactiveIcon" {
   }
   FallBack "Transparent/Cutout/VertexLit"
 }
+
 

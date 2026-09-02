@@ -44,6 +44,54 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [ApiEndpoint(
+            "debug.selection.highlight-stroke",
+            "Queues a selected stroke batch mesh through the URP selection highlight path for diagnosis.",
+            "0,30,true"
+        )]
+        public static string DebugHighlightStrokeSelection(
+            int index,
+            int frames = 30,
+            bool useStrokePostEffect = true)
+        {
+            const string logPrefix = "[OB_URP_SELECTION_DIAG]";
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
+            if (stroke == null ||
+                stroke.m_BatchSubset == null ||
+                stroke.m_BatchSubset.m_ParentBatch == null)
+            {
+                string message = $"{logPrefix} Cannot queue highlight for stroke={index}; batch missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            Batch parentBatch = stroke.m_BatchSubset.m_ParentBatch;
+            parentBatch.RegisterHighlight();
+            MeshFilter meshFilter = parentBatch.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                string message =
+                    $"{logPrefix} Cannot queue highlight for stroke={index}; mesh filter missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            int safeFrames = Mathf.Clamp(frames, 1, 120);
+            App.Instance.SelectionEffect.QueueUrpDiagnosticHighlight(
+                meshFilter,
+                safeFrames,
+                useStrokePostEffect);
+
+            string result =
+                $"{logPrefix} Queued diagnostic highlight stroke={index} " +
+                $"batch={parentBatch.name} frames={safeFrames} " +
+                $"strokePost={useStrokePostEffect}.";
+            Debug.Log(result);
+            return result;
+        }
+#endif
+
         [ApiEndpoint(
             "strokes.select",
             "Select multiple strokes by index.",
@@ -195,6 +243,7 @@ namespace TiltBrush
 
         public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
         {
+            MergeJoinedStrokeColors(new[] { stroke2, stroke1 }, stroke2);
             stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
             stroke2.Uncreate();
             stroke2.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke2.m_ControlPoints.Length).ToArray();
@@ -212,6 +261,7 @@ namespace TiltBrush
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
+            MergeJoinedStrokeColors(strokesToJoin, firstStroke);
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)
             {
@@ -223,6 +273,36 @@ namespace TiltBrush
             firstStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, firstStroke.m_ControlPoints.Length).ToArray();
             firstStroke.Recreate(null, firstStroke.Canvas);
             return firstStroke;
+        }
+
+        internal static void MergeJoinedStrokeColors(
+            IReadOnlyList<Stroke> strokes, Stroke destination)
+        {
+            ColorOverrideMode mode = destination.m_ColorOverrideMode;
+            Color baseColor = destination.m_Color;
+            bool compatible = strokes.All(
+                stroke => stroke.m_ColorOverrideMode == mode && stroke.m_Color.Equals(baseColor));
+
+            if (compatible)
+            {
+                if (strokes.All(stroke => stroke.m_OverrideColors == null))
+                {
+                    destination.m_OverrideColors = null;
+                    return;
+                }
+
+                destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                    Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(index =>
+                        stroke.m_OverrideColors != null && index < stroke.m_OverrideColors.Count
+                            ? stroke.m_OverrideColors[index]
+                            : null)).ToList();
+                return;
+            }
+
+            destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(
+                    index => (Color32?)stroke.GetColor(index))).ToList();
+            destination.m_ColorOverrideMode = ColorOverrideMode.Replace;
         }
 
         [ApiEndpoint(

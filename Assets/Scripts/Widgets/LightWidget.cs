@@ -149,7 +149,8 @@ namespace TiltBrush
                 lightWidget.PinFromSave();
             }
             lightWidget.Group = App.GroupManager.GetGroupFromId(tiltLight.GroupId);
-            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltLight.LayerId));
+            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(
+                tiltLight.LayerId, tiltLight.FrameId));
             var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, lightWidget.transform);
             gizmo.SetupLightGizmos(light);
 

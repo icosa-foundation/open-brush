@@ -23,12 +23,13 @@ Shader "Custom/TwoTexAnimation"
   }
   SubShader
   {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     LOD 100
 
     Pass
     {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
 
@@ -91,7 +92,9 @@ Shader "Custom/TwoTexAnimation"
         }
 
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+
+

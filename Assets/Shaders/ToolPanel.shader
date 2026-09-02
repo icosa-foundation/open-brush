@@ -19,81 +19,137 @@ Properties {
 }
 
 SubShader {
-  Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
+  Tags {"RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
   LOD 200
   Cull Off
 
+  Pass {
+    Name "PanelOuter"
+    Tags { "LightMode"="UniversalForward" }
+    Blend SrcAlpha OneMinusSrcAlpha
+    ZWrite Off
+    HLSLPROGRAM
+    #pragma vertex VertOuter
+    #pragma fragment FragOuter
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-  CGPROGRAM
-  #pragma surface surf Lambert vertex:vert alpha
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
 
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    CBUFFER_END
 
-  struct Input {
-    float2 uv_MainTex;
-  };
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float3 normalOS : NORMAL;
+      float2 uv : TEXCOORD0;
+    };
 
-  uniform float4 _Color;
-  sampler2D _MainTex;
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+    };
 
-  void vert (inout appdata_full v) {
-    v.vertex.xyz -= v.normal * .3;
+    Varyings VertOuter(Attributes IN) {
+      Varyings OUT;
+      float3 offsetPos = IN.positionOS.xyz - IN.normalOS * 0.3;
+      OUT.positionHCS = TransformObjectToHClip(offsetPos);
+      OUT.uv = IN.uv;
+      return OUT;
+    }
+
+    half4 FragOuter(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
+      return half4(c.rgb, c.a * 0.25h);
+    }
+    ENDHLSL
   }
 
-  void surf (Input IN, inout SurfaceOutput o) {
-    fixed4 c = tex2D(_MainTex, IN.uv_MainTex * half2(1,1)) * _Color;
-    o.Emission = c.rgb;
-    o.Alpha = c.a * .25;
+  Pass {
+    Name "PanelGlow"
+    Tags { "LightMode"="UniversalForward" }
+    Blend One One
+    ZWrite Off
+    HLSLPROGRAM
+    #pragma vertex VertGlow
+    #pragma fragment FragGlow
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    CBUFFER_END
+
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float3 normalOS : NORMAL;
+      float2 uv : TEXCOORD0;
+    };
+
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+    };
+
+    Varyings VertGlow(Attributes IN) {
+      Varyings OUT;
+      float3 offsetPos = IN.positionOS.xyz - IN.normalOS * 0.15;
+      OUT.positionHCS = TransformObjectToHClip(offsetPos);
+      OUT.uv = IN.uv;
+      return OUT;
+    }
+
+    half4 FragGlow(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
+      return half4(c.rgb * 0.7h, c.a);
+    }
+    ENDHLSL
   }
-  ENDCG
 
+  Pass {
+    Name "PanelMain"
+    Tags { "LightMode"="UniversalForward" }
+    Blend SrcAlpha OneMinusSrcAlpha
+    ZWrite Off
+    HLSLPROGRAM
+    #pragma vertex VertMain
+    #pragma fragment FragMain
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-Blend One One
-ZWrite Off
-CGPROGRAM
-  #pragma surface surf Lambert vertex:vert alpha
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
 
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    CBUFFER_END
 
-  struct Input {
-    float2 uv_MainTex;
-  };
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float2 uv : TEXCOORD0;
+    };
 
-  uniform float4 _Color;
-  sampler2D _MainTex;
+    struct Varyings {
+      float4 positionHCS : SV_POSITION;
+      float2 uv : TEXCOORD0;
+    };
 
-  void vert (inout appdata_full v) {
+    Varyings VertMain(Attributes IN) {
+      Varyings OUT;
+      OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+      OUT.uv = IN.uv;
+      return OUT;
+    }
 
-      v.vertex.xyz -= v.normal * .15;
+    half4 FragMain(Varyings IN) : SV_Target {
+      half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv) * _Color;
+      return c;
+    }
+    ENDHLSL
   }
-
-  void surf (Input IN, inout SurfaceOutput o) {
-    fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-    o.Emission = c.rgb * .7;
-    o.Alpha = c.a;
-  }
-  ENDCG
-
-
-CGPROGRAM
-#pragma surface surf Lambert alpha
-
-sampler2D _MainTex;
-fixed4 _Color;
-float3 _WorldSpaceOVRCameraPos;
-float3 _OVRCameraForward;
-
-struct Input {
-  float2 uv_MainTex;
-  float3 worldPos;
-};
-
-void surf (Input IN, inout SurfaceOutput o) {
-  fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-  o.Emission = c.rgb;
-  o.Alpha = c.a;
 }
-ENDCG
 
-}
-
-Fallback "Unlit/Diffuse"
+Fallback Off
 }

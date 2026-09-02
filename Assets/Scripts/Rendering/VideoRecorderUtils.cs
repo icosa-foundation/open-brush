@@ -17,6 +17,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
@@ -53,6 +54,59 @@ namespace TiltBrush
         static public bool IsUsingStillFrameFallback
         {
             get { return m_UsingStillFrameFallback; }
+        }
+
+        static public bool IsCapturing
+        {
+            get { return m_ActiveVideoRecording != null || m_ActiveStillFrameExporter != null; }
+        }
+
+        static public string ActiveCaptureFilePath
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return m_ActiveVideoRecording.FilePath;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FilePath;
+                }
+                return null;
+            }
+        }
+
+        static public int ActiveCaptureFrameCount
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return m_ActiveVideoRecording.FrameCount;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FrameCount;
+                }
+                return 0;
+            }
+        }
+
+        static public float ActiveCaptureFPS
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return (float)m_ActiveVideoRecording.FPS;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FPS;
+                }
+                return App.UserConfig.Video.FPS;
+            }
         }
 
         static public int NumFramesInUsdSerializer
@@ -135,7 +189,9 @@ namespace TiltBrush
             // No ffmpeg binary on mobile, so always do still frame capture.
             bool stillFrameCapture = true;
 #else
-            bool stillFrameCapture = App.UserConfig.Video.ForceFrameSequenceRender;
+            bool stillFrameCapture =
+                App.UserConfig.Video.ForceFrameSequenceRender ||
+                GraphicsSettings.currentRenderPipeline != null;
 #endif
 
             if (stillFrameCapture)

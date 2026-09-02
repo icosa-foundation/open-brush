@@ -109,6 +109,8 @@ namespace TiltBrush
         protected Vector3 m_LastSpawnPos { get { return m_LastSpawnXf.translation; } }
         protected float m_BaseSize_PS;
         protected StatelessRng m_rng;
+        // Reference to stroke data for accessing per-point colors during geometry generation
+        protected StrokeData m_StrokeData;
 
         protected BaseBrushScript(bool bCanBatch)
         {
@@ -142,6 +144,12 @@ namespace TiltBrush
         {
             get { return m_BaseSize_PS; }
             set { m_BaseSize_PS = value; }
+        }
+
+        /// Provides access to the stroke data including per-point colors
+        public StrokeData StrokeData
+        {
+            get { return m_StrokeData; }
         }
 
         /// The size of the brush, in the parent-local (Canvas) coordinate system
@@ -190,6 +198,12 @@ namespace TiltBrush
         /// This should only be used during initialization.
         public void SetPreviewMode() { m_PreviewMode = true; }
 
+        /// Set stroke data reference for per-point color access during geometry generation
+        public void SetStrokeData(StrokeData strokeData)
+        {
+            m_StrokeData = strokeData;
+        }
+
         /// Returns an object that implements the Undo animation
         public GameObject CloneAsUndoObject()
         {
@@ -205,11 +219,11 @@ namespace TiltBrush
 
         /// Returns true if permanent geometry was generated.
         /// Transform should be in the local coordinates of the stroke
-        public bool UpdatePosition_LS(TrTransform xf, float fPressure)
+        public bool UpdatePosition_LS(TrTransform xf, float fPressure, Color32? color = null)
         {
             if (IsOutOfVerts()) { return false; }
 
-            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure);
+            bool ret = UpdatePositionImpl(xf.translation, xf.rotation, fPressure, color);
             if (ret)
             {
                 m_LastSpawnXf = xf;
@@ -226,7 +240,7 @@ namespace TiltBrush
             m_Color = rColor;
             m_BaseSize_PS = fSize;
             // TODO: do preview brushes really need this?
-            GetComponent<Renderer>().material = m_Desc.Material;
+            SetRendererMaterials(GetComponent<Renderer>(), m_Desc);
         }
 
         public void DestroyMesh()
@@ -243,11 +257,19 @@ namespace TiltBrush
         #region To override
 
         // Passed transform is relative to the stroke
+        protected static void SetRendererMaterials(Renderer renderer, BrushDescriptor desc)
+        {
+            if (desc.m_OverlayMaterial != null)
+                renderer.materials = new Material[] { desc.Material, desc.m_OverlayMaterial };
+            else
+                renderer.material = desc.Material;
+        }
+
         protected virtual void InitBrush(BrushDescriptor desc, TrTransform localPointerXf)
         {
             Debug.Assert(m_BaseSize_PS != 0, "Set size and color first");
             m_Desc = desc;
-            GetComponent<Renderer>().material = m_Desc.Material;
+            SetRendererMaterials(GetComponent<Renderer>(), desc);
             m_EnableBackfaces = desc.m_RenderBackfaces;
             m_rng = new StatelessRng(MathUtils.RandomInt());
 
@@ -316,7 +338,7 @@ namespace TiltBrush
         // Return true if a new solid was created.
         protected abstract bool UpdatePositionImpl(
             Vector3 vPos, Quaternion ori,
-            float fPressure);
+            float fPressure, Color32? color = null);
 
         // This function is a sanity check for making sure we don't overrun our allocated vertex buffers
         //  when creating new geometry.  It is used at low levels as a safeguard.

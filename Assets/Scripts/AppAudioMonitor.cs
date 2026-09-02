@@ -20,6 +20,9 @@ namespace TiltBrush
     public class AppAudioMonitor : MonoBehaviour
     {
         private float[] m_WaveformFloats;
+        private float m_LastPeak;
+
+        public float LastPeak { get { return m_LastPeak; } }
 
         void Start()
         {
@@ -29,8 +32,25 @@ namespace TiltBrush
         void Update()
         {
             AudioListener.GetOutputData(m_WaveformFloats, 0);
+#if UNITY_ANDROID
+            UpdateAndroidAudioPeak();
+#endif
             VisualizerManager.m_Instance.ProcessAudio(m_WaveformFloats, AudioSettings.outputSampleRate);
         }
+
+#if UNITY_ANDROID
+        private void UpdateAndroidAudioPeak()
+        {
+            float peak = 0.0f;
+            for (int i = 0; i < m_WaveformFloats.Length; ++i)
+            {
+                float sample = m_WaveformFloats[i];
+                peak = Mathf.Max(peak, Mathf.Abs(sample));
+            }
+
+            m_LastPeak = peak;
+        }
+#endif
     }
 
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
@@ -26,6 +27,7 @@ namespace TiltBrush
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
         private static int s_MeshFixtureExportDepth;
+        private static BrushDescriptor s_MeshFixtureBrush;
 
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
@@ -34,25 +36,36 @@ namespace TiltBrush
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
+        private List<(Node node, SoundClipWidget widget)> m_SoundClipNodes;
 
         private const string kTimestampAttribute = "_TB_TIMESTAMP";
 
-        public static IDisposable BeginIsolatedMeshFixtureExport()
+        public static IDisposable BeginIsolatedMeshFixtureExport(BrushDescriptor brush)
         {
+            if (brush == null) throw new ArgumentNullException(nameof(brush));
+            BrushDescriptor previousBrush = s_MeshFixtureBrush;
             ++s_MeshFixtureExportDepth;
-            return new MeshFixtureExportScope();
+            s_MeshFixtureBrush = brush;
+            return new MeshFixtureExportScope(previousBrush);
         }
 
         private static bool IsIsolatedMeshFixtureExport => s_MeshFixtureExportDepth > 0;
 
         private sealed class MeshFixtureExportScope : IDisposable
         {
+            private readonly BrushDescriptor m_PreviousBrush;
             private bool m_Disposed;
+
+            public MeshFixtureExportScope(BrushDescriptor previousBrush)
+            {
+                m_PreviousBrush = previousBrush;
+            }
 
             public void Dispose()
             {
                 if (m_Disposed) return;
                 m_Disposed = true;
+                s_MeshFixtureBrush = m_PreviousBrush;
                 --s_MeshFixtureExportDepth;
                 Debug.Assert(s_MeshFixtureExportDepth >= 0);
             }
@@ -83,6 +96,7 @@ namespace TiltBrush
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
             m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             m_TemporaryBatchMeshes = new List<Mesh>();
@@ -308,6 +322,15 @@ namespace TiltBrush
             };
             bool hasExcludedComponent = excludedTypes.Any(t => transform.GetComponent(t) != null);
             bool excludedName = false; // TODO
+
+            // Exclude children of SoundClipWidget (distance visualisation spheres etc.)
+            // but keep the widget node itself so we can attach the audio emitter to it.
+            if (transform.GetComponent<SoundClipWidget>() == null &&
+                transform.GetComponentInParent<SoundClipWidget>() != null)
+            {
+                return false;
+            }
+
             return !hasExcludedComponent && !excludedName;
         }
 
@@ -402,6 +425,15 @@ namespace TiltBrush
             }
 
             if (!Application.isPlaying) return;
+
+            var soundClipWidget = transform.GetComponent<SoundClipWidget>();
+            if (soundClipWidget != null &&
+                soundClipWidget.SoundClip != null &&
+                !string.IsNullOrEmpty(soundClipWidget.SoundClip.AbsolutePath))
+            {
+                m_SoundClipNodes.Add((node, soundClipWidget));
+            }
+
             if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
@@ -609,25 +641,38 @@ namespace TiltBrush
 
             if (shaderName.StartsWith("Brush/"))
             {
-
-                // TODO - This assumes that every brush has a unique material with a unique name
-                // Currently, this is true, but it may not always be the case
-                var brushes = BrushCatalog.m_Instance.AllBrushes
-                    .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
-                    .ToList();
-
-                switch (brushes.Count)
+                BrushDescriptor manifest;
+                if (IsIsolatedMeshFixtureExport)
                 {
-                    case 0:
-                        Debug.LogError($"No matching brush found for material {material.name}");
+                    manifest = s_MeshFixtureBrush;
+                    if (manifest == null)
+                    {
+                        Debug.LogError($"No brush supplied for isolated mesh fixture material {material.name}");
                         return;
-                    case > 1:
-                        Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
-                        break;
+                    }
                 }
+                else
+                {
+                    // TODO - This assumes that every brush material has a unique name
+                    // (or at least if two brush materials have the same name then they are interchangeable)
+                    // Currently, the former is true, but this may not always be the case
+                    var brushes = BrushCatalog.m_Instance.AllBrushes
+                        .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
+                        .ToList();
 
-                var brush = brushes[0];
-                var manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                    switch (brushes.Count)
+                    {
+                        case 0:
+                            Debug.LogError($"No matching brush found for material {material.name}");
+                            return;
+                        case > 1:
+                            Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                            break;
+                    }
+
+                    var brush = brushes[0];
+                    manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                }
 
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 // Do we need to override the regular UnityGLTF logic here?
@@ -672,6 +717,96 @@ namespace TiltBrush
             }
         }
 
+        private static string AudioMimeType(string filePath)
+        {
+            return Path.GetExtension(filePath).ToLowerInvariant() switch
+            {
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                ".ogg" => "audio/ogg",
+                _ => "audio/mpeg"
+            };
+        }
+
+        private void ExportSoundClips(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        {
+            if (m_SoundClipNodes == null || m_SoundClipNodes.Count == 0) return;
+
+            var rootExt = new GLTF.Schema.KHR_audio_emitter();
+
+            foreach (var (node, widget) in m_SoundClipNodes)
+            {
+                var soundClip = widget.SoundClip;
+                var (volume, loop, spatialBlend, minDistance, maxDistance) = widget.GetAudioExportSettings();
+
+                if (!File.Exists(soundClip.AbsolutePath))
+                {
+                    Debug.LogWarning($"KHR_audio_emitter: audio file not found, skipping: {soundClip.AbsolutePath}");
+                    continue;
+                }
+
+                // Export the audio file — bufferView for GLB, sidecar file for GLTF
+                var fileStream = new FileStream(soundClip.AbsolutePath, FileMode.Open, FileAccess.Read);
+                var result = exporter.ExportFile(
+                    Path.GetFileName(soundClip.AbsolutePath),
+                    AudioMimeType(soundClip.AbsolutePath),
+                    fileStream);
+
+                int audioIndex = rootExt.audio.Count;
+                var audioData = new KHR_AudioData();
+                if (string.IsNullOrEmpty(result.uri))
+                {
+                    audioData.mimeType = result.mimeType;
+                    audioData.bufferView = result.bufferView;
+                }
+                else
+                {
+                    audioData.uri = result.uri;
+                }
+                rootExt.audio.Add(audioData);
+
+                int sourceIndex = rootExt.sources.Count;
+                rootExt.sources.Add(new KHR_AudioSource
+                {
+                    audio = new AudioDataId { Id = audioIndex, Root = gltfRoot },
+                    gain = volume,
+                    loop = loop,
+                    autoPlay = true,
+                    Name = soundClip.HumanName,
+                });
+
+                bool isSpatial = spatialBlend > 0.5f;
+                int emitterIndex = rootExt.emitters.Count;
+                rootExt.emitters.Add(new KHR_AudioEmitter
+                {
+                    type = isSpatial ? "positional" : "global",
+                    gain = 1.0f,
+                    sources = new List<AudioSourceId>
+                    {
+                        new AudioSourceId { Id = sourceIndex, Root = gltfRoot }
+                    },
+                    positional = isSpatial ? new PositionalEmitterData
+                    {
+                        distanceModel = PositionalAudioDistanceModel.inverse,
+                        refDistance = minDistance,
+                        maxDistance = maxDistance,
+                        rolloffFactor = 1.0f
+                    } : null
+                });
+
+                node.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName,
+                    new KHR_NodeAudioEmitterRef
+                    {
+                        emitter = new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                    });
+            }
+
+            if (rootExt.audio.Count == 0) return;
+
+            gltfRoot.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName, rootExt);
+            exporter.DeclareExtensionUsage(GLTF.Schema.KHR_audio_emitter.ExtensionName);
+        }
+
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (!Application.isPlaying) return;
@@ -683,6 +818,15 @@ namespace TiltBrush
                 m_OriginalBatchMeshes?.Clear();
                 m_TemporaryBatchMeshes?.Clear();
                 return;
+            }
+
+            try
+            {
+                ExportSoundClips(exporter, gltfRoot);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting sound clips: {e.Message}");
             }
 
             try

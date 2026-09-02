@@ -50,6 +50,7 @@ namespace TiltBrush
 
         private GripState m_CurrentGripState;
         private ControllerGeometry m_ControllerGeometry;
+        private bool m_LoggedControllerMaterialState;
 
         // -------------------------------------------------------------------------------------------- //
         // Public Properties
@@ -310,6 +311,7 @@ namespace TiltBrush
             Color rTintedColor = GetTintColor();
             ControllerGeometry.SetControllerEmission(rTintedColor);
             ControllerGeometry.SetTransformVisualsTint(rTintColor);
+            LogControllerMaterialStateOnce(rTintedColor);
 
             if (ControllerGeometry.GuideLine)
             {
@@ -320,6 +322,49 @@ namespace TiltBrush
         private Color GetTintColor()
         {
             return m_Tint * (m_BaseIntensity + m_GlowIntensity);
+        }
+
+        private void LogControllerMaterialStateOnce(Color tintedColor)
+        {
+            if (m_LoggedControllerMaterialState)
+            {
+                return;
+            }
+            m_LoggedControllerMaterialState = true;
+
+            const string prefix = "OB_CTRL_MAT_20260520";
+            LogRendererMaterialState(prefix, "MainMesh", ControllerGeometry.MainMesh, tintedColor);
+            LogRendererMaterialState(prefix, "TriggerMesh", ControllerGeometry.TriggerMesh, tintedColor);
+        }
+
+        private void LogRendererMaterialState(
+            string prefix, string label, Renderer renderer, Color tintedColor)
+        {
+            if (renderer == null)
+            {
+                Debug.Log($"{prefix} {ControllerName} {label} renderer=null");
+                return;
+            }
+
+            Material material = renderer.material;
+            Texture mainTex = material != null && material.HasProperty("_MainTex")
+                ? material.GetTexture("_MainTex")
+                : null;
+            string textureInfo = mainTex == null
+                ? "null"
+                : $"{mainTex.name} {mainTex.width}x{mainTex.height}";
+            string shaderName = material != null && material.shader != null
+                ? material.shader.name
+                : "null";
+
+            Debug.Log(
+                $"{prefix} controller={ControllerName} style={ControllerGeometry.Style} " +
+                $"platform={Application.platform} graphics={SystemInfo.graphicsDeviceType} " +
+                $"colorSpace={QualitySettings.activeColorSpace} renderer={renderer.name} " +
+                $"label={label} material={(material == null ? "null" : material.name)} " +
+                $"shader={shaderName} mainTex={textureInfo} tint={m_Tint} " +
+                $"baseIntensity={m_BaseIntensity} glowIntensity={m_GlowIntensity} " +
+                $"emissionColor={tintedColor}");
         }
 
         public void EnableTransformVisuals(bool bEnable, float fIntensity)

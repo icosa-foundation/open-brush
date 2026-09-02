@@ -20,7 +20,7 @@ namespace TiltBrush.Layers
     {
         protected override void OnButtonPressed()
         {
-            var UiManager = GetComponentInParent<LayerUI_Manager>();
+            var UiManager = GetComponentInParent<ILayerManager>();
             base.OnButtonPressed();
             UiManager.AddLayer();
         }

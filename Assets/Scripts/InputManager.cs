@@ -86,6 +86,8 @@ namespace TiltBrush
             Trash,
             Share,
             Fly,
+            ToggleReshape = 5100,
+            ToggleTintColor = 5101,
             ScriptedTool = 6000,
         }
 
@@ -718,6 +720,8 @@ namespace TiltBrush
                 case SketchCommands.ToggleDefaultTool:
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
+                case SketchCommands.ToggleReshape:
+                case SketchCommands.ToggleTintColor:
                     return Brush.GetCommandDown(rCommand);
 
                 // Misc

@@ -50,7 +50,7 @@ namespace TiltBrush
 
             // Count the number of active camera paths at the time we were created.
             // Note that this caching method is ok in this instance because these buttons are transient.
-            var datas = WidgetManager.m_Instance.CameraPathWidgets;
+            var datas = WidgetManager.m_Instance.CameraPathWidgets; ;
             m_NumActivePaths = 0;
             foreach (TypedWidgetData<CameraPathWidget> data in datas)
             {

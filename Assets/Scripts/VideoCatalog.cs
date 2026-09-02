@@ -155,7 +155,7 @@ namespace TiltBrush
 
             var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.AllDirectories).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
+                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 

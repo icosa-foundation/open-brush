@@ -41,60 +41,7 @@ public class BuildTiltBrushPostProcess
             XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
             var androidNamespaceURI = element.GetAttribute("xmlns:android");
 
-
-
-#if FORCE_QUEST_SUPPORT_DEVICE
-            UnityEngine.Debug.Log("Add quest as a supported devices");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application",
-                "meta-data",
-                "com.oculus.supportedDevices",
-                true,
-                true,
-                "value", "quest"
-            );
-#endif
-
-#if FORCE_FOCUSAWARE
-            UnityEngine.Debug.Log("Add com.oculus.vr.focusaware");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application/activity",
-                "meta-data",
-                "com.oculus.vr.focusaware",
-                true,
-                true,
-                "value", "true"
-            );
-#endif
-
-#if ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
-            UnityEngine.Debug.Log("Add com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
-                    true,
-                    true,
-                    "required", "true"
-            );
-#endif
-
-#if FORCE_HEADTRACKING
-            UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "android.hardware.vr.headtracking",
-                    true,
-                    true,
-                    "version", "1",
-                    "required", "true"
-            );
-#endif
+            // Currently nothing to modify!
 
             doc.Save(file);
         }

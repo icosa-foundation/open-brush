@@ -18,14 +18,14 @@ Shader "Custom/PanelButton" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {"Queue"="AlphaTest+20"}
 
     Pass {
-      Lighting Off
-
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 
       #include "UnityCG.cginc"
@@ -48,6 +48,8 @@ Shader "Custom/PanelButton" {
         float4 vertex : POSITION;
         float4 texcoord : TEXCOORD0;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
@@ -57,8 +59,9 @@ Shader "Custom/PanelButton" {
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-        
+
         if (_Activated) v.vertex.xyz += float3(0,0,-.2);
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.texcoord = float4(v.texcoord.xy, 0, _PanelMipmapBias);
@@ -67,6 +70,7 @@ Shader "Custom/PanelButton" {
 
       fixed4 frag (v2f i) : COLOR
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         fixed4 c = tex2Dbias(_MainTex, i.texcoord);
         if( _Activated > 0.5f )
         {
@@ -94,4 +98,5 @@ Shader "Custom/PanelButton" {
   FallBack "Diffuse"
 
 }
+
 

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Gsplat;
 using TiltBrushToolkit;
 using Unity.Profiling;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -217,6 +218,7 @@ namespace TiltBrush
 
         // How many widgets are using this model?
         public int m_UsageCount;
+        private bool m_CatalogOwnershipReleased;
 
         // Store the paths of meshes that have been through MeshSplitter
         public List<string> m_SplitMeshPaths;
@@ -232,6 +234,9 @@ namespace TiltBrush
 
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
+        public bool IsGsplatModel { get; private set; }
+        private GsplatAsset m_OwnedGsplatAsset;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -306,6 +311,38 @@ namespace TiltBrush
         }
 
         public Location GetLocation() { return m_Location; }
+
+        internal void AcquireUsage()
+        {
+            m_UsageCount++;
+        }
+
+        internal void ReleaseUsage()
+        {
+            Debug.Assert(m_UsageCount > 0, $"Model usage count underflow for {m_Location}.");
+            if (m_UsageCount <= 0)
+            {
+                return;
+            }
+
+            m_UsageCount--;
+            if (m_UsageCount == 0 && m_CatalogOwnershipReleased)
+            {
+                UnloadModel();
+            }
+        }
+
+        internal void ReleaseFromCatalog()
+        {
+            m_CatalogOwnershipReleased = true;
+            if (m_UsageCount == 0)
+            {
+                UnloadModel();
+            }
+            // Otherwise retain the inactive owner hierarchy. Active widgets borrow its
+            // procedural meshes and runtime splat asset, and may still consult it for
+            // operations such as breaking a model apart. The final ReleaseUsage unloads it.
+        }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:
@@ -616,6 +653,141 @@ namespace TiltBrush
 
         }
 
+        static bool IsGsplatPly(string path)
+        {
+            bool hasColor = false;
+            bool hasOpacity = false;
+            bool hasScale = false;
+            bool hasRotation = false;
+
+            using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new StreamReader(stream))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line == "end_header")
+                    {
+                        break;
+                    }
+
+                    string[] tokens = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length != 3 || tokens[0] != "property")
+                    {
+                        continue;
+                    }
+
+                    switch (tokens[2])
+                    {
+                        case "f_dc_0":
+                            hasColor = true;
+                            break;
+                        case "opacity":
+                            hasOpacity = true;
+                            break;
+                        case "scale_0":
+                            hasScale = true;
+                            break;
+                        case "rot_0":
+                            hasRotation = true;
+                            break;
+                    }
+                }
+            }
+
+            return hasColor && hasOpacity && hasScale && hasRotation;
+        }
+
+        GameObject LoadGsplat(List<string> warningsOut)
+        {
+            GsplatAsset asset = null;
+            GameObject root = null;
+            try
+            {
+                string path = m_Location.AbsolutePath;
+                string ext = m_Location.Extension;
+                SourceCoordinates sourceCoordinates = GetGsplatSourceCoordinates(ext);
+                asset = GsplatRuntimeLoader.LoadFile(
+                    path,
+                    Gsplat.CompressionMode.Spark,
+                    sourceCoordinates);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
+                    $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
+#endif
+
+                root = new GameObject("ImportedGsplatRoot");
+                GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
+                rendererObject.transform.SetParent(root.transform, false);
+
+                var gsplatRenderer = rendererObject.AddComponent<GsplatRenderer>();
+                gsplatRenderer.GsplatAsset = asset;
+                gsplatRenderer.SHDegree = asset.SHBands;
+                gsplatRenderer.AsyncUpload = true;
+                gsplatRenderer.RenderBeforeUploadComplete = false;
+                gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+
+                var collider = rendererObject.AddComponent<BoxCollider>();
+                collider.center = asset.Bounds.center;
+                collider.size = asset.Bounds.size;
+
+                warningsOut.Add(
+                    "Gaussian splat models are viewable in Open Brush, but are not exportable as mesh geometry.");
+                IsGsplatModel = true;
+                m_AllowExport = false;
+                return root;
+            }
+            catch (Exception ex)
+            {
+                if (root != null)
+                {
+                    UObject.Destroy(root);
+                }
+                DestroyRuntimeGsplatAsset(asset);
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        private static SourceCoordinates GetGsplatSourceCoordinates(string extension)
+        {
+            return extension == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
+        }
+
+        private void FinishGsplatLoad(GameObject root, List<string> warnings)
+        {
+            if (root == null)
+            {
+                DisplayWarnings(warnings);
+                return;
+            }
+
+            GsplatAsset asset = root
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+            try
+            {
+                CalcBoundsNonGltf(root);
+                EndCreatePrefab(root, warnings);
+            }
+            catch (Exception ex)
+            {
+                if (m_ModelParent == root.transform)
+                {
+                    m_ModelParent = null;
+                    m_OwnedGsplatAsset = null;
+                }
+                UObject.Destroy(root);
+                DestroyRuntimeGsplatAsset(asset);
+                IsGsplatModel = false;
+                m_Valid = false;
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+            }
+        }
+
         GameObject LoadVox(List<string> warningsOut)
         {
             try
@@ -892,6 +1064,7 @@ namespace TiltBrush
                 // TODO: if it's not already null, why did we get here? Probably want to check for error
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
+                IsGsplatModel = false;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
@@ -933,9 +1106,22 @@ namespace TiltBrush
                 }
                 else if (ext == ".ply")
                 {
-                    go = LoadPly(warnings);
-                    CalcBoundsNonGltf(go);
-                    EndCreatePrefab(go, warnings);
+                    bool isGsplatPly = IsGsplatPly(m_Location.AbsolutePath);
+                    go = isGsplatPly ? LoadGsplat(warnings) : LoadPly(warnings);
+                    if (isGsplatPly)
+                    {
+                        FinishGsplatLoad(go, warnings);
+                    }
+                    else
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
+                }
+                else if (ext == ".spz" || ext == ".sog")
+                {
+                    go = LoadGsplat(warnings);
+                    FinishGsplatLoad(go, warnings);
                 }
                 else if (ext == ".vox")
                 {
@@ -1030,6 +1216,9 @@ namespace TiltBrush
                 DisplayWarnings(warnings);
             }
 
+            GsplatAsset newOwnedGsplatAsset = go
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+
             // Adopt the GameObject
             go.name = m_Location.ToString();
             go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
@@ -1038,6 +1227,8 @@ namespace TiltBrush
             {
                 UnityEngine.Object.Destroy(m_ModelParent.gameObject);
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = newOwnedGsplatAsset;
             m_ModelParent = go.transform;
 
             // For glTF format models, we will have already done this via the import plugin
@@ -1118,7 +1309,26 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = null;
             m_AppliedMeshSplits?.Clear();
+        }
+
+        private static void DestroyRuntimeGsplatAsset(GsplatAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                UObject.Destroy(asset);
+            }
+            else
+            {
+                UObject.DestroyImmediate(asset);
+            }
         }
 
         /// Resets this.Error and tries to load the model again.

@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -325,6 +326,10 @@ namespace TiltBrush
         {
             get
             {
+                if (GraphicsSettings.currentRenderPipeline != null)
+                {
+                    return true;
+                }
                 return !m_SelectionTool.IsHot || ShouldRemoveFromSelection();
             }
         }
@@ -628,6 +633,16 @@ namespace TiltBrush
         // Register highlights for all selected objects
         void RegisterHighlights()
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                foreach (GrabWidget widget in m_SelectedWidgets)
+                {
+                    widget.RegisterHighlight();
+                }
+                App.Scene.SelectionCanvas.RegisterHighlight();
+                return;
+            }
+
             bool showHighlight =
                 !SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget() ||
                 SketchControlsScript.m_Instance.IsUserIntersectingWithSelectionWidget() ||
@@ -638,9 +653,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
-#endif
             }
         }
 
@@ -652,6 +665,7 @@ namespace TiltBrush
         /// Select a group that a widget belongs to and then return the corresponding selection widget.
         public SelectionWidget StartGrabbingGroupWithWidget(GrabWidget grabWidget)
         {
+            Debug.Log("START TRANSFORM SELECT");
             m_IsGrabbingGroup = true;
 
             // Save off the current tool and selection.
@@ -700,7 +714,7 @@ namespace TiltBrush
         {
             if (m_bSelectionWidgetNeedsUpdate)
             {
-                m_SelectionWidget.SelectionTransform = SelectionTransform;
+                m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
                 if (HasSelection)
                 {
                     Bounds selectionBounds;
@@ -747,6 +761,7 @@ namespace TiltBrush
                     AudioManager.m_Instance.SelectionHighlightLoop(false);
                 }
                 m_bSelectionWidgetNeedsUpdate = false;
+                SketchControlsScript.m_Instance.RefreshGrabWidgetControllerInfoIfHolding(m_SelectionWidget);
             }
         }
 
@@ -793,6 +808,14 @@ namespace TiltBrush
         /// anyway.
         public void ForgetStrokesInSelectionCanvas()
         {
+            foreach (Stroke stroke in m_SelectedStrokes)
+            {
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
+            }
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
+            }
             m_SelectedStrokes.Clear();
             m_SelectedWidgets.Clear();
             SelectionTransform = TrTransform.identity;
@@ -810,6 +833,7 @@ namespace TiltBrush
                 }
 
                 stroke.m_PreviousCanvas = stroke.Canvas;
+                App.Scene.animationUI_manager?.RetainDrawingForEditing(stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
 
@@ -845,6 +869,7 @@ namespace TiltBrush
                 }
                 var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
                 m_SelectedStrokes.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
@@ -895,6 +920,7 @@ namespace TiltBrush
                 return;
             }
             widget.m_PreviousCanvas = widget.Canvas;
+            App.Scene.animationUI_manager?.RetainDrawingForEditing(widget.m_PreviousCanvas);
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
                 App.Scene.SelectionCanvas.gameObject.layer);
@@ -928,6 +954,7 @@ namespace TiltBrush
 
                 var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
                 widget.SetCanvas(destination);
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
                 widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
@@ -961,8 +988,11 @@ namespace TiltBrush
         {
             foreach (var stroke in strokes)
             {
-                m_SelectedStrokes.Add(stroke);
-                AddToGroupToSelectedStrokes(stroke.Group, stroke);
+                if (m_SelectedStrokes.Add(stroke))
+                {
+                    App.Scene.animationUI_manager?.RetainDrawingForEditing(stroke.m_PreviousCanvas);
+                    AddToGroupToSelectedStrokes(stroke.Group, stroke);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -971,8 +1001,11 @@ namespace TiltBrush
         {
             foreach (var stroke in strokes)
             {
-                m_SelectedStrokes.Remove(stroke);
-                RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
+                if (m_SelectedStrokes.Remove(stroke))
+                {
+                    App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
+                    RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -981,8 +1014,11 @@ namespace TiltBrush
         {
             foreach (var widget in widgets)
             {
-                m_SelectedWidgets.Add(widget);
-                AddToGroupToSelectedWidgets(widget.Group, widget);
+                if (m_SelectedWidgets.Add(widget))
+                {
+                    App.Scene.animationUI_manager?.RetainDrawingForEditing(widget.m_PreviousCanvas);
+                    AddToGroupToSelectedWidgets(widget.Group, widget);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -991,8 +1027,11 @@ namespace TiltBrush
         {
             foreach (var widget in widgets)
             {
-                m_SelectedWidgets.Remove(widget);
-                RemoveFromGroupToSelectedWidgets(widget.Group, widget);
+                if (m_SelectedWidgets.Remove(widget))
+                {
+                    App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
+                    RemoveFromGroupToSelectedWidgets(widget.Group, widget);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -1094,6 +1133,25 @@ namespace TiltBrush
             m_bSelectionWidgetNeedsUpdate = true;
         }
 
+        public bool TryIntersectNonGpuSelectionWidgets(Vector3 center_GS, float radius_GS,
+            out float score)
+        {
+            score = -1.0f;
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                if (widget is not ModelWidget modelWidget ||
+                    modelWidget.HasGPUIntersectionObject() ||
+                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                {
+                    continue;
+                }
+
+                score = Mathf.Max(score, widgetScore);
+            }
+
+            return score >= 0.0f;
+        }
+
         public bool IsStrokeSelected(Stroke stroke)
         {
             return m_SelectedStrokes.Contains(stroke);
@@ -1154,7 +1212,23 @@ namespace TiltBrush
 
         private void OnSelectionTransformed(TrTransform xf_SS)
         {
-            SelectionTransform = xf_SS;
+            // The widget's SelectionTransform is in scene space, but
+            // SelectionManager.SelectionTransform applies the delta relative
+            // to the ActiveCanvas. Conjugate by the canvas's scene-space pose
+            // to convert between the two frames.
+            SelectionTransform = SceneToSelectionTransform(xf_SS);
+        }
+
+        public TrTransform SelectionTransformToScene(TrTransform xf)
+        {
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            return canvasPose_SS * xf * canvasPose_SS.inverse;
+        }
+
+        public TrTransform SceneToSelectionTransform(TrTransform xf_SS)
+        {
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            return canvasPose_SS.inverse * xf_SS * canvasPose_SS;
         }
 
         Bounds GetBoundsOfSelectedWidgets_SelectionCanvasSpace()

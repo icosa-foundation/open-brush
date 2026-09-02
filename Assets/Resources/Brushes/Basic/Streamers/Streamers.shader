@@ -124,13 +124,13 @@ Category {
         #endif
 
         // Create parametric flowing UV's
-        half2 uvs = i.texcoord;
+        float2 uvs = i.texcoord;
         float row_id = floor(uvs.y * 5);
         float row_rand = rand_1_05(row_id.xx);
         uvs.x += row_rand * 200;
 
-        half2 sins = sin(uvs.x * half2(10,23) + GetTime().z * half2(5,3));
-        uvs.y = 5 * uvs.y + dot(half2(.05, -.05), sins);
+        float2 sins = sin(uvs.x * float2(10,23) + GetTime().z * float2(5,3));
+        uvs.y = 5 * uvs.y + dot(float2(.05, -.05), sins);
 
 #ifdef AUDIO_REACTIVE
         // Scrolling UVs
@@ -143,7 +143,7 @@ Category {
 #endif
 
         // Sample final texture
-        half4 tex = tex2D(_MainTex, uvs);
+        float4 tex = tex2D(_MainTex, uvs);
 
         // Boost hot spot in texture
         tex += pow(tex, 2) * 55;
