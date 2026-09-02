@@ -195,26 +195,39 @@ namespace TiltBrush
         public ReferenceVideo(string filePath)
         {
             NetworkVideo = filePath.EndsWith(".txt");
+            AbsolutePath = filePath;
             PersistentPath = _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
-            AbsolutePath = filePath;
         }
 
-        /// A video inside the video library is identified by its path relative to that library.
-        /// Anything else keeps just its filename, which is what the pre-existing sketch metadata
-        /// format stores.
+        /// A video is identified by its path relative to whichever video root contains it, the
+        /// video library being the first root checked. That value is what sketch metadata stores,
+        /// so it has to stay resolvable across roots rather than naming an absolute location that
+        /// only exists on the machine that saved the sketch.
+        ///
+        /// A video outside every root keeps just its filename, matching what the metadata format
+        /// stored before roots existed.
         private static string _GetPersistentPath(string filePath)
         {
-            string libraryPath = System.IO.Path.GetFullPath(App.VideoLibraryPath())
-                .TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar) +
-                System.IO.Path.DirectorySeparatorChar;
-            string fullPath = System.IO.Path.GetFullPath(filePath);
-            StringComparison comparison = System.IO.Path.DirectorySeparatorChar == '\\'
-                ? StringComparison.OrdinalIgnoreCase
-                : StringComparison.Ordinal;
-            if (fullPath.StartsWith(libraryPath, comparison))
+            string fullPath;
+            try
             {
-                return fullPath.Substring(libraryPath.Length);
+                fullPath = System.IO.Path.GetFullPath(filePath);
+            }
+            catch (Exception)
+            {
+                return System.IO.Path.GetFileName(filePath);
+            }
+
+            foreach (var root in App.GetAllVideoRoots())
+            {
+                string rootPath = root.TrimEnd(
+                    System.IO.Path.DirectorySeparatorChar,
+                    System.IO.Path.AltDirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+                if (fullPath.StartsWith(rootPath, App.MediaPathComparison))
+                {
+                    return fullPath.Substring(rootPath.Length);
+                }
             }
             return System.IO.Path.GetFileName(filePath);
         }

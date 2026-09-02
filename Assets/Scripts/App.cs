@@ -2279,6 +2279,151 @@ namespace TiltBrush
             return Path.Combine(Application.persistentDataPath, "Featured Sketches");
         }
 
+        // Media root directories. The Media Library is always searched first, so the roots
+        // configured in Tilt Brush.cfg under MediaRoots only ever add search locations.
+        private const string kModelsSubdirectory = "Models";
+        private const string kImagesSubdirectory = "Images";
+        private const string kVideosSubdirectory = "Videos";
+        private const string kBackgroundImagesSubdirectory = "BackgroundImages";
+
+        /// How to compare two media paths for equality on this platform.
+        public static StringComparison MediaPathComparison =>
+            Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
+        private static UserConfig.MediaRootsConfig ConfiguredMediaRoots =>
+            m_Instance != null && m_Instance.m_UserConfig != null
+                ? m_Instance.m_UserConfig.MediaRoots
+                : default;
+
+        /// <summary>
+        /// Builds the ordered root list for one media type: the Media Library directory, then the
+        /// directories configured for that type, then the per-type subdirectory of each general
+        /// media root. Unusable and duplicate entries are dropped.
+        /// </summary>
+        private static List<string> BuildMediaRootList(
+            string defaultRoot, string[] typeSpecificRoots, string subdirectory)
+        {
+            var roots = new List<string>();
+            _AddMediaRoot(roots, defaultRoot);
+            if (typeSpecificRoots != null)
+            {
+                // A type-specific root is the media directory itself, so it gets no suffix.
+                foreach (var root in typeSpecificRoots)
+                {
+                    _AddMediaRoot(roots, root);
+                }
+            }
+            var generalRoots = ConfiguredMediaRoots.General;
+            if (generalRoots != null)
+            {
+                // A general root is a Media Library-shaped parent, so it does.
+                foreach (var root in generalRoots)
+                {
+                    _AddMediaRoot(roots, root, subdirectory);
+                }
+            }
+            return roots;
+        }
+
+        private static void _AddMediaRoot(List<string> roots, string root, string subdirectory = null)
+        {
+            if (string.IsNullOrWhiteSpace(root)) { return; }
+            string normalized;
+            try
+            {
+                normalized = Path.GetFullPath(
+                    subdirectory == null ? root : Path.Combine(root, subdirectory));
+            }
+            catch (Exception e)
+            {
+                // ArgumentException, NotSupportedException, PathTooLongException, SecurityException
+                Debug.LogWarning($"[MediaRoots] Ignoring unusable media root '{root}': {e.Message}");
+                return;
+            }
+            foreach (var existing in roots)
+            {
+                if (string.Equals(existing, normalized, MediaPathComparison)) { return; }
+            }
+            roots.Add(normalized);
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for models, in priority order.
+        /// The default ModelLibraryPath is always first for backwards compatibility.
+        /// </summary>
+        public static List<string> GetAllModelRoots()
+        {
+            return BuildMediaRootList(
+                ModelLibraryPath(), ConfiguredMediaRoots.Models, kModelsSubdirectory);
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for images, in priority order.
+        /// </summary>
+        public static List<string> GetAllImageRoots()
+        {
+            return BuildMediaRootList(
+                ReferenceImagePath(), ConfiguredMediaRoots.Images, kImagesSubdirectory);
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for videos, in priority order.
+        /// </summary>
+        public static List<string> GetAllVideoRoots()
+        {
+            return BuildMediaRootList(
+                VideoLibraryPath(), ConfiguredMediaRoots.Videos, kVideosSubdirectory);
+        }
+
+        /// <summary>
+        /// Gets all potential root directories for background images, in priority order.
+        /// </summary>
+        public static List<string> GetAllBackgroundImageRoots()
+        {
+            return BuildMediaRootList(
+                BackgroundImagesLibraryPath(), ConfiguredMediaRoots.BackgroundImages,
+                kBackgroundImagesSubdirectory);
+        }
+
+        /// <summary>
+        /// Resolves a media path for reading by checking multiple potential root directories.
+        /// If the path is absolute (rooted), returns it as-is.
+        /// If the path is relative, tries each root directory in order and returns the first
+        /// path where the file exists. Falls back to the first root if file not found anywhere.
+        ///
+        /// This searches for existing files and is only appropriate for imports. Somewhere to
+        /// write a new file should be chosen with ApiMethods.GetSafePathInDirectory against a
+        /// single explicit output directory, so that an incoming relative name can never select
+        /// and overwrite a file in a configured root.
+        /// </summary>
+        /// <param name="potentialRoots">List of root directories to check, in priority order</param>
+        /// <param name="relativePath">The relative path to resolve</param>
+        /// <returns>The resolved absolute path</returns>
+        public static string ResolveMediaPath(List<string> potentialRoots, string relativePath)
+        {
+            // If the path is already absolute (rooted), use it directly
+            if (Path.IsPathRooted(relativePath))
+            {
+                return relativePath;
+            }
+
+            // Try each root directory in order and return the first where the file exists
+            foreach (var root in potentialRoots)
+            {
+                string candidatePath = Path.Combine(root, relativePath);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            // If file not found in any root, return the default (first root) path
+            // This maintains backwards compatibility and allows files to be created in the default location
+            return potentialRoots.Count > 0 ? Path.Combine(potentialRoots[0], relativePath) : relativePath;
+        }
+
         public static string MediaLibraryPath()
         {
             return Path.Combine(UserPath(), "Media Library");

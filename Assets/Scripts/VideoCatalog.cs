@@ -26,7 +26,7 @@ namespace TiltBrush
         [SerializeField] private bool m_DebugOutput;
         [SerializeField] private string[] m_supportedVideoExtensions;
 
-        private FileWatcher m_FileWatcher;
+        private List<FileWatcher> m_FileWatchers = new List<FileWatcher>();
         private string m_CurrentVideoDirectory;
         public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
@@ -57,15 +57,38 @@ namespace TiltBrush
 
             StartCoroutine(ScanReferenceDirectory());
 
-            if (Directory.Exists(m_CurrentVideoDirectory))
+            DisposeFileWatchers();
+            foreach (var directory in ScanDirectories())
             {
-                m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnDirectoryChanged;
-                m_FileWatcher.FileCreated += OnDirectoryChanged;
-                m_FileWatcher.FileDeleted += OnDirectoryChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
+                var fileWatcher = new FileWatcher(directory);
+                fileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                fileWatcher.FileChanged += OnDirectoryChanged;
+                fileWatcher.FileCreated += OnDirectoryChanged;
+                fileWatcher.FileDeleted += OnDirectoryChanged;
+                fileWatcher.EnableRaisingEvents = true;
+                m_FileWatchers.Add(fileWatcher);
             }
+        }
+
+        /// The directories a scan covers: at the top level that is every configured video root,
+        /// otherwise just the directory the user has browsed into. Roots that do not exist on this
+        /// machine are skipped, so a config shared between machines does not have to match them all.
+        private List<string> ScanDirectories()
+        {
+            var directories = IsHomeDirectory()
+                ? App.GetAllVideoRoots()
+                : new List<string> { m_CurrentVideoDirectory };
+            return directories.Where(Directory.Exists).ToList();
+        }
+
+        private void DisposeFileWatchers()
+        {
+            foreach (var fileWatcher in m_FileWatchers)
+            {
+                fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.Dispose();
+            }
+            m_FileWatchers.Clear();
         }
 
         public string HomeDirectory => App.VideoLibraryPath();
@@ -93,7 +116,7 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
-            m_FileWatcher.EnableRaisingEvents = false;
+            DisposeFileWatchers();
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)
@@ -155,7 +178,9 @@ namespace TiltBrush
 
             var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.AllDirectories).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
+                ScanDirectories()
+                    .SelectMany(x => Directory.GetFiles(x, "*.*", SearchOption.AllDirectories))
+                    .Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 
@@ -194,9 +219,38 @@ namespace TiltBrush
         }
 
         /// Gets a video form the catalog, given its filename. Returns null if no such video is found.
+        ///
+        /// A sketch can name a video the catalog has not got to yet, either because the scan is
+        /// still running or because the file sits in a configured root below a directory the user
+        /// has browsed away from. Rather than report it missing, resolve it against the roots and
+        /// adopt it into the catalog if the file is really there.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            return m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            var video = m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            if (video != null) { return video; }
+
+            if (string.IsNullOrEmpty(path)) { return null; }
+            string resolvedPath;
+            try
+            {
+                resolvedPath = App.ResolveMediaPath(App.GetAllVideoRoots(), path);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            if (!File.Exists(resolvedPath)) { return null; }
+
+            video = new ReferenceVideo(resolvedPath);
+            m_Videos.Add(video);
+            StartCoroutine(InitializeAdoptedVideo(video));
+            return video;
+        }
+
+        private IEnumerator<object> InitializeAdoptedVideo(ReferenceVideo video)
+        {
+            yield return video.Initialize();
+            CatalogChanged?.Invoke();
         }
 
 

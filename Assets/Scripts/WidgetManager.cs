@@ -840,6 +840,20 @@ namespace TiltBrush
                     }
                 }
             }
+
+            // A model in a root configured under MediaRoots is identified by its path relative to
+            // that root, so that sketch metadata stays portable between machines that mount the
+            // same library at different locations. Model.Location resolves it back across roots.
+            foreach (var root in App.GetAllModelRoots())
+            {
+                string rootPath = CanonicalizeForCompare(root);
+                if (!rootPath.EndsWith("/")) { rootPath += "/"; }
+                string canonicalPath = CanonicalizeForCompare(fullPath);
+                if (canonicalPath.StartsWith(rootPath))
+                {
+                    return fullPath.Replace('\\', '/').Substring(rootPath.Length);
+                }
+            }
             return null;
         }
 

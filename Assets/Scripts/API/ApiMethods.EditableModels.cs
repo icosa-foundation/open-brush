@@ -126,7 +126,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "model.import",
-            "Imports a model given a filename in Media Library\\Models (Models loaded from a url are saved locally first)",
+            "Imports a model given a filename in Media Library\\Models. Filenames may also name a file in any model root configured under MediaRoots (Models loaded from a url are saved locally first)",
             "Andy.glb"
         )]
         public static ModelWidget ImportModel(string location)

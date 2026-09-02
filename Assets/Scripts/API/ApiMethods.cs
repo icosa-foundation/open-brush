@@ -490,8 +490,8 @@ namespace TiltBrush
 
         private static ReferenceImage _LoadReferenceImage(string location)
         {
-            location = GetSafeRelativePathInDirectory(
-                App.ReferenceImagePath(), location, "reference image path");
+            location = GetSafeMediaPath(
+                App.GetAllImageRoots(), location, "reference image path");
             var image = new ReferenceImage(location);
             image.SynchronousLoad();
             return image;
@@ -533,7 +533,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "video.import",
-            "Imports a video given a url or a filename in Media Library\\Videos",
+            "Imports a video given a url or a filename in Media Library\\Videos. Filenames may also name a file in any video root configured under MediaRoots",
             "animated-logo.mp4"
         )]
         public static VideoWidget ImportVideo(string location)
@@ -551,8 +551,7 @@ namespace TiltBrush
                 location = _DownloadMediaFileFromUrl(
                     location, "Videos", allowRedirects, requiredContentTypePrefix);
             }
-            location = GetSafeRelativePathInDirectory(
-                App.VideoLibraryPath(), location, "video path");
+            location = GetSafeMediaPath(App.GetAllVideoRoots(), location, "video path");
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -578,7 +577,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "skybox.import",
-            "Sets the skybox from either a url or a filename in Media Library\\BackgroundImages (Images loaded from a url are saved locally first)",
+            "Sets the skybox from either a url or a filename in Media Library\\BackgroundImages. Filenames may also name a file in any background image root configured under MediaRoots (Images loaded from a url are saved locally first)",
             "panorama.jpg"
         )]
         public static void ImportSkybox(string location)
@@ -601,7 +600,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.import",
-            "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)",
+            "Imports an image given a url or a filename in Media Library\\Images. Filenames may also name a file in any image root configured under MediaRoots (Images loaded from a url are saved locally first)",
             "OpenBrushLogo.png"
         )]
         public static ImageWidget ImportImage(string location)
@@ -1206,6 +1205,33 @@ namespace TiltBrush
                 throw new ArgumentException($"Invalid {description}: {relativePath}");
             }
             return path;
+        }
+
+        /// <summary>
+        /// Resolves a relative media path against several potential root directories, in priority
+        /// order, returning the first root where the file exists. Falls back to the first root when
+        /// the file isn't found anywhere. Each candidate is validated to stay inside its root, so
+        /// absolute paths and traversal outside a root are rejected.
+        /// </summary>
+        internal static string GetSafeMediaPath(
+            List<string> potentialRoots, string relativePath, string description)
+        {
+            if (potentialRoots == null || potentialRoots.Count == 0)
+            {
+                throw new ArgumentException($"No root directory available for {description}.");
+            }
+
+            string fallbackPath = null;
+            foreach (var root in potentialRoots)
+            {
+                string candidatePath = GetSafeRelativePathInDirectory(root, relativePath, description);
+                fallbackPath ??= candidatePath;
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+            return fallbackPath;
         }
 
         private static StringComparison FileSystemPathComparison =>
