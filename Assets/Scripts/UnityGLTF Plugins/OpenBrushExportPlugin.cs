@@ -88,7 +88,8 @@ namespace TiltBrush
             m_TemporaryBatchMeshes = new List<Mesh>();
             if (IsIsolatedMeshFixtureExport) return;
 
-            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
+            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox
+                && GltfExportStandinManager.m_Instance != null)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
@@ -647,6 +648,17 @@ namespace TiltBrush
                         break;
                 }
             }
+            else if (material.name == GltfExportStandinManager.kSkyStandinMaterialName)
+            {
+                // Sky standin sphere: mark double-sided so it renders correctly from the inside
+                // regardless of face-winding interpretation in the target GLTF viewer.
+                materialNode.DoubleSided = true;
+                if (materialNode.PbrMetallicRoughness != null)
+                {
+                    materialNode.PbrMetallicRoughness.MetallicFactor = 0;
+                    materialNode.PbrMetallicRoughness.RoughnessFactor = 1;
+                }
+            }
             else if (shaderName.StartsWith("Blocks/"))
             {
                 float r = material.color.r;
@@ -698,7 +710,8 @@ namespace TiltBrush
                 CleanupCameraPathsCameras();
             }
 
-            if (App.UserConfig.Export.ExportCustomSkybox)
+            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox
+                && GltfExportStandinManager.m_Instance != null)
             {
                 GltfExportStandinManager.m_Instance.DestroySkyStandin();
             }
@@ -727,6 +740,10 @@ namespace TiltBrush
                 exportFromUnity * (settings.GradientOrientation * Vector3.up));
             extras["TB_FogColor"] = ColorToJString(settings.FogColor);
             extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
+            if (settings.HasCustomSkybox())
+            {
+                extras["TB_SkyboxTextureName"] = settings.CustomSkyboxTextureName;
+            }
             extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
             for (int i = 0; i < App.Scene.GetNumLights(); i++)
             {
