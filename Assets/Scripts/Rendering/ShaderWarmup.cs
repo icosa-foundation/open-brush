@@ -136,9 +136,22 @@ namespace TiltBrush
                 AddKeywordMaterial(materials, material, "AUDIO_REACTIVE");
             }
 
-            if (material.HasProperty("_ISBAKEDEXPORT"))
+            bool hasTiltMesh = material.HasProperty("_IS_TILT_MESH");
+            bool hasBakedExport = material.HasProperty("_ISBAKEDEXPORT");
+            if (hasTiltMesh)
             {
-                AddKeywordMaterial(materials, material, "_ISBAKEDEXPORT");
+                Material legacyExportMaterial = new Material(material);
+                SetKeyword(legacyExportMaterial, "_IS_TILT_MESH", false);
+                SetKeyword(legacyExportMaterial, "_ISBAKEDEXPORT", false);
+                materials.Add(legacyExportMaterial);
+            }
+
+            if (hasBakedExport)
+            {
+                Material bakedExportMaterial = new Material(material);
+                SetKeyword(bakedExportMaterial, "_IS_TILT_MESH", false);
+                SetKeyword(bakedExportMaterial, "_ISBAKEDEXPORT", true);
+                materials.Add(bakedExportMaterial);
             }
 
             if (material.HasProperty("_BAKED_VERTEX_SHADER_ON") ||
@@ -154,6 +167,20 @@ namespace TiltBrush
             Material keywordMaterial = new Material(source);
             keywordMaterial.EnableKeyword(keyword);
             materials.Add(keywordMaterial);
+        }
+
+        private static void SetKeyword(Material material, string keyword, bool enabled)
+        {
+            if (!material.HasProperty(keyword)) return;
+            material.SetFloat(keyword, enabled ? 1f : 0f);
+            if (enabled)
+            {
+                material.EnableKeyword(keyword);
+            }
+            else
+            {
+                material.DisableKeyword(keyword);
+            }
         }
 
         private static bool IsDiagnosticLoggingEnabled()

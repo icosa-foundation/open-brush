@@ -52,6 +52,7 @@ namespace TiltBrush
             "SELECTION_ON",
             "AUDIO_REACTIVE",
             "SHADER_SCRIPTING_ON",
+            "_IS_TILT_MESH",
             "_ISBAKEDEXPORT",
             "_BAKED_VERTEX_SHADER_ON",
             "_BAKED_VERTEX_SHADER",
