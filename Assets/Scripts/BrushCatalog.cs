@@ -18,8 +18,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
+
 using Brush = TiltBrush.BrushDescriptor;
 
 namespace TiltBrush
@@ -46,9 +48,9 @@ namespace TiltBrush
 
             // For unit testing, probably best to have all the descriptors available,
             // rather than just a subset of them that are in a manifest.
-            m_Instance.m_GuidToBrush = UnityEditor.AssetDatabase.FindAssets("t:BrushDescriptor")
+            m_Instance.m_BuiltinBrushes = UnityEditor.AssetDatabase.FindAssets("t:BrushDescriptor")
                 .Select(name => UnityEditor.AssetDatabase.LoadAssetAtPath<BrushDescriptor>(
-                    UnityEditor.AssetDatabase.GUIDToAssetPath(name)))
+                            UnityEditor.AssetDatabase.GUIDToAssetPath(name)))
                 .ToDictionary(desc => (Guid)desc.m_Guid);
         }
 
@@ -64,27 +66,63 @@ namespace TiltBrush
         public Texture2D m_GlobalNoiseTexture;
 
         [SerializeField] private Brush m_DefaultBrush;
+        private bool m_CatalogChanged;
         [SerializeField] private Brush m_ZapboxDefaultBrush;
         private bool m_IsLoading;
         private Dictionary<Guid, Brush> m_GuidToBrush;
         private HashSet<Brush> m_AllBrushes;
         private List<Brush> m_GuiBrushList;
 
+        private Dictionary<Guid, Brush> m_BuiltinBrushes;
+        private Dictionary<Guid, Brush> m_LibraryBrushes;
+        private Dictionary<Guid, Brush> m_SceneBrushes;
+
+        private List<string> m_ChangedBrushes;
+        private readonly object m_ChangedBrushesLock = new object();
+
         [SerializeField] public BlocksMaterial[] m_BlocksMaterials;
         private Dictionary<Material, Brush> m_MaterialToBrush;
 
-        public bool IsLoading { get { return m_IsLoading; } }
+        private FileWatcher m_FileWatcher;
+
+        public bool IsLoading { get { return m_CatalogChanged; } }
+
+        /// <summary>
+        /// GetBrush Looks in the following places for brushes, in order:
+        /// 1) Built-in brushes
+        /// 2) Brushes in the Brush Library
+        /// 3) Brushes in the Scene.
+        /// </summary>
+        /// <param name="guid">Guid of the brush to seach for.</param>
+        /// <returns>The brush, if it can be found. Otherwise, null.</returns>
         public Brush GetBrush(Guid guid)
         {
-            try
+            Brush brush;
+            if (m_BuiltinBrushes.TryGetValue(guid, out brush))
             {
-                return m_GuidToBrush[guid];
+                return brush;
             }
-            catch (KeyNotFoundException)
+            if (m_LibraryBrushes.TryGetValue(guid, out brush))
             {
-                return null;
+                return brush;
             }
+            if (m_SceneBrushes.TryGetValue(guid, out brush))
+            {
+                return brush;
+            }
+            return null;
         }
+
+        public IEnumerable<Brush> AllBrushes => KeepOrderDistinct(
+          m_BuiltinBrushes.Values.Concat(m_LibraryBrushes.Values.Concat(m_SceneBrushes.Values)));
+
+        public List<Brush> GuiBrushList => m_GuiBrushList;
+
+        public bool IsBrushBuiltIn(BrushDescriptor brush)
+        {
+            return m_BuiltinBrushes.ContainsKey(brush.m_Guid);
+        }
+
         public Brush DefaultBrush
         {
             get
@@ -96,13 +134,18 @@ namespace TiltBrush
                 return m_DefaultBrush;
             }
         }
-        public IEnumerable<Brush> AllBrushes
+
+        public bool IsBrushInLibrary(BrushDescriptor brush)
         {
-            get { return m_AllBrushes; }
+            return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
+                   m_LibraryBrushes.ContainsKey(brush.m_Guid);
         }
-        public List<Brush> GuiBrushList
+
+        public bool IsBrushInSketch(BrushDescriptor brush)
         {
-            get { return m_GuiBrushList; }
+            return !m_BuiltinBrushes.ContainsKey(brush.m_Guid) &&
+                   !m_LibraryBrushes.ContainsKey(brush.m_Guid) &&
+                   m_SceneBrushes.ContainsKey(brush.m_Guid);
         }
 
         void Awake()
@@ -113,34 +156,69 @@ namespace TiltBrush
 
         public void Init()
         {
+            m_BuiltinBrushes = new Dictionary<Guid, Brush>();
+            m_LibraryBrushes = new Dictionary<Guid, Brush>();
+            m_SceneBrushes = new Dictionary<Guid, Brush>();
             m_GuidToBrush = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
             m_AllBrushes = new HashSet<Brush>();
             m_GuiBrushList = new List<Brush>();
+            m_ChangedBrushes = new List<string>();
 
             // Move blocks materials in to a dictionary for quick lookup.
             for (int i = 0; i < m_BlocksMaterials.Length; ++i)
             {
                 m_MaterialToBrush.Add(m_BlocksMaterials[i].brushDescriptor.Material,
-                    m_BlocksMaterials[i].brushDescriptor);
+                                      m_BlocksMaterials[i].brushDescriptor);
             }
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
+
+            if (FileUtils.InitializeDirectoryWithUserError(App.UserBrushesPath()))
+            {
+                m_FileWatcher = new FileWatcher(App.UserBrushesPath(), includeSubdirectories: true);
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.FileChanged += OnDirectoryChanged;
+                m_FileWatcher.FileCreated += OnDirectoryChanged;
+                m_FileWatcher.FileDeleted += OnDirectoryChanged;
+                m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
+        }
+
+        private static IEnumerable<Brush> KeepOrderDistinct(IEnumerable<Brush> brushes)
+        {
+            var alreadyFound = new HashSet<string>();
+            foreach (var brush in brushes)
+            {
+                string guid = brush.m_Guid.ToString();
+                if (!alreadyFound.Contains(guid))
+                {
+                    alreadyFound.Add(guid);
+                    yield return brush;
+                }
+            }
         }
 
         /// Begins reloading any brush assets that come from loose files.
         /// The "BrushCatalogChanged" event will be fired when this is complete.
         public void BeginReload()
         {
-            m_IsLoading = true;
+            m_CatalogChanged = true;
 
             // Recreate m_GuidToBrush
             {
                 var manifestBrushes = LoadBrushesInManifest();
                 manifestBrushes.Add(DefaultBrush);
+                m_BuiltinBrushes = KeepOrderDistinct(manifestBrushes).ToDictionary<Brush, Guid>(x => x.m_Guid);
+                LoadUserLibraryBrushes();
 
                 m_GuidToBrush.Clear();
                 m_AllBrushes = null;
-
                 foreach (var brush in manifestBrushes)
                 {
                     Brush tmp;
@@ -151,7 +229,6 @@ namespace TiltBrush
                     }
                     m_GuidToBrush[brush.m_Guid] = brush;
                 }
-
                 // Add reverse links to the brushes
                 // Auto-add brushes as compat brushes
                 foreach (var brush in manifestBrushes) { brush.m_SupersededBy = null; }
@@ -160,9 +237,9 @@ namespace TiltBrush
                     var older = brush.m_Supersedes;
                     if (older == null) { continue; }
                     // Add as compat
-                    if (!m_GuidToBrush.ContainsKey(older.m_Guid))
+                    if (!m_BuiltinBrushes.ContainsKey(older.m_Guid))
                     {
-                        m_GuidToBrush[older.m_Guid] = older;
+                        m_BuiltinBrushes[older.m_Guid] = older;
                         older.m_HiddenInGui = true;
                     }
                     // Set reverse link
@@ -200,7 +277,6 @@ namespace TiltBrush
             BrushCatalogChanged?.Invoke();
         }
 
-
         public Brush[] GetTagFilteredBrushList(List<string> includeTags = null, List<string> excludeTags = null)
         {
             includeTags ??= App.UserConfig.Brushes.IncludeTags.ToList();
@@ -234,14 +310,10 @@ namespace TiltBrush
 
         void Update()
         {
-            if (m_IsLoading)
-            {
-                m_IsLoading = false;
-                Resources.UnloadUnusedAssets();
-                ModifyBrushTags();
-                BrushCatalogChanged?.Invoke();
-            }
+            HandleChangedBrushes();
+            ModifyBrushTags();
         }
+
         private void ModifyBrushTags()
         {
             Dictionary<string, string[]> tagsToAddMap = App.UserConfig.Brushes.AddTagsToBrushes;
@@ -286,6 +358,52 @@ namespace TiltBrush
             }
         }
 
+        public void HandleChangedBrushes()
+        {
+            List<string> changedBrushes;
+            lock (m_ChangedBrushesLock)
+            {
+                changedBrushes = new List<string>(m_ChangedBrushes);
+                m_ChangedBrushes.Clear();
+            }
+
+            List<string> brushesToRepaint = null;
+            if (changedBrushes.Count > 0)
+            {
+                var changedBrushGuids = new HashSet<string>();
+                for (var i = 0; i < changedBrushes.Count; i++)
+                {
+                    var path = changedBrushes[i];
+                    Guid? changedGuid = LoadUserLibraryBrush(path);
+                    if (changedGuid.HasValue)
+                    {
+                        changedBrushGuids.Add(changedGuid.Value.ToString());
+                    }
+                }
+                m_CatalogChanged = true;
+                brushesToRepaint = changedBrushGuids.ToList();
+            }
+            if (m_CatalogChanged)
+            {
+                m_GuiBrushList = AllBrushes.Where(x => !x.m_HiddenInGui).ToList();
+                m_CatalogChanged = false;
+                Resources.UnloadUnusedAssets();
+                if (BrushCatalogChanged != null)
+                {
+                    BrushCatalogChanged();
+                }
+                StartCoroutine(
+                    OverlayManager.m_Instance.RunInCompositorWithProgress(
+                        OverlayType.LoadGeneric,
+                        SketchMemoryScript.m_Instance.RepaintCoroutine(brushesToRepaint, true),
+                        0.25f)
+                );
+            }
+
+        }
+
+
+
         // Returns brushes in both sections of the manifest (compat and non-compat)
         // Brushes that are found only in the compat section will have m_HiddenInGui = true
         static private List<Brush> LoadBrushesInManifest()
@@ -310,7 +428,118 @@ namespace TiltBrush
                     output.Add(desc);
                 }
             }
+
             return output;
         }
+
+        private void LoadUserLibraryBrushes()
+        {
+            FileUtils.InitializeDirectoryWithUserError(App.UserBrushesPath());
+            foreach (var folder in Directory.GetDirectories(App.UserBrushesPath()))
+            {
+                LoadUserLibraryBrush(folder);
+            }
+            foreach (var file in Directory.GetFiles(App.UserBrushesPath(), "*.brush"))
+            {
+                LoadUserLibraryBrush(file);
+            }
+        }
+
+        private Guid? LoadUserLibraryBrush(string path)
+        {
+            string brushObject = Path.GetFileName(path);
+            BrushDescriptor existingBrush =
+              m_LibraryBrushes.Values.FirstOrDefault(x => x.UserVariantBrush.Location == brushObject);
+            var userBrush = UserVariantBrush.Create(path);
+            if (userBrush == null)
+            {
+                if (existingBrush != null && !File.Exists(path) && !Directory.Exists(path))
+                {
+                    m_LibraryBrushes.Remove(existingBrush.m_Guid);
+                    if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
+                    {
+                        BrushController.m_Instance.SetBrushToDefault();
+                    }
+                    m_CatalogChanged = true;
+                    return existingBrush.m_Guid;
+                }
+                return null;
+            }
+            if (m_LibraryBrushes.ContainsKey(userBrush.Descriptor.m_Guid) && existingBrush == null)
+            {
+                Debug.LogError(
+                  $"New brush at {path} has a guid already used.");
+                return null;
+            }
+            m_LibraryBrushes[userBrush.Descriptor.m_Guid] = userBrush.Descriptor;
+            if (existingBrush != null)
+            {
+                if (BrushController.m_Instance.ActiveBrush.m_Guid == existingBrush.m_Guid)
+                {
+                    BrushController.m_Instance.SetBrushToDefault();
+                    BrushController.m_Instance.SetActiveBrush(userBrush.Descriptor);
+                }
+            }
+            m_CatalogChanged = true;
+            return userBrush.Descriptor.m_Guid;
+        }
+
+        public void AddSceneBrush(BrushDescriptor brush)
+        {
+            m_SceneBrushes[brush.m_Guid] = brush;
+            m_CatalogChanged = true;
+        }
+
+        public void AddMissingSceneBrushFromBase(Guid missingGuid, Guid baseGuid)
+        {
+            BrushDescriptor baseBrush = GetBrush(baseGuid);
+            if (!baseBrush)
+            {
+                Debug.LogWarning($"Error! Brush {baseBrush} not found!");
+                baseBrush = m_DefaultBrush;
+            }
+
+            BrushDescriptor missingBrush = Instantiate(baseBrush);
+            missingBrush.m_Guid = missingGuid;
+            missingBrush.BaseGuid = baseGuid;
+            missingBrush.m_Supersedes = null;
+            missingBrush.m_SupersededBy = null;
+            missingBrush.m_HiddenInGui = true;
+            m_SceneBrushes[missingGuid] = missingBrush;
+            m_CatalogChanged = true;
+        }
+
+        public void ClearSceneBrushes()
+        {
+            m_SceneBrushes.Clear();
+            Resources.UnloadUnusedAssets();
+            m_CatalogChanged = true;
+        }
+
+        private void OnDirectoryChanged(object source, FileSystemEventArgs e)
+        {
+            string path = e.FullPath;
+            if (path.StartsWith(App.UserBrushesPath()))
+            {
+                UpdateCatalog(path);
+            }
+        }
+
+        public void UpdateCatalog(string brushPath)
+        {
+            int brushPathLength = App.UserBrushesPath().Length + 1;
+            var end = brushPath.Substring(brushPathLength, brushPath.Length - brushPathLength);
+            var parts = end.Split(Path.DirectorySeparatorChar);
+            string brush = parts.FirstOrDefault();
+            if (brush == null)
+            {
+                return;
+            }
+            lock (m_ChangedBrushesLock)
+            {
+                m_ChangedBrushes.Add(Path.Combine(App.UserBrushesPath(), brush));
+            }
+        }
+
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush

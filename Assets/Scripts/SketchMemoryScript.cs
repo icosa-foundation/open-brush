@@ -914,9 +914,14 @@ namespace TiltBrush
         }
 
         // Repaint in doesn't relate to the repaint command
-        public IEnumerator<float> RepaintCoroutine()
+        public IEnumerator<float> RepaintCoroutine(List<string> brushesToRepaint = null, bool silent = false)
         {
-            int numStrokes = m_MemoryList.Count;
+            HashSet<string> brushGuids = brushesToRepaint == null
+                ? null
+                : new HashSet<string>(brushesToRepaint);
+            int numStrokes = brushGuids == null
+                ? m_MemoryList.Count
+                : m_MemoryList.Count(stroke => brushGuids.Contains(stroke.m_BrushGuid.ToString()));
             int strokesRepainted = 0;
             int remainingStrokesPerSlice = 0;
             int totalPrevVerts = 0;
@@ -924,11 +929,19 @@ namespace TiltBrush
 
             // First, gather a bunch of info about our strokes.
             bool[] batchEnabled = new bool[m_MemoryList.Count];
+            bool[] repaintStroke = new bool[m_MemoryList.Count];
             int batchEnabledIndex = 0;
             for (var node = m_MemoryList.First; node != null; node = node.Next)
             {
                 // TODO: Should we skip this stroke if it's particles?
-                var stroke = node.Value;
+                Stroke stroke = node.Value;
+                repaintStroke[batchEnabledIndex] =
+                    brushGuids == null || brushGuids.Contains(stroke.m_BrushGuid.ToString());
+                if (!repaintStroke[batchEnabledIndex])
+                {
+                    ++batchEnabledIndex;
+                    continue;
+                }
                 if (stroke.m_Type == Stroke.Type.BatchedBrushStroke)
                 {
                     totalPrevVerts += stroke.m_BatchSubset.m_VertLength;
@@ -939,16 +952,25 @@ namespace TiltBrush
                 ++batchEnabledIndex;
             }
 
-            // Clear pools.
-            foreach (var canvas in App.Scene.AllCanvases)
+            // A full repaint can discard all batch pools. A selective repaint must preserve the
+            // geometry belonging to unaffected strokes.
+            if (brushGuids == null)
             {
-                canvas.BatchManager.ResetPools();
+                foreach (var canvas in App.Scene.AllCanvases)
+                {
+                    canvas.BatchManager.ResetPools();
+                }
             }
 
             // Recreate strokes.
             batchEnabledIndex = 0;
             for (var node = m_MemoryList.First; node != null; node = node.Next)
             {
+                if (!repaintStroke[batchEnabledIndex])
+                {
+                    ++batchEnabledIndex;
+                    continue;
+                }
                 // TODO: Should we skip this stroke if it's particles?
                 var stroke = node.Value;
                 stroke.Recreate();
@@ -972,35 +994,40 @@ namespace TiltBrush
                 ++batchEnabledIndex;
             }
 
-            // Report change to user.
-            if (totalPrevVerts < totalVerts)
+            if (!silent)
             {
-                float vertChange = (float)totalVerts / (float)totalPrevVerts;
-                float increasePercent = (vertChange - 1.0f) * 100.0f;
-                int increaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(increasePercent));
-                string report = "Sketch is " + increaseReadable.ToString() + "% larger.";
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    report);
+
+                // Report change to user.
+                if (totalPrevVerts < totalVerts)
+                {
+                    float vertChange = (float)totalVerts / (float)totalPrevVerts;
+                    float increasePercent = (vertChange - 1.0f) * 100.0f;
+                    int increaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(increasePercent));
+                    string report = "Sketch is " + increaseReadable.ToString() + "% larger.";
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        report);
+                }
+                else if (totalPrevVerts > totalVerts)
+                {
+                    float vertChange = (float)totalVerts / (float)totalPrevVerts;
+                    float decreasePercent = 100.0f - (vertChange * 100.0f);
+                    int decreaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(decreasePercent));
+                    string report = "Sketch is " + decreaseReadable.ToString() + "% smaller.";
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        report);
+                }
+                else
+                {
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Wand,
+                        "No change in sketch size.");
+                }
+
+                ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
+                    totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
             }
-            else if (totalPrevVerts > totalVerts)
-            {
-                float vertChange = (float)totalVerts / (float)totalPrevVerts;
-                float decreasePercent = 100.0f - (vertChange * 100.0f);
-                int decreaseReadable = (int)Mathf.Max(1.0f, Mathf.Floor(decreasePercent));
-                string report = "Sketch is " + decreaseReadable.ToString() + "% smaller.";
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    report);
-            }
-            else
-            {
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Wand,
-                    "No change in sketch size.");
-            }
-            ControllerConsoleScript.m_Instance.AddNewLine("Sketch rebuilt! Vertex count: " +
-                totalPrevVerts.ToString() + " -> " + totalVerts.ToString());
 
             m_RepaintCoroutine = null;
         }

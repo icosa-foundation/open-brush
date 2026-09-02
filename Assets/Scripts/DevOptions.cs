@@ -44,9 +44,6 @@ using Newtonsoft.Json.Linq;
 namespace TiltBrush
 {
 
-    [Serializable]
-    public enum TiltFormat { Directory, Inherit, Zip };
-
     // This class awakens before all our other script classes, so it is
     // safe for it to override values that have been serialized into the scene.
     public class DevOptions : MonoBehaviour
@@ -59,7 +56,7 @@ namespace TiltBrush
         public bool ResaveLegacyScenes = true;
         public bool UseAutoProfiler = false;
         public bool AllowStripBreak = true;
-        public TiltFormat PreferredTiltFormat = TiltFormat.Inherit;
+        public AtomicWriter.SaveFormat PreferredTiltFormat = AtomicWriter.SaveFormat.Inherit;
         public PointerScript.BrushLerp BrushLerp = PointerScript.BrushLerp.Default;
 
         public void Awake()
@@ -150,4 +147,4 @@ namespace TiltBrush
 
 #endif // ALLOW_EXTERNAL_CFG_FILE
     }
-} // namespace TiltBrush
+}  // namespace TiltBrush

@@ -1,0 +1,76 @@
+{
+  "VariantOf": "",
+  "GUID": "0d3889f3-3ede-470c-8af4-de4813306126",
+  "Author": "Open Brush",
+  "Name": "DoubleTaperedMarker",
+  "Description": "Pinched Marker",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.04,
+    "MaxVolume": 0.8,
+    "VolumeUpSpeed": 0.7,
+    "VolumeDownSpeed": 3.0,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": false
+  },
+  "Material": {
+    "Shader": "Brush/Special/DoubleTaperedMarker",
+    "FloatProperties": {},
+    "ColorProperties": {},
+    "VectorProperties": {},
+    "TextureProperties": {},
+    "TextureAtlasV": 1,
+    "TileRate": 0.1,
+    "UseBloomSwatchOnColorPicker": false
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.025, 2.0 ],
+    "PressureSizeRange": [ 0.1, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.001
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.0,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 1.0,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": false
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.0,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": true,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 3
+  },
+  "BrushDescriptionVersion": 1
+}
