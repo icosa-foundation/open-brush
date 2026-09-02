@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using OpenBrush.Multiplayer;
-using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -25,6 +24,9 @@ namespace TiltBrush
 
     public class SceneSettings : MonoBehaviour
     {
+        private const string kHdrPanoramicSkyboxMaterialResource =
+            "Environments/HdrPanoramicSkybox";
+
         // A using() object that requests instant scene switches
         public class RequestInstantSceneSwitch : IDisposable
         {
@@ -215,32 +217,25 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            Texture2D tex = null;
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
 
-                if (path.EndsWith(".hdr"))
+                if (HdrTextureLoader.IsSupportedFile(path))
                 {
-                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                    tex = hdr.texture;
+                    tex = HdrTextureLoader.Load(fileData, path);
                 }
                 else
                 {
+                    tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
                     tex.LoadImage(fileData);
                 }
 
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
-                }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
+                float aspectRatio = (float)tex.width / tex.height;
+                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(path, aspectRatio);
                 m_CustomSkyboxMaterial.mainTexture = tex;
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
@@ -263,20 +258,35 @@ namespace TiltBrush
             }
             else
             {
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
-                }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
+                float aspectRatio = (float)tex.width / tex.height;
+                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(filepath, aspectRatio);
                 m_CustomSkyboxMaterial.mainTexture = tex;
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
                 RenderSettings.ambientMode = AmbientMode.Skybox;
             }
+        }
+
+        private static Material CreateCustomSkyboxMaterial(string path, float aspectRatio)
+        {
+            if (!HdrTextureLoader.IsSupportedFile(path))
+            {
+                string resource = aspectRatio > 1.5f
+                    ? "Environments/CustomSkybox"
+                    : "Environments/CustomStereoSkybox";
+                return Resources.Load<Material>(resource);
+            }
+
+            Material template = Resources.Load<Material>(kHdrPanoramicSkyboxMaterialResource);
+            if (template == null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not load skybox material resource: {kHdrPanoramicSkyboxMaterialResource}");
+            }
+
+            var material = new Material(template);
+            material.SetFloat("_Layout", aspectRatio > 1.5f ? 0 : 2);
+            return material;
         }
 
         public Quaternion GradientOrientation

@@ -291,7 +291,8 @@ namespace TiltBrush
             // TODO - make this smarter
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
                 filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4") ||
-                filename.ToLower().EndsWith(".hdr") || filename.ToLower().EndsWith(".svg") ||
+                filename.ToLower().EndsWith(".hdr") || filename.ToLower().EndsWith(".exr") ||
+                filename.ToLower().EndsWith(".svg") ||
                 filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
                 filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
                 filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))

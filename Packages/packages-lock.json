@@ -23,6 +23,13 @@
       },
       "hash": "bd72241ab91c664176091789c9408d676783abec"
     },
+    "com.icosa.unitytinyexr": {
+      "version": "https://github.com/icosa-mirror/UnityTinyEXR.git#7d86cd3109a02be80a91846d69c59802dba05665",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "7d86cd3109a02be80a91846d69c59802dba05665"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,

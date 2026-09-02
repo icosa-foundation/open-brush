@@ -18,7 +18,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.VectorGraphics;
-using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Localization;
 using Object = UnityEngine.Object;
@@ -373,13 +372,12 @@ namespace TiltBrush
                 return true;
             }
 
-            if (FilePath.EndsWith(".hdr"))
+            if (HdrTextureLoader.IsSupportedFile(FilePath))
             {
                 // TODO Move into the async code path?
                 var fileData = File.ReadAllBytes(FilePath);
-                RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-                tex = hdr.texture;
+                Texture2D tex = HdrTextureLoader.Load(
+                    fileData, FilePath, makeNoLongerReadable: false);
 
                 if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
                 {
