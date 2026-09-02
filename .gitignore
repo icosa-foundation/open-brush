@@ -1,5 +1,6 @@
 # Standard unity stuff
 /Temp/
+/.venv-ssim/
 /Obj/
 /Build/
 /Library/
