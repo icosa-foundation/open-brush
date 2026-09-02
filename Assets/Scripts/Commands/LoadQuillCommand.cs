@@ -37,6 +37,11 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_Active)
+            {
+                return;
+            }
+
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(true);
@@ -48,6 +53,8 @@ namespace TiltBrush
                     if (widget == null) continue;
                     widget.gameObject.SetActive(true);
                     widget.RestoreFromToss();
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                        widget.GetTiltMeterCost(), up: true);
                 }
             }
             foreach (var stroke in m_Strokes)
@@ -59,6 +66,11 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (!m_Active)
+            {
+                return;
+            }
+
             foreach (var stroke in m_Strokes)
             {
                 stroke.Hide(true);
@@ -68,6 +80,8 @@ namespace TiltBrush
                 foreach (var widget in m_Widgets)
                 {
                     if (widget == null) continue;
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                        widget.GetTiltMeterCost(), up: false);
                     widget.Hide();
                 }
             }

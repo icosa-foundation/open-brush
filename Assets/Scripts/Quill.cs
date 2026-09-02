@@ -498,25 +498,24 @@ namespace TiltBrush
                 return null;
             }
 
-            string importLocation = GetImportLocation(refImage);
-            if (string.IsNullOrEmpty(importLocation))
-            {
-                return null;
-            }
-
             TrTransform worldXfTr = TrTransform.FromMatrix4x4(worldXf);
             // Quill maps pictures to a 2x2 quad, with height driving aspect.
             worldXfTr.scale = Mathf.Abs(worldXfTr.scale) * 2.0f;
 
-            ImageWidget image = ApiMethods._ImportImage(importLocation, worldXfTr, targetLayer);
-            if (image == null)
-            {
-                return null;
-            }
-
+            ImageWidget image = UnityEngine.Object.Instantiate(
+                WidgetManager.m_Instance.ImageWidgetPrefab);
+            image.LoadingFromSketch = true;
+            image.transform.parent = targetLayer.transform;
+            image.transform.localScale = Vector3.one;
+            refImage.SynchronousLoad();
+            image.ReferenceImage = refImage;
+            image.SetSignedWidgetSize(worldXfTr.scale);
+            image.Show(bShow: true, bPlayAudio: false);
+            image.transform.position = worldXfTr.translation;
+            image.transform.rotation = worldXfTr.rotation;
             image.TwoSided = true;
-
             ApplyImageOpacity(image, opacity);
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
 
             return image;
         }
@@ -818,30 +817,6 @@ namespace TiltBrush
             return Path.GetFullPath(path.Replace('/', Path.DirectorySeparatorChar));
         }
 
-        private static string GetImportLocation(ReferenceImage referenceImage)
-        {
-            if (referenceImage == null)
-            {
-                return null;
-            }
-
-            string homeDir = App.ReferenceImagePath();
-            string fullPath = referenceImage.FileFullPath;
-            if (!fullPath.StartsWith(homeDir, StringComparison.OrdinalIgnoreCase))
-            {
-                Debug.LogWarning($"Quill image not under reference image path: {fullPath}");
-                return null;
-            }
-
-            string relativePath = Path.GetRelativePath(homeDir, fullPath).Replace('\\', '/');
-            if (relativePath.StartsWith("./", StringComparison.Ordinal) || relativePath.StartsWith(".\\", StringComparison.Ordinal))
-            {
-                relativePath = relativePath.Substring(2);
-            }
-
-            return relativePath;
-        }
-
         private static string EnsureUniqueImagePath(string destPath)
         {
             if (!File.Exists(destPath))
@@ -930,6 +905,8 @@ namespace TiltBrush
                 float maxDist = sound.Attenuation?.Maximum ?? 500f;
                 soundWidget.SetAudioProperties(
                     sound.Gain, sound.Loop, spatialBlend, minDist, maxDist);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                    soundWidget.GetTiltMeterCost(), up: true);
 
                 return soundWidget;
             }
