@@ -25,6 +25,8 @@ namespace TiltBrush
 
     public class OpenBrushExportPluginConfig : GLTFExportPluginContext
     {
+        private static int s_MeshFixtureExportDepth;
+
         private Dictionary<int, Batch> _meshesToBatches;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
@@ -34,6 +36,27 @@ namespace TiltBrush
         private bool m_WasUsingBatchedBrushes;
 
         private const string kTimestampAttribute = "_TB_TIMESTAMP";
+
+        public static IDisposable BeginIsolatedMeshFixtureExport()
+        {
+            ++s_MeshFixtureExportDepth;
+            return new MeshFixtureExportScope();
+        }
+
+        private static bool IsIsolatedMeshFixtureExport => s_MeshFixtureExportDepth > 0;
+
+        private sealed class MeshFixtureExportScope : IDisposable
+        {
+            private bool m_Disposed;
+
+            public void Dispose()
+            {
+                if (m_Disposed) return;
+                m_Disposed = true;
+                --s_MeshFixtureExportDepth;
+                Debug.Assert(s_MeshFixtureExportDepth >= 0);
+            }
+        }
 
         private readonly struct TimestampSource
         {
@@ -59,16 +82,18 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            _meshesToBatches = new Dictionary<int, Batch>();
+            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
+            if (IsIsolatedMeshFixtureExport) return;
+
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox
                 && GltfExportStandinManager.m_Instance != null)
             {
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
-            _meshesToBatches = new Dictionary<int, Batch>();
-            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
-            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
-            m_TemporaryBatchMeshes = new List<Mesh>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -662,6 +687,15 @@ namespace TiltBrush
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             if (!Application.isPlaying) return;
+            if (IsIsolatedMeshFixtureExport)
+            {
+                gltfRoot.Asset.Generator =
+                    $"Open Brush UnityGLTF Mesh Fixture {App.Config.m_VersionNumber}." +
+                    $"{App.Config.m_BuildStamp}";
+                m_OriginalBatchMeshes?.Clear();
+                m_TemporaryBatchMeshes?.Clear();
+                return;
+            }
 
             try
             {
