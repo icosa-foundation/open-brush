@@ -707,6 +707,18 @@ MonoBehaviour:
     m_Key: POLY_PANEL_TITLE_ALLMODELS
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Key: ICOSA_PANEL_TITLE_USER_COLLECTIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Key: ICOSA_PANEL_TITLE_PUBLIC_COLLECTIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Key: ICOSA_PANEL_NO_COLLECTIONS_MESSAGE
+    m_Metadata:
+      m_Items: []
   - m_Id: 7930550461112320
     m_Key: POLY_PANEL_TITLE_LIKED
     m_Metadata:

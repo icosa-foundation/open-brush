@@ -28,6 +28,12 @@ namespace TiltBrush
         AllModels
     }
 
+    public enum IcosaBrowseMode
+    {
+        Standard,   // Browse individual assets
+        Collections // Browse collections
+    }
+
     public class IcosaPanel : ModalPanel
     {
         [SerializeField] private TextMeshPro m_PanelText;
@@ -41,11 +47,16 @@ namespace TiltBrush
         public string PanelTextAllModels { get { return m_PanelTextAllModels.GetLocalizedStringAsync().Result; } }
         [SerializeField] private LocalizedString m_PanelTextLiked; // Liked Models
         public string PanelTextLiked { get { return m_PanelTextLiked.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextUserCollections; // User Collections
+        public string PanelTextUserCollections { get { return m_PanelTextUserCollections.GetLocalizedStringAsync().Result; } }
+        [SerializeField] private LocalizedString m_PanelTextFeaturedCollections; // Public Collections
+        public string PanelTextFeaturedCollections { get { return m_PanelTextFeaturedCollections.GetLocalizedStringAsync().Result; } }
         [SerializeField] private Renderer m_PolyGalleryRenderer;
         [SerializeField] private GameObject m_NoObjectsMessage;
         [SerializeField] private GameObject m_InternetError;
         [SerializeField] private GameObject m_NoAuthoredModelsMessage;
         [SerializeField] private GameObject m_NoLikesMessage;
+        [SerializeField] private GameObject m_NoCollectionsMessage;
         [SerializeField] private GameObject m_NotLoggedInMessage;
         [SerializeField] private GameObject m_OutOfDateMessage;
         [SerializeField] private GameObject m_NotSupportedMessage;
@@ -54,11 +65,16 @@ namespace TiltBrush
 
         private IcosaSetType m_CurrentSet;
         public IcosaSetType CurrentSet => m_CurrentSet;
+        private IcosaBrowseMode m_BrowseMode;
+        public IcosaBrowseMode BrowseMode => m_BrowseMode;
+        private string m_CurrentCollectionId; // When viewing assets from a specific collection
+        public string CurrentCollectionId => m_CurrentCollectionId;
         private bool m_LoggedIn;
 
         // State for automatically loading models.
         int m_LastPageIndexForLoad = -1;
         IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
+        IcosaBrowseMode m_LastBrowseModeForLoad = IcosaBrowseMode.Standard;
 
         // Flag to defer RefreshPage to once per frame
         private bool m_RefreshRequested = false;
@@ -68,6 +84,11 @@ namespace TiltBrush
         public bool ShowingAllModels { get { return m_CurrentSet == IcosaSetType.AllModels; } }
         public bool ShowingLikes { get { return m_CurrentSet == IcosaSetType.Liked; } }
         public bool ShowingUser { get { return m_CurrentSet == IcosaSetType.User; } }
+        public bool InCollectionsMode { get { return m_BrowseMode == IcosaBrowseMode.Collections; } }
+        public bool InStandardMode { get { return m_BrowseMode == IcosaBrowseMode.Standard; } }
+        private IcosaSetType CurrentCollectionSet => m_CurrentSet == IcosaSetType.AllModels
+            ? IcosaSetType.Featured
+            : m_CurrentSet;
 
         override public void OnWidgetShowAnimComplete()
         {
@@ -84,6 +105,7 @@ namespace TiltBrush
             m_InternetError.SetActive(false);
             m_NoAuthoredModelsMessage.SetActive(false);
             m_NoLikesMessage.SetActive(false);
+            m_NoCollectionsMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_OutOfDateMessage.SetActive(false);
             if (m_NotSupportedMessage)
@@ -93,8 +115,12 @@ namespace TiltBrush
 
         public override bool IsInButtonMode(ModeButton button)
         {
-            var polySetButton = button as IcosaSetButton;
-            return polySetButton && polySetButton.m_ButtonType == m_CurrentSet;
+            if (button is IcosaSetButton setButton)
+            {
+                return setButton.m_ButtonType == m_CurrentSet;
+            }
+
+            return button is IcosaBrowseModeButton && InCollectionsMode;
         }
 
         protected override void OnStart()
@@ -125,7 +151,11 @@ namespace TiltBrush
 
         public void RefreshCurrentSet(bool forced)
         {
-            if (forced)
+            if (m_CurrentCollectionId != null)
+            {
+                App.IcosaAssetCatalog.SelectCollection(m_CurrentCollectionId, m_CurrentSet);
+            }
+            else if (forced)
             {
                 App.IcosaAssetCatalog.RequestForcedRefresh(m_CurrentSet);
             }
@@ -157,6 +187,7 @@ namespace TiltBrush
         {
             m_NoLikesMessage.SetActive(false);
             m_NoAuthoredModelsMessage.SetActive(false);
+            m_NoCollectionsMessage.SetActive(false);
             m_NotLoggedInMessage.SetActive(false);
             m_InternetError.SetActive(false);
             if (VrAssetService.m_Instance.NoConnection)
@@ -174,14 +205,28 @@ namespace TiltBrush
                 return;
             }
 
-            m_NumPages = ((App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet) - 1) / Icons.Count) + 1;
-            int numCloudModels = App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet);
+            // Determine item count based on browse mode
+            int numItems;
+            if (InCollectionsMode)
+            {
+                numItems = App.IcosaAssetCatalog.NumCollections(CurrentCollectionSet);
+            }
+            else if (m_CurrentCollectionId != null)
+            {
+                numItems = App.IcosaAssetCatalog.NumCollectionAssets();
+            }
+            else
+            {
+                numItems = App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet);
+            }
+            m_NumPages = ((numItems - 1) / Icons.Count) + 1;
 
             // [ICOSALOAD] time the whole main-thread RefreshPage body and its sub-phases.
             var __rpSw = System.Diagnostics.Stopwatch.StartNew();
             long __unloadMs = 0;
 
-            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet)
+            if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet ||
+                m_LastBrowseModeForLoad != m_BrowseMode)
             {
                 // Unload the previous page's models.
 
@@ -189,6 +234,7 @@ namespace TiltBrush
                 // otherwise the current page's models will be thrashed.
                 m_LastPageIndexForLoad = PageIndex;
                 m_LastSetTypeForLoad = m_CurrentSet;
+                m_LastBrowseModeForLoad = m_BrowseMode;
 
                 var __unloadSw = System.Diagnostics.Stopwatch.StartNew();
                 // Destroy the on-button preview instances so only the thumbnail is visible. This does
@@ -209,41 +255,54 @@ namespace TiltBrush
                 // Set sketch index relative to page based index
                 int iMapIndex = m_IndexOffset + i;
 
-                // Init icon according to availability of sketch
+                // Init icon according to availability of sketch or collection
                 GameObject go = icon.gameObject;
-                if (iMapIndex < numCloudModels)
+                if (iMapIndex < numItems)
                 {
-                    IcosaAssetCatalog.AssetDetails asset =
-                        App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
                     go.SetActive(true);
-                    visibleAssetIds.Add(asset.AssetId);
 
-                    if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
+                    if (InCollectionsMode)
                     {
-                        icon.DestroyModelPreview();
+                        // Display collection
+                        IcosaAssetCatalog.CollectionDetails collection =
+                            App.IcosaAssetCatalog.GetIcosaCollection(CurrentCollectionSet, iMapIndex);
+                        icon.SetPresetCollection(collection, iMapIndex);
                     }
-                    icon.SetPreset(asset, iMapIndex);
+                    else
+                    {
+                        // Display asset
+                        IcosaAssetCatalog.AssetDetails asset = m_CurrentCollectionId != null
+                            ? App.IcosaAssetCatalog.GetCollectionAsset(iMapIndex)
+                            : App.IcosaAssetCatalog.GetIcosaAsset(m_CurrentSet, iMapIndex);
+                        visibleAssetIds.Add(asset.AssetId);
 
-                    // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
-                    // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
-                    // The flag allows previews for cached models, plus remote models whose selected
-                    // download format is not backed by the Internet Archive.
-                    // Gating preload also gates the preview, since the preview is built from the
-                    // loaded model.
-                    int maxPreviewTris = App.UserConfig.Flags.IcosaMaxPreviewTriangleCount;
-                    bool tooManyTris = maxPreviewTris > 0 && asset.TriangleCount > maxPreviewTris;
-                    bool measuredOversized = App.IcosaAssetCatalog.IsModelOversized(asset.AssetId);
-                    bool tooComplexToPreview = tooManyTris || measuredOversized;
-                    if (tooComplexToPreview)
-                    {
-                        Debug.Log($"[ICOSALOAD] skip preview/preload {asset.AssetId} " +
-                            $"tris={asset.TriangleCount} (limit={maxPreviewTris}) oversized={measuredOversized}");
-                    }
-                    bool canPreload = App.IcosaAssetCatalog.HasCachedModel(asset.AssetId)
-                        || App.IcosaAssetCatalog.CanAutoDownloadForPreview(asset.AssetId);
-                    if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview && canPreload)
-                    {
-                        icon.RequestModelPreload(PageIndex);
+                        if (icon.Asset != null && asset.AssetId != icon.Asset.AssetId)
+                        {
+                            icon.DestroyModelPreview();
+                        }
+                        icon.SetPreset(asset, iMapIndex);
+
+                        // Note that App.UserConfig.Flags.IcosaModelPreload falls through to
+                        // App.PlatformConfig.EnableIcosaPreload if it isn't set in Tilt Brush.cfg.
+                        // The flag allows previews for cached models, plus remote models whose selected
+                        // download format is not backed by the Internet Archive.
+                        // Gating preload also gates the preview, since the preview is built from the
+                        // loaded model.
+                        int maxPreviewTris = App.UserConfig.Flags.IcosaMaxPreviewTriangleCount;
+                        bool tooManyTris = maxPreviewTris > 0 && asset.TriangleCount > maxPreviewTris;
+                        bool measuredOversized = App.IcosaAssetCatalog.IsModelOversized(asset.AssetId);
+                        bool tooComplexToPreview = tooManyTris || measuredOversized;
+                        if (tooComplexToPreview)
+                        {
+                            Debug.Log($"[ICOSALOAD] skip preview/preload {asset.AssetId} " +
+                                $"tris={asset.TriangleCount} (limit={maxPreviewTris}) oversized={measuredOversized}");
+                        }
+                        bool canPreload = App.IcosaAssetCatalog.HasCachedModel(asset.AssetId)
+                            || App.IcosaAssetCatalog.CanAutoDownloadForPreview(asset.AssetId);
+                        if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview && canPreload)
+                        {
+                            icon.RequestModelPreload(PageIndex);
+                        }
                     }
                 }
                 else
@@ -270,9 +329,16 @@ namespace TiltBrush
                     {
                         if (App.IcosaIsLoggedIn)
                         {
-                            if (numCloudModels == 0)
+                            if (numItems == 0)
                             {
-                                m_NoAuthoredModelsMessage.SetActive(true);
+                                if (InCollectionsMode)
+                                {
+                                    m_NoCollectionsMessage.SetActive(true);
+                                }
+                                else
+                                {
+                                    m_NoAuthoredModelsMessage.SetActive(true);
+                                }
                             }
                         }
                         else
@@ -286,15 +352,28 @@ namespace TiltBrush
                     {
                         if (App.IcosaIsLoggedIn)
                         {
-                            if (numCloudModels == 0)
+                            if (numItems == 0)
                             {
-                                m_NoLikesMessage.SetActive(true);
+                                if (InCollectionsMode)
+                                {
+                                    m_NoCollectionsMessage.SetActive(true);
+                                }
+                                else
+                                {
+                                    m_NoLikesMessage.SetActive(true);
+                                }
                             }
                         }
                         else
                         {
                             m_NotLoggedInMessage.SetActive(true);
                         }
+                    }
+                    break;
+                case IcosaSetType.Featured:
+                    if (!internetError && InCollectionsMode && numItems == 0)
+                    {
+                        m_NoCollectionsMessage.SetActive(true);
                     }
                     break;
             }
@@ -325,28 +404,60 @@ namespace TiltBrush
 
         void RefreshPanelText()
         {
-            switch (m_CurrentSet)
+            if (InCollectionsMode)
             {
-                case IcosaSetType.User:
-                    m_PanelText.text = PanelTextStandard;
-                    m_PanelTextSubtitle.gameObject.SetActive(false);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(true);
-                    break;
-                case IcosaSetType.Featured:
-                    m_PanelText.text = PanelTextFeatured;
-                    m_PanelTextSubtitle.gameObject.SetActive(true);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
-                case IcosaSetType.AllModels:
-                    m_PanelText.text = PanelTextAllModels;
-                    m_PanelTextSubtitle.gameObject.SetActive(true);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
-                case IcosaSetType.Liked:
-                    m_PanelText.text = PanelTextLiked;
-                    m_PanelTextSubtitle.gameObject.SetActive(true);
-                    m_PanelTextUserSubtitle.gameObject.SetActive(false);
-                    break;
+                // In collections mode, show different text based on which tab
+                switch (m_CurrentSet)
+                {
+                    case IcosaSetType.User:
+                        m_PanelText.text = PanelTextUserCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(true);
+                        break;
+                    case IcosaSetType.Featured:
+                        m_PanelText.text = PanelTextFeaturedCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.Liked:
+                        // Liked collections not yet supported by API
+                        m_PanelText.text = PanelTextLiked;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.AllModels:
+                        m_PanelText.text = PanelTextFeaturedCollections;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                }
+            }
+            else
+            {
+                // Standard mode
+                switch (m_CurrentSet)
+                {
+                    case IcosaSetType.User:
+                        m_PanelText.text = PanelTextStandard;
+                        m_PanelTextSubtitle.gameObject.SetActive(false);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(true);
+                        break;
+                    case IcosaSetType.Featured:
+                        m_PanelText.text = PanelTextFeatured;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.AllModels:
+                        m_PanelText.text = PanelTextAllModels;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                    case IcosaSetType.Liked:
+                        m_PanelText.text = PanelTextLiked;
+                        m_PanelTextSubtitle.gameObject.SetActive(true);
+                        m_PanelTextUserSubtitle.gameObject.SetActive(false);
+                        break;
+                }
             }
         }
 
@@ -416,5 +527,67 @@ namespace TiltBrush
 
         public IcosaAssetCatalog.IcosaQueryParameters CurrentQuery =>
             App.IcosaAssetCatalog.QueryOptionParametersForSet(m_CurrentSet);
+
+        // Toggle between Standard and Collections mode
+        public void ToggleBrowseMode()
+        {
+            m_BrowseMode = m_BrowseMode == IcosaBrowseMode.Standard
+                ? IcosaBrowseMode.Collections
+                : IcosaBrowseMode.Standard;
+            ClearCollectionSelection();
+            ResetPageIndex();
+            RefreshCurrentSet(false);
+        }
+
+        // Enter collections browse mode
+        public void EnterCollectionsMode()
+        {
+            if (m_BrowseMode != IcosaBrowseMode.Collections)
+            {
+                m_BrowseMode = IcosaBrowseMode.Collections;
+                ClearCollectionSelection();
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
+
+        // Enter standard browse mode
+        public void EnterStandardMode()
+        {
+            if (m_BrowseMode != IcosaBrowseMode.Standard)
+            {
+                m_BrowseMode = IcosaBrowseMode.Standard;
+                ClearCollectionSelection();
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
+
+        // View assets from a specific collection
+        public void ViewCollection(string collectionId)
+        {
+            m_CurrentCollectionId = collectionId;
+            m_BrowseMode = IcosaBrowseMode.Standard;
+            App.IcosaAssetCatalog.SelectCollection(collectionId, m_CurrentSet);
+            ResetPageIndex();
+            RefreshPage();
+        }
+
+        // Clear collection filter and return to normal browse mode
+        public void ClearCollectionFilter()
+        {
+            if (m_CurrentCollectionId != null)
+            {
+                ClearCollectionSelection();
+                ResetPageIndex();
+                RefreshCurrentSet(false);
+            }
+        }
+
+        private void ClearCollectionSelection()
+        {
+            m_CurrentCollectionId = null;
+            App.IcosaAssetCatalog.ClearSelectedCollection();
+        }
     }
 } // namespace TiltBrush
