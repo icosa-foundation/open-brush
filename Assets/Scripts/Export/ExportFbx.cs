@@ -446,7 +446,8 @@ namespace TiltBrush
         {
             var payload = ExportCollector.GetExportPayload(
                 AxisConvention.kFbxAccordingToUnity,
-                includeLocalMediaContent: true);
+                includeLocalMediaContent: true,
+                outputDirectory: G.m_outputDir);
 
             // Write out each brush entry's geometry.
             foreach (var brushMeshPayload in payload.groups.SelectMany(g => g.brushMeshes))

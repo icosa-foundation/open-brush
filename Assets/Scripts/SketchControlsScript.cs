@@ -204,7 +204,8 @@ namespace TiltBrush
             ExportGaussianSplatPoses = 9601,
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
-            OpenNumericInputPopup = 12000
+            OpenNumericInputPopup = 12000,
+            OpenTextInputPopup = 12001
         }
 
         public enum ControlsType
@@ -5274,6 +5275,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
+                case GlobalCommands.OpenTextInputPopup: break;
                 case GlobalCommands.WhatIsNew:
                 case GlobalCommands.LoginToIcosa:
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
