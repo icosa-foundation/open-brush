@@ -37,6 +37,8 @@ namespace TiltBrush
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
+        internal const string POLLING_LISTENER_NOT_REGISTERED_ERROR =
+            "error: polling listener not registered";
         private const string BASE_HTML = @"<!doctype html><html lang='en'>
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
@@ -48,6 +50,8 @@ namespace TiltBrush
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
+        private readonly PollingListenerRegistry m_PollingListeners =
+            new PollingListenerRegistry();
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -701,6 +705,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             // API queries are distinct from commands in that they return immediate results and never change the scene
 
             string[] commandPair = commandString.Split(new[] { '=' }, 2);
+            // Debug.Log($"HandleApiQuery: {commandString}");
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
@@ -721,11 +726,32 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+                case "query.outgoing.poll":
+                    if (commandPair.Length < 2 || string.IsNullOrEmpty(commandPair[1]))
+                    {
+                        return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+                    }
+                    string clientId = UnityWebRequest.UnEscapeURL(commandPair[1]);
+                    if (string.IsNullOrWhiteSpace(clientId))
+                    {
+                        return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+                    }
+                    List<KeyValuePair<string, string>> commands =
+                        m_PollingListeners.Drain(clientId);
+                    return FormatPollingResponse(commands);
             }
             return "unknown query";
         }
 
+        internal static string FormatPollingResponse(
+            List<KeyValuePair<string, string>> commands)
+        {
+            if (commands == null) return POLLING_LISTENER_NOT_REGISTERED_ERROR;
+            return string.Join("\n", commands.Select(c => $"{c.Key}={c.Value}"));
+        }
+
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+        public bool HasPollingListeners => m_PollingListeners.HasListeners;
 
         // TODO Find a better home for this. It won't always be API specific
         public CHRFont TextFont
@@ -754,10 +780,13 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
-            if (!HasOutgoingListeners) return;
+            bool hasOutgoingListeners = HasOutgoingListeners;
+            bool hasPollingListeners = HasPollingListeners;
+            if (!hasOutgoingListeners && !hasPollingListeners) return;
             foreach (var command in commands)
             {
-                m_OutgoingCommandQueue.Enqueue(command);
+                if (hasPollingListeners) m_PollingListeners.Enqueue(command);
+                if (hasOutgoingListeners) m_OutgoingCommandQueue.Enqueue(command);
             }
         }
 
@@ -766,7 +795,16 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (m_OutgoingApiListeners == null) m_OutgoingApiListeners = new List<Uri>();
             if (m_OutgoingApiListeners.Contains(uri)) return;
             m_OutgoingApiListeners.Add(uri);
+        }
 
+        public bool AddPollingCommandListener(string clientId)
+        {
+            return m_PollingListeners.Register(clientId);
+        }
+
+        public bool RemovePollingCommandListener(string clientId)
+        {
+            return m_PollingListeners.Unregister(clientId);
         }
 
         private void OutgoingApiCommand()
@@ -997,7 +1035,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void HandleStrokeListeners(IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
         {
-            if (!HasOutgoingListeners) return;
+            if (!HasOutgoingListeners && !HasPollingListeners) return;
             var pointsAsStrings = new List<string>();
             foreach (var cp in controlPoints)
             {
@@ -1014,6 +1052,76 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
+        }
+
+        internal sealed class PollingListenerRegistry
+        {
+            private sealed class Listener
+            {
+                internal readonly Queue<KeyValuePair<string, string>> Commands =
+                    new Queue<KeyValuePair<string, string>>();
+            }
+
+            private readonly Dictionary<string, Listener> m_Listeners =
+                new Dictionary<string, Listener>();
+            private readonly object m_Lock = new object();
+
+            internal bool HasListeners
+            {
+                get
+                {
+                    lock (m_Lock)
+                    {
+                        return m_Listeners.Count > 0;
+                    }
+                }
+            }
+
+            internal bool Register(string clientId)
+            {
+                if (string.IsNullOrWhiteSpace(clientId)) return false;
+                lock (m_Lock)
+                {
+                    if (m_Listeners.ContainsKey(clientId)) return true;
+                    m_Listeners.Add(clientId, new Listener());
+                    return true;
+                }
+            }
+
+            internal bool Unregister(string clientId)
+            {
+                if (string.IsNullOrWhiteSpace(clientId)) return false;
+                lock (m_Lock)
+                {
+                    return m_Listeners.Remove(clientId);
+                }
+            }
+
+            internal List<KeyValuePair<string, string>> Drain(string clientId)
+            {
+                lock (m_Lock)
+                {
+                    if (!m_Listeners.TryGetValue(clientId, out Listener listener))
+                    {
+                        return null;
+                    }
+                    var commands =
+                        new List<KeyValuePair<string, string>>(listener.Commands);
+                    listener.Commands.Clear();
+                    return commands;
+                }
+            }
+
+            internal void Enqueue(KeyValuePair<string, string> command)
+            {
+                lock (m_Lock)
+                {
+                    foreach (Listener listener in m_Listeners.Values)
+                    {
+                        listener.Commands.Enqueue(command);
+                    }
+                }
+            }
         }
 
         // Undo currently only affects stroke creation

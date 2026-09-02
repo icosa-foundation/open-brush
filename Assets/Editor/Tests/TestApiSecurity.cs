@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -456,6 +457,51 @@ namespace TiltBrush
             Assert.Throws<InvalidOperationException>(() =>
                 ApiManager.InvokeEndpointForStatus(() =>
                     throw new InvalidOperationException("unexpected failure")));
+        }
+
+        [Test]
+        public void TestPollingListenersCanBeUnregistered()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+
+            Assert.IsTrue(listeners.Register("first-client"));
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+            Assert.IsTrue(listeners.HasListeners);
+            Assert.IsFalse(listeners.Unregister("missing-client"));
+            Assert.IsTrue(listeners.Unregister("second-client"));
+            Assert.IsFalse(listeners.HasListeners);
+        }
+
+        [Test]
+        public void TestPollingResponseDistinguishesUnknownClientFromEmptyQueue()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("registered-client"));
+
+            Assert.AreEqual(
+                "",
+                ApiManager.FormatPollingResponse(listeners.Drain("registered-client")));
+            Assert.AreEqual(
+                ApiManager.POLLING_LISTENER_NOT_REGISTERED_ERROR,
+                ApiManager.FormatPollingResponse(listeners.Drain("unknown-client")));
+        }
+
+        [Test]
+        public void TestPollingListenersReceiveOnlyCommandsGeneratedWhileRegistered()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("first-client"));
+            listeners.Enqueue(new KeyValuePair<string, string>("old", "command"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsEmpty(listeners.Drain("second-client"));
+
+            listeners.Enqueue(new KeyValuePair<string, string>("new", "command"));
+            var commands = listeners.Drain("second-client");
+            Assert.AreEqual(1, commands.Count);
+            Assert.AreEqual("new", commands[0].Key);
         }
     }
 }
