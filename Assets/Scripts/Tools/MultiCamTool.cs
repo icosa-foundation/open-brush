@@ -236,6 +236,7 @@ namespace TiltBrush
         private float m_SwipeHintCountdown;
 
         private string m_VideoCaptureFile;
+        private bool m_VideoCapturePublished;
         private IEnumerator m_UploadIconBlinker;
         private bool m_WaitingForAuth = false;
 
@@ -1686,6 +1687,16 @@ namespace TiltBrush
 
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
+            string sharedVideoPath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(filePath, out sharedVideoPath) &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    "saving videos",
+                    () => StartVideoCapture(filePath, offlineRender)))
+            {
+                return;
+            }
+
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.UsdPathSerializer,
@@ -1699,6 +1710,7 @@ namespace TiltBrush
             m_VideoRecordTimer.text = "0:00:00";
             m_VideoRecordIcon.gameObject.SetActive(true);
             m_VideoCaptureFile = filePath;
+            m_VideoCapturePublished = false;
             m_UploadingIcon.gameObject.SetActive(false);
             if (m_UploadIconBlinker != null)
             {
@@ -1709,19 +1721,18 @@ namespace TiltBrush
         void StopVideoCapture(bool showInfoCard)
         {
             VideoRecorder recorder = VideoRecorderUtils.ActiveVideoRecording;
-            if (recorder == null)
+            StillFrameSequenceExporter stillFrameExporter = VideoRecorderUtils.ActiveStillFrameExporter;
+            if (recorder == null && stillFrameExporter == null)
             {
                 return;
             }
 
-            float currentVideoLength = (float)recorder.FrameCount / (float)recorder.FPS;
+            float currentVideoLength = recorder != null
+                ? (float)recorder.FrameCount / (float)recorder.FPS
+                : stillFrameExporter.FrameCount / stillFrameExporter.FPS;
             bool validVideoLength = currentVideoLength >= m_VideoCaptureMinDuration;
 
-            string filePath = null;
-            if (VideoRecorderUtils.ActiveVideoRecording != null)
-            {
-                filePath = VideoRecorderUtils.ActiveVideoRecording.FilePath;
-            }
+            string filePath = recorder != null ? recorder.FilePath : stillFrameExporter.FilePath;
             VideoRecorderUtils.StopVideoCapture(validVideoLength);
 
             m_CurrentVideoState = validVideoLength ? VideoState.Processing : VideoState.Ready;
@@ -1766,12 +1777,25 @@ namespace TiltBrush
                 && recorder.IsPlayingBack
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            m_VideoSavingRoot.SetActive(recorder != null
-                && recorder.IsSaving
+            m_VideoSavingRoot.SetActive(IsVideoCaptureSaving(recorder)
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            if (m_CurrentVideoState == VideoState.Processing && !recorder.IsSaving)
+            if (m_CurrentVideoState == VideoState.Processing && !IsVideoCaptureSaving(recorder))
             {
+                if (OpenBrushStorage.IsGooglePlayStorageMode && !m_VideoCapturePublished)
+                {
+                    m_VideoCapturePublished = true;
+                    OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
+                        m_VideoCaptureFile,
+                        "video",
+                        (success, publishError) =>
+                        {
+                            if (!success)
+                            {
+                                OutputWindowScript.Error("Failed to save video", publishError);
+                            }
+                        });
+                }
                 if (App.GoogleIdentity.LoggedIn)
                 {
                     m_CurrentVideoState = VideoState.ReadyToShare;
@@ -1812,7 +1836,7 @@ namespace TiltBrush
                     }
 
                     // Disabled until sharing lands.
-                    if (recorder.IsSaving)
+                    if (IsVideoCaptureSaving(recorder))
                     {
                         m_VideoRecordAudioHeader.text = m_VideoSavingText;
                     }
@@ -1840,7 +1864,10 @@ namespace TiltBrush
             //
 
             // If we're running out of disk space, stop recording.
-            if (!FileUtils.HasFreeSpace(recorder.FilePath))
+            StillFrameSequenceExporter stillFrameExporter =
+                VideoRecorderUtils.ActiveStillFrameExporter;
+            string capturePath = recorder != null ? recorder.FilePath : stillFrameExporter?.FilePath;
+            if (!string.IsNullOrEmpty(capturePath) && !FileUtils.HasFreeSpace(capturePath))
             {
                 StopVideoCapture(false);
             }
@@ -1906,6 +1933,16 @@ namespace TiltBrush
             string saveName, MultiCamStyle style, HybridCamera odsCamera,
             Transform odsCaptureTransform)
         {
+            string sharedSnapshotPath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedSnapshotPath) &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    "saving snapshots",
+                    () => App.Instance.StartCoroutine(TakeScreenshotAsync(saveName, renderDepth))))
+            {
+                yield break;
+            }
+
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
             // thread, but it'll require a 3rd party library to do the rgb32->png encode.
@@ -2058,6 +2095,33 @@ namespace TiltBrush
                     catch (IOException e) { err = e.Message; }
                     catch (UnauthorizedAccessException e) { err = e.Message; }
 
+                    if (err == null && OpenBrushStorage.IsGooglePlayStorageMode)
+                    {
+                        bool publishDone = false;
+                        bool publishSucceeded = false;
+                        string publishError = null;
+                        var generatedPaths = new List<string> { fullPath };
+                        if (renderDepth)
+                        {
+                            generatedPaths.Add(
+                                Path.GetFullPath(saveName.Replace(".png", "_depth.png")));
+                        }
+                        OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
+                            generatedPaths,
+                            "snapshot",
+                            (success, error) =>
+                            {
+                                publishSucceeded = success;
+                                publishError = error;
+                                publishDone = true;
+                            });
+                        while (!publishDone)
+                        {
+                            yield return null;
+                        }
+                        if (!publishSucceeded) { err = publishError; }
+                    }
+
                     if (err != null)
                     {
                         OutputWindowScript.Error("Failed to save snapshot", err);
@@ -2089,6 +2153,18 @@ namespace TiltBrush
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }
+        }
+
+        private bool IsVideoCaptureSaving(VideoRecorder recorder)
+        {
+            if (recorder != null && recorder.IsSaving)
+            {
+                return true;
+            }
+
+            StillFrameSequenceExporter stillFrameExporter = GetVideoRecorder(m_CurrentCameraIndex)
+                ?.GetComponent<StillFrameSequenceExporter>();
+            return stillFrameExporter != null && stillFrameExporter.IsSaving;
         }
 
         //

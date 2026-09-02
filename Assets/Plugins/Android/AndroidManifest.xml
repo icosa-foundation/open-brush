@@ -15,6 +15,10 @@
                 <category android:name="com.oculus.intent.category.VR"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="foundation.icosa.openbrush.storage.OpenBrushStorageActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <!-- Alias that launches into flat/monoscopic mode without VR -->
         <!-- TODO Re-enable launch aliases. They will be useful but need a bit more thought and testing -->
         <!--

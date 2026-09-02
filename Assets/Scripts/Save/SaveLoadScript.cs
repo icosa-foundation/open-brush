@@ -439,8 +439,23 @@ namespace TiltBrush
         /// - SaveIconTool.LastSaveCameraRigState must be good
         /// SaveIconTool.ProgrammaticCaptureSaveIcon() does both of these things
         private IEnumerator<Timeslice> SaveLow(
-            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
+            SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false,
+            bool saveToLocalCacheOnly = false)
         {
+            bool directSafSave =
+                !saveToLocalCacheOnly &&
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
+            if (!saveToLocalCacheOnly &&
+                OpenBrushStorage.IsGooglePlayStorageMode &&
+                directSafSave &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    selectedOnly ? "saving saved strokes" : "saving sketches",
+                    () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly)),
+                    null))
+            {
+                return new List<Timeslice>().GetEnumerator();
+            }
+
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {
@@ -451,24 +466,42 @@ namespace TiltBrush
                 throw new ArgumentException("null filename");
             }
 
-            if (!FileUtils.CheckDiskSpaceWithError(m_SaveDir))
+            if (!directSafSave && !FileUtils.CheckDiskSpaceWithError(m_SaveDir))
             {
                 return new List<Timeslice>().GetEnumerator();
             }
 
-            m_LastSceneFile = info;
+            if (!directSafSave || !selectedOnly)
+            {
+                m_LastSceneFile = info;
+            }
             AbortAutosave();
 
-            m_SaveCoroutine = ThreadedSave(info, selectedOnly, bNotify, snapshot);
+            m_SaveCoroutine = ThreadedSave(
+                info,
+                selectedOnly,
+                bNotify,
+                snapshot,
+                directSafWrite: directSafSave);
             return m_SaveCoroutine;
+        }
+
+        private sealed class StorageWriteOutcome
+        {
+            public string Error;
+            public SceneFileInfo FileInfo;
         }
 
         private IEnumerator<Timeslice> ThreadedSave(
             SceneFileInfo fileInfo, bool selectedOnly,
-            bool bNotify = true, SketchSnapshot snapshot = null)
+            bool bNotify = true,
+            SketchSnapshot snapshot = null,
+            bool directSafWrite = false)
         {
             // Cancel any pending transfers of this file.
-            var cancelTask = App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
+            Task cancelTask = string.IsNullOrEmpty(fileInfo.FullPath)
+                ? Task.CompletedTask
+                : App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
 
             bool newFile = !fileInfo.Exists;
 
@@ -508,13 +541,37 @@ namespace TiltBrush
                 yield return null;
             }
 
-            string error = null;
-            var writeFuture = new Future<string>(
-                () => snapshot.WriteSnapshotToFile(fileInfo.FullPath),
-                null, true);
-            while (!writeFuture.TryGetResult(out error))
+            StorageWriteOutcome outcome;
+            if (directSafWrite)
             {
-                yield return null;
+                var writeFuture = new Future<StorageWriteOutcome>(
+                    () => WriteSnapshotToSaf(fileInfo, snapshot, selectedOnly), null, true);
+                while (!writeFuture.TryGetResult(out outcome))
+                {
+                    yield return null;
+                }
+            }
+            else
+            {
+                var writeFuture = new Future<string>(
+                    () => snapshot.WriteSnapshotToFile(fileInfo.FullPath),
+                    null, true);
+                string localError;
+                while (!writeFuture.TryGetResult(out localError))
+                {
+                    yield return null;
+                }
+                outcome = new StorageWriteOutcome
+                {
+                    Error = localError,
+                    FileInfo = fileInfo,
+                };
+            }
+            string error = outcome.Error;
+            fileInfo = outcome.FileInfo ?? fileInfo;
+            if (!directSafWrite || !selectedOnly)
+            {
+                m_LastSceneFile = fileInfo;
             }
 
             m_LastWriteSnapshotError = error;
@@ -524,26 +581,149 @@ namespace TiltBrush
             m_SaveCoroutine = null;
             if (error == null)
             {
-                if (newFile)
+                if (directSafWrite)
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.FullPath);
+                    SketchSetType setType = selectedOnly
+                        ? SketchSetType.SavedStrokes
+                        : SketchSetType.User;
+                    SketchSet set = SketchCatalog.m_Instance.GetSet(setType);
+                    if (newFile)
+                    {
+                        set.NotifySketchCreated(fileInfo.StorageId);
+                    }
+                    else
+                    {
+                        set.NotifySketchChanged(fileInfo.StorageId);
+                    }
+                    if (selectedOnly)
+                    {
+                        SavedStrokesCatalog.Instance?.NotifyStorageChanged();
+                    }
                 }
                 else
                 {
-                    SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.FullPath);
+                    if (newFile)
+                    {
+                        SketchCatalog.m_Instance.NotifyUserFileCreated(m_LastSceneFile.FullPath);
+                    }
+                    else
+                    {
+                        SketchCatalog.m_Instance.NotifyUserFileChanged(m_LastSceneFile.FullPath);
+                    }
                 }
             }
             if (bNotify && !m_SuppressNotify)
             {
-                NotifySaveFinished(m_LastSceneFile, error, newFile);
+                NotifySaveFinished(fileInfo, error, newFile);
             }
-            App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+            if (!directSafWrite)
+            {
+                App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
+            }
             m_SuppressNotify = false;
+        }
+
+        private StorageWriteOutcome WriteSnapshotToSaf(
+            SceneFileInfo fileInfo, SketchSnapshot snapshot, bool selectedOnly)
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            StorageArea area = selectedOnly
+                ? StorageArea.SavedStrokes
+                : StorageArea.Sketches;
+            string displayName = GetSafDestinationDisplayName(
+                backend, area, fileInfo);
+            try
+            {
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    area,
+                    displayName,
+                    TiltFile.TILT_MIME_TYPE,
+                    default,
+                    fileInfo is SafSceneFileInfo safFileInfo
+                        ? safFileInfo.Document.DocumentId
+                        : default))
+                {
+                    string writeError;
+                    using (Stream stream = transaction.OpenWrite())
+                    {
+                        writeError = snapshot.WriteSnapshotToStream(stream);
+                    }
+                    if (writeError != null)
+                    {
+                        transaction.Rollback();
+                        return new StorageWriteOutcome { Error = writeError };
+                    }
+
+                    StorageMutationResult commit = transaction.Commit();
+                    if (!commit.Success)
+                    {
+                        return new StorageWriteOutcome { Error = commit.Error };
+                    }
+
+                    var document = new StorageDocument(
+                        commit.DocumentId,
+                        default,
+                        displayName,
+                        TiltFile.TILT_MIME_TYPE,
+                        false,
+                        null,
+                        DateTime.Now,
+                        (1L << 1) | (1L << 6),
+                        displayName);
+                    return new StorageWriteOutcome
+                    {
+                        FileInfo = new SafSceneFileInfo(backend, document),
+                    };
+                }
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is UnauthorizedAccessException ||
+                e is InvalidOperationException)
+            {
+                return new StorageWriteOutcome { Error = e.Message };
+            }
+        }
+
+        private static string GetSafDestinationDisplayName(
+            IUserStorageBackend backend, StorageArea area, SceneFileInfo fileInfo)
+        {
+            if (fileInfo is SafSceneFileInfo safFileInfo)
+            {
+                return safFileInfo.Document.DisplayName;
+            }
+
+            string desiredName = Path.GetFileName(fileInfo.FullPath);
+            StorageDirectoryResult listing = backend.List(area, "", default);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException(listing.Error);
+            }
+            var existingNames = new HashSet<string>(
+                listing.Documents.Select(document => document.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
+            if (!existingNames.Contains(desiredName))
+            {
+                return desiredName;
+            }
+
+            string stem = Path.GetFileNameWithoutExtension(desiredName);
+            string extension = Path.GetExtension(desiredName);
+            for (int suffix = 1; suffix < 10000; ++suffix)
+            {
+                string candidate = $"{stem}{suffix}{extension}";
+                if (!existingNames.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+            throw new IOException("Could not generate a unique shared sketch name.");
         }
 
         /// If success, error should be null
         private void NotifySaveFinished(SceneFileInfo info, string error, bool newFile)
         {
+            string displayLocation = info.FullPath ?? info.HumanName;
             if (error == null)
             {
                 // TODO: More long term something should be done in OutputWindowScript itself to handle such
@@ -551,12 +731,12 @@ namespace TiltBrush
                 // is tracked.
                 if (newFile)
                 {
-                    OutputWindowScript.ReportFileSaved("Added to Sketchbook!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("Added to Sketchbook!", displayLocation,
                         OutputWindowScript.InfoCardSpawnPos.Brush);
                 }
                 else
                 {
-                    OutputWindowScript.ReportFileSaved("Saved!", info.FullPath,
+                    OutputWindowScript.ReportFileSaved("Saved!", displayLocation,
                         OutputWindowScript.InfoCardSpawnPos.UIReticle);
                     AudioManager.m_Instance.PlaySaveSound(
                         InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush));
@@ -676,7 +856,7 @@ namespace TiltBrush
                         string.Format("Error detected in sketch '{0}'.\nSuggest re-saving.",
                             fileInfo.HumanName));
                     Debug.LogWarning(string.Format("Error reading meteadata for {0}.\n{1}",
-                        fileInfo.FullPath,
+                        fileInfo.FullPath ?? fileInfo.HumanName,
                         SaveLoadScript.m_Instance.LastMetadataError));
                 }
                 if (jsonData.RequiredCapabilities != null)

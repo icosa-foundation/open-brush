@@ -46,9 +46,10 @@ public class ScriptUiNav : MonoBehaviour
         m_CopyToUserScriptsFolder.gameObject.SetActive(script.Globals.Get(LuaNames.IsExampleScriptBool).Boolean);
     }
 
-    public void HandleCopyScriptToUserScriptFolder()
+    public async void HandleCopyScriptToUserScriptFolder()
     {
-        var copied = LuaManager.Instance.CopyActiveScriptToUserScriptFolder(m_ApiCategory);
+        var copied =
+            await LuaManager.Instance.CopyActiveScriptToUserScriptFolderAsync(m_ApiCategory);
         m_CopyToUserScriptsFolder.gameObject.SetActive(copied);
     }
 }

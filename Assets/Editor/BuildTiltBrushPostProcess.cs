@@ -42,6 +42,37 @@ public class BuildTiltBrushPostProcess
             var androidNamespaceURI = element.GetAttribute("xmlns:android");
 
 
+            if (BuildTiltBrush.IsGooglePlayBuildActive)
+            {
+                UnityEngine.Debug.Log("Apply Google Play Android storage manifest profile");
+                AddOrRemoveTag(doc,
+                    androidNamespaceURI,
+                    "/manifest/application",
+                    "meta-data",
+                    "unityplayer.SkipPermissionsDialog",
+                    true,
+                    true,
+                    "value", "true"
+                );
+
+                foreach (string permission in new[]
+                {
+                    "android.permission.MANAGE_EXTERNAL_STORAGE",
+                    "android.permission.WRITE_EXTERNAL_STORAGE",
+                    "android.permission.READ_EXTERNAL_STORAGE",
+                    "android.permission.READ_MEDIA_AUDIO",
+                    "android.permission.READ_MEDIA_IMAGES",
+                    "android.permission.READ_MEDIA_VIDEO",
+                    "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+                })
+                {
+                    RemovePermissionTags(doc, androidNamespaceURI, permission);
+                }
+
+                var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+                application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
+            }
+
 
 #if FORCE_QUEST_SUPPORT_DEVICE
             UnityEngine.Debug.Log("Add quest as a supported devices");
@@ -101,6 +132,25 @@ public class BuildTiltBrushPostProcess
         catch (System.Exception e)
         {
             UnityEngine.Debug.LogException(e);
+        }
+    }
+
+    private static void RemovePermissionTags(XmlDocument doc, string @namespace, string permission)
+    {
+        RemoveTags(doc, @namespace, "/manifest", "uses-permission", permission);
+        RemoveTags(doc, @namespace, "/manifest", "uses-permission-sdk-23", permission);
+    }
+
+    private static void RemoveTags(XmlDocument doc, string @namespace, string path, string elementName, string name)
+    {
+        var nodes = doc.SelectNodes(path + "/" + elementName);
+        for (int i = nodes.Count - 1; i >= 0; --i)
+        {
+            XmlElement element = nodes[i] as XmlElement;
+            if (element != null && (name == null || name == element.GetAttribute("name", @namespace)))
+            {
+                element.ParentNode?.RemoveChild(element);
+            }
         }
     }
 

@@ -51,9 +51,14 @@ namespace TiltBrush
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
-        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts storage location")]
         public static void OpenUserScriptsFolder()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                AndroidStorageManager.ReselectSharedFolder();
+                return;
+            }
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
         }
 
@@ -1093,6 +1098,7 @@ namespace TiltBrush
 
             var path = GetSafeReferenceImageWritePath(filename);
             File.WriteAllBytes(path, bytes);
+            _PublishApiMediaLibraryPathToSharedStorage(path);
             return path;
         }
 
@@ -1413,6 +1419,7 @@ namespace TiltBrush
             bool renderDepth = true;
             bool renderNormals = true;
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+            _PublishSnapshotFilesToSharedStorage(filename, renderDepth, renderNormals);
         }
 
         internal static void ValidateSnapshotDimensions(

@@ -17,7 +17,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_GOOGLE_PLAY
 using UnityEngine.Android;
 #endif
 
@@ -40,7 +40,7 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_GOOGLE_PLAY
         private bool m_FolderPermissionOverride = false;
         private bool m_WaitingForPermission = false;
 #endif
@@ -70,7 +70,7 @@ namespace TiltBrush
 
             DontDestroyOnLoad(gameObject);
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_GOOGLE_PLAY
             if (Application.platform == RuntimePlatform.Android)
             {
                 if (!UserHasManageExternalStoragePermission())
@@ -123,7 +123,7 @@ namespace TiltBrush
             m_Overlay.Progress = m_CurrentLoadingPosition;
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_GOOGLE_PLAY
         private bool UserHasManageExternalStoragePermission()
         {
             bool isExternalStorageManager = false;

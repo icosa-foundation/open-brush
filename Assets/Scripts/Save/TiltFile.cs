@@ -26,6 +26,10 @@ using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
 
 namespace TiltBrush
 {
+    public interface IReopenableReadStream
+    {
+        Stream Open();
+    }
 
     public class TiltFile
     {
@@ -55,6 +59,102 @@ namespace TiltBrush
         public unsafe static ushort HEADER_SIZE = (ushort)sizeof(TiltZipHeader);
         public static ushort HEADER_VERSION = 1;
 
+        private static void WriteTiltZipHeader(Stream stream, TiltZipHeader header)
+        {
+            unsafe
+            {
+                Debug.Assert(
+                    HEADER_SIZE == Marshal.SizeOf(header),
+                    "Reference types detected in TiltZipHeader");
+
+                byte[] buffer = new byte[HEADER_SIZE];
+                fixed (byte* bufferPointer = buffer)
+                {
+                    Marshal.StructureToPtr(header, (IntPtr)bufferPointer, false);
+                    stream.Write(buffer, 0, buffer.Length);
+                }
+            }
+        }
+
+        /// Writes a zip-format .tilt archive to a caller-supplied stream.
+        /// Destination replacement and transaction semantics belong to the caller.
+        sealed public class ArchiveWriter : IDisposable
+        {
+            private ZipLibrary.ZipOutputStream m_zipstream;
+            private bool m_finished;
+
+            public ArchiveWriter(Stream outputStream, bool ownsOutputStream = true)
+            {
+                if (outputStream == null)
+                {
+                    throw new ArgumentNullException(nameof(outputStream));
+                }
+                if (!outputStream.CanWrite)
+                {
+                    throw new ArgumentException("Tilt archive output stream is not writable.",
+                        nameof(outputStream));
+                }
+
+                var header = new TiltZipHeader
+                {
+                    sentinel = TILT_SENTINEL,
+                    headerSize = HEADER_SIZE,
+                    headerVersion = HEADER_VERSION,
+                };
+                WriteTiltZipHeader(outputStream, header);
+                m_zipstream = new ZipLibrary.ZipOutputStream(outputStream);
+#if USE_DOTNETZIP
+                // Ionic.Zip documentation says compression level None can produce archives that
+                // the default macOS reader cannot open. Compression method None is compatible.
+                m_zipstream.CompressionMethod = ZipLibrary.CompressionMethod.None;
+                m_zipstream.EnableZip64 = ZipLibrary.Zip64Option.Never;
+#else
+                m_zipstream.IsStreamOwner = ownsOutputStream;
+                m_zipstream.SetLevel(0);
+                m_zipstream.UseZip64 = ZipLibrary.UseZip64.Off;
+#endif
+            }
+
+            public Stream GetWriteStream(string subfileName)
+            {
+                if (m_finished)
+                {
+                    throw new InvalidOperationException("Tilt archive is already complete.");
+                }
+#if USE_DOTNETZIP
+                var entry = m_zipstream.PutNextEntry(subfileName);
+                entry.LastModified = DateTime.Now;
+                return new ZipOutputStreamWrapper_DotNetZip(m_zipstream);
+#else
+                var entry = new ZipLibrary.ZipEntry(subfileName)
+                {
+                    DateTime = DateTime.Now,
+                    CompressionMethod = m_zipstream.GetLevel() == 0
+                        ? ZipLibrary.CompressionMethod.Stored
+                        : ZipLibrary.CompressionMethod.Deflated
+                };
+                return new ZipOutputStreamWrapper_SharpZipLib(m_zipstream, entry);
+#endif
+            }
+
+            public void Complete()
+            {
+                if (m_finished)
+                {
+                    return;
+                }
+
+                m_finished = true;
+                m_zipstream.Dispose();
+                m_zipstream = null;
+            }
+
+            public void Dispose()
+            {
+                Complete();
+            }
+        }
+
         /// Writes .tilt files and directories in as atomic a fashion as possible.
         /// Use in a using() block, and call Commit() or Rollback() when done.
         sealed public class AtomicWriter : IDisposable
@@ -63,7 +163,7 @@ namespace TiltBrush
             private string m_temporaryPath;
             private bool m_finished = false;
 
-            private ZipLibrary.ZipOutputStream m_zipstream = null;
+            private ArchiveWriter m_archiveWriter;
 
             public AtomicWriter(string path)
             {
@@ -89,26 +189,7 @@ namespace TiltBrush
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(m_temporaryPath));
                     FileStream tmpfs = new FileStream(m_temporaryPath, FileMode.Create, FileAccess.Write);
-                    var header = new TiltZipHeader
-                    {
-                        sentinel = TILT_SENTINEL,
-                        headerSize = HEADER_SIZE,
-                        headerVersion = HEADER_VERSION,
-                    };
-                    WriteTiltZipHeader(tmpfs, header);
-                    m_zipstream = new ZipLibrary.ZipOutputStream(tmpfs);
-#if USE_DOTNETZIP
-        // Ionic.Zip documentation says that using compression level None produces
-        // zip files that cannot be opened with the default OSX zip reader.
-        // But compression _method_ none seems fine?
-        m_zipstream.CompressionMethod = ZipLibrary.CompressionMethod.None;
-        m_zipstream.EnableZip64 = ZipLibrary.Zip64Option.Never;
-#else
-                    m_zipstream.SetLevel(0); // no compression
-                    // Since we don't have size info up front, it conservatively assumes 64-bit.
-                    // We turn it off to maximize compatibility with wider ecosystem (eg, osx unzip).
-                    m_zipstream.UseZip64 = ZipLibrary.UseZip64.Off;
-#endif
+                    m_archiveWriter = new ArchiveWriter(tmpfs);
                 }
                 else
                 {
@@ -116,55 +197,13 @@ namespace TiltBrush
                 }
             }
 
-            private static void WriteTiltZipHeader(Stream s, TiltZipHeader header)
-            {
-                unsafe
-                {
-                    // This doesn't work because we need a byte[] to pass to Stream
-                    // byte* bufp = stackalloc byte[sizeof(TiltZipHeader)];
-
-                    // This doesn't work because the type is also byte*, not byte[]
-                    // unsafe struct Foo { fixed byte buf[N]; }
-
-                    Debug.Assert(
-                        HEADER_SIZE == Marshal.SizeOf(header),
-                        "Reference types detected in TiltZipHeader");
-
-                    byte[] buf = new byte[HEADER_SIZE];
-                    fixed (byte* bufp = buf)
-                    {
-                        IntPtr bufip = (IntPtr)bufp;
-                        // Copy from undefined CLR layout to explicitly-defined layout
-                        Marshal.StructureToPtr(header, bufip, false);
-                        s.Write(buf, 0, buf.Length);
-                        // Need this if there are reference types, but in that case
-                        // there are other complications (like demarshaling)
-                        // Marshal.DestroyStructure(bufip, typeof(TiltZipHeader));
-                    }
-                }
-            }
-
             /// Returns a writable stream to an empty subfile.
             public Stream GetWriteStream(string subfileName)
             {
                 Debug.Assert(!m_finished);
-                if (m_zipstream != null)
+                if (m_archiveWriter != null)
                 {
-#if USE_DOTNETZIP
-        var entry = m_zipstream.PutNextEntry(subfileName);
-        entry.LastModified = System.DateTime.Now;
-        // entry.CompressionMethod = DotNetZip.CompressionMethod.None; no need; use the default
-        return new ZipOutputStreamWrapper_DotNetZip(m_zipstream);
-#else
-                    var entry = new ZipLibrary.ZipEntry(subfileName);
-                    entry.DateTime = System.DateTime.Now;
-                    // There is such a thing as "Deflated, compression level 0".
-                    // Explicitly use "Stored".
-                    entry.CompressionMethod = (m_zipstream.GetLevel() == 0)
-                        ? ZipLibrary.CompressionMethod.Stored
-                        : ZipLibrary.CompressionMethod.Deflated;
-                    return new ZipOutputStreamWrapper_SharpZipLib(m_zipstream, entry);
-#endif
+                    return m_archiveWriter.GetWriteStream(subfileName);
                 }
                 else
                 {
@@ -181,10 +220,10 @@ namespace TiltBrush
                 if (m_finished) { return; }
                 m_finished = true;
 
-                if (m_zipstream != null)
+                if (m_archiveWriter != null)
                 {
-                    m_zipstream.Dispose();
-                    m_zipstream = null;
+                    m_archiveWriter.Complete();
+                    m_archiveWriter = null;
                 }
 
                 string previous = m_destination + "_previous";
@@ -204,10 +243,10 @@ namespace TiltBrush
                 if (m_finished) { return; }
                 m_finished = true;
 
-                if (m_zipstream != null)
+                if (m_archiveWriter != null)
                 {
-                    m_zipstream.Dispose();
-                    m_zipstream = null;
+                    m_archiveWriter.Dispose();
+                    m_archiveWriter = null;
                 }
 
                 Destroy(m_temporaryPath);
@@ -258,17 +297,37 @@ namespace TiltBrush
             }
         }
 
-        private string m_Fullpath;
+        private readonly string m_Fullpath;
+        private readonly IReopenableReadStream m_StreamSource;
+        private readonly string m_DisplayName;
 
         public TiltFile(string fullpath)
         {
             m_Fullpath = fullpath;
+            m_StreamSource = null;
+            m_DisplayName = fullpath;
+        }
+
+        public TiltFile(IReopenableReadStream streamSource, string displayName)
+        {
+            m_Fullpath = null;
+            m_StreamSource = streamSource ?? throw new ArgumentNullException(nameof(streamSource));
+            m_DisplayName = string.IsNullOrEmpty(displayName) ? "<stream>" : displayName;
         }
 
         private static TiltZipHeader ReadTiltZipHeader(Stream s)
         {
             byte[] buf = new byte[HEADER_SIZE];
-            s.Read(buf, 0, buf.Length);
+            int totalRead = 0;
+            while (totalRead < buf.Length)
+            {
+                int read = s.Read(buf, totalRead, buf.Length - totalRead);
+                if (read == 0)
+                {
+                    throw new EndOfStreamException("Incomplete .tilt header.");
+                }
+                totalRead += read;
+            }
             unsafe
             {
                 fixed (byte* bufp = buf)
@@ -283,6 +342,36 @@ namespace TiltBrush
         /// or null if the file format is invalid.
         public Stream GetReadStream(string subfileName)
         {
+            if (m_StreamSource != null)
+            {
+                if (!IsHeaderValid())
+                {
+                    return null;
+                }
+
+                Stream archiveStream = null;
+                try
+                {
+                    archiveStream = m_StreamSource.Open();
+                    Stream result = new ZipSubfileReader(archiveStream, subfileName);
+                    archiveStream = null;
+                    return result;
+                }
+                catch (ZipLibrary.ZipException e)
+                {
+                    Debug.LogFormat("{0}", e);
+                    return null;
+                }
+                catch (FileNotFoundException)
+                {
+                    return null;
+                }
+                finally
+                {
+                    archiveStream?.Dispose();
+                }
+            }
+
             if (File.Exists(m_Fullpath))
             {
                 // It takes a long time to figure out a file isn't a .zip, so it's worth the
@@ -319,30 +408,33 @@ namespace TiltBrush
 
         public bool IsHeaderValid()
         {
+            if (m_StreamSource != null)
+            {
+                try
+                {
+                    using (Stream stream = m_StreamSource.Open())
+                    {
+                        return IsHeaderValid(stream, m_DisplayName);
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Debug.LogFormat("Document does not have read permissions: {0}", m_DisplayName);
+                    return false;
+                }
+                catch (IOException)
+                {
+                    return false;
+                }
+            }
+
             if (File.Exists(m_Fullpath))
             {
                 try
                 {
                     using (var stream = new FileStream(m_Fullpath, FileMode.Open, FileAccess.Read))
                     {
-                        var header = ReadTiltZipHeader(stream);
-                        if (header.sentinel != TILT_SENTINEL || header.headerVersion != HEADER_VERSION)
-                        {
-                            Debug.LogFormat("Bad .tilt sentinel or header: {0}", m_Fullpath);
-                            return false;
-                        }
-                        if (header.headerSize < HEADER_SIZE)
-                        {
-                            Debug.LogFormat("Unexpected header length: {0}", m_Fullpath);
-                            return false;
-                        }
-                        stream.Seek(header.headerSize - HEADER_SIZE, SeekOrigin.Current);
-                        if ((new BinaryReader(stream)).ReadUInt32() != PKZIP_SENTINEL)
-                        {
-                            Debug.LogFormat("Zip sentinel not found: {0}", m_Fullpath);
-                            return false;
-                        }
-                        return true;
+                        return IsHeaderValid(stream, m_Fullpath);
                     }
                 }
                 catch (UnauthorizedAccessException)
@@ -366,6 +458,135 @@ namespace TiltBrush
                     File.Exists(Path.Combine(m_Fullpath, FN_THUMBNAIL)));
             }
             return false;
+        }
+
+        public static bool IsHeaderValid(Stream stream, string displayName = "<stream>")
+        {
+            if (stream == null || !stream.CanRead)
+            {
+                return false;
+            }
+            if (!stream.CanSeek)
+            {
+                Debug.LogFormat("Tilt archive is not seekable: {0}", displayName);
+                return false;
+            }
+
+            long originalPosition = stream.Position;
+            try
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                var header = ReadTiltZipHeader(stream);
+                if (header.sentinel != TILT_SENTINEL || header.headerVersion != HEADER_VERSION)
+                {
+                    Debug.LogFormat("Bad .tilt sentinel or header: {0}", displayName);
+                    return false;
+                }
+                if (header.headerSize < HEADER_SIZE)
+                {
+                    Debug.LogFormat("Unexpected header length: {0}", displayName);
+                    return false;
+                }
+                stream.Seek(header.headerSize, SeekOrigin.Begin);
+                if ((new BinaryReader(stream)).ReadUInt32() != PKZIP_SENTINEL)
+                {
+                    Debug.LogFormat("Zip sentinel not found: {0}", displayName);
+                    return false;
+                }
+                return true;
+            }
+            catch (EndOfStreamException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    stream.Seek(originalPosition, SeekOrigin.Begin);
+                }
+                catch (IOException)
+                {
+                    // Header validation has already completed; a failed position restore should
+                    // not obscure its result. Callers open a fresh stream to read the archive.
+                }
+            }
+        }
+
+        public static bool IsArchiveValid(
+            Stream stream,
+            string displayName = "<stream>",
+            bool testData = false)
+        {
+            if (!IsHeaderValid(stream, displayName))
+            {
+                return false;
+            }
+
+            long originalPosition = stream.Position;
+            try
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+#if USE_DOTNETZIP
+                using (var archive = ZipLibrary.ZipFile.Read(stream))
+                {
+                    if (archive[FN_SKETCH] == null ||
+                        archive[FN_METADATA] == null &&
+                        archive[FN_METADATA_LEGACY] == null)
+                    {
+                        return false;
+                    }
+                    if (testData)
+                    {
+                        foreach (ZipLibrary.ZipEntry entry in archive)
+                        {
+                            using (Stream input = entry.OpenReader())
+                            {
+                                input.CopyTo(Stream.Null);
+                            }
+                        }
+                    }
+                    return true;
+                }
+#else
+                using (var archive = new ZipLibrary.ZipFile(stream)
+                {
+                    IsStreamOwner = false,
+                })
+                {
+                    if (archive.GetEntry(FN_SKETCH) == null ||
+                        archive.GetEntry(FN_METADATA) == null &&
+                        archive.GetEntry(FN_METADATA_LEGACY) == null)
+                    {
+                        return false;
+                    }
+                    return archive.TestArchive(testData);
+                }
+#endif
+            }
+            catch (Exception e) when (
+                e is IOException ||
+                e is ZipLibrary.ZipException ||
+                e is InvalidOperationException)
+            {
+                Debug.LogFormat("Invalid .tilt archive {0}: {1}", displayName, e.Message);
+                return false;
+            }
+            finally
+            {
+                try
+                {
+                    stream.Seek(originalPosition, SeekOrigin.Begin);
+                }
+                catch (IOException)
+                {
+                    // The caller will observe the provider failure on its next operation.
+                }
+            }
         }
 
         public bool IsLoadable()

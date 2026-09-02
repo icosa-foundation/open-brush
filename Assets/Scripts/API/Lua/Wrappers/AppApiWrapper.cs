@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using System;
 using MoonSharp.Interpreter;
 using UnityAsyncAwaitUtil;
@@ -205,6 +206,7 @@ namespace TiltBrush
             ApiMethods.ValidateSnapshotDimensions(
                 width, height, includesSidecars: renderDepth || renderNormals);
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+            ApiMethods._PublishSnapshotFilesToSharedStorage(filename, renderDepth, renderNormals);
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
@@ -223,7 +225,14 @@ namespace TiltBrush
             odsDriver.OdsCamera.imageWidth = width;
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
-            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndPublish(odsDriver, filename));
+        }
+
+        private static IEnumerator Render360SnapshotAndPublish(OdsDriver odsDriver, string filename)
+        {
+            yield return odsDriver.OdsCamera.Render(odsDriver.transform);
+            string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
+            ApiMethods._PublishApiGeneratedFileToSharedStorage(path);
         }
 
         private static bool _IsSubdirectory(string path, string basePath)

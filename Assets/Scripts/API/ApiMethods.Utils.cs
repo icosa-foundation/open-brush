@@ -316,9 +316,115 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
+                _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath);
                 return uniqueFilename;
             }
             return null;
+        }
+
+        internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
+        {
+            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(
+                localPath,
+                relativePath,
+                "generated file",
+                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
+        }
+
+        internal static void _PublishSnapshotFilesToSharedStorage(
+            string filename, bool renderDepth, bool renderNormals)
+        {
+            if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                filename += ".jpg";
+            }
+
+            string imagePath = GetSafePathInDirectory(
+                App.SnapshotPath(), filename, "snapshot filename");
+            _PublishExistingApiGeneratedFileToSharedStorage(imagePath);
+
+            string captureBasePath = Path.Combine(
+                Path.GetDirectoryName(imagePath),
+                Path.GetFileNameWithoutExtension(imagePath));
+            if (renderDepth)
+            {
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.png");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth16.png");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.exr");
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.json");
+            }
+            if (renderNormals)
+            {
+                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_normals.png");
+            }
+        }
+
+        private static void _PublishExistingApiGeneratedFileToSharedStorage(string localPath)
+        {
+            if (File.Exists(localPath))
+            {
+                _PublishApiGeneratedFileToSharedStorage(localPath);
+            }
+        }
+
+        internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
+        {
+            if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(
+                localPath,
+                relativePath,
+                "media file",
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync);
+        }
+
+        private static void _PublishApiPathToSharedStorage(
+            string localPath,
+            string relativePath,
+            string label,
+            Action<string, string, Action<bool, string>> publish)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
+
+            void Publish()
+            {
+                publish(localPath, label, (success, error) =>
+                {
+                    if (!success)
+                    {
+                        string message = string.IsNullOrEmpty(error)
+                            ? $"Failed to copy API {label} to shared storage."
+                            : $"Failed to copy API {label} to shared storage: {error}";
+                        ControllerConsoleScript.m_Instance?.AddNewLine(message);
+                    }
+                });
+            }
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                Publish();
+                return;
+            }
+
+            AndroidStorageManager.RequireSharedFolderFor(
+                label,
+                Publish,
+                () => ControllerConsoleScript.m_Instance?.AddNewLine(
+                    $"SAF_OUTPUT API {label} remains staged locally because folder " +
+                    "selection was canceled."));
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)

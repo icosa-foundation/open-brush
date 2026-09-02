@@ -16,10 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 using Newtonsoft.Json;
-using ICSharpCode.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
 
 namespace TiltBrush
@@ -238,45 +236,50 @@ namespace TiltBrush
         {
             try
             {
-                using (var zip = new ZipOutputStream(outputStream))
+                using (var tiltWriter = new TiltFile.ArchiveWriter(
+                    outputStream, ownsOutputStream: false))
                 {
-                    zip.SetLevel(9); // Set compression level
-
-                    // Write metadata
-                    zip.PutNextEntry(new ZipEntry(TiltFile.FN_METADATA));
-                    using (var writer = new StreamWriter(zip, Encoding.UTF8, 1024, true))
-                    {
-                        m_JsonSerializer.Serialize(writer, m_Metadata);
-                    }
-                    zip.CloseEntry();
-
-                    // Prepare the necessary data for WriteMemory
-                    List<Stroke> strokes = new List<Stroke>(SketchMemoryScript.m_Instance.GetMemoryList);
-                    IList<AdjustedMemoryBrushStroke> strokeCopies = EnumerateAdjustedSnapshots(strokes).ToList();
-                    GroupIdMapping groupIdMapping = new GroupIdMapping();
-                    List<Guid> brushList;
-
-                    // Write sketch data
-                    zip.PutNextEntry(new ZipEntry(TiltFile.FN_SKETCH));
-                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList);
-                    zip.CloseEntry();
-
-                    // Write thumbnail if available
-                    if (Thumbnail != null)
-                    {
-                        zip.PutNextEntry(new ZipEntry(TiltFile.FN_THUMBNAIL));
-                        zip.Write(Thumbnail, 0, Thumbnail.Length);
-                        zip.CloseEntry();
-                    }
-
-                    // Add other necessary files as needed
+                    WriteSnapshot(tiltWriter.GetWriteStream);
+                    tiltWriter.Complete();
                 }
 
-                return null; // No error
+                return null;
             }
             catch (Exception ex)
             {
                 return ex.Message;
+            }
+        }
+
+        private void WriteSnapshot(Func<string, Stream> getWriteStream)
+        {
+            if (m_ThumbnailBytes != null)
+            {
+                using (var stream = getWriteStream(TiltFile.FN_THUMBNAIL))
+                {
+                    stream.Write(m_ThumbnailBytes, 0, m_ThumbnailBytes.Length);
+                }
+            }
+
+            if (m_HiResBytes != null)
+            {
+                using (var stream = getWriteStream(TiltFile.FN_HI_RES))
+                {
+                    stream.Write(m_HiResBytes, 0, m_HiResBytes.Length);
+                }
+            }
+
+            List<Guid> brushGuids;
+            using (var stream = getWriteStream(TiltFile.FN_SKETCH))
+            {
+                SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
+            }
+            m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+
+            using (var jsonWriter = new CustomJsonWriter(
+                new StreamWriter(getWriteStream(TiltFile.FN_METADATA))))
+            {
+                m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
             }
         }
 
@@ -289,35 +292,7 @@ namespace TiltBrush
             {
                 using (var tiltWriter = new TiltFile.AtomicWriter(path))
                 {
-                    if (m_ThumbnailBytes != null)
-                    {
-                        using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_THUMBNAIL))
-                        {
-                            stream.Write(m_ThumbnailBytes, 0, m_ThumbnailBytes.Length);
-                        }
-                    }
-
-                    if (m_HiResBytes != null)
-                    {
-                        using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_THUMBNAIL))
-                        {
-                            stream.Write(m_HiResBytes, 0, m_HiResBytes.Length);
-                        }
-                    }
-
-                    List<Guid> brushGuids;
-                    using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
-                    {
-                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
-                    }
-                    m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
-
-                    using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
-                        tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
-                    {
-                        m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
-                    }
-
+                    WriteSnapshot(tiltWriter.GetWriteStream);
                     tiltWriter.Commit();
                 }
             }

@@ -71,12 +71,44 @@ namespace TiltBrush
 
             m_Sets = new[]
             {
-                new FileSketchSet(SketchSetType.User),
+                CreateUserSketchSet(),
                 featuredSketchSet,
                 new IcosaSketchSet(this, SketchSetType.Liked, needsLogin: true),
                 new GoogleDriveSketchSet(),
-                new FileSketchSet(SketchSetType.SavedStrokes)
+                CreateSavedStrokesSketchSet()
             };
+        }
+
+        private static SketchSet CreateUserSketchSet()
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            return backend.Kind == StorageBackendKind.StorageAccessFramework
+                ? (SketchSet)new SafSketchSet(
+                    SketchSetType.User, StorageArea.Sketches, backend)
+                : new FileSketchSet(SketchSetType.User);
+        }
+
+        private static SketchSet CreateSavedStrokesSketchSet()
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            return backend.Kind == StorageBackendKind.StorageAccessFramework
+                ? (SketchSet)new SafSketchSet(
+                    SketchSetType.SavedStrokes, StorageArea.SavedStrokes, backend)
+                : new FileSketchSet(SketchSetType.SavedStrokes);
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus && m_Sets != null)
+            {
+                foreach (SketchSet set in m_Sets)
+                {
+                    if (set is SafSketchSet)
+                    {
+                        set.RequestRefresh();
+                    }
+                }
+            }
         }
 
         public static bool InitFeaturedSketchesPath()

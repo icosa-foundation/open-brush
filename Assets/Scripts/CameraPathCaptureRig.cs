@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Localization;
 
@@ -31,6 +32,7 @@ namespace TiltBrush
         private UsdPathSerializer m_VideoUsdSerializer;
         private Camera m_CameraComponent;
         private Vector2 m_CameraClipPlanesBase;
+        private string m_PathCaptureFile;
 
         public bool Enabled => m_Object.activeSelf;
 
@@ -111,6 +113,15 @@ namespace TiltBrush
 
         public void RecordPath()
         {
+            string saveName = MultiCamTool.GetSaveName(MultiCamStyle.Video);
+            string sharedVideoPath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedVideoPath) &&
+                !AndroidStorageManager.RequireSharedFolderFor("saving videos", RecordPath))
+            {
+                return;
+            }
+
             // See README.md section # Video support and # Camera path support.
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(true);
@@ -121,10 +132,8 @@ namespace TiltBrush
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
 
-            VideoRecorderUtils.StartVideoCapture(
-                MultiCamTool.GetSaveName(MultiCamStyle.Video),
-                m_Manager.GetComponent<VideoRecorder>(),
-                m_VideoUsdSerializer);
+            m_PathCaptureFile = saveName;
+            VideoRecorderUtils.StartVideoCapture(saveName, m_Manager.GetComponent<VideoRecorder>(), m_VideoUsdSerializer);
         }
 
         public void StopRecordingPath(bool saveCapture)
@@ -168,6 +177,10 @@ namespace TiltBrush
             }
 
             VideoRecorderUtils.StopVideoCapture(saveCapture);
+            if (saveCapture && OpenBrushStorage.IsGooglePlayStorageMode && !string.IsNullOrEmpty(m_PathCaptureFile))
+            {
+                StartCoroutine(PublishPathCaptureWhenReady(m_PathCaptureFile));
+            }
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(false);
@@ -176,6 +189,28 @@ namespace TiltBrush
             // recording state.
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
+        }
+
+        private IEnumerator PublishPathCaptureWhenReady(string capturePath)
+        {
+            var recorder = m_Manager.GetComponent<VideoRecorder>();
+            var stillFrameExporter = m_Manager.GetComponent<StillFrameSequenceExporter>();
+            while ((recorder != null && recorder.IsSaving) ||
+                   (stillFrameExporter != null && stillFrameExporter.IsSaving))
+            {
+                yield return null;
+            }
+
+            OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
+                capturePath,
+                "camera path video",
+                (success, publishError) =>
+                {
+                    if (!success)
+                    {
+                        OutputWindowScript.Error("Failed to save video", publishError);
+                    }
+                });
         }
 
         void RefreshVisibility()

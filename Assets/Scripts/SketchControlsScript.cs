@@ -4108,7 +4108,45 @@ namespace TiltBrush
             for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
-                using (var coroutine = LoadAndExport(rInfo.FullPath))
+                string loadPath = rInfo.FullPath;
+                if (rInfo is SafSceneFileInfo safInfo)
+                {
+                    var materialization = new Future<string>(
+                        () => UserStorage.Backend.Materialize(
+                            safInfo.Document.DocumentId,
+                            MaterializationScope.File,
+                            default),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    bool failed = false;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = materialization.TryGetResult(out loadPath);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_MATERIALIZE Could not export {rInfo.HumanName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            failed = true;
+                            break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    materialization.Close();
+                    if (failed)
+                    {
+                        continue;
+                    }
+                }
+                using (var coroutine = LoadAndExport(loadPath))
                 {
                     while (coroutine.MoveNext())
                     {
@@ -4187,10 +4225,23 @@ namespace TiltBrush
 #if USD_SUPPORTED
             var current = SaveLoadScript.m_Instance.SceneFile;
             string basename = (current.Valid)
-                ? Path.GetFileNameWithoutExtension(current.FullPath)
+                ? current is SafSceneFileInfo
+                    ? FileUtils.GetValidFilename(current.HumanName)
+                    : Path.GetFileNameWithoutExtension(current.FullPath)
                 : "Untitled";
+            if (string.IsNullOrEmpty(basename))
+            {
+                basename = "Untitled";
+            }
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
+
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(directoryName, out _) &&
+                !AndroidStorageManager.RequireSharedFolderFor("saving models", SaveModel))
+            {
+                return;
+            }
 
             string usdname = Path.Combine(directoryName, basename + ".usd");
             // TODO: export selection only, though this is still only experimental. The blocking
@@ -4200,6 +4251,24 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
+                    directoryName,
+                    "model",
+                    (success, publishError) =>
+                    {
+                        if (!success)
+                        {
+                            OutputWindowScript.Error("Failed to save model", publishError);
+                            return;
+                        }
+
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush, "Model created!");
+                    });
+                return;
+            }
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif
@@ -5741,8 +5810,11 @@ namespace TiltBrush
                     texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
                     RenderTexture.active = prev;
                     byte[] jpegBytes = texture.EncodeToJPG();
-                    string filename =
-                        Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
+                    SceneFileInfo sceneFile =
+                        SaveLoadScript.m_Instance.SceneFile;
+                    string filename = sceneFile is SafSceneFileInfo
+                        ? FileUtils.GetValidFilename(sceneFile.HumanName)
+                        : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
                 }
                 finally

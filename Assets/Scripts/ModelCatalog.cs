@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -23,6 +24,8 @@ namespace TiltBrush
 
     public class ModelCatalog : MonoBehaviour, IReferenceItemCatalog
     {
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultModelsFdV1";
         static public ModelCatalog m_Instance;
 
         [SerializeField] private string[] m_DefaultModels;
@@ -49,15 +52,26 @@ namespace TiltBrush
         private string m_ChangedFile;
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
+        private bool m_SafScanInProgress;
+        private bool m_SafRescanRequested;
+        private string m_SafCatalogRootIdentity;
+        private string m_SafSeedAttemptedRootIdentity;
+        private bool m_SeedingSafDefaults;
 
         public bool IsScanning
         {
-            get { return false; } // ModelCatalog has no background processing.
+            get { return m_SafScanInProgress; }
         }
 
         public int ItemCount
         {
-            get { return m_OrderedModelNames[m_CurrentModelsDirectory].Count; }
+            get
+            {
+                return m_OrderedModelNames.TryGetValue(
+                    m_CurrentModelsDirectory, out List<string> models)
+                    ? models.Count
+                    : 0;
+            }
         }
 
         public IEnumerable<TiltModels75> MissingModels
@@ -90,8 +104,11 @@ namespace TiltBrush
 
         public void Init()
         {
-            App.InitMediaLibraryPath();
-            App.InitModelLibraryPath(m_DefaultModels);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitMediaLibraryPath();
+                App.InitModelLibraryPath(m_DefaultModels);
+            }
             m_ModelsByRelativePath = new Dictionary<string, Model>();
             m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();
@@ -129,7 +146,12 @@ namespace TiltBrush
             }
 
             m_FileWatchers = new List<FileWatcher>();
-            foreach (var directory in GetModelDirectories())
+            IEnumerable<string> watchedDirectories =
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework
+                    ? new[] { App.BlocksModelLibraryPath() }
+                    : GetModelDirectories();
+            foreach (var directory in watchedDirectories.Where(
+                         path => !string.IsNullOrEmpty(path)))
             {
                 Directory.CreateDirectory(directory);
                 var watcher = new FileWatcher(directory)
@@ -216,7 +238,8 @@ namespace TiltBrush
 
         public Model GetModelAtIndex(int i)
         {
-            return m_ModelsByRelativePath[m_OrderedModelNames[m_CurrentModelsDirectory][i]];
+            return m_ModelsByRelativePath[
+                m_OrderedModelNames[m_CurrentModelsDirectory][i]];
         }
 
         public void LoadModels()
@@ -266,6 +289,19 @@ namespace TiltBrush
 
         public void LoadModelsForNewDirectory(string path)
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                if (m_SafScanInProgress)
+                {
+                    m_SafRescanRequested = true;
+                }
+                else
+                {
+                    StartCoroutine(LoadSafModelsForNewDirectory(path));
+                }
+                return;
+            }
+
             LoadModels();
             // Get the root directory that 'path' belongs to
             var pathRoot = GetModelRoot(path) ?? HomeDirectory;
@@ -324,14 +360,154 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
-            LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            if (!m_SafScanInProgress)
+            {
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            }
         }
 
         void Update()
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                UserStorage.Backend.IsReady &&
+                !m_SeedingSafDefaults &&
+                m_SafSeedAttemptedRootIdentity !=
+                    UserStorage.Backend.RootIdentity &&
+                PlayerPrefs.GetInt(
+                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                        kSafSeedPreference),
+                    0) == 0)
+            {
+                StartCoroutine(SeedSafDefaults());
+            }
             if (m_FolderChanged)
             {
                 ForceCatalogScan();
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            string seedRootIdentity = backend.RootIdentity;
+            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+            var listingFuture = new Future<StorageDirectoryResult>(
+                () => backend.List(
+                    StorageArea.MediaLibraryModels, "", CancellationToken.None),
+                cleanupFunction: null,
+                longRunning: true);
+            StorageDirectoryResult listing = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out listing);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Could not inspect default model destination: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+
+            if (listing.Code == StorageResultCode.NotFound ||
+                listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultModels)
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default model: {resourcePath}");
+                        continue;
+                    }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    string displayName = Path.GetFileName(resourcePath);
+                    var writeFuture = new Future<StorageMutationResult>(
+                        () => WriteSafDefaultModel(
+                            backend, displayName, bytes),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    StorageMutationResult result;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = writeFuture.TryGetResult(out result);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_STORAGE Failed to seed {displayName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            m_SeedingSafDefaults = false;
+                            yield break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    if (!result.Success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                }
+            }
+
+            if (!string.Equals(
+                    seedRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            PlayerPrefs.SetInt(
+                OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, seedRootIdentity),
+                1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            ForceCatalogScan();
+        }
+
+        private static StorageMutationResult WriteSafDefaultModel(
+            IUserStorageBackend backend, string displayName, byte[] bytes)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                StorageArea.MediaLibraryModels,
+                displayName,
+                "application/octet-stream",
+                CancellationToken.None))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                return transaction.Commit();
             }
         }
 
@@ -403,6 +579,225 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        private sealed class SafModelRecord
+        {
+            public StorageDocument Document;
+            public string RelativePath;
+        }
+
+        private IEnumerator<object> LoadSafModelsForNewDirectory(string path)
+        {
+            m_SafScanInProgress = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            string scanRootIdentity = backend.RootIdentity;
+            if (m_SafCatalogRootIdentity != null &&
+                !string.Equals(
+                    m_SafCatalogRootIdentity,
+                    scanRootIdentity,
+                    StringComparison.Ordinal))
+            {
+                string localBlocksRoot = App.BlocksModelLibraryPath();
+                var localModels = m_ModelsByRelativePath.Where(pair =>
+                    m_ModelRootsByRelativePath.TryGetValue(
+                        pair.Key, out string modelRoot) &&
+                    string.Equals(
+                        modelRoot, localBlocksRoot, StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
+                var removedModels = m_ModelsByRelativePath
+                    .Where(pair => !localModels.ContainsKey(pair.Key))
+                    .Select(pair => pair.Value)
+                    .Distinct();
+                foreach (Model oldModel in removedModels)
+                {
+                    if (oldModel.m_ModelParent != null)
+                    {
+                        Destroy(oldModel.m_ModelParent.gameObject);
+                    }
+                }
+                m_ModelsByRelativePath = localModels;
+                m_ModelRootsByRelativePath = localModels.Keys.ToDictionary(
+                    relativePath => relativePath,
+                    _ => localBlocksRoot);
+                m_OrderedModelNames.Clear();
+                CatalogChanged?.Invoke();
+            }
+            m_SafCatalogRootIdentity = scanRootIdentity;
+            var scan = new Future<List<SafModelRecord>>(
+                () => ListSafModelsRecursively(backend, ""),
+                cleanupFunction: null,
+                longRunning: true);
+            List<SafModelRecord> records = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = scan.TryGetResult(out records);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_CATALOG Model query failed; retaining the previous catalog: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SafScanInProgress = false;
+                    if (m_SafRescanRequested)
+                    {
+                        m_SafRescanRequested = false;
+                        LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+                    }
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!string.Equals(
+                    scanRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SafScanInProgress = false;
+                m_SafRescanRequested = false;
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+                yield break;
+            }
+
+            Dictionary<string, Model> previous = m_ModelsByRelativePath;
+            var previousByIdentity = previous.Values
+                .GroupBy(model => model.CatalogIdentity)
+                .ToDictionary(group => group.Key, group => group.First());
+            m_ModelsByRelativePath = new Dictionary<string, Model>();
+            m_ModelRootsByRelativePath.Clear();
+
+            string blocksRoot = App.BlocksModelLibraryPath();
+            var oldBlocks = new Dictionary<string, Model>(previous);
+            ProcessDirectory(blocksRoot, oldBlocks, recurse: true);
+
+            HashSet<string> supportedExtensions = GetSupportedExtensions();
+            foreach (SafModelRecord record in records)
+            {
+                string extension = Path.GetExtension(record.RelativePath).ToLowerInvariant();
+                if (!supportedExtensions.Contains(extension))
+                {
+                    continue;
+                }
+
+                string identity =
+                    $"{record.Document.DocumentId.Value}|" +
+                    $"{record.Document.LastModified:o}|{record.Document.Size}";
+                if (!previousByIdentity.TryGetValue(identity, out Model model))
+                {
+                    StorageDocumentId documentId = record.Document.DocumentId;
+                    model = new Model(
+                        record.RelativePath,
+                        identity,
+                        () => backend.Materialize(
+                            documentId,
+                            MaterializationScope.DependencyTree,
+                            CancellationToken.None));
+                }
+                m_ModelsByRelativePath.TryAdd(model.RelativePath, model);
+                m_ModelRootsByRelativePath[model.RelativePath] = HomeDirectory;
+            }
+
+            var retained = new HashSet<Model>(m_ModelsByRelativePath.Values);
+            foreach (Model oldModel in previous.Values.Distinct())
+            {
+                if (!retained.Contains(oldModel) && oldModel.m_ModelParent != null)
+                {
+                    Destroy(oldModel.m_ModelParent.gameObject);
+                }
+            }
+            if (previous.Values.Any(model => !retained.Contains(model)))
+            {
+                Resources.UnloadUnusedAssets();
+            }
+
+            PopulateOrderedModels(m_CurrentModelsDirectory);
+            m_FolderChanged = false;
+            m_SafScanInProgress = false;
+            CatalogChanged?.Invoke();
+            if (m_SafRescanRequested)
+            {
+                m_SafRescanRequested = false;
+                LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+            }
+        }
+
+        private static List<SafModelRecord> ListSafModelsRecursively(
+            IUserStorageBackend backend, string relativeDirectory)
+        {
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.MediaLibraryModels,
+                relativeDirectory,
+                CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException($"{listing.Code}: {listing.Error}");
+            }
+
+            var records = new List<SafModelRecord>();
+            foreach (StorageDocument document in listing.Documents)
+            {
+                string relativePath = string.IsNullOrEmpty(relativeDirectory)
+                    ? document.DisplayName
+                    : Path.Combine(relativeDirectory, document.DisplayName);
+                if (document.IsDirectory)
+                {
+                    records.AddRange(ListSafModelsRecursively(
+                        backend, relativePath.Replace('\\', '/')));
+                }
+                else
+                {
+                    records.Add(new SafModelRecord
+                    {
+                        Document = document,
+                        RelativePath = relativePath,
+                    });
+                }
+            }
+            return records;
+        }
+
+        private void PopulateOrderedModels(string path)
+        {
+            string pathRoot = GetModelRoot(path) ?? HomeDirectory;
+            string blocksRoot = App.BlocksModelLibraryPath();
+            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
+                path.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+            List<string> modelsInDirectory = m_ModelsByRelativePath.Keys.Where(relativePath =>
+            {
+                if (!m_ModelRootsByRelativePath.TryGetValue(
+                        relativePath, out string modelRoot) ||
+                    modelRoot != pathRoot)
+                {
+                    return false;
+                }
+                if (isBlocksRoot && modelRoot == blocksRoot)
+                {
+                    return true;
+                }
+                return Path.GetDirectoryName(Path.Join(modelRoot, relativePath)) == path;
+            }).ToList();
+            modelsInDirectory.Sort();
+            m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
+        }
+
+        private static HashSet<string> GetSupportedExtensions()
+        {
+            var extensions = new HashSet<string>
+                { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+#if USD_SUPPORTED
+            extensions.UnionWith(new[] { ".usda", ".usdc", ".usd" });
+#endif
+#if FBX_SUPPORTED
+            extensions.Add(".fbx");
+#endif
+            return extensions;
         }
 
         /// GetModel, for .tilt files written by TB 7.5 and up

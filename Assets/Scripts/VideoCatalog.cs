@@ -15,12 +15,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class VideoCatalog : MonoBehaviour, IReferenceItemCatalog
     {
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultVideosFdV1";
         static public VideoCatalog Instance { get; private set; }
         [SerializeField] private string[] m_DefaultVideos;
         [SerializeField] private bool m_DebugOutput;
@@ -33,6 +36,8 @@ namespace TiltBrush
         private bool m_ScanningDirectory;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
+        private bool m_SeedingSafDefaults;
+        private string m_SafSeedAttemptedRootIdentity;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -44,8 +49,11 @@ namespace TiltBrush
 
         private void Init()
         {
-            App.InitMediaLibraryPath();
-            App.InitVideoLibraryPath(m_DefaultVideos);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitMediaLibraryPath();
+                App.InitVideoLibraryPath(m_DefaultVideos);
+            }
             ChangeDirectory(HomeDirectory);
         }
 
@@ -55,9 +63,17 @@ namespace TiltBrush
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
-            StartCoroutine(ScanReferenceDirectory());
+            if (m_ScanningDirectory)
+            {
+                m_DirectoryScanRequired = true;
+            }
+            else
+            {
+                StartCoroutine(ScanReferenceDirectory());
+            }
 
-            if (Directory.Exists(m_CurrentVideoDirectory))
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                Directory.Exists(m_CurrentVideoDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -93,7 +109,10 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
-            m_FileWatcher.EnableRaisingEvents = false;
+            if (m_FileWatcher != null)
+            {
+                m_FileWatcher.EnableRaisingEvents = false;
+            }
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)
@@ -114,9 +133,146 @@ namespace TiltBrush
         // has already scanned.
         private void Update()
         {
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                UserStorage.Backend.IsReady &&
+                !m_SeedingSafDefaults &&
+                m_SafSeedAttemptedRootIdentity !=
+                    UserStorage.Backend.RootIdentity &&
+                PlayerPrefs.GetInt(
+                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                        kSafSeedPreference),
+                    0) == 0)
+            {
+                StartCoroutine(SeedSafDefaults());
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            IUserStorageBackend backend = UserStorage.Backend;
+            string seedRootIdentity = backend.RootIdentity;
+            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+            var listingFuture = new Future<StorageDirectoryResult>(
+                () => backend.List(
+                    StorageArea.MediaLibraryVideos, "", CancellationToken.None),
+                cleanupFunction: null,
+                longRunning: true);
+            StorageDirectoryResult listing = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out listing);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Could not inspect default video destination: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+
+            if (listing.Code == StorageResultCode.NotFound ||
+                listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultVideos)
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default video: {resourcePath}");
+                        continue;
+                    }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    string displayName = Path.GetFileName(resourcePath);
+                    var writeFuture = new Future<StorageMutationResult>(
+                        () => WriteSafDefaultVideo(
+                            backend, displayName, bytes),
+                        cleanupFunction: null,
+                        longRunning: true);
+                    StorageMutationResult result;
+                    while (true)
+                    {
+                        bool finished;
+                        try
+                        {
+                            finished = writeFuture.TryGetResult(out result);
+                        }
+                        catch (FutureFailed e)
+                        {
+                            Debug.LogWarning(
+                                $"SAF_STORAGE Failed to seed {displayName}: " +
+                                $"{e.InnerException?.Message ?? e.Message}");
+                            m_SeedingSafDefaults = false;
+                            yield break;
+                        }
+                        if (finished)
+                        {
+                            break;
+                        }
+                        yield return null;
+                    }
+                    if (!result.Success)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                }
+            }
+
+            if (!string.Equals(
+                    seedRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            PlayerPrefs.SetInt(
+                OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, seedRootIdentity),
+                1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            ForceCatalogScan();
+        }
+
+        private static StorageMutationResult WriteSafDefaultVideo(
+            IUserStorageBackend backend, string displayName, byte[] bytes)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                StorageArea.MediaLibraryVideos,
+                displayName,
+                "video/mp4",
+                CancellationToken.None))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                return transaction.Commit();
             }
         }
 
@@ -144,6 +300,15 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory()
         {
             m_ScanningDirectory = true;
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                foreach (object item in ScanSafReferenceDirectory())
+                {
+                    yield return item;
+                }
+                yield break;
+            }
+
             HashSet<string> changedSet = null;
             // We do a switcheroo on the changed list here so that there isn't a conflict with it
             // if a filewatch callback happens.
@@ -191,6 +356,162 @@ namespace TiltBrush
             {
                 DebugListVideos();
             }
+        }
+
+        private IEnumerable<object> ScanSafReferenceDirectory()
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string scanRootIdentity = backend.RootIdentity;
+            string relativeDirectory;
+            if (!TryGetRelativeDirectory(
+                    HomeDirectory, m_CurrentVideoDirectory, out relativeDirectory))
+            {
+                Debug.LogError(
+                    $"SAF_CATALOG Video directory is outside its storage area: " +
+                    $"{m_CurrentVideoDirectory}");
+                m_ScanningDirectory = false;
+                yield break;
+            }
+
+            var listingFuture = new Future<List<StorageDocument>>(
+                () => ListSafFilesRecursively(
+                    backend, StorageArea.MediaLibraryVideos, relativeDirectory),
+                cleanupFunction: null,
+                longRunning: true);
+            List<StorageDocument> documents = null;
+            while (true)
+            {
+                bool finished;
+                try
+                {
+                    finished = listingFuture.TryGetResult(out documents);
+                }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning(
+                        $"SAF_CATALOG Video query failed; retaining the previous catalog: " +
+                        $"{e.InnerException?.Message ?? e.Message}");
+                    m_ScanningDirectory = false;
+                    yield break;
+                }
+                if (finished)
+                {
+                    break;
+                }
+                yield return null;
+            }
+
+            if (!string.Equals(
+                    scanRootIdentity,
+                    backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                m_ScanningDirectory = false;
+                m_DirectoryScanRequired = true;
+                yield break;
+            }
+
+            var oldVideos = m_Videos.ToDictionary(video => video.CatalogIdentity);
+            var nextVideos = new List<ReferenceVideo>();
+            var newVideos = new List<ReferenceVideo>();
+            foreach (StorageDocument document in documents)
+            {
+                if (!m_supportedVideoExtensions.Contains(
+                        Path.GetExtension(document.DisplayName)))
+                {
+                    continue;
+                }
+
+                string identity =
+                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                if (oldVideos.TryGetValue(identity, out ReferenceVideo existing))
+                {
+                    nextVideos.Add(existing);
+                    oldVideos.Remove(identity);
+                    continue;
+                }
+
+                StorageDocumentId documentId = document.DocumentId;
+                string path = backend.GetMaterializationPath(documentId);
+                var video = new ReferenceVideo(
+                    path,
+                    identity,
+                    () => backend.Materialize(
+                        documentId, MaterializationScope.File, CancellationToken.None));
+                nextVideos.Add(video);
+                newVideos.Add(video);
+            }
+
+            foreach (ReferenceVideo removed in oldVideos.Values)
+            {
+                removed.Dispose();
+            }
+            m_Videos = nextVideos;
+
+            TimeSpan interval = TimeSpan.FromSeconds(4);
+            DateTime nextRefresh = DateTime.Now + interval;
+            foreach (ReferenceVideo video in newVideos)
+            {
+                if (DateTime.Now > nextRefresh)
+                {
+                    CatalogChanged?.Invoke();
+                    nextRefresh = DateTime.Now + interval;
+                }
+                yield return video.Initialize();
+            }
+
+            m_ScanningDirectory = false;
+            CatalogChanged?.Invoke();
+        }
+
+        private static List<StorageDocument> ListSafFilesRecursively(
+            IUserStorageBackend backend, StorageArea area, string relativeDirectory)
+        {
+            var files = new List<StorageDocument>();
+            StorageDirectoryResult listing = backend.List(
+                area, relativeDirectory, CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException($"{listing.Code}: {listing.Error}");
+            }
+            foreach (StorageDocument document in listing.Documents)
+            {
+                if (document.IsDirectory)
+                {
+                    string childDirectory = string.IsNullOrEmpty(relativeDirectory)
+                        ? document.DisplayName
+                        : $"{relativeDirectory}/{document.DisplayName}";
+                    files.AddRange(ListSafFilesRecursively(
+                        backend, area, childDirectory));
+                }
+                else
+                {
+                    files.Add(document);
+                }
+            }
+            return files;
+        }
+
+        private static bool TryGetRelativeDirectory(
+            string root, string directory, out string relativeDirectory)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullRoot, fullDirectory, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = "";
+                return true;
+            }
+            string prefix = fullRoot + Path.DirectorySeparatorChar;
+            if (!fullDirectory.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                relativeDirectory = null;
+                return false;
+            }
+            relativeDirectory = fullDirectory.Substring(prefix.Length).Replace('\\', '/');
+            return true;
         }
 
         /// Gets a video form the catalog, given its filename. Returns null if no such video is found.

@@ -42,6 +42,9 @@ namespace TiltBrush
         /// Full path to the sketch (could be a file or a Resource)
         string FullPath { get; }
 
+        /// Stable identity used for comparisons. This is opaque and is not necessarily a path.
+        string StorageId { get; }
+
         /// Does the thing referred to by FullPath exist?
         bool Exists { get; }
 

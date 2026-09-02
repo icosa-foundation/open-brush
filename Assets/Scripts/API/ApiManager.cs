@@ -54,6 +54,7 @@ namespace TiltBrush
 
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
+        private bool m_StartupScriptRun;
 
         public enum ForcePaintingMode
         {
@@ -92,7 +93,8 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            m_UserScriptsPath = Path.Combine(App.UserPath(), "Scripts");
+            m_UserScriptsPath =
+                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Scripts);
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
@@ -108,20 +110,20 @@ namespace TiltBrush
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
 
-            if (!Directory.Exists(m_UserScriptsPath))
-            {
-                Directory.CreateDirectory(m_UserScriptsPath);
-            }
-            if (Directory.Exists(m_UserScriptsPath))
-            {
-                m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.Created += OnScriptsDirectoryChanged;
-                m_FileWatcher.Changed += OnScriptsDirectoryChanged;
-                // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
+            ConfigureLocalScriptsWatcher();
+            UserRuntimeContent.Instance.Refreshed += OnRuntimeContentRefreshed;
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private void OnDestroy()
+        {
+            if (App.Instance != null)
+            {
+                App.Instance.StateChanged -= RunStartupScript;
+            }
+            UserRuntimeContent.Instance.Refreshed -= OnRuntimeContentRefreshed;
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
         }
 
         private string DeviceLoginCallback(HttpListenerRequest request)
@@ -186,17 +188,65 @@ Success. If you are not automatically redirected, please visit <a href='{success
         {
 
             if (!(oldState == App.AppState.LoadingBrushesAndLighting && newState == App.AppState.Standard)) return;
+            RunStartupScriptIfReady();
+        }
 
+        private void RunStartupScriptIfReady()
+        {
+            if (m_StartupScriptRun || App.CurrentState != App.AppState.Standard)
+            {
+                return;
+            }
             var startupScriptPath = Path.Combine(m_UserScriptsPath, m_startupScriptName);
 
             if (File.Exists(startupScriptPath))
             {
+                m_StartupScriptRun = true;
                 var lines = File.ReadAllLines(startupScriptPath);
                 foreach (string pair in lines)
                 {
                     EnqueueCommand(pair);
                 }
             }
+        }
+
+        private void OnRuntimeContentRefreshed(StorageArea area)
+        {
+            if (area != StorageArea.Scripts)
+            {
+                return;
+            }
+            m_UserScriptsPath =
+                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Scripts);
+            foreach (string path in m_UserScripts.Keys.ToArray())
+            {
+                App.HttpServer.RemoveHttpHandler(path);
+            }
+            m_UserScripts.Clear();
+            PopulateUserScripts();
+            RunStartupScriptIfReady();
+        }
+
+        private void ConfigureLocalScriptsWatcher()
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.Local)
+            {
+                return;
+            }
+            if (!Directory.Exists(m_UserScriptsPath))
+            {
+                Directory.CreateDirectory(m_UserScriptsPath);
+            }
+            if (!Directory.Exists(m_UserScriptsPath))
+            {
+                return;
+            }
+            m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
+            m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            m_FileWatcher.Created += OnScriptsDirectoryChanged;
+            m_FileWatcher.Changed += OnScriptsDirectoryChanged;
+            // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
+            m_FileWatcher.EnableRaisingEvents = true;
         }
 
         private class EnqueuedApiCommand
@@ -353,7 +403,10 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void PopulateUserScripts()
         {
-            App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
+            if (!App.HttpServer.HttpHandlerExists(BASE_USER_SCRIPTS_URL))
+            {
+                App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
+            }
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);

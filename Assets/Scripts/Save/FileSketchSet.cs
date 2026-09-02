@@ -345,35 +345,41 @@ namespace TiltBrush
                 return;
             }
 
+            SceneFileInfo sceneFileInfo = m_Sketches[toDelete].SceneFileInfo;
             // Notify our file watcher to make sure it got the memo this sketch was deleted.
-            m_FileWatcher.NotifyDelete(m_Sketches[toDelete].SceneFileInfo.FullPath);
+            m_FileWatcher.NotifyDelete(sceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
             var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
             if (driveSet != null)
             {
-                driveSet.NotifySketchChanged(m_Sketches[toDelete].SceneFileInfo.FullPath);
+                driveSet.NotifySketchChanged(sceneFileInfo.FullPath);
             }
 
-            m_Sketches[toDelete].SceneFileInfo.Delete();
+            sceneFileInfo.Delete();
         }
 
         public virtual void RenameSketch(int toRename, string newName)
         {
+            SceneFileInfo sceneFileInfo = m_Sketches[toRename].SceneFileInfo;
+            RenameLocalSketch(sceneFileInfo, newName);
+        }
+
+        private void RenameLocalSketch(SceneFileInfo sceneFileInfo, string newName)
+        {
             // Notify our file watcher to make sure it got the memo this sketch was deleted.
-            m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
+            m_FileWatcher.NotifyDelete(sceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
             var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
             if (driveSet != null)
             {
-                driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
+                driveSet.NotifySketchChanged(sceneFileInfo.FullPath);
             }
 
-            var newPath = m_Sketches[toRename].SceneFileInfo.Rename(newName);
+            var newPath = sceneFileInfo.Rename(newName);
 
             m_FileWatcher.NotifyCreated(newPath);
-
         }
 
         public virtual void Init()
@@ -464,6 +470,11 @@ namespace TiltBrush
         public void NotifySketchChanged(string fullpath)
         {
             m_FileWatcher.NotifyChanged(fullpath);
+        }
+
+        public void NotifySketchDeleted(string fullpath)
+        {
+            m_FileWatcher.NotifyDelete(fullpath);
         }
 
         public void RequestRefresh()
