@@ -303,6 +303,8 @@ namespace TiltBrush
                     return GetVrInputDown(VrInput.Button04);
                 case SketchCommands.ToggleSelection:
                     return GetVrInputDown(VrInput.Button04);
+                case SketchCommands.ToggleSculpt:
+                    return GetVrInputDown(VrInput.Button04);
             }
             return false;
         }

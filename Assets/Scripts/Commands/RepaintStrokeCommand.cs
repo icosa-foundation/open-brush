@@ -60,6 +60,23 @@ namespace TiltBrush
 
         private void ApplyColorAndBrushToObject(Stroke stroke, Color color, Guid brushGuid, float brushSize)
         {
+            // Capture sculpting modifications before recreating the stroke discards its subset.
+            SculptedGeometryData sculptedGeometryData =
+                new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
+            if (stroke.m_MeshIsEdited)
+            {
+                var batchSubset = stroke.m_BatchSubset;
+                batchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+
+                int startIndex = batchSubset.m_StartVertIndex;
+                int vertLength = batchSubset.m_VertLength;
+
+                sculptedGeometryData.vertices = batchSubset.m_ParentBatch.m_Geometry
+                    .m_Vertices.GetRange(startIndex, vertLength);
+                sculptedGeometryData.normals = batchSubset.m_ParentBatch.m_Geometry
+                    .m_Normals.GetRange(startIndex, vertLength);
+            }
+
             stroke.m_Color = ColorPickerUtils.ClampLuminance(
                 color, BrushCatalog.m_Instance.GetBrush(brushGuid).m_ColorLuminanceMin);
             stroke.m_BrushGuid = brushGuid;
@@ -67,6 +84,13 @@ namespace TiltBrush
             stroke.InvalidateCopy();
             stroke.Uncreate();
             stroke.Recreate();
+
+            if (sculptedGeometryData.vertices.Count > 0)
+            {
+                stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+                stroke.m_MeshIsEdited = true;
+                SketchMemoryScript.m_Instance.InsertSculptedGeometry(sculptedGeometryData, stroke);
+            }
         }
 
         protected override void OnRedo()

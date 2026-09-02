@@ -90,14 +90,18 @@ namespace TiltBrush
             public uint layerIndex;
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
+
+            // If the stroke was sculpted, its vertices and triangles are stored here.
+            // Empty by default.
+            public SculptedGeometryData sculptedGeometryData;
         }
 
         private const int REQUIRED_SKETCH_VERSION_MIN = 5;
         private const int REQUIRED_SKETCH_VERSION_MAX = 6;
         private static readonly uint SKETCH_SENTINEL = 0xc576a5cd; // introduced at v5
         // 5: added sketch sentinel, explicit version
-        // 6: reserved for when we add a length-prefixed stroke extension, or more header data
-        private static readonly int SKETCH_VERSION = 5;
+        // 6: added sculpted geometry after each stroke
+        private static readonly int SKETCH_VERSION = 6;
 
         static public void RuntimeSelfCheck()
         {
@@ -152,6 +156,27 @@ namespace TiltBrush
                 {
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
+                }
+                if (stroke.IsGeometryEnabled && stroke.m_MeshIsEdited)
+                {
+                    int vertStartIndex = stroke.m_BatchSubset.m_StartVertIndex;
+                    int vertCount = stroke.m_BatchSubset.m_VertLength;
+
+                    try
+                    {
+                        stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+                        List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                            .m_Vertices.GetRange(vertStartIndex, vertCount);
+                        List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                            .m_Normals.GetRange(vertStartIndex, vertCount);
+                        snapshot.sculptedGeometryData =
+                            new SculptedGeometryData(vertices, normals);
+                    }
+                    catch
+                    {
+                        // Shouldn't happen anymore
+                        Debug.LogWarning("Orphan batchsubset, skipping");
+                    }
                 }
                 if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
                 {
@@ -282,6 +307,28 @@ namespace TiltBrush
                         writer.UInt32(rControlPoint.m_TimestampMs);
                     }
                 }
+
+                // Sculpted geometry
+                if (copy.sculptedGeometryData.vertices != null)
+                {
+                    // Write the length of the batch subset then save all the vertices.
+                    writer.Int32(copy.sculptedGeometryData.vertices.Count);
+                    foreach (Vector3 vertex in copy.sculptedGeometryData.vertices)
+                    {
+                        writer.Vec3(vertex);
+                    }
+
+                    writer.Int32(copy.sculptedGeometryData.normals.Count);
+                    foreach (Vector3 normal in copy.sculptedGeometryData.normals)
+                    {
+                        writer.Vec3(normal);
+                    }
+                }
+                else
+                {
+                    // Just leave a zero to tell the reader to ignore.
+                    writer.Int32(0);
+                }
             }
         }
 
@@ -411,10 +458,14 @@ namespace TiltBrush
             }
 
             oldGroupToNewGroup = new Dictionary<int, int>();
+            Queue<SculptedGeometryData> geometryData = new Queue<SculptedGeometryData>();
             // When loading additively we want all strokes on a single new layer;
-            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset);
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset, geometryData);
             if (strokes == null) { return false; }
-
+            if (geometryData.Count > 0)
+            { // if any sculpting modifications have been made
+                SketchMemoryScript.m_Instance.m_SavedSculptedGeometry = geometryData;
+            }
             // Check that the strokes are in timestamp order.
             uint headMs = uint.MinValue;
             foreach (var stroke in strokes)
@@ -449,7 +500,7 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset)
+            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset, Queue<SculptedGeometryData> geometryData, bool squashLayers = false)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -620,6 +671,35 @@ namespace TiltBrush
                             }
                         }
                         stroke.m_ControlPoints[j] = rControlPoint;
+                    }
+                }
+
+                // Sculpted geometry was added in sketch version 6.
+                if (version >= 6 && geometryData != null)
+                {
+                    int modifiedVertLength = reader.Int32();
+
+                    if (modifiedVertLength > 0)
+                    {
+                        stroke.m_MeshIsEdited = true;
+
+                        List<Vector3> verts = new List<Vector3>();
+
+                        for (int _ = 0; _ < modifiedVertLength; _++)
+                        {
+                            verts.Add(reader.Vec3());
+                        }
+
+                        int modifiedNormLength = reader.Int32();
+
+                        List<Vector3> norms = new List<Vector3>();
+
+                        for (int _ = 0; _ < modifiedNormLength; _++)
+                        {
+                            norms.Add(reader.Vec3());
+                        }
+
+                        geometryData.Enqueue(new SculptedGeometryData(verts, norms));
                     }
                 }
 
