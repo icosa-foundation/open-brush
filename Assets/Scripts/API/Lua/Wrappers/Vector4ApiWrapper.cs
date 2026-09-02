@@ -40,10 +40,10 @@ namespace TiltBrush
         [LuaDocsParameter("x", "The x coordinate")]
         [LuaDocsParameter("y", "The y coordinate")]
         [LuaDocsParameter("z", "The z coordinate")]
-        [LuaDocsParameter("z", "The w coordinate")]
+        [LuaDocsParameter("w", "The w coordinate")]
         public static Vector4ApiWrapper New(float x, float y, float z, float w)
         {
-            var instance = new Vector4ApiWrapper(x, y, z);
+            var instance = new Vector4ApiWrapper(x, y, z, w);
             return instance;
         }
 

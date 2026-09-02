@@ -1038,5 +1038,34 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
         }
+
+        /// <summary>
+        /// Convert this ModelWidget to a ModelStencil for use as a guide
+        /// Note: Install IsoMesh package for better SDF performance
+        /// </summary>
+        public ModelStencil ConvertToStencil()
+        {
+            if (m_Model == null)
+            {
+                Debug.LogWarning("ModelWidget: Cannot convert to stencil - no model loaded");
+                return null;
+            }
+
+            // Create the model stencil
+            var stencil = ModelStencil.CreateFromModel(m_Model);
+
+            if (stencil != null)
+            {
+                // Copy transform
+                stencil.transform.position = transform.position;
+                stencil.transform.rotation = transform.rotation;
+                stencil.SetSignedWidgetSize(GetSignedWidgetSize());
+
+                Debug.Log("ModelWidget: Converted to ModelStencil. " +
+                         "Install IsoMesh for GPU-accelerated distance queries.");
+            }
+
+            return stencil;
+        }
     }
 } // namespace TiltBrush
