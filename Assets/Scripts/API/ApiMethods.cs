@@ -1134,11 +1134,19 @@ namespace TiltBrush
             return imageWidget;
         }
 
-        public static ImageWidget _ImportImage(string location, TrTransform xf)
+        public static ImageWidget _ImportImage(
+            string location, TrTransform xf, bool recordCommand = true)
         {
             ReferenceImage image = _LoadReferenceImage(location);
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, xf, forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            if (recordCommand)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            }
+            else
+            {
+                cmd.Redo();
+            }
             var imageWidget = cmd.Widget as ImageWidget;
             if (imageWidget != null)
             {
@@ -1149,18 +1157,20 @@ namespace TiltBrush
             return imageWidget;
         }
 
-        public static ImageWidget _ImportImage(string location, TrTransform xf, CanvasScript targetCanvas)
+        public static ImageWidget _ImportImage(
+            string location, TrTransform xf, CanvasScript targetCanvas,
+            bool recordCommand = true)
         {
             if (targetCanvas == null)
             {
-                return _ImportImage(location, xf);
+                return _ImportImage(location, xf, recordCommand);
             }
 
             var previousCanvas = App.Scene.ActiveCanvas;
             try
             {
                 App.Scene.ActiveCanvas = targetCanvas;
-                return _ImportImage(location, xf);
+                return _ImportImage(location, xf, recordCommand);
             }
             finally
             {

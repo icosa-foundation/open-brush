@@ -84,6 +84,14 @@ namespace TiltBrush
             bool flattenHierarchy = true, bool layersCanTransform = false,
             int chapterIndex = -1)
         {
+            if (loadAnimations)
+            {
+                LastLoadedBackgroundColor = null;
+                LastLoaded360SkyboxName = null;
+                Debug.LogError("Quill animation import is not supported.");
+                return;
+            }
+
             string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))
@@ -233,7 +241,8 @@ namespace TiltBrush
 
                 }
 
-                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
+                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0 ||
+                    createdLayers.Count > 0)
                 {
                     // Single undo step for all strokes, layers, and widgets
                     var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
@@ -290,31 +299,22 @@ namespace TiltBrush
             // 1. Process strokes in this layer if it's a Paint layer
             if ((!hasFilter || allowAll) && layer is SQ.LayerPaint paint)
             {
-                // NOTE: For now we always call Quill.Load with loadAnimations=false,
-                // so only the first frame (or first drawing) is imported.
                 IEnumerable<SQ.Drawing> drawingsToLoad;
-                if (loadAnimations)
+                if (paint.Frames.Count > 0)
                 {
-                    drawingsToLoad = paint.Drawings;
-                }
-                else
-                {
-                    if (paint.Frames.Count > 0)
+                    int drawingIndex = paint.Frames[0];
+                    if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
                     {
-                        int drawingIndex = paint.Frames[0];
-                        if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
-                        {
-                            drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
-                        }
-                        else
-                        {
-                            drawingsToLoad = paint.Drawings.Take(1);
-                        }
+                        drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
                     }
                     else
                     {
                         drawingsToLoad = paint.Drawings.Take(1);
                     }
+                }
+                else
+                {
+                    drawingsToLoad = paint.Drawings.Take(1);
                 }
 
                 foreach (var drawing in drawingsToLoad)
