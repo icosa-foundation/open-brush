@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
+
 #if OCULUS_SUPPORTED || ZAPBOX_SUPPORTED
 #define PASSTHROUGH_SUPPORTED
 #endif

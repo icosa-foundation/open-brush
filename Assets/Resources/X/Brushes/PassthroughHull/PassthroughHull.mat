@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: PassthroughHull
-  m_Shader: {fileID: 4800000, guid: 2e1da1285b95b584383074c95b23dc2e, type: 3}
+  m_Shader: {fileID: 4800000, guid: 8120257754b48344b8a1a0961bad0c46, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _EMISSION
@@ -71,6 +71,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BlendOpAlpha: 3
+    - _BlendOpColor: 2
     - _BottomScale: 0.3
     - _BumpScale: 1
     - _Cutoff: 0.5
@@ -79,6 +81,8 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _Inflation: 0
+    - _InvertedAlpha: 1
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
@@ -90,6 +94,7 @@ Material:
     - _SrcBlend: 1
     - _TopScale: 0.3
     - _UVSec: 0
+    - _ZTest: 4
     - _ZWrite: 1
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

@@ -29,7 +29,7 @@ namespace TiltBrush
         {
             base.Awake();
             SceneSettings.m_Instance.GradientActiveChanged += OnGradientActiveChanged;
-            SceneSettings.m_Instance.SkyboxChanged += OnSkyboxChanged;
+            SceneSettings.m_Instance.SkyGradientChanged += OnSkyGradientChanged;
 
             m_Renderer = GetComponent<Renderer>();
             m_SphereCollider = m_Collider as SphereCollider;
@@ -48,7 +48,7 @@ namespace TiltBrush
         {
             base.OnDestroy();
             SceneSettings.m_Instance.GradientActiveChanged -= OnGradientActiveChanged;
-            SceneSettings.m_Instance.SkyboxChanged -= OnSkyboxChanged;
+            SceneSettings.m_Instance.SkyGradientChanged -= OnSkyGradientChanged;
         }
 
         override public void SetColor(Color color)
@@ -147,7 +147,7 @@ namespace TiltBrush
             }
         }
 
-        void OnSkyboxChanged()
+        void OnSkyGradientChanged()
         {
             m_Renderer.material.SetColor("_ColorA", SceneSettings.m_Instance.SkyColorA);
             m_Renderer.material.SetColor("_ColorB", SceneSettings.m_Instance.SkyColorB);

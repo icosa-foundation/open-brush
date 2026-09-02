@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
   m_Name: Strings_en
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_LocaleId:
     m_Code: en
   m_SharedData: {fileID: 11400000, guid: c84355079ab3f3e4f8f3812258805f86, type: 2}
@@ -3541,6 +3541,22 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 235163428054458368
     m_Localized: Saved Strokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: 'Passthrough:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: Skybox
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: Gradient
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "Passthrough\t"
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184

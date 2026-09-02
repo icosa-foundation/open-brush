@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if OCULUS_SUPPORTED
+#define PASSTHROUGH_SUPPORTED
+#endif
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -43,7 +47,8 @@ namespace TiltBrush
         public event Action FogDensityChanged;
         public event Action FogColorChanged;
         public event Action GradientActiveChanged;
-        public event Action SkyboxChanged;
+        public event Action SkyGradientChanged;
+        public event Action BackdropModeChanged;
 
         private enum TransitionState
         {
@@ -121,6 +126,67 @@ namespace TiltBrush
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
 
+        private bool m_PassthroughEnabled;
+
+        public bool PassthroughEnabled
+        {
+            get
+            {
+#if PASSTHROUGH_SUPPORTED
+                return m_PassthroughEnabled;
+#else
+                return false;
+#endif
+            }
+            set
+            {
+#if PASSTHROUGH_SUPPORTED
+                var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
+                if (passthrough == null)
+                {
+                    passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
+                    passthrough.overlayType = OVROverlay.OverlayType.Underlay;
+                }
+                if (value)
+                {
+                    m_InGradient = false;
+                    m_CustomSkyboxTextureName = null;
+                    passthrough.hidden = false;
+                    RenderSettings.skybox = null;
+                    RenderSettings.fog = false;
+                    for (int i = 0; i < m_Cameras.Count; ++i)
+                    {
+                        if (m_Cameras[i].gameObject.activeSelf)
+                        {
+                            m_Cameras[i].clearFlags = CameraClearFlags.SolidColor;
+                            m_Cameras[i].backgroundColor = Color.clear;
+                        }
+                    }
+                    m_PassthroughEnabled = true;
+                }
+                else
+                {
+                    passthrough.hidden = true;
+                    m_PassthroughEnabled = false;
+                    if (CurrentEnvironment != null)
+                    {
+                        RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+                        for (int i = 0; i < m_Cameras.Count; ++i)
+                        {
+                            if (m_Cameras[i].gameObject.activeSelf)
+                            {
+                                var clearFlags = CurrentEnvironment.HasSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+                                m_Cameras[i].clearFlags = clearFlags;
+                            }
+                        }
+                    }
+                }
+#else
+                m_PassthroughEnabled = false;
+#endif // PASSTHROUGH_SUPPORTED
+            }
+        }
+
         public float HardBoundsRadiusMeters_SS
         {
             get
@@ -152,7 +218,7 @@ namespace TiltBrush
             {
                 m_SkyColorA = value;
                 RenderSettings.skybox.SetColor("_ColorA", value);
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -163,7 +229,7 @@ namespace TiltBrush
             {
                 m_SkyColorB = value;
                 RenderSettings.skybox.SetColor("_ColorB", value);
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -174,7 +240,7 @@ namespace TiltBrush
             {
                 m_CustomFogColor = value;
                 RenderSettings.fogColor = value;
-                TriggerFogColorChanged();
+                FogColorChanged?.Invoke();
             }
         }
 
@@ -185,7 +251,7 @@ namespace TiltBrush
             {
                 m_CurrentValues.m_FogDensity = value;
                 RenderSettings.fogDensity = value / App.Scene.Pose.scale;
-                TriggerFogDensityChanged();
+                FogDensityChanged?.Invoke();
             }
         }
 
@@ -212,8 +278,15 @@ namespace TiltBrush
             }
         }
 
+        public void ReapplyEnvironmentSkybox()
+        {
+            RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+        }
+
         public void LoadCustomSkybox(string filename)
         {
+            m_PassthroughEnabled = false;
+            m_InGradient = false;
             m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
             var path = ApiMethods.GetSafeRelativePathInDirectory(
@@ -245,6 +318,7 @@ namespace TiltBrush
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
                 RenderSettings.ambientMode = AmbientMode.Skybox;
+                BackdropModeChanged?.Invoke();
             }
             else
             {
@@ -290,7 +364,7 @@ namespace TiltBrush
                     RenderSettings.skybox.SetVector("_GradientDirection",
                         App.Scene.Pose.rotation * m_GradientSkew * Vector3.up);
                 }
-                TriggerSkyboxChanged();
+                SkyGradientChanged?.Invoke();
             }
         }
 
@@ -304,6 +378,18 @@ namespace TiltBrush
             get { return m_CurrentEnvironment; }
         }
 
+        public Material CurrentSkyboxMaterial
+        {
+            get
+            {
+                if (HasCustomSkybox)
+                {
+                    return m_CustomSkyboxMaterial;
+                }
+                return m_DesiredEnvironment.m_SkyboxMaterial;
+            }
+        }
+
         public bool EnvironmentChanged
         {
             get
@@ -312,8 +398,8 @@ namespace TiltBrush
                 bool skyboxChanged = (m_InGradient && m_CurrentEnvironment.m_RenderSettings.m_SkyboxCubemap != null) ||
                     m_CurrentEnvironment.m_SkyboxColorA != m_SkyColorA ||
                     m_CurrentEnvironment.m_SkyboxColorB != m_SkyColorB ||
-                    m_GradientSkew != Quaternion.identity ||
-                    HasCustomSkybox();
+                    m_GradientSkew != Quaternion.identity || HasCustomSkybox ||
+                    m_CurrentEnvironment.m_PassthroughEnabled != m_PassthroughEnabled;
                 return skyboxChanged ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogColor != RenderSettings.fogColor ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogDensity != FogDensity ||
@@ -389,6 +475,7 @@ namespace TiltBrush
             // Set InGradient after the colors have been defined.  This call sends a message to all those
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
+            PassthroughEnabled = custom.PassthroughEnabled;
         }
 
         public void UpdateReflectionIntensity()
@@ -492,6 +579,13 @@ namespace TiltBrush
 
             // Set the reflection cubemap
             RenderSettings.customReflection = rDesired.m_ReflectionCubemap;
+
+            // A custom environment applied its saved passthrough state before the transition.
+            if (!m_LoadingCustomEnvironment)
+            {
+                PassthroughEnabled = m_DesiredEnvironment.m_PassthroughEnabled;
+            }
+
             if (!m_LoadingCustomEnvironment)
             {
                 if (rDesired.m_SkyboxCubemap)
@@ -512,7 +606,7 @@ namespace TiltBrush
                     {
                         RenderSettings.skybox.SetVector("_GradientDirection", Vector3.up);
                     }
-                    if (HasCustomSkybox())
+                    if (HasCustomSkybox)
                     {
                         RenderSettings.skybox = m_CustomSkyboxMaterial;
                     }
@@ -534,9 +628,10 @@ namespace TiltBrush
             }
 
             // Fire off messages that say 'everything changed!'
-            TriggerFogDensityChanged();
-            TriggerFogColorChanged();
-            TriggerSkyboxChanged();
+            FogDensityChanged?.Invoke();
+            FogColorChanged?.Invoke();
+            SkyGradientChanged?.Invoke();
+            BackdropModeChanged?.Invoke();
 
             m_TeleportBoundsHalfWidth = m_DesiredEnvironment.m_TeleportBoundsHalfWidth;
             m_ControllerXRayHeight = m_DesiredEnvironment.m_ControllerXRayHeight;
@@ -615,7 +710,7 @@ namespace TiltBrush
                 m_LoadingCustomEnvironment = false;
                 m_CurrentEnvironment = m_DesiredEnvironment;
 
-                if (HasCustomSkybox())
+                if (HasCustomSkybox)
                 {
                     RenderSettings.skybox = m_CustomSkyboxMaterial;
                     RenderSettings.skybox.SetColor("_Tint", Color.gray);
@@ -811,7 +906,7 @@ namespace TiltBrush
                 return;
             }
             else if (env == m_DesiredEnvironment && !bEnvironmentModified &&
-                !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
+                     !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
             {
                 // same environment and lights not changed; but make sure we inhibit scene reset if requested
                 m_InhibitSceneReset = keepSceneTransform;
@@ -836,7 +931,7 @@ namespace TiltBrush
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (HasCustomSkybox())
+                if (HasCustomSkybox)
                 {
                     LoadCustomSkybox(m_CustomSkyboxTextureName);
                 }
@@ -849,6 +944,17 @@ namespace TiltBrush
                 {
                     FadingToDesiredEnvironment();
                 }
+            }
+        }
+
+        public void ClearCustomSkybox()
+        {
+            if (HasCustomSkybox)
+            {
+                m_CustomSkyboxTextureName = null;
+                RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+                RenderSettings.ambientMode = AmbientMode.Skybox;
+                BackdropModeChanged?.Invoke();
             }
         }
 
@@ -917,6 +1023,7 @@ namespace TiltBrush
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
                         ReflectionIntensity = RenderSettings.reflectionIntensity,
+                        PassthroughEnabled = m_PassthroughEnabled,
                         Skybox = m_CustomSkyboxTextureName
                     };
             }
@@ -937,33 +1044,10 @@ namespace TiltBrush
             throw new System.ArgumentException("Invalid color mode");
         }
 
-        void TriggerFogDensityChanged()
-        {
-            if (FogDensityChanged != null)
-            {
-                FogDensityChanged();
-            }
-        }
+        // Use m_DesiredEnvironment otherwise we get previous environment during transitions
+        public bool HasSkybox => !InGradient && (HasCustomSkybox || (m_DesiredEnvironment != null && m_DesiredEnvironment.HasSkybox));
 
-        void TriggerFogColorChanged()
-        {
-            if (FogColorChanged != null)
-            {
-                FogColorChanged();
-            }
-        }
-
-        void TriggerSkyboxChanged()
-        {
-            if (SkyboxChanged != null)
-            {
-                SkyboxChanged();
-            }
-        }
-
-        public bool HasCustomSkybox()
-        {
-            return !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
-        }
+        public bool HasCustomSkybox => !string.IsNullOrEmpty(m_CustomSkyboxTextureName);
+        public string CustomSkyboxPath => m_CustomSkyboxTextureName;
     }
 } // namespace TiltBrush

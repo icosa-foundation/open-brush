@@ -1,4 +1,4 @@
-// Copyright 2022-2023 The Open Brush Authors
+﻿// Copyright 2022-2023 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class PassthroughManager : MonoBehaviour
+    public class ChangeBackdropModeButton : TextActionButton
     {
-        void Start()
-        {
-#if OCULUS_SUPPORTED
-            var passthrough  = gameObject.AddComponent<OVRPassthroughLayer>();
-            passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-            App.VrSdk.m_OvrManager.shouldBoundaryVisibilityBeSuppressed = true;
-#endif // OCULUS_SUPPORTED
-        }
-
-        void OnDestroy()
-        {
-#if OCULUS_SUPPORTED
-            App.VrSdk.m_OvrManager.shouldBoundaryVisibilityBeSuppressed = false;
-#endif
-        }
     }
-}
+} // namespace TiltBrush
