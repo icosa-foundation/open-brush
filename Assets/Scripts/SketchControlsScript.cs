@@ -4424,6 +4424,7 @@ namespace TiltBrush
                 m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             }
             ResetGrabbedPose(everything: true);
+            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
@@ -5443,6 +5444,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
+            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
