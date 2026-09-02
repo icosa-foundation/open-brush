@@ -16,9 +16,11 @@ Shader "Brush/Multiplicative" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
   _Opacity ("Opacity", Range(0, 1)) = 1
+  _SoftMultiply ("Softness", Range(0,1)) = 0.1
   _Dissolve ("Dissolve", Range(0, 1)) = 1
 	_ClipStart("Clip Start", Float) = 0
 	_ClipEnd("Clip End", Float) = -1
+	_EdgeFadeoff ("Edge Fadeoff", Range(0, 1)) = 0.1
 }
 
 Category {
@@ -67,6 +69,8 @@ Category {
       uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
+      uniform half _SoftMultiply;
+      uniform half _EdgeFadeoff;
 
       v2f vert (appdata_t v)
       {
@@ -92,10 +96,18 @@ Category {
         if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
         #endif
 
-         half4 c = tex2D(_MainTex, i.texcoord );
-         c = i.color * c;
-                                // TODO: investigate doing this in the blend mode
-        c = lerp(1, c, c.a);
+        half4 c = tex2D(_MainTex, i.texcoord );
+        c = i.color;
+
+        // Calculate edge fadeoff based on UV coordinates
+        half edgeFade = 1.0;
+        if (_EdgeFadeoff > 0) {
+            half distFromEdgeV = min(i.texcoord.y, 1.0 - i.texcoord.y);
+            edgeFade = saturate(distFromEdgeV / _EdgeFadeoff);
+        }
+
+        half k = saturate(c.a * _Opacity * _SoftMultiply * edgeFade);
+        c = lerp(1, c, k);
         c.a *= _Opacity;
         return c;
       }
