@@ -20,6 +20,11 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
+#if UNITY_ANDROID || UNITY_IOS
+  // The slice renderer issues one Camera.Render per angular slice. Large batches can overflow the
+  // mobile Vulkan driver's practical render-pass limit before Unity submits the frame.
+  const int MaxMobileRendersPerFrame = 16;
+#endif
   const int MaxImageWidth = 8192;
   // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
   // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
@@ -227,6 +232,9 @@ public class HybridCamera : MonoBehaviour {
     }
 
     renderCamera.CopyFrom( parentCamera );
+    // ODS renders this camera manually. Keep Unity from rendering it during mobile batch yields and
+    // overwriting the last slice before OdsSlice copies that slice into the output texture.
+    renderCamera.enabled = false;
     renderCamera.cullingMask = parentCamera.cullingMask;
     renderCamera.name = "Hybrid ODS Camera";
     renderCamera.fieldOfView = 90.0f;
@@ -258,13 +266,31 @@ public class HybridCamera : MonoBehaviour {
 #endif
 
     isRendering = true;
+    int maxRendersPerFrame = MaxRenders;
+#if UNITY_ANDROID || UNITY_IOS
+    maxRendersPerFrame = MaxMobileRendersPerFrame;
+    Debug.Log($"[Snapshot360Mobile] Starting {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}, capped at {maxRendersPerFrame} renders per frame.");
+#endif
     //This suspends the execution of this function while running the odsRenderer.Render() function 
     //as a coroutine and will then resume execution when it is done.
-    yield return StartCoroutine( 
-      odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
-                         MaxRenders)
-    );
+    float timeScaleRestore = Time.timeScale;
+    try {
+      // Mobile captures span many frames so freeze animations and simulation for every entry point.
+      Time.timeScale = 0.0f;
+      yield return StartCoroutine(
+        odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
+                           maxRendersPerFrame)
+      );
+    }
+    finally {
+      Time.timeScale = timeScaleRestore;
+    }
     isRendering = false;
+#if UNITY_ANDROID || UNITY_IOS
+    Debug.Log($"[Snapshot360Mobile] Finished {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}.");
+#endif
 
 #if ENABLE_TIMING
     double deltaMs = timerStop();
