@@ -199,6 +199,7 @@ namespace TiltBrush
             {
                 (int layerId, int frameId) =
                     App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
+                var audioState = widget.GetAudioSaveState();
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
                     FilePath = widget.SoundClip.PersistentPath,
@@ -208,13 +209,13 @@ namespace TiltBrush
                     GroupId = groupIdMapping.GetId(widget.Group),
                     LayerId = layerId,
                     FrameId = frameId,
-                    Paused = !widget.SoundClipController.Playing,
-                    Time = widget.SoundClipController.Time,
-                    Volume = widget.SoundClipController.Volume,
-                    Loop = widget.SoundClipController.Loop,
-                    SpatialBlend = widget.SoundClipController.SpatialBlend,
-                    MinDistance = widget.SoundClipController.MinDistance,
-                    MaxDistance = widget.SoundClipController.MaxDistance
+                    Paused = audioState.paused,
+                    Time = audioState.time,
+                    Volume = audioState.volume,
+                    Loop = audioState.loop,
+                    SpatialBlend = audioState.spatialBlend,
+                    MinDistance = audioState.minDistance,
+                    MaxDistance = audioState.maxDistance
                 };
                 return soundClip;
             }

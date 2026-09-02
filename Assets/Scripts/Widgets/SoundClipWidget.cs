@@ -182,7 +182,8 @@ namespace TiltBrush
 
             foreach (var gltfAudio in go.GetComponentsInChildren<GltfAudioSource>())
             {
-                var soundClip = new SoundClip(gltfAudio.AbsoluteFilePath);
+                var soundClipPath = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
+                var soundClip = new SoundClip(soundClipPath);
                 var widget = Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
                 widget.LoadingFromSketch = true;
                 widget.transform.parent = App.Instance.m_CanvasTransform;
@@ -205,6 +206,45 @@ namespace TiltBrush
             WidgetManager.m_Instance.UnregisterGrabWidget(modelWidget.gameObject);
             Destroy(modelWidget.gameObject);
             return soundClipWidgets;
+        }
+
+        private static string CopyGltfAudioToSoundLibrary(string sourcePath)
+        {
+            string soundClipLibraryPath = App.SoundClipLibraryPath();
+            string fullSourcePath = Path.GetFullPath(sourcePath);
+            string fullLibraryPath = Path.GetFullPath(soundClipLibraryPath);
+
+            if (fullSourcePath.StartsWith(fullLibraryPath + Path.DirectorySeparatorChar))
+            {
+                return fullSourcePath;
+            }
+
+            Directory.CreateDirectory(fullLibraryPath);
+            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, Path.GetFileName(fullSourcePath));
+            File.Copy(fullSourcePath, destinationPath);
+            SoundClipCatalog.Instance.ForceCatalogScan();
+            return destinationPath;
+        }
+
+        private static string GetUniqueSoundClipPath(string directory, string filename)
+        {
+            string destinationPath = Path.Combine(directory, filename);
+            if (!File.Exists(destinationPath))
+            {
+                return destinationPath;
+            }
+
+            string name = Path.GetFileNameWithoutExtension(filename);
+            string extension = Path.GetExtension(filename);
+            for (int i = 1; i < 1000; i++)
+            {
+                destinationPath = Path.Combine(directory, $"{name}_{i}{extension}");
+                if (!File.Exists(destinationPath))
+                {
+                    return destinationPath;
+                }
+            }
+            return Path.Combine(directory, $"{name}_{System.Guid.NewGuid()}{extension}");
         }
 
         public static void FromTiltSoundClip(TiltSoundClip tiltSoundClip)
@@ -261,6 +301,13 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.transform.parent = transform.parent;
+            var audioSettings = GetAudioExportSettings();
+            clone.SetAudioProperties(
+                audioSettings.volume,
+                audioSettings.loop,
+                audioSettings.spatialBlend,
+                audioSettings.minDistance,
+                audioSettings.maxDistance);
             clone.SetSoundClip(m_SoundClip);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
@@ -433,19 +480,31 @@ namespace TiltBrush
         /// and falling back to m_InitialState or defaults otherwise.
         public (float volume, bool loop, float spatialBlend, float minDistance, float maxDistance) GetAudioExportSettings()
         {
+            var state = GetAudioSaveState();
+            return (state.volume, state.loop, state.spatialBlend,
+                state.minDistance, state.maxDistance);
+        }
+
+        /// Returns the complete serializable audio state, including values that are waiting for
+        /// asynchronous controller initialization.
+        public (bool paused, float time, float volume, bool loop, float spatialBlend,
+            float minDistance, float maxDistance) GetAudioSaveState()
+        {
             if (SoundClipController != null && SoundClipController.Initialized)
             {
-                return (SoundClipController.Volume, SoundClipController.Loop,
+                return (!SoundClipController.Playing, SoundClipController.Time,
+                    SoundClipController.Volume, SoundClipController.Loop,
                     SoundClipController.SpatialBlend, SoundClipController.MinDistance,
                     SoundClipController.MaxDistance);
             }
             if (m_InitialState != null)
             {
-                return (m_InitialState.Volume, m_InitialState.Loop,
+                return (m_InitialState.Paused, m_InitialState.Time ?? 0f,
+                    m_InitialState.Volume, m_InitialState.Loop,
                     m_InitialState.SpatialBlend, m_InitialState.MinDistance,
                     m_InitialState.MaxDistance);
             }
-            return (1f, true, 0f, 1f, 500f);
+            return (false, 0f, 1f, true, 0f, 1f, 500f);
         }
     }
 } // namespace TiltBrush

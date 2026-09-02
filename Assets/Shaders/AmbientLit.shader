@@ -18,36 +18,64 @@ Shader "Custom/AmbientLit" {
     _MainTex ("Base (RGB)", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
 
-    CGPROGRAM
-    #pragma surface surf NonDirectional
+    Pass {
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #pragma multi_compile_instancing
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-    sampler2D _MainTex;
-    fixed _Cutoff;
-    fixed4 _Color;
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float4 _MainTex_ST;
+      CBUFFER_END
 
-    half4 LightingNonDirectional (SurfaceOutput s, half3 lightDir, half atten) {
-              half NdotL = .5;
-              half4 c;
-              c.rgb = s.Albedo * _LightColor0.rgb * (NdotL * atten * 2);
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+        float3 normalOS : NORMAL;
 
-              c.a = s.Alpha;
-              return c;
-          }
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      half4 tex = tex2D (_MainTex, IN.uv_MainTex);
-      fixed4 c = tex * _Color;
-      o.Emission = 0.0;
-      o.Albedo = c.rgb;
-      o.Alpha = 1.0;
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+        float3 positionWS : TEXCOORD1;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
+        OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
+        return OUT;
+      }
+
+      half4 Frag(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+        half3 baseColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv).rgb * _Color.rgb;
+        Light mainLight = GetMainLight(TransformWorldToShadowCoord(IN.positionWS));
+        half atten = mainLight.shadowAttenuation;
+        half3 lit = baseColor * (mainLight.color * atten);
+        return half4(lit, 1.0h);
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

@@ -80,8 +80,13 @@ namespace TiltBrush
             foreach (var example in toolScripts)
             {
                 var script = example.Value;
+                LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptStartPoint}", TrTransform.T(Vector3.zero));
                 LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptVector}", Vector3.one);
-                LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(Vector3.one));
+                LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptRotation}", Vector3.up);
+                LuaManager.Instance.SetApiProperty(
+                    script,
+                    $"Tool.{LuaNames.ToolScriptEndPoint}",
+                    TrTransform.TR(Vector3.one, Quaternion.LookRotation(Vector3.forward, Vector3.up)));
                 TestAllKnown(script);
             }
 
@@ -167,9 +172,15 @@ namespace TiltBrush
 
             var startPoint = Vector3.up;
             var endPoint = Vector3.up + Vector3.one;
+            var endRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptStartPoint}", TrTransform.T(startPoint));
             LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptVector}", endPoint - startPoint);
-            LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptRotation}", Quaternion.LookRotation(endPoint - startPoint));
-            LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.T(endPoint));
+            LuaManager.Instance.SetApiProperty(script, $"Tool.{LuaNames.ToolScriptRotation}", endRotation * Vector3.up);
+            LuaManager.Instance.SetApiProperty(
+                script,
+                $"Tool.{LuaNames.ToolScriptEndPoint}",
+                TrTransform.TR(endPoint, endRotation));
+            LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.TR(endPoint, endRotation));
         }
     }
 

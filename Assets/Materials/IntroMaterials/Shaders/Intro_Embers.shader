@@ -24,7 +24,7 @@ Properties {
 }
 
 Category {
-  Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "DisableBatching"="True" }
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "DisableBatching"="True" }
   Blend One One  // SrcAlpha One
   BlendOp Add, Min
   ColorMask RGBA
@@ -32,6 +32,7 @@ Category {
 
   SubShader {
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
       #pragma vertex vert

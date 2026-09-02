@@ -57,119 +57,67 @@ Shader "Custom/NewSketchButton" {
     float4 vertex : SV_POSITION;
     float4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+    float3 viewDir : TEXCOORD1;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
-  v2f vertInflate (appdata_t v, float currentSliceIndex) {
-
-    float ratioMultiplier = .5;
-
+  v2f vert (appdata_t v) {
     v2f o;
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-    v.tangent.w = 1.0;
-    float totalNumSlices = 5;
-    float  ratio = (currentSliceIndex / (totalNumSlices - 1));
-    v.vertex.z -= ratioMultiplier * ratio * _Distance;
-    totalNumSlices = 5;
 
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.color = 0;
-    o.texcoord = TRANSFORM_TEX(v.texcoord,_Tex_0);
+    o.texcoord = TRANSFORM_TEX(v.texcoord, _Tex_0);
+    o.viewDir = ObjSpaceViewDir(v.vertex);
     return o;
   }
 
-  v2f vertLayer0 (appdata_t v) {
-    return vertInflate(v,0.25);
-  }
+  // URP only renders one pass per object. Layers are composited front-to-back:
+  // _Tex_0 (front) -> _Tex_3 -> _Tex_2 -> _Tex_1 (back).
+  // This matches the original multi-pass Z-order where passes 2 and 3 shared
+  // the same depth, making pass 3 (_Tex_3) override pass 2 (_Tex_2).
+  // Back layers receive a larger UV parallax offset to simulate depth separation.
+  fixed4 frag (v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+    float3 viewDir = normalize(i.viewDir);
+    float2 offset1 = viewDir.xy * (_Distance * 0.05);
+    float2 offset2 = viewDir.xy * (_Distance * 0.10);
 
-  v2f vertLayer1 (appdata_t v) {
-    return vertInflate(v,0.75);
-  }
+    fixed4 tex0 = tex2D(_Tex_0, i.texcoord.xy);
+    fixed4 tex1 = tex2D(_Tex_1, i.texcoord.xy - offset2);
+    fixed4 tex2 = tex2D(_Tex_2, i.texcoord.xy - offset2);
+    fixed4 tex3 = tex2D(_Tex_3, i.texcoord.xy - offset1);
 
-  v2f vertLayer2 (appdata_t v) {
-    return vertInflate(v,1.25);
-  }
+    float4 myColor;
 
-  fixed4 frag0 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_0, i.texcoord.xy);
-    // dim white values to match the rest of panel buttons
-    tex.rgb *= .75;
-    float4 myColor = _Color * tex;
-    myColor.a = tex.a;
-
-    if (myColor.a < _Cutoff)
+    if (tex0.a >= _Cutoff) {
+      tex0.rgb *= 0.75;
+      myColor = _Color * tex0;
+      myColor.a = tex0.a;
+    } else if (tex3.a >= _Cutoff) {
+      tex3.rgb *= 0.75;
+      myColor = _Color * tex3;
+      myColor.a = tex3.a;
+    } else if (tex2.a * 0.7 >= _Cutoff) {
+      myColor = _Color * tex2 * _BrushColor * 0.7;
+      myColor.a = tex2.a * 0.7;
+    } else if (tex1.a * 0.8 >= _Cutoff) {
+      myColor = _Color * tex1 * _BrushColor * 0.8;
+      myColor.a = tex1.a * 0.8;
+    } else {
       discard;
-
-    // Let color bits go grayscale when not in focus
-    if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
     }
 
-    return encodeHdr(myColor);
-  }
-
-  fixed4 frag1 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_1, i.texcoord.xy);
-  // Pass through brush color
-    float4 myColor = _Color * tex * _BrushColor;
-    myColor.a = tex.a;
-  // Tint color to taste; don't let values go fully white
-  // because it clashes with the rest of our UI (also dimmed)
-    myColor *= 0.8;
-
-    if (myColor.a < _Cutoff)
-      discard;
-
-    // Let color bits go grayscale when not in focus
     if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
-    }
-
-    return encodeHdr(myColor);
-  }
-
-  fixed4 frag2(v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_2, i.texcoord.xy);
-  // Pass through brush color
-    float4 myColor = _Color * tex * _BrushColor;
-    myColor.a = tex.a;
-  // Tint color to taste; don't let values go fully white
-  // because it clashes with the rest of our UI (also dimmed)
-    myColor *= 0.7;
-
-    if (myColor.a < _Cutoff)
-      discard;
-
-    // Let color bits go grayscale when not in focus
-    if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
-    }
-
-    return encodeHdr(myColor);
-  }
-
-  fixed4 frag3(v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_3, i.texcoord.xy);
-    // dim white values to match the rest of panel buttons
-    tex.rgb *= .75;
-    float4 myColor = _Color * tex;
-    myColor.a = tex.a;
-
-    if (myColor.a < _Cutoff)
-      discard;
-
-    // Let color bits go grayscale when not in focus
-    if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
+      float grayscale = dot(myColor.rgb, float3(0.3, 0.59, 0.11));
+      return encodeHdr(grayscale);
     }
 
     return encodeHdr(myColor);
@@ -178,42 +126,16 @@ Shader "Custom/NewSketchButton" {
   ENDCG
 
   SubShader {
-  Tags{ "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
     Zwrite On
     Ztest LEqual
-    Pass{
+    Pass {
       CGPROGRAM
-      #pragma vertex vertLayer0
-      #pragma fragment frag0
-      ENDCG
-    }
-
-    Zwrite On
-    Ztest LEqual
-    Pass{
-      CGPROGRAM
-      #pragma vertex vertLayer1
-      #pragma fragment frag1
-      ENDCG
-    }
-
-    Zwrite On
-    Ztest LEqual
-    Pass{
-      CGPROGRAM
-      #pragma vertex vertLayer2
-      #pragma fragment frag2
-      ENDCG
-    }
-
-    Zwrite On
-    Ztest LEqual
-    Pass{
-      CGPROGRAM
-      #pragma vertex vertLayer2
-      #pragma fragment frag3
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma multi_compile_instancing
       ENDCG
     }
   }

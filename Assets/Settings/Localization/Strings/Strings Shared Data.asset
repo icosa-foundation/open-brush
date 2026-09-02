@@ -3639,6 +3639,10 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_TOGGLE_Z_ROTATION_SNAP
     m_Metadata:
       m_Items: []
+  - m_Id: 423748078849216512
+    m_Key: POPUP_ACCOUNTS_VIVEINFO_TITLE
+    m_Metadata:
+      m_Items: []
   - m_Id: 455073616801390592
     m_Key: BRUSH_QUILLCUBE
     m_Metadata:

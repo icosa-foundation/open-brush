@@ -302,7 +302,7 @@ namespace TiltBrush
                 case SketchCommands.DuplicateSelection:
                     return GetVrInputDown(VrInput.Button04);
                 case SketchCommands.ToggleSelection:
-                case SketchCommands.TogglePushPull:
+                case SketchCommands.ToggleReshape:
                 case SketchCommands.ToggleTintColor:
                     return GetVrInputDown(VrInput.Button04);
             }

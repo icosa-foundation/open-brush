@@ -84,14 +84,6 @@ namespace TiltBrush
             bool flattenHierarchy = true, bool layersCanTransform = false,
             int chapterIndex = -1)
         {
-            if (loadAnimations)
-            {
-                LastLoadedBackgroundColor = null;
-                LastLoaded360SkyboxName = null;
-                Debug.LogError("Quill animation import is not supported.");
-                return;
-            }
-
             string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))
@@ -118,9 +110,9 @@ namespace TiltBrush
             s_QuillStatsRecorder = recorder;
             try
             {
-                if (sequence == null)
+                if (sequence?.RootLayer == null)
                 {
-                    Debug.LogError("Failed to read Quill sequence");
+                    Debug.LogError("Failed to read Quill sequence or root layer");
                     return;
                 }
 
@@ -152,8 +144,8 @@ namespace TiltBrush
                 Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
                 Matrix4x4 rootWorldWithFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: true);
 
-                bool rootVisible = sequence.RootLayer == null || sequence.RootLayer.Visible;
-                float rootOpacity = sequence.RootLayer == null ? 1f : sequence.RootLayer.Opacity;
+                bool rootVisible = sequence.RootLayer.Visible;
+                float rootOpacity = sequence.RootLayer.Opacity;
                 if (!rootVisible || rootOpacity <= 0f)
                 {
                     return;
@@ -241,8 +233,7 @@ namespace TiltBrush
 
                 }
 
-                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0 ||
-                    createdLayers.Count > 0)
+                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
                 {
                     // Single undo step for all strokes, layers, and widgets
                     var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
@@ -299,22 +290,31 @@ namespace TiltBrush
             // 1. Process strokes in this layer if it's a Paint layer
             if ((!hasFilter || allowAll) && layer is SQ.LayerPaint paint)
             {
+                // NOTE: For now we always call Quill.Load with loadAnimations=false,
+                // so only the first frame (or first drawing) is imported.
                 IEnumerable<SQ.Drawing> drawingsToLoad;
-                if (paint.Frames.Count > 0)
+                if (loadAnimations)
                 {
-                    int drawingIndex = paint.Frames[0];
-                    if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
+                    drawingsToLoad = paint.Drawings;
+                }
+                else
+                {
+                    if (paint.Frames.Count > 0)
                     {
-                        drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
+                        int drawingIndex = paint.Frames[0];
+                        if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
+                        {
+                            drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
+                        }
+                        else
+                        {
+                            drawingsToLoad = paint.Drawings.Take(1);
+                        }
                     }
                     else
                     {
                         drawingsToLoad = paint.Drawings.Take(1);
                     }
-                }
-                else
-                {
-                    drawingsToLoad = paint.Drawings.Take(1);
                 }
 
                 foreach (var drawing in drawingsToLoad)
@@ -498,26 +498,24 @@ namespace TiltBrush
                 return null;
             }
 
-            string importLocation = GetImportLocation(refImage);
-            if (string.IsNullOrEmpty(importLocation))
-            {
-                return null;
-            }
-
             TrTransform worldXfTr = TrTransform.FromMatrix4x4(worldXf);
             // Quill maps pictures to a 2x2 quad, with height driving aspect.
             worldXfTr.scale = Mathf.Abs(worldXfTr.scale) * 2.0f;
 
-            ImageWidget image = ApiMethods._ImportImage(
-                importLocation, worldXfTr, targetLayer, recordCommand: false);
-            if (image == null)
-            {
-                return null;
-            }
-
+            ImageWidget image = UnityEngine.Object.Instantiate(
+                WidgetManager.m_Instance.ImageWidgetPrefab);
+            image.LoadingFromSketch = true;
+            image.transform.parent = targetLayer.transform;
+            image.transform.localScale = Vector3.one;
+            refImage.SynchronousLoad();
+            image.ReferenceImage = refImage;
+            image.SetSignedWidgetSize(worldXfTr.scale);
+            image.Show(bShow: true, bPlayAudio: false);
+            image.transform.position = worldXfTr.translation;
+            image.transform.rotation = worldXfTr.rotation;
             image.TwoSided = true;
-
             ApplyImageOpacity(image, opacity);
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
 
             return image;
         }
@@ -819,30 +817,6 @@ namespace TiltBrush
             return Path.GetFullPath(path.Replace('/', Path.DirectorySeparatorChar));
         }
 
-        private static string GetImportLocation(ReferenceImage referenceImage)
-        {
-            if (referenceImage == null)
-            {
-                return null;
-            }
-
-            string homeDir = App.ReferenceImagePath();
-            string fullPath = referenceImage.FileFullPath;
-            if (!fullPath.StartsWith(homeDir, StringComparison.OrdinalIgnoreCase))
-            {
-                Debug.LogWarning($"Quill image not under reference image path: {fullPath}");
-                return null;
-            }
-
-            string relativePath = Path.GetRelativePath(homeDir, fullPath).Replace('\\', '/');
-            if (relativePath.StartsWith("./", StringComparison.Ordinal) || relativePath.StartsWith(".\\", StringComparison.Ordinal))
-            {
-                relativePath = relativePath.Substring(2);
-            }
-
-            return relativePath;
-        }
-
         private static string EnsureUniqueImagePath(string destPath)
         {
             if (!File.Exists(destPath))
@@ -931,6 +905,8 @@ namespace TiltBrush
                 float maxDist = sound.Attenuation?.Maximum ?? 500f;
                 soundWidget.SetAudioProperties(
                     sound.Gain, sound.Loop, spatialBlend, minDist, maxDist);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                    soundWidget.GetTiltMeterCost(), up: true);
 
                 return soundWidget;
             }
@@ -1145,6 +1121,7 @@ namespace TiltBrush
             // Build the right-handed matrix first.
             Vector3 pos = new Vector3(sqXf.Translation.X, sqXf.Translation.Y, sqXf.Translation.Z);
             Quaternion rot = new Quaternion(sqXf.Rotation.X, sqXf.Rotation.Y, sqXf.Rotation.Z, sqXf.Rotation.W);
+            rot = Quaternion.Normalize(rot);
             Vector3 scale = Vector3.one * sqXf.Scale;
             Matrix4x4 rh = Matrix4x4.TRS(pos, rot, scale);
 

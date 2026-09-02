@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -24,6 +23,8 @@ namespace TiltBrush
     [System.Serializable]
     public class SoundClip
     {
+        private const int kMaxWaveformFramesPerColumn = 4096;
+
         /// The controller is used as a handle for controlling the clip - clips stay instantiated as
         /// long as there are controllers in existence that reference them. For this reason it is
         /// important to Dispose() of controllers once they are no longer needed.
@@ -70,13 +71,17 @@ namespace TiltBrush
                 {
                     if (m_SoundClipInitialized)
                     {
-                        if (m_SoundClipAudioSource.isPlaying)
+                        if (value == m_SoundClipAudioSource.isPlaying)
                         {
-                            m_SoundClipAudioSource.Pause();
+                            return;
+                        }
+                        if (value)
+                        {
+                            m_SoundClipAudioSource.Play();
                         }
                         else
                         {
-                            m_SoundClipAudioSource.Play();
+                            m_SoundClipAudioSource.Pause();
                         }
                     }
                 }
@@ -262,16 +267,25 @@ namespace TiltBrush
             return soundClipController;
         }
 
+        private void InitializeController(SoundClipController controller)
+        {
+            if (m_Controllers.Contains(controller))
+            {
+                controller.OnInitialization();
+            }
+        }
+
         private void OnControllerDisposed(SoundClipController soundClipController)
         {
             m_Controllers.Remove(soundClipController);
-            if (soundClipController.m_SoundClipAudioSource != null)
+            if (soundClipController != null && soundClipController.m_SoundClipAudioSource != null)
             {
-                soundClipController.m_SoundClipAudioSource.Stop();
-                soundClipController.m_SoundClipAudioSource.clip = null;
+                AudioSource audioSource = soundClipController.m_SoundClipAudioSource;
+                audioSource.Stop();
+                audioSource.clip = null;
                 soundClipController.m_SoundClipAudioSource = null;
             }
-            if (soundClipController.m_OwnedAudioClip != null)
+            if (soundClipController?.m_OwnedAudioClip != null)
             {
                 UnityEngine.Object.Destroy(soundClipController.m_OwnedAudioClip);
                 soundClipController.m_OwnedAudioClip = null;
@@ -294,7 +308,8 @@ namespace TiltBrush
                 _ => throw new ArgumentOutOfRangeException(nameof(path), $"Unsupported audio type: {path}.")
             };
 
-            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(path, audioType))
+            string url = new Uri(path).AbsoluteUri;
+            using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
                 uwr.SendWebRequest();
 
@@ -320,32 +335,41 @@ namespace TiltBrush
         private IEnumerator<Null> PrepareAudioPlayer(SoundClipController controller)
         {
             Error = null;
-            AudioSource audioSource = controller.m_SoundClipAudioSource;
-            if (audioSource == null) yield break;
-            audioSource.playOnAwake = false;
-            AudioClip audioClip = null;
-            if (!string.IsNullOrEmpty(AbsolutePath))
+            if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
             {
-                var audioClipTask = LoadClip(AbsolutePath);
-                while (!audioClipTask.IsCompleted)
-                {
-                    yield return null;
-                }
-                if (audioClipTask.IsFaulted)
-                {
-                    Error = audioClipTask.Exception?.GetBaseException().Message;
-                }
-                else if (!audioClipTask.IsCanceled)
-                {
-                    audioClip = audioClipTask.Result;
-                }
+                yield break;
             }
+            if (string.IsNullOrEmpty(AbsolutePath))
+            {
+                yield break;
+            }
+            AudioSource audioSource = controller.m_SoundClipAudioSource;
+            audioSource.playOnAwake = false;
+            var audioClipTask = LoadClip(AbsolutePath);
+            while (!audioClipTask.IsCompleted)
+            {
+                yield return null;
+            }
+            if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
+            {
+                string reason = audioClipTask.Exception?.GetBaseException().Message ??
+                    "the load operation was canceled";
+                Error = $"Failed to load audio clip '{AbsolutePath}': {reason}";
+                yield break;
+            }
+
+            AudioClip audioClip = audioClipTask.Result;
             if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
             {
                 if (audioClip != null)
                 {
                     UnityEngine.Object.Destroy(audioClip);
                 }
+                yield break;
+            }
+            if (audioClip == null)
+            {
+                Error = $"Failed to load audio clip '{AbsolutePath}'.";
                 yield break;
             }
 
@@ -358,11 +382,9 @@ namespace TiltBrush
             Aspect = 1;
 
             audioSource.mute = false;
-            if (audioClip != null)
-            {
-                audioSource.Play();
-            }
-            controller.OnInitialization();
+            audioSource.Play();
+
+            InitializeController(controller);
         }
 
         private void OnError(GvrAudioSource player, string error)
@@ -393,9 +415,12 @@ namespace TiltBrush
 
         public void Dispose()
         {
-            foreach (SoundClipController controller in m_Controllers.ToList())
+            if (m_Controllers.Count > 0)
             {
-                controller.Dispose();
+                foreach (var controller in new List<SoundClipController>(m_Controllers))
+                {
+                    controller.Dispose();
+                }
             }
             if (Thumbnail != null)
             {
@@ -412,28 +437,60 @@ namespace TiltBrush
         {
             int height = (int)Height;
             int width = aspect > 0 ? Mathf.RoundToInt(height * aspect) : (int)Width;
-            audio ??= m_Controllers
-                .Select(controller => controller.m_SoundClipAudioSource?.clip)
-                .FirstOrDefault(clip => clip != null);
+            if (audio == null)
+            {
+                foreach (var controller in m_Controllers)
+                {
+                    audio = controller.m_SoundClipAudioSource?.clip;
+                    if (audio != null)
+                    {
+                        break;
+                    }
+                }
+            }
             if (audio == null) return null;
             Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            float[] samples = new float[audio.samples * audio.channels];
-            audio.GetData(samples, 0);
 
-            // Find peak amplitude per column using max abs value in each range
+            // Read a bounded, representative window for each output column. Short clips are
+            // sampled in full; long clips avoid allocating or scanning every decoded sample.
             float[] waveform = new float[width];
-            int packSize = Mathf.Max(samples.Length / width, 1);
-            for (int x = 0; x < width; x++)
+            int totalFrames = audio.samples;
+            int channels = Mathf.Max(audio.channels, 1);
+            if (totalFrames > 0)
             {
-                float peak = 0f;
-                int start = x * packSize;
-                int end = Mathf.Min(start + packSize, samples.Length);
-                for (int i = start; i < end; i++)
+                int maxBinFrames = Mathf.CeilToInt(totalFrames / (float)width);
+                int sampleFrames = Mathf.Min(maxBinFrames, kMaxWaveformFramesPerColumn);
+                float[] samples = new float[sampleFrames * channels];
+
+                for (int x = 0; x < width; x++)
                 {
-                    float abs = Mathf.Abs(samples[i]);
-                    if (abs > peak) peak = abs;
+                    int binStart = (int)((long)x * totalFrames / width);
+                    int binEnd = (int)((long)(x + 1) * totalFrames / width);
+                    int binFrames = binEnd - binStart;
+                    if (binFrames == 0)
+                    {
+                        continue;
+                    }
+                    int framesToInspect = Mathf.Min(binFrames, sampleFrames);
+                    int inspectionStart = binStart + (binFrames - framesToInspect) / 2;
+                    int sampleOffset = Mathf.Min(inspectionStart, totalFrames - sampleFrames);
+
+                    if (!audio.GetData(samples, sampleOffset))
+                    {
+                        continue;
+                    }
+
+                    float peak = 0f;
+                    int valuesToInspect = framesToInspect * channels;
+                    int firstValue = (inspectionStart - sampleOffset) * channels;
+                    int endValue = firstValue + valuesToInspect;
+                    for (int i = firstValue; i < endValue; i++)
+                    {
+                        float abs = Mathf.Abs(samples[i]);
+                        if (abs > peak) peak = abs;
+                    }
+                    waveform[x] = peak;
                 }
-                waveform[x] = peak;
             }
 
             // Normalize so the loudest peak fills the available height

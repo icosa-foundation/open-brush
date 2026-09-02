@@ -21,10 +21,70 @@ namespace TiltBrush
 
         [SerializeField]
         public SculptSubToolManager.SubTool m_SubTool;
+        private FlattenSubTool.InfluenceMode? m_LastFlattenInfluenceMode;
+
+        override protected void Start()
+        {
+            base.Start();
+            RefreshSelection();
+            RefreshFlattenInfluenceDescription();
+        }
 
         override protected void OnButtonPressed()
         {
-            SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
+            bool toggleFlattenMode =
+                m_SubTool == SculptSubToolManager.SubTool.Flatten &&
+                SculptSubToolManager.m_Instance.ActiveSubTool == m_SubTool;
+            if (toggleFlattenMode)
+            {
+                SculptSubToolManager.m_Instance.TryToggleFlattenInfluenceMode();
+            }
+            else
+            {
+                SculptSubToolManager.m_Instance.SetSubTool(m_SubTool);
+            }
+            foreach (SculptSubToolButton button in
+                transform.parent.GetComponentsInChildren<SculptSubToolButton>(true))
+            {
+                button.RefreshSelection();
+                button.RefreshFlattenInfluenceDescription();
+            }
+        }
+
+        override public void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            RefreshFlattenInfluenceDescription();
+        }
+
+        private void RefreshSelection()
+        {
+            if (SculptSubToolManager.m_Instance != null)
+            {
+                SetButtonSelected(
+                    SculptSubToolManager.m_Instance.ActiveSubTool == m_SubTool);
+            }
+        }
+
+        private void RefreshFlattenInfluenceDescription()
+        {
+            if (m_SubTool != SculptSubToolManager.SubTool.Flatten ||
+                SculptSubToolManager.m_Instance == null)
+            {
+                return;
+            }
+
+            FlattenSubTool.InfluenceMode mode =
+                SculptSubToolManager.m_Instance.FlattenInfluenceMode;
+            if (m_LastFlattenInfluenceMode == mode)
+            {
+                return;
+            }
+
+            m_LastFlattenInfluenceMode = mode;
+            SetExtraDescriptionText(mode == FlattenSubTool.InfluenceMode.Sphere
+                ? "Sphere influence"
+                : "Plane-projected influence");
         }
     }
 } // namespace TiltBrush

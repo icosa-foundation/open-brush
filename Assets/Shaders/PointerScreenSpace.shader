@@ -30,116 +30,151 @@ Shader "Custom/PointerScreenSpace" {
   }
 
   SubShader {
-    Tags { "Queue"="Geometry" "RenderType"="Geometry" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "RenderType"="Geometry" }
 
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
-    #include "Assets/Shaders/Include/Math.cginc"
+    Pass {
+      Name "MainScreenSpace"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex VertMain
+      #pragma fragment FragMain
+      #pragma multi_compile_instancing
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Assets/Shaders/Include/Math.cginc"
 
-    struct Input {
-      float2 uv_MainTex;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _BaseThickness;
+      float _MaxDistance;
+      float _RevealSpeed;
+      float _RevealStartTime;
+      half _Cutoff;
+      CBUFFER_END
 
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _BaseThickness;
-    uniform float _MaxDistance;
-    uniform float _RevealSpeed;
-    uniform float _RevealStartTime;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+        float2 uv : TEXCOORD0;
 
-    void vert (inout appdata_full v) {
-      // Transform into worldspace
-      float4 world_space_vertex = mul( unity_ObjectToWorld, v.vertex );
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
 
-      // Figure out distance to vertex in world space.
-      float vertexDistance = length(world_space_vertex.xyz - _WorldSpaceCameraPos);
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
 
-      if (vertexDistance > _MaxDistance) {
-        float sizeIncrease = 0.5 * (vertexDistance / _MaxDistance - 1) * _BaseThickness;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
 
-        // Inflate the geometry.
+      Varyings VertMain(Attributes IN) {
+        Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+        float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
+        float3 camPos = _WorldSpaceCameraPos.xyz;
+        float vertexDistance = length(worldPos.xyz - camPos);
 
-        // Unscaled version of object to world matrix
+        if (vertexDistance > _MaxDistance) {
+          float sizeIncrease = 0.5 * (vertexDistance / _MaxDistance - 1.0) * _BaseThickness;
+          float3x3 unscaledObject2World;
+          float3 unusedScale;
+          factorRotationAndLocalScale((float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
+          float3 worldNormal = normalize(mul(unscaledObject2World, IN.normalOS));
+          worldPos.xyz += worldNormal * sizeIncrease;
+        }
+
+        float4 objectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(objectPos.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
+      }
+
+      half4 FragMain(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+        half alpha = 1.0h;
+        if (_RevealStartTime != 0.0) {
+          alpha = IN.uv.x < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0h : 0.0h;
+        }
+        clip(alpha - _Cutoff);
+        return half4(_Color.rgb, alpha);
+      }
+      ENDHLSL
+    }
+
+    Pass {
+      Name "OutlineScreenSpace"
+      Tags { "LightMode"="UniversalForward" }
+      Cull Front
+      HLSLPROGRAM
+      #pragma vertex VertOutline
+      #pragma fragment FragOutline
+      #pragma multi_compile_instancing
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Assets/Shaders/Include/Math.cginc"
+
+      CBUFFER_START(UnityPerMaterial)
+      float _OutlineWidth;
+      float _BaseThickness;
+      float _MaxDistance;
+      float _RevealSpeed;
+      float _RevealStartTime;
+      half _Cutoff;
+      CBUFFER_END
+
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float3 normalOS : NORMAL;
+        float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+      };
+
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+        UNITY_VERTEX_OUTPUT_STEREO
+      };
+
+      Varyings VertOutline(Attributes IN) {
+        Varyings OUT;
+        UNITY_SETUP_INSTANCE_ID(IN);
+        UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+        float4 worldPos = mul(unity_ObjectToWorld, IN.positionOS);
+        float3 camPos = _WorldSpaceCameraPos.xyz;
+        float vertexDistance = length(worldPos.xyz - camPos);
+
+        float sizeIncrease = vertexDistance > _MaxDistance ?
+            0.5 * (vertexDistance / _MaxDistance * (_BaseThickness + 2.0 * _OutlineWidth) - _BaseThickness) :
+            _OutlineWidth;
+
         float3x3 unscaledObject2World;
         float3 unusedScale;
-        factorRotationAndLocalScale(
-            (float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
+        factorRotationAndLocalScale((float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
+        float3 worldNormal = normalize(mul(unscaledObject2World, IN.normalOS));
+        worldPos.xyz += worldNormal * sizeIncrease;
 
-        // Push the outline out in the direction of the new unscaled normal.
-        float3 world_normal = normalize(mul(unscaledObject2World, v.normal));
-
-        world_space_vertex.xyz += world_normal * sizeIncrease;
-
-        // Transform back into local space
-        v.vertex = mul( unity_WorldToObject, world_space_vertex );
+        float4 objectPos = mul(unity_WorldToObject, worldPos);
+        OUT.positionHCS = TransformObjectToHClip(objectPos.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
       }
-    }
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      o.Albedo = 0;
-      o.Emission = _Color.rgb;
-      if (_RevealStartTime) {
-        o.Alpha = IN.uv_MainTex.x < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0 : 0.0;
-      } else {
-        o.Alpha = 1.0;
+      half4 FragOutline(Varyings IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+        half alpha = 1.0h;
+        if (_RevealStartTime != 0.0 && _RevealSpeed != 0.0) {
+          alpha = IN.uv.x < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0h : 0.0h;
+        }
+        clip(alpha - _Cutoff);
+        return half4(0.0h, 0.0h, 0.0h, alpha);
       }
+      ENDHLSL
     }
-    ENDCG
-
-    Cull Front
-    CGPROGRAM
-    #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
-    #include "Assets/Shaders/Include/Math.cginc"
-
-    struct Input {
-      float2 uv_MainTex;
-    };
-
-    uniform float4 _Color;
-    sampler2D _MainTex;
-    uniform float _OutlineWidth;
-    uniform float _BaseThickness;
-    uniform float _MaxDistance;
-    uniform float _RevealSpeed;
-    uniform float _RevealStartTime;
-
-    void vert (inout appdata_full v) {
-      // Transform into worldspace
-      float4 world_space_vertex = mul( unity_ObjectToWorld, v.vertex );
-
-      // Figure out distance to vertex in world space.
-      float vertexDistance = length(world_space_vertex.xyz - _WorldSpaceCameraPos);
-
-      float sizeIncrease = vertexDistance > _MaxDistance ?
-          0.5 * (vertexDistance / _MaxDistance * (_BaseThickness + 2 * _OutlineWidth) - _BaseThickness) :
-          _OutlineWidth;
-
-      // Create the outline.
-
-      // Unscaled version of object to world matrix
-      float3x3 unscaledObject2World;
-      float3 unusedScale;
-      factorRotationAndLocalScale(
-          (float3x3)unity_ObjectToWorld, unscaledObject2World, unusedScale);
-
-      // Push the outline out in the direction of the new unscaled normal.
-      float3 world_normal = normalize(mul(unscaledObject2World, v.normal));
-      world_space_vertex.xyz += world_normal * sizeIncrease;
-
-      // Transform back into local space
-      v.vertex = mul( unity_WorldToObject, world_space_vertex );
-    }
-
-    void surf (Input IN, inout SurfaceOutput o) {
-      o.Albedo = 0;
-      o.Emission = 0.0f;
-      if (_RevealStartTime && _RevealSpeed != 0.0) {
-        o.Alpha = IN.uv_MainTex[0] < (_Time.y - _RevealStartTime) * _RevealSpeed ? 1.0 : 0.0;
-      } else {
-        o.Alpha = 1.0;
-      }
-    }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }

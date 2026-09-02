@@ -45,6 +45,7 @@ namespace TiltBrush
 
         private TintMode m_CurrentMode = TintMode.Replace;
         private bool m_OwnsUndoGroup;
+        private readonly Dictionary<Stroke, ModifyStrokePointColorsCommand> m_ActiveTintCommands = new();
         public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
@@ -62,6 +63,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
+                m_ActiveTintCommands.Clear();
                 if (ApiManager.Instance.ActiveUndo == null)
                 {
                     ApiManager.Instance.StartUndo();
@@ -70,11 +72,14 @@ namespace TiltBrush
             }
             else if (m_OwnsUndoGroup && !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                ApiManager.Instance.EndUndo();
-                m_OwnsUndoGroup = false;
+                EndOwnedUndoGroup();
+            }
+            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                m_ActiveTintCommands.Clear();
             }
 
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.TogglePushPull))
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
                 int idx = System.Array.IndexOf(k_ModeOrder, m_CurrentMode);
                 m_CurrentMode = k_ModeOrder[(idx + 1) % k_ModeOrder.Length];
@@ -111,7 +116,7 @@ namespace TiltBrush
             int controlPointCount = stroke.m_ControlPoints.Length;
             if (controlPointCount == 0)
             {
-                return true;
+                return false;
             }
 
             List<Color32?> newOverrideColors = stroke.m_OverrideColors != null &&
@@ -126,6 +131,8 @@ namespace TiltBrush
             float amount = pressure * EffectAmount * 0.5f;
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
+            ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
+            ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
 
             for (int i = 0; i < controlPointCount; i++)
             {
@@ -137,6 +144,23 @@ namespace TiltBrush
 
                 if (applyingTint)
                 {
+                    if (targetMode != desiredMode)
+                    {
+                        // Override values have different meanings in each mode. Preserve the visible
+                        // colors of untouched points before changing the stroke-wide interpretation.
+                        if (desiredMode == ColorOverrideMode.Replace)
+                        {
+                            for (int j = 0; j < newOverrideColors.Count; j++)
+                            {
+                                if (newOverrideColors[j].HasValue)
+                                {
+                                    newOverrideColors[j] = stroke.GetColor(j);
+                                }
+                            }
+                        }
+                        targetMode = desiredMode;
+                        strokeIsModified = true;
+                    }
                     // Identity depends on mode: Replace=baseColor, Multiply=white, Add=black
                     Color identity = m_CurrentMode == TintMode.Multiply ? Color.white
                         : m_CurrentMode == TintMode.Add ? Color.black
@@ -148,7 +172,7 @@ namespace TiltBrush
                     Color32 blended = Color.Lerp(existing, tintColor, amount);
                     blended.a = newOverrideColors[i].HasValue
                         ? newOverrideColors[i].Value.a
-                        : (byte)255;
+                        : ((Color32)baseColor).a;
                     if (!newOverrideColors[i].HasValue || !newOverrideColors[i].Value.Equals(blended))
                     {
                         newOverrideColors[i] = blended;
@@ -162,17 +186,7 @@ namespace TiltBrush
                 }
             }
 
-            ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
-            if (applyingTint)
-            {
-                ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
-                if (targetMode != desiredMode)
-                {
-                    targetMode = desiredMode;
-                    strokeIsModified = true;
-                }
-            }
-            else if (!newOverrideColors.Any(c => c.HasValue))
+            if (!applyingTint && !newOverrideColors.Any(c => c.HasValue))
             {
                 if (stroke.m_OverrideColors != null || targetMode != ColorOverrideMode.None)
                 {
@@ -186,20 +200,31 @@ namespace TiltBrush
             {
                 PlayModifyStrokeSound();
                 var undoParent = ApiManager.Instance.ActiveUndo;
-                var cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode, undoParent);
+                ModifyStrokePointColorsCommand cmd;
                 if (undoParent == null)
                 {
+                    cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode);
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
                 {
+                    if (!m_ActiveTintCommands.TryGetValue(stroke, out cmd))
+                    {
+                        cmd = new ModifyStrokePointColorsCommand(
+                            stroke, newOverrideColors, targetMode, undoParent);
+                        m_ActiveTintCommands.Add(stroke, cmd);
+                    }
+                    else
+                    {
+                        cmd.UpdateEndState(newOverrideColors, targetMode);
+                    }
                     // Apply changes immediately while keeping this command inside the active undo group.
                     cmd.Redo();
                 }
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             }
 
-            return true;
+            return strokeIsModified;
         }
 
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
@@ -236,12 +261,18 @@ namespace TiltBrush
 
         private void EndOwnedUndoGroup()
         {
-            if (!m_OwnsUndoGroup)
+            if (m_OwnsUndoGroup)
             {
-                return;
+                BaseCommand undoGroup = ApiManager.Instance.ActiveUndo;
+                ApiManager.Instance.ActiveUndo = null;
+                if (undoGroup != null && undoGroup.HasChildren)
+                {
+                    SketchSurfacePanel.m_Instance.m_LastCommand = undoGroup;
+                    SketchMemoryScript.m_Instance.RecordCommand(undoGroup);
+                }
+                m_OwnsUndoGroup = false;
             }
-            ApiManager.Instance.EndUndo();
-            m_OwnsUndoGroup = false;
+            m_ActiveTintCommands.Clear();
         }
     }
 } // namespace TiltBrush

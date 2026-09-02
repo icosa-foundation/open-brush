@@ -71,7 +71,10 @@ namespace TiltBrush
             newObj.AddComponent<MeshFilter>();
 
             Renderer renderer = newObj.AddComponent<MeshRenderer>();
-            renderer.material = brush.Material;
+            if (brush.m_OverlayMaterial != null)
+                renderer.materials = new Material[] { brush.Material, brush.m_OverlayMaterial };
+            else
+                renderer.material = brush.Material;
 
             var propertyBlock = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(propertyBlock);

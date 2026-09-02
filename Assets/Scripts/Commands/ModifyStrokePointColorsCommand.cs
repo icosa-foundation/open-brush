@@ -23,8 +23,8 @@ namespace TiltBrush
         private readonly Stroke m_TargetStroke;
         private readonly List<Color32?> m_StartOverrideColors;
         private readonly ColorOverrideMode m_StartColorOverrideMode;
-        private readonly List<Color32?> m_EndOverrideColors;
-        private readonly ColorOverrideMode m_EndColorOverrideMode;
+        private List<Color32?> m_EndOverrideColors;
+        private ColorOverrideMode m_EndColorOverrideMode;
 
         public ModifyStrokePointColorsCommand(
             Stroke stroke,
@@ -40,6 +40,13 @@ namespace TiltBrush
         }
 
         public override bool NeedsSave => true;
+
+        public void UpdateEndState(
+            List<Color32?> newOverrideColors, ColorOverrideMode newColorOverrideMode)
+        {
+            m_EndOverrideColors = newOverrideColors?.ToList();
+            m_EndColorOverrideMode = newColorOverrideMode;
+        }
 
         private void ApplyNewColorsToStroke(List<Color32?> overrideColors, ColorOverrideMode colorOverrideMode)
         {

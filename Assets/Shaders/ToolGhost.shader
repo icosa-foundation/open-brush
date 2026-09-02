@@ -17,12 +17,9 @@ Shader "Custom/ToolGhost"
   Properties
   {
     _Color ("Color", Color) = (1, 1, 1, 1)
-    _MainTex ("Texture", 2D) = "white" {}
-    _VectorX ("X Vector", Float) = 1
-    _VectorY ("Y Vector", Float) = 0.5
-    _VectorZ ("Z Vector", Float) = 0
-    _TilingX ("X Tiling", Float) = 1
-    _TilingY ("Y Tiling", Float) = 1
+    _GridDensity ("Grid Density", Float) = 8
+    _GridLineWidth ("Grid Line Width", Range(0.001, 0.25)) = 0.04
+    _FresnelStrength ("Fresnel Strength", Range(-8, 8)) = 1
   }
 
   Category
@@ -47,6 +44,7 @@ Shader "Custom/ToolGhost"
         #pragma vertex vert
         #pragma fragment frag
         #pragma target 3.0
+        #pragma multi_compile_instancing
 
         #include <UnityStandardInput.cginc>
 
@@ -54,11 +52,9 @@ Shader "Custom/ToolGhost"
         #include "Assets/Shaders/Include/Brush.cginc"
         #include "Assets/Shaders/Include/ColorSpace.cginc"
 
-        float _VectorX;
-        float _VectorY;
-        float _VectorZ;
-        float _TilingX;
-        float _TilingY;
+        float _GridDensity;
+        float _GridLineWidth;
+        float _FresnelStrength;
 
         struct appdata_t
         {
@@ -66,43 +62,62 @@ Shader "Custom/ToolGhost"
           fixed4 color : COLOR;
           float3 normal : NORMAL;
           float2 uv : TEXCOORD0;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f
         {
-          float4 vertex : POSITION;
-          float3 viewDir : TEXCOORD0;
-          float3 normal : NORMAL;
-          float2 uv : TEXCOORD1;
+          float4 vertex : SV_POSITION;
+          float3 objectPosition : TEXCOORD0;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
 
         v2f vert(appdata_t v)
         {
+          UNITY_SETUP_INSTANCE_ID(v);
           v2f o;
+          UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_TRANSFER_INSTANCE_ID(v, o);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
           o.vertex = UnityObjectToClipPos(v.vertex);
-          o.viewDir = normalize(ObjSpaceViewDir(v.vertex));
-          o.normal = normalize(v.normal);
-
-          float3 direction = float3(_VectorX, _VectorY, _VectorZ); // The direction to project onto
-          float2 tiling = float2(_TilingX, _TilingY);
-          float3 N = normalize(direction); // Normalize the projection direction to use as the plane's normal
-          float3 U = normalize(cross(float3(0, 1, 0), N)); // U is perpendicular to 'up' and 'N'
-          float3 V = cross(N, U); // V is perpendicular to both 'N' and 'U', lies on the plane
-
-          // Project position onto the plane defined by N, U, V
-          float3 proj = v.vertex - dot(v.vertex, N) * N; // Project 'position' onto the plane
-          o.uv = float2(dot(proj, U) * tiling.x, dot(proj, V) * tiling.y);
+          o.objectPosition = v.vertex.xyz;
           return o;
         }
 
-        fixed4 frag(v2f i) : COLOR
+        float ProceduralGrid(float3 objectPosition)
         {
-          float facingRatio = saturate(dot(i.viewDir, i.normal));
+          float3 gridPosition = objectPosition * max(abs(_GridDensity), 0.0001);
+          float3 distanceToLine = abs(frac(gridPosition + 0.5) - 0.5);
+          float3 filterWidth = max(fwidth(gridPosition), 0.0001);
+          float3 gridLines = 1.0 - smoothstep(
+              _GridLineWidth - filterWidth,
+              _GridLineWidth + filterWidth,
+              distanceToLine);
+          return max(gridLines.x, max(gridLines.y, gridLines.z));
+        }
+
+        fixed4 frag(v2f i) : SV_Target
+        {
+          UNITY_SETUP_INSTANCE_ID(i);
+          UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+          float3 sphereDirection = normalize(i.objectPosition);
+          float3 spherePosition = sphereDirection * 0.5;
+          float3 worldPosition = mul(
+              unity_ObjectToWorld, float4(spherePosition, 1.0)).xyz;
+          float3 viewDir = normalize(UnityWorldSpaceViewDir(worldPosition));
+          float3 normal = normalize(UnityObjectToWorldNormal(sphereDirection));
+          float facingRatio = saturate(dot(viewDir, normal));
           facingRatio = 1 - facingRatio;
-          float4 texColor = tex2D(_MainTex, i.uv);
-          float4 outColor = _Color * (texColor + 0.5) * facingRatio;
-          outColor.a = 0.5;
+          facingRatio = _FresnelStrength >= 0
+              ? pow(max(facingRatio, 0.0001), _FresnelStrength)
+              : pow(max(1 - facingRatio, 0.0001), -_FresnelStrength);
+          float grid = ProceduralGrid(spherePosition);
+          float4 outColor = _Color * (grid + _Color.a) * facingRatio + 0.05;
+          outColor.a = _Color.a;
           return outColor;
         }
         ENDCG

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: CustomMirrorGuide
-  m_Shader: {fileID: 4800000, guid: b25bb00353dee3045b6afef5a48cc184, type: 3}
+  m_Shader: {fileID: 4800000, guid: 3a5f4d2d4f6d49aab70f3e25f91d5c85, type: 3}
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 5

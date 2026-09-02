@@ -473,13 +473,13 @@ namespace TiltBrush
 
         public void LogGenericLuaError(Script script, string fnName, Exception e)
         {
-            if (e is ScriptRuntimeException)
+            if (e is ScriptRuntimeException runtimeException)
             {
-                LogLuaInterpreterError(script, fnName, e as ScriptRuntimeException);
+                LogLuaInterpreterError(script, fnName, runtimeException);
             }
-            else if (e is InvalidCastException)
+            else if (e is InvalidCastException castException)
             {
-                LogLuaCastError(script, fnName, e as InvalidCastException);
+                LogLuaCastError(script, fnName, castException);
             }
         }
 
@@ -1304,10 +1304,8 @@ namespace TiltBrush
                 case ScriptCoordSpace.Default:
                 case ScriptCoordSpace.Pointer:
 
-                    Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
                     tr_CS.translation = firstTr_CS.translation;
-                    tr_CS.rotation = drawnVector_CS == Vector3.zero ?
-                        Quaternion.identity : Quaternion.LookRotation(drawnVector_CS, upVector);
+                    tr_CS.rotation = secondTr_CS.rotation;
                     tr_CS.scale = quantizedVector_CS.magnitude;
                     transforms = result.AsMultiTrList();
                     break;

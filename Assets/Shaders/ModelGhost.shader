@@ -19,6 +19,7 @@ Shader "Custom/ModelGhost" {
 
   Category {
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
       Tags{ "Queue" = "Overlay" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
 
@@ -26,12 +27,11 @@ Shader "Custom/ModelGhost" {
 
         //Blend SrcAlpha OneMinusSrcAlpha, Zero One
         Blend One One
-        Lighting Off Cull Back ZTest Always ZWrite Off Fog { Mode Off }
-
-
+        Cull Back ZTest Always ZWrite Off
         CGPROGRAM
         #pragma vertex vert
         #pragma fragment frag
+        #pragma multi_compile_instancing
         #pragma target 3.0
         #include "UnityCG.cginc"
         #include "Assets/Shaders/Include/Brush.cginc"
@@ -50,6 +50,8 @@ Shader "Custom/ModelGhost" {
           float3 viewDir : TEXCOORD0;
           float3 normal : NORMAL;
 
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+
           UNITY_VERTEX_OUTPUT_STEREO
         };
 
@@ -60,6 +62,7 @@ Shader "Custom/ModelGhost" {
 
           UNITY_SETUP_INSTANCE_ID(v);
           UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_TRANSFER_INSTANCE_ID(v, o);
           UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
           o.vertex = UnityObjectToClipPos(v.vertex);
@@ -69,6 +72,7 @@ Shader "Custom/ModelGhost" {
         }
 
         fixed4 frag (v2f i) : COLOR {
+          UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
           float facingRatio = saturate(dot(i.viewDir, i.normal));
           facingRatio = 1-facingRatio;
           float4 outColor = _Color * facingRatio;
@@ -82,3 +86,4 @@ Shader "Custom/ModelGhost" {
 
   Fallback "Unlit/Diffuse"
 }
+

@@ -90,19 +90,19 @@ Category {
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
         float4 center = float4(v.center.xyz, 1);
-        PrepForOds(center);
-        float4 corner = OrientParticle(center.xyz, halfSize, v.vid, rotation);
+        float4 center_WS = mul(unity_ObjectToWorld, center);
+        PrepForOdsWorldSpace(center_WS);
+        float4 corner_WS = OrientParticle_WS(center_WS.xyz, halfSize, v.vid, rotation);
         float waveform = 0;
         // TODO: displacement should happen before orientation
 #ifdef AUDIO_REACTIVE
         float4 dispVec = float4(0,0,0,0);
-        float4 corner_WS = mul(unity_ObjectToWorld, corner);
         // TODO: worldspace is almost certainly incorrect: use scene or object?
         waveform = tex2Dlod(_FFTTex, float4(fmod(corner_WS.x * _WaveformFreq + _BeatOutputAccum.z*.5,1),0,0,0) ).b * .25;
         dispVec.xyz += waveform * _WaveformIntensity.xyz;
-        corner = corner + dispVec;
+        corner_WS = corner_WS + dispVec;
 #endif
-        o.vertex = UnityObjectToClipPos(corner);
+        o.vertex = mul(UNITY_MATRIX_VP, corner_WS);
         o.color = v.color * _BaseGain;
         o.texcoord = TRANSFORM_TEX(v.texcoord.xy,_MainTex);
         o.waveform = waveform * 15;

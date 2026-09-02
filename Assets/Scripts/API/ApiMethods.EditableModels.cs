@@ -94,34 +94,47 @@ namespace TiltBrush
 
         private static async Task SetupWidgetAfterLoadAsync(Model model, ModelWidget widget, string subtree, CreateWidgetCommand cmd)
         {
-            await model.LoadModelAsync();
-            model.EnsureCollectorExists();
-
-            // Now assign the model, which triggers LoadModel() in the widget
-            // This must happen after the model is loaded (m_ModelParent is set)
-            widget.Model = model;
-
-            // Calculate proper size based on model bounds (same as normal model loading)
-            float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
-                Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
-            float consistentSize;
-            if (maxExtent == 0.0f)
+            bool assignedToWidget = false;
+            try
             {
-                consistentSize = 1.0f;
+                await model.LoadModelAsync();
+                model.EnsureCollectorExists();
+
+                // Now assign the model, which triggers LoadModel() in the widget
+                // This must happen after the model is loaded (m_ModelParent is set)
+                widget.Model = model;
+                assignedToWidget = true;
+                model.ReleaseFromCatalog();
+
+                // Calculate proper size based on model bounds (same as normal model loading)
+                float maxExtent = 2 * Mathf.Max(model.m_MeshBounds.extents.x,
+                    Mathf.Max(model.m_MeshBounds.extents.y, model.m_MeshBounds.extents.z));
+                float consistentSize;
+                if (maxExtent == 0.0f)
+                {
+                    consistentSize = 1.0f;
+                }
+                else
+                {
+                    consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+                }
+
+                widget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                widget.SetPreserveCustomSize(true);
+                widget.Subtree = subtree;
+                widget.SyncHierarchyToSubtree();
+                widget.AddSceneLightGizmos();
+                cmd.SetWidgetCost(widget.GetTiltMeterCost());
             }
-            else
+            finally
             {
-                consistentSize = 0.25f * App.METERS_TO_UNITS / maxExtent;
+                if (!assignedToWidget)
+                {
+                    model.ReleaseFromCatalog();
+                }
             }
-
-            widget.SetSignedWidgetSize(consistentSize);
-
-            // Now enable preservation to prevent async overrides
-            widget.SetPreserveCustomSize(true);
-            widget.Subtree = subtree;
-            widget.SyncHierarchyToSubtree();
-            widget.AddSceneLightGizmos();
-            cmd.SetWidgetCost(widget.GetTiltMeterCost());
         }
 
         [ApiEndpoint(

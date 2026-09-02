@@ -1415,7 +1415,7 @@ namespace TiltBrush
                     case ScriptCoordSpace.Canvas:
                         {
                             bNeedsDummyPointer = false;
-                            newTr_CS = TrTransform.T(tr.translation - LuaManager.Instance.GetPastBrushPos(0));
+                            newTr_CS = TrTransform.T(tr.translation);
                             break;
                         }
                     case ScriptCoordSpace.Pointer:

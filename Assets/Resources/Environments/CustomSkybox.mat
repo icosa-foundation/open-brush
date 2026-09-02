@@ -127,3 +127,4 @@ Material:
     - _SunTint: {r: 1, g: 0.925, b: 0.737, a: 1}
     - _Tint: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
