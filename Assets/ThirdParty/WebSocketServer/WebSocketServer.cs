@@ -78,7 +78,10 @@ namespace WebSocketServer {
         private void ListenForTcpConnection () { 		
             try {
                 // Create listener on <address>:<port>.
-                tcpListener = new TcpListener(port);
+                var bindAddress = App.UserConfig.Flags.EnableApiRemoteCalls
+                    ? IPAddress.Any
+                    : IPAddress.Parse(address);
+                tcpListener = new TcpListener(bindAddress, port);
                 tcpListener.Start();
                 while (true) {
                     // Accept a new client, then open a stream for reading and writing.

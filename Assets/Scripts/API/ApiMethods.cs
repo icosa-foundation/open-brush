@@ -48,7 +48,15 @@ namespace TiltBrush
         )]
         public static void AddListener(string url)
         {
-            ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
+            if (url.ToLower().StartsWith("http://") || url.ToLower().StartsWith("https://"))
+            {
+                ApiManager.Instance.AddOutgoingHttpListener(new Uri(url));
+            }
+            else if (url.ToLower().StartsWith("ws://") || url.ToLower().StartsWith("wss://"))
+            {
+                ApiManager.Instance.AddOutgoingWebsocketListener(new Uri(url));
+
+            }
         }
 
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
