@@ -3957,16 +3957,24 @@ namespace TiltBrush
         }
 
         /// Reset the scene or the canvas, depending on the current mode
-        public void ResetGrabbedPose(bool everything = false)
+        public void ResetGrabbedPose(
+            bool everything = false,
+            bool keepSceneTransform = false)
         {
             //update sketch surface position with offset to sweet spot
             m_SketchSurface.transform.position = m_PanelManager.GetSketchSurfaceResetPos();
             if (everything)
             {
-                App.Scene.Pose = TrTransform.identity;
+                if (!keepSceneTransform)
+                {
+                    App.Scene.Pose = TrTransform.identity;
+                }
                 Coords.CanvasLocalPose = TrTransform.identity;
             }
-            App.Scene.Pose = TrTransform.identity;
+            if (!keepSceneTransform)
+            {
+                App.Scene.Pose = TrTransform.identity;
+            }
 
             //reset orientation and pointer
             ResetSketchSurfaceOrientation();
@@ -5434,11 +5442,19 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
             SketchMemoryScript.m_Instance.ClearMemory();
             ControllerConsoleScript.m_Instance.AddNewLine("Sketch Cleared");
-            ResetGrabbedPose(everything: true);
+            ResetGrabbedPose(
+                everything: true,
+                keepSceneTransform: keepSceneTransform);
+            if (keepSceneTransform)
+            {
+                SketchMemoryScript.m_Instance.InitialSketchTransform =
+                    App.Scene.Pose;
+            }
             QualityControls.m_Instance.ResetAutoQuality();
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
             SaveLoadScript.m_Instance.ResetLastFilename();
@@ -5472,7 +5488,9 @@ namespace TiltBrush
             {
                 SceneSettings.m_Instance.RecordSkyColorsForFading();
                 SceneSettings.m_Instance.SetDesiredPreset(
-                    SceneSettings.m_Instance.GetDesiredPreset(), skipFade: !fade);
+                    SceneSettings.m_Instance.GetDesiredPreset(),
+                    keepSceneTransform: keepSceneTransform,
+                    skipFade: !fade);
             }
             // Blank the thumbnail position so that autosave won't save the thumbnail position to be
             // the one from the old sketch.
