@@ -22,6 +22,7 @@
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.nuget.mono-cecil": "1.11.6",
     "com.unity.performance.profile-analyzer": "1.4.0",
+    "com.unity.pipeline": "0.6.0-exp.1",
     "com.unity.recorder": "5.1.7",
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.test-framework": "1.6.0",
