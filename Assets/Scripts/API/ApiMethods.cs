@@ -416,6 +416,17 @@ namespace TiltBrush
             bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
             bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            VideoRecorder ownedVideoRecording = null;
+            StillFrameSequenceExporter ownedStillFrameExporter = null;
+
+            bool OwnsActiveCapture()
+            {
+                return (ownedVideoRecording != null &&
+                        ReferenceEquals(VideoRecorderUtils.ActiveVideoRecording, ownedVideoRecording)) ||
+                    (ownedStillFrameExporter != null &&
+                     ReferenceEquals(VideoRecorderUtils.ActiveStillFrameExporter, ownedStillFrameExporter));
+            }
+
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
@@ -442,21 +453,28 @@ namespace TiltBrush
                     yield break;
                 }
 
+                ownedVideoRecording = VideoRecorderUtils.ActiveVideoRecording;
+                ownedStillFrameExporter = VideoRecorderUtils.ActiveStillFrameExporter;
+
                 float endTime = Time.time + seconds;
                 float captureTime = 0f;
                 while (Time.time < endTime)
                 {
                     VideoRecorderUtils.SerializerNewUsdFrame();
-                    if (VideoRecorderUtils.ActiveStillFrameExporter != null)
+                    if (ownedStillFrameExporter != null)
                     {
                         captureTime += 1f / App.UserConfig.Video.FPS;
-                        VideoRecorderUtils.ActiveStillFrameExporter.CaptureFrame(
-                            captureTime, includePostProcessing);
+                        ownedStillFrameExporter.CaptureFrame(captureTime, includePostProcessing);
                     }
                     yield return null;
                 }
 
-                VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                if (OwnsActiveCapture())
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+                ownedVideoRecording = null;
+                ownedStillFrameExporter = null;
                 Debug.Log(
                     $"{logPrefix} Video frame-sequence capture finished " +
                     $"path={StillFrameSequenceExporter.GetOutputDirectory(fullPath)} " +
@@ -464,8 +482,7 @@ namespace TiltBrush
             }
             finally
             {
-                if (VideoRecorderUtils.ActiveVideoRecording != null ||
-                    VideoRecorderUtils.ActiveStillFrameExporter != null)
+                if (OwnsActiveCapture())
                 {
                     VideoRecorderUtils.StopVideoCapture(saveCapture: true);
                 }
