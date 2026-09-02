@@ -851,6 +851,7 @@ namespace TiltBrush
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
+                    ApiMethods.VoxRestoreFromTilt(fileInfo, jsonData.RuntimeVoxIndex);
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
                         gdInfo.SourceId = jsonData.SourceId;
