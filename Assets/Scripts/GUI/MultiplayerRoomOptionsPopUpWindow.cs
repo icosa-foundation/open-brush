@@ -175,6 +175,10 @@ namespace TiltBrush
                     Debug.Log($"ToggleAudioMuteForPlayer: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.MutePlayerForMe(button.IsToggledOn, button.playerId);
                     break;
+                case SketchControlsScript.GlobalCommands.MultiplayerHideForMe:
+                    MultiplayerManager.m_Instance.SetPlayerAvatarHiddenForMe(
+                        button.IsToggledOn, button.playerId);
+                    break;
                 case SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll:
                     Debug.Log($"MutePlayerForAll: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.MutePlayerForAll(button.IsToggledOn, button.playerId);
@@ -198,6 +202,18 @@ namespace TiltBrush
                         MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(remotePlayer.PlayerId, button.IsToggledOn);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetAudioToggleState(button.IsToggledOn);
+                    }
+                    break;
+                case SketchControlsScript.GlobalCommands.MultiplayerHideAllForMe:
+                    if (MultiplayerManager.m_Instance.SetPlayerAvatarsHiddenForMe(
+                            button.IsToggledOn) && !button.IsToggledOn)
+                    {
+                        foreach (var remotePlayer in m_RemotePlayers.List)
+                        {
+                            PlayerListItemPrefab playerComponent =
+                                GetGameobjectWithPlayerId(remotePlayer.PlayerId);
+                            if (playerComponent) playerComponent.SetHiddenToggleState(false);
+                        }
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForAll:

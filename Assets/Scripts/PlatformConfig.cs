@@ -48,6 +48,10 @@ namespace TiltBrush
 
         public int MemoryWarningVertCount;
 
+        [Header("Multiplayer")]
+        [Tooltip("Maximum pointers in one drawing action eligible for live multiplayer streaming.")]
+        public int MaxStreamedPointers;
+
         // On some platforms (eg Android) the C# FileSystemWatcher API does not seem to work.
         // In that case we need to use some manual workarounds. This can be used to test those
         // workarounds even on Windows.

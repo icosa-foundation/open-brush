@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Open Brush Multiplayer Controls</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+          crossorigin="anonymous">
+    <style>
+        body { background: #f4f6f8; }
+        .container { max-width: 920px; padding-top: 24px; padding-bottom: 32px; }
+        .card { margin-bottom: 18px; }
+        .endpoint { color: #6c757d; font-family: monospace; font-size: .9rem; }
+        .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .player-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        #commandLog { min-height: 9rem; font-family: monospace; font-size: .85rem; }
+    </style>
+</head>
+
+<body>
+<main class="container">
+    <h1 class="h3">Open Brush Multiplayer Controls</h1>
+    <p class="text-muted">
+        These controls call the multiplayer HTTP API on the Open Brush instance serving this page.
+        Joining a room creates it when it does not already exist.
+    </p>
+
+    <section class="card">
+        <div class="card-body">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <h2 class="h5 mb-1">Current state</h2>
+                    <span id="connectionState" class="badge bg-secondary">Loading</span>
+                    <span id="ownerBadge" class="badge bg-warning text-dark" hidden>Room owner</span>
+                </div>
+                <button id="refreshState" class="btn btn-sm btn-outline-secondary" type="button">Refresh</button>
+            </div>
+            <p id="roomSummary" class="mt-3 mb-0 text-muted">Requesting multiplayer status...</p>
+            <p class="endpoint mt-2 mb-0">query.multiplayer</p>
+        </div>
+    </section>
+
+    <section id="joinCard" class="card">
+        <div class="card-body">
+            <h2 class="h5">Join or create a room</h2>
+            <p class="endpoint">multiplayer.join</p>
+            <form id="joinForm">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="nickname" class="form-label">Nickname</label>
+                        <input id="nickname" class="form-control" value="Painter" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="roomName" class="form-label">Room name</label>
+                        <input id="roomName" class="form-control" value="Open Brush Room" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="maxPlayers" class="form-label">Maximum players</label>
+                        <input id="maxPlayers" class="form-control" type="number" min="1" step="1" value="8" required>
+                    </div>
+                    <div class="col-md-8 d-flex flex-column justify-content-end">
+                        <div class="form-check">
+                            <input id="privateRoom" class="form-check-input" type="checkbox">
+                            <label for="privateRoom" class="form-check-label">Private room</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="silentRoom" class="form-check-input" type="checkbox">
+                            <label for="silentRoom" class="form-check-label">Silent room (mute participants)</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="viewOnlyRoom" class="form-check-input" type="checkbox">
+                            <label for="viewOnlyRoom" class="form-check-label">View-only room</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="liveStrokeStreaming" class="form-check-input" type="checkbox">
+                            <label for="liveStrokeStreaming" class="form-check-label">Live stroke streaming</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="useDefaultPhotonCloudPorts" class="form-check-input" type="checkbox" checked>
+                            <label for="useDefaultPhotonCloudPorts" class="form-check-label">Use default Photon cloud ports</label>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" type="submit">Join or create</button>
+            </form>
+        </div>
+    </section>
+
+    <section id="leaveCard" class="card" hidden>
+        <div class="card-body">
+            <h2 class="h5">Connection</h2>
+            <p class="endpoint">multiplayer.leave</p>
+            <button id="leaveRoom" class="btn btn-outline-danger" type="button">Leave room</button>
+        </div>
+    </section>
+
+    <section id="localVoiceCard" class="card" hidden>
+        <div class="card-body">
+            <h2 class="h5">Voice on this client</h2>
+            <p class="endpoint">multiplayer.voice</p>
+            <p>Disabling this disconnects this client's voice connection and stops incoming and outgoing voice bandwidth.</p>
+            <div class="button-row">
+                <button id="enableLocalVoice" class="btn btn-outline-primary" type="button" data-command="multiplayer.voice" data-value="true">Enable voice</button>
+                <button id="disableLocalVoice" class="btn btn-outline-secondary" type="button" data-command="multiplayer.voice" data-value="false">Disable voice</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="localAvatarCard" class="card" hidden>
+        <div class="card-body">
+            <h2 class="h5">Player avatars on this client</h2>
+            <p class="endpoint">multiplayer.hideallforme</p>
+            <p>Hide or show all remote player avatars in both the player and spectator cameras.</p>
+            <div class="button-row">
+                <button id="showPlayerAvatars" class="btn btn-outline-primary" type="button" data-command="multiplayer.hideallforme" data-value="false">Show avatars</button>
+                <button id="hidePlayerAvatars" class="btn btn-outline-secondary" type="button" data-command="multiplayer.hideallforme" data-value="true">Hide avatars</button>
+            </div>
+        </div>
+    </section>
+
+    <div id="ownerRoomControls" hidden>
+        <section class="card border-warning">
+            <div class="card-body">
+                <h2 class="h5">Voice for the whole room <span class="badge bg-warning text-dark">Owner only</span></h2>
+                <p class="endpoint">multiplayer.voiceall</p>
+                <p>The room owner's setting propagates to current participants and users who join later.</p>
+                <div class="button-row">
+                    <button id="enableRoomVoice" class="btn btn-outline-primary" type="button" data-command="multiplayer.voiceall" data-value="true">Allow room voice</button>
+                    <button id="disableRoomVoice" class="btn btn-outline-secondary" type="button" data-command="multiplayer.voiceall" data-value="false">Disable room voice</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="card border-warning">
+            <div class="card-body">
+                <h2 class="h5">Live stroke streaming <span class="badge bg-warning text-dark">Owner only</span></h2>
+                <p class="endpoint">multiplayer.livestrokes</p>
+                <p>Compatible clients show eligible strokes while they are drawn. Completed-stroke delivery remains the fallback.</p>
+                <div class="button-row">
+                    <button id="enableLiveStrokes" class="btn btn-outline-primary" type="button" data-command="multiplayer.livestrokes" data-value="true">Enable live strokes</button>
+                    <button id="disableLiveStrokes" class="btn btn-outline-secondary" type="button" data-command="multiplayer.livestrokes" data-value="false">Disable live strokes</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section id="playerCard" class="card" hidden>
+        <div class="card-body">
+            <h2 class="h5">Players</h2>
+            <p class="mb-2">
+                Every participant can mute a player locally. Per-player avatar visibility, room-wide mute, view-only,
+                kick, and ownership transfer controls are shown only to the room owner.
+            </p>
+            <p class="endpoint">multiplayer.muteplayer, multiplayer.hideplayer, multiplayer.muteplayerall, multiplayer.viewonlyplayer, multiplayer.kickplayer, multiplayer.transferowner</p>
+            <div id="playerList" class="list-group">
+                <div class="list-group-item text-muted">Join a room to list its other players.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Command log</h2>
+                <button id="clearLog" class="btn btn-sm btn-outline-secondary" type="button">Clear</button>
+            </div>
+            <p id="status" class="mt-3 mb-2" role="status">Ready.</p>
+            <textarea id="commandLog" class="form-control" readonly></textarea>
+        </div>
+    </section>
+</main>
+
+<script>
+    const commandLog = document.getElementById("commandLog");
+    const status = document.getElementById("status");
+    const connectionState = document.getElementById("connectionState");
+    const ownerBadge = document.getElementById("ownerBadge");
+    const ownerRoomControls = document.getElementById("ownerRoomControls");
+    const roomSummary = document.getElementById("roomSummary");
+    const playerList = document.getElementById("playerList");
+    const playerCard = document.getElementById("playerCard");
+    const joinCard = document.getElementById("joinCard");
+    const leaveCard = document.getElementById("leaveCard");
+    const localVoiceCard = document.getElementById("localVoiceCard");
+    const localAvatarCard = document.getElementById("localAvatarCard");
+    const leaveRoom = document.getElementById("leaveRoom");
+    let lastQueryError = "";
+    let initialStatusRetries = 0;
+    let photonPortSettingInitialized = false;
+
+    function log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        commandLog.value += `[${timestamp}] ${message}\n`;
+        commandLog.scrollTop = commandLog.scrollHeight;
+    }
+
+    async function sendCommands(commands) {
+        const commandTexts = commands.map(({ command, value }) =>
+            value === undefined ? command : `${command}=${value}`);
+        const url = `/api/v1?${commands.map(({ command, value }) =>
+            `${command}${value === undefined ? "" : `=${encodeURIComponent(value)}`}`).join("&")}`;
+        const commandText = commandTexts.join("; ");
+        status.textContent = `Sending ${commandText}...`;
+        log(commandText);
+
+        try {
+            const response = await fetch(url, { method: "GET", cache: "no-store" });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            status.textContent = `Queued ${commandTexts.join(", ")}.`;
+            window.setTimeout(queryMultiplayerStatus, 400);
+        } catch (error) {
+            status.textContent = `Could not send ${commandText}: ${error.message}`;
+            log(`ERROR: ${error.message}`);
+        }
+    }
+
+    function sendCommand(command, value) {
+        return sendCommands([{ command, value }]);
+    }
+
+    function makeButton(label, className, handler) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `btn btn-sm ${className}`;
+        button.textContent = label;
+        button.addEventListener("click", handler);
+        return button;
+    }
+
+    function renderPlayers(snapshot) {
+        playerList.replaceChildren();
+        if (!snapshot.inRoom) {
+            const message = document.createElement("div");
+            message.className = "list-group-item text-muted";
+            message.textContent = "Join a room to list its other players.";
+            playerList.appendChild(message);
+            return;
+        }
+        if (snapshot.players.length === 0) {
+            const message = document.createElement("div");
+            message.className = "list-group-item text-muted";
+            message.textContent = "No other players are currently in the room.";
+            playerList.appendChild(message);
+            return;
+        }
+
+        snapshot.players.forEach(player => {
+            const item = document.createElement("div");
+            item.className = "list-group-item";
+
+            const heading = document.createElement("div");
+            heading.className = "d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2";
+            const name = document.createElement("strong");
+            name.textContent = `${player.nickname || "Unnamed"} (player ${player.playerId})`;
+            heading.appendChild(name);
+
+            const flags = document.createElement("span");
+            flags.className = "text-muted small";
+            const flagNames = [];
+            if (player.isOwner) flagNames.push("owner");
+            if (player.mutedForMe) flagNames.push("muted for me");
+            if (player.mutedForAll) flagNames.push("muted for room");
+            if (player.viewOnly) flagNames.push("view-only");
+            if (player.hiddenForMe) flagNames.push("hidden for me");
+            flags.textContent = flagNames.join(" · ") || "active";
+            heading.appendChild(flags);
+            item.appendChild(heading);
+
+            const actions = document.createElement("div");
+            actions.className = "player-actions";
+            actions.appendChild(makeButton(
+                player.mutedForMe ? "Unmute for me" : "Mute for me",
+                "btn-outline-secondary",
+                () => sendCommand("multiplayer.muteplayer", `${player.playerId},${!player.mutedForMe}`)));
+            actions.appendChild(makeButton(
+                player.hiddenForMe ? "Show avatar" : "Hide avatar",
+                "btn-outline-secondary",
+                () => sendCommand("multiplayer.hideplayer", `${player.playerId},${!player.hiddenForMe}`)));
+
+            if (snapshot.isOwner) {
+                actions.appendChild(makeButton(
+                    player.mutedForAll ? "Unmute for room" : "Mute for room",
+                    "btn-outline-secondary",
+                    () => sendCommand("multiplayer.muteplayerall", `${player.playerId},${!player.mutedForAll}`)));
+                actions.appendChild(makeButton(
+                    player.viewOnly ? "Allow painting" : "Make view-only",
+                    "btn-outline-secondary",
+                    () => sendCommand("multiplayer.viewonlyplayer", `${player.playerId},${!player.viewOnly}`)));
+                actions.appendChild(makeButton("Kick", "btn-outline-danger", () => {
+                    if (window.confirm(`Remove ${player.nickname || `player ${player.playerId}`} from the room?`)) {
+                        sendCommand("multiplayer.kickplayer", player.playerId);
+                    }
+                }));
+                actions.appendChild(makeButton("Transfer ownership", "btn-warning", () => {
+                    if (window.confirm(`Transfer room ownership to ${player.nickname || `player ${player.playerId}`}? You will lose owner controls.`)) {
+                        sendCommand("multiplayer.transferowner", player.playerId);
+                    }
+                }));
+            }
+
+            item.appendChild(actions);
+            playerList.appendChild(item);
+        });
+    }
+
+    function renderMultiplayerStatus(snapshot) {
+        const canJoin = ["INITIALIZED", "DISCONNECTED", "IN_LOBBY"].includes(snapshot.state);
+        if (!photonPortSettingInitialized &&
+            typeof snapshot.useDefaultPhotonCloudPorts === "boolean") {
+            document.getElementById("useDefaultPhotonCloudPorts").checked =
+                snapshot.useDefaultPhotonCloudPorts;
+            photonPortSettingInitialized = true;
+        }
+        connectionState.textContent = snapshot.state;
+        connectionState.className = `badge ${snapshot.inRoom ? "bg-success" : "bg-secondary"}`;
+        ownerBadge.hidden = !snapshot.isOwner;
+        ownerRoomControls.hidden = !snapshot.isOwner;
+        joinCard.hidden = !canJoin || snapshot.inRoom;
+        leaveCard.hidden = !snapshot.inRoom;
+        localVoiceCard.hidden = !snapshot.inRoom;
+        localAvatarCard.hidden = !snapshot.inRoom;
+        playerCard.hidden = !snapshot.inRoom;
+
+        document.getElementById("enableLocalVoice").hidden = snapshot.localVoiceEnabled;
+        document.getElementById("disableLocalVoice").hidden = !snapshot.localVoiceEnabled;
+        document.getElementById("showPlayerAvatars").hidden = !snapshot.playerAvatarsHiddenForMe;
+        document.getElementById("hidePlayerAvatars").hidden = snapshot.playerAvatarsHiddenForMe;
+        if (snapshot.room) {
+            document.getElementById("enableRoomVoice").hidden = snapshot.room.voiceEnabled;
+            document.getElementById("disableRoomVoice").hidden = !snapshot.room.voiceEnabled;
+            document.getElementById("enableLiveStrokes").hidden = snapshot.room.liveStrokeStreaming;
+            document.getElementById("disableLiveStrokes").hidden = !snapshot.room.liveStrokeStreaming;
+        }
+
+        if (snapshot.inRoom && snapshot.room) {
+            const roomFlags = [
+                snapshot.room.voiceEnabled ? "room voice enabled" : "room voice disabled",
+                snapshot.room.liveStrokeStreaming ? "live strokes enabled" : "completed strokes only"
+            ];
+            roomSummary.textContent = `${snapshot.localNickname || "Unnamed"} in ${snapshot.room.name} · ${roomFlags.join(" · ")}`;
+        } else {
+            roomSummary.textContent = "This client is not currently in a multiplayer room.";
+        }
+
+        renderPlayers(snapshot);
+    }
+
+    async function queryMultiplayerStatus() {
+        try {
+            const response = await fetch("/api/v1?query.multiplayer", { method: "GET", cache: "no-store" });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            const responseText = await response.text();
+            const snapshot = JSON.parse(responseText);
+            renderMultiplayerStatus(snapshot);
+            lastQueryError = "";
+            if (snapshot.state === "UNAVAILABLE" && initialStatusRetries < 5) {
+                initialStatusRetries += 1;
+                window.setTimeout(queryMultiplayerStatus, 100);
+            } else if (snapshot.state !== "UNAVAILABLE") {
+                initialStatusRetries = 0;
+            }
+        } catch (error) {
+            connectionState.textContent = "Unavailable";
+            connectionState.className = "badge bg-danger";
+            ownerBadge.hidden = true;
+            ownerRoomControls.hidden = true;
+            if (lastQueryError !== error.message) {
+                log(`STATUS ERROR: ${error.message}`);
+                lastQueryError = error.message;
+            }
+        }
+    }
+
+    function fieldValue(id) {
+        return document.getElementById(id).value.trim();
+    }
+
+    function checkedValue(id) {
+        return document.getElementById(id).checked ? "true" : "false";
+    }
+
+    document.getElementById("joinForm").addEventListener("submit", event => {
+        event.preventDefault();
+        const nickname = fieldValue("nickname");
+        const roomName = fieldValue("roomName");
+        const maxPlayers = fieldValue("maxPlayers");
+
+        if (nickname.includes(",") || roomName.includes(",")) {
+            status.textContent = "Nickname and room name cannot contain commas.";
+            return;
+        }
+
+        const parameters = [
+            nickname,
+            roomName,
+            checkedValue("privateRoom"),
+            maxPlayers,
+            checkedValue("silentRoom"),
+            checkedValue("viewOnlyRoom"),
+            checkedValue("liveStrokeStreaming")
+        ].join(",");
+        sendCommands([
+            {
+                command: "multiplayer.photondefaultports",
+                value: checkedValue("useDefaultPhotonCloudPorts")
+            },
+            { command: "multiplayer.join", value: parameters }
+        ]);
+    });
+
+    leaveRoom.addEventListener("click", () => sendCommand("multiplayer.leave"));
+    document.getElementById("refreshState").addEventListener("click", queryMultiplayerStatus);
+
+    document.querySelectorAll("[data-command]").forEach(button => {
+        button.addEventListener("click", () => {
+            sendCommand(button.dataset.command, button.dataset.value);
+        });
+    });
+
+    document.getElementById("clearLog").addEventListener("click", () => {
+        commandLog.value = "";
+        status.textContent = "Ready.";
+    });
+
+    queryMultiplayerStatus();
+    window.setInterval(queryMultiplayerStatus, 1000);
+</script>
+</body>
+</html>

@@ -164,6 +164,8 @@ namespace TiltBrush
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
+                StrokeTimeSessions =
+                    SketchMemoryScript.m_Instance.GetStrokeTimeSessionsForSaving(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,

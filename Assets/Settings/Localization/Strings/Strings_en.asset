@@ -3939,8 +3939,28 @@ MonoBehaviour:
     m_Localized: Only sketches published to Icosa Gallery can be used as portals
     m_Metadata:
       m_Items: []
+  - m_Id: 600000000000000001
+    m_Localized: Hide all avatars
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000002
+    m_Localized: Show all avatars
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000003
+    m_Localized: Hide avatar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000004
+    m_Localized: Show avatar
+    m_Metadata:
+      m_Items: []
   - m_Id: 533423339270135808
     m_Localized: Enter Code Manually
+    m_Metadata:
+      m_Items: []
+  - m_Id: 535607692813230080
+    m_Localized: Toggle realtime strokes from other players
     m_Metadata:
       m_Items: []
   references:

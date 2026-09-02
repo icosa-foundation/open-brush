@@ -317,6 +317,24 @@ namespace TiltBrush
         /// TODO: handle more intelligently.  Depends on user's access to e.g. 4-way symmetry.
         private int NumUserPointers { get { return m_NumActivePointers; } }
 
+        public int ActiveUserPointerCount => m_NumActivePointers;
+
+        public bool IsActiveUserPointer(PointerScript pointer)
+        {
+            if (pointer == null)
+            {
+                return false;
+            }
+            for (int i = 0; i < m_NumActivePointers; ++i)
+            {
+                if (m_Pointers[i].m_Script == pointer)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public SymmetryMode CurrentSymmetryMode
         {
             set { SetSymmetryMode(value); }
@@ -1952,6 +1970,8 @@ namespace TiltBrush
             }
 
             HandleColorJitter();
+
+            SketchMemoryScript.m_Instance.BeginPendingStrokeTimeSession();
 
             if (m_StraightEdgeEnabled)
             {

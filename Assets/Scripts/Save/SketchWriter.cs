@@ -372,7 +372,8 @@ namespace TiltBrush
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
         public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
-            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
+            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup,
+            out List<Stroke> strokes, out uint timestampOffset)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -383,7 +384,7 @@ namespace TiltBrush
 
             isLegacy = false;
             SketchMemoryScript.m_Instance.ClearRedo();
-            uint timestampOffset = 0;
+            timestampOffset = 0;
             if (bAdditive)
             {
                 // Get the current front brushstroke timestamp and use it as an offset
@@ -611,7 +612,7 @@ namespace TiltBrush
                                     rControlPoint.m_Pressure = reader.Float();
                                     break;
                                 case ControlPointExtension.Timestamp:
-                                    rControlPoint.m_TimestampMs = reader.UInt32() + timestampOffset;
+                                    rControlPoint.m_TimestampMs = reader.UInt32();
                                     break;
                                 default:
                                     // skip unknown extension
@@ -620,6 +621,20 @@ namespace TiltBrush
                             }
                         }
                         stroke.m_ControlPoints[j] = rControlPoint;
+                    }
+                }
+
+                // Apply additive-load rebasing after either deserialization path. The fast path
+                // copies timestamps directly from the file and must receive the same offset as
+                // the field-by-field path.
+                if (timestampOffset != 0)
+                {
+                    for (int j = 0; j < nControlPoints; ++j)
+                    {
+                        PointerManager.ControlPoint controlPoint = stroke.m_ControlPoints[j];
+                        controlPoint.m_TimestampMs = unchecked(
+                            controlPoint.m_TimestampMs + timestampOffset);
+                        stroke.m_ControlPoints[j] = controlPoint;
                     }
                 }
 

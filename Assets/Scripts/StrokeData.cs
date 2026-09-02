@@ -33,6 +33,8 @@ namespace TiltBrush
         // Seed for deterministic pseudo-random numbers for geometry generation.
         // Not currently serialized.
         public int m_Seed;
+        [NonSerialized] public Guid m_MultiplayerContributorId;
+        [NonSerialized] public string m_MultiplayerContributorNickname;
         protected SketchGroupTag m_Group = SketchGroupTag.None;
         public SketchGroupTag Group => m_Group;
         public Guid m_Guid;
@@ -64,6 +66,9 @@ namespace TiltBrush
                 this.m_BrushScale = existing.m_BrushScale;
                 this.m_Flags = existing.m_Flags;
                 this.m_Seed = existing.m_Seed;
+                this.m_MultiplayerContributorId = existing.m_MultiplayerContributorId;
+                this.m_MultiplayerContributorNickname =
+                    existing.m_MultiplayerContributorNickname;
                 this.m_Group = existing.m_Group;
                 this.m_ControlPoints = new PointerManager.ControlPoint[existing.m_ControlPoints.Length];
                 Array.Copy(existing.m_ControlPoints, this.m_ControlPoints, this.m_ControlPoints.Length);

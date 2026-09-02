@@ -3763,8 +3763,28 @@ MonoBehaviour:
     m_Key: POPUP_SKETCHMENU_BUTTON_DESCRIPTIONEXTRA_PORTAL
     m_Metadata:
       m_Items: []
+  - m_Id: 600000000000000001
+    m_Key: MULTIPLAYER_HIDE_ALL_PLAYER_AVATARS_FOR_ME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000002
+    m_Key: MULTIPLAYER_SHOW_ALL_PLAYER_AVATARS_FOR_ME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000003
+    m_Key: MULTIPLAYER_HIDE_PLAYER_AVATAR_FOR_ME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000004
+    m_Key: MULTIPLAYER_SHOW_PLAYER_AVATAR_FOR_ME
+    m_Metadata:
+      m_Items: []
   - m_Id: 533423339270135808
     m_Key: BUTTON_ACCOUNTS_ENTER_CODE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 535607692813230080
+    m_Key: MULTIPLAYER_TOGGLE_REALTIME
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -650,6 +650,17 @@ namespace TiltBrush
         /// will duplicate geometry on separate layers.
         public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
         {
+            return Load(
+                fileInfo, bAdditive, targetLayer, out strokes,
+                out StrokeTimeSessionMetadata[] _);
+        }
+
+        public bool Load(
+            SceneFileInfo fileInfo, bool bAdditive, int targetLayer,
+            out List<Stroke> strokes,
+            out StrokeTimeSessionMetadata[] additiveStrokeTimeSessions)
+        {
+            additiveStrokeTimeSessions = Array.Empty<StrokeTimeSessionMetadata>();
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {
@@ -762,13 +773,16 @@ namespace TiltBrush
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
+                uint timestampOffset;
 
                 // Load sketch
                 using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
+                    bool success = SketchWriter.ReadMemory(
+                        stream, brushGuids, bAdditive, targetLayer, out legacySketch,
+                        out oldGroupToNewGroup, out strokes, out timestampOffset);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -790,10 +804,19 @@ namespace TiltBrush
                 // before we pass it to WidgetManager
                 //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
 
-                if (!bAdditive)
+                if (bAdditive)
+                {
+                    SketchMemoryScript.m_Instance.EndCurrentStrokeTimeSession();
+                    additiveStrokeTimeSessions = SketchMemoryScript.m_Instance
+                        .AddAdditiveStrokeTimeSessions(
+                            jsonData.StrokeTimeSessions, timestampOffset);
+                }
+                else
                 {
                     ModelCatalog.m_Instance.ClearMissingModels();
                     SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+                    SketchMemoryScript.m_Instance.SetStrokeTimeSessions(
+                        jsonData.StrokeTimeSessions);
 
                     if (jsonData.ModelIndex != null)
                     {

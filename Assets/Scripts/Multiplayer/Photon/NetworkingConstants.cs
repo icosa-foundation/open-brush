@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if FUSION_WEAVER
-
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace OpenBrush.Multiplayer
 {
     public static class NetworkingConstants
@@ -38,5 +32,3 @@ namespace OpenBrush.Multiplayer
 
     }
 }
-
-#endif // FUSION_WEAVER

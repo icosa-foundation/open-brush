@@ -36,12 +36,14 @@ namespace OpenBrush.Multiplayer
     {
         void Update();
         int GetPlayerCount();
+        bool IsLocalPlayerRoomOwner();
         int GetNetworkedTimestampMilliseconds();
         bool GetPlayerRoomOwnershipStatus(int playerId);
         GameObject GetPlayerPrefab(int playerId);
         void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
         Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
+        bool RpcSyncSketchTimeToPlayer(uint sketchTimeMs, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
         Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
         Task<bool> UndoCommand(BaseCommand command);
@@ -53,6 +55,28 @@ namespace OpenBrush.Multiplayer
         Task<bool> RpcSyncToSharedAnchor(string uuid);
         Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData roomData);
         Task<bool> RpcSetUserViewOnlyMode(bool value, int playerId);
+        Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId);
+        Task<bool> RpcAdvertiseLiveStrokeSupport(int maxStreamedPointers);
+        Task<bool> RpcSetLiveStrokeRoomState(
+            bool enabled, int playerId);
+        bool RpcLiveStrokeStart(
+            Guid streamId, Stroke stroke, StrokeTimeSessionMetadata sourceTimeSession,
+            Guid contributorId, string contributorNickname, int playerId);
+        bool RpcLiveStrokeConfirmed(
+            Guid streamId, int firstControlPointIndex,
+            PointerManager.ControlPoint[] confirmedControlPoints, int playerId);
+        bool RpcLiveStrokeProvisionalTail(
+            Guid streamId, uint sequence, int confirmedControlPointCount,
+            PointerManager.ControlPoint provisionalTail, int playerId);
+        bool RpcLiveStrokeComplete(
+            Guid streamId, int finalControlPointCount,
+            SketchMemoryScript.StrokeFlags strokeFlags, Guid commandGuid,
+            int timestamp, Guid parentGuid, int childCount, int playerId);
+        bool RpcLiveStrokeCancel(Guid streamId, int playerId);
+        bool RpcLiveStrokeDeclined(Guid streamId, int playerId);
+        bool RpcRequestLiveStrokeRepair(
+            Guid streamId, Guid commandGuid, int playerId);
+        void RemoveLiveStrokePreviewsForPlayer(int playerId);
         Task<bool> RpcKickPlayerOut(int playerId);
         bool RpcMutePlayer(bool mute, int playerId);
 

@@ -284,6 +284,8 @@ namespace TiltBrush
 
         /// Time origin of sketch in seconds for case when drawing is not sync'd to media.
         private double m_sketchTimeBase = 0;
+        private DateTimeOffset? m_SketchSuspendUtc;
+        private double m_SketchSuspendUnityTime;
         private float m_AppStateCountdown;
         private float m_QuickLoadHintCountdown;
         private bool m_QuickLoadInputWasValid;
@@ -345,13 +347,22 @@ namespace TiltBrush
             get
             {
                 // If you change this, also modify SketchTimeToLevelLoadTime
-                return Time.timeSinceLevelLoad - m_sketchTimeBase;
+                return Time.timeSinceLevelLoadAsDouble - m_sketchTimeBase;
             }
             set
             {
                 if (value < 0) { throw new ArgumentException("negative"); }
-                m_sketchTimeBase = Time.timeSinceLevelLoad - value;
+                m_sketchTimeBase = Time.timeSinceLevelLoadAsDouble - value;
             }
+        }
+
+        internal static double CalculateSuspensionAdjustmentSeconds(
+            DateTimeOffset suspendUtc, double suspendUnityTime,
+            DateTimeOffset resumeUtc, double resumeUnityTime)
+        {
+            double wallElapsed = (resumeUtc - suspendUtc).TotalSeconds;
+            double unityElapsed = resumeUnityTime - suspendUnityTime;
+            return Math.Max(0, wallElapsed - unityElapsed);
         }
 
         public float RoomRadius => m_RoomRadius;
@@ -2372,10 +2383,37 @@ namespace TiltBrush
             AutosaveRestoreFileExists = false;
         }
 
+        void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                m_SketchSuspendUtc = DateTimeOffset.UtcNow;
+                m_SketchSuspendUnityTime = Time.timeSinceLevelLoadAsDouble;
+                return;
+            }
+
+            if (!m_SketchSuspendUtc.HasValue)
+            {
+                return;
+            }
+
+            var resumeUtc = DateTimeOffset.UtcNow;
+            double resumeUnityTime = Time.timeSinceLevelLoadAsDouble;
+            double wallElapsed = (resumeUtc - m_SketchSuspendUtc.Value).TotalSeconds;
+            double unityElapsed = resumeUnityTime - m_SketchSuspendUnityTime;
+            double adjustment = CalculateSuspensionAdjustmentSeconds(
+                m_SketchSuspendUtc.Value, m_SketchSuspendUnityTime,
+                resumeUtc, resumeUnityTime);
+            m_sketchTimeBase -= adjustment;
+
+            Debug.Log($"[SketchClockSuspend] Wall elapsed: {wallElapsed:F3}s; Unity elapsed: {unityElapsed:F3}s; sketch adjustment: {adjustment:F3}s");
+            m_SketchSuspendUtc = null;
+        }
+
         void OnPlaybackComplete()
         {
             SaveLoadScript.m_Instance.SignalPlaybackCompletion();
-            if (SketchControlsScript.m_Instance.SketchPlaybackMode !=
+            if (SketchMemoryScript.m_Instance.CurrentPlaybackMode !=
                 SketchMemoryScript.PlaybackMode.Timestamps)
             {
 
