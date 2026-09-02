@@ -45,8 +45,9 @@ namespace TiltBrush
         // Probably we won't ever need more than these two pieces of data; any other
         // per-platform asset references can go into PlatformConfig.
 
-        public PlatformConfig m_PlatformConfigMobile;
         public PlatformConfig m_PlatformConfigPc;
+        public PlatformConfig m_PlatformConfigMobile;
+        public PlatformConfig m_PlatformConfigLowEndMobile;
 
 #if UNITY_EDITOR
         public PlatformConfig GetConfigForBuildTarget(BuildTarget target)
@@ -63,6 +64,21 @@ namespace TiltBrush
                     return m_PlatformConfigPc;
                 default:
                     throw new ArgumentException("target");
+            }
+        }
+
+        public PlatformConfig GetConfigForBuildTarget(DeviceConfigType deviceConfigType)
+        {
+            switch (deviceConfigType)
+            {
+                case DeviceConfigType.Desktop:
+                    return m_PlatformConfigPc;
+                case  DeviceConfigType.Mobile:
+                    return m_PlatformConfigMobile;
+                case  DeviceConfigType.LowEndMobile:
+                    return m_PlatformConfigLowEndMobile;
+                default:
+                    throw new ArgumentException("deviceConfigType");
             }
         }
 #endif

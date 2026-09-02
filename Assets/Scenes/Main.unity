@@ -10458,6 +10458,8 @@ MonoBehaviour:
   m_QualityLevels: {fileID: 11400000, guid: 268ad053764ab88479007fcc04e5cdcb, type: 2}
   m_MobileQualityLevels: {fileID: 11400000, guid: f5586851c6e53bd4294e7c2c7a75d40d,
     type: 2}
+  m_LowEndMobileQualityLevels: {fileID: 11400000, guid: d0b93b15604b6a641900014420f9a1a0,
+    type: 2}
   m_DebugText: {fileID: 436990583}
 --- !u!114 &652605548
 MonoBehaviour:
@@ -27513,7 +27515,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1848773839
 MonoBehaviour:
   m_ObjectHideFlags: 0

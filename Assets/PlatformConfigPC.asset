@@ -21,6 +21,8 @@ MonoBehaviour:
   MemoryWarningVertCount: 2147483647
   UseFileSystemWatcher: 1
   EnableAutosave: 1
+  PlatformQualitySettings: {fileID: 11400000, guid: 268ad053764ab88479007fcc04e5cdcb,
+    type: 2}
   QuickLoadMaxDistancePerFrame: 40
   IntroSketchPrefab: {fileID: 1843608203, guid: f9e36942d6b3ed84ba2b8b6e21505c95,
     type: 3}

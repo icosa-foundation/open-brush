@@ -57,6 +57,8 @@ namespace TiltBrush
         // Maybe we should tune the interval instead, or kNanoSecondsPerSnapshotSlice, or both?
         public bool EnableAutosave;
 
+        public AppQualitySettingLevels PlatformQualitySettings;
+
         [Header("Loading")]
         public float QuickLoadMaxDistancePerFrame;
 

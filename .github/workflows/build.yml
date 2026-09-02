@@ -215,12 +215,14 @@ jobs:
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
+            platformConfig: Desktop
             vrsdk: OpenXR
             cache: Windows
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: Windows Pimax
             targetPlatform: StandaloneWindows64
+            platformConfig: Desktop
             vrsdk: OpenXR
             cache: Windows
             extra_defines: PIMAX_SUPPORTED
@@ -228,6 +230,7 @@ jobs:
 
           - name: Windows Rift
             targetPlatform: StandaloneWindows64
+            platformConfig: Desktop
             vrsdk: Oculus
             cache: Windows
             extra_defines: OCULUS_SUPPORTED
@@ -235,12 +238,14 @@ jobs:
 
           - name: Linux
             targetPlatform: StandaloneLinux64
+            platformConfig: Desktop
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
             extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
 
           - name: MacOS
             targetPlatform: StandaloneOSX
+            platformConfig: Desktop
             vrsdk: Monoscopic
             cache: MacOS
             packages_to_remove: com.meta.xr.sdk.core
@@ -248,6 +253,7 @@ jobs:
 
           - name: Android OpenXR
             targetPlatform: Android
+            platformConfig: Mobile
             vrsdk: OpenXR
             cache: Android_Vulkan
             packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
@@ -278,6 +284,7 @@ jobs:
 
           - name: Oculus Quest (1)
             targetPlatform: Android
+            platformConfig: LowEndMobile
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -288,6 +295,7 @@ jobs:
 
           - name: Oculus Quest (2+)
             targetPlatform: Android
+            platformConfig: Mobile
             vrsdk: Oculus
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp -btb-android-target-sdk 34
@@ -297,6 +305,7 @@ jobs:
 
           - name: Android Pico
             targetPlatform: Android
+            platformConfig: Mobile
             vrsdk: Pico
             cache: Android_GLES
             extraoptions: -btb-il2cpp
@@ -306,6 +315,7 @@ jobs:
 
           - name: Android Pico (CN)
             targetPlatform: Android
+            platformConfig: Mobile
             vrsdk: Pico
             cache: Android_GLES
             # Pico requested Chinese build that doesn't have google/sketchfab login.
@@ -316,6 +326,7 @@ jobs:
 
           - name: iOS Zapbox
             targetPlatform: iOS
+            platformConfig: Mobile
             vrsdk: Zapbox
             cache: iOS
             extraoptions: -btb-il2cpp

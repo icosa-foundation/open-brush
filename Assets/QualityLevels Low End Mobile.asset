@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 834d4fddb4ee8a74c9458f52562d8a65, type: 3}
-  m_Name: QualityLevels Mobile
+  m_Name: QualityLevels Low End Mobile
   m_EditorClassIdentifier: 
   m_qualityLevels:
   - m_Bloom: 0
@@ -191,12 +191,12 @@ MonoBehaviour:
     Weight: 2
   - Brush: {fileID: 11400000, guid: 991f6df195c83734f927996b42c074cb, type: 2}
     Weight: 2.5
-  m_maxPolySketchTriangles: 1200000
-  m_warningPolySketchTriangles: 800000
+  m_maxPolySketchTriangles: 600000
+  m_warningPolySketchTriangles: 400000
   m_HigherQualityGpuTrigger: 75
   m_HigherQualityFpsTrigger: 70
   m_LowerQualityGpuTrigger: 85
   m_LowerQualityFpsTrigger: 65
   m_FramesForLowerQuality: 30
   m_FramesForHigherQuality: 45
-  m_BloomFadeTime: 1
+  m_BloomFadeTime: 2

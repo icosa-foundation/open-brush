@@ -50,9 +50,6 @@ namespace TiltBrush
         [SerializeField] private bool m_enableHdr = true;
         [SerializeField] private int m_msaaLevel = 1;
 
-        [SerializeField] private AppQualitySettingLevels m_QualityLevels;
-        [UsedImplicitly] // on Android
-        [SerializeField] private AppQualitySettingLevels m_MobileQualityLevels;
         [SerializeField] private GpuTextRender m_DebugText;
 
         /// Used to track when quality level actually changes.
@@ -116,17 +113,7 @@ namespace TiltBrush
                     : RenderTextureFormat.ARGB32;
             }
         }
-        public AppQualitySettingLevels AppQualityLevels
-        {
-            get
-            {
-#if UNITY_ANDROID || UNITY_IOS
-                return m_MobileQualityLevels;
-#else
-                return m_QualityLevels;
-#endif
-            }
-        }
+        public AppQualitySettingLevels AppQualityLevels => App.PlatformConfig.PlatformQualitySettings;
 
         public AppQualitySettingLevels.AppQualitySettings AppQualitySettings
         {
