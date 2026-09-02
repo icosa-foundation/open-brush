@@ -595,7 +595,7 @@ namespace TiltBrush
                     .ToList();
                 meta.Tracks[i] = new AnimationTrackMetadata
                 {
-                    Visible = layer.gameObject.activeSelf,
+                    Visible = animationUI_manager.Timeline[activeTrackIndexes[i]].Visible,
                     Name = layer.name,
                     Spans = spans
                 };

@@ -110,7 +110,11 @@ namespace TiltBrush
                     m_Color = color,
                     m_Seed = 0,
                     m_ControlPoints = controlPoints.ToArray(),
-                    m_OverrideColors = controlPointColors[pathIndex].ToList()
+                    m_OverrideColors = controlPointColors != null &&
+                        pathIndex < controlPointColors.Count &&
+                        controlPointColors[pathIndex] != null
+                            ? controlPointColors[pathIndex].ToList()
+                            : null
                 };
                 stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
                 stroke.Group = groupTag ?? new SketchGroupTag(group);

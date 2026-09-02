@@ -37,9 +37,12 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_Active) return;
+
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(layer);
             }
             if (m_Widgets != null)
             {
@@ -59,6 +62,8 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (!m_Active) return;
+
             foreach (var stroke in m_Strokes)
             {
                 stroke.Hide(true);
@@ -74,6 +79,7 @@ namespace TiltBrush
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(false);
+                App.Scene.MarkLayerAsDeleted(layer);
             }
             m_Active = false;
         }

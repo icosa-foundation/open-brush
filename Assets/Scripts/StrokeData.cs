@@ -109,7 +109,8 @@ namespace TiltBrush
 
             // Preserve original alpha — some brushes (e.g. QuillFlatBrush) store
             // per-vertex opacity in color.a. Override modes only affect RGB.
-            byte originalAlpha = (byte)(m_Color.a * 255);
+            Color32 baseColor32 = m_Color;
+            byte originalAlpha = baseColor32.a;
 
             switch (m_ColorOverrideMode)
             {
@@ -130,9 +131,9 @@ namespace TiltBrush
 
                 case ColorOverrideMode.Add:
                     calculatedColor = new Color32(
-                        (byte)Mathf.Min(255, m_Color.r + controlpointColor.Value.r),
-                        (byte)Mathf.Min(255, m_Color.g + controlpointColor.Value.g),
-                        (byte)Mathf.Min(255, m_Color.b + controlpointColor.Value.b),
+                        (byte)Mathf.Min(255, baseColor32.r + controlpointColor.Value.r),
+                        (byte)Mathf.Min(255, baseColor32.g + controlpointColor.Value.g),
+                        (byte)Mathf.Min(255, baseColor32.b + controlpointColor.Value.b),
                         originalAlpha
                     );
                     break;

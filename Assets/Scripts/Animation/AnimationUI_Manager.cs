@@ -2535,9 +2535,14 @@ namespace TiltBrush.FrameAnimation
             return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
-        private CanvasScript ReplicateStrokesToNewCanvas(List<Stroke> oldStrokes, out List<Stroke> newStrokes)
+        private CanvasScript ReplicateDrawingToNewCanvas(
+            CanvasScript oldCanvas, List<Stroke> oldStrokes, out List<Stroke> newStrokes)
         {
             CanvasScript newCanvas = App.Scene.AddCanvas();
+            newCanvas.gameObject.name = oldCanvas.gameObject.name;
+            newCanvas.LocalPose = oldCanvas.LocalPose;
+            newCanvas.gameObject.SetActive(oldCanvas.gameObject.activeSelf);
+
             newStrokes = oldStrokes
                 .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
                     stroke, App.Scene.SelectionCanvas, null)).ToList();
@@ -2595,6 +2600,17 @@ namespace TiltBrush.FrameAnimation
             foreach (var sg in strokeGroups)
             {
                 GroupManager.MoveStrokesToNewGroups(sg.Value, null);
+            }
+
+            foreach (GrabWidget widget in oldCanvas.GetComponentsInChildren<GrabWidget>(true))
+            {
+                if (widget is CameraPathWidget || !widget.gameObject.activeSelf ||
+                    widget.Canvas != oldCanvas)
+                {
+                    continue;
+                }
+                GrabWidget clone = widget.Clone();
+                clone.SetCanvas(newCanvas);
             }
 
             return newCanvas;
@@ -2786,6 +2802,7 @@ namespace TiltBrush.FrameAnimation
                     DestroyTimelineCanvas(canvas);
                 }
             }
+
         }
 
         private HashSet<CanvasScript> GetTimelineCanvases(
@@ -2997,7 +3014,8 @@ namespace TiltBrush.FrameAnimation
             }
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
-            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
+            CanvasScript newCanvas = ReplicateDrawingToNewCanvas(
+                oldCanvas, oldStrokes, out List<Stroke> newStrokes);
             AnimationTimelineModel.FrameValue newDrawing = NewDrawingFrameValue(newCanvas);
 
             ApplySparseTimelineEdit(tracks =>
@@ -3026,7 +3044,8 @@ namespace TiltBrush.FrameAnimation
                 .Where(x => x.Canvas == oldCanvas).ToList();
 
             AnimationTimelineModel.Snapshot previousTimeline = CreateTimelineSnapshot();
-            CanvasScript newCanvas = ReplicateStrokesToNewCanvas(oldStrokes, out List<Stroke> newStrokes);
+            CanvasScript newCanvas = ReplicateDrawingToNewCanvas(
+                oldCanvas, oldStrokes, out List<Stroke> newStrokes);
             AnimationTimelineModel.FrameValue newDrawing = NewDrawingFrameValue(newCanvas);
 
             int frameLength = GetFrameLength(index.Item1, index.Item2);

@@ -883,8 +883,12 @@ namespace TiltBrush
 
             if (!m_CurrentLine) return;
             if (CurrentColorOverrideMode == ColorOverrideMode.None) return;
-            m_ControlPointColors ??= Enumerable.Repeat((Color32?)null, m_ControlPoints.Count).ToList();
-            m_ControlPointColors.Add(CurrentColorOverride);
+            m_ControlPointColors ??= new List<Color32?>();
+            while (m_ControlPointColors.Count < m_ControlPoints.Count)
+            {
+                m_ControlPointColors.Add(null);
+            }
+            m_ControlPointColors[m_ControlPoints.Count - 1] = CurrentColorOverride;
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.
@@ -892,6 +896,7 @@ namespace TiltBrush
         public void CreateNewLine(CanvasScript canvas, TrTransform xf_CS,
                                   ParametricStrokeCreator creator, BrushDescriptor overrideDesc = null)
         {
+            m_ControlPointColors = null;
             // If straightedge is enabled, we may have a minimum size requirement.
             // Initialize parametric stroke creator for our type of straightedge.
             // Maybe change the brush to a proxy brush.
@@ -1121,6 +1126,7 @@ namespace TiltBrush
             }
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
+            m_ControlPointColors = null;
         }
 
         public bool ShouldCurrentLineEnd()

@@ -80,7 +80,7 @@ namespace TiltBrush
 
         public static CameraPathMetadata[] GetCameraPaths()
         {
-            return WidgetManager.m_Instance.AllPathWidgets
+            return WidgetManager.m_Instance.CameraPathWidgets
                 .Where(cpw => cpw.WidgetScript.ShouldSerialize())
                 .Select(cpw => cpw.WidgetScript.AsSerializable())
                 .ToArray();
