@@ -83,7 +83,7 @@ namespace TiltBrush
     public class TypedWidgetData<T> : GrabWidgetData where T : GrabWidget
     {
         private readonly T m_typedWidget;
-        public new T WidgetScript => m_typedWidget;
+        public T WidgetScript => m_typedWidget;
         public TypedWidgetData(T widget) : base(widget)
         {
             m_typedWidget = widget;

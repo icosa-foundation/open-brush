@@ -20,7 +20,7 @@ namespace TiltBrush
 
     public class BackgroundImageCatalog : ReferenceImageCatalog
     {
-        static public BackgroundImageCatalog m_Instance;
+        static public new BackgroundImageCatalog m_Instance;
         protected string m_CurrentBackgroundImagesDirectory;
         public string CurrentBackgroundImagesDirectory => m_CurrentBackgroundImagesDirectory;
 

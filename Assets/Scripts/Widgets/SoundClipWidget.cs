@@ -49,7 +49,7 @@ namespace TiltBrush
 
         public override float? AspectRatio => 1.0f;
 
-        public TrTransform SaveTransform
+        public new TrTransform SaveTransform
         {
             get
             {
