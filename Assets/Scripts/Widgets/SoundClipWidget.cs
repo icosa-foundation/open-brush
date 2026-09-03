@@ -480,10 +480,11 @@ namespace TiltBrush
 
         /// Returns audio settings for GLTF export, reading from the controller when initialized
         /// and falling back to m_InitialState or defaults otherwise.
-        public (float volume, bool loop, float spatialBlend, float minDistance, float maxDistance) GetAudioExportSettings()
+        public (bool paused, float volume, bool loop, float spatialBlend,
+            float minDistance, float maxDistance) GetAudioExportSettings()
         {
             var state = GetAudioSaveState();
-            return (state.volume, state.loop, state.spatialBlend,
+            return (state.paused, state.volume, state.loop, state.spatialBlend,
                 state.minDistance, state.maxDistance);
         }
 

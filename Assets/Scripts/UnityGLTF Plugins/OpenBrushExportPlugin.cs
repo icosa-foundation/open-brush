@@ -737,7 +737,8 @@ namespace TiltBrush
             foreach (var (node, widget) in m_SoundClipNodes)
             {
                 var soundClip = widget.SoundClip;
-                var (volume, loop, spatialBlend, minDistance, maxDistance) = widget.GetAudioExportSettings();
+                var (paused, volume, loop, spatialBlend, minDistance, maxDistance) =
+                    widget.GetAudioExportSettings();
 
                 if (!File.Exists(soundClip.AbsolutePath))
                 {
@@ -771,7 +772,7 @@ namespace TiltBrush
                     audio = new AudioDataId { Id = audioIndex, Root = gltfRoot },
                     gain = volume,
                     loop = loop,
-                    autoPlay = true,
+                    autoPlay = !paused,
                     Name = soundClip.HumanName,
                 });
 
