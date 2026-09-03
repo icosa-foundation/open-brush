@@ -77,6 +77,8 @@ namespace TiltBrush
             float superSampling,
             string includePostProcessing = "")
         {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
             const string logPrefix = "[OB_URP_CAPTURE_API]";
             bool usePostProcessing = ParseCapturePostProcessingOption(
                 includePostProcessing,
@@ -243,6 +245,8 @@ namespace TiltBrush
             int height = 576,
             string includePostProcessing = "")
         {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
             const string logPrefix = "[OB_URP_CAPTURE_API]";
             bool usePostProcessing = ParseCapturePostProcessingOption(
                 includePostProcessing,
