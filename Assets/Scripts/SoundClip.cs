@@ -421,10 +421,18 @@ namespace TiltBrush
                     controller.Dispose();
                 }
             }
-            if (Thumbnail != null)
+            ReleaseThumbnail();
+        }
+
+        public void ReleaseThumbnail()
+        {
+            if (Thumbnail == null)
             {
-                UnityEngine.Object.Destroy(Thumbnail);
+                return;
             }
+
+            UnityEngine.Object.Destroy(Thumbnail);
+            Thumbnail = null;
         }
 
         public override string ToString()
