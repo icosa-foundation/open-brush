@@ -63,7 +63,19 @@ namespace TiltBrush
             {
                 clip.Dispose();
             }
+            DisposeFileWatcher();
+        }
+
+        private void DisposeFileWatcher()
+        {
+            if (m_FileWatcher == null) return;
+
             m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public SoundClip GetSoundClipAtIndex(int index)
@@ -228,6 +240,7 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            DisposeFileWatcher();
             m_CurrentSoundClipDirectory = newPath;
             m_SoundClips = new List<SoundClip>();
             m_ChangedFiles = new HashSet<string>();
