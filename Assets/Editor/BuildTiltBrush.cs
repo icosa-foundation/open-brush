@@ -1083,11 +1083,6 @@ static class BuildTiltBrush
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
-            switch (tiltOptions.XrSdk)
-            {
-
-            }
-
             if (requiredFeatureStrings.Count == 0)
             {
                 return;
