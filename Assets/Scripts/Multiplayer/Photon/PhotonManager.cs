@@ -408,7 +408,7 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
+        public Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
 
@@ -430,24 +430,24 @@ namespace OpenBrush.Multiplayer
                 PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings, roomData);
             });
 
-            return true;
+            return Task.FromResult(true);
         }
 
 
-        public async Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
+        public Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_SetUserViewOnlyMode(m_Runner,value, targetPlayer); });
-            return true;
+            return Task.FromResult(true);
         }
 
-        public async Task<bool> RpcKickPlayerOut(int playerId)
+        public Task<bool> RpcKickPlayerOut(int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_DisconnectRemoteUser(m_Runner, targetPlayer); });
-            return true;
+            return Task.FromResult(true);
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
