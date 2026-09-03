@@ -369,8 +369,8 @@ namespace TiltBrush
                                 SaveCurrentView(
                                     cam,
                                     GetBrushScreenshotFileName(brush),
-                                    1024,
-                                    1024,
+                                    2048,
+                                    2048,
                                     enablePostProcessing,
                                     renderMode == BrushScreenshotRenderMode.Wireframe,
                                     GetBrushScreenshotDirectory(
