@@ -1100,8 +1100,8 @@ namespace TiltBrush
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
                         WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
-                        m_CurrentLine.StrokeData?.m_OverrideColors,
-                        m_CurrentLine.StrokeData?.m_ColorOverrideMode ?? ColorOverrideMode.None
+                        m_ControlPointColors,
+                        CurrentColorOverrideMode
                     );
                 }
                 else
