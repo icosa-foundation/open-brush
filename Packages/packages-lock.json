@@ -193,13 +193,13 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "https://github.com/icosa-mirror/com.unity.inputsystem.git#1.8.2-openbrush",
+      "version": "1.20.0",
       "depth": 0,
-      "source": "git",
+      "source": "registry",
       "dependencies": {
         "com.unity.modules.uielements": "1.0.0"
       },
-      "hash": "c47c0d12ee0afaabbed5ed1572470d881097dc18"
+      "url": "https://packages.unity.com"
     },
     "com.unity.localization": {
       "version": "1.5.13",
