@@ -402,7 +402,12 @@ namespace TiltBrush
 
         public void EnablePoseTracking(bool enabled)
         {
-            UnityEngine.XR.XRDevice.DisableAutoXRCameraTracking(App.VrSdk.GetVrCamera(), !enabled);
+            var vrCamera = App.VrSdk.GetVrCamera();
+            var poseDriver = vrCamera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            if (poseDriver != null)
+            {
+                poseDriver.enabled = enabled;
+            }
             if (enabled)
             {
                 App.VrSdk.RestorePoseTracking();
