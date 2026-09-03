@@ -30,8 +30,6 @@ namespace OpenBrush.Multiplayer
 {
     public class PhotonManager : IDataConnectionHandler, INetworkRunnerCallbacks
     {
-        private const bool k_UseDefaultPhotonCloudPorts = true;
-
         private NetworkRunner m_Runner;
         private MultiplayerManager m_Manager;
         private List<PlayerRef> m_PlayersSpawning;
@@ -117,8 +115,7 @@ namespace OpenBrush.Multiplayer
 
             var result = await m_Runner.JoinSessionLobby(
                 SessionLobby.Shared,
-                customAppSettings: m_PhotonAppSettings,
-                useDefaultCloudPorts: k_UseDefaultPhotonCloudPorts);
+                customAppSettings: m_PhotonAppSettings);
 
             if (result.Ok)
             {
@@ -155,7 +152,6 @@ namespace OpenBrush.Multiplayer
                 PlayerCount = roomCreateData.maxPlayers != 0 ? roomCreateData.maxPlayers : null,
                 SceneManager = m_Runner.gameObject.GetComponent<NetworkSceneManagerDefault>(),
                 Scene = sceneInfo, // Pass the configured NetworkSceneInfo
-                UseDefaultPhotonCloudPorts = k_UseDefaultPhotonCloudPorts,
             };
 
             var result = await m_Runner.StartGame(args);
@@ -669,7 +665,7 @@ namespace OpenBrush.Multiplayer
             m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
 
-        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data)
         {
             //Debug.Log("Server received complete reliable data");
 
@@ -677,13 +673,13 @@ namespace OpenBrush.Multiplayer
             key.GetInts(out _, out _, out _, out percentage);
             //Debug.Log($"Data received with percentage: {percentage}%");
 
-            byte[] receivedData = data.Array;
-            if (receivedData == null || receivedData.Length == 0)
+            if (data.IsEmpty)
             {
                 Debug.LogWarning("Received data is null or empty.");
                 return;
             }
 
+            byte[] receivedData = data.ToArray();
             MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData,percentage);
         }
 
