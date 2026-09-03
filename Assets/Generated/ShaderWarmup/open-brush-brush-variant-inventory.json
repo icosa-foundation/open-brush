@@ -1,7 +1,7 @@
 ﻿{
     "generatedAtUtc": "2026-07-06T13:34:44.1507666Z",
     "unityVersion": "6000.3.18f1",
-    "materialStateCount": 697,
+    "materialStateCount": 694,
     "materialStates": [
         {
             "source": "Manifest:Brushes",
@@ -2088,55 +2088,6 @@
             "globalIlluminationFlags": 1,
             "doubleSidedGI": false,
             "notes": "base"
-        },
-        {
-            "source": "Manifest_Experimental:Brushes",
-            "brushAssetPath": "Assets/Resources/X/Brushes/CandyCane/CandyCane.asset",
-            "brushGuid": "61d2ef63-ed60-49b3-85fb-7267b7d234f2",
-            "brushDurableName": "CandyCane",
-            "materialPath": "Assets/Resources/Brushes/Shared/Materials/Diffuse.mat",
-            "materialName": "Diffuse",
-            "shaderPath": "Assets/Resources/Brushes/Shared/Shaders/DiffuseSingleSided.shader",
-            "shaderName": "Brush/DiffuseSingleSided",
-            "keywords": [],
-            "renderQueue": 2450,
-            "globalIlluminationFlags": 5,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
-            "source": "Manifest_Experimental:Brushes",
-            "brushAssetPath": "Assets/Resources/X/Brushes/CandyCane/CandyCane.asset",
-            "brushGuid": "61d2ef63-ed60-49b3-85fb-7267b7d234f2",
-            "brushDurableName": "CandyCane",
-            "materialPath": "Assets/Resources/Brushes/Shared/Materials/Diffuse.mat",
-            "materialName": "Diffuse",
-            "shaderPath": "Assets/Resources/Brushes/Shared/Shaders/DiffuseSingleSided.shader",
-            "shaderName": "Brush/DiffuseSingleSided",
-            "keywords": [
-                "SELECTION_ON"
-            ],
-            "renderQueue": 2450,
-            "globalIlluminationFlags": 5,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SELECTION_ON"
-        },
-        {
-            "source": "Manifest_Experimental:Brushes",
-            "brushAssetPath": "Assets/Resources/X/Brushes/CandyCane/CandyCane.asset",
-            "brushGuid": "61d2ef63-ed60-49b3-85fb-7267b7d234f2",
-            "brushDurableName": "CandyCane",
-            "materialPath": "Assets/Resources/Brushes/Shared/Materials/Diffuse.mat",
-            "materialName": "Diffuse",
-            "shaderPath": "Assets/Resources/Brushes/Shared/Shaders/DiffuseSingleSided.shader",
-            "shaderName": "Brush/DiffuseSingleSided",
-            "keywords": [
-                "SHADER_SCRIPTING_ON"
-            ],
-            "renderQueue": 2450,
-            "globalIlluminationFlags": 5,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SHADER_SCRIPTING_ON"
         },
         {
             "source": "Manifest_Experimental:Brushes",

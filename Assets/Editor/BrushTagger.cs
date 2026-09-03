@@ -60,7 +60,6 @@ namespace TiltBrush
                 if (brush.m_BrushPrefab == null) continue;
                 if (brush.m_BrushPrefab.GetComponent<HullBrush>() != null) brush.m_Tags.Add("hull");
                 if (brush.m_BrushPrefab.GetComponent<GeniusParticlesBrush>() != null) brush.m_Tags.Add("particle");
-                if (brush.m_BrushPrefab.GetComponent<ParentBrush>() != null) brush.m_Tags.Add("broken");
             }
         }
     }
