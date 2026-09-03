@@ -434,6 +434,24 @@ namespace TiltBrush
             ShowControllers(false);
         }
 
+        void OnDisable()
+        {
+            if (m_ControllerInfos == null)
+            {
+                return;
+            }
+
+            foreach (ControllerInfo controllerInfo in m_ControllerInfos)
+            {
+                if (controllerInfo is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+
+            m_ControllerInfos = null;
+        }
+
         public void CreateControllerInfos()
         {
             VrControllers vrControllers = App.VrSdk.VrControls;
