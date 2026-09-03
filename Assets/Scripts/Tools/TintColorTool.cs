@@ -19,40 +19,20 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// Paints per-control-point color overrides inside the tool radius.
-    /// Thumbstick press cycles through the modes enabled in k_ModeOrder.
+    /// Thumbstick press toggles between applying and clearing overrides.
     public class TintColorTool : ToggleStrokeModificationTool
     {
-        private enum TintMode
-        {
-            Replace,
-            Multiply,
-            Add,
-            Clear
-        }
-
-        private static readonly TintMode[] k_ModeOrder =
-        {
-            TintMode.Replace,
-            // Multiply and Add are unfinished. Switching an existing override between these modes
-            // cannot preserve its displayed color in all cases, so keep them out of the UI cycle.
-            // TintMode.Multiply,
-            // TintMode.Add,
-            TintMode.Clear
-        };
-
         [SerializeField] private Texture2D m_IconReplace;
-        [SerializeField] private Texture2D m_IconMultiply;
-        [SerializeField] private Texture2D m_IconAdd;
         [SerializeField] private Texture2D m_IconClear;
 
-        private TintMode m_CurrentMode = TintMode.Replace;
+        private bool m_ClearMode;
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointColorsCommand> m_ActiveTintCommands = new();
         public float EffectAmount { get; set; } = 1f;
 
         protected override bool IsOn()
         {
-            return m_CurrentMode != TintMode.Clear;
+            return !m_ClearMode;
         }
 
         public override void OnUpdateDetection()
@@ -83,8 +63,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
-                int idx = System.Array.IndexOf(k_ModeOrder, m_CurrentMode);
-                m_CurrentMode = k_ModeOrder[(idx + 1) % k_ModeOrder.Length];
+                m_ClearMode = !m_ClearMode;
                 StartToggleAnimation();
             }
         }
@@ -125,7 +104,7 @@ namespace TiltBrush
                                                stroke.m_OverrideColors.Count == controlPointCount
                 ? stroke.m_OverrideColors.ToList()
                 : new List<Color32?>(new Color32?[controlPointCount]);
-            bool applyingTint = m_CurrentMode != TintMode.Clear;
+            bool applyingTint = !m_ClearMode;
             bool strokeIsModified = false;
             Color tintColor = PointerManager.m_Instance.PointerColor;
             Color baseColor = stroke.m_Color;
@@ -134,7 +113,6 @@ namespace TiltBrush
             float maxDistance = GetSize() / m_CurrentCanvas.Pose.scale;
             Vector3 toolPos = m_CurrentCanvas.Pose.inverse * m_ToolTransform.position;
             ColorOverrideMode targetMode = stroke.m_ColorOverrideMode;
-            ColorOverrideMode desiredMode = ModeToColorOverrideMode(m_CurrentMode);
 
             for (int i = 0; i < controlPointCount; i++)
             {
@@ -146,30 +124,23 @@ namespace TiltBrush
 
                 if (applyingTint)
                 {
-                    if (targetMode != desiredMode)
+                    if (targetMode != ColorOverrideMode.Replace)
                     {
-                        // Override values have different meanings in each mode. Preserve the visible
-                        // colors of untouched points before changing the stroke-wide interpretation.
-                        if (desiredMode == ColorOverrideMode.Replace)
+                        // Preserve the visible colors of untouched points before changing the
+                        // stroke-wide interpretation of overrides created by another source.
+                        for (int j = 0; j < newOverrideColors.Count; j++)
                         {
-                            for (int j = 0; j < newOverrideColors.Count; j++)
+                            if (newOverrideColors[j].HasValue)
                             {
-                                if (newOverrideColors[j].HasValue)
-                                {
-                                    newOverrideColors[j] = stroke.GetColor(j);
-                                }
+                                newOverrideColors[j] = stroke.GetColor(j);
                             }
                         }
-                        targetMode = desiredMode;
+                        targetMode = ColorOverrideMode.Replace;
                         strokeIsModified = true;
                     }
-                    // Identity depends on mode: Replace=baseColor, Multiply=white, Add=black
-                    Color identity = m_CurrentMode == TintMode.Multiply ? Color.white
-                        : m_CurrentMode == TintMode.Add ? Color.black
-                        : baseColor;
                     Color existing = newOverrideColors[i].HasValue
                         ? (Color)newOverrideColors[i].Value
-                        : identity;
+                        : baseColor;
                     // Lerp RGB only — preserve alpha (used by QuillFlatBrush for per-vertex opacity)
                     Color32 blended = Color.Lerp(existing, tintColor, amount);
                     blended.a = newOverrideColors[i].HasValue
@@ -233,31 +204,8 @@ namespace TiltBrush
         {
             if (controller == InputManager.ControllerName.Brush)
             {
-                InputManager.Brush.Geometry.ShowTintMode(
-                    m_CurrentMode != TintMode.Clear, GetIconForMode(m_CurrentMode));
-            }
-        }
-
-        private Texture2D GetIconForMode(TintMode mode)
-        {
-            switch (mode)
-            {
-                case TintMode.Replace: return m_IconReplace;
-                case TintMode.Multiply: return m_IconMultiply;
-                case TintMode.Add: return m_IconAdd;
-                case TintMode.Clear: return m_IconClear;
-                default: return null;
-            }
-        }
-
-        private static ColorOverrideMode ModeToColorOverrideMode(TintMode mode)
-        {
-            switch (mode)
-            {
-                case TintMode.Replace: return ColorOverrideMode.Replace;
-                case TintMode.Multiply: return ColorOverrideMode.Multiply;
-                case TintMode.Add: return ColorOverrideMode.Add;
-                default: return ColorOverrideMode.None;
+                InputManager.Brush.Geometry.ShowTintMode(!m_ClearMode,
+                    m_ClearMode ? m_IconClear : m_IconReplace);
             }
         }
 
