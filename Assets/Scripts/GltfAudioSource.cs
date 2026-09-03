@@ -65,6 +65,20 @@ namespace TiltBrush
             StopAllCoroutines();
         }
 
+        private void OnDestroy()
+        {
+            if (_audioSource != null && _audioSource.clip == _loadedClip)
+            {
+                _audioSource.Stop();
+                _audioSource.clip = null;
+            }
+            if (_loadedClip != null)
+            {
+                Destroy(_loadedClip);
+                _loadedClip = null;
+            }
+        }
+
         private IEnumerator LoadAndPlay()
         {
             string url = $"file:///{AbsoluteFilePath.Replace('\\', '/')}";
