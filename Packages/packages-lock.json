@@ -21,7 +21,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "38207e2235f6ff5ef9ca4f0cd7b863f21961f0fb"
+      "hash": "b640ffeb4c83316fe12f03669dde508f182e2a79"
     },
     "com.immersive-foundation.imm-stroke-reader": {
       "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
@@ -202,7 +202,7 @@
       "hash": "c47c0d12ee0afaabbed5ed1572470d881097dc18"
     },
     "com.unity.localization": {
-      "version": "1.5.12",
+      "version": "1.5.13",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -512,13 +512,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.valvesoftware.steamaudio": {
-      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
-    },
     "com.valvesoftware.openxr.utils": {
       "version": "https://github.com/ValveSoftware/Unity.git?path=/com.valvesoftware.openxr.utils",
       "depth": 0,
@@ -528,6 +521,13 @@
         "com.unity.inputsystem": "1.7.0"
       },
       "hash": "28c3b8d9a4ecd7a128906e11c398944d3c8524dc"
+    },
+    "com.valvesoftware.steamaudio": {
+      "version": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "7ae596f571e5a3141f7e6d0be0e7dcb7312722c0"
     },
     "com.watertrans.glyphloader": {
       "version": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",

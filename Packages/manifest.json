@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#a6f96d79f13779d63124e9b3f1ad6dc074fad8ad",
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
     "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
@@ -16,7 +17,7 @@
     "com.unity.ide.rider": "3.0.40",
     "com.unity.ide.visualstudio": "2.0.28",
     "com.unity.inputsystem": "https://github.com/icosa-mirror/com.unity.inputsystem.git#1.8.2-openbrush",
-    "com.unity.localization": "1.5.12",
+    "com.unity.localization": "1.5.13",
     "com.unity.meshopt.decompress": "0.1.0-preview.7",
     "com.unity.mobile.android-logcat": "1.4.7",
     "com.unity.multiplayer.center": "1.0.1",
@@ -34,11 +35,10 @@
     "com.unity.xr.core-utils": "2.6.0",
     "com.unity.xr.management": "4.5.4",
     "com.unity.xr.openxr": "1.16.1",
-    "com.valvesoftware.steamaudio": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
     "com.valvesoftware.openxr.utils": "https://github.com/ValveSoftware/Unity.git?path=/com.valvesoftware.openxr.utils",
+    "com.valvesoftware.steamaudio": "https://github.com/icosa-mirror/com.valvesoftware.steamaudio.git",
     "com.watertrans.glyphloader": "https://github.com/icosa-mirror/GlyphLoader-Unity.git#upm",
     "com.zappar.xr.zapbox": "https://github.com/zappar-xr/zapbox-xr-sdk.git#43697771ed65efee02d5b1743141b8179444c147",
-    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#a6f96d79f13779d63124e9b3f1ad6dc074fad8ad",
     "dev.mikesky.openxrextensions": "https://github.com/icosa-mirror/unity-openxr-extensions.git#dda381da8a658b4a2e45c74df437bda72577f605",
     "moonsharp": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
     "org.khronos.unitygltf": "https://github.com/icosa-mirror/UnityGLTF.git#open-brush/plugin-settings-dedupe",
