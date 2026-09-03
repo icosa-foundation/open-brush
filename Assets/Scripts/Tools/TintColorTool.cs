@@ -19,7 +19,7 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// Paints per-control-point color overrides inside the tool radius.
-    /// Thumbstick press cycles through modes: Replace → Multiply → Add → Clear.
+    /// Thumbstick press cycles through the modes enabled in k_ModeOrder.
     public class TintColorTool : ToggleStrokeModificationTool
     {
         private enum TintMode
@@ -33,6 +33,8 @@ namespace TiltBrush
         private static readonly TintMode[] k_ModeOrder =
         {
             TintMode.Replace,
+            // Multiply and Add are unfinished. Switching an existing override between these modes
+            // cannot preserve its displayed color in all cases, so keep them out of the UI cycle.
             // TintMode.Multiply,
             // TintMode.Add,
             TintMode.Clear
