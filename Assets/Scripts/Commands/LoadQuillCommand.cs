@@ -45,6 +45,7 @@ namespace TiltBrush
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(layer);
             }
             if (m_Widgets != null)
             {
@@ -88,6 +89,7 @@ namespace TiltBrush
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(false);
+                App.Scene.MarkLayerAsDeleted(layer);
             }
             m_Active = false;
         }
@@ -104,6 +106,15 @@ namespace TiltBrush
             }
             if (m_Layers != null)
             {
+                // Clear all deleted-layer indices before removing any layers. DestroyLayer removes
+                // entries from the layer list, which changes the indices of the remaining layers.
+                foreach (var layer in m_Layers)
+                {
+                    if (App.Scene.IsLayerDeleted(layer))
+                    {
+                        App.Scene.MarkLayerAsNotDeleted(layer);
+                    }
+                }
                 foreach (var layer in m_Layers)
                 {
                     App.Scene.DestroyLayer(layer);
