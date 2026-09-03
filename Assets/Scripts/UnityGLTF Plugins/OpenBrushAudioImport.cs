@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
 using TiltBrush;
@@ -150,8 +151,9 @@ namespace UnityGLTF.Plugins
         {
             if (_audioExtension.audio == null) return;
 
-            // Store outside the sound clip library so the catalog doesn't pick these up.
-            string importDir = Path.Combine(Application.persistentDataPath, "GltfAudio");
+            // Store outside the sound clip library so the catalog doesn't pick these up. This is a
+            // content-addressed cache: repeated imports reuse files, and the OS may purge them.
+            string importDir = Path.Combine(Application.temporaryCachePath, "GltfAudio");
             Directory.CreateDirectory(importDir);
 
             for (int i = 0; i < _audioExtension.audio.Count; i++)
@@ -178,8 +180,12 @@ namespace UnityGLTF.Plugins
                         continue;
                     }
 
-                    string filePath = GetUniquePath(importDir, $"audio_{i:D3}{ext}");
-                    File.WriteAllBytes(filePath, buffer.ToArray());
+                    byte[] contents = buffer.ToArray();
+                    string filePath = GetCachePath(importDir, contents, ext);
+                    if (!File.Exists(filePath))
+                    {
+                        File.WriteAllBytes(filePath, contents);
+                    }
                     _audioFilePaths[i] = filePath;
                 }
                 else if (!string.IsNullOrEmpty(audio.uri))
@@ -198,8 +204,11 @@ namespace UnityGLTF.Plugins
                     }
 
                     string ext = Path.GetExtension(srcPath);
-                    string destPath = GetUniquePath(importDir, $"audio_{i:D3}{ext}");
-                    File.Copy(srcPath, destPath);
+                    string destPath = GetCachePath(importDir, srcPath, ext);
+                    if (!File.Exists(destPath))
+                    {
+                        File.Copy(srcPath, destPath);
+                    }
                     _audioFilePaths[i] = destPath;
                 }
             }
@@ -256,6 +265,22 @@ namespace UnityGLTF.Plugins
             gltfAudio.AutoPlay = autoPlay;
         }
 
+        private static string GetCachePath(string directory, byte[] contents, string extension)
+        {
+            using var sha256 = SHA256.Create();
+            return Path.Combine(directory, $"{FormatHash(sha256.ComputeHash(contents))}{extension}");
+        }
+
+        private static string GetCachePath(string directory, string sourcePath, string extension)
+        {
+            using var stream = File.OpenRead(sourcePath);
+            using var sha256 = SHA256.Create();
+            return Path.Combine(directory, $"{FormatHash(sha256.ComputeHash(stream))}{extension}");
+        }
+
+        private static string FormatHash(byte[] hash) =>
+            BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+
         private static string MimeTypeToExtension(string mimeType)
         {
             return mimeType switch
@@ -267,19 +292,5 @@ namespace UnityGLTF.Plugins
             };
         }
 
-        private static string GetUniquePath(string directory, string filename)
-        {
-            string path = Path.Combine(directory, filename);
-            if (!File.Exists(path)) return path;
-
-            string name = Path.GetFileNameWithoutExtension(filename);
-            string ext = Path.GetExtension(filename);
-            for (int i = 1; i < 1000; i++)
-            {
-                path = Path.Combine(directory, $"{name}_{i}{ext}");
-                if (!File.Exists(path)) return path;
-            }
-            return Path.Combine(directory, $"{name}_{Guid.NewGuid()}{ext}");
-        }
     }
 }
