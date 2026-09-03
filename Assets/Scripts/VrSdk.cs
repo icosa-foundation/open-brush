@@ -133,7 +133,8 @@ namespace TiltBrush
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
 
-            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+            bool disableXr = App.Config.m_SdkMode != SdkMode.UnityXR ||
+                App.UserConfig.Flags.DisableXrMode ||
                 Keyboard.current[Key.D].isPressed;
 
             // Allow forcing of monoscopic mode even if launching in XR
