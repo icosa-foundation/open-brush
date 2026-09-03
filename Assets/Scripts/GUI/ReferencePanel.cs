@@ -232,7 +232,9 @@ namespace TiltBrush
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
                 ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
                 ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory,
-                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory
+                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory,
+                _ => throw new System.InvalidOperationException(
+                    $"Unsupported reference tab type: {m_CurrentTab.ReferenceButtonType}")
             };
 
             string displayPath;
