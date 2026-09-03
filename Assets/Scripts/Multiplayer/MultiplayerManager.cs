@@ -57,8 +57,6 @@ namespace OpenBrush.Multiplayer
 
         public event Action<ConnectionState> StateUpdated;
         public event Action<bool> RoomOwnershipUpdated;
-        public event Action<ConnectionUserInfo> UserInfoStateUpdated;
-
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
 
