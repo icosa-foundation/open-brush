@@ -234,7 +234,7 @@ public class MultiplayerManagerInspector : Editor
         }
     }
 
-    private async void SetNickname()
+    private void SetNickname()
     {
         if (multiplayerManager != null)
         {
