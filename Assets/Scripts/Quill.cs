@@ -233,7 +233,8 @@ namespace TiltBrush
 
                 }
 
-                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0)
+                if (allCollectedStrokes.Count > 0 || createdLayers.Count > 0 ||
+                    createdWidgets.Count > 0)
                 {
                     // Single undo step for all strokes, layers, and widgets
                     var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
