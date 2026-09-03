@@ -174,7 +174,7 @@ namespace OpenBrush.Multiplayer
                     State = ConnectionState.ERROR;
                     LastError = "[PhotonManager] Room is full.";
                     ControllerConsoleScript.m_Instance.AddNewLine(LastError);
-                    Disconnect();
+                    await Disconnect();
                     return false;
                 }
 
