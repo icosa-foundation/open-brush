@@ -316,7 +316,7 @@ namespace TiltBrush
             string url = new Uri(path).AbsoluteUri;
             using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
-                uwr.SendWebRequest();
+                _ = uwr.SendWebRequest();
 
                 try
                 {

@@ -1018,7 +1018,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                StartCreatePrefab(go);
+                _ = StartCreatePrefab(go);
             }
 
             AssignMaterialsToCollector(m_ImportMaterialCollector);
@@ -1036,7 +1036,7 @@ namespace TiltBrush
 
         public void LoadModel()
         {
-            StartCreatePrefab(null);
+            _ = StartCreatePrefab(null);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
