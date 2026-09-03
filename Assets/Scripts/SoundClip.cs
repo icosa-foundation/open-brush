@@ -356,6 +356,14 @@ namespace TiltBrush
             }
             if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
             {
+                if (audioClipTask.Status == TaskStatus.RanToCompletion)
+                {
+                    AudioClip abandonedClip = audioClipTask.Result;
+                    if (abandonedClip != null)
+                    {
+                        UnityEngine.Object.Destroy(abandonedClip);
+                    }
+                }
                 yield break;
             }
             if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
