@@ -196,10 +196,10 @@ namespace UnityGLTF.Plugins
                         continue;
                     }
 
-                    string srcPath = Path.GetFullPath(Path.Combine(GltfDirectory, audio.uri));
-                    if (!File.Exists(srcPath))
+                    string srcPath = ResolveSidecarPath(audio.uri);
+                    if (srcPath == null)
                     {
-                        Debug.LogWarning($"[OBAudio] Audio sidecar file not found: {srcPath}");
+                        Debug.LogWarning($"[OBAudio] Audio sidecar file not found for uri '{audio.uri}' in {GltfDirectory}");
                         continue;
                     }
 
@@ -275,6 +275,40 @@ namespace UnityGLTF.Plugins
             gltfAudio.MinDistance = emitter.positional?.refDistance ?? 1f;
             gltfAudio.MaxDistance = emitter.positional?.maxDistance ?? 500f;
             gltfAudio.AutoPlay = autoPlay;
+        }
+
+        /// glTF uris are percent-encoded, so "My%20Track.ogg" has to be unescaped before it can be
+        /// used as a file name. Falls back to the raw uri for files whose names really do contain
+        /// escape-like sequences.
+        private string ResolveSidecarPath(string uri)
+        {
+            string decoded = uri;
+            try
+            {
+                decoded = Uri.UnescapeDataString(uri);
+            }
+            catch (UriFormatException)
+            {
+                // Leave the uri as-is and let the existence checks below decide.
+            }
+
+            foreach (string candidate in new[] { decoded, uri })
+            {
+                string path;
+                try
+                {
+                    path = Path.GetFullPath(Path.Combine(GltfDirectory, candidate));
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+            return null;
         }
 
         private static string GetCachePath(string directory, byte[] contents, string extension)
