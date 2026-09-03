@@ -84,6 +84,11 @@ namespace TiltBrush
             bool flattenHierarchy = true, bool layersCanTransform = false,
             int chapterIndex = -1)
         {
+            // Clear any environment state cached by a previous load so a failure part-way through
+            // this one can't leave the previous project's background or skybox behind.
+            LastLoadedBackgroundColor = null;
+            LastLoaded360SkyboxName = null;
+
             string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))
@@ -119,7 +124,6 @@ namespace TiltBrush
                 // Store background color (Quill colors are linear; convert to gamma for Unity)
                 var sqBg = sequence.BackgroundColor;
                 LastLoadedBackgroundColor = new Color(sqBg.R, sqBg.G, sqBg.B).gamma;
-                LastLoaded360SkyboxName = null;
 
                 if (!flattenHierarchy)
                 {
