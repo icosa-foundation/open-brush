@@ -21,7 +21,7 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
-  const int MaxImageWidth = 8192;
+  public const int MaxImageWidth = 8192;
   // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
   // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
   // platform bound; maxTextureSize is not itself a render-texture guarantee.
@@ -191,7 +191,8 @@ public class HybridCamera : MonoBehaviour {
     int bloomPadding = bloomPaddingMultiplier * clampedBloomRadius;
     int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
     maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
-    return Math.Min(((requestedImageWidth + 3) / 4) * 4, maxImageWidth);
+    int clampedImageWidth = Math.Max(4, Math.Min(requestedImageWidth, maxImageWidth));
+    return ((clampedImageWidth + 3) / 4) * 4;
   }
 
   public IEnumerator Render(Transform node, bool saveImage = true) {

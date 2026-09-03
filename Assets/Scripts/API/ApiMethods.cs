@@ -80,6 +80,13 @@ namespace TiltBrush
             ValidateSnapshotDimensions(width, height, includesSidecars: false);
 
             const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
             bool usePostProcessing = ParseCapturePostProcessingOption(
                 includePostProcessing,
                 logPrefix,
