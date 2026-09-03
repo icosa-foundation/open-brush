@@ -25,7 +25,6 @@ namespace TiltBrush
 
     static public class VideoRecorderUtils
     {
-        static private float m_VideoCaptureResolutionScale = 1.0f;
         static private int m_DebugVideoCaptureQualityLevel = -1;
         static private int m_PreCaptureQualityLevel = -1;
 

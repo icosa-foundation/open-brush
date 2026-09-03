@@ -96,8 +96,6 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
-        private string m_oldNickName = null;
-
         [HideInInspector] public RoomCreateData CurrentRoomData;
 
         private bool _isUserRoomOwner = false;
@@ -412,7 +410,6 @@ namespace OpenBrush.Multiplayer
 
             if (State != ConnectionState.IN_ROOM)
             {
-                m_oldNickName = null;
                 return;
             }
 

@@ -61,8 +61,6 @@ namespace TiltBrush
 
         [SerializeField] private float m_SnapAngleXZPlane = 45.0f;
         [SerializeField] private float m_SnapXZPlaneStickyAmount;
-        private float m_SnapQuantizeAmount = 15.0f;
-        private float m_SnapStickyAngle = 1.0f;
 
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
