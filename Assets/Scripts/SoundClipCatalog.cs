@@ -185,6 +185,8 @@ namespace TiltBrush
                 if (generation != m_ScanGeneration)
                 {
                     clipRef.ReleaseThumbnail();
+                    // The replacement scan owns m_ScanningDirectory. A stale scan must not clear
+                    // it while the replacement may still be running.
                     yield break;
                 }
             }
