@@ -626,9 +626,10 @@ namespace TiltBrush
         {
 #if USD_SUPPORTED
             return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
-#endif
+#else
             m_LoadError = new LoadError("usd not supported");
             return null;
+#endif
         }
 
         GameObject LoadPly(List<string> warningsOut)
