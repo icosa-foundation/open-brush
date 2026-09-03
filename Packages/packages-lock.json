@@ -21,7 +21,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "b640ffeb4c83316fe12f03669dde508f182e2a79"
+      "hash": "ae200e8d4b7f7b50680a8240b2fc8cedc649f5c9"
     },
     "com.immersive-foundation.imm-stroke-reader": {
       "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
