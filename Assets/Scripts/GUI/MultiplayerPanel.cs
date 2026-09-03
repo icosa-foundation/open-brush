@@ -226,7 +226,7 @@ namespace TiltBrush
             SubscribeManualColocationEvents();
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
             {
-                MultiplayerManager.m_Instance.Connect();
+                _ = MultiplayerManager.m_Instance.Connect();
             }
 
             if (updateDisplay) UpdateDisplay();
@@ -240,7 +240,7 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State != ConnectionState.IN_ROOM)
             {
-                MultiplayerManager.m_Instance.Disconnect();
+                _ = MultiplayerManager.m_Instance.Disconnect();
             }
         }
 
