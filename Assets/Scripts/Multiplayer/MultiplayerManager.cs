@@ -722,9 +722,9 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+#if OCULUS_SUPPORTED
         async void ShareAnchors()
         {
-#if OCULUS_SUPPORTED
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
@@ -735,8 +735,10 @@ namespace OpenBrush.Multiplayer
                     await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }
             }
-#endif // OCULUS_SUPPORTED
         }
+#else
+        void ShareAnchors() { }
+#endif // OCULUS_SUPPORTED
 
         private void OnConnectionHandlerDisconnected()
         {
