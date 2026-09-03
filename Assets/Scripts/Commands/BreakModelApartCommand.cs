@@ -304,6 +304,8 @@ namespace TiltBrush
                 {
                     if (newWidget.GetComponentInChildren<GltfAudioSource>() != null)
                     {
+                        m_NewLightWidgets.AddRange(
+                            LightWidget.FromModelWidget(newWidget, destroyModelWidget: false));
                         m_NewSoundClipWidgets.AddRange(SoundClipWidget.FromModelWidget(newWidget));
                     }
                     else
