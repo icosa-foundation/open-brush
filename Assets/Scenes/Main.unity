@@ -13159,7 +13159,6 @@ MonoBehaviour:
   m_BimanualGuideLineOutline: {fileID: 309623949}
   m_BimanualGuideIntersect: {fileID: 1712388237}
   m_BimanualGuideIntersectOutline: {fileID: 1151093197}
-  m_BimanualGuideLineHorizontalOffset: 0.75
   m_BimanualGuideLineOutlineWidth: 0.05
   m_BimanualGuideLineBaseWidth: 0.015
   m_BimanualGuideHintIntensity: 0.75

@@ -619,7 +619,6 @@ MonoBehaviour:
   m_GuideBeamLength: 3
   m_SnapColor: {r: 0.06314879, g: 0.53676474, b: 0.37998155, a: 1}
   m_SnapOrientationSpeed: 0.2
-  m_SnapAngleXZPlane: 67.5
   m_SnapXZPlaneStickyAmount: 25
   m_JumpToUserControllerOffsetDistance: 1.25
   m_JumpToUserControllerYOffset: 2

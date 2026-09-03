@@ -59,7 +59,6 @@ namespace TiltBrush
         [SerializeField] private Color m_SnapColor;
         [SerializeField] private float m_SnapOrientationSpeed = 0.2f;
 
-        [SerializeField] private float m_SnapAngleXZPlane = 45.0f;
         [SerializeField] private float m_SnapXZPlaneStickyAmount;
 
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
