@@ -149,7 +149,8 @@ namespace TiltBrush
             var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
                 Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
-                    x => m_supportedSoundClipExtensions.Contains(Path.GetExtension(x))));
+                    x => m_supportedSoundClipExtensions.Contains(
+                        Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 
