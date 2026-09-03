@@ -126,8 +126,9 @@ namespace TiltBrush
 
         private List<Func<Tuple<bool, string>>> alertChecks;
 
-        public void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             data = new RoomCreateData
             {
                 roomName = "default room",
