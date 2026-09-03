@@ -1209,12 +1209,24 @@ namespace TiltBrush
 
         }
 
-        public void EndCreatePrefab(GameObject go, List<string> warnings)
+        public bool EndCreatePrefab(GameObject go, List<string> warnings)
         {
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
                 DisplayWarnings(warnings);
+                return false;
+            }
+
+            float maxSide = Mathf.Max(m_MeshBounds.size.x,
+                Mathf.Max(m_MeshBounds.size.y, m_MeshBounds.size.z));
+            if (maxSide <= Mathf.Epsilon)
+            {
+                m_Valid = false;
+                m_LoadError = new LoadError("No usable geometry");
+                UObject.Destroy(go);
+                DisplayWarnings(warnings);
+                return false;
             }
 
             GsplatAsset newOwnedGsplatAsset = go
@@ -1257,6 +1269,7 @@ namespace TiltBrush
             // However the code paths have become a bit convoluted so err on the side of caution
             AssignMaterialsToCollector(m_ImportMaterialCollector);
             DisplayWarnings(warnings);
+            return true;
         }
 
 
