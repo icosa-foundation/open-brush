@@ -103,7 +103,13 @@ namespace TiltBrush
             }
             if (selection == null && App.Instance != null)
             {
-                selection = App.Instance.SelectionEffect;
+                // Only fall back to the app's effect for the camera that owns it. Auxiliary
+                // cameras (snapshot, dropcam, ODS) must not composite selection into their output.
+                Camera vrCamera = App.VrSdk != null ? App.VrSdk.GetVrCamera() : null;
+                if (camera != null && camera == vrCamera)
+                {
+                    selection = App.Instance.SelectionEffect;
+                }
             }
             if (camera == null ||
                 selection == null)
