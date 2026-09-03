@@ -166,7 +166,56 @@ namespace TiltBrush
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.
         public SoundClip GetSoundClipByPersistentPath(string path)
         {
-            return m_SoundClips.FirstOrDefault(x => x.PersistentPath == path);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            SoundClip soundClip = m_SoundClips.FirstOrDefault(x => x.PersistentPath == path);
+            if (soundClip != null)
+            {
+                return soundClip;
+            }
+
+            // The catalog contains only the directory currently shown in the reference panel.
+            // Resolve saved paths directly so clips in subdirectories can be restored without the
+            // user first navigating to their directory.
+            if (Path.IsPathRooted(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                string libraryPath = Path.GetFullPath(App.SoundClipLibraryPath());
+                string normalizedPath = path
+                    .Replace('\\', Path.DirectorySeparatorChar)
+                    .Replace('/', Path.DirectorySeparatorChar);
+                string absolutePath = Path.GetFullPath(Path.Combine(libraryPath, normalizedPath));
+                string libraryPathWithSeparator = libraryPath.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                StringComparison pathComparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+
+                if (!absolutePath.StartsWith(libraryPathWithSeparator, pathComparison) ||
+                    !m_supportedSoundClipExtensions.Contains(
+                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase) ||
+                    !File.Exists(absolutePath))
+                {
+                    return null;
+                }
+
+                return new SoundClip(absolutePath);
+            }
+            catch (Exception e) when (
+                e is ArgumentException ||
+                e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return null;
+            }
         }
 
         public void DebugListSoundClips()
