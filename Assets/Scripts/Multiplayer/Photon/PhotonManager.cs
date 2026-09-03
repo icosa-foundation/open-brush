@@ -58,7 +58,7 @@ namespace OpenBrush.Multiplayer
             };
         }
 
-        public async Task<bool> Init()
+        public bool Init()
         {
             try
             {

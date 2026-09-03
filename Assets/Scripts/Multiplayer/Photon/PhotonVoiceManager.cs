@@ -55,7 +55,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         isTransmitting = false;
     }
 
-    public async Task<bool> Init()
+    public bool Init()
     {
 
         try
