@@ -527,21 +527,13 @@ namespace TiltBrush
 
         private static void ApplyImageOpacity(ImageWidget image, float opacity)
         {
-            if (image == null || image.m_ImageQuad == null)
+            if (image == null)
             {
                 return;
             }
 
-            float alpha = Mathf.Clamp01(opacity);
-            var mat = image.m_ImageQuad.material;
-            if (mat == null)
-            {
-                return;
-            }
-
-            Color color = mat.color;
-            color.a *= alpha;
-            mat.color = color;
+            // Set through the widget so the value is saved with the sketch.
+            image.Opacity = opacity;
         }
 
         /// <summary>

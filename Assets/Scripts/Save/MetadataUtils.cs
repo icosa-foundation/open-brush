@@ -32,6 +32,7 @@ namespace TiltBrush
             public bool twoSided;
             public float extrusionDepth;
             public Color extrusionColor;
+            public float opacity;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -422,6 +423,7 @@ namespace TiltBrush
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
+                newEntry.opacity = image.Opacity;
                 imagesByPath[path].Add(newEntry);
             }
 
@@ -457,6 +459,10 @@ namespace TiltBrush
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
                     val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
                     val.ExtrusionColors[i] = ordered[i].extrusionColor;
+                }
+                if (ordered.Any(m => m.opacity < 1.0f))
+                {
+                    val.Opacities = ordered.Select(m => m.opacity).ToArray();
                 }
                 imageIndex.Add(val);
             }
