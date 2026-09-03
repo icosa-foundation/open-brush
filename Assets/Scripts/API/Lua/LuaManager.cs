@@ -751,7 +751,7 @@ namespace TiltBrush
                     // Try to cast to multipath first
                     pathListWrapper = result.ToObject<PathListApiWrapper>();
                 }
-                catch (Exception _)
+                catch (Exception)
                 {
                     try
                     {

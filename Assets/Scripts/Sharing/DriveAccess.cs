@@ -124,7 +124,7 @@ namespace TiltBrush
                     {
                         return GetPcId();
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         // We suspect wmic.exe can cause an exception on some systems, so we catch it here
                         Debug.LogWarning("wmic.exe not found. No Host id generated");

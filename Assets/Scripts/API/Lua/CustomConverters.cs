@@ -44,7 +44,7 @@ public static class LuaCustomConverters
                 {
                     return ((Vector3ApiWrapper)dynVal.ToObject())._Vector3;
                 }
-                catch (InvalidCastException e)
+                catch (InvalidCastException)
                 {
                     // Also accept Vector2 in place of Vector3
                     var pos2D = (Vector2ApiWrapper)dynVal.ToObject();
@@ -73,7 +73,7 @@ public static class LuaCustomConverters
                     var tr = (TransformApiWrapper)dynVal.ToObject();
                     return tr._TrTransform;
                 }
-                catch (InvalidCastException e)
+                catch (InvalidCastException)
                 {
                     try
                     {
@@ -81,7 +81,7 @@ public static class LuaCustomConverters
                         var pos = (Vector3ApiWrapper)dynVal.ToObject();
                         return TrTransform.T(pos._Vector3);
                     }
-                    catch (InvalidCastException e2)
+                    catch (InvalidCastException)
                     {
                         // Finally - try Vector2
                         var pos = (Vector2ApiWrapper)dynVal.ToObject();
