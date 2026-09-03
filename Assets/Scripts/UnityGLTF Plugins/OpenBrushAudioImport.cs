@@ -229,7 +229,18 @@ namespace UnityGLTF.Plugins
                 return;
             }
 
-            var source = emitter.sources[0].Value;
+            foreach (var sourceId in emitter.sources)
+            {
+                if (sourceId != null)
+                {
+                    SetupAudioSourceOnNode(pending.NodeObject, emitter, sourceId.Value);
+                }
+            }
+        }
+
+        private void SetupAudioSourceOnNode(
+            GameObject nodeObject, KHR_AudioEmitter emitter, KHR_AudioSource source)
+        {
             if (source.audio == null)
             {
                 Debug.LogWarning($"[OBAudio] Source has no audio reference, skipping");
@@ -249,13 +260,14 @@ namespace UnityGLTF.Plugins
             bool loop = source.loop ?? true;
             bool autoPlay = source.autoPlay ?? true;
 
-            var audioSource = pending.NodeObject.AddComponent<AudioSource>();
+            var audioSource = nodeObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false; // GltfAudioSource handles playback
             audioSource.spatialBlend = isSpatial ? 1f : 0f;
             audioSource.minDistance = emitter.positional?.refDistance ?? 1f;
             audioSource.maxDistance = emitter.positional?.maxDistance ?? 500f;
 
-            var gltfAudio = pending.NodeObject.AddComponent<GltfAudioSource>();
+            var gltfAudio = nodeObject.AddComponent<GltfAudioSource>();
+            gltfAudio.SetAudioSource(audioSource);
             gltfAudio.AbsoluteFilePath = filePath;
             gltfAudio.Gain = gain;
             gltfAudio.Loop = loop;
