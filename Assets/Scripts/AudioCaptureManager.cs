@@ -295,6 +295,7 @@ namespace TiltBrush
                 var appMonitor = m_AppAudio.GetComponent<AppAudioMonitor>();
                 if (appMonitor != null && appMonitor.LastPeak > kAndroidSignalThreshold)
                 {
+                    ResetAndroidSourceProbeTimer();
                     return;
                 }
                 if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
