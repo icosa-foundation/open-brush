@@ -190,6 +190,11 @@ namespace TiltBrush
             m_CaptureObjects[(int)style].m_Object.SetActive(enable);
         }
 
+        public bool IsCaptureObjectEnabled(MultiCamStyle style)
+        {
+            return m_CaptureObjects[(int)style].m_Object.activeSelf;
+        }
+
         public void ScaleVisuals(MultiCamStyle style, Vector3 scale)
         {
             m_CaptureObjects[(int)style].m_Visuals.transform.localScale = scale;

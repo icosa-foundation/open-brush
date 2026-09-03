@@ -412,7 +412,7 @@ namespace TiltBrush
 
             MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
             bool initialRigActive = rig.gameObject.activeSelf;
-            bool initialVideoObjectActive = false;
+            bool initialVideoObjectActive = rig.IsCaptureObjectEnabled(MultiCamStyle.Video);
             bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
             bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
@@ -432,7 +432,6 @@ namespace TiltBrush
                 Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
                 rig.gameObject.SetActive(true);
                 rig.EnableCaptureObject(MultiCamStyle.Video, true);
-                initialVideoObjectActive = true;
 
                 ScreenshotManager manager = rig.ManagerFromStyle(MultiCamStyle.Video);
                 VideoRecorder recorder = manager.GetComponent<VideoRecorder>();
@@ -494,10 +493,7 @@ namespace TiltBrush
 
                 App.UserConfig.Video.ForceFrameSequenceRender = forceFrameSequenceRestore;
                 App.UserConfig.Video.UsePngForFrameSequence = usePngRestore;
-                if (initialVideoObjectActive)
-                {
-                    rig.EnableCaptureObject(MultiCamStyle.Video, false);
-                }
+                rig.EnableCaptureObject(MultiCamStyle.Video, initialVideoObjectActive);
                 rig.gameObject.SetActive(initialRigActive);
             }
         }
