@@ -315,12 +315,57 @@ namespace TiltBrush
                 }
             }
 
+            // A Shader Graph's keywords are not always declared in the graph. Custom Function
+            // nodes pull their file in with #include_with_pragmas, so a multi_compile living
+            // in a shared .hlsl elsewhere in the project (OpenBrushOds.hlsl and
+            // OpenBrushSelection.hlsl in the unity-tools package, for instance) is real
+            // evidence even though it is not in the graph's own directory.
+            foreach (string includePath in EnumerateCustomFunctionSources(shaderPath))
+            {
+                paths.Add(includePath);
+            }
+
             var builder = new StringBuilder();
             foreach (string path in paths)
             {
                 builder.AppendLine(File.ReadAllText(path));
             }
             return builder.ToString();
+        }
+
+        private static IEnumerable<string> EnumerateCustomFunctionSources(string shaderPath)
+        {
+            if (!shaderPath.EndsWith(".shadergraph", StringComparison.OrdinalIgnoreCase) ||
+                !File.Exists(shaderPath))
+            {
+                yield break;
+            }
+
+            // Custom Function nodes serialise their file as "m_FunctionSource": "<guid>".
+            const string kToken = "\"m_FunctionSource\": \"";
+            string graphText = File.ReadAllText(shaderPath);
+            int index = graphText.IndexOf(kToken, StringComparison.Ordinal);
+            while (index >= 0)
+            {
+                int start = index + kToken.Length;
+                int end = graphText.IndexOf('"', start);
+                if (end < 0)
+                {
+                    yield break;
+                }
+
+                string guid = graphText.Substring(start, end - start);
+                if (guid.Length == 32)
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                    {
+                        yield return path;
+                    }
+                }
+
+                index = graphText.IndexOf(kToken, end, StringComparison.Ordinal);
+            }
         }
 
         private static void AddState(
