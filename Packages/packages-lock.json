@@ -21,7 +21,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "ae200e8d4b7f7b50680a8240b2fc8cedc649f5c9"
+      "hash": "b07a0bd6d25044cf04c0f72a551f85a2e78cd544"
     },
     "com.immersive-foundation.imm-stroke-reader": {
       "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
@@ -552,7 +552,7 @@
       "dependencies": {
         "com.unity.xr.openxr": "1.18.0"
       },
-      "hash": "9b204ad38e9f9f669286f2cc3ce58f2be0847f66"
+      "hash": "6c79eae8fcc4a6a3efe54bbf80bb55079d0b0cb6"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
