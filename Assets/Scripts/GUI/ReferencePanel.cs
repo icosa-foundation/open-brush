@@ -380,7 +380,10 @@ namespace TiltBrush
             {
                 return true;
             }
-            return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
+            // Gaze raycasts reach us before the panel is first enabled, and m_CurrentTab
+            // is only assigned in OnEnablePanel.
+            return m_CurrentTab != null &&
+                m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
         public void ChangeDirectoryForCurrentTab(string path)
