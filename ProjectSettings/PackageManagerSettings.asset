@@ -18,30 +18,44 @@ MonoBehaviour:
   m_SeeAllPackageVersions: 0
   m_DismissPreviewPackagesInUse: 0
   oneTimeWarningShown: 0
-  m_Registries:
-  - m_Id: main
+  oneTimePackageErrorsPopUpShown: 0
+  m_MainRegistry:
+    m_Id: main
     m_Name: 
     m_Url: https://packages.unity.com
     m_Scopes: []
     m_IsDefault: 1
+    m_IsUnityRegistry: 1
     m_Capabilities: 7
     m_ConfigSource: 0
+    m_Compliance:
+      m_Status: 0
+      m_Violations: []
+  m_ScopedRegistries:
   - m_Id: scoped:project:Vive
     m_Name: Vive
     m_Url: https://npm-registry.vive.com
     m_Scopes:
     - com.htc.upm
     m_IsDefault: 0
+    m_IsUnityRegistry: 0
     m_Capabilities: 0
     m_ConfigSource: 4
+    m_Compliance:
+      m_Status: 0
+      m_Violations: []
   - m_Id: scoped:project:Meta XR
     m_Name: Meta XR
     m_Url: https://npm.developer.oculus.com
     m_Scopes:
     - com.meta.xr.sdk
     m_IsDefault: 0
+    m_IsUnityRegistry: 0
     m_Capabilities: 0
     m_ConfigSource: 4
+    m_Compliance:
+      m_Status: 0
+      m_Violations: []
   - m_Id: scoped:project:OpenUPM
     m_Name: OpenUPM
     m_Url: https://package.openupm.com
@@ -53,13 +67,19 @@ MonoBehaviour:
     - org.nuget.sharpziplib
     - org.nuget.system
     m_IsDefault: 0
+    m_IsUnityRegistry: 0
     m_Capabilities: 0
     m_ConfigSource: 4
-  m_UserSelectedRegistryName: OpenUPM
+    m_Compliance:
+      m_Status: 0
+      m_Violations: []
+  m_UserSelectedRegistryName: Vive
   m_UserAddingNewScopedRegistry: 0
   m_RegistryInfoDraft:
     m_Modified: 0
     m_ErrorMessage: 
-    m_UserModificationsInstanceId: -834
-    m_OriginalInstanceId: -838
+    m_UserModificationsEntityId:
+      m_rawData: 1099511629626
+    m_OriginalEntityId:
+      m_rawData: 1099511629627
   m_LoadAssets: 0
