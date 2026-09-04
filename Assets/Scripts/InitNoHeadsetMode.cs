@@ -1554,7 +1554,7 @@ namespace TiltBrush
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Ellipsis;
             text.raycastTarget = false;
             return text;
