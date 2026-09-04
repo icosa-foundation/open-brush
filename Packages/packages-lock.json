@@ -412,7 +412,7 @@
       "hash": "a6f09e27efb7cc008a469290f4bc1e84ec5c15de"
     },
     "com.unity.xr.androidxr-openxr": {
-      "version": "1.4.0",
+      "version": "1.4.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
