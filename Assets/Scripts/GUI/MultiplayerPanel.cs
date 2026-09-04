@@ -96,6 +96,10 @@ namespace TiltBrush
             }
             set
             {
+                // Matches the getter: with no MultiplayerManager there is no user info to
+                // update, so setting a nickname is a no-op rather than a null dereference.
+                if (!MultiplayerManager.m_Instance) { return; }
+
                 ConnectionUserInfo ui = new ConnectionUserInfo
                 {
                     Nickname = value,
