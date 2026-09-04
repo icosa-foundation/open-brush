@@ -312,6 +312,10 @@ namespace TiltBrush
             m_Instance = this;
         }
 
+        /// True once Init has created the widget lists. Awake only assigns m_Instance,
+        /// so widgets registering from their own Awake must check this as well.
+        public bool IsInitialized => m_GrabWidgets != null;
+
         public void Init()
         {
             m_CameraPathTinter = gameObject.AddComponent<CameraPathTinter>();
