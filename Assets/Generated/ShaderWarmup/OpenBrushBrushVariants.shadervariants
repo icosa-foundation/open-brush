@@ -17,17 +17,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -62,13 +74,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -77,13 +101,25 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
+      - keywords: HIGHLIGHT_ON
+        passType: 0
+      - keywords: SELECTION_ON
+        passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -105,13 +141,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -159,13 +207,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -176,13 +236,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -195,17 +267,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -247,17 +331,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -292,17 +388,29 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -345,17 +453,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -476,13 +596,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -511,13 +643,25 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -691,17 +835,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -714,6 +870,10 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: _ISBAKEDEXPORT
@@ -723,6 +883,10 @@ ShaderVariantCollection:
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
+        passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
         passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
@@ -733,6 +897,10 @@ ShaderVariantCollection:
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -1346,6 +1514,10 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
   - first: {fileID: -6465566751694194690, guid: 0de0df21bd564d31b79649d785098ebb, type: 3}
     second:
       variants:
@@ -1353,10 +1525,18 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
   - first: {fileID: -6465566751694194690, guid: e0cb37d325cd4866a4f5cad4cb226efd, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13

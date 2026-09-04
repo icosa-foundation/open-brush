@@ -47,9 +47,17 @@ namespace TiltBrush
         // These are runtime states Open Brush actually toggles or uses for brush rendering.
         // They are intentionally not a full Cartesian product; the generator only adds a state
         // when the shader/material already has evidence that the keyword is relevant.
+        //
+        // ODS_RENDER and ODS_RENDER_CM are deliberately absent. They are only enabled while
+        // rendering a 360 capture, which is an offline export rather than interactive
+        // rendering, so a first-use compilation hitch there costs nothing worth the extra
+        // variants.
         private static readonly string[] kRuntimeKeywordCandidates =
         {
             "SELECTION_ON",
+            // Set by GrabWidget on Android and iOS only, but the collection is shared across
+            // platforms, so the variants are recorded everywhere.
+            "HIGHLIGHT_ON",
             "AUDIO_REACTIVE",
             "SHADER_SCRIPTING_ON",
             "_IS_TILT_MESH",
