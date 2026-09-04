@@ -1,7 +1,7 @@
 ﻿{
-    "generatedAtUtc": "2026-07-06T13:34:44.1507666Z",
-    "unityVersion": "6000.3.18f1",
-    "materialStateCount": 694,
+    "generatedAtUtc": "2026-09-04T15:30:17.1757353Z",
+    "unityVersion": "6000.6.0f1",
+    "materialStateCount": 703,
     "materialStates": [
         {
             "source": "Manifest:Brushes",
@@ -1344,6 +1344,72 @@
             "notes": "runtime keyword SHADER_SCRIPTING_ON"
         },
         {
+            "source": "Manifest:Brushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
+            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
+            "brushDurableName": "Toon",
+            "materialPath": "Assets/Resources/Brushes/Basic/Toon/Toon.mat",
+            "materialName": "Toon",
+            "shaderPath": "Assets/Resources/Brushes/Basic/Toon/Toon.shader",
+            "shaderName": "Brush/Special/Toon",
+            "keywords": [],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "Manifest:Brushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
+            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
+            "brushDurableName": "Toon",
+            "materialPath": "Assets/Resources/Brushes/Basic/Toon/Toon.mat",
+            "materialName": "Toon",
+            "shaderPath": "Assets/Resources/Brushes/Basic/Toon/Toon.shader",
+            "shaderName": "Brush/Special/Toon",
+            "keywords": [
+                "AUDIO_REACTIVE"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword AUDIO_REACTIVE"
+        },
+        {
+            "source": "Manifest:Brushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
+            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
+            "brushDurableName": "Toon",
+            "materialPath": "Assets/Resources/Brushes/Basic/Toon/Toon.mat",
+            "materialName": "Toon",
+            "shaderPath": "Assets/Resources/Brushes/Basic/Toon/Toon.shader",
+            "shaderName": "Brush/Special/Toon",
+            "keywords": [
+                "SELECTION_ON"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword SELECTION_ON"
+        },
+        {
+            "source": "Manifest:Brushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
+            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
+            "brushDurableName": "Toon",
+            "materialPath": "Assets/Resources/Brushes/Basic/Toon/Toon.mat",
+            "materialName": "Toon",
+            "shaderPath": "Assets/Resources/Brushes/Basic/Toon/Toon.shader",
+            "shaderName": "Brush/Special/Toon",
+            "keywords": [
+                "SHADER_SCRIPTING_ON"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword SHADER_SCRIPTING_ON"
+        },
+        {
             "source": "Manifest_Experimental:Brushes",
             "brushAssetPath": "Assets/Resources/Brushes/Basic/TubeToonInverted/TubeToonInverted.asset",
             "brushGuid": "9871385a-df73-4396-9e33-31e4e4930b27",
@@ -1685,165 +1751,6 @@
             "globalIlluminationFlags": 5,
             "doubleSidedGI": false,
             "notes": "runtime keyword SHADER_SCRIPTING_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.asset",
-            "brushGuid": "232998f8-d357-47a2-993a-53415df9be10",
-            "brushDurableName": "BlocksGem",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.mat",
-            "materialName": "BlocksGem",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.shader",
-            "shaderName": "Blocks/BlocksGem",
-            "keywords": [
-                "SELECTION_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SELECTION_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.asset",
-            "brushGuid": "232998f8-d357-47a2-993a-53415df9be10",
-            "brushDurableName": "BlocksGem",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.mat",
-            "materialName": "BlocksGem",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.shader",
-            "shaderName": "Blocks/BlocksGem",
-            "keywords": [
-                "SHADER_SCRIPTING_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SHADER_SCRIPTING_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.asset",
-            "brushGuid": "232998f8-d357-47a2-993a-53415df9be10",
-            "brushDurableName": "BlocksGem",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.mat",
-            "materialName": "BlocksGem",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.shader",
-            "shaderName": "Blocks/BlocksGem",
-            "keywords": [
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.asset",
-            "brushGuid": "3d813d82-5839-4450-8ddc-8e889ecd96c7",
-            "brushDurableName": "BlocksGlass",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.mat",
-            "materialName": "BlocksGlass",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.shader",
-            "shaderName": "Blocks/BlocksGlass",
-            "keywords": [
-                "SELECTION_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SELECTION_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.asset",
-            "brushGuid": "3d813d82-5839-4450-8ddc-8e889ecd96c7",
-            "brushDurableName": "BlocksGlass",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.mat",
-            "materialName": "BlocksGlass",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.shader",
-            "shaderName": "Blocks/BlocksGlass",
-            "keywords": [
-                "SHADER_SCRIPTING_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SHADER_SCRIPTING_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.asset",
-            "brushGuid": "3d813d82-5839-4450-8ddc-8e889ecd96c7",
-            "brushDurableName": "BlocksGlass",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.mat",
-            "materialName": "BlocksGlass",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.shader",
-            "shaderName": "Blocks/BlocksGlass",
-            "keywords": [
-                "_EMISSION"
-            ],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.asset",
-            "brushGuid": "0e87b49c-6546-3a34-3a44-8a556d7d6c3e",
-            "brushDurableName": "BlocksBasic",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.mat",
-            "materialName": "BlocksPaper",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.shader",
-            "shaderName": "Blocks/Basic",
-            "keywords": [
-                "SELECTION_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 2000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SELECTION_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.asset",
-            "brushGuid": "0e87b49c-6546-3a34-3a44-8a556d7d6c3e",
-            "brushDurableName": "BlocksBasic",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.mat",
-            "materialName": "BlocksPaper",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.shader",
-            "shaderName": "Blocks/Basic",
-            "keywords": [
-                "SHADER_SCRIPTING_ON",
-                "_EMISSION"
-            ],
-            "renderQueue": 2000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword SHADER_SCRIPTING_ON"
-        },
-        {
-            "source": "Manifest:CompatibilityBrushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.asset",
-            "brushGuid": "0e87b49c-6546-3a34-3a44-8a556d7d6c3e",
-            "brushDurableName": "BlocksBasic",
-            "materialPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.mat",
-            "materialName": "BlocksPaper",
-            "shaderPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.shader",
-            "shaderName": "Blocks/Basic",
-            "keywords": [
-                "_EMISSION"
-            ],
-            "renderQueue": 2000,
-            "globalIlluminationFlags": 1,
-            "doubleSidedGI": false,
-            "notes": "base"
         },
         {
             "source": "Manifest_Experimental:Brushes",
@@ -4943,21 +4850,6 @@
             "notes": "runtime keyword AUDIO_REACTIVE"
         },
         {
-            "source": "Manifest:Brushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
-            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
-            "brushDurableName": "Toon",
-            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/2_UnlitSpecials/Toon/Toon.mat",
-            "materialName": "Toon",
-            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/2_UnlitSpecials/Toon/ToonMultiMaterial.shader",
-            "shaderName": "TiltBrush/UnlitSpecials/Toon",
-            "keywords": [],
-            "renderQueue": 2000,
-            "globalIlluminationFlags": 4,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
             "source": "UnityToolsPackageMaterial",
             "brushAssetPath": "",
             "brushGuid": "",
@@ -4971,23 +4863,6 @@
             "globalIlluminationFlags": 4,
             "doubleSidedGI": false,
             "notes": "base"
-        },
-        {
-            "source": "Manifest:Brushes",
-            "brushAssetPath": "Assets/Resources/Brushes/Basic/Toon/Toon.asset",
-            "brushGuid": "4391385a-df73-4396-9e33-31e4e4930b27",
-            "brushDurableName": "Toon",
-            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/2_UnlitSpecials/Toon/Toon.mat",
-            "materialName": "Toon",
-            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/2_UnlitSpecials/Toon/ToonMultiMaterial.shader",
-            "shaderName": "TiltBrush/UnlitSpecials/Toon",
-            "keywords": [
-                "AUDIO_REACTIVE"
-            ],
-            "renderQueue": 2000,
-            "globalIlluminationFlags": 4,
-            "doubleSidedGI": false,
-            "notes": "runtime keyword AUDIO_REACTIVE"
         },
         {
             "source": "UnityToolsPackageMaterial",
@@ -6210,6 +6085,51 @@
             "notes": "runtime keyword SHADER_SCRIPTING_ON"
         },
         {
+            "source": "Manifest:CompatibilityBrushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksPaper/BlocksPaper.asset",
+            "brushGuid": "0e87b49c-6546-3a34-3a44-8a556d7d6c3e",
+            "brushDurableName": "BlocksBasic",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.mat",
+            "materialName": "BlocksBasic",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.shadergraph",
+            "shaderName": "Blocks/BlocksBasic",
+            "keywords": [],
+            "renderQueue": 2000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.mat",
+            "materialName": "BlocksBasic",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.shadergraph",
+            "shaderName": "Blocks/BlocksBasic",
+            "keywords": [],
+            "renderQueue": 2000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.shadergraph",
+            "materialName": "BlocksBasic",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/5_StandardCommon/BlocksBasic/BlocksBasic.shadergraph",
+            "shaderName": "Blocks/BlocksBasic",
+            "keywords": [],
+            "renderQueue": 2000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
             "source": "UnityToolsPackageMaterial",
             "brushAssetPath": "",
             "brushGuid": "",
@@ -7026,6 +6946,96 @@
             "notes": "base"
         },
         {
+            "source": "Manifest:CompatibilityBrushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGem/BlocksGem.asset",
+            "brushGuid": "232998f8-d357-47a2-993a-53415df9be10",
+            "brushDurableName": "BlocksGem",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.mat",
+            "materialName": "BlocksGem",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.shadergraph",
+            "shaderName": "Blocks/BlocksGem",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.mat",
+            "materialName": "BlocksGem",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.shadergraph",
+            "shaderName": "Blocks/BlocksGem",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.shadergraph",
+            "materialName": "BlocksGem",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGem/BlocksGem.shadergraph",
+            "shaderName": "Blocks/BlocksGem",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "Manifest:CompatibilityBrushes",
+            "brushAssetPath": "Assets/Resources/Brushes/Blocks/BlocksGlass/BlocksGlass.asset",
+            "brushGuid": "3d813d82-5839-4450-8ddc-8e889ecd96c7",
+            "brushDurableName": "BlocksGlass",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.mat",
+            "materialName": "BlocksGlass",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.shadergraph",
+            "shaderName": "Blocks/BlocksGlass",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.mat",
+            "materialName": "BlocksGlass",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.shadergraph",
+            "shaderName": "Blocks/BlocksGlass",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 2,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.shadergraph",
+            "materialName": "BlocksGlass",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/BlocksGlass/BlocksGlass.shadergraph",
+            "shaderName": "Blocks/BlocksGlass",
+            "keywords": [],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
             "source": "Manifest:Brushes",
             "brushAssetPath": "Assets/Resources/Brushes/Basic/DiamondHull/DiamondHull.asset",
             "brushGuid": "c8313697-2563-47fc-832e-290f4c04b901",
@@ -7449,6 +7459,7 @@
             "keywords": [
                 "AUDIO_REACTIVE",
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7468,6 +7479,7 @@
             "keywords": [
                 "AUDIO_REACTIVE",
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7487,6 +7499,7 @@
             "keywords": [
                 "SHADER_SCRIPTING_ON",
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7506,6 +7519,7 @@
             "keywords": [
                 "SHADER_SCRIPTING_ON",
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7525,6 +7539,7 @@
             "keywords": [
                 "_EMISSION",
                 "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7544,6 +7559,7 @@
             "keywords": [
                 "_EMISSION",
                 "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7562,6 +7578,7 @@
             "shaderName": "Shader Graphs/LightWire",
             "keywords": [
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7580,6 +7597,7 @@
             "shaderName": "Shader Graphs/LightWire",
             "keywords": [
                 "_EMISSION",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -7652,6 +7670,23 @@
             "globalIlluminationFlags": 4,
             "doubleSidedGI": false,
             "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/LightWire/LightWire.shadergraph",
+            "materialName": "LightWire",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/6_StandardSpecials/LightWire/LightWire.shadergraph",
+            "shaderName": "Shader Graphs/LightWire",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 2000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _IS_TILT_MESH"
         },
         {
             "source": "Manifest:Brushes",
@@ -8337,38 +8372,9 @@
             "materialName": "BubbleWand",
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
             "shaderName": "Shader Graphs/BubbleWand",
-            "keywords": [],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 5,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
-            "source": "UnityToolsPackageMaterial",
-            "brushAssetPath": "",
-            "brushGuid": "",
-            "brushDurableName": "",
-            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.mat",
-            "materialName": "BubbleWand",
-            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
-            "shaderName": "Shader Graphs/BubbleWand",
-            "keywords": [],
-            "renderQueue": 3000,
-            "globalIlluminationFlags": 5,
-            "doubleSidedGI": false,
-            "notes": "base"
-        },
-        {
-            "source": "Manifest_Experimental:Brushes",
-            "brushAssetPath": "Assets/Resources/X/Brushes/BubbleWand/BubbleWand.asset",
-            "brushGuid": "eba3f993-f9a1-4d35-b84e-bb08f48981a4",
-            "brushDurableName": "BubbleWand",
-            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.mat",
-            "materialName": "BubbleWand",
-            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
-            "shaderName": "Shader Graphs/BubbleWand",
             "keywords": [
-                "SHADER_SCRIPTING_ON"
+                "SHADER_SCRIPTING_ON",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 3000,
             "globalIlluminationFlags": 5,
@@ -8385,7 +8391,8 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
             "shaderName": "Shader Graphs/BubbleWand",
             "keywords": [
-                "SHADER_SCRIPTING_ON"
+                "SHADER_SCRIPTING_ON",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 3000,
             "globalIlluminationFlags": 5,
@@ -8402,7 +8409,8 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
             "shaderName": "Shader Graphs/BubbleWand",
             "keywords": [
-                "_ISBAKEDEXPORT"
+                "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 3000,
             "globalIlluminationFlags": 5,
@@ -8419,12 +8427,47 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
             "shaderName": "Shader Graphs/BubbleWand",
             "keywords": [
-                "_ISBAKEDEXPORT"
+                "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 3000,
             "globalIlluminationFlags": 5,
             "doubleSidedGI": false,
             "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "Manifest_Experimental:Brushes",
+            "brushAssetPath": "Assets/Resources/X/Brushes/BubbleWand/BubbleWand.asset",
+            "brushGuid": "eba3f993-f9a1-4d35-b84e-bb08f48981a4",
+            "brushDurableName": "BubbleWand",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.mat",
+            "materialName": "BubbleWand",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
+            "shaderName": "Shader Graphs/BubbleWand",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "base"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.mat",
+            "materialName": "BubbleWand",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
+            "shaderName": "Shader Graphs/BubbleWand",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 5,
+            "doubleSidedGI": false,
+            "notes": "base"
         },
         {
             "source": "UnityToolsPackageMaterial",
@@ -8474,6 +8517,23 @@
             "globalIlluminationFlags": 4,
             "doubleSidedGI": false,
             "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
+            "materialName": "BubbleWand",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/BubbleWand/BubbleWand.shadergraph",
+            "shaderName": "Shader Graphs/BubbleWand",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 3000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _IS_TILT_MESH"
         },
         {
             "source": "UnityToolsPackageMaterial",
@@ -8810,7 +8870,8 @@
             "shaderName": "Shader Graphs/KeijiroTube",
             "keywords": [
                 "SHADER_SCRIPTING_ON",
-                "_EMISSION"
+                "_EMISSION",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 2450,
             "globalIlluminationFlags": 3,
@@ -8828,7 +8889,8 @@
             "shaderName": "Shader Graphs/KeijiroTube",
             "keywords": [
                 "SHADER_SCRIPTING_ON",
-                "_EMISSION"
+                "_EMISSION",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 2450,
             "globalIlluminationFlags": 3,
@@ -8845,7 +8907,46 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
             "shaderName": "Shader Graphs/KeijiroTube",
             "keywords": [
-                "_EMISSION"
+                "_EMISSION",
+                "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 3,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.mat",
+            "materialName": "KeijiroTube",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "shaderName": "Shader Graphs/KeijiroTube",
+            "keywords": [
+                "_EMISSION",
+                "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 3,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "Manifest_Experimental:Brushes",
+            "brushAssetPath": "Assets/Resources/X/Brushes/KeijiroTube/KeijiroTube.asset",
+            "brushGuid": "f8ba3d18-01fc-4d7b-b2d9-b99d10b8e7cf",
+            "brushDurableName": "KeijiroTube",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.mat",
+            "materialName": "KeijiroTube",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "shaderName": "Shader Graphs/KeijiroTube",
+            "keywords": [
+                "_EMISSION",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 2450,
             "globalIlluminationFlags": 3,
@@ -8862,7 +8963,8 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
             "shaderName": "Shader Graphs/KeijiroTube",
             "keywords": [
-                "_EMISSION"
+                "_EMISSION",
+                "_IS_TILT_MESH"
             ],
             "renderQueue": 2450,
             "globalIlluminationFlags": 3,
@@ -8900,6 +9002,40 @@
             "globalIlluminationFlags": 4,
             "doubleSidedGI": false,
             "notes": "runtime keyword SHADER_SCRIPTING_ON"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "materialName": "KeijiroTube",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "shaderName": "Shader Graphs/KeijiroTube",
+            "keywords": [
+                "_ISBAKEDEXPORT"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "materialName": "KeijiroTube",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/KeijiroTube/KeijiroTube.shadergraph",
+            "shaderName": "Shader Graphs/KeijiroTube",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 2450,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _IS_TILT_MESH"
         },
         {
             "source": "Manifest_Experimental:Brushes",
@@ -9420,6 +9556,7 @@
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
                 "SHADER_SCRIPTING_ON",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9438,6 +9575,7 @@
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
                 "SHADER_SCRIPTING_ON",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9456,6 +9594,7 @@
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
                 "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9474,6 +9613,7 @@
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
                 "_ISBAKEDEXPORT",
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9491,6 +9631,7 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/MylarTube/MylarTube.shadergraph",
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9508,6 +9649,7 @@
             "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/MylarTube/MylarTube.shadergraph",
             "shaderName": "Shader Graphs/MylarTube",
             "keywords": [
+                "_IS_TILT_MESH",
                 "_POSITION_IS_BAKED"
             ],
             "renderQueue": 2000,
@@ -9563,6 +9705,23 @@
             "globalIlluminationFlags": 4,
             "doubleSidedGI": false,
             "notes": "runtime keyword _ISBAKEDEXPORT"
+        },
+        {
+            "source": "UnityToolsPackageMaterial",
+            "brushAssetPath": "",
+            "brushGuid": "",
+            "brushDurableName": "",
+            "materialPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/MylarTube/MylarTube.shadergraph",
+            "materialName": "MylarTube",
+            "shaderPath": "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/8_Experimental/MylarTube/MylarTube.shadergraph",
+            "shaderName": "Shader Graphs/MylarTube",
+            "keywords": [
+                "_IS_TILT_MESH"
+            ],
+            "renderQueue": 2000,
+            "globalIlluminationFlags": 4,
+            "doubleSidedGI": false,
+            "notes": "runtime keyword _IS_TILT_MESH"
         },
         {
             "source": "UnityToolsPackageMaterial",
