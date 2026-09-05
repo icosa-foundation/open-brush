@@ -124,6 +124,13 @@ namespace TiltBrush
             return BasePanel.DoesRayHitCollider(ray, GetCollider(), out hitInfo);
         }
 
+        /// UnityEvent target for trays that are driven by a toggle button rather than by
+        /// tool state.
+        public void ToggleTray(ActionToggleButton btn)
+        {
+            EnableTray(btn.ToggleState);
+        }
+
         public void EnableTray(bool activate)
         {
             if (activate != m_AnimateIn)
