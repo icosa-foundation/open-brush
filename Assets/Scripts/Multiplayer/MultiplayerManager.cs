@@ -57,8 +57,6 @@ namespace OpenBrush.Multiplayer
 
         public event Action<ConnectionState> StateUpdated;
         public event Action<bool> RoomOwnershipUpdated;
-        public event Action<ConnectionUserInfo> UserInfoStateUpdated;
-
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
 
@@ -96,8 +94,6 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
-        private string m_oldNickName = null;
-
         [HideInInspector] public RoomCreateData CurrentRoomData;
 
         private bool _isUserRoomOwner = false;
@@ -412,7 +408,6 @@ namespace OpenBrush.Multiplayer
 
             if (State != ConnectionState.IN_ROOM)
             {
-                m_oldNickName = null;
                 return;
             }
 
@@ -727,9 +722,9 @@ namespace OpenBrush.Multiplayer
             }
         }
 
+#if OCULUS_SUPPORTED
         async void ShareAnchors()
         {
-#if OCULUS_SUPPORTED
             Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
             var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
 
@@ -740,8 +735,10 @@ namespace OpenBrush.Multiplayer
                     await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
                 }
             }
-#endif // OCULUS_SUPPORTED
         }
+#else
+        void ShareAnchors() { }
+#endif // OCULUS_SUPPORTED
 
         private void OnConnectionHandlerDisconnected()
         {

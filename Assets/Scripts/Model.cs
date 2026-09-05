@@ -626,9 +626,10 @@ namespace TiltBrush
         {
 #if USD_SUPPORTED
             return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
-#endif
+#else
             m_LoadError = new LoadError("usd not supported");
             return null;
+#endif
         }
 
         GameObject LoadPly(List<string> warningsOut)
@@ -1017,7 +1018,7 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                StartCreatePrefab(go);
+                _ = StartCreatePrefab(go);
             }
 
             AssignMaterialsToCollector(m_ImportMaterialCollector);
@@ -1035,7 +1036,7 @@ namespace TiltBrush
 
         public void LoadModel()
         {
-            StartCreatePrefab(null);
+            _ = StartCreatePrefab(null);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -1208,12 +1209,24 @@ namespace TiltBrush
 
         }
 
-        public void EndCreatePrefab(GameObject go, List<string> warnings)
+        public bool EndCreatePrefab(GameObject go, List<string> warnings)
         {
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
                 DisplayWarnings(warnings);
+                return false;
+            }
+
+            float maxSide = Mathf.Max(m_MeshBounds.size.x,
+                Mathf.Max(m_MeshBounds.size.y, m_MeshBounds.size.z));
+            if (maxSide <= Mathf.Epsilon)
+            {
+                m_Valid = false;
+                m_LoadError = new LoadError("No usable geometry");
+                UObject.Destroy(go);
+                DisplayWarnings(warnings);
+                return false;
             }
 
             GsplatAsset newOwnedGsplatAsset = go
@@ -1256,6 +1269,7 @@ namespace TiltBrush
             // However the code paths have become a bit convoluted so err on the side of caution
             AssignMaterialsToCollector(m_ImportMaterialCollector);
             DisplayWarnings(warnings);
+            return true;
         }
 
 

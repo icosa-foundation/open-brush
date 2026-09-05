@@ -1681,16 +1681,16 @@ namespace TiltBrush
                 return 0;
             }
             long bytes = 0;
-            var seenMeshes = new HashSet<int>();
+            var seenMeshes = new HashSet<Mesh>();
             foreach (var mf in model.m_ModelParent.GetComponentsInChildren<MeshFilter>(true))
             {
                 var mesh = mf.sharedMesh;
-                if (mesh != null && seenMeshes.Add(mesh.GetInstanceID()))
+                if (mesh != null && seenMeshes.Add(mesh))
                 {
                     bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh);
                 }
             }
-            var seenTextures = new HashSet<int>();
+            var seenTextures = new HashSet<Texture>();
             foreach (var renderer in model.m_ModelParent.GetComponentsInChildren<Renderer>(true))
             {
                 foreach (var mat in renderer.sharedMaterials)
@@ -1699,7 +1699,7 @@ namespace TiltBrush
                     foreach (var nameId in mat.GetTexturePropertyNameIDs())
                     {
                         var tex = mat.GetTexture(nameId);
-                        if (tex != null && seenTextures.Add(tex.GetInstanceID()))
+                        if (tex != null && seenTextures.Add(tex))
                         {
                             bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(tex);
                         }

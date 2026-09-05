@@ -20,6 +20,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
+using UnityEngine.XR.OpenXR;
 using InputDevice = UnityEngine.XR.InputDevice;
 
 namespace TiltBrush
@@ -148,7 +149,8 @@ public bool IsInitializingUnityXR
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
 
-            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+            bool disableXr = App.Config.m_SdkMode != SdkMode.UnityXR ||
+                App.UserConfig.Flags.DisableXrMode ||
                 Keyboard.current[Key.D].isPressed;
 
             // Allow forcing of monoscopic mode even if launching in XR
@@ -339,18 +341,57 @@ public bool IsInitializingUnityXR
 
         private void SetPassthroughStrategy()
         {
-            if (FBPassthrough.FeatureEnabled)
+            PassthroughMode = DeterminePassthroughStrategy();
+            Debug.Log($"[Passthrough] Strategy: {PassthroughMode}");
+        }
+
+        private static PassthroughMode DeterminePassthroughStrategy()
+        {
+#if ZAPBOX_SUPPORTED
+            // Zapbox is passthrough-only and doesn't advertise it through OpenXR, so the
+            // build target is the only signal we have.
+            return PassthroughMode.Zapbox;
+#else
+            // Everything below describes what the *runtime* actually supports, and none of it
+            // is meaningful until a loader is up. Without one - XR disabled by flag or key,
+            // headless, Linux view mode - OpenXRSettings still reports the authored feature
+            // flags, which would claim passthrough the runtime never confirmed.
+            XRLoader loader = XRGeneralSettings.Instance?.Manager?.activeLoader;
+            if (loader == null)
             {
-                PassthroughMode = PassthroughMode.FBPassthrough;
-                return;
+                return PassthroughMode.None;
             }
 
-#if ZAPBOX_SUPPORTED
-            PassthroughMode = PassthroughMode.Zapbox;
-            return;
-#endif // ZAPBOX_SUPPORTED
+            if (IsFbPassthroughAvailable())
+            {
+                return PassthroughMode.FBPassthrough;
+            }
 
-            PassthroughMode = PassthroughMode.None;
+            // Runtimes that composite the real world for us (additive or alpha-blend
+            // environment blend modes, e.g. Android XR) expose no passthrough extension;
+            // they just report a non-opaque display.
+            var display = loader.GetLoadedSubsystem<XRDisplaySubsystem>();
+            if (display != null && display.running && !display.displayOpaque)
+            {
+                return PassthroughMode.OpenXREnvionmentBlendMode;
+            }
+
+            return PassthroughMode.None;
+#endif // ZAPBOX_SUPPORTED
+        }
+
+        /// FBPassthrough.FeatureEnabled dereferences both the settings asset and the feature,
+        /// either of which is null when the active loader isn't OpenXR. The feature's own
+        /// `enabled` already folds in whether XR_FB_passthrough survived instance creation.
+        private static bool IsFbPassthroughAvailable()
+        {
+            OpenXRSettings settings = OpenXRSettings.Instance;
+            if (settings == null)
+            {
+                return false;
+            }
+            FBPassthrough feature = settings.GetFeature<FBPassthrough>();
+            return feature != null && feature.enabled;
         }
 
         // -------------------------------------------------------------------------------------------- //

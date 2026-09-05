@@ -776,7 +776,10 @@ namespace TiltBrush
 
         void RegisterWithWidgetManager()
         {
-            if (!m_Registered && WidgetManager.m_Instance != null)
+            // Awake can run before SketchControlsScript calls WidgetManager.Init, so the
+            // manager may exist without its lists. Start registers us once it is ready.
+            if (!m_Registered && WidgetManager.m_Instance != null &&
+                WidgetManager.m_Instance.IsInitialized)
             {
                 WidgetManager.m_Instance.RegisterGrabWidget(gameObject);
                 m_Registered = true;

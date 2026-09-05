@@ -662,7 +662,7 @@ namespace OpenBrush.Multiplayer
         [Rpc(InvokeLocal = false)]
         public static void RPC_DisconnectRemoteUser(NetworkRunner runner,[RpcTarget] PlayerRef targetPlayer)
         {
-            MultiplayerManager.m_Instance.Disconnect();
+            _ = MultiplayerManager.m_Instance.Disconnect();
         }
 
         [Rpc(InvokeLocal = false)]

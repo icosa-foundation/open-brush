@@ -101,7 +101,7 @@ namespace TiltBrush
         {
             TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
 
-            Color color = Color.magenta;
+            Color color = Color.white;
             bool hasColor = false;
             if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
             {
@@ -128,9 +128,15 @@ namespace TiltBrush
                     }
                 }
             }
-            if (!hasColor)
+            if (!hasColor && unityMaterial.HasColor("_Color"))
             {
-                color = unityMaterial.color;
+                color = unityMaterial.GetColor("_Color");
+                hasColor = true;
+            }
+            if (!hasColor && unityMaterial.HasColor("_BaseColor"))
+            {
+                color = unityMaterial.GetColor("_BaseColor");
+                hasColor = true;
             }
 
             var dynMat = new DynamicExportableMaterial(

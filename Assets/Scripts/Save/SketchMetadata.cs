@@ -681,6 +681,9 @@ namespace TiltBrush
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
+        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] Opacities { get; set; }
     }
 
     [Serializable]

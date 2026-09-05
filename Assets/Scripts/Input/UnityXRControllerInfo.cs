@@ -28,10 +28,11 @@ namespace TiltBrush
     ///   - AndroidXRHandBridge supplies Brush trigger state
     ///   - Controller-only inputs are suppressed while hand mode is active
     /// </summary>
-    public class UnityXRControllerInfo : ControllerInfo
+    public class UnityXRControllerInfo : ControllerInfo, IDisposable
     {
         private UnityEngine.XR.InputDevice device;
         private readonly UnityXRInputAction actionSet = new();
+        private bool m_IsDisposed;
 
         private Vector2 padAxisPrevious = Vector2.zero;
         private const float kInputScrollScalar = 0.5f;
@@ -55,6 +56,18 @@ namespace TiltBrush
         {
             isBrush = !isBrush;
             Init();
+        }
+
+        public void Dispose()
+        {
+            if (m_IsDisposed)
+            {
+                return;
+            }
+
+            actionSet.Disable();
+            actionSet.Dispose();
+            m_IsDisposed = true;
         }
 
         private void Init()

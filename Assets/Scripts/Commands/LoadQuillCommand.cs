@@ -37,9 +37,15 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_Active)
+            {
+                return;
+            }
+
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(layer);
             }
             if (m_Widgets != null)
             {
@@ -48,6 +54,8 @@ namespace TiltBrush
                     if (widget == null) continue;
                     widget.gameObject.SetActive(true);
                     widget.RestoreFromToss();
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                        widget.GetTiltMeterCost(), up: true);
                 }
             }
             foreach (var stroke in m_Strokes)
@@ -59,6 +67,11 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (!m_Active)
+            {
+                return;
+            }
+
             foreach (var stroke in m_Strokes)
             {
                 stroke.Hide(true);
@@ -68,12 +81,15 @@ namespace TiltBrush
                 foreach (var widget in m_Widgets)
                 {
                     if (widget == null) continue;
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(
+                        widget.GetTiltMeterCost(), up: false);
                     widget.Hide();
                 }
             }
             foreach (var layer in m_Layers)
             {
                 layer.gameObject.SetActive(false);
+                App.Scene.MarkLayerAsDeleted(layer);
             }
             m_Active = false;
         }
@@ -90,6 +106,15 @@ namespace TiltBrush
             }
             if (m_Layers != null)
             {
+                // Clear all deleted-layer indices before removing any layers. DestroyLayer removes
+                // entries from the layer list, which changes the indices of the remaining layers.
+                foreach (var layer in m_Layers)
+                {
+                    if (App.Scene.IsLayerDeleted(layer))
+                    {
+                        App.Scene.MarkLayerAsNotDeleted(layer);
+                    }
+                }
                 foreach (var layer in m_Layers)
                 {
                     App.Scene.DestroyLayer(layer);

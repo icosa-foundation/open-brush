@@ -103,7 +103,13 @@ namespace TiltBrush
             }
             if (selection == null && App.Instance != null)
             {
-                selection = App.Instance.SelectionEffect;
+                // Only fall back to the app's effect for the camera that owns it. Auxiliary
+                // cameras (snapshot, dropcam, ODS) must not composite selection into their output.
+                Camera vrCamera = App.VrSdk != null ? App.VrSdk.GetVrCamera() : null;
+                if (camera != null && camera == vrCamera)
+                {
+                    selection = App.Instance.SelectionEffect;
+                }
             }
             if (camera == null ||
                 selection == null)
@@ -221,7 +227,6 @@ namespace TiltBrush
 
         protected override void Dispose(bool disposing)
         {
-            m_Pass?.Dispose();
             CoreUtils.Destroy(m_MaskMaterial);
             CoreUtils.Destroy(m_SimpleCompositeMaterial);
         }
@@ -247,8 +252,6 @@ namespace TiltBrush
             private Material m_SimpleCompositeMaterial;
             private int m_SimpleCompositeMode;
             private bool m_DebugRawMask;
-            private RTHandle m_ColorCopy;
-            private RTHandle m_SelectionMask;
 
             public void Setup(
                 SelectionEffect selection,
@@ -262,104 +265,6 @@ namespace TiltBrush
                 m_SimpleCompositeMaterial = simpleCompositeMaterial;
                 m_SimpleCompositeMode = simpleCompositeMode;
                 m_DebugRawMask = debugRawMask;
-            }
-
-            public void Dispose()
-            {
-                m_ColorCopy?.Release();
-                m_SelectionMask?.Release();
-                m_ColorCopy = null;
-                m_SelectionMask = null;
-            }
-
-            [System.Obsolete]
-            public override void Execute(
-                ScriptableRenderContext context,
-                ref RenderingData renderingData)
-            {
-                if (m_Selection == null)
-                {
-                    return;
-                }
-
-                CommandBuffer cmd = CommandBufferPool.Get("Open Brush Selection");
-                try
-                {
-                    if (!m_Selection.HasPreparedUrpSelectionFrame)
-                    {
-                        return;
-                    }
-
-                    if (m_MaskMaterial == null || m_SimpleCompositeMaterial == null)
-                    {
-                        return;
-                    }
-
-                    RenderTextureDescriptor cameraDescriptor =
-                        renderingData.cameraData.cameraTargetDescriptor;
-                    cameraDescriptor.depthBufferBits = 0;
-                    RenderingUtils.ReAllocateIfNeeded(
-                        ref m_ColorCopy,
-                        cameraDescriptor,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        name: "_OpenBrushSelectionColorCopy");
-
-                    RenderTextureDescriptor maskDescriptor = cameraDescriptor;
-                    maskDescriptor.msaaSamples = 1;
-                    maskDescriptor.colorFormat = RenderTextureFormat.RFloat;
-
-                    RenderingUtils.ReAllocateIfNeeded(
-                        ref m_SelectionMask,
-                        maskDescriptor,
-                        FilterMode.Bilinear,
-                        TextureWrapMode.Clamp,
-                        name: "_OpenBrushSelectionMask");
-
-                    RTHandle cameraColorTarget =
-                        renderingData.cameraData.renderer.cameraColorTargetHandle;
-                    CoreUtils.SetRenderTarget(
-                        cmd,
-                        m_SelectionMask,
-                        ClearFlag.Color,
-                        Color.black);
-                    m_Selection.DrawUrpHighlightMeshes(cmd, m_MaskMaterial);
-                    if (m_DebugRawMask)
-                    {
-                        cmd.Blit(m_SelectionMask, cameraColorTarget);
-                        context.ExecuteCommandBuffer(cmd);
-                        return;
-                    }
-
-                    cmd.Blit(cameraColorTarget, m_ColorCopy);
-                    CoreUtils.SetRenderTarget(
-                        cmd,
-                        cameraColorTarget,
-                        ClearFlag.None);
-                    cmd.SetGlobalTexture(SimpleSelectionColor, m_ColorCopy);
-                    cmd.SetGlobalTexture(SimpleSelectionMask, m_SelectionMask);
-                    cmd.DrawMesh(
-                        RenderingUtils.fullscreenMesh,
-                        Matrix4x4.identity,
-                        m_SimpleCompositeMaterial,
-                        0,
-                        0,
-                        CreateSimpleCompositeProperties(
-                            cameraDescriptor.width,
-                            cameraDescriptor.height,
-                            m_SimpleCompositeMode));
-
-                    context.ExecuteCommandBuffer(cmd);
-                }
-                finally
-                {
-                    CommandBufferPool.Release(cmd);
-                    m_Selection.EndUrpSelectionFrame();
-                    m_Selection = null;
-                    m_MaskMaterial = null;
-                    m_SimpleCompositeMaterial = null;
-                    m_DebugRawMask = false;
-                }
             }
 
             private class PassData

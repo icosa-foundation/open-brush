@@ -378,7 +378,6 @@ namespace TiltBrush
                 else if (args[i] == "--captureOds")
                 {
                     m_SdkMode = SdkMode.Ods;
-                    UnityEngine.XR.XRSettings.enabled = false;
                     Debug.Log("CaptureODS: Enable ");
 
                 }
@@ -507,7 +506,6 @@ namespace TiltBrush
                     }
                     m_VideoPathToRender = args[++i];
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (args[i] == "--EnableMonoscopicMode")
                 {
@@ -622,12 +620,10 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (disableXr)
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
 
                 string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");

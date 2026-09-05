@@ -34,12 +34,18 @@ namespace TiltBrush
         public float MaxDistance = 500f;
         public bool AutoPlay = true;
 
-        private AudioSource _audioSource;
+        [SerializeField] private AudioSource _audioSource;
         private AudioClip _loadedClip;
+
+        public void SetAudioSource(AudioSource audioSource)
+        {
+            _audioSource = audioSource;
+        }
 
         private void Awake()
         {
-            _audioSource = GetComponent<AudioSource>();
+            if (_audioSource == null)
+                _audioSource = GetComponent<AudioSource>();
             if (_audioSource == null)
                 _audioSource = gameObject.AddComponent<AudioSource>();
         }
@@ -63,6 +69,20 @@ namespace TiltBrush
         {
             _audioSource.Stop();
             StopAllCoroutines();
+        }
+
+        private void OnDestroy()
+        {
+            if (_audioSource != null && _audioSource.clip == _loadedClip)
+            {
+                _audioSource.Stop();
+                _audioSource.clip = null;
+            }
+            if (_loadedClip != null)
+            {
+                Destroy(_loadedClip);
+                _loadedClip = null;
+            }
         }
 
         private IEnumerator LoadAndPlay()

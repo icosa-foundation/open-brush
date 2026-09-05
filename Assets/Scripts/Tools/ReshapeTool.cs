@@ -39,8 +39,6 @@ namespace TiltBrush
         private const float k_ArcLengthFeatherRadiusRatio = 0.25f;
         private const float k_SmoothAmountPerReferenceUpdate = 0.1f;
 
-        /// Keeps track of the first sculpting change made while the trigger is held.
-        private bool m_AtLeastOneModificationMade = false;
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
         private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
@@ -144,11 +142,6 @@ namespace TiltBrush
             }
         }
 
-        public void FinalizeSculptingBatch()
-        {
-            m_AtLeastOneModificationMade = false;
-        }
-
         public override void OnUpdateDetection()
         {
             if (m_WaitingForTriggerRelease &&
@@ -159,7 +152,6 @@ namespace TiltBrush
 
             if (!m_CurrentlyHot && m_ToolWasHot)
             {
-                FinalizeSculptingBatch();
                 ResetToolRotation();
                 ClearGpuFutureLists();
                 m_SculptContacts.Clear();
@@ -554,7 +546,6 @@ namespace TiltBrush
                 // Apply immediately while keeping this command in the active undo group.
                 cmd.Redo();
             }
-            m_AtLeastOneModificationMade = true;
         }
 
         private void ExpireSculptContacts()

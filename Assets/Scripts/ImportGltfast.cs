@@ -140,7 +140,10 @@ namespace TiltBrush
                 }
 
                 model.CalcBoundsGltf(go);
-                model.EndCreatePrefab(go, warnings);
+                if (!model.EndCreatePrefab(go, warnings))
+                {
+                    return;
+                }
                 var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
                 // Gather all the unity materials created by UnityGltf
                 var mrs = go.GetComponentsInChildren<MeshRenderer>(true);

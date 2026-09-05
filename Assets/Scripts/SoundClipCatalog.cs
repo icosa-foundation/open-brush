@@ -29,6 +29,7 @@ namespace TiltBrush
         private FileWatcher m_FileWatcher;
         private bool m_ScanningDirectory;
         private bool m_DirectoryScanRequired;
+        private int m_ScanGeneration;
         private HashSet<string> m_ChangedFiles;
 
         private List<SoundClip> m_SoundClips;
@@ -63,7 +64,19 @@ namespace TiltBrush
             {
                 clip.Dispose();
             }
+            DisposeFileWatcher();
+        }
+
+        private void DisposeFileWatcher()
+        {
+            if (m_FileWatcher == null) return;
+
             m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public SoundClip GetSoundClipAtIndex(int index)
@@ -94,8 +107,7 @@ namespace TiltBrush
         {
             if (!m_ScanningDirectory)
             {
-                m_DirectoryScanRequired = false;
-                StartCoroutine(ScanReferenceDirectory());
+                StartCatalogScan();
             }
         }
 
@@ -111,34 +123,52 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerator<object> ScanReferenceDirectory()
+        private void StartCatalogScan()
         {
+            m_DirectoryScanRequired = false;
             m_ScanningDirectory = true;
-            HashSet<string> changedSet = null;
+            int generation = ++m_ScanGeneration;
+
             // We do a switcheroo on the changed list here so that there isn't a conflict with it
             // if a filewatch callback happens.
+            HashSet<string> changedSet;
             lock (m_ChangedFiles)
             {
                 changedSet = m_ChangedFiles;
                 m_ChangedFiles = new HashSet<string>();
             }
 
-            var existing = new HashSet<string>(m_SoundClips.Select(x => x.AbsolutePath));
+            StartCoroutine(ScanReferenceDirectory(
+                m_CurrentSoundClipDirectory, m_SoundClips, changedSet, generation));
+        }
+
+        private IEnumerator<object> ScanReferenceDirectory(
+            string directory, List<SoundClip> soundClips, HashSet<string> changedSet, int generation)
+        {
+
+            var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentSoundClipDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedSoundClipExtensions.Contains(Path.GetExtension(x))));
+                Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                    x => m_supportedSoundClipExtensions.Contains(
+                        Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 
             // Remove deleted sound clips from the list. Currently playing clips may continue to play, but will
             // not appear in the reference panel.
-            m_SoundClips.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+            var retiredSoundClips = soundClips.Where(x => toDelete.Contains(x.AbsolutePath)).ToArray();
+            soundClips.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+            foreach (var soundClip in retiredSoundClips)
+            {
+                soundClip.ReleaseThumbnail();
+            }
 
             var newSoundClips = new List<SoundClip>();
             foreach (var filePath in toScan)
             {
                 SoundClip clipRef = new SoundClip(filePath);
                 newSoundClips.Add(clipRef);
-                m_SoundClips.Add(clipRef);
+                soundClips.Add(clipRef);
             }
 
             // If we have a lot of clips, they may take a while to create thumbnails. Make sure we refresh
@@ -153,6 +183,13 @@ namespace TiltBrush
                     nextRefresh = DateTime.Now + interval;
                 }
                 yield return clipRef.Initialize();
+                if (generation != m_ScanGeneration)
+                {
+                    clipRef.ReleaseThumbnail();
+                    // The replacement scan owns m_ScanningDirectory. A stale scan must not clear
+                    // it while the replacement may still be running.
+                    yield break;
+                }
             }
 
             m_ScanningDirectory = false;
@@ -166,7 +203,56 @@ namespace TiltBrush
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.
         public SoundClip GetSoundClipByPersistentPath(string path)
         {
-            return m_SoundClips.FirstOrDefault(x => x.PersistentPath == path);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+
+            SoundClip soundClip = m_SoundClips.FirstOrDefault(x => x.PersistentPath == path);
+            if (soundClip != null)
+            {
+                return soundClip;
+            }
+
+            // The catalog contains only the directory currently shown in the reference panel.
+            // Resolve saved paths directly so clips in subdirectories can be restored without the
+            // user first navigating to their directory.
+            if (Path.IsPathRooted(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                string libraryPath = Path.GetFullPath(App.SoundClipLibraryPath());
+                string normalizedPath = path
+                    .Replace('\\', Path.DirectorySeparatorChar)
+                    .Replace('/', Path.DirectorySeparatorChar);
+                string absolutePath = Path.GetFullPath(Path.Combine(libraryPath, normalizedPath));
+                string libraryPathWithSeparator = libraryPath.TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                StringComparison pathComparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+
+                if (!absolutePath.StartsWith(libraryPathWithSeparator, pathComparison) ||
+                    !m_supportedSoundClipExtensions.Contains(
+                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase) ||
+                    !File.Exists(absolutePath))
+                {
+                    return null;
+                }
+
+                return new SoundClip(absolutePath);
+            }
+            catch (Exception e) when (
+                e is ArgumentException ||
+                e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return null;
+            }
         }
 
         public void DebugListSoundClips()
@@ -179,11 +265,21 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            DisposeFileWatcher();
+            ++m_ScanGeneration;
+            m_DirectoryScanRequired = false;
+            if (m_SoundClips != null)
+            {
+                foreach (var soundClip in m_SoundClips)
+                {
+                    soundClip.ReleaseThumbnail();
+                }
+            }
             m_CurrentSoundClipDirectory = newPath;
             m_SoundClips = new List<SoundClip>();
             m_ChangedFiles = new HashSet<string>();
 
-            StartCoroutine(ScanReferenceDirectory());
+            StartCatalogScan();
 
             if (Directory.Exists(m_CurrentSoundClipDirectory))
             {

@@ -1,5 +1,6 @@
 # Standard unity stuff
 /Temp/
+/.venv-ssim/
 /Obj/
 /Build/
 /Library/
@@ -98,3 +99,4 @@
 /Assets/Resources/ViverseViewer.bytes
 /Assets/Resources/ViverseViewer.bytes.meta
 /Support/Screenshots
+/Support/BrushFixtures

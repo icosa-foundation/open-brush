@@ -255,7 +255,7 @@ namespace TiltBrush
                     return m_Instance.m_MemoryList.ElementAt(index);
                 }
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
             }
             return null;

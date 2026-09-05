@@ -18,7 +18,7 @@ namespace TiltBrush
     {
         public override StencilType CaptureShapeType => StencilType.InteriorDome;
 
-        public static void FromTiltGaussianCapture(TiltGaussianCapture tilt)
+        public new static void FromTiltGaussianCapture(TiltGaussianCapture tilt)
         {
             CreateFromTiltGaussianCapture(
                 tilt, WidgetManager.m_Instance.GaussianCaptureHemisphereWidgetPrefab);

@@ -31,7 +31,7 @@ namespace TiltBrush
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
+            App.Switchboard.BrushSizeChanged -= UpdateSliderToMatchCurrentSize;
         }
 
         private void DetectSupportedDevices()
@@ -40,21 +40,11 @@ namespace TiltBrush
             bool needsBrushSizeUI =
                 VrStylusHandler.m_Instance?.CurrentState?.isActive == true;
 
-            // DoAnimateIn performs a toggle so we have to also check the state
-            if (needsBrushSizeUI)
+            bool wasShowing = m_AnimateIn;
+            EnableTray(needsBrushSizeUI);
+            if (needsBrushSizeUI && !wasShowing)
             {
-                if (!m_AnimateIn)
-                {
-                    DoAnimateIn();
-                    UpdateSliderToMatchCurrentSize();
-                }
-            }
-            else
-            {
-                if (m_AnimateIn)
-                {
-                    DoAnimateIn();
-                }
+                UpdateSliderToMatchCurrentSize();
             }
         }
 

@@ -882,9 +882,16 @@ namespace TiltBrush
             m_LastControlPointIsKeeper = isKeeper;
 
             if (!m_CurrentLine) return;
-            if (CurrentColorOverrideMode == ColorOverrideMode.None) return;
+            if (m_ControlPointColors == null &&
+                CurrentColorOverrideMode == ColorOverrideMode.None) return;
+
             m_ControlPointColors ??= Enumerable.Repeat((Color32?)null, m_ControlPoints.Count).ToList();
-            m_ControlPointColors.Add(CurrentColorOverride);
+            while (m_ControlPointColors.Count < m_ControlPoints.Count)
+            {
+                m_ControlPointColors.Add(null);
+            }
+            m_ControlPointColors[m_ControlPoints.Count - 1] =
+                CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.
@@ -1093,8 +1100,8 @@ namespace TiltBrush
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
                         WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
-                        m_CurrentLine.StrokeData?.m_OverrideColors,
-                        m_CurrentLine.StrokeData?.m_ColorOverrideMode ?? ColorOverrideMode.None
+                        m_ControlPointColors,
+                        CurrentColorOverrideMode
                     );
                 }
                 else
@@ -1121,6 +1128,7 @@ namespace TiltBrush
             }
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
+            m_ControlPointColors = null;
         }
 
         public bool ShouldCurrentLineEnd()

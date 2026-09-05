@@ -83,7 +83,7 @@ namespace TiltBrush
     public class TypedWidgetData<T> : GrabWidgetData where T : GrabWidget
     {
         private readonly T m_typedWidget;
-        public new T WidgetScript => m_typedWidget;
+        public T WidgetScript => m_typedWidget;
         public TypedWidgetData(T widget) : base(widget)
         {
             m_typedWidget = widget;
@@ -311,6 +311,10 @@ namespace TiltBrush
         {
             m_Instance = this;
         }
+
+        /// True once Init has created the widget lists. Awake only assigns m_Instance,
+        /// so widgets registering from their own Awake must check this as well.
+        public bool IsInitialized => m_GrabWidgets != null;
 
         public void Init()
         {

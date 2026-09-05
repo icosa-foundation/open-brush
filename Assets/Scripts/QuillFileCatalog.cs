@@ -81,14 +81,7 @@ namespace TiltBrush
                 Instance = null;
             }
 
-            if (m_FileWatcher != null)
-            {
-                m_FileWatcher.EnableRaisingEvents = false;
-                m_FileWatcher.FileChanged -= OnDirectoryChanged;
-                m_FileWatcher.FileCreated -= OnDirectoryChanged;
-                m_FileWatcher.FileDeleted -= OnDirectoryChanged;
-                m_FileWatcher = null;
-            }
+            StopWatchingCurrentDirectory();
         }
 
         private void Update()
@@ -172,14 +165,7 @@ namespace TiltBrush
 
         private void StartWatchingCurrentDirectory()
         {
-            if (m_FileWatcher != null)
-            {
-                m_FileWatcher.EnableRaisingEvents = false;
-                m_FileWatcher.FileChanged -= OnDirectoryChanged;
-                m_FileWatcher.FileCreated -= OnDirectoryChanged;
-                m_FileWatcher.FileDeleted -= OnDirectoryChanged;
-                m_FileWatcher = null;
-            }
+            StopWatchingCurrentDirectory();
 
             if (!Directory.Exists(m_CurrentDirectory))
             {
@@ -193,6 +179,21 @@ namespace TiltBrush
             m_FileWatcher.FileCreated += OnDirectoryChanged;
             m_FileWatcher.FileDeleted += OnDirectoryChanged;
             m_FileWatcher.EnableRaisingEvents = true;
+        }
+
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null)
+            {
+                return;
+            }
+
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)

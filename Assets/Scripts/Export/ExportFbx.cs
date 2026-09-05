@@ -352,6 +352,15 @@ namespace TiltBrush
                 material.Diffuse.ConnectSrcObject(texture);
                 material.TransparentColor.ConnectSrcObject(texture);
             }
+            else if (!exportableMaterial.SupportsDetailedMaterialInfo)
+            {
+                // Experimental brushes have no entry in exportManifest.json, so we don't know their
+                // texture uris. Export the material (and its geometry) without them rather than
+                // failing the whole export.
+                Debug.LogWarning(
+                    $"FBX export: no texture info for {exportableMaterial.DurableName}; " +
+                    "exporting material without textures (not in exportManifest.json).");
+            }
             else
             {
                 foreach (var kvp in exportableMaterial.TextureUris)

@@ -8,8 +8,7 @@ ShaderVariantCollection:
   m_PrefabAsset: {fileID: 0}
   m_Name: OpenBrushBrushVariants
   m_Shaders:
-  - first: {fileID: -6465566751694194690, guid: b698f21caf81c6544a789e7f49527c11,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: b698f21caf81c6544a789e7f49527c11, type: 3}
     second:
       variants:
       - keywords: 
@@ -18,17 +17,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -54,10 +65,16 @@ ShaderVariantCollection:
         passType: 0
       - keywords: AUDIO_REACTIVE
         passType: 0
-  - first: {fileID: 4800000, guid: 561cd39ab4e063843a09f5c11c3a8531, type: 3}
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+  - first: {fileID: -6465566751694194690, guid: b3844b15c535ed04db7b9b8e6c07ce3b, type: 3}
     second:
       variants:
       - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: HIGHLIGHT_ON
         passType: 4
       - keywords: SELECTION_ON
         passType: 4
@@ -65,41 +82,44 @@ ShaderVariantCollection:
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
       - keywords: SELECTION_ON
         passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
-  - first: {fileID: -6465566751694194690, guid: b3844b15c535ed04db7b9b8e6c07ce3b,
-      type: 3}
+      - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 286c16fdd0381854cb875392608b62df, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 5
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 5
-      - keywords: 
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: 286c16fdd0381854cb875392608b62df,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
+      - keywords: HIGHLIGHT_ON
+        passType: 0
+      - keywords: SELECTION_ON
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -114,21 +134,32 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 2a80dce37f4d57349b4d98e7fcdf60d2,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 2a80dce37f4d57349b4d98e7fcdf60d2, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -148,16 +179,14 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 3ee4d5b2d39172d49a8ff37c131b37b3,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 3ee4d5b2d39172d49a8ff37c131b37b3, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 7155064e818d84a48b337a74a6c48767,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 7155064e818d84a48b337a74a6c48767, type: 3}
     second:
       variants:
       - keywords: 
@@ -171,44 +200,65 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: bed5c8c09a625664488d59b68d51690d,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: bed5c8c09a625664488d59b68d51690d, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: a1537ea5abf7c7f4198075ddfd323ab4,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: a1537ea5abf7c7f4198075ddfd323ab4, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: dd78e84a130ff004f9981de54cc47a4f,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: dd78e84a130ff004f9981de54cc47a4f, type: 3}
     second:
       variants:
       - keywords: 
@@ -217,17 +267,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -238,12 +300,16 @@ ShaderVariantCollection:
         passType: 0
       - keywords: AUDIO_REACTIVE
         passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
   - first: {fileID: 4800000, guid: fb1ab3f9ab465f54eb58155e74965fd3, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
         passType: 0
   - first: {fileID: 4800000, guid: d3f113ebb941b344eab871b7ff555989, type: 3}
     second:
@@ -256,8 +322,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 6abb5ba876659de42821546dafac4bed,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 6abb5ba876659de42821546dafac4bed, type: 3}
     second:
       variants:
       - keywords: 
@@ -266,17 +331,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -289,25 +366,51 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: f739a59e6abd4484aa43b4ab6501c0f3,
-      type: 3}
+  - first: {fileID: 4800000, guid: f642cb91c8b664571967bdb587334e76, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 4
+      - keywords: 
+        passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: f739a59e6abd4484aa43b4ab6501c0f3, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -324,8 +427,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: AUDIO_REACTIVE
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 8162ad84995fada49b47b674f1fed4a7,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 8162ad84995fada49b47b674f1fed4a7, type: 3}
     second:
       variants:
       - keywords: 
@@ -342,8 +444,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 783cbf4081d995842a2c6e46b24e6b55,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 783cbf4081d995842a2c6e46b24e6b55, type: 3}
     second:
       variants:
       - keywords: 
@@ -352,17 +453,29 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -370,13 +483,13 @@ ShaderVariantCollection:
     second:
       variants:
       - keywords: 
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
   - first: {fileID: 4800000, guid: 62214494f4cd16a4db9c53337309f0e6, type: 3}
     second:
       variants:
@@ -406,8 +519,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 1a9f040da59157d488be5a827e2d4612,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 1a9f040da59157d488be5a827e2d4612, type: 3}
     second:
       variants:
       - keywords: 
@@ -437,8 +549,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: 
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: b95218752580b4140aa9ca29544d1c68,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: b95218752580b4140aa9ca29544d1c68, type: 3}
     second:
       variants:
       - keywords: 
@@ -447,13 +558,25 @@ ShaderVariantCollection:
         passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
+      - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: _IS_TILT_MESH
+        passType: 4
       - keywords: 
         passType: 5
       - keywords: SHADER_SCRIPTING_ON
+        passType: 5
+      - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: _IS_TILT_MESH
         passType: 5
       - keywords: 
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+      - keywords: _ISBAKEDEXPORT
+        passType: 13
+      - keywords: _IS_TILT_MESH
         passType: 13
   - first: {fileID: 4800000, guid: 387f4f61bc82c4e5f813ad7caa1f394a, type: 3}
     second:
@@ -466,21 +589,32 @@ ShaderVariantCollection:
         passType: 4
       - keywords: 
         passType: 5
-  - first: {fileID: -6465566751694194690, guid: c6d2c472771b2dd4db15475fb4946a96,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: c6d2c472771b2dd4db15475fb4946a96, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -502,21 +636,32 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 378dd8a90f17baf4aae7a033627296b4,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 378dd8a90f17baf4aae7a033627296b4, type: 3}
     second:
       variants:
       - keywords: 
         passType: 0
       - keywords: 
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
@@ -527,8 +672,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: AUDIO_REACTIVE
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 4dd819de1c7160145bf58bcf060e35d5,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 4dd819de1c7160145bf58bcf060e35d5, type: 3}
     second:
       variants:
       - keywords: 
@@ -537,19 +681,37 @@ ShaderVariantCollection:
         passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
+      - keywords: SHADER_SCRIPTING_ON _IS_TILT_MESH
+        passType: 4
       - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: _ISBAKEDEXPORT _IS_TILT_MESH
+        passType: 4
+      - keywords: _IS_TILT_MESH
         passType: 4
       - keywords: 
         passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
+      - keywords: SHADER_SCRIPTING_ON _IS_TILT_MESH
+        passType: 5
       - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: _ISBAKEDEXPORT _IS_TILT_MESH
+        passType: 5
+      - keywords: _IS_TILT_MESH
         passType: 5
       - keywords: 
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
+      - keywords: SHADER_SCRIPTING_ON _IS_TILT_MESH
+        passType: 13
       - keywords: _ISBAKEDEXPORT
+        passType: 13
+      - keywords: _ISBAKEDEXPORT _IS_TILT_MESH
+        passType: 13
+      - keywords: _IS_TILT_MESH
         passType: 13
   - first: {fileID: 4800000, guid: bfa82537bb6dcf94a8d673eb2ac036f0, type: 3}
     second:
@@ -562,8 +724,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 74e761c433fdc564b898ed8d2b34fe56,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 74e761c433fdc564b898ed8d2b34fe56, type: 3}
     second:
       variants:
       - keywords: 
@@ -597,8 +758,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: 2de056245b8dd70408172b79566d3716,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 2de056245b8dd70408172b79566d3716, type: 3}
     second:
       variants:
       - keywords: 
@@ -637,8 +797,7 @@ ShaderVariantCollection:
         passType: 0
       - keywords: SHADER_SCRIPTING_ON
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: c05db7dbe3ea3c74a9558c204e8aed41,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: c05db7dbe3ea3c74a9558c204e8aed41, type: 3}
     second:
       variants:
       - keywords: 
@@ -649,20 +808,25 @@ ShaderVariantCollection:
         passType: 4
       - keywords: _ISBAKEDEXPORT
         passType: 4
+      - keywords: _IS_TILT_MESH
+        passType: 4
       - keywords: 
         passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: _ISBAKEDEXPORT
         passType: 5
+      - keywords: _IS_TILT_MESH
+        passType: 5
       - keywords: 
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
       - keywords: _ISBAKEDEXPORT
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 670d33baa4122f443822bdc77253d8b7,
-      type: 3}
+      - keywords: _IS_TILT_MESH
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 670d33baa4122f443822bdc77253d8b7, type: 3}
     second:
       variants:
       - keywords: 
@@ -671,22 +835,33 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 47d57b935b2e03247b66525cd9653e4a,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 47d57b935b2e03247b66525cd9653e4a, type: 3}
     second:
       variants:
       - keywords: 
@@ -695,25 +870,43 @@ ShaderVariantCollection:
         passType: 4
       - keywords: AUDIO_REACTIVE
         passType: 4
+      - keywords: HIGHLIGHT_ON
+        passType: 4
+      - keywords: SELECTION_ON
+        passType: 4
       - keywords: SHADER_SCRIPTING_ON
         passType: 4
       - keywords: _ISBAKEDEXPORT
+        passType: 4
+      - keywords: _IS_TILT_MESH
         passType: 4
       - keywords: 
         passType: 5
       - keywords: AUDIO_REACTIVE
         passType: 5
+      - keywords: HIGHLIGHT_ON
+        passType: 5
+      - keywords: SELECTION_ON
+        passType: 5
       - keywords: SHADER_SCRIPTING_ON
         passType: 5
       - keywords: _ISBAKEDEXPORT
+        passType: 5
+      - keywords: _IS_TILT_MESH
         passType: 5
       - keywords: 
         passType: 13
       - keywords: AUDIO_REACTIVE
         passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
       - keywords: _ISBAKEDEXPORT
+        passType: 13
+      - keywords: _IS_TILT_MESH
         passType: 13
   - first: {fileID: 4800000, guid: e412fb1c98a347b4ab08429cbf1d0894, type: 3}
     second:
@@ -729,8 +922,7 @@ ShaderVariantCollection:
       variants:
       - keywords: 
         passType: 0
-  - first: {fileID: -6465566751694194690, guid: e641a359896eeec4c9a6df6a51332d04,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: e641a359896eeec4c9a6df6a51332d04, type: 3}
     second:
       variants:
       - keywords: 
@@ -745,30 +937,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: bfbad5c8c0f6e8447aaeeebf21dc2e97,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: AUDIO_REACTIVE
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: AUDIO_REACTIVE
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: AUDIO_REACTIVE
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: 2689d2eb10ab78a4b9cfffbc76df3363,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: bfbad5c8c0f6e8447aaeeebf21dc2e97, type: 3}
     second:
       variants:
       - keywords: 
@@ -789,8 +958,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: a491026fdcd62ae429dacacb5683abca,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 2689d2eb10ab78a4b9cfffbc76df3363, type: 3}
     second:
       variants:
       - keywords: 
@@ -811,8 +979,28 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: d34197ac591341c48bb2d40f81e0f202,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: a491026fdcd62ae429dacacb5683abca, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: d34197ac591341c48bb2d40f81e0f202, type: 3}
     second:
       variants:
       - keywords: 
@@ -827,8 +1015,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 919b9134ed875654aa41cdcc7bc89593,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 919b9134ed875654aa41cdcc7bc89593, type: 3}
     second:
       variants:
       - keywords: 
@@ -867,8 +1054,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 065e4d0b5350f7441843b8cf64bbceb9,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 065e4d0b5350f7441843b8cf64bbceb9, type: 3}
     second:
       variants:
       - keywords: 
@@ -883,46 +1069,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 23a643ccf33c8664ab3554a22f27c277,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: AUDIO_REACTIVE
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: AUDIO_REACTIVE
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: AUDIO_REACTIVE
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: e15818c071abb264cb48f1eaa442ac62,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: a28a1f284037e374ba0b15dd7c0112e3,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 23a643ccf33c8664ab3554a22f27c277, type: 3}
     second:
       variants:
       - keywords: 
@@ -943,8 +1090,22 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 4f9baf9861d335c4d8839a51943a13a0,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: e15818c071abb264cb48f1eaa442ac62, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: a28a1f284037e374ba0b15dd7c0112e3, type: 3}
     second:
       variants:
       - keywords: 
@@ -965,24 +1126,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 01429d4ad6ce34d42aaa27fd4857a278,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: 36238908d0b4c4441b3c379d51440b96,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 4f9baf9861d335c4d8839a51943a13a0, type: 3}
     second:
       variants:
       - keywords: 
@@ -1003,8 +1147,22 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 20ac29e1e12ac614abfd7cf0ea391900,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 01429d4ad6ce34d42aaa27fd4857a278, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 36238908d0b4c4441b3c379d51440b96, type: 3}
     second:
       variants:
       - keywords: 
@@ -1025,8 +1183,28 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 8ebaa9db7ccea784ca52a871428e2300,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 20ac29e1e12ac614abfd7cf0ea391900, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 8ebaa9db7ccea784ca52a871428e2300, type: 3}
     second:
       variants:
       - keywords: 
@@ -1053,8 +1231,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 49dbb2c4804d08d4990c8574cdf6011f,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 49dbb2c4804d08d4990c8574cdf6011f, type: 3}
     second:
       variants:
       - keywords: 
@@ -1075,8 +1252,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: b2b04f82dbbf9c24cb61c91d57ba8c3c,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: b2b04f82dbbf9c24cb61c91d57ba8c3c, type: 3}
     second:
       variants:
       - keywords: 
@@ -1091,46 +1267,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: e798b8640ec2f9f4b9bf4d22b25b718c,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: AUDIO_REACTIVE
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: AUDIO_REACTIVE
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: AUDIO_REACTIVE
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: a30aeeecfb8d6c74ca292b8773168d20,
-      type: 3}
-    second:
-      variants:
-      - keywords: 
-        passType: 0
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 0
-      - keywords: 
-        passType: 4
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 4
-      - keywords: 
-        passType: 13
-      - keywords: SHADER_SCRIPTING_ON
-        passType: 13
-  - first: {fileID: -6465566751694194690, guid: 2f7a6000e87c1b94996f1cb79aa5f3b5,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: e798b8640ec2f9f4b9bf4d22b25b718c, type: 3}
     second:
       variants:
       - keywords: 
@@ -1151,8 +1288,22 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 25db9a6cd7679ae48bf0b8a7b09c0c88,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: a30aeeecfb8d6c74ca292b8773168d20, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 2f7a6000e87c1b94996f1cb79aa5f3b5, type: 3}
     second:
       variants:
       - keywords: 
@@ -1173,8 +1324,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 080f1b64c1b1fe74aae01545ed26d55b,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 25db9a6cd7679ae48bf0b8a7b09c0c88, type: 3}
     second:
       variants:
       - keywords: 
@@ -1195,8 +1345,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 4e7fb45668b386748bf89c5aab99b6c5,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 080f1b64c1b1fe74aae01545ed26d55b, type: 3}
     second:
       variants:
       - keywords: 
@@ -1217,8 +1366,28 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: bbe745735a56aba47a6b7d7260aac547,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 4e7fb45668b386748bf89c5aab99b6c5, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: AUDIO_REACTIVE
+        passType: 0
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 0
+      - keywords: 
+        passType: 4
+      - keywords: AUDIO_REACTIVE
+        passType: 4
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 4
+      - keywords: 
+        passType: 13
+      - keywords: AUDIO_REACTIVE
+        passType: 13
+      - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: bbe745735a56aba47a6b7d7260aac547, type: 3}
     second:
       variants:
       - keywords: 
@@ -1245,8 +1414,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: _BAKED_VERTEX_SHADER_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 9d25c95d3b8f5c04f98a619d3abd3ffd,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 9d25c95d3b8f5c04f98a619d3abd3ffd, type: 3}
     second:
       variants:
       - keywords: 
@@ -1261,8 +1429,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 49c9fd0d2ebe1fd4ab1928ae0dbe46e6,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 49c9fd0d2ebe1fd4ab1928ae0dbe46e6, type: 3}
     second:
       variants:
       - keywords: 
@@ -1277,8 +1444,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 4d8ea5521bcdfe44b945331eccbb435a,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 4d8ea5521bcdfe44b945331eccbb435a, type: 3}
     second:
       variants:
       - keywords: 
@@ -1305,8 +1471,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: 036d3ec2c7a6345448f89be0d26fa632,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: 036d3ec2c7a6345448f89be0d26fa632, type: 3}
     second:
       variants:
       - keywords: 
@@ -1327,8 +1492,7 @@ ShaderVariantCollection:
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
         passType: 13
-  - first: {fileID: -6465566751694194690, guid: a67443de2c4f9d84a828d8b4b615d463,
-      type: 3}
+  - first: {fileID: -6465566751694194690, guid: a67443de2c4f9d84a828d8b4b615d463, type: 3}
     second:
       variants:
       - keywords: 
@@ -1342,4 +1506,37 @@ ShaderVariantCollection:
       - keywords: 
         passType: 13
       - keywords: SHADER_SCRIPTING_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 5d107b5d6a4146d0b79bb309463e508a, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: 0de0df21bd564d31b79649d785098ebb, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
+        passType: 13
+  - first: {fileID: -6465566751694194690, guid: e0cb37d325cd4866a4f5cad4cb226efd, type: 3}
+    second:
+      variants:
+      - keywords: 
+        passType: 0
+      - keywords: 
+        passType: 13
+      - keywords: HIGHLIGHT_ON
+        passType: 13
+      - keywords: SELECTION_ON
         passType: 13

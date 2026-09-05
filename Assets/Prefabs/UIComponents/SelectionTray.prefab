@@ -74,6 +74,7 @@ MonoBehaviour:
   m_Border: {fileID: 505703257451421084}
   m_AnimateSpeed: 8
   m_AnimateRange: {x: 0, y: 1}
+  m_TrayWidth: 0.45
   m_ShowOnToolType: 21
   m_GroupButton: {fileID: 2130795022144400380}
   references:

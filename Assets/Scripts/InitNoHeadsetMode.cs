@@ -1032,7 +1032,7 @@ namespace TiltBrush
                 if (m_PcControlsText != null)
                 {
                     // TODO We should really do a specific "is mouse/keyboard" check here
-                    m_PcControlsText.SetActive(!Application.isMobilePlatform);
+                    m_PcControlsText.SetActive(!App.Config.IsMobileHardware);
                 }
             }
             RefreshViewOnlyUi();
@@ -1554,7 +1554,7 @@ namespace TiltBrush
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Ellipsis;
             text.raycastTarget = false;
             return text;

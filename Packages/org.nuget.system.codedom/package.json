@@ -1,0 +1,12 @@
+{
+  "name": "org.nuget.system.codedom",
+  "displayName": "System.CodeDom (NuGet)",
+  "version": "7.0.0",
+  "unity": "2019.1",
+  "description": "Provides types that can be used to model the structure of a source code document and to output source code for that model in a supported language.\n\nCommonly Used Types:\nSystem.CodeDom.CodeObject\nSystem.CodeDom.Compiler.CodeDomProvider\nMicrosoft.CSharp.CSharpCodeProvider\nMicrosoft.VisualBasic.VBCodeProvider",
+  "keywords": [
+    "nuget"
+  ],
+  "category": null,
+  "dependencies": {}
+}
