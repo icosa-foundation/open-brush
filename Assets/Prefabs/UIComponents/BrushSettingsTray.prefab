@@ -74,6 +74,7 @@ MonoBehaviour:
   m_Border: {fileID: 505703257451421084}
   m_AnimateSpeed: 8
   m_AnimateRange: {x: 0, y: 1}
+  m_TrayWidth: 0.45
   m_ShowOnToolType: 10
   m_BrushSizeSlider: {fileID: 584482961708206757}
   references:
