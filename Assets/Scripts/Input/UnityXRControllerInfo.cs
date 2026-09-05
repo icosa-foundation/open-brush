@@ -174,6 +174,18 @@ namespace TiltBrush
             return map?.FindAction(actionName);
         }
 
+        private bool IsActionInProgress(string actionName)
+        {
+            InputAction action = FindAction(actionName);
+            return action != null && action.inProgress;
+        }
+
+        private bool IsActionPressed(string actionName)
+        {
+            InputAction action = FindAction(actionName);
+            return action != null && action.IsPressed();
+        }
+
         // ---------------------------------------------------------------------
         // Tracking
         // ---------------------------------------------------------------------
@@ -352,30 +364,24 @@ namespace TiltBrush
             if (AndroidXRHandBridge.Active)
                 return false;
 
-            InputAction action;
-
             switch (input)
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                    action = FindAction("ThumbTouch");
-                    return action != null && action.inProgress;
+                    return IsActionInProgress("ThumbTouch");
 
                 case VrInput.Touchpad:
-                    action = FindAction("PadTouch");
-                    return action != null && action.inProgress;
+                    return IsActionInProgress("PadTouch");
 
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-                    action = FindAction("PrimaryTouch");
-                    return action != null && action.inProgress;
+                    return IsActionInProgress("PrimaryTouch");
 
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    action = FindAction("SecondaryTouch");
-                    return action != null && action.inProgress;
+                    return IsActionInProgress("SecondaryTouch");
             }
 
             return false;
@@ -408,16 +414,10 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                {
-                    InputAction action = FindAction("ThumbButton");
-                    return action != null && action.IsPressed();
-                }
+                    return IsActionPressed("ThumbButton");
 
                 case VrInput.Touchpad:
-                {
-                    InputAction action = FindAction("PadButton");
-                    return action != null && action.IsPressed();
-                }
+                    return IsActionPressed("PadButton");
 
                 case VrInput.Trigger:
                     if (IsStylusActive())
@@ -425,20 +425,14 @@ namespace TiltBrush
                         return stylusState.cluster_middle_value > 0.2f ||
                                stylusState.tip_value > 0.2f;
                     }
-                    {
-                        InputAction action = FindAction("TriggerAxis");
-                        return action != null && action.IsPressed();
-                    }
+                    return IsActionPressed("TriggerAxis");
 
                 case VrInput.Grip:
                     if (IsStylusActive())
                     {
                         return stylusState.cluster_front_value;
                     }
-                    {
-                        InputAction action = FindAction("GripAxis");
-                        return action != null && action.IsPressed();
-                    }
+                    return IsActionPressed("GripAxis");
 
                 case VrInput.Button01:
                 case VrInput.Button04:
@@ -447,18 +441,12 @@ namespace TiltBrush
                     {
                         return stylusState.cluster_back_value;
                     }
-                    {
-                        InputAction action = FindAction("PrimaryButton");
-                        return action != null && action.IsPressed();
-                    }
+                    return IsActionPressed("PrimaryButton");
 
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                {
-                    InputAction action = FindAction("SecondaryButton");
-                    return action != null && action.IsPressed();
-                }
+                    return IsActionPressed("SecondaryButton");
             }
 
             return false;
