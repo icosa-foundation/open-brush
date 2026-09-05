@@ -31,7 +31,7 @@ namespace TiltBrush
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
+            App.Switchboard.BrushSizeChanged -= UpdateSliderToMatchCurrentSize;
         }
 
         private void DetectSupportedDevices()
