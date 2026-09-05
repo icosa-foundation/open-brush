@@ -259,6 +259,7 @@ jobs:
             targetPlatform: Android
             vrsdk: OpenXR
             cache: Android_Vulkan
+            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
@@ -280,6 +281,7 @@ jobs:
             targetPlatform: Android
             vrsdk: OpenXR
             cache: Android_Vulkan
+            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: OPEN_BRUSH_VIEWER
