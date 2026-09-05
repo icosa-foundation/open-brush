@@ -18,6 +18,11 @@ namespace TiltBrush
     /// the prefabs' UnityEvent bindings name it.
     public class CaptureTray : BaseTray
     {
+        /// This tray's visibility is owned by its toggle button, so don't let tool changes
+        /// drive it. m_ShowOnToolType is unused here.
+        protected override void OnToolChanged()
+        {
+        }
     }
 
 } // namespace TiltBrush
