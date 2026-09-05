@@ -4,7 +4,6 @@
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
     "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
-    "com.meta.xr.sdk.platform": "69.0.0",
     "com.netpyoung.webp": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
     "com.rlabrecque.steamworks.net": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
     "com.sandrofigo.voxreader": "5.0.6",
@@ -87,13 +86,6 @@
       "url": "https://npm-registry.vive.com",
       "scopes": [
         "com.htc.upm"
-      ]
-    },
-    {
-      "name": "Meta XR",
-      "url": "https://npm.developer.oculus.com",
-      "scopes": [
-        "com.meta.xr.sdk"
       ]
     },
     {
