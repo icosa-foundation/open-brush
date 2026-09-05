@@ -121,7 +121,18 @@ namespace TiltBrush
 
         public bool IsInitializingUnityXR
         {
-            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
+            get
+            {
+                if (VrControls == null ||
+                    VrControls.Brush == null ||
+                    VrControls.Brush.ControllerGeometry == null)
+                {
+                    return true;
+                }
+
+                return VrControls.Brush.ControllerGeometry.Style ==
+                    ControllerStyle.InitializingUnityXR;
+            }
         }
 
         // -------------------------------------------------------------------------------------------- //
