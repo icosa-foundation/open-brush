@@ -86,6 +86,7 @@ static class BuildTiltBrush
     const string kMenuPluginPref = "Open Brush/Build/Plugin";
     const string kMenuPluginMono = "Open Brush/Build/Plugin: Mono";
     const string kMenuPluginOpenXr = "Open Brush/Build/Plugin: OpenXR";
+    const string kMenuPluginAndroidXr = "Open Brush/Build/Plugin: Android XR";
     const string kMenuPluginZapbox = "Open Brush/Build/Plugin: Zapbox";
     const string kMenuPlatformPref = "Open Brush/Build/Platform";
     const string kMenuPlatformWindows = "Open Brush/Build/Platform: Windows";
@@ -110,6 +111,7 @@ static class BuildTiltBrush
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.AndroidXR, BuildTarget.Android),
 
             // Zapbox
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Zapbox, BuildTarget.iOS),
@@ -187,6 +189,7 @@ static class BuildTiltBrush
             EditorPrefs.SetString(kMenuPluginPref, value.ToString());
             Menu.SetChecked(kMenuPluginMono, value == XrSdkMode.Monoscopic);
             Menu.SetChecked(kMenuPluginOpenXr, value == XrSdkMode.OpenXR);
+            Menu.SetChecked(kMenuPluginAndroidXr, value == XrSdkMode.AndroidXR);
             Menu.SetChecked(kMenuPluginZapbox, value == XrSdkMode.Zapbox);
 
             if (!BuildTargetSupported(value, GuiSelectedBuildTarget))
@@ -395,7 +398,20 @@ static class BuildTiltBrush
         return true;
     }
 
-    [MenuItem(kMenuPluginZapbox, isValidateFunction: false, priority: 112)]
+    [MenuItem(kMenuPluginAndroidXr, isValidateFunction: false, priority: 112)]
+    static void MenuItem_Plugin_AndroidXr()
+    {
+        GuiSelectedSdk = XrSdkMode.AndroidXR;
+    }
+
+    [MenuItem(kMenuPluginAndroidXr, isValidateFunction: true)]
+    static bool MenuItem_Plugin_AndroidXr_Validate()
+    {
+        Menu.SetChecked(kMenuPluginAndroidXr, GuiSelectedSdk == XrSdkMode.AndroidXR);
+        return true;
+    }
+
+    [MenuItem(kMenuPluginZapbox, isValidateFunction: false, priority: 113)]
     static void MenuItem_Plugin_Zapbox()
     {
         GuiSelectedSdk = XrSdkMode.Zapbox;
@@ -903,6 +919,10 @@ static class BuildTiltBrush
         private Texture2D[] m_Icons;
         private bool m_RestoreAndroidTargetSdkVersion;
         private AndroidSdkVersions m_AndroidTargetSdkVersion;
+        private bool m_RestoreAndroidXrSettings;
+        private AndroidApplicationEntry m_AndroidApplicationEntry;
+        private bool m_AndroidResizeableActivity;
+        private AndroidSdkVersions m_AndroidMinSdkVersion;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
@@ -917,6 +937,24 @@ static class BuildTiltBrush
                 m_AndroidTargetSdkVersion = PlayerSettings.Android.targetSdkVersion;
                 PlayerSettings.Android.targetSdkVersion = tiltOptions.AndroidTargetSdkVersion.Value;
                 Debug.Log($"Set Android target SDK to {tiltOptions.AndroidTargetSdkVersion.Value}.");
+            }
+
+            if (m_Target == BuildTarget.Android && tiltOptions.XrSdk == XrSdkMode.AndroidXR)
+            {
+                m_RestoreAndroidXrSettings = true;
+                m_AndroidApplicationEntry = PlayerSettings.Android.applicationEntry;
+                m_AndroidResizeableActivity = PlayerSettings.Android.resizeableActivity;
+                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
+
+                PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.GameActivity;
+                PlayerSettings.Android.resizeableActivity = true;
+                if ((int)PlayerSettings.Android.minSdkVersion <
+                    (int)AndroidSdkVersions.AndroidApiLevel24)
+                {
+                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+                }
+
+                Debug.Log("Configured Android XR PlayerSettings for this build.");
             }
 
             switch (tiltOptions.XrSdk)
@@ -952,6 +990,12 @@ static class BuildTiltBrush
             if (m_RestoreAndroidTargetSdkVersion)
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
+            }
+            if (m_RestoreAndroidXrSettings)
+            {
+                PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
+                PlayerSettings.Android.resizeableActivity = m_AndroidResizeableActivity;
+                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             }
             AssetDatabase.SaveAssets();
         }
@@ -1079,19 +1123,27 @@ static class BuildTiltBrush
         {
             enabledFeatures = new();
             requiredFeatures = new();
-            List<string> requiredFeatureStrings = new();
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
-            if (requiredFeatureStrings.Count == 0)
+            if (tiltOptions.XrSdk != XrSdkMode.AndroidXR)
             {
                 return;
             }
 
-            // Refresh list of features present in project, then iterate and disable all of them.
+            // Refresh the installed feature list and remember the existing state. Android XR
+            // requirements are additive so other enabled interaction profiles remain available.
             UnityEditor.XR.OpenXR.Features.FeatureHelpers.RefreshFeatures(m_targetGroup);
+            var settings = UnityEngine.XR.OpenXR.OpenXRSettings.GetSettingsForBuildTargetGroup(
+                m_targetGroup);
+            if (settings == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not load OpenXR settings for {m_targetGroup}.");
+            }
+
             var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
-            int featuresCount = UnityEngine.XR.OpenXR.OpenXRSettings.Instance.GetFeatures(featureList);
+            int featuresCount = settings.GetFeatures(featureList);
             if (featuresCount > 0)
             {
                 foreach (var feature in featureList)
@@ -1100,34 +1152,70 @@ static class BuildTiltBrush
                     {
                         enabledFeatures.Add(feature);
                     }
-                    feature.enabled = false;
                 }
             }
 
-            foreach (var feature in featureList)
+            // Keep this list aligned with the Android OpenXR feature selection validated on
+            // Android XR, Quest, and Pico. Some entries are currently enabled in the serialized
+            // project settings, but selecting them here makes both local and CI AndroidXR builds
+            // deterministic if an editor session or package refresh changes those settings.
+            //
+            // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
+            // Microsoft Hand Interaction profile currently publish the same feature ID, so an
+            // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
+            EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
+                settings);
+
+            // Android XR's AR Foundation providers and display helpers are part of the tested
+            // cross-device configuration. Unsupported extensions are negotiated by each runtime.
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARAnchorFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARBoundingBoxFeature>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARCameraFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AROcclusionFeature>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARPlaneFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARRaycastFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARSessionFeature>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.DisplayUtilitiesFeature>(
+                settings);
+
+            // Hand mesh data is used by Android XR, while XR Hands and Meta's aim extension keep
+            // the same AndroidXR artifact usable with hand tracking on other OpenXR runtimes.
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
+                settings);
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+
+            // These vendor-neutral/vendor-extension features are also part of the configuration
+            // tested on Quest and Pico. Meta Quest Support supplies Quest's loader initialization;
+            // runtimes that do not expose the Meta extensions simply leave them unavailable.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
+                settings);
+            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
+        }
+
+        void EnableRequiredFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
+            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
+        {
+            var feature = settings.GetFeature<T>();
+            if (feature == null)
             {
-                if (feature.enabled)
-                {
-                    throw new BuildFailedException($"Shouldn't be here! {feature.name}");
-                }
+                throw new BuildFailedException(
+                    $"Could not find required OpenXR feature {typeof(T).FullName}. " +
+                    "Is its package installed?");
             }
 
-            if (requiredFeatures.Count == 0)
-            {
-                return;
-            }
-
-            // Locate and enable features, fail if not found.
-            foreach (string requiredFeatureString in requiredFeatureStrings)
-            {
-                var requiredFeature = UnityEditor.XR.OpenXR.Features.FeatureHelpers.GetFeatureWithIdForBuildTarget(m_targetGroup, requiredFeatureString);
-                if (requiredFeature == null)
-                {
-                    throw new BuildFailedException($"Could not find required OpenXR Feature {requiredFeatureString}. Is it installed?");
-                }
-                requiredFeatures.Add(requiredFeature);
-                requiredFeature.enabled = true;
-            }
+            requiredFeatures.Add(feature);
+            feature.enabled = true;
+            Debug.Log($"Enabled required OpenXR feature {typeof(T).FullName} for " +
+                $"this {m_targetGroup} build.");
         }
 
         public void Dispose()
@@ -1165,6 +1253,7 @@ static class BuildTiltBrush
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.OpenXR:
+                case XrSdkMode.AndroidXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
                 case XrSdkMode.Zapbox:
@@ -1507,7 +1596,8 @@ static class BuildTiltBrush
         using (var unused3 = new TempDefineSymbols(
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
-            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null))
+            tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
