@@ -235,7 +235,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -263,9 +263,9 @@ jobs:
             versionSuffix: 0
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android OpenXR Google Play
+          - name: Android AndroidXR
             targetPlatform: Android
-            vrsdk: OpenXR
+            vrsdk: AndroidXR
             cache: Android_Vulkan
             packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
@@ -273,9 +273,21 @@ jobs:
             androidExportType: androidAppBundle
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android Viewer
+          # The Viewer is a product variant, not a flat-only runtime. Keep a generic
+          # OpenXR APK alongside the AndroidXR AAB so both of its runtime modes are
+          # exercised without conflating the Google Play and non-Google artifacts.
+          - name: Android Viewer OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+
+          - name: Android Viewer AndroidXR
+            targetPlatform: Android
+            vrsdk: AndroidXR
             cache: Android_Vulkan
             packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
@@ -1229,7 +1241,7 @@ jobs:
             "viewer_changes_not_sent_for_review"
 
   publish_google_play:
-    name: Publish Google Play Android XR Release
+    name: Publish Google Play AndroidXR Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1238,11 +1250,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR Google Play)
+      - name: Download Build Artifacts (Android AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR Google Play
-          path: build_android_openxr_google_play
+          name: Android AndroidXR
+          path: build_android_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1250,18 +1262,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play" >&2
-            find build_android_openxr_google_play -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_androidxr" >&2
+            find build_android_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrush_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrush_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrush_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrush_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrush_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrush_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1269,7 +1281,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
-          releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrush_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -1281,7 +1293,7 @@ jobs:
           changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
-    name: Publish Google Play Viewer Release
+    name: Publish Google Play AndroidXR Viewer Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1290,11 +1302,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android Viewer)
+      - name: Download Build Artifacts (Android Viewer AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Viewer
-          path: build_android_openxr_google_play_viewer
+          name: Android Viewer AndroidXR
+          path: build_android_viewer_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1302,18 +1314,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play_viewer -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play_viewer -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_viewer_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_viewer_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play_viewer" >&2
-            find build_android_openxr_google_play_viewer -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_viewer_androidxr" >&2
+            find build_android_viewer_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrushViewer_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrushViewer_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1321,7 +1333,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrushviewer
-          releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrushViewer_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
