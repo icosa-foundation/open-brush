@@ -305,12 +305,10 @@ namespace TiltBrush
             if (AndroidXRHandBridge.Active)
                 return 0.0f;
 
-#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
                 return stylusState.cluster_front_value ? 1.0f : 0.0f;
             }
-#endif
 
             InputAction action = FindAction("GripAxis");
             return action != null ? action.ReadValue<float>() : 0.0f;
@@ -333,14 +331,12 @@ namespace TiltBrush
                 return AndroidXRHandBridge.Trigger(isBrush) ? 1.0f : 0.0f;
             }
 
-#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
                 return Math.Max(
                     stylusState.tip_value,
                     stylusState.cluster_middle_value);
             }
-#endif
 
             InputAction action = FindAction("TriggerAxis");
             return action != null ? action.ReadValue<float>() : 0.0f;
@@ -424,25 +420,21 @@ namespace TiltBrush
                 }
 
                 case VrInput.Trigger:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                     {
                         return stylusState.cluster_middle_value > 0.2f ||
                                stylusState.tip_value > 0.2f;
                     }
-#endif
                     {
                         InputAction action = FindAction("TriggerAxis");
                         return action != null && action.IsPressed();
                     }
 
                 case VrInput.Grip:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                     {
                         return stylusState.cluster_front_value;
                     }
-#endif
                     {
                         InputAction action = FindAction("GripAxis");
                         return action != null && action.IsPressed();
@@ -451,12 +443,10 @@ namespace TiltBrush
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                     {
                         return stylusState.cluster_back_value;
                     }
-#endif
                     {
                         InputAction action = FindAction("PrimaryButton");
                         return action != null && action.IsPressed();

@@ -39,15 +39,6 @@
       "dependencies": {},
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
-    "com.meta.xr.sdk.platform": {
-      "version": "69.0.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      },
-      "url": "https://npm.developer.oculus.com"
-    },
     "com.netpyoung.webp": {
       "version": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
       "depth": 0,
