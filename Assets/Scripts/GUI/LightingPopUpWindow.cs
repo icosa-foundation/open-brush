@@ -60,9 +60,11 @@ namespace TiltBrush
             m_Environments = EnvironmentCatalog.m_Instance.AllEnvironments.ToList();
 
             // Remove passthrough scene for devices that don't support it
-#if !PASSTHROUGH_SUPPORTED
-            RemovePassthrough();
-#endif
+            if (App.VrSdk.PassthroughMode == PassthroughMode.None)
+            {
+                RemovePassthrough();
+            }
+
             //find the active lighting preset
             TiltBrush.Environment rCurrentPreset = SceneSettings.m_Instance.GetDesiredPreset();
             if (rCurrentPreset != null)
