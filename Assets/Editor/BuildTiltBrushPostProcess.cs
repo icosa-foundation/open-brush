@@ -48,6 +48,7 @@ public class BuildTiltBrushPostProcess
         catch (System.Exception e)
         {
             UnityEngine.Debug.LogException(e);
+            throw;
         }
     }
 
