@@ -356,14 +356,6 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcSyncToSharedAnchor(string uuid)
-        {
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid); });
-            await Task.Yield();
-            return true;
-        }
-
         public async Task<bool> RpcPublishManualColocationReference(
             ManualColocationReference reference)
         {

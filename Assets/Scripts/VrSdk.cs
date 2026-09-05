@@ -222,29 +222,6 @@ namespace TiltBrush
 
             UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
 
-            // Let it fail on non-oculus platforms
-            //Get Oculus ID
-            var oculusAppId = App.Config.OculusSecrets?.ClientId;
-            bool packagePresent = true;
-#if UNITY_ANDROID
-            oculusAppId = App.Config.OculusMobileSecrets.ClientId;
-            // Initialize() will crash android if the required system packages are not present.
-            // This is the earliest in the chain.
-            packagePresent = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
-#endif
-            if (packagePresent)
-            {
-#if OCULUS_SUPPORTED
-                try
-                {
-                    Oculus.Platform.Core.Initialize(oculusAppId);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Failed to initialize Oculus Platform SDK. Oculus features will be unavailable. Exception: {e}");
-                }
-#endif // OCULUS_SUPPORTED
-            }
         }
 
         void Start()
@@ -423,14 +400,8 @@ namespace TiltBrush
         {
             Vector3[] points_RS = null;
 
-#if OCULUS_SUPPORTED
-                // N points, clockwise winding (but axis is undocumented), undocumented convexity
-                // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary
-                    ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-                    ?.Select(v => UnityFromOculus(v))
-                    .ToArray();
-#else // OCULUS_SUPPORTED
+            // TODO: no play-area boundary source since the Meta SDK was removed.
+            // OpenXR has no vendor-neutral equivalent; points_RS stays empty.
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mikesky - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
@@ -449,7 +420,6 @@ namespace TiltBrush
             //     //     points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
             //     // }
             // }
-#endif // OCULUS_SUPPORTED
 
             if (points_RS == null)
             {
@@ -507,12 +477,6 @@ namespace TiltBrush
         // {
         //     return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
         // }
-
-        /// Converts from Oculus axis conventions and units to Unity
-        static private Vector3 UnityFromOculus(Vector3 v)
-        {
-            return v * App.METERS_TO_UNITS;
-        }
 
         // -------------------------------------------------------------------------------------------- //
         // Controller Methods
@@ -969,37 +933,28 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Performance Methods
         // -------------------------------------------------------------------------------------------- //
+        // TODO: not implemented since the Meta SDK was removed. The OpenXR replacement
+        // is FoveatedRenderingFeature + XRDisplaySubsystem.foveatedRenderingLevel.
+        // See openxr-perf-migration.md.
         public void SetFixedFoveation(int level)
         {
-#if OCULUS_SUPPORTED
             Debug.Assert(level >= 0 && level <= 3);
-            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
-            {
-                OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
-            }
-#endif // OCULUS_SUPPORTED
         }
 
         /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
+        /// TODO: always 0 since the Meta SDK was removed. OpenXR has no vendor-neutral
+        /// utilization query; see openxr-perf-migration.md for the notification-based
+        /// replacement. Callers in QualityControls are biased while this returns 0.
         public float GetGpuUtilization()
         {
-#if OCULUS_SUPPORTED
-            if (OVRManager.gpuUtilSupported)
-            {
-                return OVRManager.gpuUtilLevel;
-            }
-#endif // OCULUS_SUPPORTED
             return 0;
         }
 
+        // TODO: not implemented since the Meta SDK was removed. The OpenXR replacement
+        // is XrPerformanceSettingsFeature.SetPerformanceLevelHint.
+        // See openxr-perf-migration.md.
         public void SetGpuClockLevel(int level)
         {
-#if OCULUS_SUPPORTED
-            if (App.Config.IsMobileHardware)
-            {
-                OVRManager.gpuLevel = level;
-            }
-#endif // OCULUS_SUPPORTED
         }
     }
 }

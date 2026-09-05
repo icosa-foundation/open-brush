@@ -209,14 +209,6 @@ Follow these steps to store the Google API Key and credential data:
 1.  Select `Google` as the service. Paste in the API key, client ID, and client
     secret that were generated earlier.
 
-## Enabling native Oculus support
-
-Open Brush targets OpenXR instead of Oculus by default. Follow these steps to enable native Oculus support:
-.
-1.  In the **Standalone** and **Android** tabs of the Player settings, go to **Other Settings** > **Scripting Define Symbols**.
-1. Click the + button to create a new entry.
-1. Add `OCULUS_SUPPORTED` and press **Apply**.
-
 ### Building your app for Oculus Quest
 
 Follow these steps to build your app for Oculus Quest:
