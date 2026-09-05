@@ -438,6 +438,9 @@ namespace TiltBrush
 
         private void RenderHighlightsIfReady()
         {
+            // Deliberately Application.isMobilePlatform rather than Config.IsMobileHardware:
+            // this gates on the actual graphics device, which spoofing mobile in the Editor
+            // does not change.
             if (Application.isMobilePlatform &&
                 GraphicsSettings.currentRenderPipeline == null)
             {
