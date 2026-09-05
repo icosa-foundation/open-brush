@@ -60,6 +60,8 @@ CGINCLUDE
     float2 texcoord : TEXCOORD3;
     float4 screenPos : TEXCOORD4;
 
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
@@ -69,6 +71,7 @@ CGINCLUDE
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     o.pos = v.vertex;
@@ -228,64 +231,63 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
 LOD 100
 ColorMask RGB
-Lighting Off Fog { Color (0,0,0,0) }
+
 ZWrite Off
-
-// back faces
-Cull Front
+Cull Off
 Blend SrcAlpha OneMinusSrcAlpha // overlay
 
+// Single URP-compatible pass: branches on VFACE to apply the original two-pass
+// behavior. URP's forward renderer dispatches only one pass per material per
+// draw, so the previous Cull Front + Cull Back two-pass structure rendered only
+// the back faces under URP.
 Pass {
+  Tags { "LightMode" = "UniversalForward" }
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
-    fixed4 frag (v2f i) : SV_Target
+    #pragma multi_compile_instancing
+
+    fixed4 frag (v2f i, fixed face : VFACE) : SV_Target
     {
-      float4 c = createStencilGrid(i,2,.5,.25);
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+      if (face > 0) {
+        // Front face — was the Cull Back pass.
+        float4 c = createStencilGrid(i,1,1,.5);
 
-      #if SELECTION_ON
-         return float4(GetSelectionColor().rgb, c.r) * 0.65;
-      #elif HIGHLIGHT_ON
-         return float4(_BrushColor.rgb, c.r) * 0.65;
-      #endif
+        #if SELECTION_ON
+           return float4(GetSelectionColor().rgb, c.r);
+        #elif HIGHLIGHT_ON
+           return float4(_BrushColor.rgb, c.r);
+        #endif
 
-      c.a = c.r * .65;
-      c.rgb += float3(.2,.2,.2);
-      c.a = _WidgetsDormant ? max (.5, c.a) : c.a;
-      return c * c.a * _Color * _BackColor;
+        c.a = c.r * .65;
+        c.rgb *= 1.5;
+        return c * c.a * _Color;
+      } else {
+        // Back face — was the Cull Front pass.
+        float4 c = createStencilGrid(i,2,.5,.25);
+
+        #if SELECTION_ON
+           return float4(GetSelectionColor().rgb, c.r) * 0.65;
+        #elif HIGHLIGHT_ON
+           return float4(_BrushColor.rgb, c.r) * 0.65;
+        #endif
+
+        c.a = c.r * .65;
+        c.rgb += float3(.2,.2,.2);
+        c.a = _WidgetsDormant ? max (.5, c.a) : c.a;
+        return c * c.a * _Color * _BackColor;
+      }
     }
   ENDCG
-  }
-
-// front faces
-Cull Back
-Blend SrcAlpha OneMinusSrcAlpha // overlay
-Pass {
-  CGPROGRAM
-    #pragma vertex vert
-    #pragma fragment frag
-
-    fixed4 frag (v2f i) : SV_Target
-    {
-      float4 c = createStencilGrid(i,1,1,.5);
-
-      #if SELECTION_ON
-         return float4(GetSelectionColor().rgb, c.r);
-      #elif HIGHLIGHT_ON
-         return float4(_BrushColor.rgb, c.r);
-      #endif
-
-      c.a = c.r * .65;
-      c.rgb *= 1.5;
-      return c * c.a * _Color;
-    }
-  ENDCG
-  }
+}
 
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+

@@ -24,6 +24,7 @@ Shader "Hidden/Mobile Bloom"
     CGINCLUDE
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
 
     #include "UnityCG.cginc"
     #include "Assets/Shaders/Include/ColorSpace.cginc"
@@ -35,22 +36,28 @@ Shader "Hidden/Mobile Bloom"
     int _Eye;
     float _BloomAmount;
 
-    struct appdata
-    {
+    struct appdata {
         float4 vertex : POSITION;
         float2 uv : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
-    struct v2f
-    {
+    struct v2f {
         float2 uv : TEXCOORD0;
         float4 vertex : SV_POSITION;
         int eye : TEXCOORD1;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     v2f vert (appdata v)
     {
         v2f o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.uv = v.uv;
         o.eye = unity_StereoEyeIndex;
@@ -93,13 +100,16 @@ Shader "Hidden/Mobile Bloom"
 
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         // No culling or depth
         Cull Off ZWrite Off ZTest Always
 
         Pass { // 0 Inital Pass - Multiplies through only by pixels with HDR components
+            Tags { "LightMode"="SRPDefaultUnlit" }
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float4 col = SampleBoxHDR(i.uv);
                 col.rgb *= col.a;
 
@@ -109,10 +119,12 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 1 Normal reduction pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One Zero
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 fixed3 col = SampleBox(i.uv);
                 return col;
             }
@@ -120,10 +132,12 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 2 Normal enlargement pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One One
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 fixed3 col = SampleBox(i.uv);
                 return col;
             }
@@ -131,10 +145,12 @@ Shader "Hidden/Mobile Bloom"
         }
 
         Pass { // 3 Final pass
+            Tags { "LightMode"="SRPDefaultUnlit" }
             Blend One One
             CGPROGRAM
             fixed3 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float2 pos = i.uv;
                 // 0.6 is a fudge factor - TODO : make it adjustable from C#
                 pos = tan(atan(pos - 0.5) + _FinalOffset.xy * (1 - abs(_Eye -_BloomEye)) * 0.6) + 0.5;
@@ -150,3 +166,4 @@ Shader "Hidden/Mobile Bloom"
         }
     }
 }
+

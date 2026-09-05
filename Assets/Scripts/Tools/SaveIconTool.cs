@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -261,7 +262,8 @@ namespace TiltBrush
                     float ssaaRestore = wrapper.SuperSampling;
                     wrapper.SuperSampling = m_superSampling;
                     m_SaveIconScreenshotManager.RenderToTexture(
-                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                        includePostProcessing: true);
                     wrapper.SuperSampling = ssaaRestore;
 
                     // save off camera transform from the position we took the snapshot
@@ -364,14 +366,18 @@ namespace TiltBrush
             try
             {
                 // TODO XXX: Why is this Render() necessary?
-                m_SaveIconScreenshotManager.LeftEye.Render();
+                if (GraphicsSettings.currentRenderPipeline == null)
+                {
+                    m_SaveIconScreenshotManager.LeftEye.Render();
+                }
 
                 //snapshot the current scene and push it to the preview window
                 RenderWrapper wrapper = m_SaveIconScreenshotManager.gameObject.GetComponent<RenderWrapper>();
                 float ssaaRestore = wrapper.SuperSampling;
                 wrapper.SuperSampling = m_superSampling;
                 m_SaveIconScreenshotManager.RenderToTexture(
-                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture());
+                    SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                    includePostProcessing: true);
                 // save off camera transform from the position we took the snapshot
                 wrapper.SuperSampling = ssaaRestore;
                 m_LastSaveCameraRigState = CurrentCameraRigState;

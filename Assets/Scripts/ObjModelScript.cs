@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 
 namespace TiltBrush
 {
@@ -36,21 +36,27 @@ namespace TiltBrush
 
         public int NumMeshes
         {
-            get { return m_MeshChildren.Length + m_SkinnedMeshChildren.Length; }
+            get { return MeshChildren.Length + SkinnedMeshChildren.Length; }
         }
         public SVGParser.SceneInfo SvgSceneInfo { get; set; }
+
+        private MeshFilter[] MeshChildren => m_MeshChildren ?? new MeshFilter[0];
+        private SkinnedMeshRenderer[] SkinnedMeshChildren =>
+            m_SkinnedMeshChildren ?? new SkinnedMeshRenderer[0];
 
         public int GetNumVertsInMeshes()
         {
             if (m_NumVertsInMeshes <= 0)
             {
-                for (int i = 0; i < m_MeshChildren.Length; ++i)
+                MeshFilter[] meshChildren = MeshChildren;
+                SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+                for (int i = 0; i < meshChildren.Length; ++i)
                 {
-                    m_NumVertsInMeshes += m_MeshChildren[i].sharedMesh.vertexCount;
+                    m_NumVertsInMeshes += meshChildren[i].sharedMesh.vertexCount;
                 }
-                for (int i = 0; i < m_SkinnedMeshChildren.Length; ++i)
+                for (int i = 0; i < skinnedMeshChildren.Length; ++i)
                 {
-                    m_NumVertsInMeshes += m_SkinnedMeshChildren[i].sharedMesh.vertexCount;
+                    m_NumVertsInMeshes += skinnedMeshChildren[i].sharedMesh.vertexCount;
                 }
 
                 m_NumVertsInMeshes = Mathf.Max(1,
@@ -119,23 +125,30 @@ namespace TiltBrush
 
         public void RegisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
-            for (int i = 0; i < m_MeshChildren.Length; i++)
+            MeshFilter[] meshChildren = MeshChildren;
+            SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+            for (int i = 0; i < meshChildren.Length; i++)
             {
-                App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
-                // TODO Handle skinned meshes
+                App.Instance.SelectionEffect.RegisterMesh(meshChildren[i]);
             }
-#endif
+            for (int i = 0; i < skinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.RegisterMesh(skinnedMeshChildren[i]);
+            }
         }
 
         public void UnregisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
-            for (int i = 0; i < m_MeshChildren.Length; i++)
+            MeshFilter[] meshChildren = MeshChildren;
+            SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+            for (int i = 0; i < meshChildren.Length; i++)
             {
-                App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);
+                App.Instance.SelectionEffect.UnregisterMesh(meshChildren[i]);
             }
-#endif
+            for (int i = 0; i < skinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.UnregisterMesh(skinnedMeshChildren[i]);
+            }
         }
 
     }

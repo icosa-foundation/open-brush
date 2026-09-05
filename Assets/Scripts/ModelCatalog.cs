@@ -247,12 +247,7 @@ namespace TiltBrush
             {
                 foreach (var entry in oldModels)
                 {
-                    // Verified that destroy a gameObject removes all children transforms,
-                    // all components, and most importantly all textures no longer used by the destroyed objects
-                    if (entry.Value.m_ModelParent != null)
-                    {
-                        Destroy(entry.Value.m_ModelParent.gameObject);
-                    }
+                    entry.Value.ReleaseFromCatalog();
                 }
                 Resources.UnloadUnusedAssets();
             }
@@ -305,13 +300,13 @@ namespace TiltBrush
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
-                    ModelWidget.CreateModelsFromRelativePath(
+                    _ = ModelWidget.CreateModelsFromRelativePath(
                         relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
                 if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
                 {
-                    ModelWidget.CreateModelsFromRelativePath(
+                    _ = ModelWidget.CreateModelsFromRelativePath(
                         relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
@@ -349,7 +344,7 @@ namespace TiltBrush
                 if (!isBlocksRoot)
                 {
                     // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
                     extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });

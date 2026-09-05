@@ -681,6 +681,9 @@ namespace TiltBrush
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
+        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] Opacities { get; set; }
     }
 
     [Serializable]
@@ -718,6 +721,25 @@ namespace TiltBrush
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
         public bool TwoSided { get; set; }
+    }
+
+    [Serializable]
+    public class TiltSoundClip
+    {
+        public string FilePath { get; set; } // relative to Media Library folder
+        public float AspectRatio { get; set; }
+        public bool Pinned;
+        public TrTransform Transform;
+        public bool Paused { get; set; }
+        public float Time { get; set; }
+        public float Volume { get; set; }
+        public bool Loop { get; set; } = true;
+        public float SpatialBlend { get; set; }
+        public float MinDistance { get; set; } = 1f;
+        public float MaxDistance { get; set; } = 500f;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -870,6 +892,9 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltText[] TextWidgets { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltSoundClip[] SoundClips { get; set; }
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltPortal[] Portals { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

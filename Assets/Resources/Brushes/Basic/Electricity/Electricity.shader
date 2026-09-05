@@ -209,6 +209,9 @@ Category {
 
   SubShader {
     Pass {
+      Name "ElectricityStrand1"
+      Tags { "LightMode"="UniversalForward" }
+
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_1
@@ -222,6 +225,9 @@ Category {
     }
 
     Pass {
+      Name "ElectricityStrand2"
+      Tags { "LightMode"="SRPDefaultUnlit" }
+
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_2
@@ -235,6 +241,9 @@ Category {
     }
 
     Pass {
+      Name "ElectricityStrand3"
+      Tags { "LightMode"="UniversalForwardOnly" }
+
       CGPROGRAM
       #pragma multi_compile __ SHADER_SCRIPTING_ON
       #pragma vertex vert_3

@@ -117,6 +117,9 @@ namespace TiltBrush
                 options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
                 GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
 
+                if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
+                    audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
+
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.
                 // In a player build it moves mesh/buffer construction off the main thread, shrinking
@@ -137,7 +140,10 @@ namespace TiltBrush
                 }
 
                 model.CalcBoundsGltf(go);
-                model.EndCreatePrefab(go, warnings);
+                if (!model.EndCreatePrefab(go, warnings))
+                {
+                    return;
+                }
                 var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
                 // Gather all the unity materials created by UnityGltf
                 var mrs = go.GetComponentsInChildren<MeshRenderer>(true);

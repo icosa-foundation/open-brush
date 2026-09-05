@@ -59,6 +59,7 @@ namespace TiltBrush
         public bool ResaveLegacyScenes = true;
         public bool UseAutoProfiler = false;
         public bool AllowStripBreak = true;
+        public bool UseBrushTestingMaterial = false;
         public TiltFormat PreferredTiltFormat = TiltFormat.Inherit;
         public PointerScript.BrushLerp BrushLerp = PointerScript.BrushLerp.Default;
 
@@ -79,6 +80,7 @@ namespace TiltBrush
             MaybeLoad(ref BufferAfterZip, obj["BufferAfterZip"]);
             MaybeLoad(ref ResaveLegacyScenes, obj["ResaveLegacyScenes"]);
             MaybeLoad(ref UseAutoProfiler, obj["UseAutoProfiler"]);
+            MaybeLoad(ref UseBrushTestingMaterial, obj["UseBrushTestingMaterial"]);
             MaybeLoadEnum(ref PreferredTiltFormat, obj["PreferredTiltFormat"]);
             MaybeLoadEnum(ref BrushLerp, obj["BrushLerp"]);
             // Note: this now only works for choosing between VR modes.

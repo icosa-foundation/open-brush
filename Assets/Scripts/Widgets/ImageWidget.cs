@@ -14,7 +14,7 @@
 
 using UnityEngine;
 using System.IO;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 
 namespace TiltBrush
 {
@@ -29,6 +29,7 @@ namespace TiltBrush
         [SerializeField] private float m_VertCountScalar = 1;
 
         private bool m_UseLegacyTint;
+        private float m_Opacity = 1.0f;
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
         private bool m_PreserveCustomSize;
@@ -52,6 +53,22 @@ namespace TiltBrush
                 m_UseLegacyTint = value;
                 float tintValue = m_UseLegacyTint ? 1.0f : 0.0f;
                 m_ImageQuad.material.SetFloat("_LegacyReferenceImageTint", tintValue);
+            }
+        }
+
+        /// Alpha multiplier applied to the image. Currently only set by the Quill importer.
+        public float Opacity
+        {
+            get { return m_Opacity; }
+            set
+            {
+                m_Opacity = Mathf.Clamp01(value);
+                if (m_ImageQuad != null && m_ImageQuad.material != null)
+                {
+                    Color color = m_ImageQuad.material.color;
+                    color.a = m_Opacity;
+                    m_ImageQuad.material.color = color;
+                }
             }
         }
 
@@ -115,6 +132,7 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
             clone.UseLegacyTint = this.m_UseLegacyTint;
+            clone.Opacity = this.m_Opacity;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);
@@ -300,6 +318,7 @@ namespace TiltBrush
             var twoSidedFlags = tiltImage.TwoSidedFlags;
             var extrusionDepths = tiltImage.ExtrusionDepths;
             var extrusionColors = tiltImage.ExtrusionColors;
+            var opacities = tiltImage.Opacities;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -324,6 +343,10 @@ namespace TiltBrush
                     image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
                 }
                 image.Show(bShow: true, bPlayAudio: false);
+                if (opacities != null && i < opacities.Length)
+                {
+                    image.Opacity = opacities[i];
+                }
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
                 if (tiltImage.PinStates[i])

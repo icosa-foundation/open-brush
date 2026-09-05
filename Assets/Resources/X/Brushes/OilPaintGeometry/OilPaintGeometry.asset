@@ -23,7 +23,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 5d389e49c32371c4aaf832d61e52302e, type: 3}
-  m_Description: BRUSH_OILPAINTGEOMETRY
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -43,7 +42,7 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: fb303f8bc9581e54d81110ab93198edf, type: 2}
+  m_Material: {fileID: 2100000, guid: e971ec661e0941b469f27acae1244f88, type: 2}
   m_TextureAtlasV: 4
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0

@@ -4,8 +4,6 @@ using UnityEngine;
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
 using System.Runtime.InteropServices;
-using System.Drawing;
-using System.Drawing.Imaging;
 #endif
 
 namespace TiltBrush
@@ -66,6 +64,61 @@ namespace TiltBrush
         [DllImport("user32.dll", EntryPoint = "IsClipboardFormatAvailable", SetLastError = true)]
         private static extern bool IsClipboardFormatAvailable(uint format);
 
+        [DllImport("gdi32.dll", EntryPoint = "GetObject", SetLastError = true)]
+        private static extern int GetObjectBitmap(IntPtr hObject, int nCount, ref BITMAP lpObject);
+
+        [DllImport("gdi32.dll", EntryPoint = "GetDIBits", SetLastError = true)]
+        private static extern int GetDIBits(IntPtr hdc, IntPtr hbmp, uint uStartScan,
+            uint cScanLines, byte[] lpvBits, ref BITMAPINFO lpbi, uint uUsage);
+
+        [DllImport("user32.dll", EntryPoint = "GetDC", SetLastError = true)]
+        private static extern IntPtr GetDC(IntPtr hWnd);
+
+        [DllImport("user32.dll", EntryPoint = "ReleaseDC", SetLastError = true)]
+        private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BITMAP
+        {
+            public int bmType;
+            public int bmWidth;
+            public int bmHeight;
+            public int bmWidthBytes;
+            public ushort bmPlanes;
+            public ushort bmBitsPixel;
+            public IntPtr bmBits;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BITMAPINFOHEADER
+        {
+            public uint biSize;
+            public int biWidth;
+            public int biHeight;
+            public ushort biPlanes;
+            public ushort biBitCount;
+            public uint biCompression;
+            public uint biSizeImage;
+            public int biXPelsPerMeter;
+            public int biYPelsPerMeter;
+            public uint biClrUsed;
+            public uint biClrImportant;
+        }
+
+        /// Header plus room for the three BI_BITFIELDS masks. 32bpp BI_RGB needs no colour
+        /// table, but GDI expects a BITMAPINFO rather than a bare header.
+        [StructLayout(LayoutKind.Sequential)]
+        private struct BITMAPINFO
+        {
+            public BITMAPINFOHEADER bmiHeader;
+            public uint bmiColors0;
+            public uint bmiColors1;
+            public uint bmiColors2;
+        }
+
+        private const uint BI_RGB = 0;
+        private const uint DIB_RGB_COLORS = 0;
+
         private const uint CF_BITMAP = 2;
 
         private static Texture2D GetClipboardImageWindows()
@@ -91,34 +144,55 @@ namespace TiltBrush
             return clipboardImage;
         }
 
+        /// Reads the clipboard HBITMAP through GDI rather than System.Drawing, which is not
+        /// available under the .NET Standard profile. Requesting 32bpp BI_RGB with a negative
+        /// biHeight yields top-down BGRA rows, the same bytes the previous
+        /// Image.FromHbitmap/LockBits(Format32bppArgb) path produced, so the resulting texture
+        /// is unchanged.
         private static Texture2D TextureFromClipboardData(IntPtr hBitmap)
         {
-            Bitmap bitmap = null;
+            BITMAP bmp = new BITMAP();
+            if (GetObjectBitmap(hBitmap, Marshal.SizeOf(typeof(BITMAP)), ref bmp) == 0)
+            {
+                return null;
+            }
+
+            int width = bmp.bmWidth;
+            int height = Math.Abs(bmp.bmHeight);
+            if (width <= 0 || height <= 0)
+            {
+                return null;
+            }
+
+            BITMAPINFO info = new BITMAPINFO();
+            info.bmiHeader.biSize = (uint)Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+            info.bmiHeader.biWidth = width;
+            info.bmiHeader.biHeight = -height;
+            info.bmiHeader.biPlanes = 1;
+            info.bmiHeader.biBitCount = 32;
+            info.bmiHeader.biCompression = BI_RGB;
+
+            byte[] pixels = new byte[width * height * 4];
+            IntPtr hdc = GetDC(IntPtr.Zero);
             try
             {
-                bitmap = Image.FromHbitmap(hBitmap);
-                Texture2D texture = new Texture2D(bitmap.Width, bitmap.Height, TextureFormat.RGBA32, false);
-                BitmapData bitmapData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-
-                IntPtr pixelsPtr = bitmapData.Scan0;
-                int size = bitmapData.Stride * bitmapData.Height;
-                byte[] pixels = new byte[size];
-                Marshal.Copy(pixelsPtr, pixels, 0, size);
-
-                texture.LoadRawTextureData(pixels);
-                texture.Apply();
-
-                bitmap.UnlockBits(bitmapData);
-
-                return texture;
+                if (GetDIBits(hdc, hBitmap, 0, (uint)height, pixels, ref info, DIB_RGB_COLORS) == 0)
+                {
+                    return null;
+                }
             }
             finally
             {
-                if (bitmap != null)
+                if (hdc != IntPtr.Zero)
                 {
-                    bitmap.Dispose();
+                    ReleaseDC(IntPtr.Zero, hdc);
                 }
             }
+
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.LoadRawTextureData(pixels);
+            texture.Apply();
+            return texture;
         }
 
 

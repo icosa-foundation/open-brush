@@ -56,7 +56,7 @@ namespace TiltBrush
                 unchecked
                 {
                     int hash = m_FontSize.GetHashCode();
-                    hash = (hash * 397) ^ (m_Font != null ? m_Font.GetInstanceID() : 0);
+                    hash = (hash * 397) ^ (m_Font != null ? m_Font.GetHashCode() : 0);
                     hash = (hash * 397) ^
                         (m_Text != null ? StringComparer.Ordinal.GetHashCode(m_Text) : 0);
                     return hash;

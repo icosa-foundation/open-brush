@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
+  m_Name: QuillCylinder
+  m_EditorClassIdentifier: 
+  m_Guid:
+    m_storage: f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c
+  m_DurableName: QuillCylinder
+  m_CreationVersion: 16.0
+  m_ShaderVersion: 10.0
+  m_BrushPrefab: {fileID: 1000012766643648, guid: 6c5293cd417bd87499d9c4bac547947c,
+    type: 3}
+  m_Tags:
+  - experimental
+  - quill
+  m_Nondeterministic: 0
+  m_Supersedes: {fileID: 0}
+  m_LooksIdentical: 0
+  m_ButtonTexture: {fileID: 0}
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 455073689002139648
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionExtra: 
+  m_BrushAudioLayers: []
+  m_BrushAudioBasePitch: 1
+  m_BrushAudioMaxPitchShift: 0
+  m_BrushAudioMaxVolume: 0.7
+  m_BrushVolumeUpSpeed: 1
+  m_BrushVolumeDownSpeed: 3
+  m_VolumeVelocityRangeMultiplier: 2
+  m_AudioReactive: 0
+  m_ButtonAudio: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 632c30292a1e6c7469362c8f225a9020, type: 2}
+  m_TextureAtlasV: 1
+  m_TileRate: 1
+  m_UseBloomSwatchOnColorPicker: 0
+  m_BrushSizeRange: {x: 0.001, y: 5}
+  m_PressureSizeRange: {x: 0, y: 1}
+  m_SizeVariance: 0
+  m_PreviewPressureSizeMin: 0.001
+  m_Opacity: 1
+  m_PressureOpacityRange: {x: 1, y: 1}
+  m_ColorLuminanceMin: 0
+  m_ColorSaturationMax: 1
+  m_ParticleSpeed: 0
+  m_ParticleRate: 1
+  m_ParticleInitialRotationRange: 0
+  m_RandomizeAlpha: 0
+  m_SprayRateMultiplier: 1
+  m_RotationVariance: 0
+  m_PositionVariance: 0
+  m_SizeRatio: {x: 1, y: 1}
+  m_M11Compatibility: 0
+  m_SolidMinLengthMeters_PS: 0.0005
+  m_TubeStoreRadiusInTexcoord0Z: 1
+  m_RenderBackfaces: 0
+  m_BackIsInvisible: 0
+  m_BackfaceHueShift: 0
+  m_BoundsPadding: 0
+  m_PlayBackAtStrokeGranularity: 0
+  m_BlendMode: 0
+  m_EmissiveFactor: 0
+  m_AllowExport: 1
+  m_SupportsSimplification: 0
+  m_HeadMinPoints: 6
+  m_HeadPointStep: 1
+  m_TailMinPoints: 6
+  m_TailPointStep: 1
+  m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

@@ -11,9 +11,13 @@ public class MobileButtonSwap : MonoBehaviour
 
     void Start()
     {
-        bool isMobile = Application.isMobilePlatform;
-        bool isDesktop = !Application.isMobilePlatform;
-        bool isWindows = Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor;
+        // Use App.Config rather than Application.isMobilePlatform so that the Editor's
+        // "Spoof Mobile Hardware" option (Android build target only) is respected.
+        bool isMobile = TiltBrush.App.Config.IsMobileHardware;
+        bool isDesktop = !isMobile;
+        bool isWindows = !isMobile &&
+            (Application.platform == RuntimePlatform.WindowsPlayer ||
+            Application.platform == RuntimePlatform.WindowsEditor);
 
         foreach (var btn in m_DesktopOnlyButtons)
         {

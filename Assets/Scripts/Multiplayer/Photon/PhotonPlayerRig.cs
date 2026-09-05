@@ -137,7 +137,7 @@ namespace OpenBrush.Multiplayer
                 }
                 
             }
-            catch (InvalidOperationException ex)
+            catch (InvalidOperationException)
             {
                 return default;
             }

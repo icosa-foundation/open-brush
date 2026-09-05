@@ -54,72 +54,50 @@ Shader "Custom/SketchbookButton" {
     float4 vertex : SV_POSITION;
     float4 color : COLOR;
     float4 texcoord : TEXCOORD0;
+    float3 viewDir : TEXCOORD1;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 
     UNITY_VERTEX_OUTPUT_STEREO
   };
 
-  v2f vertInflate (appdata_t v, float currentSliceIndex) {
-
-    
+  v2f vert (appdata_t v) {
     v2f o;
-    
+
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-    
-    v.tangent.w = 1.0;
-    float totalNumSlices = 5;
-    float  ratio = (currentSliceIndex / (totalNumSlices - 1));
-    float ratioMultiplier = .5;
-    v.vertex.z -= ratioMultiplier * ratio * _Distance;
-    totalNumSlices = 5;
 
     o.vertex = UnityObjectToClipPos(v.vertex);
     o.color = 0;
     o.texcoord = float4(TRANSFORM_TEX(v.texcoord,_Tex_0).xy, 0, _PanelMipmapBias);
+    o.viewDir = ObjSpaceViewDir(v.vertex);
     return o;
   }
 
-  v2f vertLayer0 (appdata_t v) {
-    return vertInflate(v,0.25);
-  }
+  // _Tex_0 is the front layer; _Tex_1 is the recessed background.
+  // UV offset on _Tex_1 based on view angle simulates parallax depth.
+  fixed4 frag (v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+    float3 viewDir = normalize(i.viewDir);
+    float2 parallaxOffset = viewDir.xy * (_Distance * 0.1);
+    fixed4 tex0 = tex2Dbias(_Tex_0, float4(i.texcoord.xy - parallaxOffset, 0, i.texcoord.w));
+    fixed4 tex1 = tex2D(_Tex_1, i.texcoord.xy);
+    tex0.rgb *= .75;
+    tex1.rgb *= .75;
 
-  v2f vertLayer1 (appdata_t v) {
-    return vertInflate(v,0.6);
-  }
-
-  fixed4 frag0 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2Dbias(_Tex_0, i.texcoord);
-    // dim white values to match the rest of panel buttons
-    tex.rgb *= .75;
+    // _Tex_1 is the icon overlay (front); _Tex_0 is the sketch background (back, parallax-shifted)
+    fixed4 tex = (tex1.a >= _Cutoff) ? tex1 : tex0;
     float4 myColor = _Color * tex;
     myColor.a = tex.a;
 
     if (myColor.a < _Cutoff)
       discard;
 
-    // Let color bits go grayscale when not in focus
     if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
-    }
-
-    return encodeHdr(myColor);
-  }
-
-  fixed4 frag1 (v2f i) : SV_TARGET {
-    fixed4 tex = tex2D(_Tex_1, i.texcoord.xy);
-	tex.rgb *= .75;
-    float4 myColor = _Color * tex;
-    myColor.a = tex.a;
-
-    if (myColor.a < _Cutoff)
-      discard;
-
-    // Let color bits go grayscale when not in focus
-    if (_Grayscale == 1) {
-        float grayscale = dot(myColor, float3(0.3, 0.59, 0.11));
-        return encodeHdr(grayscale);
+      float grayscale = dot(myColor.rgb, float3(0.3, 0.59, 0.11));
+      return encodeHdr(grayscale);
     }
 
     return encodeHdr(myColor);
@@ -128,26 +106,20 @@ Shader "Custom/SketchbookButton" {
   ENDCG
 
   SubShader {
-  Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
     Zwrite On
     Ztest LEqual
-    Pass{
+    Pass {
       CGPROGRAM
-      #pragma vertex vertLayer0
-      #pragma fragment frag0
-      ENDCG
-    }
-
-    Zwrite On
-    Ztest LEqual
-    Pass{
-      CGPROGRAM
-      #pragma vertex vertLayer1
-      #pragma fragment frag1
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma multi_compile_instancing
       ENDCG
     }
   }
   FallBack "Diffuse"
 }
+
+

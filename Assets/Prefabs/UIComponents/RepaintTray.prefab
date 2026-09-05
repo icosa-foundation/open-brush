@@ -920,6 +920,7 @@ MonoBehaviour:
   m_Border: {fileID: 6681089317093558847}
   m_AnimateSpeed: 8
   m_AnimateRange: {x: 0, y: 1}
+  m_TrayWidth: 0.45
   m_ShowOnToolType: 19
   m_RecolorButton: {fileID: 5053456529424186463}
   m_ResizeButton: {fileID: 5057016941597226837}

@@ -21,8 +21,6 @@ namespace LIV.SDK.Unity
         private CameraEvent _clipPlaneCombineAlphaCameraEvent = CameraEvent.AfterEverything;
         private CameraEvent _captureTextureEvent = CameraEvent.BeforeImageEffects;
         private CameraEvent _applyTextureEvent = CameraEvent.AfterEverything;
-        private CameraEvent _optimizedRenderingCameraEvent = CameraEvent.AfterEverything;
-
         // Tessellated quad
         private Mesh _clipPlaneMesh = null;
         // Clear material

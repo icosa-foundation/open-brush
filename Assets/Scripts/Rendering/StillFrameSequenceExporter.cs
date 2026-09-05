@@ -31,7 +31,18 @@ namespace TiltBrush
         private float m_FrameInterval;
 
         public string FilePath => m_FilePath;
+        public int FrameCount => m_FrameCount;
+        public float FPS => m_FPS;
+        public bool IsCapturing => m_IsCapturing;
+        public bool IsSaving => m_IsSaving;
+        public string OutputDirectory => m_DirectoryPath;
 
+        public static string GetOutputDirectory(string filePath)
+        {
+            string baseDir = Path.GetDirectoryName(filePath);
+            string baseFileName = Path.GetFileNameWithoutExtension(filePath);
+            return Path.Combine(baseDir, $"{baseFileName}_frames");
+        }
 
         private void Awake()
         {
@@ -52,8 +63,7 @@ namespace TiltBrush
             m_FilePath = filePath;
             m_BaseFileName = Path.GetFileNameWithoutExtension(filePath);
             // Create subfolder for still frames using the same naming as the video file
-            string baseDir = Path.GetDirectoryName(filePath);
-            m_DirectoryPath = Path.Combine(baseDir, m_BaseFileName + "_frames");
+            m_DirectoryPath = GetOutputDirectory(filePath);
             m_FPS = fps;
             m_FrameCount = 0;
             m_FrameInterval = 1.0f / fps;
@@ -88,6 +98,11 @@ namespace TiltBrush
 
         public void CaptureFrame(float currentTime)
         {
+            CaptureFrame(currentTime, CameraConfig.PostEffects);
+        }
+
+        public void CaptureFrame(float currentTime, bool includePostProcessing)
+        {
             if (!m_IsCapturing || !ShouldCapture(currentTime))
             {
                 return;
@@ -106,7 +121,9 @@ namespace TiltBrush
             try
             {
                 // Render the current frame
-                m_ScreenshotManager.RenderToTexture(renderTexture);
+                m_ScreenshotManager.RenderToTexture(
+                    renderTexture,
+                    includePostProcessing: includePostProcessing);
 
                 byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
                 File.WriteAllBytes(frameFilePath, frameData);

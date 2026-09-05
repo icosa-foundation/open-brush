@@ -145,6 +145,14 @@ namespace TiltBrush
                     WriteObjectsAndConnections(exporter, payload);
 
                     string[] exportedFiles = exporter.EndExport();
+
+                    var skipped = exporter.SkippedMaterialNames.ToList();
+                    if (skipped.Count > 0)
+                    {
+                        OutputWindowScript.Error(
+                            "Some strokes were not exported",
+                            $"No glTF material data for: {string.Join(", ", skipped)}");
+                    }
                     return new ExportResults
                     {
                         success = true,
@@ -156,9 +164,8 @@ namespace TiltBrush
                 {
                     OutputWindowScript.Error("glTF export failed", e.Message);
                     // TODO: anti-pattern. Let the exception bubble up so caller can log it properly
-                    // Actually, InvalidOperationException is now somewhat expected in experimental, since
-                    // the gltf exporter does not check IExportableMaterial.SupportsDetailedMaterialInfo.
-                    // But we still want the logging for standalone builds.
+                    // Materials without detailed info (eg experimental brushes) no longer land here;
+                    // ExportMeshPayload skips their geometry instead. See SkippedMaterialNames.
                     Debug.LogException(e);
                     return new ExportResults { success = false };
                 }
@@ -323,7 +330,10 @@ namespace TiltBrush
                         // Condense the two levels into one; give the top-level node the same name
                         // it would have had had it been multi-level.
                         GlTF_Node newNode = exporter.ExportMeshPayload(payload, first, groupNode);
-                        newNode.PresentationNameOverride = rootNodeName;
+                        if (newNode != null)
+                        {
+                            newNode.PresentationNameOverride = rootNodeName;
+                        }
                     }
                     else
                     {

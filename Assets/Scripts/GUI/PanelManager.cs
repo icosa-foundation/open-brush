@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -490,7 +490,7 @@ namespace TiltBrush
                 type == BasePanel.PanelType.AppSettings || type == BasePanel.PanelType.AppSettingsMobile ||
                 type == BasePanel.PanelType.Sketchbook || type == BasePanel.PanelType.SketchbookMobile ||
                 type == BasePanel.PanelType.Camera || type == BasePanel.PanelType.MemoryWarning ||
-                type == BasePanel.PanelType.Multiplayer;
+                type == BasePanel.PanelType.Multiplayer || type == BasePanel.PanelType.QuillLibrary;
         }
 
         // Core panels are those that exist in the basic mode experience.  Practically, those that

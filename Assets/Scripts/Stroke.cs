@@ -57,7 +57,7 @@ namespace TiltBrush
         private StrokeData m_CopyForSaveThread;
 
         /// The group this stroke is a part of. Cannot be null (as it is a struct).
-        public SketchGroupTag Group
+        public new SketchGroupTag Group
         {
             get => m_Group;
             set

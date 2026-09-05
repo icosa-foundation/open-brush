@@ -34,25 +34,17 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityGLTF;
 
-#if OCULUS_SUPPORTED
-using Unity.XR.Oculus;
-#endif
-
 namespace TiltBrush
 {
     public enum XrSdkMode
     {
         Monoscopic = -1,
         OpenXR = 0,
-        Oculus,
-        Wave,
-        Pico,
         Zapbox,
+        AndroidXR,
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
-    //  - These names are used in our analytics, so they must be protected from obfuscation.
-    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
@@ -60,6 +52,15 @@ namespace TiltBrush
         UnityXR,
         Monoscopic,
         Ods,    // Video rendering
+    }
+
+    [Serializable]
+    public enum PassthroughMode
+    {
+        None,
+        OpenXREnvionmentBlendMode,
+        FBPassthrough,
+        Zapbox,
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -139,13 +140,13 @@ namespace TiltBrush
         [NonSerialized] public bool m_QuickLoad = true;
 
         public SecretsConfig.ServiceAuthData GoogleSecrets => Secrets?[SecretsConfig.Service.Google];
-        public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets[SecretsConfig.Service.Sketchfab];
-        public SecretsConfig.ServiceAuthData OculusSecrets => Secrets[SecretsConfig.Service.Oculus];
-        public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets[SecretsConfig.Service.OculusMobile];
-        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets[SecretsConfig.Service.Pimax];
-        public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets[SecretsConfig.Service.PhotonFusion];
-        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets[SecretsConfig.Service.PhotonVoice];
-        public SecretsConfig.ServiceAuthData ViveSecrets => Secrets[SecretsConfig.Service.Vive];
+        public SecretsConfig.ServiceAuthData SketchfabSecrets => Secrets?[SecretsConfig.Service.Sketchfab];
+        public SecretsConfig.ServiceAuthData OculusSecrets => Secrets?[SecretsConfig.Service.Oculus];
+        public SecretsConfig.ServiceAuthData OculusMobileSecrets => Secrets?[SecretsConfig.Service.OculusMobile];
+        public SecretsConfig.ServiceAuthData PimaxSecrets => Secrets?[SecretsConfig.Service.Pimax];
+        public SecretsConfig.ServiceAuthData PhotonFusionSecrets => Secrets?[SecretsConfig.Service.PhotonFusion];
+        public SecretsConfig.ServiceAuthData PhotonVoiceSecrets => Secrets?[SecretsConfig.Service.PhotonVoice];
+        public SecretsConfig.ServiceAuthData ViveSecrets => Secrets?[SecretsConfig.Service.Vive];
 
         public bool DisableAccountLogins;
         [NonSerialized] public bool CanReachLocalhostDisabled;
@@ -377,7 +378,6 @@ namespace TiltBrush
                 else if (args[i] == "--captureOds")
                 {
                     m_SdkMode = SdkMode.Ods;
-                    UnityEngine.XR.XRSettings.enabled = false;
                     Debug.Log("CaptureODS: Enable ");
 
                 }
@@ -506,7 +506,6 @@ namespace TiltBrush
                     }
                     m_VideoPathToRender = args[++i];
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (args[i] == "--EnableMonoscopicMode")
                 {
@@ -564,10 +563,6 @@ namespace TiltBrush
         {
             get
             {
-#if OCULUS_SUPPORTED
-                SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
-                return headset != SystemHeadset.Oculus_Quest;
-#endif // OCULUS_SUPPORTED
 #if ZAPBOX_SUPPORTED
                 return false;
 #endif
@@ -625,12 +620,10 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (disableXr)
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
 
                 string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");
@@ -824,10 +817,9 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
+        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {
             m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
-            DisableAccountLogins = disableAccountLogins;
         }
 #endif
     }

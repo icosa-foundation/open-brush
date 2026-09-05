@@ -151,6 +151,7 @@ namespace TiltBrush
                 ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
                 Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
                 TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping),
+                SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping),
                 Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping),
                 GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping),
                 Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
@@ -181,7 +182,7 @@ namespace TiltBrush
             if (hiResTexture != null)
             {
                 tool.CurrentCameraRigState = iconXform;
-                saveIconScreenshotManager.RenderToTexture(hiResTexture);
+                saveIconScreenshotManager.RenderToTexture(hiResTexture, includePostProcessing: true);
                 yield return null;
             }
 
@@ -194,7 +195,7 @@ namespace TiltBrush
                 for (int i = 0; i < gifTextures.Length; ++i)
                 {
                     m_SaveIconCapture.SetSaveIconTransformForGifFrame(basePos, baseRot, i);
-                    saveIconScreenshotManager.RenderToTexture(gifTextures[i]);
+                    saveIconScreenshotManager.RenderToTexture(gifTextures[i], includePostProcessing: true);
                     yield return null;
                 }
             }

@@ -231,7 +231,10 @@ namespace TiltBrush
                 ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
                 ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
-                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
+                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory,
+                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory,
+                _ => throw new System.InvalidOperationException(
+                    $"Unsupported reference tab type: {m_CurrentTab.ReferenceButtonType}")
             };
 
             string displayPath;
@@ -258,7 +261,7 @@ namespace TiltBrush
             }
             else
             {
-                displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                displayPath = currentDir?.Substring(App.MediaLibraryPath().Length);
             }
 
             if (m_DirectoryChooserPopupButton != null)
@@ -377,7 +380,10 @@ namespace TiltBrush
             {
                 return true;
             }
-            return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
+            // Gaze raycasts reach us before the panel is first enabled, and m_CurrentTab
+            // is only assigned in OnEnablePanel.
+            return m_CurrentTab != null &&
+                m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
         public void ChangeDirectoryForCurrentTab(string path)

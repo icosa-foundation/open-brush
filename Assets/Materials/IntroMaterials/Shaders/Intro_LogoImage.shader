@@ -19,10 +19,11 @@ Shader "Custom/Intro_Image" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
-    Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha
     LOD 100
     Pass {
+      Tags { "LightMode"="UniversalForward" }
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag

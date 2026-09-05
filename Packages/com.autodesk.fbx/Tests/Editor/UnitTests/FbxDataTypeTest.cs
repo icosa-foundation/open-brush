@@ -34,9 +34,9 @@ namespace Autodesk.Fbx.UnitTests
             Assert.AreEqual("bool", v.GetNameForIO());
             Assert.IsTrue(v.Is(v2));
 
-            using(new FbxDataType(EFbxType.eFbxFloat));
-            using(new FbxDataType("name", EFbxType.eFbxFloat));
-            using(new FbxDataType("name", v));
+            using (new FbxDataType(EFbxType.eFbxFloat)) { }
+            using (new FbxDataType("name", EFbxType.eFbxFloat)) { }
+            using (new FbxDataType("name", v)) { }
 
             // make sure disposing doesn't crash in either case (disposing a handle to a
             // global, or disposing a handle to a copy)

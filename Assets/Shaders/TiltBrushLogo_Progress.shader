@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,71 +19,77 @@ Shader "Custom/TiltBrushLogo_Progress" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha
     LOD 100
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
-      
+      #pragma multi_compile_instancing
+
       #include "UnityCG.cginc"
-  
+
       float _Progress;
       sampler2D _MainTex;
       float4 _MainTex_ST;
       fixed4 _Color;
-  
+
       struct appdata {
         float4 vertex : POSITION;
         float2 uv : TEXCOORD0;
 
         UNITY_VERTEX_INPUT_INSTANCE_ID
       };
-  
+
       struct v2f {
         float2 uv_MainTex : TEXCOORD0;
         float4 vertex : SV_POSITION;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
-  
+
       // Creates a smooth in and out line from min to max over the range t = [0, 1].
       float smooth(float min, float max, float t) {
         const float PI = 3.14159265358979;
-  
+
         // Clamp min and max to be within a certain limit of each other.
         float limit = 3;
         min = t < 0.5 ? min : max + limit * (saturate((min - max) / limit + 0.5) - 0.5);
         max = t > 0.5 ? max : min + limit * (saturate((max - min) / limit + 0.5) - 0.5);
-  
+
         float inCurve = pow(cos(t * PI), .3);
         float outCurve = -pow(abs(cos(t * PI)), .5);
         return t < 0.5 ?
             (-0.5 * inCurve + .5) * (max - min) + min :
             (-0.5 * outCurve + .5) * (max - min) + min;
       }
-      
+
       v2f vert (appdata v) {
         v2f o;
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-        
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.uv_MainTex = TRANSFORM_TEX(v.uv, _MainTex);
         return o;
       }
-  
+
       fixed4 frag (v2f IN) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
         // Base theta is the rotational angle around the logo.
         const float TWO_PI = 2.0 * 3.14159265358979;
         const float PI_OVER_THREE = 3.14159265358979 / 3.0;
         float x = IN.uv_MainTex.x - 0.5;
         float y = IN.uv_MainTex.y - 0.5;
         float theta = fmod(atan2(x , y) + TWO_PI - TWO_PI/21, TWO_PI);
-  
+
         // The commented code below was used to progress the Tilt Brush logo correctly.
         // As Open Brush's logo is radial, this is not needed.
 
@@ -99,7 +105,7 @@ Shader "Custom/TiltBrushLogo_Progress" {
         // a = (a - A_MIN) / (A_MAX - A_MIN);
         // float b = IN.uv_MainTex.x * sin_30 + (1 - IN.uv_MainTex.y) * cos_30;
         // b = (b - B_MIN) / (B_MAX - B_MIN);
-  
+
         // // Interpolate between the three different colors in the first 1/6th of the logo.
         // const float edge1 = 1.0 / 18;
         // const float factor1 = _Progress / edge1;
@@ -126,22 +132,24 @@ Shader "Custom/TiltBrushLogo_Progress" {
         //     b < 7.0 / 8 ? smooth(-e3, -e4, 4 * b - 2.5) :
         //                   smooth(-e4, -e4 - 1, 4 * b - 3.5);
         // taper *= 0.05;
-  
+
         // theta = a > 0 && a < 1 && b > 0 && b < 1
         //     ? (a + taper) * PI_OVER_THREE
         //     : theta;
-  
+
         fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
         c *= _Color * theta < (_Progress * TWO_PI) ? 1 : 0.75;
-  
+
         // Uncomment out the next two lines to test out the boundaries.
         //c.r += a > 0 && a < 1 ? .5 : 0;
         //c.g += b > 0 && b < 1 ? .5 : 0;
-  
+
         return c;
       }
-      ENDCG
+      ENDHLSL
     }
   }
   FallBack "Diffuse"
 }
+
+

@@ -72,6 +72,12 @@ public class MobileBloom : MonoBehaviour
 
     private void Awake()
     {
+        if (GraphicsSettings.currentRenderPipeline != null)
+        {
+            enabled = false;
+            return;
+        }
+
         m_xOffset = new int[2];
 
         m_Camera = GetComponent<Camera>();
@@ -91,6 +97,12 @@ public class MobileBloom : MonoBehaviour
 
     private void OnEnable()
     {
+        if (GraphicsSettings.currentRenderPipeline != null)
+        {
+            enabled = false;
+            return;
+        }
+
         // QualityControls can be null if we're not in the main scene.
         if (QualityControls.m_Instance == null)
         {
@@ -106,6 +118,11 @@ public class MobileBloom : MonoBehaviour
     // Whenever we change quality levels, we recreate the command buffers to match the new settings.
     private void InitializeBloom(int qualityLevel)
     {
+        if (GraphicsSettings.currentRenderPipeline != null)
+        {
+            return;
+        }
+
         if (m_Camera.stereoEnabled)
         {
             // Calculate the pixel values for the offsets into the area of the screen that receives bloom.
@@ -165,6 +182,7 @@ public class MobileBloom : MonoBehaviour
 #if UNITY_IOS
         return;
 #endif
+        if (GraphicsSettings.currentRenderPipeline != null) { return; }
         if (!m_Camera.enabled) { return; }
         int other = (m_Eye + 1) & 1;
 
