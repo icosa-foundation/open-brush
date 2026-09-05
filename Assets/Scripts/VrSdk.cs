@@ -933,12 +933,27 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Performance Methods
         // -------------------------------------------------------------------------------------------- //
-        // TODO: not implemented since the Meta SDK was removed. The OpenXR replacement
-        // is FoveatedRenderingFeature + XRDisplaySubsystem.foveatedRenderingLevel.
-        // See openxr-perf-migration.md.
+        /// Sets fixed foveated rendering strength, 0 (off) to 3 (maximum).
+        /// Driven by AppQualitySettings.FixedFoveationLevel, which only asks for
+        /// foveation at the two lowest mobile quality levels.
         public void SetFixedFoveation(int level)
         {
             Debug.Assert(level >= 0 && level <= 3);
+            if (!App.Config.IsMobileHardware || SpoofMobileHardware.MobileHardware)
+            {
+                return;
+            }
+
+            var displaySubsystem =
+                XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRDisplaySubsystem>();
+            if (displaySubsystem == null)
+            {
+                return;
+            }
+
+            // The provider maps 0..1 onto whatever discrete levels the device supports.
+            // Runtimes without a foveation extension ignore this.
+            displaySubsystem.foveatedRenderingLevel = Mathf.Clamp01(level / 3.0f);
         }
 
         /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
