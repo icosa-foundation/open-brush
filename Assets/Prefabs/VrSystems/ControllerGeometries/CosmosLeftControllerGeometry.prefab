@@ -245,6 +245,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -948,7 +949,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102532919905576526}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102532919905576526}
   references:
     version: 2
     RefIds: []
@@ -3178,7 +3180,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102875913045538892}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102875913045538892}
   references:
     version: 2
     RefIds: []
@@ -3459,7 +3462,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102531384443331616}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102531384443331616}
   references:
     version: 2
     RefIds: []
@@ -4384,7 +4388,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102731257449837894}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102731257449837894}
   references:
     version: 2
     RefIds: []
@@ -4452,7 +4457,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102591206735069938}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102591206735069938}
   references:
     version: 2
     RefIds: []
@@ -4521,7 +4527,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102509880744970058}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102509880744970058}
   references:
     version: 2
     RefIds: []
@@ -5299,7 +5306,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102739602937155400}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102739602937155400}
   references:
     version: 2
     RefIds: []
@@ -5936,7 +5944,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102850474470639046}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102850474470639046}
   references:
     version: 2
     RefIds: []
@@ -8996,6 +9005,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -9456,6 +9466,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -9734,7 +9745,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102387123927909948}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102387123927909948}
   references:
     version: 2
     RefIds: []
@@ -9983,7 +9995,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102755521357828488}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102755521357828488}
   references:
     version: 2
     RefIds: []
@@ -10970,7 +10983,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102311783885083682}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102311783885083682}
   references:
     version: 2
     RefIds: []
@@ -11039,7 +11053,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102341076671252184}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102341076671252184}
   references:
     version: 2
     RefIds: []
@@ -12058,7 +12073,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 325417540763979628}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 325417540763979628}
   references:
     version: 2
     RefIds: []

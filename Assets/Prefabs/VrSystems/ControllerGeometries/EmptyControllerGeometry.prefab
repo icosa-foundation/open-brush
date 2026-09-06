@@ -562,7 +562,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102595500267641592}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102595500267641592}
   references:
     version: 2
     RefIds: []
@@ -954,7 +955,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102445368675750274}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102445368675750274}
   references:
     version: 2
     RefIds: []
@@ -1812,7 +1814,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102629304084849938}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102629304084849938}
   references:
     version: 2
     RefIds: []
@@ -3279,7 +3282,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102985068256184808}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102985068256184808}
   references:
     version: 2
     RefIds: []
@@ -3348,7 +3352,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102442738964779986}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102442738964779986}
   references:
     version: 2
     RefIds: []
@@ -3619,7 +3624,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102308567795484878}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102308567795484878}
   references:
     version: 2
     RefIds: []
@@ -4363,7 +4369,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102082780116779568}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102082780116779568}
   references:
     version: 2
     RefIds: []
@@ -4432,7 +4439,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102107981671276404}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102107981671276404}
   references:
     version: 2
     RefIds: []
@@ -4501,7 +4509,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102690148992792218}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102690148992792218}
   references:
     version: 2
     RefIds: []
@@ -7857,6 +7866,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -8532,7 +8542,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102924685820157194}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102924685820157194}
   references:
     version: 2
     RefIds: []
@@ -9592,7 +9603,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102997567639289142}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102997567639289142}
   references:
     version: 2
     RefIds: []
@@ -11109,7 +11121,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102999774473249330}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102999774473249330}
   references:
     version: 2
     RefIds: []
@@ -11554,7 +11567,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102495349566499598}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102495349566499598}
   references:
     version: 2
     RefIds: []
@@ -11622,7 +11636,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 102683885675125962}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 102683885675125962}
   references:
     version: 2
     RefIds: []
@@ -12167,7 +12182,8 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_HintText: {fileID: 6443131424543111036}
+  m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 6443131424543111036}
   references:
     version: 2
     RefIds: []
