@@ -1117,12 +1117,14 @@ static class BuildTiltBrush
     {
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
+        readonly Dictionary<UnityEngine.XR.OpenXR.Features.OpenXRFeature, int> originalPriorities;
         readonly BuildTargetGroup m_targetGroup;
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
             enabledFeatures = new();
             requiredFeatures = new();
+            originalPriorities = new();
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
@@ -1199,6 +1201,18 @@ static class BuildTiltBrush
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
+
+            // OpenXRAndroidSettings, FBPassthrough, and METABoundaryVisibility all derive from
+            // Mikesky's FeatureBase. FeatureBase uses one static xrGetInstanceProcAddr
+            // interceptor for every derived feature. Keep all three at the same priority so
+            // Unity's foveation hook cannot be inserted between two shared-interceptor hooks.
+            const int sharedInterceptorPriority = 1;
+            SetFeaturePriority<OpenXR.Extensions.OpenXRAndroidSettings>(settings,
+                sharedInterceptorPriority);
+            SetFeaturePriority<OpenXR.Extensions.FBPassthrough>(settings,
+                sharedInterceptorPriority);
+            SetFeaturePriority<OpenXR.Extensions.METABoundaryVisibility>(settings,
+                sharedInterceptorPriority);
         }
 
         void EnableRequiredFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1218,6 +1232,30 @@ static class BuildTiltBrush
                 $"this {m_targetGroup} build.");
         }
 
+        void SetFeaturePriority<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings, int priority)
+            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
+        {
+            var feature = settings.GetFeature<T>();
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find OpenXR feature {typeof(T).FullName} to set its priority.");
+            }
+
+            var serializedFeature = new SerializedObject(feature);
+            var priorityProperty = serializedFeature.FindProperty("priority");
+            if (priorityProperty == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find the serialized priority for OpenXR feature " +
+                    $"{typeof(T).FullName}.");
+            }
+
+            originalPriorities[feature] = priorityProperty.intValue;
+            priorityProperty.intValue = priority;
+            serializedFeature.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         public void Dispose()
         {
             foreach (var requiredFeature in requiredFeatures)
@@ -1231,6 +1269,17 @@ static class BuildTiltBrush
             foreach (var enabledFeature in enabledFeatures)
             {
                 enabledFeature.enabled = true;
+            }
+
+            foreach (var originalPriority in originalPriorities)
+            {
+                var serializedFeature = new SerializedObject(originalPriority.Key);
+                var priorityProperty = serializedFeature.FindProperty("priority");
+                if (priorityProperty != null)
+                {
+                    priorityProperty.intValue = originalPriority.Value;
+                    serializedFeature.ApplyModifiedPropertiesWithoutUndo();
+                }
             }
         }
     }
