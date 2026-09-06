@@ -34,8 +34,8 @@ CGPROGRAM
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #pragma multi_compile __ SELECTION_ON
 #pragma target 4.0
-#include "Assets/Shaders/Include/Brush.cginc"
-#include "Assets/Shaders/Include/MobileSelection.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
 sampler2D _MainTex;
 fixed4 _Color;
@@ -98,7 +98,7 @@ CGPROGRAM
 #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
 #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 #pragma target 4.0
-#include "Assets/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
 sampler2D _MainTex;
 fixed4 _Color;

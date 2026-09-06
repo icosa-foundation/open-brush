@@ -41,7 +41,7 @@ Properties {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
-    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
     struct Input {
       float2 uv_MainTex;
@@ -118,7 +118,7 @@ Properties {
         #pragma fragment frag
         #pragma target 3.0
 
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -233,10 +233,10 @@ Properties {
         #pragma multi_compile __ SELECTION_ON
         #pragma multi_compile_fog
 
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
-        #include "Assets/Shaders/Include/MobileSelection.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
         // Disable all the things.
         #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight noshadow
@@ -358,7 +358,7 @@ Properties {
         #pragma fragment frag
         #pragma target 3.0
 
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -459,7 +459,7 @@ Properties {
         #pragma fragment frag
         #pragma target 3.0
 
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -558,7 +558,7 @@ Properties {
         #pragma fragment frag
         #pragma target 3.0
 
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
 
@@ -644,7 +644,7 @@ Properties {
       #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
       #pragma target 3.0
 
-      #include "Assets/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
       sampler2D _MainTex;
       fixed4 _Color;

@@ -38,7 +38,7 @@ Properties {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
-    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
     struct Input {
       float2 uv_MainTex;

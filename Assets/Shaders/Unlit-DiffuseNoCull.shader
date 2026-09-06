@@ -31,7 +31,7 @@ SubShader {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Ods.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;

@@ -33,7 +33,7 @@ Shader "Custom/LightWidget" {
             #pragma fragment frag
             #pragma multi_compile_instancing
             #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
             #pragma target 3.0
 
             uniform float4 _ClampedColor;
@@ -101,7 +101,7 @@ Shader "Custom/LightWidget" {
             #pragma fragment frag
             #pragma multi_compile_instancing
             #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
             float _OutlineWidth;
       uniform float4 _Color;

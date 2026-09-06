@@ -36,8 +36,8 @@ Shader "Brush/Special/Intersection" {
 #pragma geometry geom
 
 #include "UnityCG.cginc"
-#include "Assets/Shaders/Include/Brush.cginc"
-#include "Assets/Shaders/Include/PackInt.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
 // TODO: This is currently disabled because of issues with back facing triangles.
 #define TILT_ENABLE_CONSERVATIVE_RASTER 0

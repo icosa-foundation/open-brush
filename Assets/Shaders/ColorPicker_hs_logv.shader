@@ -20,8 +20,8 @@ Properties {
 }
 CGINCLUDE
     #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/ColorSpace.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
     float _Slider01;
     fixed4 _Color;
 

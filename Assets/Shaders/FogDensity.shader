@@ -29,7 +29,7 @@ Shader "Custom/FogDensity" {
 
   CGINCLUDE
   #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
   #pragma target 3.0
 
     sampler2D _FogTex_0;

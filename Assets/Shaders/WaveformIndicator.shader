@@ -29,7 +29,7 @@ Shader "Custom/WaveformIndicator" {
       #pragma multi_compile __ AUDIO_REACTIVE
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
       fixed4 _Color;
       fixed4 _BGColor;

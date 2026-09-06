@@ -33,8 +33,8 @@ SubShader {
   #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
   #pragma multi_compile __ SELECTION_ON
   #pragma target 3.0
-  #include "Assets/Shaders/Include/Brush.cginc"
-  #include "Assets/Shaders/Include/MobileSelection.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
   fixed4 _Color;
 

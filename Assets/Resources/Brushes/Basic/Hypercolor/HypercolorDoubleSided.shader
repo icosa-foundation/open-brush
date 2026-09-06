@@ -42,8 +42,8 @@ Properties {
     #pragma multi_compile __ AUDIO_REACTIVE
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
     #pragma multi_compile __ SELECTION_ON
-    #include "Assets/Shaders/Include/Brush.cginc"
-    #include "Assets/Shaders/Include/MobileSelection.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
     struct appdata {
       float4 vertex : POSITION;

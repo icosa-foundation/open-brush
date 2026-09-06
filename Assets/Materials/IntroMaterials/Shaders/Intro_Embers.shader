@@ -42,10 +42,10 @@ Category {
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
-      #include "Assets/Shaders/Include/Particles.cginc"
-      #include "Assets/ThirdParty/Shaders/Noise.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Particles.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/ThirdParty/Noise.cginc"
 
       sampler2D _MainTex;
       fixed4 _TintColor;
