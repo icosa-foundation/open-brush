@@ -17,8 +17,7 @@ MonoBehaviour:
   m_DurableName: QuillRibbon
   m_CreationVersion: 16.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 1000012766643651, guid: ce3834e0b85a3994e91b381ba401eec6,
-    type: 3}
+  m_BrushPrefab: {fileID: 1000012766643651, guid: ce3834e0b85a3994e91b381ba401eec6, type: 3}
   m_Tags:
   - experimental
   - quill
@@ -46,6 +45,8 @@ MonoBehaviour:
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 632c30292a1e6c7469362c8f225a9020, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0

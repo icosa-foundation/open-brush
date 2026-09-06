@@ -639,7 +639,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fcab0ed71e649cd95d1e668f220beda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mReshapeTool: {fileID: 3491021130848758577}
+  m_ReshapeTool: {fileID: 3491021130848758577}
 --- !u!1 &3491021130614667045
 GameObject:
   m_ObjectHideFlags: 0
@@ -796,8 +796,7 @@ MonoBehaviour:
   m_ModifyStrokeSounds:
   - {fileID: 8300000, guid: f587ca1bdddc6014090c8a2169e5745e, type: 3}
   m_ModifyStrokeMinTriggerTime: 0.1
-  m_ToolHotOffMaterial: {fileID: 2100000, guid: 1f259984fed24d4fa141bf61d2abd10a,
-    type: 2}
+  m_ToolHotOffMaterial: {fileID: 2100000, guid: 1f259984fed24d4fa141bf61d2abd10a, type: 2}
   m_OnMesh: {fileID: 3491021130875935208}
   m_OffMesh: {fileID: 3491021130614667047}
   m_HighlightMesh: {fileID: 3491021130204876306}
@@ -1214,6 +1213,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 401478a7696a46a8b35fc186c6cf40c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_InfluenceMode: 0
 --- !u!65 &3491021131110089004
 BoxCollider:
   m_ObjectHideFlags: 0

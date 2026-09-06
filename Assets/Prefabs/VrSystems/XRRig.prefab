@@ -545,8 +545,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbf343cbbccd49d459e9d60f27f26984, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_StencilToMaskMaterial: {fileID: 2100000, guid: fc6175dc3f232544f9e8744f14131f59,
-    type: 2}
+  m_StencilToMaskMaterial: {fileID: 2100000, guid: fc6175dc3f232544f9e8744f14131f59, type: 2}
 --- !u!114 &114000014001565202
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -559,12 +558,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20faaaed7d9c21040bd6371092acb8b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_GrabHighlightMaskMaterial: {fileID: 2100000, guid: 02f5897148636384ea5f881820baa576,
-    type: 2}
-  m_WidgetSelectionPostEffect: {fileID: 2100000, guid: 6d5dcf68f440aea459178e8e71e1e1c5,
-    type: 2}
-  m_StrokeSelectionPostEffect: {fileID: 2100000, guid: 989d64a8e82eeba4cb66d66a87f71242,
-    type: 2}
+  m_GrabHighlightMaskMaterial: {fileID: 2100000, guid: 02f5897148636384ea5f881820baa576, type: 2}
+  m_WidgetSelectionPostEffect: {fileID: 2100000, guid: 6d5dcf68f440aea459178e8e71e1e1c5, type: 2}
+  m_StrokeSelectionPostEffect: {fileID: 2100000, guid: 989d64a8e82eeba4cb66d66a87f71242, type: 2}
   m_BlurWidth: 1
   m_SelectionSaturation: 0.5
   m_SelectionValue: 1
@@ -896,8 +892,7 @@ MonoBehaviour:
   _stage: {fileID: 4000013585580318}
   _stageTransform: {fileID: 0}
   _HMDCamera: {fileID: 20000011692615516}
-  _MRCameraPrefab: {fileID: 55574840757722984, guid: ec4aae6658ccfed4a9d715849c84003e,
-    type: 3}
+  _MRCameraPrefab: {fileID: 55574840757722984, guid: ec4aae6658ccfed4a9d715849c84003e, type: 3}
   _disableStandardAssets: 0
   _spectatorLayerMask:
     serializedVersion: 2
