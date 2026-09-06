@@ -84,36 +84,3 @@ resharper_wrap_after_expression_lbrace = false
 resharper_wrap_before_expression_rbrace = false
 resharper_wrap_for_stmt_header_style = wrap_if_long
 resharper_wrap_object_and_collection_initializer_style = chop_always
-
-# ---------------------------------------------------------------------------
-# Unity's serialization analyzer (UAC1001/UAC1015) flags fields that Unity's
-# serializer skips: System.Guid, Dictionary<>, nullable types. The types below
-# are round-tripped by Newtonsoft.Json rather than by Unity, so the diagnostics
-# are false positives for them.
-#
-# Do NOT silence these with [NonSerialized]. Newtonsoft honours that attribute
-# and would stop writing the fields - for SketchMetadata that means silently
-# corrupting saved sketches.
-[SketchMetadata.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
-
-[IcosaService.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
-
-[SketchfabService.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
-
-[GoogleUserSettings.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
-
-[ExportGlTF.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
-
-[UserConfig.cs]
-dotnet_diagnostic.UAC1001.severity = none
-dotnet_diagnostic.UAC1015.severity = none
