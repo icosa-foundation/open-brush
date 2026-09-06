@@ -492,6 +492,11 @@ namespace OpenBrush.Multiplayer
             {
                 var asString = string.Join(string.Empty, data);
                 Debug.Log(asString);
+                // JsonUtility silently drops any field it cannot serialize, so this
+                // round trip loses StrokeData.m_BrushGuid and m_Guid (System.Guid) and
+                // m_OverrideColors (List<Color32?>). m_BrushGuid is restored below from
+                // the separate guid parameter; the other two are not, so per-control-point
+                // override colours do not currently survive multiplayer sync.
                 var decode = JsonUtility.FromJson<Stroke>(asString);
 
                 // Temp
