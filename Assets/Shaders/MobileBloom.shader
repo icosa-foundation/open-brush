@@ -27,7 +27,7 @@ Shader "Hidden/Mobile Bloom"
     #pragma multi_compile_instancing
 
     #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/ColorSpace.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
 
     sampler2D _MainTex;
     float4 _MainTex_TexelSize;

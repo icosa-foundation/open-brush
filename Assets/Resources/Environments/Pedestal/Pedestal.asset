@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: ab080511-e465-4a6d-8587-53bf495af68b
-  m_Description: ENVIRONMENT_PEDESTAL
   m_EnvironmentDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -38,8 +37,7 @@ MonoBehaviour:
     m_EnvironmentPrefab: EnvironmentPrefabs/Pedestal
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_LivingRoom
     m_SkyboxCubemap: {fileID: 0}
-    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d,
-      type: 3}
+    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d, type: 3}
     m_ReflectionIntensity: 1
   m_Lights:
   - m_Color: {r: 0.61960787, g: 0.50980395, b: 0.43137255, a: 1}
@@ -63,6 +61,7 @@ MonoBehaviour:
   m_WidgetHome: {x: 0, y: 9.675, z: 5}
   m_SkyboxColorA: {r: 0.34117648, g: 0.34509805, b: 0.4509804, a: 1}
   m_SkyboxColorB: {r: 0.09411765, g: 0.105882354, b: 0.1764706, a: 1}
+  isPassthrough: 0
   references:
     version: 2
     RefIds: []

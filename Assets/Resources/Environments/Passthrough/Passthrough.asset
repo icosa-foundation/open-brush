@@ -37,8 +37,7 @@ MonoBehaviour:
     m_EnvironmentPrefab: EnvironmentPrefabs/Passthrough
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_Room
     m_SkyboxCubemap: {fileID: 0}
-    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d,
-      type: 3}
+    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d, type: 3}
     m_ReflectionIntensity: 0.3
   m_Lights:
   - m_Color: {r: 0.7309363, g: 0.7467866, b: 0.8207547, a: 1}

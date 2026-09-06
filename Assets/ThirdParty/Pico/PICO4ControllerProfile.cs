@@ -336,6 +336,22 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Without this the base returns an empty string, and OpenXR's binding path
+        /// validator cannot associate this interaction profile with its device layout.
+        /// </remarks>
+        protected override string GetDeviceLayoutName()
+        {
+            return nameof(PICO4TouchController);
+        }
+
+        /// <inheritdoc/>
+        protected override InteractionProfileType GetInteractionProfileType()
+        {
+            return InteractionProfileType.XRController;
+        }
+
+        /// <inheritdoc/>
         protected override void RegisterActionMapsWithRuntime()
         {
             ActionMapConfig actionMap = new ActionMapConfig()

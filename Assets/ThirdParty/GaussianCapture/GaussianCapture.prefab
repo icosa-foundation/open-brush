@@ -108,7 +108,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -209,8 +209,7 @@ MonoBehaviour:
   transparentBackground: 0
   includeTransparentsAndParticles: 0
   alphaThreshold: 0.05
-  depthReplacementShader: {fileID: 4800000, guid: 0da7fe4fde6d6784696f9dd8e3c781f4,
-    type: 3}
+  depthReplacementShader: {fileID: 4800000, guid: 0da7fe4fde6d6784696f9dd8e3c781f4, type: 3}
   nativeDepthShader: {fileID: 4800000, guid: 5f2e1d3cb8944e9b8f657386a6b6e5ce, type: 3}
   saveDepthDebugImages: 0
   saveDepthDebugPreviewPng: 0

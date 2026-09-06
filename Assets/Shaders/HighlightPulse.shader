@@ -31,7 +31,7 @@ Shader "Custom/HighlightPulse" {
         #pragma multi_compile_instancing
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-        #include "Assets/Shaders/Include/Hdr.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
         TEXTURE2D(_MainTex);
         SAMPLER(sampler_MainTex);

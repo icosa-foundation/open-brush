@@ -1,78 +1,190 @@
 fileFormatVersion: 2
 guid: b145e4f919d70c24c90953943fdce275
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: //RootNode
-    100002: KnucklesLController_AButton
-    100004: KnucklesLController_AButtonSlice
-    100006: KnucklesLController_BButton
-    100008: KnucklesLController_BButtonSlice
-    100010: KnucklesLController_Body
-    100012: KnucklesLController_Grip
-    100014: KnucklesLController_Thumbstick
-    100016: KnucklesLController_ThumbstickSlice
-    100018: KnucklesLController_Trigger
-    100020: SteamVR_KnucklesController_RSlices:polySurface2
-    400000: //RootNode
-    400002: KnucklesLController_AButton
-    400004: KnucklesLController_AButtonSlice
-    400006: KnucklesLController_BButton
-    400008: KnucklesLController_BButtonSlice
-    400010: KnucklesLController_Body
-    400012: KnucklesLController_Grip
-    400014: KnucklesLController_Thumbstick
-    400016: KnucklesLController_ThumbstickSlice
-    400018: KnucklesLController_Trigger
-    400020: SteamVR_KnucklesController_RSlices:polySurface2
-    2100000: button_a1_knuckles_right1
-    2100002: button_b_knuckles_right1
-    2100004: gripsqueeze_knuckles_right1
-    2100006: thumbstick_knuckles_right1
-    2100008: trigger_knuckles_right1
-    2100010: body3_knuckles_left1
-    2100012: lambert1
-    2300000: KnucklesLController_AButton
-    2300002: KnucklesLController_AButtonSlice
-    2300004: KnucklesLController_BButton
-    2300006: KnucklesLController_BButtonSlice
-    2300008: KnucklesLController_Body
-    2300010: KnucklesLController_Grip
-    2300012: KnucklesLController_Thumbstick
-    2300014: KnucklesLController_ThumbstickSlice
-    2300016: KnucklesLController_Trigger
-    3300000: KnucklesLController_AButton
-    3300002: KnucklesLController_AButtonSlice
-    3300004: KnucklesLController_BButton
-    3300006: KnucklesLController_BButtonSlice
-    3300008: KnucklesLController_Body
-    3300010: KnucklesLController_Grip
-    3300012: KnucklesLController_Thumbstick
-    3300014: KnucklesLController_ThumbstickSlice
-    3300016: KnucklesLController_Trigger
-    4300000: KnucklesLController_AButton
-    4300002: KnucklesLController_BButton
-    4300004: KnucklesLController_Grip
-    4300006: KnucklesLController_Thumbstick
-    4300008: KnucklesLController_Trigger
-    4300010: KnucklesLController_Body
-    4300012: KnucklesLController_ThumbstickSlice
-    4300014: KnucklesLController_BButtonSlice
-    4300016: KnucklesLController_AButtonSlice
+  serializedVersion: 24600
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: //RootNode
+  - first:
+      1: 100002
+    second: KnucklesLController_AButton
+  - first:
+      1: 100004
+    second: KnucklesLController_AButtonSlice
+  - first:
+      1: 100006
+    second: KnucklesLController_BButton
+  - first:
+      1: 100008
+    second: KnucklesLController_BButtonSlice
+  - first:
+      1: 100010
+    second: KnucklesLController_Body
+  - first:
+      1: 100012
+    second: KnucklesLController_Grip
+  - first:
+      1: 100014
+    second: KnucklesLController_Thumbstick
+  - first:
+      1: 100016
+    second: KnucklesLController_ThumbstickSlice
+  - first:
+      1: 100018
+    second: KnucklesLController_Trigger
+  - first:
+      1: 100020
+    second: SteamVR_KnucklesController_RSlices:polySurface2
+  - first:
+      4: 400000
+    second: //RootNode
+  - first:
+      4: 400002
+    second: KnucklesLController_AButton
+  - first:
+      4: 400004
+    second: KnucklesLController_AButtonSlice
+  - first:
+      4: 400006
+    second: KnucklesLController_BButton
+  - first:
+      4: 400008
+    second: KnucklesLController_BButtonSlice
+  - first:
+      4: 400010
+    second: KnucklesLController_Body
+  - first:
+      4: 400012
+    second: KnucklesLController_Grip
+  - first:
+      4: 400014
+    second: KnucklesLController_Thumbstick
+  - first:
+      4: 400016
+    second: KnucklesLController_ThumbstickSlice
+  - first:
+      4: 400018
+    second: KnucklesLController_Trigger
+  - first:
+      4: 400020
+    second: SteamVR_KnucklesController_RSlices:polySurface2
+  - first:
+      21: 2100000
+    second: button_a1_knuckles_right1
+  - first:
+      21: 2100002
+    second: button_b_knuckles_right1
+  - first:
+      21: 2100004
+    second: gripsqueeze_knuckles_right1
+  - first:
+      21: 2100006
+    second: thumbstick_knuckles_right1
+  - first:
+      21: 2100008
+    second: trigger_knuckles_right1
+  - first:
+      21: 2100010
+    second: body3_knuckles_left1
+  - first:
+      21: 2100012
+    second: lambert1
+  - first:
+      23: 2300000
+    second: KnucklesLController_AButton
+  - first:
+      23: 2300002
+    second: KnucklesLController_AButtonSlice
+  - first:
+      23: 2300004
+    second: KnucklesLController_BButton
+  - first:
+      23: 2300006
+    second: KnucklesLController_BButtonSlice
+  - first:
+      23: 2300008
+    second: KnucklesLController_Body
+  - first:
+      23: 2300010
+    second: KnucklesLController_Grip
+  - first:
+      23: 2300012
+    second: KnucklesLController_Thumbstick
+  - first:
+      23: 2300014
+    second: KnucklesLController_ThumbstickSlice
+  - first:
+      23: 2300016
+    second: KnucklesLController_Trigger
+  - first:
+      33: 3300000
+    second: KnucklesLController_AButton
+  - first:
+      33: 3300002
+    second: KnucklesLController_AButtonSlice
+  - first:
+      33: 3300004
+    second: KnucklesLController_BButton
+  - first:
+      33: 3300006
+    second: KnucklesLController_BButtonSlice
+  - first:
+      33: 3300008
+    second: KnucklesLController_Body
+  - first:
+      33: 3300010
+    second: KnucklesLController_Grip
+  - first:
+      33: 3300012
+    second: KnucklesLController_Thumbstick
+  - first:
+      33: 3300014
+    second: KnucklesLController_ThumbstickSlice
+  - first:
+      33: 3300016
+    second: KnucklesLController_Trigger
+  - first:
+      43: 4300000
+    second: KnucklesLController_AButton
+  - first:
+      43: 4300002
+    second: KnucklesLController_BButton
+  - first:
+      43: 4300004
+    second: KnucklesLController_Grip
+  - first:
+      43: 4300006
+    second: KnucklesLController_Thumbstick
+  - first:
+      43: 4300008
+    second: KnucklesLController_Trigger
+  - first:
+      43: 4300010
+    second: KnucklesLController_Body
+  - first:
+      43: 4300012
+    second: KnucklesLController_ThumbstickSlice
+  - first:
+      43: 4300014
+    second: KnucklesLController_BButtonSlice
+  - first:
+      43: 4300016
+    second: KnucklesLController_AButtonSlice
   externalObjects: {}
   materials:
-    importMaterials: 1
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
     materialLocation: 1
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -94,25 +206,43 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 0
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -121,10 +251,11 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -134,13 +265,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

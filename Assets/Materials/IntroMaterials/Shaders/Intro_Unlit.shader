@@ -32,7 +32,7 @@ SubShader {
         #pragma vertex vert
         #pragma fragment frag
         #pragma multi_compile_fog
-        #include "Assets/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
         #include "UnityCG.cginc"
 
         sampler2D _MainTex;

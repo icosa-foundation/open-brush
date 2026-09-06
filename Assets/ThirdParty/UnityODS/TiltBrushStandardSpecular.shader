@@ -427,7 +427,7 @@ Shader "TiltBrush/Standard (Specular setup)"
         vertex = mul(unity_WorldToObject, float4(worldPos, 1.0));
       #endif
       }
-      #include "Assets/Shaders/Include/MobileSelection.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;

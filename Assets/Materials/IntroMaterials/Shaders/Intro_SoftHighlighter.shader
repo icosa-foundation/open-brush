@@ -32,7 +32,7 @@ Category {
       #pragma vertex vert
       #pragma fragment frag
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
       sampler2D _MainTex;
       half _IntroDissolve;

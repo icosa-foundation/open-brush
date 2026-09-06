@@ -44,7 +44,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEBUG
         [ApiEndpoint(
             "debug.selection.highlight-stroke",
             "Queues a selected stroke batch mesh through the URP selection highlight path for diagnosis.",

@@ -63,8 +63,6 @@ namespace TiltBrush
 
         private int m_NumFramesFpsTooLow;
         private int m_NumFramesFpsHighEnough;
-        private int m_NumFramesGpuTooHigh;
-        private int m_NumFramesGpuLowEnough;
 
         /// A number from 0 (mobile, lowest) to 3 (future, highest)
         public int QualityLevel
@@ -189,7 +187,8 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
-            // Update the counts for fps / gpu levels high or low
+            // Update the frame counts. There is no cross-platform GPU load signal,
+            // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
             int fps = m_FramesInLastSecond;
             if (fps <= AppQualityLevels.LowerQualityFpsTrigger)
             {
@@ -209,31 +208,10 @@ namespace TiltBrush
                 m_NumFramesFpsHighEnough = 0;
             }
 
-            float gpuUtilization = App.VrSdk.GetGpuUtilization() * 100f;
-            if (gpuUtilization >= AppQualityLevels.LowerQualityGpuTrigger)
-            {
-                m_NumFramesGpuTooHigh++;
-            }
-            else
-            {
-                m_NumFramesGpuTooHigh = 0;
-            }
-
-            if (gpuUtilization <= AppQualityLevels.HigherQualityGpuTrigger)
-            {
-                m_NumFramesGpuLowEnough++;
-            }
-            else
-            {
-                m_NumFramesGpuLowEnough = 0;
-            }
-
             if (SelectionQualityOverrideActive)
             {
                 m_NumFramesFpsTooLow = 0;
                 m_NumFramesFpsHighEnough = 0;
-                m_NumFramesGpuTooHigh = 0;
-                m_NumFramesGpuLowEnough = 0;
                 return;
             }
 
@@ -248,23 +226,13 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            if (m_NumFramesGpuTooHigh >= limit)
-            {
-                if (QualityLevel > 0)
-                {
-                    QualityLevel--;
-                }
-                m_NumFramesGpuTooHigh = 0;
-            }
-
             limit = AppQualityLevels.FramesForHigherQuality;
-            if (m_NumFramesGpuLowEnough >= limit && m_NumFramesFpsHighEnough >= limit)
+            if (m_NumFramesFpsHighEnough >= limit)
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
                 {
                     QualityLevel++;
                 }
-                m_NumFramesGpuLowEnough = 0;
                 m_NumFramesFpsHighEnough = 0;
             }
 

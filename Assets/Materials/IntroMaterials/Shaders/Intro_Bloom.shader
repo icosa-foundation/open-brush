@@ -37,8 +37,8 @@ Category {
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
       sampler2D _MainTex;
       float4 _MainTex_ST;
