@@ -235,7 +235,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -257,6 +257,7 @@ jobs:
 
           - name: Android OpenXR
             targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -265,6 +266,7 @@ jobs:
 
           - name: Android AndroidXR
             targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: AndroidXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -277,6 +279,7 @@ jobs:
           # exercised without conflating the Google Play and non-Google artifacts.
           - name: Android Viewer OpenXR
             targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -286,6 +289,7 @@ jobs:
 
           - name: Android Viewer AndroidXR
             targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: AndroidXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -294,13 +298,16 @@ jobs:
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Oculus Quest (1)
+          # The Meta store requires its original application ID, irrespective of the XR loader.
+          - name: Android Meta Quest
             targetPlatform: Android
+            # Deliberately try 35 in Meta upload validation; do not couple this to Google Play.
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
-            extra_defines: USE_QUEST_PACKAGE_NAME  # :(
+            extra_defines: USE_QUEST_PACKAGE_NAME
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: iOS Zapbox
@@ -532,6 +539,7 @@ jobs:
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
             buildMethod: BuildTiltBrush.CommandLine
             androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
+            androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
             androidKeystoreName: openbrush.keystore
             androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
             androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
@@ -816,7 +824,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v6
         with:
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
 
       - name: Download Build Artifacts (Linux)
@@ -1354,7 +1362,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
@@ -1455,10 +1463,11 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Oculus Quest 1)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (1)
+          # ArborXR is not the Meta store, including when the device is a Quest.
+          name: Android OpenXR
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
