@@ -32,3 +32,44 @@ Depth writing, camera thresholds, and global sorting are scene-wide settings;
 they are applied when a splat is imported. Sorting less frequently does not skip
 all GPU depth/merge work. Spark compression and asynchronous upload remain enabled
 by the importer. Automatic LOD is unavailable in the pinned library version.
+
+## Import-time pruning
+
+To remove splats that are both large and faint, set both thresholds. For example:
+
+```json
+"Splats": {
+  "PruneOpacityBelow": 0.05,
+  "PruneScaleFractionAbove": 0.02
+}
+```
+
+This removes a splat only when its opacity is **below 5%** AND its largest linear
+Gaussian scale is **greater than 2% of the original capture bounds' longest dimension**.
+The scale is a Gaussian axis scale, not a full diameter or projected pixel size.
+These are experimental starting values, not a measured mobile preset. Large faint
+splats can collectively contribute visible surfaces, so compare the result visually.
+
+Pruning is disabled when either setting is omitted or null. Opacity must be finite
+and between 0 and 1; scale fraction must be finite and positive. Invalid pruning
+thresholds cause an import error rather than silently changing their meaning.
+An opacity threshold of 0 removes nothing. Zero-sized capture bounds also remove
+nothing. If filtering removes every splat, the import reports an error.
+
+Restart Open Brush after changing the config. Original files and model bounds stay
+unchanged. Rejected splats are excluded from packed CPU data and GPU uploads,
+including their SH coefficients. Parallel decoder workers grow output buffers as
+needed, then combine survivors in source order. Temporary buffers and the final
+arrays coexist during that combination.
+
+The library stores original bounds in `GsplatBounds` under Unity's persistent data
+directory. The cache checks source path, coordinate convention, file length and UTC
+modification time. It does not hash file contents. A missing, stale or corrupt entry
+triggers a bounds scan; later imports reuse it even after changing thresholds.
+Ordinary unfiltered imports also populate the cache. Deleting the cache is safe.
+An unwritable cache falls back to scanning on subsequent imports.
+
+Standard PLY, SPZ and SOG retain their direct Spark decoding paths. The first filtered
+load on a cache miss performs a bounds-only pass without packed output, then a filtered
+pass. Formats already requiring canonical decoded arrays still require those arrays;
+this change does not remove their existing decompression/decoding allocations.

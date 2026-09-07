@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#a6f96d79f13779d63124e9b3f1ad6dc074fad8ad",
+    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#f92eaa2356abf0d1228c6f5fe0144dad803fc1a9",
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
     "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",

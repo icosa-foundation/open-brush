@@ -70,6 +70,15 @@ namespace TiltBrush
             public float? CameraTranslationRefreshThreshold;
             public float? CameraRotationRefreshThreshold;
             public bool? EnableGlobalSort;
+            public float? PruneOpacityBelow;
+            public float? PruneScaleFractionAbove;
+
+            internal Gsplat.GsplatImportFilter CreateImportFilter()
+            {
+                // Requiring both values avoids enabling pruning by default.
+                if (!PruneOpacityBelow.HasValue || !PruneScaleFractionAbove.HasValue) return null;
+                return new Gsplat.GsplatImportFilter(PruneOpacityBelow.Value, PruneScaleFractionAbove.Value);
+            }
 
             internal void ApplyTo(Gsplat.GsplatRenderer renderer, Gsplat.GsplatSettings settings)
             {
