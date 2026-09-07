@@ -47,11 +47,11 @@
       "hash": "9818db6327e09d399bf4fb84da4ed19f03b565b4"
     },
     "com.rlabrecque.steamworks.net": {
-      "version": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
+      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "c791803ec16191a1f771b591438151d5f46e865e"
+      "hash": "ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3"
     },
     "com.sandrofigo.voxreader": {
       "version": "5.0.6",
