@@ -23,13 +23,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000010436909754}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011949354466}
-  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1000010438099326
 GameObject:
@@ -55,6 +55,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000010438099326}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
@@ -64,7 +65,6 @@ Transform:
   - {fileID: 4000010915250370}
   - {fileID: 4000011896525792}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000011240657384
 MonoBehaviour:
@@ -113,13 +113,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000012863469616}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011949354466}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000013332822508
 MonoBehaviour:
@@ -134,8 +134,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ControllerName: 1
-  m_ControllerGeometryPrefab: {fileID: 114325135207796964, guid: 3cd07446095703047a13fb06f490ae32,
-    type: 3}
+  m_ControllerGeometryPrefab: {fileID: 114325135207796964, guid: 3cd07446095703047a13fb06f490ae32, type: 3}
   m_GeometryOffset: {x: 0, y: -0.21, z: 0.73}
   m_GeometryRotation: {x: 0.3007058, y: 0, z: 0, w: 0.95371693}
 --- !u!114 &114000013512061632
@@ -152,10 +151,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: 62e8737fe26e5cb4088986c50522e964,
-    type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: 0febb0642a50e644ab2b4f075fe32a9b,
-    type: 2}
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 62e8737fe26e5cb4088986c50522e964, type: 2}
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 0febb0642a50e644ab2b4f075fe32a9b, type: 2}
 --- !u!114 &5150373983745297255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,13 +197,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000013186975256}
+  serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000011949354466}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114000010919708240
 MonoBehaviour:
@@ -221,8 +218,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ControllerName: 0
-  m_ControllerGeometryPrefab: {fileID: 114623063409550128, guid: 159c6bfa584b05041b7b743386f70521,
-    type: 3}
+  m_ControllerGeometryPrefab: {fileID: 114623063409550128, guid: 159c6bfa584b05041b7b743386f70521, type: 3}
   m_GeometryOffset: {x: 0, y: -0.21, z: 0.73}
   m_GeometryRotation: {x: 0.3007058, y: 0, z: 0, w: 0.95371693}
 --- !u!114 &114000011013631904
@@ -239,10 +235,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: 62e8737fe26e5cb4088986c50522e964,
-    type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: 0febb0642a50e644ab2b4f075fe32a9b,
-    type: 2}
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 62e8737fe26e5cb4088986c50522e964, type: 2}
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 0febb0642a50e644ab2b4f075fe32a9b, type: 2}
 --- !u!114 &2985740444238942637
 MonoBehaviour:
   m_ObjectHideFlags: 0
