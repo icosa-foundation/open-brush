@@ -145,6 +145,7 @@ static class BuildTiltBrush
         public XrSdkMode xrSdk;
     }
     static PostBuildInfo m_forPostBuild;
+    internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
@@ -1091,8 +1092,13 @@ static class BuildTiltBrush
 #endif
             if (!String.IsNullOrEmpty(Description))
             {
-                new_name += "-(" + Description.Replace("#", "") + ")";
-                new_identifier += "-" + Description.Replace("_", "").Replace("#", "").Replace("-", "");
+                new_name += $"-({Description.Replace("#", "")})";
+                // Android CI artifacts are also used for store release-channel testing. Keep
+                // their registered identity even on PR builds; the label still identifies the PR.
+                if (target != BuildTarget.Android)
+                {
+                    new_identifier += $"-{Description.Replace("_", "").Replace("#", "").Replace("-", "")}";
+                }
             }
             if (m_IsAndroidOrIos)
             {
@@ -1165,6 +1171,10 @@ static class BuildTiltBrush
             {
                 EnableAndroidXrFeatures(settings);
             }
+#if USE_QUEST_PACKAGE_NAME
+            // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
+            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
+#endif
 
             // Validated on Quest by patching these three priorities in the failing APK.
             // All three features share FeatureBase's static xrGetInstanceProcAddr interceptor;
