@@ -362,7 +362,8 @@ namespace TiltBrush
             m_Instance = this;
             m_xfSketchInitial_RS = TrTransform.identity;
 
-            m_MemoryWarningVertCount = App.PlatformConfig.MemoryWarningVertCount;
+            m_MemoryWarningVertCount = App.PlatformConfig.GetMemoryWarningVertCount(
+                App.UserConfig.Flags.MemoryWarningVertCount);
         }
 
         void Update()
