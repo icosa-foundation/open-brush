@@ -48,8 +48,18 @@ namespace TiltBrush
 
         public int MemoryWarningVertCount;
 
-        public int GetMemoryWarningVertCount()
+        public int GetMemoryWarningVertCount(int userOverride = 0)
         {
+            if (userOverride > 0)
+            {
+                Debug.Log($"[MOBILE_VERTEX_LIMITS] User config override: warningVertices={userOverride}");
+                return userOverride;
+            }
+            if (userOverride < 0)
+            {
+                Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Ignoring negative user config " +
+                    $"MemoryWarningVertCount={userOverride}; using automatic device selection");
+            }
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
