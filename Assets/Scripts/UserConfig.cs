@@ -96,8 +96,8 @@ namespace TiltBrush
                     renderer.SortMode = interval == 1
                         ? Gsplat.GsplatRenderer.GsplatSortMode.Always
                         : Gsplat.GsplatRenderer.GsplatSortMode.SortEveryNFrames;
-                    // UnitySplats counts skipped frames after each sort.
-                    renderer.SortRefreshRate = (uint)(interval - 1);
+                    // UnitySplats converts the full interval to skipped frames internally.
+                    renderer.SortRefreshRate = (uint)interval;
                 }
                 if (DepthPrepassAlphaCutoff.HasValue)
                 {
