@@ -1128,7 +1128,11 @@ static class BuildTiltBrush
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
-            if (tiltOptions.XrSdk != XrSdkMode.AndroidXR)
+            // The Quest APK uses OpenXR; AndroidXR is the separate Google Play build option.
+            // Both Android paths need the same shared-interceptor ordering.
+            if (tiltOptions.Target != BuildTarget.Android ||
+                (tiltOptions.XrSdk != XrSdkMode.OpenXR &&
+                 tiltOptions.XrSdk != XrSdkMode.AndroidXR))
             {
                 return;
             }
@@ -1157,6 +1161,42 @@ static class BuildTiltBrush
                 }
             }
 
+            if (tiltOptions.XrSdk == XrSdkMode.AndroidXR)
+            {
+                EnableAndroidXrFeatures(settings);
+            }
+
+            // Validated on Quest by patching these three priorities in the failing APK.
+            // All three features share FeatureBase's static xrGetInstanceProcAddr interceptor;
+            // Unity's foveation hook must not be inserted between them.
+            const int sharedInterceptorPriority = 1;
+            Debug.Log($"_btb_ [OBXR-HOOK] Configuring {tiltOptions.Target}/{tiltOptions.XrSdk}.");
+            SetFeaturePriority<OpenXR.Extensions.OpenXRAndroidSettings>(settings,
+                sharedInterceptorPriority);
+            SetFeaturePriority<OpenXR.Extensions.FBPassthrough>(settings,
+                sharedInterceptorPriority);
+            SetFeaturePriority<OpenXR.Extensions.METABoundaryVisibility>(settings,
+                sharedInterceptorPriority);
+
+            var foveation = settings.GetFeature<
+                UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>();
+            if (foveation != null && foveation.enabled)
+            {
+                var serializedFoveation = new SerializedObject(foveation);
+                int foveationPriority = serializedFoveation.FindProperty("priority").intValue;
+                if (foveationPriority >= sharedInterceptorPriority)
+                {
+                    throw new BuildFailedException(
+                        $"[OBXR-HOOK] Foveation priority {foveationPriority} must be below " +
+                        $"the shared-interceptor priority {sharedInterceptorPriority}.");
+                }
+                Debug.Log($"_btb_ [OBXR-HOOK] FoveatedRenderingFeature: enabled=True, " +
+                    $"priority={foveationPriority}.");
+            }
+        }
+
+        void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
+        {
             // Keep this list aligned with the Android OpenXR feature selection validated on
             // Android XR, Quest, and Pico. Some entries are currently enabled in the serialized
             // project settings, but selecting them here makes both local and CI AndroidXR builds
@@ -1201,18 +1241,6 @@ static class BuildTiltBrush
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
-
-            // OpenXRAndroidSettings, FBPassthrough, and METABoundaryVisibility all derive from
-            // Mikesky's FeatureBase. FeatureBase uses one static xrGetInstanceProcAddr
-            // interceptor for every derived feature. Keep all three at the same priority so
-            // Unity's foveation hook cannot be inserted between two shared-interceptor hooks.
-            const int sharedInterceptorPriority = 1;
-            SetFeaturePriority<OpenXR.Extensions.OpenXRAndroidSettings>(settings,
-                sharedInterceptorPriority);
-            SetFeaturePriority<OpenXR.Extensions.FBPassthrough>(settings,
-                sharedInterceptorPriority);
-            SetFeaturePriority<OpenXR.Extensions.METABoundaryVisibility>(settings,
-                sharedInterceptorPriority);
         }
 
         void EnableRequiredFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1254,6 +1282,14 @@ static class BuildTiltBrush
             originalPriorities[feature] = priorityProperty.intValue;
             priorityProperty.intValue = priority;
             serializedFeature.ApplyModifiedPropertiesWithoutUndo();
+            serializedFeature.Update();
+            if (priorityProperty.intValue != priority)
+            {
+                throw new BuildFailedException(
+                    $"[OBXR-HOOK] Failed to apply priority {priority} to {typeof(T).FullName}.");
+            }
+            Debug.Log($"_btb_ [OBXR-HOOK] {typeof(T).FullName}: enabled={feature.enabled}, " +
+                $"priority={priorityProperty.intValue} (was {originalPriorities[feature]}).");
         }
 
         public void Dispose()
