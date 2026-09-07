@@ -1123,19 +1123,17 @@ static class BuildTiltBrush
     {
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
-        readonly Dictionary<UnityEngine.XR.OpenXR.Features.OpenXRFeature, int> originalPriorities;
         readonly BuildTargetGroup m_targetGroup;
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
             enabledFeatures = new();
             requiredFeatures = new();
-            originalPriorities = new();
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
             // The Quest APK uses OpenXR; AndroidXR is the separate Google Play build option.
-            // Both Android paths need the same shared-interceptor ordering.
+            // Both Android paths need their required OpenXR features configured.
             if (tiltOptions.Target != BuildTarget.Android ||
                 (tiltOptions.XrSdk != XrSdkMode.OpenXR &&
                  tiltOptions.XrSdk != XrSdkMode.AndroidXR))
@@ -1175,34 +1173,6 @@ static class BuildTiltBrush
             // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
 #endif
-
-            // Validated on Quest by patching these three priorities in the failing APK.
-            // All three features share FeatureBase's static xrGetInstanceProcAddr interceptor;
-            // Unity's foveation hook must not be inserted between them.
-            const int sharedInterceptorPriority = 1;
-            Debug.Log($"_btb_ [OBXR-HOOK] Configuring {tiltOptions.Target}/{tiltOptions.XrSdk}.");
-            SetFeaturePriority<OpenXR.Extensions.OpenXRAndroidSettings>(settings,
-                sharedInterceptorPriority);
-            SetFeaturePriority<OpenXR.Extensions.FBPassthrough>(settings,
-                sharedInterceptorPriority);
-            SetFeaturePriority<OpenXR.Extensions.METABoundaryVisibility>(settings,
-                sharedInterceptorPriority);
-
-            var foveation = settings.GetFeature<
-                UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>();
-            if (foveation != null && foveation.enabled)
-            {
-                var serializedFoveation = new SerializedObject(foveation);
-                int foveationPriority = serializedFoveation.FindProperty("priority").intValue;
-                if (foveationPriority >= sharedInterceptorPriority)
-                {
-                    throw new BuildFailedException(
-                        $"[OBXR-HOOK] Foveation priority {foveationPriority} must be below " +
-                        $"the shared-interceptor priority {sharedInterceptorPriority}.");
-                }
-                Debug.Log($"_btb_ [OBXR-HOOK] FoveatedRenderingFeature: enabled=True, " +
-                    $"priority={foveationPriority}.");
-            }
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1270,38 +1240,6 @@ static class BuildTiltBrush
                 $"this {m_targetGroup} build.");
         }
 
-        void SetFeaturePriority<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings, int priority)
-            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
-        {
-            var feature = settings.GetFeature<T>();
-            if (feature == null)
-            {
-                throw new BuildFailedException(
-                    $"Could not find OpenXR feature {typeof(T).FullName} to set its priority.");
-            }
-
-            var serializedFeature = new SerializedObject(feature);
-            var priorityProperty = serializedFeature.FindProperty("priority");
-            if (priorityProperty == null)
-            {
-                throw new BuildFailedException(
-                    $"Could not find the serialized priority for OpenXR feature " +
-                    $"{typeof(T).FullName}.");
-            }
-
-            originalPriorities[feature] = priorityProperty.intValue;
-            priorityProperty.intValue = priority;
-            serializedFeature.ApplyModifiedPropertiesWithoutUndo();
-            serializedFeature.Update();
-            if (priorityProperty.intValue != priority)
-            {
-                throw new BuildFailedException(
-                    $"[OBXR-HOOK] Failed to apply priority {priority} to {typeof(T).FullName}.");
-            }
-            Debug.Log($"_btb_ [OBXR-HOOK] {typeof(T).FullName}: enabled={feature.enabled}, " +
-                $"priority={priorityProperty.intValue} (was {originalPriorities[feature]}).");
-        }
-
         public void Dispose()
         {
             foreach (var requiredFeature in requiredFeatures)
@@ -1315,17 +1253,6 @@ static class BuildTiltBrush
             foreach (var enabledFeature in enabledFeatures)
             {
                 enabledFeature.enabled = true;
-            }
-
-            foreach (var originalPriority in originalPriorities)
-            {
-                var serializedFeature = new SerializedObject(originalPriority.Key);
-                var priorityProperty = serializedFeature.FindProperty("priority");
-                if (priorityProperty != null)
-                {
-                    priorityProperty.intValue = originalPriority.Value;
-                    serializedFeature.ApplyModifiedPropertiesWithoutUndo();
-                }
             }
         }
     }
