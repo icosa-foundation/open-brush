@@ -3,6 +3,8 @@
   },
   "Brushes": {
   },
+  "Splats": {
+  },
   "Video": {
   },
   "Flags": {

@@ -59,6 +59,69 @@ namespace TiltBrush
         public YouTubeConfig YouTube;
 
         [Serializable]
+        public struct SplatsConfig
+        {
+            // Null leaves the imported asset or library/project default unchanged.
+            public int? SHDegree;
+            public float? SplatDownscaleFactor;
+            // User-facing frame interval: 1 sorts every frame, 2 every other frame.
+            public int? SortEveryNFrames;
+            public float? DepthPrepassAlphaCutoff;
+            public float? CameraTranslationRefreshThreshold;
+            public float? CameraRotationRefreshThreshold;
+            public bool? EnableGlobalSort;
+
+            internal void ApplyTo(Gsplat.GsplatRenderer renderer, Gsplat.GsplatSettings settings)
+            {
+                if (SHDegree.HasValue)
+                {
+                    renderer.SHDegree = Mathf.Clamp(SHDegree.Value, 0, renderer.GsplatAsset.SHBands);
+                }
+                if (SplatDownscaleFactor.HasValue)
+                {
+                    renderer.SplatDownscaleFactor = ClampFinite(SplatDownscaleFactor.Value, 0, 1);
+                }
+                if (SortEveryNFrames.HasValue)
+                {
+                    int interval = Math.Max(1, SortEveryNFrames.Value);
+                    renderer.SortMode = interval == 1
+                        ? Gsplat.GsplatRenderer.GsplatSortMode.Always
+                        : Gsplat.GsplatRenderer.GsplatSortMode.SortEveryNFrames;
+                    // UnitySplats counts skipped frames after each sort.
+                    renderer.SortRefreshRate = (uint)(interval - 1);
+                }
+                if (DepthPrepassAlphaCutoff.HasValue)
+                {
+                    settings.DepthPrepassAlphaCutoff = ClampFinite(DepthPrepassAlphaCutoff.Value, 0, 1.1f);
+                }
+                if (CameraTranslationRefreshThreshold.HasValue)
+                {
+                    settings.CameraTranslationRefreshTreshold =
+                        ClampFinite(CameraTranslationRefreshThreshold.Value, 0.05f, 1);
+                }
+                if (CameraRotationRefreshThreshold.HasValue)
+                {
+                    settings.CameraRotationRefreshTreshold =
+                        ClampFinite(CameraRotationRefreshThreshold.Value, 0.2f, 30);
+                }
+                if (EnableGlobalSort.HasValue)
+                {
+                    settings.EnableGlobalSort = EnableGlobalSort.Value;
+                }
+            }
+
+            private static float ClampFinite(float value, float min, float max)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Splat settings must be finite.");
+                }
+                return Mathf.Clamp(value, min, max);
+            }
+        }
+        public SplatsConfig Splats;
+
+        [Serializable]
         public struct FlagsConfig
         {
             public bool DisableAudio;
