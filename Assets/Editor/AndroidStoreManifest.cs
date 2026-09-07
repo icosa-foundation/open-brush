@@ -22,9 +22,13 @@ internal static class AndroidStoreManifest
         // AndroidXR derives hardware requirements from the foveation feature's extension list,
         // including eye-tracked foveation. Open Brush also works with fixed foveation and no
         // eye tracker. Override the lower-priority XR library manifest's required=true value.
-        var eyes = GetOrCreate(doc, root, "uses-feature", "android.hardware.xr.input.eye_tracking");
-        SetAndroid(eyes, "required", "false");
-        eyes.SetAttribute("replace", ToolsNamespace, "android:required");
+        // Meta's feature processor can also add a separate required software feature.
+        foreach (string feature in new[] { "android.hardware.xr.input.eye_tracking", "oculus.software.eye_tracking" })
+        {
+            var eyes = GetOrCreate(doc, root, "uses-feature", feature);
+            SetAndroid(eyes, "required", "false");
+            eyes.SetAttribute("replace", ToolsNamespace, "android:required");
+        }
 
         if (!androidXr)
         {

@@ -301,8 +301,8 @@ jobs:
           # The Meta store requires its original application ID, irrespective of the XR loader.
           - name: Android Meta Quest
             targetPlatform: Android
-            # Deliberately try 35 in Meta upload validation; do not couple this to Google Play.
-            androidTargetSdkVersion: AndroidApiLevel35
+            # Meta upload validation rejects SDK 35; keep this separate from Google Play.
+            androidTargetSdkVersion: AndroidApiLevel34
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
