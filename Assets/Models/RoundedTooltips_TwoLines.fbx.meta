@@ -1,70 +1,166 @@
 fileFormatVersion: 2
 guid: 4c73e89db10180443a48c2e7922f9c50
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: CenterBG
-    100002: CenterBorder
-    100004: LeftBG
-    100006: LeftBorder
-    100008: RightBG
-    100010: RightBorder
-    100012: //RootNode
-    100014: LeftBorder_Draft
-    100016: LeftMask
-    100018: RightMask
-    400000: CenterBG
-    400002: CenterBorder
-    400004: LeftBG
-    400006: LeftBorder
-    400008: RightBG
-    400010: RightBorder
-    400012: //RootNode
-    400014: LeftBorder_Draft
-    400016: LeftMask
-    400018: RightMask
-    2100000: No Name
-    2300000: CenterBG
-    2300002: CenterBorder
-    2300004: LeftBG
-    2300006: LeftBorder
-    2300008: RightBG
-    2300010: RightBorder
-    2300012: LeftBorder_Draft
-    2300014: LeftMask
-    2300016: RightMask
-    3300000: CenterBG
-    3300002: CenterBorder
-    3300004: LeftBG
-    3300006: LeftBorder
-    3300008: RightBG
-    3300010: RightBorder
-    3300012: LeftBorder_Draft
-    3300014: LeftMask
-    3300016: RightMask
-    4300000: CenterBorder
-    4300002: CenterBG
-    4300004: RightBG
-    4300006: LeftBorder
-    4300008: LeftBG
-    4300010: RightBorder
-    4300012: LeftMask
-    4300014: LeftBorder_Draft
-    4300016: RightMask
+  serializedVersion: 24600
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: CenterBG
+  - first:
+      1: 100002
+    second: CenterBorder
+  - first:
+      1: 100004
+    second: LeftBG
+  - first:
+      1: 100006
+    second: LeftBorder
+  - first:
+      1: 100008
+    second: RightBG
+  - first:
+      1: 100010
+    second: RightBorder
+  - first:
+      1: 100012
+    second: //RootNode
+  - first:
+      1: 100014
+    second: LeftBorder_Draft
+  - first:
+      1: 100016
+    second: LeftMask
+  - first:
+      1: 100018
+    second: RightMask
+  - first:
+      4: 400000
+    second: CenterBG
+  - first:
+      4: 400002
+    second: CenterBorder
+  - first:
+      4: 400004
+    second: LeftBG
+  - first:
+      4: 400006
+    second: LeftBorder
+  - first:
+      4: 400008
+    second: RightBG
+  - first:
+      4: 400010
+    second: RightBorder
+  - first:
+      4: 400012
+    second: //RootNode
+  - first:
+      4: 400014
+    second: LeftBorder_Draft
+  - first:
+      4: 400016
+    second: LeftMask
+  - first:
+      4: 400018
+    second: RightMask
+  - first:
+      21: 2100000
+    second: No Name
+  - first:
+      23: 2300000
+    second: CenterBG
+  - first:
+      23: 2300002
+    second: CenterBorder
+  - first:
+      23: 2300004
+    second: LeftBG
+  - first:
+      23: 2300006
+    second: LeftBorder
+  - first:
+      23: 2300008
+    second: RightBG
+  - first:
+      23: 2300010
+    second: RightBorder
+  - first:
+      23: 2300012
+    second: LeftBorder_Draft
+  - first:
+      23: 2300014
+    second: LeftMask
+  - first:
+      23: 2300016
+    second: RightMask
+  - first:
+      33: 3300000
+    second: CenterBG
+  - first:
+      33: 3300002
+    second: CenterBorder
+  - first:
+      33: 3300004
+    second: LeftBG
+  - first:
+      33: 3300006
+    second: LeftBorder
+  - first:
+      33: 3300008
+    second: RightBG
+  - first:
+      33: 3300010
+    second: RightBorder
+  - first:
+      33: 3300012
+    second: LeftBorder_Draft
+  - first:
+      33: 3300014
+    second: LeftMask
+  - first:
+      33: 3300016
+    second: RightMask
+  - first:
+      43: 4300000
+    second: CenterBorder
+  - first:
+      43: 4300002
+    second: CenterBG
+  - first:
+      43: 4300004
+    second: RightBG
+  - first:
+      43: 4300006
+    second: LeftBorder
+  - first:
+      43: 4300008
+    second: LeftBG
+  - first:
+      43: 4300010
+    second: RightBorder
+  - first:
+      43: 4300012
+    second: LeftMask
+  - first:
+      43: 4300014
+    second: LeftBorder_Draft
+  - first:
+      43: 4300016
+    second: RightMask
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
     materialLocation: 1
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -86,25 +182,43 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -113,10 +227,11 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -126,13 +241,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 
