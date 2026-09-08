@@ -16,8 +16,13 @@ using System;
 using System.IO;
 using UnityEngine;
 
+#if USE_DOTNETZIP
+using ZipSubfileReader = ZipSubfileReader_DotNetZip;
+using ZipLibrary = Ionic.Zip;
+#else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
+#endif
 
 namespace TiltBrush
 {

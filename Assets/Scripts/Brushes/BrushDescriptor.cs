@@ -143,6 +143,8 @@ namespace TiltBrush
 
         [Header("Material")]
         [SerializeField] private Material m_Material;
+        [SerializeField] private Material m_TestingMaterial;
+        public Material m_OverlayMaterial;
         // Number of atlas textures in the V direction
         public int m_TextureAtlasV;
         public float m_TileRate;
@@ -240,10 +242,11 @@ namespace TiltBrush
 
         public bool HasExportTexture()
         {
-            if (m_Material != null)
+            Material material = Material;
+            if (material != null)
             {
-                return m_Material.HasProperty("_MainTex") &&
-                    m_Material.mainTexture is Texture2D;
+                return material.HasProperty("_MainTex") &&
+                    material.mainTexture is Texture2D;
             }
             return false;
         }
@@ -375,7 +378,17 @@ namespace TiltBrush
         /// Return non-instantiated material
         public Material Material
         {
-            get { return m_Material; }
+            get
+            {
+                if (DevOptions.I != null &&
+                    DevOptions.I.UseBrushTestingMaterial &&
+                    m_TestingMaterial != null)
+                {
+                    return m_TestingMaterial;
+                }
+
+                return m_Material;
+            }
             set { m_Material = value; }
         }
 
@@ -450,8 +463,9 @@ namespace TiltBrush
 #if UNITY_EDITOR
         private string GetExportTextureFilenameEditor()
         {
-            Debug.Assert(m_Material != null);
-            Texture2D mainTex = (Texture2D)m_Material.mainTexture;
+            Material material = Material;
+            Debug.Assert(material != null);
+            Texture2D mainTex = (Texture2D)material.mainTexture;
             if (mainTex != null)
             {
                 // Kind of junky... this is because we hardcode this extension

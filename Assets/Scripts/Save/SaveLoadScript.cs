@@ -92,8 +92,10 @@ namespace TiltBrush
         static SaveLoadScript()
         {
 #if UNITY_2018_4_OR_NEWER
+            // Use Unity's namespaced package: Mono players also ship a legacy
+            // ICSharpCode.SharpZipLib.dll that does not contain ZipStrings.
             // 2018 doesn't include ANSICodePage any more -- or maybe it's only if we use .net 4.6?
-            ICSharpCode.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
+            Unity.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
 #else
             // There's an ancient mono bug (that Unity inherits) that prevents builds
             // from including the proper set of code pages, causing runtime errors when
@@ -117,6 +119,7 @@ namespace TiltBrush
         private string m_SaveDir;
         private string m_SaveSelectedDir;
         private SceneFileInfo m_LastSceneFile;
+        private string m_PreferredNewSketchFilenameBase;
         private bool m_LastSceneIsLegacy;
 
         private int m_LastNonexistentFileIndex = 0;
@@ -267,6 +270,22 @@ namespace TiltBrush
         public void ResetLastFilename()
         {
             m_LastSceneFile = new DiskSceneFileInfo();
+            m_PreferredNewSketchFilenameBase = null;
+        }
+
+        public void SetPreferredNewSketchFilenameFromPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                m_PreferredNewSketchFilenameBase = null;
+                return;
+            }
+
+            string trimmedPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string leafName = Path.GetFileName(trimmedPath);
+            string baseName = Path.GetFileNameWithoutExtension(leafName);
+            string validName = FileUtils.GetValidFilename(baseName);
+            m_PreferredNewSketchFilenameBase = string.IsNullOrWhiteSpace(validName) ? null : validName;
         }
 
         // Create a name that is guaranteed not to exist.
@@ -362,7 +381,9 @@ namespace TiltBrush
             {
                 uniquePath = tiltasaurusMode
                     ? GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX)
-                    : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX);
+                    : (!string.IsNullOrEmpty(m_PreferredNewSketchFilenameBase)
+                        ? GenerateNewFilename(m_PreferredNewSketchFilenameBase, m_SaveDir, TILT_SUFFIX)
+                        : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX));
             }
             else
             {
@@ -857,6 +878,10 @@ namespace TiltBrush
                         if (jsonData.TextWidgets != null)
                         {
                             WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
+                        }
+                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
+                        {
+                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
                         }
                     }
                     if (jsonData.Portals != null)
