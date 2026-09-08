@@ -68,7 +68,7 @@ namespace TiltBrush
                     bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
                         m_PathT, out m_PathT);
 
-                    if (VideoRecorderUtils.ActiveVideoRecording != null && completed)
+                    if ((VideoRecorderUtils.ActiveVideoRecording != null || VideoRecorderUtils.ActiveStillFrameExporter != null) && completed)
                     {
                         SketchControlsScript.m_Instance.CameraPathCaptureRig.StopRecordingPath(true);
                     }
@@ -143,7 +143,6 @@ namespace TiltBrush
 
         override public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
             // Intentionally do not call base class.
             if (m_HighlightMeshFilters != null)
             {
@@ -155,7 +154,6 @@ namespace TiltBrush
                     }
                 }
             }
-#endif
         }
 
         override public float GetActivationScore(

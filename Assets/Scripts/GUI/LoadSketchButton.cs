@@ -19,6 +19,8 @@ namespace TiltBrush
 
     public class LoadSketchButton : BaseButton
     {
+        private const string kLoadCompareLogPrefix = "[PortalLoadCmp_20260313]";
+
         [System.Serializable]
         public struct MenuButton
         {
@@ -30,6 +32,7 @@ namespace TiltBrush
         [SerializeField] private GameObject m_Warning;
         [SerializeField] private Material m_WarningMaterial;
         [SerializeField] private Material m_ErrorMaterial;
+        [SerializeField] private bool m_IsMergeStrokesButton;
 
         private bool m_ThumbnailLoaded = false;
         private bool m_SizeOk = true;
@@ -150,17 +153,36 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            if (!m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex).Available &&
-                m_SketchSet.Type != SketchSetType.Drive)
+            SceneFileInfo sceneFileInfo = m_SketchSet.GetSketchSceneFileInfo(m_SketchIndex);
+            if (sceneFileInfo == null)
             {
+                Debug.LogWarning(
+                    $"{kLoadCompareLogPrefix} Sketchbook button has null SceneFileInfo. " +
+                    $"set={m_SketchSet?.Type} index={m_SketchIndex} button={name}");
                 return;
+            }
+
+            if (!sceneFileInfo.Available)
+            {
+                // The sketch is not ready to load. Does this sketch set support 
+                // downloading from the cloud?
+                if (m_SketchSet.Type != SketchSetType.Drive
+                    && m_SketchSet.Type != SketchSetType.Curated
+                    && m_SketchSet.Type != SketchSetType.Liked)
+                {
+                    // No, not one of the cloud types.
+                    return;
+                }
             }
 
             // Sequence on load is:
             // LoadConfirmUnsaved -> LoadWaitOnDownload -> LoadConfirmComplex -> LoadComplexHigh ->  Load
+            var cmd = m_IsMergeStrokesButton ?
+                SketchControlsScript.GlobalCommands.MergeBrushStrokes :
+                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved;
             SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadConfirmUnsaved,
-                m_SketchIndex, (int)m_SketchSet.Type);
+                cmd, m_SketchIndex, (int)m_SketchSet.Type
+            );
             ResetState();
         }
 
@@ -196,7 +218,7 @@ namespace TiltBrush
         {
             base.GainFocus();
             m_DynamicUvTransitionValue = 0.0f;
-            m_MenuButton.gameObject.SetActive(m_SketchSet.Type == SketchSetType.User);
+            m_MenuButton.gameObject.SetActive(m_SketchSet.Type != SketchSetType.Drive && m_SketchSet.Type != SketchSetType.SavedStrokes);
             if (!m_SizeOk)
             {
                 SetDescriptionVisualsAvailable(false);

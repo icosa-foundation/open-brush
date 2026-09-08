@@ -159,7 +159,7 @@ namespace TiltBrush
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.MenuItem("Tilt/Load Profile")]
+        [UnityEditor.MenuItem("Open Brush/Load Profile")]
         static void MenuItem_LoadProfiler()
         {
             UnityEngine.Profiling.Profiler.AddFramesFromFile(LOG_FILE_BASE);

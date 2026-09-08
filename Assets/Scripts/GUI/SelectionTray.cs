@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -24,6 +27,17 @@ namespace TiltBrush
         protected override void OnSelectionChanged()
         {
             m_GroupButton.UpdateVisuals();
+        }
+
+        public void RepaintSelected()
+        {
+            var pm = PointerManager.m_Instance;
+            SketchMemoryScript.m_Instance.RepaintSelected(
+                pm.RebrushOn,
+                pm.RecolorOn,
+                pm.ResizeOn,
+                pm.JitterOn
+            );
         }
     }
 

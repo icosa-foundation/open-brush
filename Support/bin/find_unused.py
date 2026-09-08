@@ -57,7 +57,6 @@ def get_filesize(filename):
 
 
 def main():
-
     os.chdir(find_project_dir())
     used = set(gen_used_assets(r"../Builds/Windows_SteamVR_Release/"))
     exist = set(gen_existing_assets("."))

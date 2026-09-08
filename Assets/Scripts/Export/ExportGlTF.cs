@@ -12,8 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using System.Collections.Generic;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -115,7 +131,9 @@ namespace TiltBrush
             // 1. will not write files whose names conflict with payload's
             // 2. will clean up the entire directory when done
             // This works, as long as the payload isn't used for more than one export (it currently isn't)
-            using (var exporter = new GlTF_ScriptableExporter(payload.temporaryDirectory, gltfVersion))
+            using (var exporter = new GlTF_ScriptableExporter(
+                       payload.temporaryDirectory, gltfVersion,
+                       App.UserConfig.Flags.LargeMeshSupport))
             {
                 exporter.AllowHttpUri = allowHttpUri;
                 try
@@ -142,6 +160,14 @@ namespace TiltBrush
                     WriteObjectsAndConnections(exporter, payload);
 
                     string[] exportedFiles = exporter.EndExport();
+
+                    var skipped = exporter.SkippedMaterialNames.ToList();
+                    if (skipped.Count > 0)
+                    {
+                        OutputWindowScript.Error(
+                            "Some strokes were not exported",
+                            $"No glTF material data for: {string.Join(", ", skipped)}");
+                    }
                     return new ExportResults
                     {
                         success = true,
@@ -153,9 +179,8 @@ namespace TiltBrush
                 {
                     OutputWindowScript.Error("glTF export failed", e.Message);
                     // TODO: anti-pattern. Let the exception bubble up so caller can log it properly
-                    // Actually, InvalidOperationException is now somewhat expected in experimental, since
-                    // the gltf exporter does not check IExportableMaterial.SupportsDetailedMaterialInfo.
-                    // But we still want the logging for standalone builds.
+                    // Materials without detailed info (eg experimental brushes) no longer land here;
+                    // ExportMeshPayload skips their geometry instead. See SkippedMaterialNames.
                     Debug.LogException(e);
                     return new ExportResults { success = false };
                 }
@@ -176,11 +201,11 @@ namespace TiltBrush
 
         static string CommaFormattedFloatRGB(Color c)
         {
-            return string.Format("{0}, {1}, {2}", c.r, c.g, c.b);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.r, c.g, c.b);
         }
         static string CommaFormattedVector3(Vector3 v)
         {
-            return string.Format("{0}, {1}, {2}", v.x, v.y, v.z);
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", v.x, v.y, v.z);
         }
 
         // Populates glTF metadata and scene extras fields.
@@ -191,9 +216,12 @@ namespace TiltBrush
             Color skyColorB = payload.env.skyColorB;
             Vector3 skyGradientDir = payload.env.skyGradientDir;
 
+            // var camPose = SketchControlsScript.m_Instance.GetSaveIconTool().LastSaveCameraRigState.GetLossyTrTransform();
+            var pose = App.Scene.Pose;
+
             // Scene-level extras:
             exporter.G.extras["TB_EnvironmentGuid"] = payload.env.guid.ToString("D");
-            exporter.G.extras["TB_Environment"] = payload.env.description;
+            exporter.G.extras["TB_Environment"] = payload.env.description; // This is localized so should be just for display
             exporter.G.extras["TB_UseGradient"] = payload.env.useGradient ? "true" : "false";
             exporter.G.extras["TB_SkyColorA"] = CommaFormattedFloatRGB(skyColorA);
             exporter.G.extras["TB_SkyColorB"] = CommaFormattedFloatRGB(skyColorB);
@@ -201,11 +229,32 @@ namespace TiltBrush
             exporter.G.extras["TB_SkyGradientDirection"] = CommaFormattedVector3(
                 exportFromUnity * skyGradientDir);
             exporter.G.extras["TB_FogColor"] = CommaFormattedFloatRGB(payload.env.fogColor);
-            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString();
+            exporter.G.extras["TB_FogDensity"] = payload.env.fogDensity.ToString(CultureInfo.InvariantCulture);
 
-            // TODO: remove when Poly starts using the new color data
-            exporter.G.extras["TB_SkyColorHorizon"] = CommaFormattedFloatRGB(skyColorA);
-            exporter.G.extras["TB_SkyColorZenith"] = CommaFormattedFloatRGB(skyColorB);
+            exporter.G.extras["TB_AmbientLightColor"] = CommaFormattedFloatRGB(payload.lights.ambientColor);
+            exporter.G.extras["TB_SceneLight0Color"] = CommaFormattedFloatRGB(payload.lights.lights[0].lightColor);
+            exporter.G.extras["TB_SceneLight0Rotation"] = CommaFormattedVector3(
+                payload.lights.lights[0].xform.rotation.eulerAngles);
+            exporter.G.extras["TB_SceneLight1Color"] = CommaFormattedFloatRGB(payload.lights.lights[1].lightColor);
+            exporter.G.extras["TB_SceneLight1Rotation"] = CommaFormattedVector3(
+                payload.lights.lights[1].xform.rotation.eulerAngles);
+
+            exporter.G.extras["TB_PoseTranslation"] = CommaFormattedVector3(pose.translation);
+            exporter.G.extras["TB_PoseRotation"] = CommaFormattedVector3(pose.rotation.eulerAngles);
+            exporter.G.extras["TB_PoseScale"] = pose.scale.ToString(CultureInfo.InvariantCulture);
+
+            exporter.G.extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+
+            if (SaveLoadScript.m_Instance != null)
+            {
+                TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+                exporter.G.extras["TB_CameraTranslation"] = CommaFormattedVector3(cameraPose.translation);
+                exporter.G.extras["TB_CameraRotation"] = CommaFormattedVector3(cameraPose.rotation.eulerAngles);
+            }
+
+            // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
+            // And better suits Open Brush sketches
+            exporter.G.extras["TB_FlyMode"] = "true";
         }
 
         // Returns a GlTF_Node; null means "there is no node for this group".
@@ -221,12 +270,59 @@ namespace TiltBrush
             return GlTF_Node.GetOrCreate(G, name, Matrix4x4.identity, null, out _);
         }
 
+        private void ExportSaveCamera(GlTF_ScriptableExporter exporter, SceneStatePayload payload)
+        {
+            // Get the saved camera position from the loaded sketch
+            if (SaveLoadScript.m_Instance == null)
+            {
+                return;
+            }
+
+            // ReasonableThumbnail_SS returns the camera transform in Scene Space
+            // But exported geometry has Scene.Pose baked in, so we need to apply it to the camera too
+            TrTransform cameraTr_Scene = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+
+            // Convert both the camera and Scene.Pose to export coordinate system first
+            // This ensures the pose is applied correctly in the export coordinate space
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(payload.axes);
+            Matrix4x4 unityFromExport = AxisConvention.GetToUnity(payload.axes);
+
+            TrTransform cameraTr_Export_Scene = ExportUtils.ChangeBasis(cameraTr_Scene, exportFromUnity, unityFromExport);
+            TrTransform scenePose_Export = ExportUtils.ChangeBasis(App.Scene.Pose, exportFromUnity, unityFromExport);
+
+            // Apply Scene.Pose in export coordinate space
+            TrTransform cameraTr_Export = scenePose_Export * cameraTr_Export_Scene;
+
+            // Apply scale conversion
+            cameraTr_Export = cameraTr_Export.TransformBy(TrTransform.S(payload.exportUnitsFromAppUnits));
+
+            // Create a perspective camera with reasonable defaults
+            var camera = new GlTF_Perspective(exporter.G);
+            camera.name = "SaveCamera";
+            camera.aspect_ratio = 16.0f / 9.0f;  // Standard aspect ratio
+            camera.yfov = 60.0f * Mathf.Deg2Rad;  // 60 degree FOV in radians
+            camera.znear = 0.1f * payload.exportUnitsFromAppUnits;
+            camera.zfar = 1000.0f * payload.exportUnitsFromAppUnits;
+
+            exporter.G.cameras.Add(camera);
+
+            // Create a node for the camera
+            Matrix4x4 cameraMatrix = Matrix4x4.TRS(
+                cameraTr_Export.translation,
+                cameraTr_Export.rotation,
+                Vector3.one  // Cameras don't have scale
+            );
+
+            var cameraNode = GlTF_Node.Create(exporter.G, "SaveCameraNode", cameraMatrix, null);
+            cameraNode.cameraName = camera.name;
+        }
+
         private void WriteObjectsAndConnections(GlTF_ScriptableExporter exporter,
                                                 SceneStatePayload payload)
         {
             foreach (BrushMeshPayload meshPayload in payload.groups.SelectMany(g => g.brushMeshes))
             {
-                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group));
+                exporter.ExportMeshPayload(payload, meshPayload, GetGroupNode(meshPayload.group), localXf: meshPayload.xform);
             }
 
             foreach (var sameInstance in payload.modelMeshes.GroupBy(m => (m.model, m.modelId)))
@@ -249,7 +345,10 @@ namespace TiltBrush
                         // Condense the two levels into one; give the top-level node the same name
                         // it would have had had it been multi-level.
                         GlTF_Node newNode = exporter.ExportMeshPayload(payload, first, groupNode);
-                        newNode.PresentationNameOverride = rootNodeName;
+                        if (newNode != null)
+                        {
+                            newNode.PresentationNameOverride = rootNodeName;
+                        }
                     }
                     else
                     {
@@ -285,6 +384,9 @@ namespace TiltBrush
                 var node = GlTF_Node.Create(exporter.G, uniqueName, xformPayload.xform, null);
                 node.PresentationNameOverride = $"empty_{xformPayload.name}";
             }
+
+            // Export camera from LastSaveCameraRigState
+            ExportSaveCamera(exporter, payload);
         }
     }
 

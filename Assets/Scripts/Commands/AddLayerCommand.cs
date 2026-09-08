@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Linq;
-using UnityEngine;
 namespace TiltBrush
 {
     public class AddLayerCommand : BaseCommand
@@ -32,8 +30,20 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            m_Layer = App.Scene.AddLayerNow();
-            App.Scene.ActiveCanvas = m_Layer;
+            if (m_Layer == null)
+            {
+                m_Layer = App.Scene.AddLayerNow();
+            }
+            else
+            {
+                m_Layer.gameObject.SetActive(true);
+                App.Scene.MarkLayerAsNotDeleted(m_Layer);
+            }
+
+            if (m_MakeActive)
+            {
+                App.Scene.ActiveCanvas = m_Layer;
+            }
         }
 
         protected override void OnUndo()

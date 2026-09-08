@@ -259,6 +259,20 @@ public sealed class GlTF_Accessor : GlTF_ReferencedObject {
     }
   }
 
+  public void PopulateUint(int[] vs) {
+      RequireType(Type.SCALAR, ComponentType.UNSIGNED_INT);
+      byteOffset = bufferView.currentOffset;
+      bufferView.PopulateUint(vs);
+      count = vs.Length;
+      // TODO: try to remove
+      if (count > 0) {
+          InitMinMaxInt();
+          for (int i = 0; i < count; ++i) {
+              maxInt = Mathf.Max(vs[i], maxInt);
+              minInt = Mathf.Min(vs[i], minInt);
+          }
+      }
+  }
   // flipY -
   //   true if value.xy is a UV, and if a UV axis convention swap is needed
   //   glTF defines uv axis conventions to be u right, v down -- origin top-left
@@ -334,6 +348,10 @@ public sealed class GlTF_Accessor : GlTF_ReferencedObject {
       if (type == Type.SCALAR) {
         val = i.ToString();
       }
+    } else if (componentType == ComponentType.UNSIGNED_INT) {
+        if (type == Type.SCALAR) {
+            val = i.ToString();
+        }
     }
     if (val == null) {
       throw new InvalidOperationException($"Unhandled: {type} {componentType}");

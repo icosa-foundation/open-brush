@@ -51,10 +51,11 @@
             <button onclick="sendCommand('spectator.mode=slowfollow');">Follow</button>
             <button onclick="sendCommand('spectator.mode=circular');">Circular</button>
             <button onclick="sendCommand('spectator.mode=wobble');">Wobble</button>
+            <button onclick="sendCommand('camerapath.setactive=' + document.getElementById('campath').value); sendCommand('spectator.mode=camerapath');">Camera Path</button>
         </label><br><br>
 
         <label>Position: <input id="campos.x" value="0">,<input id="campos.y" value="11">,<input id="campos.z" value="0"></label><br>
-        <label>Target: <input id="camtarget.x" value="0">,<input id="camtarget.y" value="11">,<input id="camtarget.z" value="8"></label><br>
+        <label>Path: <input id="campath" value="0"></label><br>
         <button onclick='setCam();'>Set</button>&nbsp;&nbsp;
         <button onclick='saveCamera(0)'>Save Slot 1</button>
         <button onclick='saveCamera(1)'>Save Slot 2</button>

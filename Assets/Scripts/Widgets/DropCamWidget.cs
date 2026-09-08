@@ -31,10 +31,11 @@ namespace TiltBrush
     {
         public enum Mode
         {
-            SlowFollow,
-            Stationary,
-            Wobble,
-            Circular
+            SlowFollow = 0,
+            Stationary = 1,
+            Wobble = 2,
+            Circular = 3,
+            CameraPath = 5600
         }
 
         public const Mode kDefaultMode = Mode.Stationary;
@@ -71,6 +72,7 @@ namespace TiltBrush
 
         private Vector3 m_SlowFollowMoveVel;
         private Vector3 m_SlowFollowRotVel;
+        public bool isVisible => m_CurrentState == State.Visible;
 
         override protected void Awake()
         {
@@ -91,6 +93,7 @@ namespace TiltBrush
 
             // Register the drop camera with scene settings
             Camera camera = GetComponentInChildren<Camera>();
+            ConfigureSpectatorCamera(camera);
             SceneSettings.m_Instance.RegisterCamera(camera);
 
             InitSnapGhost(m_GhostMesh, transform);
@@ -125,6 +128,7 @@ namespace TiltBrush
         {
             base.Show(bShow, bPlayAudio);
 
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
             RefreshRenderers();
         }
 
@@ -132,6 +136,7 @@ namespace TiltBrush
         {
             gameObject.SetActive(bShow);
             m_CurrentState = bShow ? State.Showing : State.Hiding;
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
         }
 
         override protected void OnShow()
@@ -167,6 +172,7 @@ namespace TiltBrush
                 case Mode.Stationary: return "Stationary";
                 case Mode.Wobble: return "Figure 8";
                 case Mode.Circular: return "Circular";
+                case Mode.CameraPath: return "Camera Path";
             }
             return "";
         }
@@ -207,8 +213,7 @@ namespace TiltBrush
 
         override protected void OnUpdate()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Debug.isDebugBuild && Config.IsExperimental)
+            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
             {
                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
                     InputManager.KeyboardShortcut.ToggleHeadStationaryOrWobble))
@@ -223,7 +228,6 @@ namespace TiltBrush
                     RefreshRenderers();
                 }
             }
-#endif
 
             //animate the guide beams in and out, relatively to activation
             float fShowRatio = GetShowRatio();
@@ -271,8 +275,7 @@ namespace TiltBrush
                         break;
                     case Mode.SlowFollow:
                         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                            if (Debug.isDebugBuild && Config.IsExperimental)
+                            if (App.UserConfig.Flags.AdvancedKeyboardShortcuts)
                             {
                                 if (InputManager.m_Instance.GetKeyboardShortcutDown(
                                     InputManager.KeyboardShortcut.DecreaseSlowFollowSmoothing))
@@ -286,7 +289,6 @@ namespace TiltBrush
                                     m_SlowFollowSmoothing += 0.001f;
                                 }
                             }
-#endif
 
                             transform.position = Vector3.SmoothDamp(transform.position, ViewpointScript.Head.position,
                                 ref m_SlowFollowMoveVel, m_SlowFollowSmoothing, Mathf.Infinity, Time.deltaTime);
@@ -331,7 +333,45 @@ namespace TiltBrush
                             m_GuideCircleObject.SetActive(false);
                         }
                         break;
+                    case Mode.CameraPath:
+                        if (m_UserInteracting)
+                        {
+                            ResetCam();
+                        }
+                        else
+                        {
+                            m_AnimatedPathTime += Time.deltaTime * (m_CircleSpeed * 20);
+                            FollowCameraPath();
+                        }
+                        break;
                 }
+            }
+        }
+
+        private void FollowCameraPath()
+        {
+            var currentPathWidget = WidgetManager.m_Instance.GetCurrentCameraPath().WidgetScript; // TODO Cache
+            var pathT = new PathT(m_AnimatedPathTime);
+            pathT.Clamp(currentPathWidget.Path.PositionKnots.Count);
+
+            if (currentPathWidget != null && currentPathWidget.Path.NumPositionKnots > 1)
+            {
+                float speed = Mathf.Max(currentPathWidget.Path.GetSpeed(pathT),
+                    CameraPathSpeedKnot.kMinSpeed);
+                bool completed = currentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
+                    pathT, out pathT);
+                if (completed)
+                {
+                    // TODO optional looping?
+                    m_AnimatedPathTime = 0;
+                }
+
+                PathT t = pathT;
+                float fov = currentPathWidget.Path.GetFov(t);
+                var cam = GetComponentInChildren<Camera>();  // TODO Cache
+                cam.fieldOfView = fov;
+                transform.position = currentPathWidget.Path.GetPosition(t) - cam.transform.localPosition;
+                transform.rotation = currentPathWidget.Path.GetRotation(t) * cam.transform.localRotation.Negated();
             }
         }
 
@@ -374,6 +414,17 @@ namespace TiltBrush
         {
             return (m_CurrentMode != Mode.SlowFollow) &&
                 (m_CurrentState == State.Showing || m_CurrentState == State.Visible);
+        }
+
+        private static void ConfigureSpectatorCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            camera.targetDisplay = 0;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(camera);
         }
     }
 } // namespace TiltBrush

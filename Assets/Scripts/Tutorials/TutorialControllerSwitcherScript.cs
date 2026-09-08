@@ -43,17 +43,6 @@ namespace TiltBrush
             // Enable whatever style is active.
             switch (style)
             {
-                case ControllerStyle.OculusTouch:
-                    if (App.Config.VrHardware == VrHardware.Rift)
-                    {
-                        ActivateControllers(m_RiftControllers, true);
-                    }
-                    else if (App.Config.VrHardware == VrHardware.Quest)
-                    {
-                        // TODO(b/135950527): rift-s also uses quest controllers.
-                        ActivateControllers(m_QuestControllers, true);
-                    }
-                    break;
                 case ControllerStyle.Wmr:
                     ActivateControllers(m_WmrControllers, true);
                     break;
@@ -61,8 +50,22 @@ namespace TiltBrush
                     ActivateControllers(m_KnucklesControllers, true);
                     break;
                 case ControllerStyle.Vive:
-                default:
                     ActivateControllers(m_ViveControllers, true);
+                    break;
+                case ControllerStyle.OculusTouch:
+                default:
+                    // if (App.Config.IsMobileHardware)
+                    // {
+                    //     ActivateControllers(m_QuestControllers, true);
+                    // }
+                    // else
+                    // {
+                    //     ActivateControllers(m_RiftControllers, true);
+                    //     // TODO(b/135950527): rift-s also uses quest controllers.
+                    // }
+
+                    // TODO: Rift prefabs are completely missing. just using quest now.
+                    ActivateControllers(m_QuestControllers, true);
                     break;
             }
         }

@@ -1,0 +1,1018 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &-3903529720270446558
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: NotoSansCJK-Light SDF Material
+  m_Shader: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Cube:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FaceTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 3065501166461915760}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OutlineTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Ambient: 0.5
+    - _Bevel: 0.5
+    - _BevelClamp: 0
+    - _BevelOffset: 0
+    - _BevelRoundness: 0
+    - _BevelWidth: 0
+    - _BumpFace: 0
+    - _BumpOutline: 0
+    - _ColorMask: 15
+    - _CullMode: 0
+    - _Diffuse: 0.5
+    - _FaceDilate: 0
+    - _FaceUVSpeedX: 0
+    - _FaceUVSpeedY: 0
+    - _GlowInner: 0.05
+    - _GlowOffset: 0
+    - _GlowOuter: 0.05
+    - _GlowPower: 0.75
+    - _GradientScale: 6
+    - _LightAngle: 3.1416
+    - _MaskSoftnessX: 0
+    - _MaskSoftnessY: 0
+    - _OutlineSoftness: 0
+    - _OutlineUVSpeedX: 0
+    - _OutlineUVSpeedY: 0
+    - _OutlineWidth: 0
+    - _PerspectiveFilter: 0.875
+    - _Reflectivity: 10
+    - _ScaleRatioA: 0.8333333
+    - _ScaleRatioB: 0.6770833
+    - _ScaleRatioC: 0.6770833
+    - _ScaleX: 1
+    - _ScaleY: 1
+    - _ShaderFlags: 0
+    - _Sharpness: 0
+    - _SpecularPower: 2
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TextureHeight: 4096
+    - _TextureWidth: 4096
+    - _UnderlayDilate: 0
+    - _UnderlayOffsetX: 0
+    - _UnderlayOffsetY: 0
+    - _UnderlaySoftness: 0
+    - _VertexOffsetX: 0
+    - _VertexOffsetY: 0
+    - _WeightBold: 0.75
+    - _WeightNormal: 0
+    m_Colors:
+    - _ClipRect: {r: -32767, g: -32767, b: 32767, a: 32767}
+    - _EnvMatrixRotation: {r: 0, g: 0, b: 0, a: 0}
+    - _FaceColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 0, g: 1, b: 0, a: 0.5}
+    - _MaskCoord: {r: 0, g: 0, b: 32767, a: 32767}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ReflectFaceColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ReflectOutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
+    - _UnderlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+  m_Name: NotoSansCJK-Light SDF
+  m_EditorClassIdentifier: 
+  m_Version: 1.1.0
+  m_FaceInfo:
+    m_FaceIndex: 0
+    m_FamilyName: Noto Sans CJK JP
+    m_StyleName: Light
+    m_PointSize: 109
+    m_Scale: 1
+    m_UnitsPerEM: 1000
+    m_LineHeight: 157.832
+    m_AscentLine: 126.44
+    m_CapLine: 79
+    m_MeanLine: 58
+    m_Baseline: 0
+    m_DescentLine: -31.392
+    m_SuperscriptOffset: 126.44
+    m_SuperscriptSize: 0.5
+    m_SubscriptOffset: -31.392
+    m_SubscriptSize: 0.5
+    m_UnderlineOffset: -16.35
+    m_UnderlineThickness: 5.4500003
+    m_StrikethroughOffset: 23.2
+    m_StrikethroughThickness: 5.4500003
+    m_TabWidth: 24
+  m_Material: {fileID: -3903529720270446558}
+  m_SourceFontFileGUID: 501eea5417f248044ac830eb146b46cb
+  m_CreationSettings:
+    sourceFontFileName: 
+    sourceFontFileGUID: 501eea5417f248044ac830eb146b46cb
+    faceIndex: 0
+    pointSizeSamplingMode: 0
+    pointSize: 109
+    padding: 5
+    paddingMode: 0
+    packingMode: 0
+    atlasWidth: 4096
+    atlasHeight: 4096
+    characterSetSelectionMode: 8
+    characterSequence: "\n !\"#%'()+,-./012356789:<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz{}\_\xA1\xAB\xBB\xBF\xC0\xC1\xC4\xC9\xCA\xD3\xD6\xDC\xDF\xE0\xE1\xE2\xE4\xE7\xE8\xE9\xEA\xED\xEF\xF1\xF3\xF4\xF6\xFA\xFB\xFC\u2019\u201C\u201D\u201E\u2026\u3000\u3001\u3002\u300C\u300D\u3042\u3044\u3046\u3048\u304A\u304B\u304C\u304D\u304F\u3050\u3051\u3052\u3053\u3054\u3055\u3056\u3057\u3058\u3059\u305B\u305D\u305F\u3060\u3061\u3063\u3064\u3066\u3067\u3068\u306A\u306B\u306D\u306E\u306F\u3071\u3073\u3078\u3079\u307E\u307F\u3080\u3081\u3082\u3084\u3087\u3088\u3089\u308A\u308B\u308C\u308F\u3092\u3093\u30A1\u30A2\u30A3\u30A4\u30A5\u30A6\u30A7\u30A8\u30A9\u30AA\u30AB\u30AC\u30AD\u30AF\u30B0\u30B1\u30B2\u30B3\u30B4\u30B5\u30B6\u30B7\u30B8\u30B9\u30BA\u30BB\u30BC\u30BD\u30BE\u30BF\u30C0\u30C1\u30C3\u30C4\u30C6\u30C7\u30C8\u30C9\u30CA\u30CB\u30CD\u30CE\u30CF\u30D0\u30D1\u30D2\u30D3\u30D4\u30D5\u30D6\u30D7\u30D8\u30D9\u30DA\u30DB\u30DC\u30DD\u30DE\u30DF\u30E0\u30E1\u30E2\u30E3\u30E4\u30E5\u30E6\u30E7\u30E9\u30EA\u30EB\u30EC\u30ED\u30EF\u30F3\u30FC\u4E00\u4E01\u4E09\u4E0A\u4E0B\u4E0D\u4E0E\u4E14\u4E1D\u4E21\u4E22\u4E24\u4E2A\u4E2D\u4E3A\u4E3B\u4E49\u4E50\u4E59\u4E73\u4E86\u4E88\u4E8E\u4E91\u4E92\u4E9A\u4E9B\u4EAB\u4EAE\u4EBA\u4EC5\u4ECD\u4ECE\u4ED6\u4ED9\u4EE4\u4EE5\u4EF6\u4EFD\u4F1A\u4F20\u4F46\u4F4D\u4F4E\u4F4F\u4F53\u4F55\u4F5C\u4F60\u4F7F\u4F8B\u4FA7\u4FDD\u4FE1\u5019\u501F\u504F\u505C\u50A8\u50CF\u5143\u5148\u5149\u5165\u5168\u516C\u5170\u5173\u5176\u5177\u5185\u5186\u518C\u518D\u5199\u51B2\u51B7\u51C6\u51E0\u51F9\u51FA\u51FB\u5206\u5207\u5217\u521B\u521D\u5220\u5229\u5230\u5236\u5237\u523A\u524A\u524D\u526A\u529F\u52A0\u52A1\u52A8\u52A9\u52B9\u52D5\u5305\u5316\u533A\u5347\u5348\u5349\u5355\u5358\u5361\u5370\u5371\u5373\u5378\u539A\u53BB\u53C2\u53CC\u53CD\u53CE\u53D1\u53D6\u53D8\u53E0\u53E4\u53E6\u53EA\u53EC\u53EF\u53F0\u53F3\u53F6\u53F7\u5408\u540C\u540D\u540E\u5411\u5426\u542B\u542C\u542F\u544A\u547C\u548C\u54C1\u54CD\u54D1\u5524\u554F\u559C\u5662\u5668\u56CA\u56DE\u56F2\u56F3\u56FA\u56FE\u5706\u571F\u5728\u5730\u573A\u5757\u5761\u576F\u578B\u57FA\u5831\u5834\u5857\u5883\u58A8\u58F3\u5904\u5907\u5909\u590D\u5916\u591A\u591C\u5927\u5929\u592A\u5931\u5934\u597D\u5983\u59CB\u5A92\u5AE9\u5B50\u5B58\u5B87\u5B89\u5B8C\u5B99\u5B9A\u5B9E\u5B9F\u5BA4\u5BB6\u5BB9\u5BBD\u5BDF\u5BF8\u5BF9\u5BFB\u5BFC\u5C02\u5C06\u5C0F\u5C16\u5C1D\u5C3A\u5C42\u5CA9\u5D29\u5DE5\u5DE6\u5DE7\u5DEE\u5DF2\u5E03\u5E0C\u5E26\u5E2E\u5E45\u5E72\u5E73\u5E74\u5E76\u5E7D\u5E8F\u5E93\u5E94\u5E95\u5EA6\u5EA7\u5EFA\u5F00\u5F0F\u5F15\u5F31\u5F53\u5F55\u5F57\u5F62\u5F69\u5F79\u5F84\u5F85\u5F8C\u5F97\u5FC3\u5FC5\u5FEB\u6001\u6027\u6062\u606F\u60AA\u60C5\u610F\u614B\u6162\u6210\u6211\u6216\u622A\u6234\u6237\u623B\u624B\u624D\u6251\u6253\u6263\u6267\u626D\u6273\u627E\u6280\u6293\u6295\u629E\u62BC\u62CD\u62E9\u62FE\u62FF\u6301\u6307\u6309\u6362\u6368\u63A2\u63A5\u63A7\u63CF\u63D0\u63DB\u63E1\u641C\u6444\u6447\u6478\u64A4\u64AD\u64CD\u64E6\u652F\u6536\u6539\u653E\u653F\u6545\u6548\u656C\u6570\u6574\u6587\u6591\u6599\u65AF\u65B0\u65B9\u65E0\u65E5\u65E7\u65F6\u6607\u660E\u660F\u661F\u6625\u662F\u663E\u6642\u6652\u666F\u6676\u6697\u66F4\u66F8\u66FF\u6700\u6708\u6709\u670D\u671B\u671F\u6728\u672A\u672B\u672C\u673A\u6742\u6746\u6756\u6761\u6765\u677E\u677F\u6797\u679C\u67D4\u67E0\u67E5\u6807\u6811\u6817\u683C\u6843\u6846\u684C\u6863\u68C0\u68EE\u691C\u692D\u6955\u696D\u697D\u6984\u6A19\u6A21\u6A44\u6A59\u6A5F\u6A61\u6AAC\u6B21\u6B22\u6B3E\u6B4C\u6B62\u6B63\u6B64\u6B8B\u6BD5\u6BDB\u6BE1\u6C14\u6C17\u6C34\u6C60\u6C99\u6CA1\u6CA2\u6CB9\u6CBB\u6CD5\u6CE1\u6CE2\u6CE8\u6CFC\u6D0B\u6D3B\u6D45\u6D4F\u6D53\u6D77\u6D82\u6D88\u6DE1\u6DF1\u6DF7\u6DFB\u6E05\u6E08\u6E29\u6E7F\u6E83\u6E85\u6E96\u6EC5\u6ED1\u6EE1\u6EF4\u6F06\u6F0F\u6FC0\u6FC3\u706B\u706F\u7070\u7075\u707C\u70AD\u70B9\u70EC\u70ED\u70EF\u7121\u7130\u7136\u7167\u71B1\u7247\u7248\u7259\u7269\u7279\u72B6\u731C\u7329\u732E\u7389\u73A9\u73AB\u73AF\u73B0\u73CA\u73DE\u73FE\u7403\u7406\u745A\u7470\u7490\u74B0\u74DC\u74E3\u751F\u7528\u7531\u7535\u753B\u756A\u767A\u767B\u767D\u7684\u76AE\u76D6\u76D8\u76EE\u76F4\u76F8\u770B\u77E2\u77F3\u7801\u786C\u786E\u78A7\u78BA\u793A\u793E\u7981\u79BB\u79C1\u79D1\u79D2\u79F0\u79FB\u7A0B\u7A0D\u7A3F\u7A57\u7A7A\u7A84\u7ACB\u7AEF\u7B14\u7B49\u7B56\u7B80\u7BA1\u7BAD\u7BC4\u7C73\u7C89\u7C92\u7C97\u7CBE\u7CD6\u7CD9\u7D04\u7D14\u7D19\u7D1A\u7D22\u7D2B\u7D30\u7D42\u7D50\u7D71\u7D75\u7D9A\u7DDA\u7DE8\u7EA2\u7EA7\u7EB8\u7EB9\u7EBF\u7EC4\u7EC6\u7ED2\u7ED8\u7ED9\u7EDC\u7EE7\u7EED\u7EEF\u7EFF\u7F13\u7F16\u7F29\u7F51\u7F57\u7F6E\u7FA4\u7FBD\u7FC5\u7FFB\u8005\u804A\u805A\u8089\u808C\u80A0\u80CC\u80ED\u80F6\u80FD\u8102\u8109\u8111\u811A\u819C\u81EA\u81F3\u81F4\u821E\u8272\u8273\u8282\u82B1\u82D4\u8304\u8349\u8367\u8377\u83B7\u83CA\u843D\u8449\u8463\u84DD\u857E\u8584\u85B0\u85CF\u85FB\u8679\u86C9\u871C\u884C\u8863\u8868\u88AB\u88C5\u88CF\u88FD\u8907\u8910\u8981\u8986\u898B\u898F\u8996\u89A7\u89C2\u89C6\u89C8\u89C9\u89D2\u89E3\u89E6\u8A00\u8A18\u8A2D\u8A31\u8A66\u8A73\u8A8D\u8AAD\u8ABF\u8B66\u8BA1\u8BA4\u8BAE\u8BAF\u8BB0\u8BBE\u8BBF\u8BCD\u8BD5\u8BE5\u8BE6\u8BED\u8BEF\u8BF4\u8BF7\u8BFB\u8C03\u8C37\u8C61\u8CA2\u8CEA\u8D1D\u8D26\u8D28\u8D5B\u8D5E\u8D6D\u8D77\u8D85\u8DDD\u8DEF\u8EAB\u8EE2\u8F66\u8F6C\u8F7D\u8F83\u8F85\u8F91\u8F93\u8FB9\u8FBC\u8FD0\u8FD1\u8FD9\u8FDB\u8FDE\u8FEA\u8FFD\u9000\u9001\u9009\u900F\u901A\u901F\u9020\u9045\u904E\u9053\u9078\u90CE\u90E8\u9152\u916F\u91CA\u91CC\u91CD\u91CE\u91CF\u9332\u9488\u94A2\u94BB\u94C1\u94F6\u9500\u9501\u9519\u951A\u952E\u9549\u955C\u9577\u957F\u9589\u958B\u9593\u95B2\u95E8\u95EA\u95ED\u95EE\u95F4\u9650\u9664\u9669\u9676\u967A\u968F\u9690\u969C\u96C6\u96D1\u96E2\u96E8\u96EA\u96F2\u96FB\u96FE\u9700\u9713\u971C\u9727\u9752\u975B\u975E\u9762\u97F3\u984C\u9879\u9884\u9891\u989C\u98A8\u98CE\u98DB\u98DE\u9971\u9996\u9999\u9A13\u9A8C\u9AA8\u9AD8\u9B03\u9B54\u9C91\u9E2D\u9EA6\u9EBB\u9EC4\u9ED1\u9F50\uAC00\uAC01\uAC04\uAC08\uAC15\uAC19\uAC1C\uAC70\uAC78\uAC80\uAC83\uAC8C\uACA0\uACA8\uACAC\uACB0\uACB9\uACBD\uACC4\uACE0\uACE7\uACF5\uACFC\uAD00\uAD6C\uAD8C\uADF8\uADFC\uAE00\uAE08\uAE09\uAE30\uAE38\uAE43\uAE4A\uAE4C\uAE54\uAE5C\uAEBC\uAED8\uAF43\uB044\uB098\uB0A8\uB0AE\uB0B4\uB0C5\uB0C8\uB108\uB110\uB118\uB124\uB128\uB137\uB178\uB179\uB192\uB208\uB20C\uB274\uB290\uB294\uB298\uB2A5\uB2C8\uB2D0\uB2E4\uB2E8\uB2EB\uB2F9\uB300\uB304\uB354\uB358\uB36E\uB370\uB378\uB3C4\uB3D9\uB410\uB418\uB41C\uB420\uB428\uB429\uB450\uB4A4\uB4C0\uB4DC\uB4DD\uB4E3\uB4E4\uB4EC\uB514\uB524\uB525\uB530\uB5A4\uB610\uB728\uB77C\uB77D\uB780\uB78C\uB798\uB799\uB7AB\uB7C9\uB7EC\uB7F0\uB7F4\uB808\uB80C\uB81B\uB824\uB85C\uB85D\uB864\uB86D\uB8CC\uB8E8\uB8F0\uB8F9\uB93C\uB958\uB974\uB978\uB97C\uB984\uB9AC\uB9AD\uB9B0\uB9B4\uB9BC\uB9BD\uB9C1\uB9C8\uB9C9\uB9CC\uB9D0\uB9DE\uB9E4\uB9E8\uBA38\uBA3C\uBA54\uBA74\uBA85\uBAA8\uBAA9\uBAAC\uBB34\uBB38\uBB3C\uBB47\uBB54\uBBA4\uBBB4\uBBF8\uBBF9\uBBFC\uBC00\uBC0F\uBC14\uBC18\uBC1B\uBC1C\uBC1D\uBC24\uBC29\uBC31\uBC84\uBC88\uBCA0\uBCA4\uBCA8\uBCB3\uBCC0\uBCC4\uBCF4\uBCF5\uBCF8\uBD09\uBD80\uBD81\uBD84\uBD88\uBE0C\uBE14\uBE44\uBE5B\uBE60\uBE61\uBE68\uC0AC\uC0AD\uC0B4\uC0C1\uC0C8\uC0C9\uC0CC\uC0D0\uC0DD\uC0E4\uC0F7\uC108\uC11C\uC11D\uC120\uC124\uC131\uC138\uC13C\uC140\uC14B\uC158\uC18C\uC18D\uC19F\uC1A1\uC1C4\uC218\uC21C\uC220\uC228\uC22F\uC26C\uC288\uC290\uC2A4\uC2AC\uC2B5\uC2DC\uC2DD\uC2E0\uC2E4\uC2F1\uC368\uC378\uC4F0\uC528\uC544\uC545\uC548\uC54A\uC54C\uC554\uC558\uC560\uC561\uC564\uC57C\uC57D\uC591\uC5B4\uC5B8\uC5BC\uC5C4\uC5C5\uC5C6\uC5D0\uC5D4\uC5EC\uC5ED\uC5F0\uC5F4\uC601\uC608\uC610\uC624\uC625\uC628\uC62C\uC635\uC640\uC644\uC678\uC67C\uC694\uC6A9\uC6B0\uC6B4\uC6B8\uC6C0\uC6C1\uC6C3\uC6CC\uC6D0\uC6E8\uC704\uC719\uC720\uC721\uC728\uC73C\uC740\uC744\uC74C\uC758\uC774\uC778\uC77C\uC77D\uC783\uC784\uC785\uC787\uC788\uC789\uC78E\uC790\uC791\uC7A0\uC7A1\uC7A5\uC7AC\uC800\uC801\uC804\uC810\uC811\uC815\uC816\uC81C\uC820\uC838\uC870\uC885\uC88B\uC8FC\uC900\uC90C\uC911\uC988\uC9C0\uC9C1\uC9C4\uC9C8\uC9D1\uC9D5\uCABD\uCC0D\uCC28\uCC29\uCC38\uCC44\uCC45\uCC98\uCCAD\uCCB4\uCD08\uCD5C\uCD94\uCD9C\uCDB0\uCDE8\uCE20\uCE58\uCE5C\uCE60\uCE68\uCE74\uCE7C\uCEA1\uCEE4\uCEE8\uCEEC\uCEF4\uCF00\uCF1C\uCF54\uCF58\uCFE0\uCFE8\uCFFC\uD050\uD06C\uD074\uD0A4\uD0C0\uD0C4\uD0C8\uD0D5\uD0DC\uD0DD\uD0E0\uD0ED\uD130\uD138\uD140\uD14C\uD150\uD154\uD1A0\uD1B1\uD1B5\uD230\uD234\uD29C\uD2B8\uD2BC\uD2F0\uD2F1\uD2F8\uD301\uD305\uD30C\uD314\uD328\uD37C\uD384\uD398\uD39C\uD3A0\uD3C9\uD3D0\uD3EC\uD3F4\uD3FC\uD45C\uD4E8\uD504\uD508\uD50C\uD53C\uD540\uD544\uD551\uD558\uD559\uD55C\uD560\uD568\uD569\uD56B\uD56D\uD574\uD588\uD589\uD5A5\uD5C8\uD5D0\uD5D8\uD5E4\uD604\uD615\uD61C\uD638\uD64D\uD654\uD655\uD658\uD65C\uD669\uD68C\uD6A8\uD6C4\uD729\uD770\uD788\uFF01\uFF08\uFF09\uFF0C\uFF1A\uFF1F"
+    referencedFontAssetGUID: 
+    referencedTextAssetGUID: ded0d801a4bcf964dbe37d9675c46b96
+    fontStyle: 0
+    fontStyleModifier: 0
+    renderMode: 4165
+    includeFontFeatures: 1
+  m_SourceFontFile: {fileID: 12800000, guid: 501eea5417f248044ac830eb146b46cb, type: 3}
+  m_SourceFontFilePath: 
+  m_AtlasPopulationMode: 1
+  InternalDynamicOS: 0
+  m_GlyphTable: []
+  m_CharacterTable: []
+  m_AtlasTextures:
+  - {fileID: 3065501166461915760}
+  m_AtlasTextureIndex: 0
+  m_IsMultiAtlasTexturesEnabled: 1
+  m_GetFontFeatures: 0
+  m_ClearDynamicDataOnBuild: 1
+  m_AtlasWidth: 1024
+  m_AtlasHeight: 1024
+  m_AtlasPadding: 5
+  m_AtlasRenderMode: 4165
+  m_UsedGlyphRects: []
+  m_FreeGlyphRects:
+  - m_X: 0
+    m_Y: 0
+    m_Width: 1023
+    m_Height: 1023
+  m_FontFeatureTable:
+    m_MultipleSubstitutionRecords: []
+    m_LigatureSubstitutionRecords: []
+    m_GlyphPairAdjustmentRecords:
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -4.469
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 357
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -4.469
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 365
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -4.469
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 300
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -3.597
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 43
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -4.469
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 85
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.014
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 325
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.014
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 333
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 358
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.014
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 275
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 276
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.014
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 53
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 87
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.616
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 55
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.199
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 56
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 90
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 187
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 189
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 713
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 715
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 717
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -0.436
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 719
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 58
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 155
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 712
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 714
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 716
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -5.559
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 718
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -4.796
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 330
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.0709999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 311
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.616
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 360
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 328
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -3.161
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 326
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.635
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 313
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.616
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 303
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 278
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.398
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 262
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -3.597
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 52
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.616
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 89
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 57
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.398
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 59
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.635
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 368
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.0709999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 318
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 346
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 370
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.8339999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 338
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.398
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 314
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -2.398
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 336
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    - m_FirstAdjustmentRecord:
+        m_GlyphIndex: 121
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: -1.4169999
+          m_YAdvance: 0
+      m_SecondAdjustmentRecord:
+        m_GlyphIndex: 345
+        m_GlyphValueRecord:
+          m_XPlacement: 0
+          m_YPlacement: 0
+          m_XAdvance: 0
+          m_YAdvance: 0
+      m_FeatureLookupFlags: -613938369
+    m_MarkToBaseAdjustmentRecords: []
+    m_MarkToMarkAdjustmentRecords: []
+  m_ShouldReimportFontFeatures: 0
+  m_FallbackFontAssetTable: []
+  m_FontWeightTable:
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  - regularTypeface: {fileID: 0}
+    italicTypeface: {fileID: 0}
+  fontWeights: []
+  normalStyle: 0
+  normalSpacingOffset: 0
+  boldStyle: 0.75
+  boldSpacing: 7
+  italicStyle: 35
+  tabSize: 10
+  m_fontInfo:
+    Name: 
+    PointSize: 0
+    Scale: 0
+    CharacterCount: 0
+    LineHeight: 0
+    Baseline: 0
+    Ascender: 0
+    CapHeight: 0
+    Descender: 0
+    CenterLine: 0
+    SuperscriptOffset: 0
+    SubscriptOffset: 0
+    SubSize: 0
+    Underline: 0
+    UnderlineThickness: 0
+    strikethrough: 0
+    strikethroughThickness: 0
+    TabWidth: 0
+    Padding: 0
+    AtlasWidth: 0
+    AtlasHeight: 0
+  m_glyphInfoList: []
+  m_KerningTable:
+    kerningPairs: []
+  fallbackFontAssets: []
+  atlas: {fileID: 0}
+--- !u!28 &3065501166461915760
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: NotoSansCJK-Light SDF Atlas
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 4
+  m_Width: 1
+  m_Height: 1
+  m_CompleteImageSize: 1
+  m_MipsStripped: 0
+  m_TextureFormat: 1
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 0
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_LightmapFormat: 0
+  m_ColorSpace: 0
+  m_PlatformBlob: 
+  image data: 1
+  _typelessdata: 00
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 

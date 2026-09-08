@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace TiltBrush
@@ -23,9 +24,15 @@ namespace TiltBrush
         public struct WidgetMetadata
         {
             public TrTransform xf;
+            public string subtree;
             public bool pinned;
             public bool tinted;
             public uint groupId;
+            public int layerId;
+            public bool twoSided;
+            public float extrusionDepth;
+            public Color extrusionColor;
+            public float opacity;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -96,16 +103,21 @@ namespace TiltBrush
 
             Dictionary<Model.Location, List<WidgetMetadata>> modelLocationMap =
                 new Dictionary<Model.Location, List<WidgetMetadata>>();
+            var modelSplitsMap = new Dictionary<Model.Location, (List<string> m_SplitMeshPaths, List<string> m_NotSplittableMeshPaths)>();
             foreach (var model in widgetModels)
             {
-                modelLocationMap[model.GetLocation()] = new List<WidgetMetadata>();
+                var loc = model.GetLocation();
+                modelLocationMap[loc] = new List<WidgetMetadata>();
+                modelSplitsMap[loc] = (model.m_SplitMeshPaths, model.m_NotSplittableMeshPaths);
             }
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = widget.GetSaveTransform();
+                newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -115,18 +127,24 @@ namespace TiltBrush
                 var val = new TiltModels75
                 {
                     Location = elem.Key,
+                    SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths,
+                    NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
                 };
 
                 // Order and align the metadata.
                 WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();
                 val.PinStates = new bool[ordered.Length];
+                val.Subtrees = new string[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
+                    val.Subtrees[i] = ordered[i].subtree;
                     val.PinStates[i] = ordered[i].pinned;
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
+                    val.LayerIds[i] = ordered[i].layerId;
                 }
                 models.Add(val);
             }
@@ -134,6 +152,144 @@ namespace TiltBrush
             return models
                 .Concat(ModelCatalog.m_Instance.MissingModels)
                 .OrderBy(ByModelLocation).ToArray();
+        }
+
+        public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
+        {
+            return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
+
+            TiltText ConvertTextWidgetToTiltText(TextWidget widget)
+            {
+                TiltText text = new TiltText
+                {
+                    Transform = widget.SaveTransform,
+                    Text = widget.Text,
+                    FillColor = widget.TextColor,
+                    Pinned = widget.Pinned,
+                    GroupId = groupIdMapping.GetId(widget.Group),
+                    StrokeColor = widget.StrokeColor,
+                    Font = "Oswald-Regular",
+                    ExtrudeDepth = 0,
+                    Mode = widget.Mode,
+                };
+                return text;
+            }
+        }
+
+        public static TiltSoundClip[] GetTiltSoundClip(GroupIdMapping groupIdMapping)
+        {
+            return WidgetManager.m_Instance.SoundClipWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
+
+            TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
+            {
+                var audioState = widget.GetAudioSaveState();
+                TiltSoundClip soundClip = new TiltSoundClip
+                {
+                    FilePath = widget.SoundClip.PersistentPath,
+                    AspectRatio = widget.SoundClip.Aspect,
+                    Pinned = widget.Pinned,
+                    Transform = widget.LocalTransform,
+                    GroupId = groupIdMapping.GetId(widget.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    Paused = audioState.paused,
+                    Time = audioState.time,
+                    Volume = audioState.volume,
+                    Loop = audioState.loop,
+                    SpatialBlend = audioState.spatialBlend,
+                    MinDistance = audioState.minDistance,
+                    MaxDistance = audioState.maxDistance
+                };
+                return soundClip;
+            }
+        }
+
+        public static TiltPortal[] GetTiltPortals(GroupIdMapping groupIdMapping)
+        {
+            var portals = WidgetManager.m_Instance.ActivePortalWidgets
+                .Select(x => x.WidgetScript)
+                .Where(x => x.gameObject.activeSelf)
+                .ToArray();
+            if (portals.Length == 0)
+            {
+                return null;
+            }
+
+            return portals
+                .OrderBy(x => ByTranslation(x.GetSaveTransform()))
+                .Select(portal => new TiltPortal
+                {
+                    ShapeType = portal.PortalShapeType,
+                    Transform = portal.GetSaveTransform(),
+                    Destination = portal.Destination,
+                    Pinned = portal.Pinned,
+                    GroupId = groupIdMapping.GetId(portal.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(portal.Canvas),
+                })
+                .ToArray();
+        }
+
+        public static TiltGaussianCapture[] GetTiltGaussianCaptures(GroupIdMapping groupIdMapping)
+        {
+            var captures = WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
+                .Select(x => x.WidgetScript)
+                .Where(x => x.gameObject.activeSelf);
+
+            var results = captures
+                .Select(widget =>
+                {
+                    if (widget is GaussianCaptureBoxWidget box)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = StencilType.Cube,
+                            Transform = box.GetSaveTransform(),
+                            AspectRatio = box.CustomDimension,
+                            SubdivX = box.SubdivX,
+                            SubdivY = box.SubdivY,
+                            SubdivZ = box.SubdivZ,
+                            Pinned = box.Pinned,
+                            GroupId = groupIdMapping.GetId(box.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(box.Canvas),
+                        };
+                    }
+
+                    if (widget is GaussianCaptureEllipsoidWidget ellipsoid)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = ellipsoid.CaptureShapeType,
+                            Transform = ellipsoid.GetSaveTransform(),
+                            AspectRatio = ellipsoid.CustomDimension,
+                            NumRings = ellipsoid.NumRings,
+                            ViewsPerRing = ellipsoid.ViewsPerRing,
+                            Pinned = ellipsoid.Pinned,
+                            GroupId = groupIdMapping.GetId(ellipsoid.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(ellipsoid.Canvas),
+                        };
+                    }
+
+                    if (widget is GaussianCaptureSphereWidget dome)
+                    {
+                        return new TiltGaussianCapture
+                        {
+                            ShapeType = dome.CaptureShapeType,
+                            Transform = dome.GetSaveTransform(),
+                            AspectRatio = Vector3.one,
+                            NumRings = dome.NumRings,
+                            ViewsPerRing = dome.ViewsPerRing,
+                            Pinned = dome.Pinned,
+                            GroupId = groupIdMapping.GetId(dome.Group),
+                            LayerId = App.Scene.GetIndexOfCanvas(dome.Canvas),
+                        };
+                    }
+
+                    return null;
+                })
+                .Where(x => x != null)
+                .OrderBy(x => ByTranslation(x.Transform))
+                .ToArray();
+
+            return results.Length == 0 ? null : results;
         }
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
@@ -144,11 +300,16 @@ namespace TiltBrush
             {
                 TiltVideo video = new TiltVideo
                 {
+                    // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
+                    // Switching videos would have led to backwards incompatible changes in .tilt files
+                    // or an annoying legacy
                     FilePath = widget.Video.PersistentPath,
                     AspectRatio = widget.Video.Aspect,
                     Pinned = widget.Pinned,
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    TwoSided = widget.TwoSided
                 };
                 if (widget.VideoController != null)
                 {
@@ -190,6 +351,45 @@ namespace TiltBrush
             return guideIndex.OrderBy(g => g.Type).ToArray();
         }
 
+        public static TiltLights[] GetTiltLights(GroupIdMapping groupIdMapping)
+        {
+            var imports = WidgetManager.m_Instance.LightWidgets
+                .Where(w => w.gameObject.activeSelf).ToArray();
+            if (imports.Length == 0)
+            {
+                return null;
+            }
+
+            var lightIndex = new List<TiltLights>();
+            foreach (var lightWidget in imports)
+            {
+                var light = lightWidget.GetComponentInChildren<Light>();
+                var newEntry = new TiltLights();
+                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Pinned = lightWidget.Pinned;
+                newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
+                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+
+                newEntry.PunctualLightType = light.type;
+                newEntry.Intensity = light.intensity;
+                newEntry.LightColor = light.color;
+
+                if (light.type == LightType.Spot)
+                {
+                    newEntry.InnerConeAngle = light.innerSpotAngle;
+                    newEntry.OuterConeAngle = light.spotAngle;
+                }
+
+                if (light.type == LightType.Point || light.type == LightType.Spot)
+                {
+                    newEntry.Range = light.range;
+                }
+
+                lightIndex.Add(newEntry);
+            }
+            return lightIndex.ToArray();
+        }
+
         public static TiltImages75[] GetTiltImages(GroupIdMapping groupIdMapping)
         {
             var imports = WidgetManager.m_Instance.ImageWidgets
@@ -201,36 +401,40 @@ namespace TiltBrush
 
             // From the list of image widgets in the sketch, create a map that contains a unique
             // entry per image, with associated metadata (transform and pin state) stored as arrays.
-            Dictionary<string, List<WidgetMetadata>> imagesByFileName =
+            Dictionary<string, List<WidgetMetadata>> imagesByPath =
                 new Dictionary<string, List<WidgetMetadata>>();
             Dictionary<string, float> aspectRatios = new Dictionary<string, float>();
             foreach (var image in imports)
             {
-                string fileName = image.FileName;
+                string path = image.RelativePath;
                 if (image.AspectRatio == null)
                 {
                     Debug.LogError("Trying to save partially-initialized image {fileName}");
                 }
-                if (!imagesByFileName.ContainsKey(fileName))
+                if (!imagesByPath.ContainsKey(path))
                 {
-                    imagesByFileName[fileName] = new List<WidgetMetadata>();
-                    aspectRatios[fileName] = image.AspectRatio ?? 1;
+                    imagesByPath[path] = new List<WidgetMetadata>();
+                    aspectRatios[path] = image.AspectRatio ?? 1;
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = image.SaveTransform;
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                imagesByFileName[fileName].Add(newEntry);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                newEntry.twoSided = image.TwoSided;
+                newEntry.opacity = image.Opacity;
+                imagesByPath[path].Add(newEntry);
             }
 
             // Build the save metadata from our unique map.
             List<TiltImages75> imageIndex = new List<TiltImages75>();
-            foreach (var elem in imagesByFileName)
+            foreach (var elem in imagesByPath)
             {
                 var val = new TiltImages75
                 {
-                    FileName = elem.Key,
+                    FilePath = elem.Key,
+                    FileName = Path.GetFileName(elem.Key),
                     AspectRatio = aspectRatios[elem.Key]
                 };
 
@@ -241,12 +445,24 @@ namespace TiltBrush
                 val.TintStates = new bool[ordered.Length];
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
+                val.LayerIds = new int[ordered.Length];
+                val.TwoSidedFlags = new bool[ordered.Length];
+                val.ExtrusionDepths = new float[ordered.Length];
+                val.ExtrusionColors = new Color[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.PinStates[i] = ordered[i].pinned;
                     val.TintStates[i] = ordered[i].tinted;
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
+                    val.LayerIds[i] = ordered[i].layerId;
+                    val.TwoSidedFlags[i] = ordered[i].twoSided;
+                    val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
+                    val.ExtrusionColors[i] = ordered[i].extrusionColor;
+                }
+                if (ordered.Any(m => m.opacity < 1.0f))
+                {
+                    val.Opacities = ordered.Select(m => m.opacity).ToArray();
                 }
                 imageIndex.Add(val);
             }
@@ -265,12 +481,16 @@ namespace TiltBrush
             {
                 UpgradeSchema_1to2(data);
             }
+            if (data.SchemaVersion < 3)
+            {
+                UpgradeSchema_2to3(data);
+            }
         }
 
         // Converts data.Set_deprecated[] to data.ModelIndex[].InSet
         static void Upgrade_Set_ModelIndexInSet(SketchMetadata data)
         {
-            if (data.Set_deprecated == null)
+            if (data == null || data.Set_deprecated == null)
             {
                 return;
             }
@@ -342,7 +562,7 @@ namespace TiltBrush
                     for (int j = 0; j < data.ModelIndex[i].PinStates.Length; ++j)
                     {
                         data.ModelIndex[i].PinStates[j] = (data.ModelIndex[i].Location.GetLocationType() !=
-                            Model.Location.Type.PolyAssetId);
+                            Model.Location.Type.IcosaAssetId);
                     }
                 }
             }
@@ -380,6 +600,12 @@ namespace TiltBrush
                 tm75.PinStates = SafeAppend(tm75.PinStates, true);
             }
             data.SchemaVersion = 2;
+        }
+
+        static void UpgradeSchema_2to3(SketchMetadata data)
+        {
+            Debug.Assert(data.SchemaVersion == 2);
+            data.SchemaVersion = 3;
         }
     }
 } // namespace TiltBrush

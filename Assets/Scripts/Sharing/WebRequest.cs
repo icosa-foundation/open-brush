@@ -221,16 +221,12 @@ namespace TiltBrush
 #endif
         }
 
-        /// Convenience method
-        public static Task<Reply> GetAsync(string uri)
-        {
-            return new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET)
-                .SendAsync();
-        }
-
         private string m_Uri;
         private string m_Method;
+
         private OAuth2Identity m_Identity;
+        private string m_LoginToken;
+
         private byte[] m_Result = null;
         private int m_UploadedBytes = 0;
         private float? m_PreUploadProgress = null;
@@ -300,6 +296,27 @@ namespace TiltBrush
             m_Compressed = compress;
             m_Uri = uri;
             m_Identity = identity;
+        }
+
+        // identity may be null, in which case no authentication takes place
+        public WebRequest(string uri, string loginToken = null,
+                          string method = UnityWebRequest.kHttpVerbGET, bool compress = false)
+        {
+#if UNITY_EDITOR
+            Debug.Log($"WebRequest: {uri}");
+#endif
+            if (string.IsNullOrEmpty(uri))
+            {
+                throw new ArgumentException("uri");
+            }
+            if (!kEnableHttpCompression)
+            {
+                compress = false;
+            }
+            m_Method = method;
+            m_Compressed = compress;
+            m_Uri = uri;
+            m_LoginToken = loginToken;
         }
 
         /// Sends a multipart form that includes a parameter with data that comes from a stream.
@@ -421,6 +438,8 @@ namespace TiltBrush
             {
                 using (UnityWebRequest www = new UnityWebRequest(m_Uri, m_Method))
                 {
+                    // Strip trailing ampersands
+                    m_Uri = m_Uri.TrimEnd('&');
                     UploadHandler payload = payloadCreator?.Invoke();
                     www.uploadHandler = payload;
                     www.disposeUploadHandlerOnDispose = true; // the default, but just to be expicit about it
@@ -438,7 +457,11 @@ namespace TiltBrush
                     }
 
                     www.downloadHandler = new DownloadHandlerBuffer();
-                    if (m_Identity != null)
+                    if (m_LoginToken != null)
+                    {
+                        www.SetRequestHeader("Authorization", $"bearer {m_LoginToken}");
+                    }
+                    else if (m_Identity != null)
                     {
                         await m_Identity.Authenticate(www);
                     }
@@ -509,6 +532,7 @@ namespace TiltBrush
 
                     if (www.isNetworkError)
                     {
+                        Debug.LogWarning($"Network error: {m_Uri} {www.responseCode} {www.error}");
                         // This is always a bug, rather than some error on the other end
                         if (www.error == "Malformed URL")
                         {
@@ -518,8 +542,7 @@ namespace TiltBrush
                         {
                             throw new VrAssetServiceException(
                                 "Error connecting to server.",
-                                string.Format("Error connecting to {0} : {1}",
-                                    RedactUriForError(m_Uri), www.error));
+                                $"Error connecting to {RedactUriForError(m_Uri)} : {www.responseCode} {www.error}");
                         }
                         Debug.LogFormat("Network error ({0} retries remaining): {1} : {2}", retries, m_Uri, www.error);
                         await Awaiters.SecondsRealtime(BackoffSeconds(retries));
@@ -555,7 +578,14 @@ namespace TiltBrush
                     // authorization has been revoked, so just log out here.
                     if (IsAuthError(www.responseCode))
                     {
-                        m_Identity.Logout();
+                        if (m_LoginToken != null)
+                        {
+                            App.Instance.LogoutIcosa();
+                        }
+                        else if (m_Identity != null)
+                        {
+                            m_Identity.Logout();
+                        }
                         throw new VrAssetServiceException("Not authorized for login. Automatically logged out.",
                             RedactUriForError(m_Uri));
                     }

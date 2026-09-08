@@ -22,6 +22,7 @@ namespace TiltBrush
         private CanvasScript m_SquashedLayer;
         private CanvasScript m_DestinationLayer;
         private Stroke[] m_OriginalStrokes;
+        private GrabWidget[] m_ActiveWidgets;
         private bool SquashedLayerWasActive;
 
         public SquashLayerCommand(int squashedLayerIndex, int destinationLayerIndex, BaseCommand parent = null) : base(parent)
@@ -43,6 +44,7 @@ namespace TiltBrush
             m_OriginalStrokes = SketchMemoryScript.m_Instance.GetMemoryList
                 .Where(x => x.Canvas == m_SquashedLayer).ToArray();
             SquashedLayerWasActive = App.Scene.ActiveCanvas == m_SquashedLayer;
+            m_ActiveWidgets = m_SquashedLayer.GetComponentsInChildren<GrabWidget>();
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -53,6 +55,12 @@ namespace TiltBrush
             {
                 stroke.SetParentKeepWorldPosition(m_DestinationLayer);
             }
+
+            foreach (var widget in m_ActiveWidgets)
+            {
+                widget.transform.SetParent(m_DestinationLayer.transform, true);
+            }
+
             App.Scene.ActiveCanvas = m_DestinationLayer;
             App.Scene.MarkLayerAsDeleted(m_SquashedLayer);
             if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_DestinationLayer;
@@ -67,6 +75,12 @@ namespace TiltBrush
             {
                 stroke.SetParentKeepWorldPosition(m_SquashedLayer);
             }
+
+            foreach (var widget in m_ActiveWidgets)
+            {
+                widget.transform.SetParent(m_SquashedLayer.transform, true);
+            }
+
         }
     }
 

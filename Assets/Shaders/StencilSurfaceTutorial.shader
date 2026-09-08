@@ -26,7 +26,7 @@ Properties {
 
 CGINCLUDE
   #include "UnityCG.cginc"
-  #include "Assets/Shaders/Include/Brush.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
   #pragma multi_compile _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
 
@@ -42,6 +42,8 @@ CGINCLUDE
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
@@ -50,11 +52,20 @@ CGINCLUDE
     float3 normal : TEXCOORD2;
     float2 texcoord : TEXCOORD3;
     float4 screenPos : TEXCOORD4;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vert (appdata_t v)
   {
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     // Shrink the stencil slightly to prevent z fighting when the user is drawing on top of it.
     float stencilShrinkAmount = .005f;
@@ -145,11 +156,12 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
 LOD 100
 ColorMask RGB
-Lighting Off Fog { Color (0,0,0,0) }
+
 ZWrite Off
 
 // back faces
@@ -159,8 +171,10 @@ Pass {
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
     fixed4 frag (v2f i) : SV_Target
     {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       float4 c = createStencilGrid(i,2,.5,.25);
       //clip( c.x < 0.01f ? -1:1 );
       c.rgb += float3(.2,.2,.2);
@@ -178,9 +192,11 @@ Pass {
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
 
     fixed4 frag (v2f i) : SV_Target
     {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       float4 c = createStencilGrid(i,1,1,.5);
       //clip( c.x < 0.01f ? -1:1 );
       c.a = .5;
@@ -192,3 +208,4 @@ Pass {
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+

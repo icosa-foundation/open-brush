@@ -38,6 +38,11 @@ namespace TiltBrush
             {
                 m_Layer.gameObject.SetActive(false);
                 App.Scene.MarkLayerAsDeleted(m_Layer);
+                if (App.Scene.ActiveCanvas == m_Layer)
+                {
+                    // If we've deleted the active canvas the switch to main
+                    App.Scene.ActiveCanvas = App.Scene.MainCanvas;
+                }
             }
         }
 

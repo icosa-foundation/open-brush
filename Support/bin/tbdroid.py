@@ -110,7 +110,7 @@ def upload_sketch(sketchname):
 
 def profile_sketches(
     sketches, reps, csv, configtemplate, lod, skip
-):  # pylint: disable=too-many-arguments
+):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     try:
         enable_powersaving(False)
         save_config()
@@ -263,7 +263,6 @@ def save_config():
 
 
 def restore_config():
-    global configcopy  # pylint: disable=global-statement
     if configcopy:
         upload_config(configcopy)
     else:
@@ -291,7 +290,6 @@ def info(message):
 
 
 def main():
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run", help="Run Tilt Brush on the remote device.", action="store_true"

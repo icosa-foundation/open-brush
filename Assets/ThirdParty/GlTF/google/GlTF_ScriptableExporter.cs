@@ -67,6 +67,12 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
   private Dictionary<IExportableMaterial, GlTF_Technique.States> m_techniqueStates =
       new Dictionary<IExportableMaterial, GlTF_Technique.States>();
 
+  // Materials we couldn't export because we have no detailed material info for them.
+  // In practice this means experimental brushes, which aren't in exportManifest.json.
+  // Geometry using these materials is skipped rather than failing the whole export.
+  private HashSet<IExportableMaterial> m_skippedMaterials =
+      new HashSet<IExportableMaterial>();
+
   // Handles low-level write operations into glTF files.
   private GlTF_Globals m_globals;
   // Output path to .gltf file.
@@ -80,9 +86,15 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
   // List of all exported files (so far).
   public HashSet<string> ExportedFiles { get; private set; }
   private CultureInfo m_previousCulture;
+  private readonly bool m_largeMeshes;
 
   // Total number of triangles exported.
   public int NumTris { get; private set; }
+
+  /// Human-readable names of materials whose geometry was omitted from the export
+  /// because no detailed material info was available for them.
+  public IEnumerable<string> SkippedMaterialNames =>
+      m_skippedMaterials.Select(m => m.DurableName).Distinct().OrderBy(n => n);
   public GlTF_Globals G { get { return m_globals; } }
 
   /// Allows the use of absolute http:// URIs; leave this false for maximum compatibility.
@@ -93,8 +105,9 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
   // temporaryDirectory may be null.
   // If non-null, ownership of the directory is transferred.
-  public GlTF_ScriptableExporter(string temporaryDirectory, int gltfVersion) {
+  public GlTF_ScriptableExporter(string temporaryDirectory, int gltfVersion, bool largeMeshSupport) {
     m_globals = new GlTF_Globals(temporaryDirectory, gltfVersion);
+    m_largeMeshes = largeMeshSupport;
     if (TiltBrush.App.PlatformConfig.EnableExportMemoryOptimization) {
       m_globals.EnableFileStream();
     }
@@ -140,8 +153,6 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
     G.CloseFiles();
     m_meshCache.Clear();
     ExportedFiles.UnionWith(G.ExportedFiles);
-    Debug.LogFormat("Wrote files:\n  {0}", String.Join("\n  ", ExportedFiles.ToArray()));
-    Debug.LogFormat("Saved {0} triangle(s) to {1}.", NumTris, m_outPath);
     return ExportedFiles.ToArray();
   }
 
@@ -264,6 +275,17 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
       BaseMeshPayload meshPayload,
       [CanBeNull] GlTF_Node parent,
       Matrix4x4? localXf = null) {
+    // Some materials (experimental brushes) have no entry in exportManifest.json, so we can't
+    // describe them in the gltf. Skip their geometry instead of aborting the entire export.
+    if (!meshPayload.exportableMaterial.SupportsDetailedMaterialInfo) {
+      if (m_skippedMaterials.Add(meshPayload.exportableMaterial)) {
+        Debug.LogWarning(
+            $"glTF export: skipping geometry for {meshPayload.exportableMaterial.DurableName}; " +
+            "no detailed material info (not in exportManifest.json).");
+      }
+      return null;
+    }
+
     var node = ExportMeshPayload_NoMaterial(meshPayload, parent, localXf);
 
     if (node != null) {
@@ -318,7 +340,7 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
       // Populate mesh data only once.
       AddMeshDependencies(meshNameAndId, mesh.exportableMaterial, gltfMesh, gltfLayout);
-      gltfMesh.Populate(pool);
+      gltfMesh.Populate(pool, m_largeMeshes);
       G.meshes.Add(gltfMesh);
     }
 
@@ -658,9 +680,13 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
     GlTF_Primitive primitive = new GlTF_Primitive(
         new GlTF_Attributes(G, meshName, gltfLayout));
 
+    var indexSize = m_largeMeshes ?
+        GlTF_Accessor.ComponentType.UNSIGNED_INT :
+        GlTF_Accessor.ComponentType.USHORT;
+
     GlTF_Accessor indexAccessor = G.CreateAccessor(
         GlTF_Accessor.GetNameFromObject(meshName, "indices_0"),
-        GlTF_Accessor.Type.SCALAR, GlTF_Accessor.ComponentType.USHORT,
+        GlTF_Accessor.Type.SCALAR, indexSize,
         isNonVertexAttributeAccessor: true);
     primitive.indices = indexAccessor;
     if (gltfMesh.primitives.Count > 0) {

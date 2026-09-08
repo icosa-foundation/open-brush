@@ -40,12 +40,8 @@ namespace TiltBrush
             // SketchControlsScript.IsCommandActive.
             if (m_PathWidget != null)
             {
-                int? index = WidgetManager.m_Instance.GetIndexOfCameraPath(m_PathWidget);
-                if (index == null)
-                {
-                    throw new ArgumentException("SelectCameraPathButton m_PathWidget index invalid.");
-                }
-                m_CommandParam = index.Value;
+                int index = WidgetManager.m_Instance.GetActiveWidgetIndex(m_PathWidget);
+                m_CommandParam = index;
             }
             else
             {
@@ -76,16 +72,24 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
-            // Create a new path if we pressed the + icon.
+            // Enter path-creation state if we pressed the + icon. The selected creation method
+            // will create the path when the user places a knot, finishes drawing, or finishes
+            // recording a flight.
             if (m_NumActivePaths == m_PathNumber)
             {
-                m_PathWidget = WidgetManager.m_Instance.CreatePathWidget();
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
-                App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
+                if (SketchSurfacePanel.m_Instance.GetCurrentToolType() ==
+                    BaseTool.ToolType.CameraPathTool)
+                {
+                    SketchSurfacePanel.m_Instance.EnableDefaultTool();
+                }
+                WidgetManager.m_Instance.BeginCreatingCameraPath();
+            }
+            else
+            {
+                WidgetManager.m_Instance.SetCurrentCameraPath(m_PathWidget);
             }
 
             WidgetManager.m_Instance.CameraPathsVisible = true;
-            WidgetManager.m_Instance.SetCurrentCameraPath(m_PathWidget);
             SketchControlsScript.m_Instance.EatGazeObjectInput();
         }
 

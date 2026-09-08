@@ -30,16 +30,18 @@ Category {
 
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma multi_compile_particles
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Ods.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
 
       fixed4 _Color;
       float _NearFadeDistanceStart;
@@ -51,6 +53,8 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -58,6 +62,10 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float viewdist : TEXCOORD1;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -67,6 +75,11 @@ Category {
       {
         PrepForOds(v.vertex);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.vertex = UnityObjectToClipPos(v.vertex);
 
@@ -82,13 +95,15 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         float4 outColor = _Color;
         outColor *= smoothstep(_NearFadeDistanceStart, _NearFadeDistanceEnd, i.viewdist);
         outColor *= smoothstep(_FarFadeDistanceEnd, _FarFadeDistanceStart, i.viewdist);
         return outColor;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+

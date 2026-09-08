@@ -25,7 +25,11 @@ public class SecretsConfig : ScriptableObject
         Sketchfab = 1,
         Oculus = 2,
         OculusMobile = 3,
-        Pimax = 4
+        Pimax = 4,
+        PhotonFusion = 5,
+        PhotonVoice = 6,
+        Icosa = 7,
+        Vive = 8
     }
 
     [Serializable]
@@ -41,6 +45,6 @@ public class SecretsConfig : ScriptableObject
 
     public ServiceAuthData this[Service service]
     {
-        get => Secrets.FirstOrDefault(x => x.Service == service);
+        get => Secrets?.FirstOrDefault(x => x.Service == service);
     }
 }

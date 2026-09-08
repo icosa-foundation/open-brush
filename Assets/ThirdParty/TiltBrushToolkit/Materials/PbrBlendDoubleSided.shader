@@ -16,7 +16,9 @@
 // https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/schema/material.pbrMetallicRoughness.schema.json
 Shader "Poly/PbrBlendDoubleSided" {
   Properties {
+    [MainColor]
     _BaseColorFactor ("Base Color Factor", Color) = (1,1,1,1)
+    [MainTex]
     _BaseColorTex ("Base Color Texture", 2D) = "white" {}
     _MetallicFactor ("Metallic Factor", Range(0,1)) = 1.0
     _RoughnessFactor ("Roughness Factor", Range(0,1)) = 1.0
@@ -33,10 +35,10 @@ Shader "Poly/PbrBlendDoubleSided" {
 
     // Selection
     #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
-    #include "Assets/Shaders/Include/MobileSelection.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
     // ODS Render Support
     #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
-    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
     // Use shader model 3.0 target, because we use VFACE and to get nicer looking lighting
     #pragma target 3.0

@@ -23,8 +23,10 @@ Properties {
 //
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags {"Queue"="AlphaTest+30"}
   Pass {
+    Tags { "LightMode"="SRPDefaultUnlit" }
     ZTest Always
     ZWrite Off
     ColorMask 0
@@ -38,32 +40,47 @@ Category {
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/ColorSpace.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v) {
         v2f o;
-      o.vertex = UnityObjectToClipPos(v.vertex);
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
+        o.vertex = UnityObjectToClipPos(v.vertex);
         return o;
       }
 
       void frag (v2f i, out fixed4 col : SV_Target) {
-     col = float4(1,1,1,1);
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+        col = float4(1,1,1,1);
       }
       ENDCG
       }
     }
   }
 }
+

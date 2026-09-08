@@ -27,7 +27,8 @@ class BuildFailed(Error):
 
 class BadVersionCode(BuildFailed):
     """The Oculus store had a build with a code >= the one we uploaded.
-    self.desired_version_code is the lowest new version code that the store will accept."""
+    self.desired_version_code is the lowest new version code that the store will accept.
+    """
 
     def __init__(self, message, desired_version_code):
         super().__init__(message)

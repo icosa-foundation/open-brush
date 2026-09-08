@@ -19,8 +19,9 @@ Properties {
     _Slider01 ("Slider", Range(0,1)) = 0.5
 }
 CGINCLUDE
-    #include "Assets/Shaders/Include/ColorSpace.cginc"
-  #include "Assets/Shaders/Include/Hdr.cginc"
+    #include "UnityCG.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
     float _Slider01;
     fixed4 _Color;
 
@@ -28,15 +29,22 @@ CGINCLUDE
         float4 vertex : POSITION;
         float2 texcoord : TEXCOORD0;
         float4 tangent : TANGENT;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f {
         float2 texcoord : TEXCOORD0;
         float4 pos : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Tags {
         "Queue"="AlphaTest+20"
         "IgnoreProjector"="True"
@@ -48,36 +56,13 @@ SubShader {
     LOD 100
 
     Pass {
+        Name "ForwardUnlit"
+        Tags { "LightMode"="UniversalForward" }
         CGPROGRAM
 
         #pragma vertex vert
         #pragma fragment frag
-
-        v2f vert(appdata_t v)
-        {
-            v2f o;
-            v.vertex.z += v.vertex.z + 0.05;
-            o.pos = UnityObjectToClipPos(v.vertex);
-            o.texcoord = v.texcoord;
-            return o;
-        }
-
-        // Tilt Brush "circle" mode
-        fixed4 frag(v2f i) : SV_Target
-        {
-            float2 rang = xy_to_polar(i.texcoord);
-            clip(1 - rang.x);
-            return encodeHdr(fixed4(0,0,0,0));
-        }
-
-        ENDCG
-        }
-
-    Pass {
-        CGPROGRAM
-
-        #pragma vertex vert
-        #pragma fragment frag
+        #pragma multi_compile_instancing
 
         float _LogVMax;
         uniform float _LogVMin;
@@ -85,6 +70,12 @@ SubShader {
         v2f vert (appdata_t v)
         {
             v2f o;
+
+            UNITY_SETUP_INSTANCE_ID(v);
+            UNITY_INITIALIZE_OUTPUT(v2f, o);
+            UNITY_TRANSFER_INSTANCE_ID(v, o);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
             o.pos = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;
             return o;
@@ -98,6 +89,7 @@ SubShader {
 
         // Slider: HDR "value". Polar.
         float4 frag (v2f i) : SV_Target {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
             float2 rang = xy_to_polar(i.texcoord);
             clip(1 - rang.x);
             float3 base_rgb = hue33_to_base_rgb(rang.y * 6);

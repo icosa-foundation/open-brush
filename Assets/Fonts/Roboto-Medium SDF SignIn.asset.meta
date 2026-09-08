@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Fonts/Roboto-Medium SDF SignIn.asset.meta
 guid: 4f59e930b73ea8b4db1873e2a28a80df
+========
+guid: 1a2b3c4d5e6f70801c2d3e4f50617283
+>>>>>>>> main:Assets/Materials/ScriptedToolPreviewCube.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 0

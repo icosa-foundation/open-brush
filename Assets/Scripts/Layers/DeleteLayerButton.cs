@@ -19,7 +19,7 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().DeleteLayer(transform.parent.gameObject);
+            GetComponentInParent<LayerUI_Manager>().DeleteLayer(m_CommandParam);
         }
 
     }

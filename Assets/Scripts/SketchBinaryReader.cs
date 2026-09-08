@@ -100,6 +100,13 @@ namespace TiltBrush
             return new Quaternion(Float(), Float(), Float(), Float());
         }
 
+
+        public Guid ReadGuid()
+        {
+            int bytesRead = m_stream.Read(m_buf16, 0, 16);
+            return new Guid(m_buf16);
+        }
+
         private void LazyCreateBigBuffer()
         {
             if (m_bufBig == null)

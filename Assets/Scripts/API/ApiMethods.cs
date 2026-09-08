@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +13,27 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private static readonly HashSet<string> kSupportedReferenceImageExtensions =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".hdr",
+                ".svg"
+            };
 
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
@@ -32,7 +43,11 @@ namespace TiltBrush
         //     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         // }
 
-        [ApiEndpoint("listenfor.strokes", "Adds the url of an app that wants to receive the data for a stroke as each one is finished")]
+        [ApiEndpoint(
+            "listenfor.strokes",
+            "Adds the url of an app that wants to receive the data for a stroke as each one is finished",
+            "http://localhost:8000/"
+        )]
         public static void AddListener(string url)
         {
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
@@ -50,6 +65,510 @@ namespace TiltBrush
             OpenUserFolder(App.UserExportPath());
         }
 
+        [ApiEndpoint(
+            "capture.snapshot",
+            "Saves a MultiCam snapshot to the user's Snapshots folder",
+            "snapshot.png,1024,768,1,true"
+        )]
+        public static string CaptureSnapshot(
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            string includePostProcessing = "")
+        {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot");
+
+            string fullPath = BuildCapturePath(filename, "snapshot.png", ".png");
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            if (rig == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: MultiCamCaptureRig is missing.");
+                return null;
+            }
+
+            ScreenshotManager rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+            if (rMgr == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: snapshot ScreenshotManager is missing.");
+                return null;
+            }
+
+            RenderTexture tmp = null;
+            RenderWrapper wrapper = null;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+
+                tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper != null ? wrapper.SuperSampling : 1f;
+                if (wrapper != null)
+                {
+                    wrapper.SuperSampling = superSampling;
+                }
+
+                try
+                {
+                    rMgr.RenderToTexture(tmp, includePostProcessing: usePostProcessing);
+                }
+                finally
+                {
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                }
+
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
+                }
+
+                Debug.Log(
+                    $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
+                    $"superSampling={superSampling} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (tmp != null)
+                {
+                    RenderTexture.ReleaseTemporary(tmp);
+                }
+
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.autogif",
+            "Queues an Auto GIF capture to the user's Snapshots folder",
+            "autogif.gif,true"
+        )]
+        public static string CaptureAutoGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "autogif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "autogif.gif", ".gif");
+            return cam.CaptureAutoGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.timegif",
+            "Queues a Time GIF capture to the user's Snapshots folder",
+            "timegif.gif,true"
+        )]
+        public static string CaptureTimeGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "timegif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "timegif.gif", ".gif");
+            return cam.CaptureTimeGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.saveicon",
+            "Renders the save-icon/sketch-thumbnail camera to a PNG in the user's Snapshots folder",
+            "saveicon.png"
+        )]
+        public static string CaptureSaveIcon(string filename)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            string fullPath = BuildCapturePath(filename, "saveicon.png", ".png");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                SketchControlsScript.m_Instance.GenerateBestGuessSaveIcon();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(
+                        fs,
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                        bSaveAsPng: true);
+                }
+
+                Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Save-icon capture failed: {e}");
+                return null;
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.dropcam",
+            "Renders the spectator/dropcam camera to a PNG in the user's Snapshots folder",
+            "dropcam.png,1024,576,true"
+        )]
+        public static string CaptureDropCam(
+            string filename,
+            int width = 1024,
+            int height = 576,
+            string includePostProcessing = "")
+        {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "dropcam");
+
+            string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
+            DropCamWidget dropCam = null;
+            bool wasActive = false;
+            bool shouldRestoreDropCam = false;
+            try
+            {
+                dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                wasActive = dropCam.gameObject.activeSelf;
+                shouldRestoreDropCam = true;
+                dropCam.ShowInstantly(true);
+
+                Camera camera = dropCam.GetComponentInChildren<Camera>(includeInactive: true);
+                if (camera == null)
+                {
+                    Debug.LogError($"{logPrefix} Dropcam capture failed: camera is missing.");
+                    return null;
+                }
+
+                RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
+
+                Debug.Log(
+                    $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
+                    $"post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Dropcam capture failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (shouldRestoreDropCam && dropCam != null)
+                {
+                    dropCam.ShowInstantly(wasActive);
+                }
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.video",
+            "Records a short MultiCam video-camera frame-sequence smoke test into the user's Videos folder",
+            "video.mp4,1.0,true"
+        )]
+        public static string CaptureVideo(
+            string filename,
+            float seconds = 1.0f,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "video");
+
+            string fullPath = BuildCapturePath(filename, "video.mp4", ".mp4", App.VideosPath());
+            string outputDirectory = StillFrameSequenceExporter.GetOutputDirectory(fullPath);
+            App.Instance.StartCoroutine(CaptureVideoCoroutine(
+                fullPath,
+                Mathf.Max(0.1f, seconds),
+                usePostProcessing));
+            Debug.Log(
+                $"{logPrefix} Queued video frame-sequence capture path={outputDirectory} " +
+                $"seconds={seconds} post={usePostProcessing}.");
+            return outputDirectory;
+        }
+
+        [ApiEndpoint(
+            "capture.360",
+            "Queues a 360/ODS snapshot to the user's Snapshots folder",
+            "snapshot360.png,1024,true"
+        )]
+        public static string Capture360(
+            string filename,
+            int width = 1024,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "360");
+
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = "snapshot360.png";
+            }
+            if (!safeFilename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += ".png";
+            }
+
+            try
+            {
+                TrTransform captureTransform = TrTransform.T(new Vector3(0f, 12f, 3f));
+                AppApiWrapper.Take360Snapshot(
+                    captureTransform,
+                    safeFilename,
+                    width,
+                    usePostProcessing);
+                string fullPath = Path.Combine(App.SnapshotPath(), safeFilename);
+                Debug.Log(
+                    $"{logPrefix} Queued 360 capture path={fullPath} " +
+                    $"width={width} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} 360 capture failed: {e}");
+                return null;
+            }
+        }
+
+        private static MultiCamTool GetMultiCamToolForCaptureApi(string logPrefix)
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: SketchSurfacePanel is missing.");
+                return null;
+            }
+
+            MultiCamTool cam =
+                SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+            if (cam == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: MultiCamTool is missing.");
+                return null;
+            }
+
+            return cam;
+        }
+
+        private static bool ParseCapturePostProcessingOption(
+            string value,
+            string logPrefix,
+            string captureKind)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (bool.TryParse(value, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"{logPrefix} Invalid post-processing value '{value}' for {captureKind}; " +
+                $"using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
+        }
+
+        private static IEnumerator CaptureVideoCoroutine(
+            string fullPath,
+            float seconds,
+            bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool initialVideoObjectActive = rig.IsCaptureObjectEnabled(MultiCamStyle.Video);
+            bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
+            bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            VideoRecorder ownedVideoRecording = null;
+            StillFrameSequenceExporter ownedStillFrameExporter = null;
+
+            bool OwnsActiveCapture()
+            {
+                return (ownedVideoRecording != null &&
+                        ReferenceEquals(VideoRecorderUtils.ActiveVideoRecording, ownedVideoRecording)) ||
+                    (ownedStillFrameExporter != null &&
+                     ReferenceEquals(VideoRecorderUtils.ActiveStillFrameExporter, ownedStillFrameExporter));
+            }
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCaptureObject(MultiCamStyle.Video, true);
+
+                ScreenshotManager manager = rig.ManagerFromStyle(MultiCamStyle.Video);
+                VideoRecorder recorder = manager.GetComponent<VideoRecorder>();
+                Camera camera = manager.LeftEye;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = true;
+                App.UserConfig.Video.UsePngForFrameSequence = true;
+
+                if (!VideoRecorderUtils.StartVideoCapture(fullPath, recorder, null))
+                {
+                    Debug.LogError($"{logPrefix} Video capture failed to start path={fullPath}.");
+                    yield break;
+                }
+
+                ownedVideoRecording = VideoRecorderUtils.ActiveVideoRecording;
+                ownedStillFrameExporter = VideoRecorderUtils.ActiveStillFrameExporter;
+
+                float endTime = Time.time + seconds;
+                float captureTime = 0f;
+                while (Time.time < endTime)
+                {
+                    VideoRecorderUtils.SerializerNewUsdFrame();
+                    if (ownedStillFrameExporter != null)
+                    {
+                        captureTime += 1f / App.UserConfig.Video.FPS;
+                        ownedStillFrameExporter.CaptureFrame(captureTime, includePostProcessing);
+                    }
+                    yield return null;
+                }
+
+                if (OwnsActiveCapture())
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+                ownedVideoRecording = null;
+                ownedStillFrameExporter = null;
+                Debug.Log(
+                    $"{logPrefix} Video frame-sequence capture finished " +
+                    $"path={StillFrameSequenceExporter.GetOutputDirectory(fullPath)} " +
+                    $"seconds={seconds} post={includePostProcessing}.");
+            }
+            finally
+            {
+                if (OwnsActiveCapture())
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = forceFrameSequenceRestore;
+                App.UserConfig.Video.UsePngForFrameSequence = usePngRestore;
+                rig.EnableCaptureObject(MultiCamStyle.Video, initialVideoObjectActive);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        private static void RenderCameraToPng(
+            Camera camera, string fullPath, int width, int height, bool includePostProcessing)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            RenderTexture target = RenderTexture.GetTemporary(
+                width,
+                height,
+                24,
+                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
+            RenderTexture previousTarget = camera.targetTexture;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            try
+            {
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                camera.targetTexture = target;
+                camera.Render();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, target, bSaveAsPng: true);
+                }
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        private static string BuildCapturePath(string filename, string defaultFilename, string extension)
+        {
+            return BuildCapturePath(filename, defaultFilename, extension, App.SnapshotPath());
+        }
+
+        private static string BuildCapturePath(
+            string filename, string defaultFilename, string extension, string folder)
+        {
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = defaultFilename;
+            }
+            if (!safeFilename.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += extension;
+            }
+
+            return Path.Combine(folder, safeFilename);
+        }
+
         private static void OpenUserFolder(string path)
         {
             // Launch external window and tell the user we did so
@@ -64,78 +583,163 @@ namespace TiltBrush
             }
         }
 
-        [ApiEndpoint("spectator.move.to", "Moves the spectator camera to the given position")]
+        [ApiEndpoint(
+            "spectator.move.to",
+            "Moves the spectator camera to the given position",
+            "1,1,1"
+        )]
         public static void MoveSpectatorTo(Vector3 position)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             cam.transform.position = position;
         }
 
-        [ApiEndpoint("user.move.to", "Moves the user to the given position")]
-        public static void MoveUserTo(Vector3 position)
-        {
-            TrTransform pose = App.Scene.Pose;
-            pose.translation = position;
-            float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-            pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
-            App.Scene.Pose = pose;
-        }
-
-        [ApiEndpoint("spectator.move.by", "Moves the spectator camera by the given amount")]
+        [ApiEndpoint(
+            "spectator.move.by",
+            "Moves the spectator camera by the given amount",
+            "1,1,1"
+        )]
         public static void MoveSpectatorBy(Vector3 amount)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             cam.transform.position += amount;
         }
 
-        [ApiEndpoint("user.move.by", "Moves the user by the given amount")]
-        public static void MoveUserBy(Vector3 amount)
+        [ApiEndpoint(
+            "user.move.to",
+            "Moves the user to the given position",
+            "1,1,1"
+        )]
+        public static void MoveUserTo(Vector3 position)
         {
             TrTransform pose = App.Scene.Pose;
-            pose.translation -= amount;
+            pose.translation = -position;
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
             pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
         }
 
-        [ApiEndpoint("spectator.turn.y", "Rotates the spectator camera left or right.")]
+        [ApiEndpoint(
+            "user.move.by",
+            "Moves the user by the given amount",
+            "1,1,1"
+        )]
+        public static void MoveUserBy(Vector3 amount)
+        {
+            TrTransform pose = App.Scene.Pose;
+            pose.translation -= amount;
+            App.Scene.Pose = pose;
+        }
+
+        [ApiEndpoint(
+            "spectator.turn.y",
+            "Rotates the spectator camera left or right.",
+            "45"
+        )]
         public static void SpectatorYaw(float angle)
         {
             _ChangeSpectatorBearing(angle, Vector3.up);
         }
 
-        [ApiEndpoint("spectator.turn.x", "Rotates the spectator camera up or down.")]
+        [ApiEndpoint(
+            "spectator.turn.x",
+            "Rotates the spectator camera up or down.",
+            "45"
+        )]
         public static void SpectatorPitch(float angle)
         {
             _ChangeSpectatorBearing(angle, Vector3.left);
         }
 
-        [ApiEndpoint("spectator.turn.z", "Tilts the angle of the spectator camera clockwise or anticlockwise.")]
+        [ApiEndpoint(
+            "spectator.turn.z",
+            "Tilts the angle of the spectator camera clockwise or anticlockwise.",
+            "45"
+        )]
         public static void SpectatorRoll(float angle)
         {
             _ChangeSpectatorBearing(angle, Vector3.forward);
         }
 
-        // [ApiEndpoint("user.turn.y", "Rotates the user camera left or right.")]
-        // public static void UserYaw(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.up);
-        // }
+        [ApiEndpoint(
+            "user.turn.y",
+            "Rotates the user camera left or right.",
+            "45"
+        )]
+        public static void UserYaw(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.up);
+        }
 
-        // [ApiEndpoint("user.turn.x", "Rotates the user camera up or down. (monoscopic mode only)")]
-        // public static void UserPitch(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.left);
-        // }
+        [ApiEndpoint(
+            "user.turn.x",
+            "Rotates the user camera up or down. (monoscopic mode only)",
+            "45"
+        )]
+        public static void UserPitch(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.left);
+        }
 
-        // [ApiEndpoint("user.turn.z", "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)")]
-        // public static void UserRoll(float angle)
-        // {
-        //     ChangeUserBearing(angle, Vector3.forward);
-        // }
+        [ApiEndpoint(
+            "user.turn.z",
+            "Tilts the angle of the user camera clockwise or anticlockwise. (monoscopic mode only)",
+            "45"
+        )]
+        public static void UserRoll(float angle)
+        {
+            ChangeUserBearing(angle, Vector3.forward);
+        }
 
-        [ApiEndpoint("spectator.direction", "Points the spectator camera to look in the specified direction. Angles are given in x,y,z degrees")]
+        [ApiEndpoint(
+            "scene.scale.to",
+            "Sets the scene scale to the given value",
+            "0.5"
+        )]
+        public static void ScaleSceneTo(float scale)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.scale = scale;
+            App.Scene.Pose = lookPose;
+        }
+
+        [ApiEndpoint(
+            "scene.scale.by",
+            "Scales the scene by the given amount",
+            "1.5"
+        )]
+        public static void ScaleSceneBy(float amount)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.scale *= amount;
+            App.Scene.Pose = lookPose;
+        }
+
+        public static void ChangeUserBearing(float angle, Vector3 axis)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            lookPose.rotation *= Quaternion.AngleAxis(-angle, axis);
+            App.Scene.Pose = lookPose;
+        }
+
+        [ApiEndpoint(
+            "spectator.direction",
+            "Points the spectator camera to look in the specified direction. Angles are given in x,y,z degrees",
+            "45,45,0"
+        )]
         public static void SpectatorDirection(Vector3 direction)
+        {
+            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
+            var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
+            cam.transform.rotation = qNewRotation;
+        }
+
+        [ApiEndpoint(
+            "user.direction",
+            "Points the user camera to look in the specified direction. Angles are given in x,y,z degrees. (Monoscopic mode only)",
+            "45,45,0"
+        )]
+        public static void UserDirection(Vector3 direction)
         {
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
@@ -143,32 +747,34 @@ namespace TiltBrush
             App.Scene.Pose = lookPose;
         }
 
-        // [ApiEndpoint("user.direction", "Points the user camera to look in the specified direction. Angles are given in x,y,z degrees. (Monoscopic mode only)")]
-        // public static void UserDirection(Vector3 direction)
-        // {
-        //     TrTransform lookPose = App.Scene.Pose;
-        //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-        //     lookPose.rotation = qNewRotation;
-        //     App.Scene.Pose = lookPose;
-        // }
-
-        [ApiEndpoint("spectator.look.at", "Points the spectator camera towards a specific point")]
+        [ApiEndpoint(
+            "spectator.look.at",
+            "Points the spectator camera towards a specific point",
+            "1,2,3"
+        )]
         public static void SpectatorLookAt(Vector3 position)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
             cam.transform.LookAt(position);
         }
 
-        // [ApiEndpoint("user.look.at", "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)")]
-        // public static void UserLookAt(Vector3 position)
-        // {
-        //     TrTransform lookPose = App.Scene.Pose;
-        //     Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-        //     lookPose.rotation = qNewRotation;
-        //     App.Scene.Pose = lookPose;
-        // }
+        [ApiEndpoint(
+            "user.look.at",
+            "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)",
+            "1,2,3"
+        )]
+        public static void UserLookAt(Vector3 direction)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
+            lookPose.rotation = qNewRotation;
+            App.Scene.Pose = lookPose;
+        }
 
-        [ApiEndpoint("spectator.mode", "Sets the spectator camera mode to one of Stationary, SlowFollow, Wobble, Circular")]
+        [ApiEndpoint(
+            "spectator.mode",
+            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular",
+            "stationary")]
         public static void SpectatorMode(string mode)
         {
             var cam = SketchControlsScript.m_Instance.GetDropCampWidget();
@@ -186,34 +792,71 @@ namespace TiltBrush
                 case "circular":
                     cam.SetMode(DropCamWidget.Mode.Circular);
                     break;
+                case "camerapath":
+                    cam.SetMode(DropCamWidget.Mode.CameraPath);
+                    break;
             }
         }
 
-        [ApiEndpoint("spectator.show", "Unhides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
-        public static void SpectatorShow(string thing)
-        {
-            _SpectatorShowHide(thing, true);
-        }
-
-        [ApiEndpoint("spectator.hide", "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui")]
+        [ApiEndpoint(
+            "spectator.hide",
+            "Hides the chosen type of elements from the spectator camera (widgets, strokes, selection, headset, panels, ui",
+            "panels")]
         public static void SpectatorHide(string thing)
         {
-            _SpectatorShowHide(thing, false);
+            _SpectatorShowHideFromFriendlyName(thing, false);
         }
 
-        [ApiEndpoint("brush.move.to", "Moves the brush to the given coordinates")]
+        [ApiEndpoint(
+            "brush.move.to",
+            "Moves the brush to the given coordinates",
+            "widgets"
+        )]
         public static void BrushMoveTo(Vector3 position)
         {
             ApiManager.Instance.BrushPosition = position;
         }
 
-        [ApiEndpoint("brush.move.by", "Moves the brush by the given amount")]
+        [ApiEndpoint(
+            "brush.move.to.hand",
+            "Moves the brush to the given hand (l or r",
+            "r")]
+        public static void BrushMoveToHand(string hand, bool alsoRotate = false)
+        {
+            Transform tr;
+            if (hand.ToLower().StartsWith("l"))
+            {
+                tr = InputManager.Wand.Transform;
+
+            }
+            else
+            {
+                tr = PointerManager.m_Instance.MainPointer.transform;
+            }
+
+            ApiManager.Instance.BrushPosition = tr.position;
+
+            if (alsoRotate)
+            {
+                ApiManager.Instance.BrushRotation = tr.rotation;
+            }
+        }
+
+        [ApiEndpoint(
+            "brush.move.by",
+            "Moves the brush by the given amount",
+            "1,1,1"
+        )]
         public static void BrushMoveBy(Vector3 offset)
         {
             ApiManager.Instance.BrushPosition += offset;
         }
 
-        [ApiEndpoint("brush.move", "Moves the brush forward by 'distance' without drawing a line")]
+        [ApiEndpoint(
+            "brush.move",
+            "Moves the brush forward by 'distance' without drawing a line",
+            "1"
+        )]
         public static void BrushMove(float distance)
         {
             var currentPosition = ApiManager.Instance.BrushPosition;
@@ -222,45 +865,66 @@ namespace TiltBrush
             ApiManager.Instance.BrushPosition = newPosition;
         }
 
-        [ApiEndpoint("brush.draw", "Moves the brush forward by 'distance' and draws a line")]
+        [ApiEndpoint(
+            "brush.draw",
+            "Moves the brush forward by 'distance' and draws a line",
+            "2"
+        )]
         public static void BrushDraw(float distance)
         {
             Vector3 directionVector = ApiManager.Instance.BrushRotation * Vector3.forward;
             var end = directionVector * distance;
-            var path = new List<List<Vector3>>
-            {
-                new List<Vector3>{Vector3.zero, end}
-            };
-            var origin = ApiManager.Instance.BrushPosition;
-            DrawStrokes.MultiPositionPathsToStrokes(path, null, null, origin);
+            var path = new List<List<TrTransform>> { new List<TrTransform> { TrTransform.identity, TrTransform.T(end) } };
+            DrawStrokes.DrawNestedTrList(
+                path,
+                TrTransform.T(ApiManager.Instance.BrushPosition),
+                smoothing: ApiManager.Instance.PathSmoothing
+            );
             ApiManager.Instance.BrushPosition += end;
         }
 
-        [ApiEndpoint("brush.turn.y", "Changes the brush direction to the left or right. Angle is measured in degrees")]
+        [ApiEndpoint(
+            "brush.turn.y",
+            "Changes the brush direction to the left or right. Angle is measured in degrees",
+            "45"
+        )]
         public static void BrushYaw(float angle)
         {
             _ChangeBrushBearing(angle, Vector3.up);
         }
 
-        [ApiEndpoint("brush.turn.x", "Changes the brush direction up or down. Angle is measured in degrees")]
+        [ApiEndpoint(
+            "brush.turn.x",
+            "Changes the brush direction up or down. Angle is measured in degrees",
+            "45"
+        )]
         public static void BrushPitch(float angle)
         {
             _ChangeBrushBearing(angle, Vector3.left);
         }
 
-        [ApiEndpoint("brush.turn.z", "Rotates the brush clockwise or anticlockwise. Angle is measured in degrees")]
+        [ApiEndpoint(
+            "brush.turn.z",
+            "Rotates the brush clockwise or anticlockwise. Angle is measured in degrees",
+            "45"
+        )]
         public static void BrushRoll(float angle)
         {
             _ChangeBrushBearing(angle, Vector3.forward);
         }
 
-        [ApiEndpoint("brush.look.at", "Changes the brush direction to look at the specified point")]
+        [ApiEndpoint(
+            "brush.look.at",
+            "Changes the brush direction to look at the specified point",
+            "1,2,3"
+        )]
         public static void BrushLookAt(Vector3 direction)
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
         }
 
-        [ApiEndpoint("brush.look.forwards", "Changes the brush direction to look forwards")]
+        [ApiEndpoint(
+            "brush.look.forwards", "Changes the brush direction to look forwards")]
         public static void BrushLookForwards()
         {
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.forward, Vector3.up);
@@ -296,14 +960,13 @@ namespace TiltBrush
             ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.back, Vector3.up);
         }
 
-        [ApiEndpoint("brush.home", "Resets the brush position and direction")]
+        [ApiEndpoint("brush.home.reset", "Resets the brush position and direction")]
         public static void BrushHome()
         {
-            BrushMoveTo(ApiManager.Instance.BrushOrigin);
-            ApiManager.Instance.BrushRotation = ApiManager.Instance.BrushInitialRotation;
+            ApiManager.Instance.ResetBrushTransform();
         }
 
-        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home")]
+        [ApiEndpoint("brush.home.set", "Sets the current brush position and direction as the new home. This persists in new sketches")]
         public static void BrushSetHome()
         {
             ApiManager.Instance.BrushOrigin = ApiManager.Instance.BrushPosition;
@@ -333,26 +996,155 @@ namespace TiltBrush
 
         private static ReferenceImage _LoadReferenceImage(string location)
         {
-            location = Path.Combine(App.MediaLibraryPath(), "Images", location);
+            location = GetSafeRelativePathInDirectory(
+                App.ReferenceImagePath(), location, "reference image path");
             var image = new ReferenceImage(location);
-            bool result;
-            int timeout = 0;
-            do
-            {
-                result = image.RequestLoad();
-            } while (result == false && timeout++ < 100000);
+            image.SynchronousLoad();
             return image;
         }
 
-        [ApiEndpoint("image.import", "Imports an image given a url or a filename in Media Library\\Images")]
-        public static void ImportImage(string location)
+        [ApiEndpoint(
+            "text.add",
+            "Adds a text widget to the sketch",
+            "Hello world!"
+        )]
+        public static void AddText(string text)
         {
-            var image = _LoadReferenceImage(location);
-            var tr = new TrTransform();
-            tr.translation = ApiManager.Instance.BrushPosition;
-            tr.rotation = ApiManager.Instance.BrushRotation;
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, tr);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.TextWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
 
+            var textWidget = cmd.Widget as TextWidget;
+            if (textWidget != null)
+            {
+                textWidget.Text = text;
+                textWidget.Show(true);
+                cmd.SetWidgetCost(textWidget.GetTiltMeterCost());
+            }
+
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+        }
+
+        // TODO
+        // [ApiEndpoint(
+        //     "text.extrude",
+        //     "Sets a text object to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
+        //     "-1,0.75,0.5,0.25,0")]
+        // public static void ExtrudeText(int index, float depth, Vector3 rgb)
+        // {
+        //     var textWidget = _GetActiveTextWidget(index);
+        //     textWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
+        // }
+
+        [ApiEndpoint(
+            "video.import",
+            "Imports a video given a url or a filename in Media Library\\Videos",
+            "animated-logo.mp4"
+        )]
+        public static VideoWidget ImportVideo(string location)
+        {
+            return ImportVideo(location, allowRedirects: true);
+        }
+
+        internal static VideoWidget ImportVideo(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
+            {
+                location = _DownloadMediaFileFromUrl(
+                    location, "Videos", allowRedirects, requiredContentTypePrefix);
+            }
+            location = GetSafeRelativePathInDirectory(
+                App.VideoLibraryPath(), location, "video path");
+
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var videoWidget = cmd.Widget as VideoWidget;
+            if (videoWidget != null)
+            {
+                // Set consistent size regardless of scene scale, then enable preservation
+                float consistentSize = 2.0f;
+                videoWidget.SetSignedWidgetSize(consistentSize);
+
+                // Now enable preservation to prevent async overrides
+                videoWidget.SetPreserveCustomSize(true);
+
+                var video = new ReferenceVideo(location);
+                videoWidget.SetVideo(video);
+                videoWidget.Show(true);
+                cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
+                // videoWidget.VideoController.Playing = true;
+                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => { }));
+            }
+            return videoWidget;
+        }
+
+        [ApiEndpoint(
+            "skybox.import",
+            "Sets the skybox from either a url or a filename in Media Library\\BackgroundImages (Images loaded from a url are saved locally first)",
+            "panorama.jpg"
+        )]
+        public static void ImportSkybox(string location)
+        {
+            ImportSkybox(location, allowRedirects: true);
+        }
+
+        internal static void ImportSkybox(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
+            {
+                location = _DownloadMediaFileFromUrl(
+                    location, "BackgroundImages", allowRedirects, requiredContentTypePrefix);
+            }
+            SceneSettings.m_Instance.LoadCustomSkybox(location);
+        }
+
+        [ApiEndpoint(
+            "image.import",
+            "Imports an image given a url or a filename in Media Library\\Images (Images loaded from a url are saved locally first)",
+            "OpenBrushLogo.png"
+        )]
+        public static ImageWidget ImportImage(string location)
+        {
+            return ImportImage(location, allowRedirects: true);
+        }
+
+        internal static ImageWidget ImportImage(
+            string location,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            if (IsHttpLocation(location))
+            {
+                location = _DownloadMediaFileFromUrl(
+                    location, "Images", allowRedirects, requiredContentTypePrefix);
+            }
+            var imageWidget = _ImportImage(location, _CurrentBrushTransform());
+            if (imageWidget != null)
+            {
+                // Set consistent size regardless of scene scale
+                float consistentSize = 2.0f;
+                imageWidget.SetSignedWidgetSize(consistentSize);
+                // Now enable preservation to prevent async overrides
+                imageWidget.SetPreserveCustomSize(true);
+
+            }
+            WidgetManager.m_Instance.WidgetsDormant = false;
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            SelectionManager.m_Instance.RemoveFromSelection(false);
+            return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf)
+        {
+            ReferenceImage image = _LoadReferenceImage(location);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, xf, forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             var imageWidget = cmd.Widget as ImageWidget;
             if (imageWidget != null)
@@ -361,17 +1153,133 @@ namespace TiltBrush
                 imageWidget.Show(true);
                 cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
             }
-
-            WidgetManager.m_Instance.WidgetsDormant = false;
-            SketchControlsScript.m_Instance.EatGazeObjectInput();
-            SelectionManager.m_Instance.RemoveFromSelection(false);
+            return imageWidget;
         }
 
-        [ApiEndpoint("environment.type", "Sets the current environment")]
+        public static ImageWidget _ImportImage(string location, TrTransform xf, CanvasScript targetCanvas)
+        {
+            if (targetCanvas == null)
+            {
+                return _ImportImage(location, xf);
+            }
+
+            var previousCanvas = App.Scene.ActiveCanvas;
+            try
+            {
+                App.Scene.ActiveCanvas = targetCanvas;
+                return _ImportImage(location, xf);
+            }
+            finally
+            {
+                App.Scene.ActiveCanvas = previousCanvas;
+            }
+        }
+
+        internal static bool IsHttpLocation(string location)
+        {
+            return location != null &&
+                (location.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    location.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+        }
+
+        // TODO - currently the polygon collider isn't using the imported SVG sprite
+        // [ApiEndpoint(
+        //     "image.extrude",
+        //     "Sets an SVG image to be extruded by a given depth and color. Set depth to 0 to remove extrusion.",
+        //     "-1,0.75,0.5,0.25,0")]
+        // public static void ExtrudeImage(int index, float depth, Vector3 rgb)
+        // {
+        //     var imageWidget = _GetActiveImage(index);
+        //     imageWidget.SetExtrusion(depth, new Color(rgb.x, rgb.y, rgb.z));
+        // }
+
+        [ApiEndpoint(
+            "environment.type",
+            "Sets the current environment",
+            "pistachio"
+        )]
         public static void SetEnvironment(string name)
         {
-            Environment env = EnvironmentCatalog.m_Instance.AllEnvironments.First(x => x.name == name);
+            Environment env = EnvironmentCatalog.m_Instance.AllEnvironments
+                .First(x => x.name.ToLower() == name.ToLower());
             SceneSettings.m_Instance.SetDesiredPreset(env, false, true);
+        }
+
+        public static BasePanel.PanelType _PanelByName(string name)
+        {
+            BasePanel.PanelType panelType = (BasePanel.PanelType)Enum.Parse(typeof(BasePanel.PanelType), name, true);
+            return panelType;
+        }
+
+        [ApiEndpoint(
+            "panel.open",
+            "Opens a given panel at the given position",
+            "scripts,4,12,4"
+        )]
+        public static void OpenPanel(string name, float x, float y, float z)
+        {
+            SketchControlsScript.m_Instance.OpenPanelOfType(_PanelByName(name), TrTransform.T(new Vector3(x, y, z)), true);
+        }
+
+        [ApiEndpoint(
+            "panel.close",
+            "Closes a given panel",
+            "scripts"
+        )]
+        public static void ClosePanel(string name)
+        {
+            PanelManager.m_Instance.HidePanel(_PanelByName(name));
+        }
+
+        [ApiEndpoint(
+            "panel.position",
+            "Sets position of a given panel",
+            "4,12,4"
+        )]
+        public static void PositionPanel(string name, Vector3 position)
+        {
+            var panel = PanelManager.m_Instance.GetPanelByType(_PanelByName(name));
+            panel.transform.position = position;
+        }
+
+        [ApiEndpoint(
+            "panel.rotation",
+            "Sets rotation of a given panel",
+            "4,12,4"
+        )]
+        public static void RotatePanel(string name, Vector3 rotation)
+        {
+            var panel = PanelManager.m_Instance.GetPanelByType(_PanelByName(name));
+            panel.transform.position = rotation;
+        }
+
+        [ApiEndpoint(
+            "strokes.debug", "Logs some debug info about the strokes"
+        )]
+        public static void StrokesDebug()
+        {
+            Debug.Log($"Strokes: {SketchMemoryScript.m_Instance.StrokeCount}");
+        }
+
+        [ApiEndpoint(
+            "panel.attach",
+            "Attaches the given panel to the user's wand",
+            "scripts"
+        )]
+        public static void AttachPanel(string name)
+        {
+            PanelManager.m_Instance.AttachPanelToWand(_PanelByName(name));
+        }
+
+        [ApiEndpoint(
+            "panel.detach",
+            "Detaches the given panel from the user's wand",
+            "scripts"
+        )]
+        public static void DetachPanel(string name, Vector3 position)
+        {
+            var tr = TrTransform.T(position);
+            PanelManager.m_Instance.DetachPanelFromWand(_PanelByName(name), tr);
         }
 
         [ApiEndpoint("layer.add", "Adds a new layer")]
@@ -381,104 +1289,626 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.delete", "Deletes a layer")]
+        [ApiEndpoint(
+            "layer.clear",
+            "Clears the contents of a layer",
+            "2"
+        )]
+        public static void ClearLayer(int layer)
+        {
+            ClearLayerCommand cmd = new ClearLayerCommand(layer);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint("debug.ram", "Enable/Disable logging of RAM usage to the in-app console (Android only)")]
+        public static void EnableRamLogging(bool active)
+        {
+            App.Instance.RamLoggingActive = active;
+        }
+
+        [ApiEndpoint("audio.reactive", "Enable or disable audio-reactive mode", "true")]
+        public static string EnableAudioReactiveMode(bool active)
+        {
+            if (App.Instance.RequestingAudioReactiveMode != active)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.reactive={App.Instance.RequestingAudioReactiveMode}";
+        }
+
+        [ApiEndpoint("audio.music.play", "Play in-app music and enable audio-reactive mode", "0")]
+        public static string PlayAudioReactiveMusic(int index)
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            if (index < 0 || index >= AudioManager.m_Instance.NumGameMusics())
+            {
+                string message = $"Invalid game music index: {index}";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.PlayGameMusic(index);
+            if (!App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.music.play={index}";
+        }
+
+        [ApiEndpoint("audio.music.stop", "Stop in-app music and disable audio-reactive mode")]
+        public static string StopAudioReactiveMusic()
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.StopMusic();
+            if (App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return "audio.music.stop";
+        }
+
+        [ApiEndpoint(
+            "layer.delete",
+            "Deletes a layer",
+            "1"
+        )]
         public static void DeleteLayer(int layer)
         {
             DeleteLayerCommand cmd = new DeleteLayerCommand(layer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.squash", "Move all brush strokes from one layer to another and removes the empty layer")]
+        [ApiEndpoint(
+            "layer.squash",
+            "Move everything from one layer to another then removes the empty layer",
+            "1,0"
+        )]
         public static void SquashLayer(int squashedLayer, int destinationLayer)
         {
-            Debug.Log($"squashedLayer {squashedLayer} destinationLayer {destinationLayer}");
             SquashLayerCommand cmd = new SquashLayerCommand(squashedLayer, destinationLayer);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.activate", "Make a layer active")]
+        [ApiEndpoint(
+            "layer.activate",
+            "Make a layer the active layer",
+            "2"
+        )]
         public static void ActivateLayer(int layer)
         {
             ActivateLayerCommand cmd = new ActivateLayerCommand(App.Scene.GetCanvasByLayerIndex(layer));
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }
 
-        [ApiEndpoint("layer.show", "Make a layer visible")]
+        [ApiEndpoint(
+            "layer.show",
+            "Make a layer visible",
+            "2"
+        )]
         public static void ShowLayer(int layer)
         {
             App.Scene.ShowLayer(layer);
         }
 
-        [ApiEndpoint("layer.hide", "Hide a layer")]
+        [ApiEndpoint(
+            "layer.hide",
+            "Hide a layer",
+            "2"
+        )]
         public static void HideLayer(int layer)
         {
             App.Scene.HideLayer(layer);
         }
 
-        [ApiEndpoint("layer.toggle", "Toggles a layer between visible and hidden")]
+        [ApiEndpoint(
+            "layer.toggle",
+            "Toggles a layer between visible and hidden",
+            "2"
+        )]
         public static void ToggleLayer(int layer)
         {
             App.Scene.ToggleLayerVisibility(layer);
         }
 
-        [ApiEndpoint("model.select", "Selects a widget by index.")]
-        private static void SelectModel(int index)
+        [ApiEndpoint(
+            "model.select",
+            "Selects a 3d model by index.",
+            "2"
+        )]
+        public static void SelectModel(int index)
         {
             SelectWidget(_GetActiveModel(index));
         }
 
-        private static void SelectWidget(GrabWidget widget)
+        public static void SelectWidget(GrabWidget widget)
         {
             SelectionManager.m_Instance.SelectWidget(widget);
         }
 
-        [ApiEndpoint("model.position", "Move a model to the given coordinates")]
+        public static void DeselectWidget(GrabWidget widget)
+        {
+            SelectionManager.m_Instance.DeselectWidget(widget);
+        }
+
+        public static void DeleteWidget(GrabWidget widget)
+        {
+            widget.HideNow(force: true);
+        }
+
+        [ApiEndpoint(
+            "model.position",
+            "Move a 3d model to the given coordinates",
+            "2,6,8"
+        )]
         public static void PositionModel(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveModel(index), position);
+            _SetWidgetPosition(_GetActiveModel(index), position);
         }
 
-        [ApiEndpoint("brush.forcepainting", "When on, overrides the trigger so the brush is always painting")]
-        public static void ForcePainting(bool active)
+        [ApiEndpoint("model.rotation", "Set a model's rotation to the given angles")]
+        public static void RotateModel(int index, Vector3 rotation)
         {
-            ApiManager.Instance.ForcePaintingOn = active;
+            _SetWidgetRotation(_GetActiveModel(index), rotation);
         }
 
-        [ApiEndpoint("image.position", "Move an image to the given coordinates")]
+        [ApiEndpoint("model.scale", "Set a model's scale to the amount")]
+        public static void ScaleModel(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveModel(index), scale);
+        }
+
+        [ApiEndpoint(
+            "symmetry.position",
+            "Move the symmetry widget to the given coordinates",
+            "2,6,8"
+        )]
+        public static void SymmetrySetPosition(Vector3 position)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetPosition(widget, position);
+        }
+
+        [ApiEndpoint(
+            "symmetry.set.rotation",
+            "Sets the symmetry widget rotation",
+            "45,30,0"
+        )]
+        public static void SymmetrySetRotation(Vector3 rotation)
+        {
+            _SymmetrySetRotation(Quaternion.Euler(rotation));
+        }
+
+        [ApiEndpoint(
+            "symmetry.set.transform",
+            "Sets the position and rotation of the symmetry widget",
+            "2,6,8,45,30,0"
+        )]
+        public static void SymmetrySetTransform(Vector3 position, Vector3 rotation)
+        {
+            _SymmetrySetTransform(position, Quaternion.Euler(rotation));
+        }
+
+        public static void _SymmetrySetRotation(Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetRotation(widget, rotation);
+        }
+
+        public static void _SymmetrySetTransform(Vector3 position, Quaternion rotation)
+        {
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            _SetWidgetTransform(widget, position, rotation);
+        }
+
+        [ApiEndpoint(
+            "brush.force.painting.on",
+            "Turns on or off an override that paints even if the trigger is not pressed.",
+            "true"
+        )]
+        public static void ForcePaintingOn(bool active)
+        {
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOn;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
+        }
+
+        [ApiEndpoint(
+            "brush.force.painting.off",
+            "Turns on or off an override that stops the user painting even if the trigger is pressed.",
+            "false"
+        )]
+        public static void ForcePaintingOff(bool active)
+        {
+            if (active)
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForcedOff;
+            }
+            else
+            {
+                ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
+            }
+        }
+
+        [ApiEndpoint("brush.new.stroke", "Ends the current stroke and starts a new one next frame")]
+        public static void ForceNewStroke()
+        {
+            ApiManager.Instance.PreviousForcePaintingMode = ApiManager.Instance.ForcePainting;
+            ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.ForceNewStroke;
+        }
+
+        [ApiEndpoint(
+            "image.select",
+            "Selects an image by index.",
+            "2"
+        )]
+        public static void SelectImage(int index)
+        {
+            SelectWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint(
+            "image.delete",
+            "Deletes an image by index.",
+            "2"
+        )]
+        public static void DeleteImage(int index)
+        {
+            DeleteWidget(_GetActiveImage(index));
+        }
+
+        [ApiEndpoint(
+            "video.delete",
+            "Deletes a video by index.",
+            "2"
+        )]
+        public static void DeleteVideo(int index)
+        {
+            DeleteWidget(_GetActiveVideo(index));
+        }
+
+        [ApiEndpoint(
+            "model.delete",
+            "Deletes a 3d model by index.",
+            "2,6,8"
+        )]
+        public static void DeleteModel(int index)
+        {
+            DeleteWidget(_GetActiveModel(index));
+        }
+
+        [ApiEndpoint(
+            "guide.delete",
+            "Deletes a guide by index.",
+            "2"
+        )]
+        public static void DeleteGuide(int index)
+        {
+            DeleteWidget(_GetActiveStencil(index));
+        }
+
+        [ApiEndpoint(
+            "image.position",
+            "Move an image to the given coordinates",
+            "2,1,6,8"
+        )]
         public static void PositionImage(int index, Vector3 position)
         {
-            _PositionWidget(_GetActiveImage(index), position);
+            _SetWidgetPosition(_GetActiveImage(index), position);
         }
 
-        // WIP
-        // [ApiEndpoint("video.import", "Imports a video given a url or a filename in Media Library\\Videos")]
-        // public static void ImportVideo(string location)
-        // {
-        //     if (location.StartsWith("http://") || location.StartsWith("https://"));
-        //     {
-        //         location = DownloadMediaFileFromUrl(location, "Videos");
-        //     }
-        //     location = DownloadMediaFileFromUrl(location, "Videos");
-        //
-        //     location = Path.Combine("Videos", location);
-        //     var video = new TiltVideo();
-        //     video.FilePath = location;
-        //     VideoWidget.FromTiltVideo(video);
-        //     // var tr = new TrTransform();
-        //     // tr.translation = ApiManager.Instance.BrushPosition;
-        //     // tr.rotation = ApiManager.Instance.BrushRotation;
-        //     // CreateWidgetCommand createCommand = new CreateWidgetCommand(
-        //     //     WidgetManager.m_Instance.ImageWidgetPrefab, tr);
-        //     // SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-        //     // videoWidget.Show(true);
-        //     // createCommand.SetWidgetCost(videoWidget.GetTiltMeterCost());
-        //     //
-        //     // WidgetManager.m_Instance.WidgetsDormant = false;
-        //     // SketchControlsScript.m_Instance.EatGazeObjectInput();
-        //     // SelectionManager.m_Instance.RemoveFromSelection(false);
-        // }
+        [ApiEndpoint("image.rotation", "Set a images rotation to the given angles")]
+        public static void RotateImage(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveImage(index), rotation);
+        }
 
-        [ApiEndpoint("guide.add", "Adds a guide to the scene")]
+        [ApiEndpoint("image.scale", "Set a images scale to the amount")]
+        public static void ScaleImage(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveImage(index), scale);
+        }
+
+        [ApiEndpoint("light.position", "Move a light to the given coordinates")]
+        public static void PositionLight(int index, Vector3 position)
+        {
+            _SetWidgetPosition(_GetActiveLight(index), position);
+        }
+
+        [ApiEndpoint("light.rotation", "Set a light's rotation to the given angles")]
+        public static void RotateLight(int index, Vector3 rotation)
+        {
+            // TODO
+            //_SetWidgetRotation(_GetActiveLight(index), rotation);
+        }
+
+        [ApiEndpoint(
+            "image.formEncode",
+            "Converts an image to a string suitable for use in a form",
+            "2"
+        )]
+        public static string FormEncodeImage(int index)
+        {
+            var path = _GetActiveImage(index).ReferenceImage.FileFullPath;
+            return Convert.ToBase64String(File.ReadAllBytes(path));
+        }
+
+        [ApiEndpoint(
+            "image.base64Decode",
+            "Saves base64-encoded PNG, JPEG, HDR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
+        )]
+        public static string SaveBase64(string base64, string filename)
+        {
+            var bytes = Convert.FromBase64String(base64);
+            string imageExtension = GetReferenceImageExtension(bytes);
+            if (imageExtension == null)
+            {
+                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, and SVG image data.");
+            }
+
+            string extension = Path.GetExtension(filename);
+            if (string.IsNullOrEmpty(extension))
+            {
+                filename += imageExtension;
+            }
+            else if (!kSupportedReferenceImageExtensions.Contains(extension))
+            {
+                throw new ArgumentException($"Unsupported image filename extension: {extension}");
+            }
+            else if (!ReferenceImageExtensionMatchesData(extension, imageExtension))
+            {
+                throw new ArgumentException($"{imageExtension} image data cannot be saved with the {extension} extension.");
+            }
+
+            var path = GetSafeReferenceImageWritePath(filename);
+            File.WriteAllBytes(path, bytes);
+            return path;
+        }
+
+        private static string GetReferenceImageExtension(byte[] bytes)
+        {
+            if (bytes.Length > 4 && bytes[0] == 0x89 && bytes[1] == 'P' && bytes[2] == 'N' && bytes[3] == 'G')
+            {
+                return ".png";
+            }
+            if (bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+            {
+                return ".jpg";
+            }
+            if (bytes.Length > 10 &&
+                bytes[0] == (byte)'#' &&
+                bytes[1] == (byte)'?' &&
+                (StartsWithAscii(bytes, "#?RADIANCE") || StartsWithAscii(bytes, "#?RGBE")))
+            {
+                return ".hdr";
+            }
+            string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
+            if (text.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) ||
+                (text.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase) &&
+                    text.IndexOf("<svg", StringComparison.OrdinalIgnoreCase) != -1))
+            {
+                return ".svg";
+            }
+            return null;
+        }
+
+        private static bool ReferenceImageExtensionMatchesData(string extension, string imageExtension)
+        {
+            if (imageExtension == ".jpg")
+            {
+                return extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                    extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase);
+            }
+            return extension.Equals(imageExtension, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool StartsWithAscii(byte[] bytes, string value)
+        {
+            if (bytes.Length < value.Length) return false;
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (bytes[i] != (byte)value[i]) return false;
+            }
+            return true;
+        }
+
+        private static string GetSafeReferenceImageWritePath(string filename)
+        {
+            return GetSafePathInDirectory(App.ReferenceImagePath(), filename, "image filename");
+        }
+
+        internal static void ValidateSafeFilename(string filename, string description)
+        {
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"{description} cannot be empty.");
+            }
+            if (filename.IndexOfAny(Path.GetInvalidFileNameChars()) != -1 ||
+                filename.Contains("/") ||
+                filename.Contains("\\") ||
+                filename == "." ||
+                filename == ".." ||
+                Path.GetFileName(filename) != filename ||
+                Path.IsPathRooted(filename))
+            {
+                throw new ArgumentException($"Invalid {description}: {filename}");
+            }
+        }
+
+        internal static string GetSafePathInDirectory(string directory, string filename, string description)
+        {
+            ValidateSafeFilename(filename, description);
+
+            string basePath = Path.GetFullPath(directory);
+            string path = Path.GetFullPath(Path.Combine(basePath, filename));
+            string basePathWithSeparator = basePath.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!path.StartsWith(basePathWithSeparator, FileSystemPathComparison))
+            {
+                throw new ArgumentException($"Invalid {description}: {filename}");
+            }
+            return path;
+        }
+
+        internal static string GetSafeRelativePathInDirectory(
+            string directory, string relativePath, string description,
+            bool allowBaseDirectory = false)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+            {
+                throw new ArgumentException($"Invalid {description}: {relativePath}");
+            }
+
+            string normalizedRelativePath = relativePath
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar);
+            string basePath = Path.GetFullPath(directory);
+            string path = Path.GetFullPath(Path.Combine(basePath, normalizedRelativePath));
+            string basePathWithSeparator = basePath.TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            bool isBaseDirectory = path.Equals(basePath, FileSystemPathComparison);
+            if ((!allowBaseDirectory && isBaseDirectory) ||
+                (!isBaseDirectory && !path.StartsWith(basePathWithSeparator, FileSystemPathComparison)))
+            {
+                throw new ArgumentException($"Invalid {description}: {relativePath}");
+            }
+            return path;
+        }
+
+        private static StringComparison FileSystemPathComparison =>
+            Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+
+        [ApiEndpoint(
+            "scripts.initPluginScripting",
+            "Initializes plugin scripting for headless or HTTP automation. Disabled by default; requires Flags.WebScriptsCanControlPlugins to be enabled in the user config. Call this before using HTTP endpoints or pages that access plugins",
+            ""
+        )]
+        public static void InitPluginScripting()
+        {
+            LuaManager.Instance.Init();
+        }
+
+        [ApiEndpoint(
+            "scripts.toolscript.activate",
+            "Activate the given tool script",
+            "Spiral"
+        )]
+        public static void ActivateToolScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.ToolScript, scriptName);
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.ScriptedTool);
+        }
+
+        [ApiEndpoint(
+            "scripts.toolscript.deactivate",
+            "Dectivate the tool script",
+            "Spiral"
+        )]
+        public static void DeactivateToolScript()
+        {
+            SketchSurfacePanel.m_Instance.EnableDefaultTool();
+        }
+
+        [ApiEndpoint(
+            "scripts.symmetryscript.activate",
+            "Activate the given symmetry script",
+            "Boids"
+        )]
+        public static void ActivateSymmetryScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.SymmetryScript, scriptName);
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.ScriptedSymmetryMode);
+        }
+
+        [ApiEndpoint(
+            "scripts.symmetryscript.deactivate",
+            "Dectivate the symmetry script",
+            "Boids"
+        )]
+        public static void DeactivateSymmetryScript()
+        {
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
+        }
+
+        [ApiEndpoint(
+            "scripts.pointerscript.activate",
+            "Activate the given pointer script",
+            "Loops"
+        )]
+        public static void ActivatePointerScript(string scriptName)
+        {
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.PointerScript, scriptName);
+            LuaManager.Instance.PointerScriptsEnabled = true;
+        }
+
+        [ApiEndpoint(
+            "scripts.pointerscript.deactivate",
+            "Dectivate the pointer script",
+            "Loops"
+        )]
+        public static void DeactivatePointerScript()
+        {
+            LuaManager.Instance.PointerScriptsEnabled = false;
+        }
+
+        [ApiEndpoint(
+            "scripts.backgroundscript.activate",
+            "Activate the given background script",
+            "Lines"
+        )]
+        public static void ActivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint(
+            "scripts.backgroundscript.deactivate",
+            "Dectivate the given background script",
+            "Lines"
+        )]
+        public static void DeactivateBackgroundScript(string scriptName)
+        {
+            LuaManager.Instance.ToggleBackgroundScript(scriptName);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.activateall", "Dectivate all background scripts")]
+        public static void ActivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(true);
+        }
+
+        [ApiEndpoint("scripts.backgroundscript.deactivateall", "Dectivate all background scripts")]
+        public static void DectivateAllBackgroundScripts()
+        {
+            LuaManager.Instance.EnableBackgroundScripts(false);
+        }
+
+
+        [ApiEndpoint(
+            "guide.add",
+            "Adds a guide to the scene (cube, sphere, capsule, cone, ellipsoid)",
+            "cube"
+        )]
         public static void AddGuide(string type)
         {
             StencilType stencilType;
@@ -491,7 +1921,7 @@ namespace TiltBrush
                 case "sphere":
                     stencilType = StencilType.Sphere;
                     break;
-                case "capsure":
+                case "capsule":
                     stencilType = StencilType.Capsule;
                     break;
                 case "cone":
@@ -505,13 +1935,92 @@ namespace TiltBrush
                     break;
             }
 
-            var tr = _CurrentTransform();
-            CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(stencilType), tr);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint(
+            "portal.add",
+            "Adds a portal to the scene",
+            "dLHpzNdygsg"
+        )]
+        public static void AddPortal(string destination)
+        {
+            WidgetManager.m_Instance.CreatePortalWidget(_CurrentBrushTransform(), destination);
         }
 
 
+        [ApiEndpoint(
+            "guide.select",
+            "Selects a guide by index.",
+            "2"
+        )]
+        public static void SelectGuide(int index)
+        {
+            SelectWidget(_GetActiveStencil(index));
+        }
 
+        [ApiEndpoint(
+            "guide.position",
+            "Move a guide to the given coordinates",
+            "2,4,10,-4"
+        )]
+        public static void PositionGuide(int index, Vector3 position)
+        {
+            // TODO
+            //_SetWidgetTransform(_GetActiveStencil(index), position);
+        }
+
+        [ApiEndpoint(
+            "guide.scale",
+            "Sets the (non-uniform) scale of a guide",
+            "2,1.5,1,1.5"
+        )]
+        public static void ScaleGuide(int index, Vector3 scale)
+        {
+            var stencil = _GetActiveStencil(index);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(stencil, stencil.LocalTransform, scale));
+        }
+
+        [ApiEndpoint(
+            "app.snapshot",
+            "Takes a color snapshot and saves depth and normals sidecars using the given camera position and direction",
+            "0,10,0,0,45,45,hello,1024,768"
+        )]
+        public static void TakeSnapshot(Vector3 position, Vector3 direction, string filename, int width, int height)
+        {
+            ValidateSafeFilename(filename, "snapshot filename");
+            ValidateSnapshotDimensions(width, height, includesSidecars: true);
+            TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
+            float superSampling = 1f;
+            bool removeBackground = false;
+            bool renderDepth = true;
+            bool renderNormals = true;
+            ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+        }
+
+        internal static void ValidateSnapshotDimensions(
+            int width, int height, bool includesSidecars)
+        {
+            int maxDimension = App.PlatformConfig.MaxSnapshotDimension;
+            if (includesSidecars)
+            {
+                maxDimension = Math.Min(
+                    maxDimension, ScreenshotManager.kMaxDepthCaptureDimension);
+            }
+            if (width <= 0 || width > maxDimension)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(width), width,
+                    $"Snapshot width must be between 1 and {maxDimension} pixels.");
+            }
+            if (height <= 0 || height > maxDimension)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(height), height,
+                    $"Snapshot height must be between 1 and {maxDimension} pixels.");
+            }
+        }
     }
 }

@@ -111,8 +111,8 @@ namespace TiltBrush
         // Files that should not be copied
         static readonly HashSet<string> kIgnoredFiles = new HashSet<string>
         {
-            "Assets/Shaders/Include/Hdr.cginc",
-            "Assets/Shaders/Include/Ods.cginc"
+            "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc",
+            "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
         };
 
         // Files that should override their path and instead be copied to a specific folder
@@ -179,33 +179,35 @@ namespace TiltBrush
 
         #region Menus
 
-        [MenuItem("Tilt/Toolkit/Export FBX", true)]
+        [MenuItem("Open Brush/Toolkit/Export FBX", true)]
         private static bool ExportBrushStrokesFbx_Enabled()
         {
             return Application.isPlaying;
         }
 
 #if FBX_SUPPORTED
-  [MenuItem("Tilt/Toolkit/Export FBX")]
-  private static void ExportBrushStrokesFbx() {
-    var current = SaveLoadScript.m_Instance.SceneFile;
-    string basename = (current.Valid)
-      ? Path.GetFileNameWithoutExtension(current.FullPath).Replace(" ", "_")
-      : "Untitled";
+        [MenuItem("Open Brush/Toolkit/Export FBX")]
+        private static void ExportBrushStrokesFbx()
+        {
+            var current = SaveLoadScript.m_Instance.SceneFile;
+            string basename = (current.Valid)
+              ? Path.GetFileNameWithoutExtension(current.FullPath).Replace(" ", "_")
+              : "Untitled";
 
-    string directoryName = FileUtils.GenerateNonexistentFilename(
-      App.UserExportPath(), basename, "");
-    if (!FileUtils.InitializeDirectoryWithUserError(directoryName,
-                                                    "Failed to export")) {
-      return;
-    }
-    string fbxName = Path.Combine(directoryName, basename + ".fbx");
-    ExportFbx.Export(fbxName, ExportFbx.kFbxAscii);
-  }
+            string directoryName = FileUtils.GenerateNonexistentFilename(
+              App.UserExportPath(), basename, "");
+            if (!FileUtils.InitializeDirectoryWithUserError(directoryName,
+                                                            "Failed to export"))
+            {
+                return;
+            }
+            string fbxName = Path.Combine(directoryName, basename + ".fbx");
+            ExportFbx.Export(fbxName, ExportFbx.kFbxAscii);
+        }
 #endif
 
         // Collects all brushes and their assets, and exports them into a folder that can be copied into into Tilt Brush Toolkit's Unity SDK
-        [MenuItem("Tilt/Toolkit/Export Brushes for Toolkit")]
+        [MenuItem("Open Brush/Toolkit/Export Brushes for Toolkit")]
         static void CollectBrushes()
         {
             ExportToToolkit(
@@ -216,7 +218,7 @@ namespace TiltBrush
 
         // Collects all environments as scenes with the right preferences, and their assets, and exports them into a folder that can be copied into Tilt Brush Toolkit's Unity SDK
         // This is dead and unsupported code at the moment
-        // [MenuItem("Tilt/Toolkit/Export Environments for Toolkit")]
+        // [MenuItem("Open Brush/Toolkit/Export Environments for Toolkit")]
         static void CollectEnvironments()
         {
             ExportToToolkit(

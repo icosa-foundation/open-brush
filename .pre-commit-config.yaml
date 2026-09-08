@@ -1,35 +1,59 @@
 ---
 repos:
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.17.0
+    rev: v1.38.0
     hooks:
       - id: yamllint
+        priority: 10
   - repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 26.1.0
     hooks:
       - id: black
         files: ^Support/
         language_version: python3
+        priority: 1
   - repo: https://github.com/pycqa/flake8
-    rev: 3.9.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         files: ^Support/
+        priority: 10
   - repo: https://github.com/PyCQA/pylint.git
-    rev: pylint-2.7.4
+    rev: v4.0.4
     hooks:
       - id: pylint
         name: pylint
         files: ^Support/
         language_version: python3
+        additional_dependencies:
+          - typing_extensions
         args:
           - --load-plugins=pylint.extensions.redefined_variable_type,pylint.extensions.bad_builtin
-  - repo: https://github.com/dotnet/format
-    rev: "aec7996c51c76644de6014bbcce9264d402a8db0"
+          - --disable=import-error
+        priority: 10
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.21.0
     hooks:
+      - id: yamlfmt
+        args:
+          - -conf
+          - .yamlfmt
+        priority: 1
+  - repo: local
+    hooks:
+      # Use dotnet format already installed on your machine
       - id: dotnet-format
-        exclude: ^(Assets/ThirdParty)|(Packages/)
-        entry: dotnet-format whitespace
+        name: dotnet-format
+        language: system
+        entry: dotnet format whitespace
+        types_or: [c#, vb]
+        exclude: ^(Assets/ThirdParty)|(Packages/)|(Assets/Photon/)
         args:
           - --folder
           - --include
+        priority: 10
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        priority: 10

@@ -21,7 +21,7 @@ namespace TiltBrush
 {
     public class BrushTagger
     {
-        [MenuItem("Tilt/Rewrite Brush Tags")]
+        [MenuItem("Open Brush/Rewrite Brush Tags")]
         private static void TagBrushes()
         {
             var whiteboardBrushes = new List<string>
@@ -60,7 +60,6 @@ namespace TiltBrush
                 if (brush.m_BrushPrefab == null) continue;
                 if (brush.m_BrushPrefab.GetComponent<HullBrush>() != null) brush.m_Tags.Add("hull");
                 if (brush.m_BrushPrefab.GetComponent<GeniusParticlesBrush>() != null) brush.m_Tags.Add("particle");
-                if (brush.m_BrushPrefab.GetComponent<ParentBrush>() != null) brush.m_Tags.Add("broken");
             }
         }
     }

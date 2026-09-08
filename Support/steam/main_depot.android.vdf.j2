@@ -1,0 +1,32 @@
+"DepotBuildConfig"
+{
+    // # Set your assigned depot ID here
+    "DepotID" "{{ OPEN_BRUSH_ANDROID_DEPOT_ID }}"
+
+    "ContentRoot" "build_android_openxr/Android"
+
+    "FileMapping"
+    {
+        // Include all files in the build output directory (ContentRoot)
+        "LocalPath" "*"
+
+        // Destination is the main install directory
+        "DepotPath" "."
+
+        // If LocalPath contains wildcards, setting this means that all
+        // matching files within subdirectories of LocalPath will also
+        // be included.
+        "recursive" "0"
+    }
+
+    // Install scripts
+    //"FileMapping" {
+    //  "LocalPath" "../installscript_win.vdf"
+    //  "DepotPath" "."
+    //}
+    //"InstallScript" "../installscript_win.vdf"
+
+    // Exclide symbols zip
+    "FileExclusion" "*.zip"
+    "FileExclusion" "build_log.txt"
+}

@@ -71,5 +71,25 @@ static class AndroidUtils {
     var context = GetContext();
     return context.Call<string>("getPackageName");
   }
+
+  public static bool IsPackageInstalled(string packageName)
+  {
+      if (Application.platform != RuntimePlatform.Android)
+      {
+          return false;
+      }
+
+      var context = GetContext();
+      var packageMgr = context.Call<AndroidJavaObject>("getPackageManager");
+
+      try
+      {
+          packageMgr.Call<AndroidJavaObject>("getPackageInfo", packageName, 0);
+          return true;
+      } catch (AndroidJavaException)
+      {
+          return false;
+      }
+  }
 }
 #endif

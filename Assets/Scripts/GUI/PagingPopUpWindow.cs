@@ -86,20 +86,25 @@ namespace TiltBrush
                 //default to first page highlighted
                 m_PageIndex = 0;
                 m_BaseIndex = 0;
-                if (m_DataCount <= m_IconCountFullPage)
-                {
-                    m_NumPages = 1;
-                }
-                else
-                {
-                    m_NumPages = ((m_DataCount - 1) / m_IconCountNavPage) + 1;
-                }
+                CalcNumPages();
             }
 
             //base modifies scale, so we want to do this after we create our icons
             base.Init(rParent, sText);
 
             RefreshPage();
+        }
+
+        public void CalcNumPages()
+        {
+            if (m_DataCount <= m_IconCountFullPage)
+            {
+                m_NumPages = 1;
+            }
+            else
+            {
+                m_NumPages = ((m_DataCount - 1) / m_IconCountNavPage) + 1;
+            }
         }
 
         override protected void UpdateTransitionOut()
@@ -150,8 +155,10 @@ namespace TiltBrush
             }
         }
 
-        protected void RefreshPage()
+        public virtual void RefreshPage()
         {
+            CalcNumPages(); // in case m_DataCount has changed
+
             //if we can fit all the icons on one page, turn off the nav buttons and do that
             if (m_DataCount <= m_IconCountFullPage)
             {
@@ -286,24 +293,28 @@ namespace TiltBrush
                 bool bThisIconActive = false;
                 ImageIcon rIcon = m_Icons[i];
 
-                if (bButtonsAvailable && rIcon.m_Valid &&
-                    BasePanel.DoesRayHitCollider(rCastRay, rIcon.m_IconScript.GetCollider()))
+                var collider = rIcon.m_IconScript.GetCollider();
+                if (collider != null)
                 {
-                    bool bWasButtonPressed = rIcon.m_IconScript.IsPressed();
-                    rIcon.m_IconScript.UpdateButtonState(inputValid);
-                    if (rIcon.m_IconScript.IsPressed() && !bWasButtonPressed)
+                    if (bButtonsAvailable && rIcon.m_Valid &&
+                        BasePanel.DoesRayHitCollider(rCastRay, collider))
                     {
-                        //on press, refresh the buttons
-                        RefreshPage();
+                        bool bWasButtonPressed = rIcon.m_IconScript.IsPressed();
+                        rIcon.m_IconScript.UpdateButtonState(inputValid);
+                        if (rIcon.m_IconScript.IsPressed() && !bWasButtonPressed)
+                        {
+                            //on press, refresh the buttons
+                            RefreshPage();
+                        }
+
+                        bThisIconActive = true;
                     }
 
-                    bThisIconActive = true;
-                }
-
-                if (!bThisIconActive)
-                {
-                    //reset state of button because we're not messing with it
-                    rIcon.m_IconScript.ResetState();
+                    if (!bThisIconActive)
+                    {
+                        //reset state of button because we're not messing with it
+                        rIcon.m_IconScript.ResetState();
+                    }
                 }
             }
 

@@ -1,0 +1,1860 @@
+﻿// Copyright 2020 The Tilt Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using UnityEngine;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+
+namespace TiltBrush
+{
+    public static class ChoicesHelper
+    {
+        public static bool IsValidChoice<T>(string choice) where T : class
+        {
+            var fieldValues = typeof(T)
+                .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null))
+                .ToArray();
+            return fieldValues.Contains(choice);
+        }
+
+        public static string[] GetAllChoices<T>() where T : class
+        {
+            return typeof(T)
+                .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(string))
+                .Select(f => (string)f.GetValue(null))
+                .ToArray();
+        }
+    }
+
+    public class CategoryChoices
+    {
+        public static string
+            ANY = "",
+            ANIMALS = "ANIMALS",
+            ARCHITECTURE = "ARCHITECTURE",
+            ART = "ART",
+            CULTURE = "CULTURE",
+            EVENTS = "EVENTS",
+            FOOD = "FOOD",
+            HISTORY = "HISTORY",
+            HOME = "HOME",
+            MISCELLANEOUS = "MISCELLANEOUS",
+            NATURE = "NATURE",
+            OBJECTS = "OBJECTS",
+            PEOPLE = "PEOPLE",
+            PLACES = "PLACES",
+            SCIENCE = "SCIENCE",
+            SPORTS = "SPORTS",
+            TECH = "TECH",
+            TRANSPORT = "TRANSPORT",
+            TRAVEL = "TRAVEL";
+
+        public static string GetFriendlyName(string category)
+        {
+            return category switch
+            {
+                "ANY" => "Any",
+                "ANIMALS" => "Animals & Pets",
+                "ARCHITECTURE" => "Architecture",
+                "ART" => "Art",
+                "CULTURE" => "Culture & Humanity",
+                "EVENTS" => "Current Events",
+                "FOOD" => "Food & Drink",
+                "HISTORY" => "History",
+                "HOME" => "Furniture & Home",
+                "MISCELLANEOUS" => "Miscellaneous",
+                "NATURE" => "Nature",
+                "OBJECTS" => "Objects",
+                "PEOPLE" => "People & Characters",
+                "PLACES" => "Places & Scenes",
+                "SCIENCE" => "Science",
+                "SPORTS" => "Sports & Fitness",
+                "TECH" => "Tools & Technology",
+                "TRANSPORT" => "Transport",
+                "TRAVEL" => "Travel & Leisure",
+                _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
+            };
+        }
+    }
+
+    public class LicenseChoices
+    {
+        public static readonly string
+            ANY = "",
+            CC0 = "CREATIVE_COMMONS_0",
+            REMIXABLE = "REMIXABLE",
+            ALL_CC = "ALL_CC",
+            CREATIVE_COMMONS_BY = "CREATIVE_COMMONS_BY",
+            CREATIVE_COMMONS_BY_NC = "CREATIVE_COMMONS_BY_NC",
+            CREATIVE_COMMONS_BY_ND = "CREATIVE_COMMONS_BY_ND",
+            ALL_RIGHTS_RESERVED = "ALL_RIGHTS_RESERVED";
+
+        public static string GetFriendlyName(string licence)
+        {
+            return licence switch
+            {
+                "ANY" => "Any License",
+                "CC0" => "Creative Commons Zero (Public Domain)",
+                "CREATIVE_COMMONS_BY" => "Creative Commons Attribution",
+                "CREATIVE_COMMONS_BY_NC" => "Creative Commons Attribution, Non-Commercial",
+                "CREATIVE_COMMONS_BY_ND" => "Creative Commons Attribution, No Derivatives",
+                "REMIXABLE" => "Any Remixable Licence",
+                "ALL_CC" => "Any Creative Commons License",
+                "ALL_RIGHTS_RESERVED" => "All Rights Reserved",
+                _ => throw new ArgumentOutOfRangeException(nameof(licence), licence, null)
+            };
+        }
+    }
+
+    public class OrderByChoices
+    {
+        public const string
+            NEWEST = "NEWEST",  // Same as CREATE_TIME
+            OLDEST = "OLDEST",  // Same as -CREATE_TIME
+            BEST = "BEST",
+            TRIANGLE_COUNT = "TRIANGLE_COUNT",
+            LIKED_TIME = "LIKED_TIME",
+            CREATE_TIME = "CREATE_TIME",
+            UPDATE_TIME = "UPDATE_TIME",
+            LIKES = "LIKES",
+            DOWNLOADS = "DOWNLOADS",
+            DISPLAY_NAME = "DISPLAY_NAME",
+            AUTHOR_NAME = "AUTHOR_NAME";
+
+        public static string GetFriendlyName(string orderBy)
+        {
+            return orderBy switch
+            {
+                "NEWEST" => "Newest",
+                "OLDEST" => "Oldest",
+                "BEST" => "Best",
+                "TRIANGLE_COUNT" => "Triangle Count",
+                "LIKED_TIME" => "Recently Liked",
+                "CREATE_TIME" => "Creation Time",
+                "UPDATE_TIME" => "Update Time",
+                "LIKES" => "Likes",
+                "DOWNLOADS" => "Downloads",
+                "DISPLAY_NAME" => "Title",
+                "AUTHOR_NAME" => "Author",
+                _ => throw new ArgumentOutOfRangeException(nameof(orderBy), orderBy, null)
+            };
+        }
+    }
+
+    public class FormatChoices
+    {
+        public static string
+            ANY = "",
+            TILT = "TILT",
+            BLOCKS = "BLOCKS",
+            GLTF = "GLTF",
+            GLTF1 = "GLTF1",
+            GLTF2 = "GLTF2",
+            OBJ = "OBJ",
+            FBX = "FBX",
+            VOX = "VOX",
+            NOT_TILT = "-TILT",
+            NOT_BLOCKS = "-BLOCKS",
+            NOT_GLTF = "-GLTF",
+            NOT_GLTF1 = "-GLTF1",
+            NOT_GLTF2 = "-GLTF2",
+            NOT_OBJ = "-OBJ",
+            NOT_FBX = "-FBX",
+            NOT_VOX = "-VOX";
+    }
+
+    public class CuratedChoices
+    {
+        public static string
+            ANY = "",
+            TRUE = "true",
+            FALSE = "false";
+    }
+
+    /// Used as an accessor for files downloaded from Poly and cached on local storage.
+    public partial class IcosaAssetCatalog : MonoBehaviour
+    {
+        // TODO limit for non-desktop builds?
+        const int kAssetDiskCacheSize = 1000;
+        const float kThumbnailFetchRate = 15;
+        const int kThumbnailFetchMaxCount = 30;
+        const int kThumbnailReadRate = 4;
+        private const int DEFAULT_MODEL_TRIANGLE_COUNT_MAX = 80000;
+        // Budget for keeping loaded-but-unplaced models resident so that browsing back to a recently
+        // viewed model (e.g. switching panel tabs) doesn't re-import it. Sized by estimated runtime
+        // bytes (meshes + textures), not model count, since model sizes vary wildly. Models placed in
+        // the scene (m_UsageCount > 0) are always retained and are not evicted.
+        private const long kLoadedModelMemoryBudgetBytes = 512L * 1024 * 1024;
+        // A model whose measured runtime footprint exceeds this is remembered as "oversized" and no
+        // longer auto-preloaded/previewed (it still loads on explicit selection). This catches heavy
+        // models whose API triangle-count metadata under-reports their true cost.
+        private const long kOversizedModelByteThreshold = 256L * 1024 * 1024;
+        // Max simultaneous asset downloads. Capping this avoids bursting the asset host: legacy Poly
+        // assets are served via web.archive.org, which drops connections under a flood (manifesting
+        // as mass "couldn't connect" failures, not HTTP 429), so a page-load firing ~6+ downloads at
+        // once trips it. A small cap keeps throughput while staying under the throttle.
+        private const int kMaxConcurrentDownloads = 4;
+        private const string kAssetCacheVersion = "2.28.11";
+
+        // This may be a bit broader than an asset id, but it's a safe set of
+        // filename characters.
+        // Change - added . % ~ to allow urlencoded urls
+        static readonly Regex sm_AssetIdPattern = new Regex(@"^[a-zA-Z0-9-_%~\.]+$");
+
+        /// Returns the list of supported Icosa asset formats in order of preference.
+        /// The list is conditional based on compiler flags for optional format support.
+        static VrAssetFormat[] GetSupportedIcosaFormats()
+        {
+            // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
+            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
+            return new[]
+            {
+                VrAssetFormat.VOX,
+                VrAssetFormat.GLTF2,
+                VrAssetFormat.GLTF,
+                VrAssetFormat.OBJ_NGON,
+                VrAssetFormat.OBJ,
+                VrAssetFormat.PLY
+            };
+        }
+
+        public static bool TryGetDownloadFormat(
+            JObject json, VrAssetFormat[] desiredTypes,
+            out JToken format, out VrAssetFormat selectedType, out string formatType)
+        {
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+
+            if (json == null)
+            {
+                return false;
+            }
+
+            var formatsToken = json["formats"];
+            if (formatsToken == null || !formatsToken.HasValues)
+            {
+                return false;
+            }
+
+            var allFormats = formatsToken.ToList();
+            if (allFormats.Count == 0)
+            {
+                return false;
+            }
+
+            if (desiredTypes == null)
+            {
+                return false;
+            }
+
+            var desiredFormatTypes = desiredTypes.Select(x => x.ToString()).ToList();
+            var preferredFormats = allFormats.Where(f => f["isPreferredForDownload"]?.Value<bool>() == true);
+            format = GetBestFormat(preferredFormats, desiredFormatTypes)
+                ?? GetBestFormat(allFormats, desiredFormatTypes);
+            if (format == null)
+            {
+                return false;
+            }
+
+            formatType = format["formatType"]?.ToString();
+            if (!string.IsNullOrEmpty(formatType) && Enum.TryParse(formatType, out selectedType))
+            {
+                return true;
+            }
+
+            format = null;
+            selectedType = VrAssetFormat.Unknown;
+            formatType = null;
+            return false;
+        }
+
+        private static JToken GetBestFormat(IEnumerable<JToken> formats, List<string> desiredTypes)
+        {
+            foreach (var typeByPreference in desiredTypes)
+            {
+                foreach (var format in formats)
+                {
+                    if (format["formatType"]?.ToString() == typeByPreference)
+                    {
+                        return format;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public enum AssetLoadState
+        {
+            Unknown,
+            NotDownloaded,
+            Downloading,
+            Downloaded, // On disk but not in memory
+            // DownloadFailed,  // We don't keep track of download errors, so this becomes "NotDownloaded"
+            Loading,
+            LoadFailed, // This shows up as a !Valid model in the model catalog
+            Loaded
+        }
+
+        public class AssetDetails
+        {
+            // Disabled only because there isn't a pressing reason to enable it.
+            const bool kLazyLoadThumbnail = false;
+
+            private readonly IcosaAssetCatalog m_Owner;
+            private readonly Texture2D m_Thumbnail;
+            private string m_ThumbnailUrl; // if non-null, have not attempted to fetch it yet
+
+            public string AssetId { get; }
+            public string HumanName { get; }
+            public string AccountName { get; }
+            public Quaternion? ModelRotation { get; }
+            // Highest triangle count reported across the asset's formats (0 if unknown). Used to skip
+            // auto-preload/preview of very heavy models. This is metadata, so it's available before
+            // any download/import.
+            public int TriangleCount { get; }
+
+            public Texture2D Thumbnail
+            {
+                get
+                {
+                    if (m_ThumbnailUrl != null)
+                    {
+                        string url = m_ThumbnailUrl;
+                        m_ThumbnailUrl = null;
+                        DownloadThumbnailAsync(url);
+                    }
+                    return m_Thumbnail;
+                }
+            }
+
+            public Model Model { get { return App.IcosaAssetCatalog.GetModel(AssetId); } }
+
+            public AssetDetails(
+                JToken json, string accountName, string thumbnailSuffix)
+            {
+                m_Owner = App.IcosaAssetCatalog;
+                HumanName = json["displayName"].ToString();
+                AssetId = json["assetId"].ToString();
+                AccountName = accountName;
+                var rotation = json["presentationParams"]?["orientingRotation"];
+                if (rotation != null)
+                {
+                    ModelRotation = new Quaternion(
+                        rotation["x"]?.Value<float>() ?? 0,
+                        rotation["y"]?.Value<float>() ?? 0,
+                        rotation["z"]?.Value<float>() ?? 0,
+                        rotation["w"]?.Value<float>() ?? 0
+                    );
+                }
+                else
+                {
+                    ModelRotation = null;
+                }
+
+                int maxTriangleCount = 0;
+                var formats = json["formats"];
+                if (formats != null)
+                {
+                    foreach (var format in formats)
+                    {
+                        var triToken = format?["formatComplexity"]?["triangleCount"];
+                        if (triToken != null && int.TryParse(triToken.ToString(), out int tris)
+                            && tris > maxTriangleCount)
+                        {
+                            maxTriangleCount = tris;
+                        }
+                    }
+                }
+                TriangleCount = maxTriangleCount;
+
+                m_Thumbnail = new Texture2D(4, 4, TextureFormat.ARGB32, false);
+                m_ThumbnailUrl = json?["thumbnail"]?["url"]?.ToString();
+                if (!string.IsNullOrEmpty(thumbnailSuffix))
+                {
+                    m_ThumbnailUrl = string.Format("{0}={1}", m_ThumbnailUrl, thumbnailSuffix);
+                }
+                if (!kLazyLoadThumbnail)
+                {
+                    // Pre-emptive thumbnail fetch
+                    _ = Thumbnail;
+                }
+            }
+
+            /// Returns the contents of path, or null if the cache doesn't exist / can't be read.
+            /// It's ok to pass null.
+            /// Does not raise exceptions.
+            private static byte[] SafeReadCache(string path)
+            {
+                if (path != null && File.Exists(path))
+                {
+                    try
+                    {
+                        return File.ReadAllBytes(path);
+                    }
+                    catch (IOException e)
+                    {
+                        Debug.LogWarning($"Could not read cache {path}: {e}");
+                    }
+                }
+                return null;
+            }
+
+            /// Updates the contents of path.
+            /// It's ok to pass null path or contents; passing contents=null clears the cache file.
+            /// Does not raise exceptions.
+            private static void SafeWriteCache(string path, byte[] contents)
+            {
+                if (path == null) { return; }
+                try { File.Delete(path); }
+                catch { }
+                if (contents != null)
+                {
+                    string dir = Path.GetDirectoryName(path);
+                    if (!Directory.Exists(dir))
+                    {
+                        try { Directory.CreateDirectory(dir); }
+                        catch { }
+                    }
+                    try { File.WriteAllBytes(path, contents); }
+                    catch { }
+                }
+            }
+
+            async void DownloadThumbnailAsync(string thumbnailUrl)
+            {
+                string cachePath = Path.Combine(m_Owner.m_ThumbnailCacheDir, AssetId);
+                byte[] thumbnailBytes = SafeReadCache(cachePath);
+
+                if (thumbnailBytes == null)
+                {
+                    await m_Owner.m_thumbnailFetchLimiter.WaitAsync();
+                    WebRequest www = new WebRequest(thumbnailUrl);
+                    await www.SendAsync();
+
+                    while (m_Owner.m_thumbnailReadLimiter.IsBlocked())
+                    {
+                        await Awaiters.NextFrame;
+                    }
+                    thumbnailBytes = www.ResultBytes;
+                    SafeWriteCache(cachePath, thumbnailBytes);
+                }
+
+                if (thumbnailBytes != null)
+                {
+                    try
+                    {
+                        // TODO: fix aspect ratio of thumbnail
+                        RawImage imageData = await new ThreadedImageReader(thumbnailBytes, thumbnailUrl);
+
+                        UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
+                        if (imageData != null)
+                        {
+                            m_Thumbnail.Reinitialize(imageData.ColorWidth, imageData.ColorHeight,
+                                TextureFormat.ARGB32, false);
+                            m_Thumbnail.SetPixels32(imageData.ColorData);
+                            m_Thumbnail.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+                        }
+                        UnityEngine.Profiling.Profiler.EndSample();
+
+                        // m_Thumbnail still points to the same Texture2D, so we don't need to send CatalogChanged
+                    }
+                    catch (Exception)
+                    {
+                        SafeWriteCache(cachePath, null);
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public struct IcosaQueryParameters
+        {
+            public string SearchText;
+            public int TriangleCountMax;
+            public string License;
+            public string OrderBy;
+            public string[] Formats;
+            public string Curated;
+            public string Category;
+
+            public string FriendlyString
+            {
+                get
+                {
+                    var parts = new List<string>();
+                    string orderingLabel = OrderBy.ToLowerInvariant();
+                    orderingLabel = orderingLabel.Replace("_", " ");
+                    orderingLabel = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(orderingLabel);
+                    if (!string.IsNullOrEmpty(OrderBy)) parts.Add($"{orderingLabel} first");
+                    if (!string.IsNullOrEmpty(SearchText)) parts.Add($"Title contains \"{SearchText.ToLowerInvariant()}\"");
+                    if (!string.IsNullOrEmpty(License)) parts.Add($"{License.ToLowerInvariant()}");
+                    if (!string.IsNullOrEmpty(Category)) parts.Add($"Category is {Category.ToLowerInvariant()}");
+                    //if (!string.IsNullOrEmpty(Curated)) parts.Add($"Curated: {Curated.ToLowerInvariant()}");
+                    //if (Formats != null && Formats.Length > 0) parts.Add($"Formats: {string.Join(", ", Formats).ToLowerInvariant()}");
+                    if (TriangleCountMax > 0) parts.Add($"Max triangles {TriangleCountMax:N0}");
+                    return parts.Count > 0 ? string.Join(", ", parts) : "(no filters)";
+                }
+            }
+        }
+
+        private static Vector3? GetCameraForward(JToken cameraParams)
+        {
+            if (cameraParams == null)
+            {
+                return null;
+            }
+            JToken cameraMatrix = cameraParams["matrix4x4"];
+            if (cameraMatrix == null) { return null; }
+            // The third column holds the camera's forward.
+            Vector3 cameraForward = new Vector3();
+            cameraForward.x = float.Parse(cameraMatrix[2].ToString());
+            cameraForward.y = float.Parse(cameraMatrix[6].ToString());
+            cameraForward.z = float.Parse(cameraMatrix[10].ToString());
+            return cameraForward;
+        }
+
+        private class AssetSet
+        {
+            public List<AssetDetails> m_Models = new List<AssetDetails>();
+            public IEnumerator<Null> m_FetchMetadataCoroutine;
+            public bool m_RefreshRequested;
+            public float m_CooldownTimer;
+            public IcosaQueryParameters QueryParams;
+        }
+
+        /// A request to pull a Model into memory.
+        /// It's assumed that the Model already exists on disk.
+        public class ModelLoadRequest
+        {
+            public readonly Model Model;
+            /// The reason for the Model being pulled into memory.
+            public readonly string Reason;
+            public string AssetId => Model.AssetId;
+            public ModelLoadRequest(Model model, string reason)
+            {
+                Model = model;
+                Reason = reason;
+            }
+        }
+
+        public event Action CatalogChanged;
+
+        [SerializeField] private string m_ThumbnailSuffix = "s128";
+        /// Assets being downloaded to disk.
+        /// When done, these get moved to m_RequestLoadQueue.
+        private List<AssetGetter> m_ActiveRequests;
+        /// Assets that someone wants to bring from disk into memory.
+        /// Precondition: they are on disk
+        /// These get moved onto m_LoadQueue periodically.
+        /// May contain duplicates?
+        /// TODO: figure out why we have this intermediate stage
+        private List<ModelLoadRequest> m_RequestLoadQueue;
+        private List<ModelLoadRequest> m_LoadQueue;
+        /// Asset downloads waiting for a free slot (see kMaxConcurrentDownloads). Dispatched in
+        /// UpdateCatalog by PumpDownloadQueue. Items here are not yet in m_ActiveRequests.
+        private readonly List<(string assetId, string reason)> m_PendingDownloads =
+            new List<(string assetId, string reason)>();
+        /// Memoization data for IsLoading().
+        /// Set this to null to invalidate it; or (if you are very confident) mutate it.
+        /// Invariant: either null, or the union of m_ActiveRequests, m_RequestLoadQueue, m_LoadQueue.
+        private HashSet<string> m_IsLoadingMemo = null;
+        /// Models that have been started loading (LoadModel called) but aren't valid yet.
+        /// This prevents re-queuing models that are being loaded asynchronously.
+        private HashSet<string> m_ModelsBeingLoaded = new HashSet<string>();
+        private string m_CacheDir;
+        private string m_ThumbnailCacheDir;
+        private Dictionary<string, Model> m_ModelsByAssetId;
+        private Dictionary<string, JObject> m_AssetJsonByAssetId;
+        private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
+        private bool m_NotifyListeners;
+
+        // LRU bookkeeping for the in-memory model cache. Entries exist only while a model is loaded
+        // (m_Valid); they are removed on unload/evict via PruneModelCacheBookkeeping.
+        private readonly Dictionary<string, long> m_LoadedModelBytes = new Dictionary<string, long>();
+        private readonly Dictionary<string, float> m_ModelLastUsedTime = new Dictionary<string, float>();
+        // AssetIds the active panel is currently displaying. These are pinned (never evicted) so the
+        // visible page can't be unloaded out from under the user - which would thrash-reload it.
+        private readonly HashSet<string> m_VisibleAssetIds = new HashSet<string>();
+        // AssetIds measured (after a load) to exceed kOversizedModelByteThreshold. We stop
+        // auto-preloading these. Learned per session; not persisted.
+        private readonly HashSet<string> m_OversizedModelIds = new HashSet<string>();
+
+        private AwaitableRateLimiter m_thumbnailFetchLimiter =
+            new AwaitableRateLimiter(kThumbnailFetchRate, kThumbnailFetchMaxCount);
+        private RateLimiter m_thumbnailReadLimiter =
+            new RateLimiter(maxEventsPerFrame: kThumbnailReadRate);
+
+        /// Returns true if the assetId is in any of our download or load queues
+        public bool IsLoading(string assetId)
+        {
+            // Check if currently being loaded asynchronously
+            if (m_ModelsBeingLoaded.Contains(assetId))
+            {
+                return true;
+            }
+
+            // This needs caching because it's hammered every frame by the model buttons :-/
+            if (m_IsLoadingMemo == null)
+            {
+                m_IsLoadingMemo = new HashSet<string>();
+                m_IsLoadingMemo.UnionWith(m_ActiveRequests.Select(request => request.Asset.Id));
+                m_IsLoadingMemo.UnionWith(m_PendingDownloads.Select(d => d.assetId));
+                m_IsLoadingMemo.UnionWith(m_RequestLoadQueue.Select(request => request.AssetId));
+                m_IsLoadingMemo.UnionWith(m_LoadQueue.Select(request => request.AssetId));
+            }
+            return m_IsLoadingMemo.Contains(assetId);
+        }
+
+        private void EnsureCatalogsExist()
+        {
+            if (m_AssetSetByType == null || m_AssetSetByType.Count == 0)
+            {
+                InitCatalogQueries();
+            }
+        }
+
+        public void RequestAutoRefresh(IcosaSetType type)
+        {
+            EnsureCatalogsExist();
+            // We don't update public catalogue tabs except on startup or forced refresh.
+            if (type != IcosaSetType.Featured && type != IcosaSetType.AllModels && App.IcosaIsLoggedIn)
+            {
+                m_AssetSetByType[type].m_RefreshRequested = true;
+            }
+        }
+
+        public void RequestForcedRefresh(IcosaSetType type)
+        {
+            EnsureCatalogsExist();
+            var set = m_AssetSetByType[type];
+            if (set.m_FetchMetadataCoroutine != null)
+            {
+                StopCoroutine(set.m_FetchMetadataCoroutine);
+                set.m_FetchMetadataCoroutine = null;
+            }
+            set.m_Models.Clear();
+            set.m_CooldownTimer = -1f;
+            set.m_RefreshRequested = true;
+        }
+
+        public void Init()
+        {
+            string cacheDir = Path.Combine(Application.persistentDataPath, "assetCache");
+            m_CacheDir = cacheDir.Replace("\\", "/");
+            // Use a different directory from m_CacheDir to avoid having to make ValidModelCache()
+            // smart enough to allow directories with only a thumbnail and no asset data.
+            m_ThumbnailCacheDir = Path.Combine(Application.persistentDataPath, "assetThumbnail")
+                .Replace("\\", "/");
+            m_ActiveRequests = new List<AssetGetter>();
+            m_RequestLoadQueue = new List<ModelLoadRequest>();
+            m_LoadQueue = new List<ModelLoadRequest>();
+
+            FileUtils.InitializeDirectoryWithUserError(m_CacheDir, "Failed to create asset cache");
+            FileUtils.InitializeDirectoryWithUserError(GetVersionedCacheDirectory(), "Failed to create asset cache");
+            DeleteOldCacheDirectories();
+
+            m_ModelsByAssetId = new Dictionary<string, Model>();
+            // InitCatalogQueries();
+
+            try
+            {
+                foreach (string folderPath in EnumerateCacheDirectories())
+                {
+                    string assetId = Path.GetFileName(folderPath);
+                    string modelFile = ValidModelCache(folderPath);
+                    if (modelFile != null)
+                    {
+                        string path = Path.Combine(folderPath, modelFile);
+                        m_ModelsByAssetId[assetId] = new Model(assetId, path);
+                    }
+                    else
+                    {
+                        Debug.LogWarningFormat("Deleting invalid cache folder {0}", folderPath);
+                        Directory.Delete(folderPath, true);
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                Debug.LogException(e);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Debug.LogException(e);
+            }
+
+            m_AssetSetByType = new Dictionary<IcosaSetType, AssetSet>();
+            // InitCatalogQueries();
+
+            App.Instance.AppExit += () =>
+            {
+                var models = EnumerateCacheDirectories()
+                    .OrderBy(d => Directory.GetLastAccessTimeUtc(d)).ToArray();
+                for (int excess = models.Count() - kAssetDiskCacheSize; excess > 0; excess--)
+                {
+                    Directory.Delete(models[excess - 1], true);
+                }
+            };
+        }
+
+        public void InitCatalogQueries()
+        {
+            m_AssetSetByType[IcosaSetType.User] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.ANY,
+                    OrderBy = OrderByChoices.NEWEST,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.Liked] = new AssetSet
+            {
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.LIKED_TIME,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.Featured] = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.BEST,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.TRUE,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            m_AssetSetByType[IcosaSetType.AllModels] = new AssetSet
+            {
+                m_RefreshRequested = true,
+                QueryParams = new IcosaQueryParameters
+                {
+                    SearchText = "",
+                    TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
+                    License = LicenseChoices.REMIXABLE,
+                    OrderBy = OrderByChoices.DISPLAY_NAME,
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Curated = CuratedChoices.ANY,
+                    Category = CategoryChoices.ANY
+                }
+            };
+
+            // if (App.IcosaIsLoggedIn)
+            // {
+            //     m_AssetSetByType[IcosaSetType.Featured].m_RefreshRequested = true;
+            //     m_AssetSetByType[IcosaSetType.AllModels].m_RefreshRequested = true;
+            // }
+
+            RefreshFetchCoroutines();
+        }
+
+        public AssetLoadState GetAssetLoadState(string assetId)
+        {
+            if (GetModel(assetId) is Model m)
+            {
+                // A model may be present in memory but also be still loading -- eg if someone
+                // requested that the load be retried. In this case it's kind of in two states;
+                // I'm somewhat arbitrarily choosing one.
+                if (m.m_Valid) { return AssetLoadState.Loaded; }
+                else if (m.Error != null) { return AssetLoadState.LoadFailed; }
+                else if (IsLoading(assetId))
+                {
+                    foreach (var elt in m_RequestLoadQueue)
+                    {
+                        if (elt.AssetId == assetId)
+                        {
+                            return AssetLoadState.Loading;
+                        }
+                    }
+                    foreach (var elt in m_LoadQueue)
+                    {
+                        if (elt.AssetId == assetId)
+                        {
+                            return AssetLoadState.Loading;
+                        }
+                    }
+                    // This should never happen and probably indicates some bug where m_AssetLoading hasn't
+                    // been kept in sync with m_[Request]LoadQueue.
+                    Debug.LogWarning($"Model for {assetId} is in an indeterminate state!");
+                    return AssetLoadState.Unknown;
+                }
+                else
+                {
+                    return AssetLoadState.Downloaded;
+                }
+            }
+            else
+            {
+                foreach (var downloadRequest in m_ActiveRequests)
+                {
+                    if (downloadRequest.Asset.Id == assetId)
+                    {
+                        return AssetLoadState.Downloading;
+                    }
+                }
+                return AssetLoadState.NotDownloaded;
+            }
+        }
+
+        public string GetCacheDirectoryForAsset(string asset)
+        {
+            if (!sm_AssetIdPattern.IsMatch(asset))
+            {
+                Debug.LogWarningFormat("Not an asset id: {0}", asset);
+                return null;
+            }
+            return Path.Combine(GetVersionedCacheDirectory(), asset);
+        }
+
+        private string GetVersionedCacheDirectory()
+        {
+            return Path.Combine(m_CacheDir, kAssetCacheVersion);
+        }
+
+        private void DeleteOldCacheDirectories()
+        {
+            try
+            {
+                foreach (var cacheDirectory in new DirectoryInfo(m_CacheDir).EnumerateDirectories())
+                {
+                    if (cacheDirectory.Name == kAssetCacheVersion)
+                    {
+                        continue;
+                    }
+
+                    cacheDirectory.Delete(true);
+                }
+            }
+            catch (UnauthorizedAccessException e) { Debug.LogException(e); }
+            catch (DirectoryNotFoundException e) { Debug.LogException(e); }
+            catch (IOException e) { Debug.LogException(e); }
+        }
+
+        /// On any error, returns an empty enumeration
+        public IEnumerable<string> EnumerateCacheDirectories()
+        {
+            try
+            {
+                return Directory.GetDirectories(GetVersionedCacheDirectory());
+            }
+            catch (UnauthorizedAccessException e) { Debug.LogException(e); }
+            catch (DirectoryNotFoundException e) { Debug.LogException(e); }
+            return new string[] { };
+        }
+
+        void Start()
+        {
+            OAuth2Identity.ProfileUpdated += OnProfileUpdated;
+        }
+
+        public Model GetModel(string assetId)
+        {
+            Model model;
+            if (!m_ModelsByAssetId.TryGetValue(assetId, out model))
+            {
+                // null is actually the default for reference types, just being explicit here.
+                // ReSharper disable once RedundantAssignment
+                model = null;
+            }
+            return model;
+        }
+
+        public bool HasCachedModel(string assetId)
+        {
+            return m_ModelsByAssetId.ContainsKey(assetId);
+        }
+
+        public bool CanAutoDownloadForPreview(string assetId)
+        {
+            if (!TryGetDownloadFormat(GetJsonForAsset(assetId), GetSupportedIcosaFormats(),
+                out JToken format, out _, out _))
+            {
+                return false;
+            }
+
+            return !FormatUsesInternetArchive(format);
+        }
+
+        private static bool FormatUsesInternetArchive(JToken format)
+        {
+            if (IsInternetArchiveUrl(format["root"]?["url"]?.ToString()))
+            {
+                return true;
+            }
+
+            var resources = format["resources"];
+            if (resources != null)
+            {
+                foreach (var resource in resources)
+                {
+                    if (IsInternetArchiveUrl(resource["url"]?.ToString()))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsInternetArchiveUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return false;
+            }
+
+            return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// Checks to see if it's time to kick off a new refresh
+        /// Polls any refresh coroutines going on.
+        void Update()
+        {
+            m_thumbnailFetchLimiter.Tick(Time.deltaTime);
+
+            // Check for models that have finished loading asynchronously
+            var finishedModels = new List<string>();
+            foreach (var assetId in m_ModelsBeingLoaded)
+            {
+                if (m_ModelsByAssetId.TryGetValue(assetId, out Model model))
+                {
+                    if (model.m_Valid || model.Error != null)
+                    {
+                        finishedModels.Add(assetId);
+                    }
+                }
+            }
+            foreach (var assetId in finishedModels)
+            {
+                m_ModelsBeingLoaded.Remove(assetId);
+                // Record cache size/recency for models that loaded successfully.
+                if (m_ModelsByAssetId.TryGetValue(assetId, out Model finished) && finished.m_Valid)
+                {
+                    long modelBytes = EstimateModelBytes(finished);
+                    m_LoadedModelBytes[assetId] = modelBytes;
+                    m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+                    if (modelBytes > kOversizedModelByteThreshold && m_OversizedModelIds.Add(assetId))
+                    {
+                        Debug.Log($"[ICOSALOAD] mark oversized {assetId} " +
+                            $"~{modelBytes / (1024 * 1024)}MB > {kOversizedModelByteThreshold / (1024 * 1024)}MB " +
+                            "- will not auto-preload");
+                    }
+                }
+            }
+            if (finishedModels.Count > 0)
+            {
+                // A load just completed: refresh IsLoading() and let the panel update its buttons.
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+                long __cacheTotal = 0;
+                foreach (var kv in m_LoadedModelBytes) { __cacheTotal += kv.Value; }
+                Debug.Log($"[ICOSALOAD] cache {m_LoadedModelBytes.Count} models " +
+                    $"~{__cacheTotal / (1024 * 1024)}MB (budget {kLoadedModelMemoryBudgetBytes / (1024 * 1024)}MB, " +
+                    $"visible={m_VisibleAssetIds.Count})");
+                EnforceMemoryBudget();
+            }
+
+            if (!VrAssetService.m_Instance.Available)
+            {
+                return;
+            }
+
+            foreach (var entry in m_AssetSetByType)
+            {
+                var type = entry.Key;
+                var set = entry.Value;
+
+                if (set.m_FetchMetadataCoroutine != null)
+                {
+                    // Pump existing update coroutine
+                    try
+                    {
+                        if (!set.m_FetchMetadataCoroutine.MoveNext())
+                        {
+                            set.m_FetchMetadataCoroutine = null;
+                        }
+                    }
+                    catch (VrAssetServiceException e)
+                    {
+                        ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                        Debug.LogException(e);
+                        set.m_FetchMetadataCoroutine = null;
+                    }
+                }
+                else if (set.m_RefreshRequested)
+                {
+                    // Kick off a new refresh coroutine if it is time.
+                    if (set.m_CooldownTimer <= 0)
+                    {
+                        set.m_FetchMetadataCoroutine = RefreshAssetSet(type);
+                        set.m_RefreshRequested = false;
+                        set.m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+                    }
+                }
+                if (set.m_CooldownTimer >= 0)
+                {
+                    set.m_CooldownTimer -= Time.deltaTime;
+                }
+            }
+        }
+
+        /// Pass the reason the Model is being pulled into memory, for logging purposes.
+        public void RequestModelLoad(Model model, string reason)
+        {
+            Debug.Log($"Requesting model load {model} for {reason}");
+            // Verify assumption that byAssetId[model.asset] == model; otherwise, caller may wait
+            // indefinitely for model's loaded state to change and that bug will be hard to track down.
+            string assetId = model.GetLocation().AssetId;
+            m_ModelsByAssetId.TryGetValue(assetId, out Model model2);
+            if (model2 != model)
+            {
+                // If we pretend to try to load the model, the caller may wait infinitely for the Model
+                // to load.
+                throw new InvalidOperationException($"Duplicate {assetId}");
+            }
+            RequestModelLoad(assetId, reason);
+        }
+
+        /// Request loading a model with a given Poly Asset ID.
+        /// Pass the reason the Model is being pulled into memory, for logging purposes.
+        ///
+        /// Upon completion, the asset will:
+        /// - be in "failed download" state (don't know how to check for this)
+        /// - be in "download succeeded, load failed" state (check Model.Error != null)
+        /// - be in "download succeeded, load succeeded" state (check Model.m_Valid)
+        ///
+        /// The intent is that this method will ignore previous failures and try again.
+        /// If you don't want to retry a failed load-into-memory, you should check Model.Error first.
+        /// If you aren't trying to do a hot-reload, you should check Model.m_Valid first.
+        public void RequestModelLoad(string assetId, string reason)
+        {
+            // Don't attempt to load models which are already loading.
+            if (IsLoading(assetId))
+            {
+                return;
+            }
+
+            if (m_ModelsByAssetId.ContainsKey(assetId))
+            {
+                // Already downloaded.
+                // Only add to queue if the model isn't valid yet, to avoid duplicate requests
+                // when RefreshPage() is called multiple times by CatalogChanged events
+                Model model = m_ModelsByAssetId[assetId];
+
+                if (model.m_Valid)
+                {
+                    // Already cached in memory; mark it recently used so it survives LRU eviction.
+                    MarkModelUsed(assetId);
+                    return;
+                }
+                if (model.Error != null)
+                {
+                    return;
+                }
+
+                // It may be in memory already, but it's safe to ask for it to be brought in again.
+                // That way we get the behavior of "ignore a failed load-into-memory"
+                m_RequestLoadQueue.Add(new ModelLoadRequest(model, reason));
+                m_IsLoadingMemo?.Add(assetId);
+            }
+            else
+            {
+                // Not downloaded yet. Queue it; PumpDownloadQueue (in UpdateCatalog) starts the actual
+                // download once a slot is free, so we don't burst the asset host all at once.
+                m_PendingDownloads.Add((assetId, reason));
+                m_IsLoadingMemo?.Add(assetId);
+            }
+        }
+
+        /// Starts queued downloads up to kMaxConcurrentDownloads. Called once per frame from
+        /// UpdateCatalog. Capping concurrency prevents flooding the (rate-limited) asset host.
+        private void PumpDownloadQueue()
+        {
+            while (m_ActiveRequests.Count < kMaxConcurrentDownloads && m_PendingDownloads.Count > 0)
+            {
+                var (assetId, reason) = m_PendingDownloads[0];
+                m_PendingDownloads.RemoveAt(0);
+
+                // It may have been downloaded (or its request canceled) while waiting in the queue.
+                if (m_ModelsByAssetId.ContainsKey(assetId))
+                {
+                    m_IsLoadingMemo = null;
+                    continue;
+                }
+
+                string assetDir = GetCacheDirectoryForAsset(assetId);
+                try
+                {
+                    // For the case that the folder exists, but the files were removed.
+                    if (!Directory.Exists(assetDir))
+                    {
+                        Directory.CreateDirectory(assetDir);
+                    }
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Debug.LogError("Cannot create directory for online asset download.");
+                }
+
+                AssetGetter request = VrAssetService.m_Instance.GetAsset(
+                    assetId, GetSupportedIcosaFormats(), reason);
+                StartCoroutine(request.GetAssetCoroutine());
+                m_ActiveRequests.Add(request);
+                m_IsLoadingMemo = null;
+            }
+        }
+
+        /// The inverse of RequestModelLoad().
+        /// Returns true if the model is no longer in any load queues.
+        /// The current implementation is only a half-hearted effort, so it may return false.
+        public bool CancelRequestModelLoad(string assetId)
+        {
+            if (IsLoading(assetId))
+            {
+                // Drop it from the pending-download queue if it hasn't started yet.
+                if (m_PendingDownloads.RemoveAll(d => d.assetId == assetId) > 0)
+                {
+                    m_IsLoadingMemo = null;
+                }
+
+                // Might be tricky to safely remove from this queue, but at least mark it so that
+                // it doesn't go from "downloading" to "loading into memory"
+                bool isInActiveRequests = false;
+                foreach (var elt in m_ActiveRequests)
+                {
+                    if (elt.Asset.Id == assetId)
+                    {
+                        elt.IsCanceled = true;
+                        isInActiveRequests = true;
+                    }
+                }
+
+                // Removing from RequestLoadQueue is easy; there's no computation associated with it (yet)
+                m_RequestLoadQueue.RemoveAll(elt => elt.AssetId == assetId);
+                bool isInRequestLoadQueue = false;
+
+                {
+                    bool wasInLoadQueue = false;
+                    foreach (var elt in m_LoadQueue)
+                    {
+                        if (elt.AssetId == assetId)
+                        {
+                            elt.Model.CancelLoadModelAsync();
+                            wasInLoadQueue = true;
+                        }
+                    }
+                    if (wasInLoadQueue)
+                    {
+                        m_LoadQueue = m_LoadQueue.Where(elt => elt.AssetId != assetId).ToList();
+                    }
+                }
+                bool isInLoadQueue = false;
+
+                // Could just invalidate the cache, but we're going to have to rebuild it in just a moment,
+                // and we have enough information to mutate it properly.
+                if (!isInActiveRequests && !isInRequestLoadQueue && !isInLoadQueue)
+                {
+                    m_IsLoadingMemo?.Remove(assetId);
+                }
+            }
+
+            return !IsLoading(assetId);
+        }
+
+        /// Downloads models referenced by the passed sketch.
+        /// Pass the reason this is happening.
+        /// TODO: maybe annotate the download request so we can choose whether they turn
+        /// into model loads?
+        public void PrecacheModels(SceneFileInfo sceneFileInfo, string reason)
+        {
+            // TODO precaching can end up getting us rate limited on archive.org
+            //StartCoroutine(PrecacheModelsCoroutine(sceneFileInfo, reason));
+        }
+
+        /// Waits for the json data to be read on a background thread, and then executes a precache
+        /// coroutine for each found asset.
+        private IEnumerator<Null> PrecacheModelsCoroutine(SceneFileInfo sceneFileInfo, string reason)
+        {
+            var getIdsFuture = new Future<List<string>>(() => GetModelIds(sceneFileInfo));
+            List<string> ids;
+            while (true)
+            {
+                try
+                {
+                    if (getIdsFuture.TryGetResult(out ids)) { break; }
+                }
+                catch (FutureFailed e)
+                {
+                    throw new Exception($"While reading {sceneFileInfo}", e);
+                }
+                yield return null;
+            }
+
+            if (ids == null) { yield break; }
+            List<IEnumerator<Null>> precacheCoroutines = new List<IEnumerator<Null>>();
+            // Only trigger off one precache routine per frame.
+            foreach (string id in ids)
+            {
+                if (m_ModelsByAssetId.ContainsKey(id))
+                {
+                    // Already cached
+                    continue;
+                }
+                if (!FileUtils.InitializeDirectory(GetCacheDirectoryForAsset(id)))
+                {
+                    continue;
+                }
+
+                precacheCoroutines.Add(PrecacheCoroutine(
+                    VrAssetService.m_Instance.GetAsset(id, GetSupportedIcosaFormats(), reason)));
+                yield return null;
+            }
+
+            var cr = CoroutineUtil.CompleteAllCoroutines(precacheCoroutines);
+            while (cr.MoveNext())
+            {
+                yield return cr.Current;
+            }
+        }
+
+        /// Returns all non-null asset ids from the passed sketch's metadata.
+        /// null return value means "empty list".
+        /// Raises exception on error.
+        private static List<string> GetModelIds(SceneFileInfo sceneFileInfo)
+        {
+            // Json deserializing is in a separate method that doesn't access Unity objects so that it
+            // can be called on a thread. The json deserializing can be pretty slow and can cause
+            // frame drops if performed on the main thread.
+            Stream metadata = SaveLoadScript.GetMetadataReadStream(sceneFileInfo);
+            if (metadata == null)
+            {
+                if (sceneFileInfo.Exists)
+                {
+                    // ??? Let's try to provoke an exception to propagate to the caller
+                    using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
+                    throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                }
+                else
+                {
+                    throw new Exception(
+                        "Reading metadata from nonexistent " +
+                        $"{sceneFileInfo.InfoType} {sceneFileInfo.HumanName}");
+                }
+            }
+            using (var jsonReader = new JsonTextReader(new StreamReader(metadata)))
+            {
+                var jsonData = SaveLoadScript.m_Instance.DeserializeMetadata(jsonReader);
+                if (SaveLoadScript.m_Instance.LastMetadataError != null)
+                {
+                    throw new Exception($"Deserialize error: {SaveLoadScript.m_Instance.LastMetadataError}");
+                }
+                if (jsonData.ModelIndex == null) { return null; }
+                return jsonData.ModelIndex.Select(m => m.AssetId).Where(a => a != null).ToList();
+            }
+        }
+
+        // The directory for the asset must have already been created
+        IEnumerator<Null> PrecacheCoroutine(AssetGetter request)
+        {
+            string assetId = request.Asset.Id;
+            var cr = request.GetAssetCoroutine();
+            while (true)
+            {
+                try
+                {
+                    bool result = cr.MoveNext();
+                    if (!result)
+                    {
+                        break;
+                    }
+                }
+                catch (VrAssetServiceException e)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                    Debug.LogException(e);
+                    yield break;
+                }
+                yield return cr.Current;
+            }
+            while (!request.IsReady) { yield return null; }
+            request.Asset.WriteToDisk();
+            string path = Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
+            m_ModelsByAssetId[assetId] = new Model(assetId, path);
+        }
+
+        public void UpdateCatalog()
+        {
+            // Walk backwards so removal doesn't mess up our indexing.
+            for (int i = m_ActiveRequests.Count - 1; i >= 0; --i)
+            {
+                AssetGetter request = m_ActiveRequests[i];
+                if (request.IsReady || request.IsCanceled)
+                {
+                    if (request.Asset.ValidAsset)
+                    {
+                        if (request.Asset.WriteToDisk())
+                        {
+                            string assetId = request.Asset.Id;
+                            string path =
+                                Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
+                            // TODO: This assumes PolyRawAssets are models.  This may not be true in the
+                            // future and should the VrAssetProtos.ElementType request parameter to
+                            // VrAssetService.m_Instance.GetAsset to decide how to store and index the asset.
+
+                            // Populate map entry for this new model.
+                            m_ModelsByAssetId[assetId] = new Model(assetId, path);
+
+                            // After download the model should be loaded too, unless the request was canceled.
+                            // TODO: this seems a littttle suspect. Just because it finished downloading,
+                            // does that mean we still want to bring it into memory?
+                            if (!request.IsCanceled)
+                            {
+                                m_RequestLoadQueue.Add(
+                                    new ModelLoadRequest(
+                                        m_ModelsByAssetId[assetId], $"{request.Reason} fetched"));
+                            }
+                            else
+                            {
+                                // Just reset, in case asset is on one of the other queues.
+                                m_IsLoadingMemo = null;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Downloaded asset is empty " + request.Asset.RootFilePath);
+                    }
+
+                    m_ActiveRequests.RemoveAt(i);
+                    m_NotifyListeners = true;
+                }
+            }
+
+            // Start any queued downloads that now have a free slot.
+            PumpDownloadQueue();
+
+            if (m_RequestLoadQueue.Count > 0 && m_LoadQueue.Count == 0)
+            {
+                // Move a single item from "request load" to "load". Too many items on the load queue
+                // causes bad stuttering (at least for heavy models).
+                var toMove = m_RequestLoadQueue[0];
+                // TODO: how is it possible for m_RequestLoadQueue to contain duplicates?
+                m_RequestLoadQueue = m_RequestLoadQueue
+                    .Where(elt => elt.AssetId != toMove.AssetId)
+                    .ToList();
+                m_LoadQueue.Add(toMove);
+            }
+
+            // Always call this to poll the async loader.
+            LoadModelsInQueueAsync();
+
+            // Shout from the hills.
+            if (m_NotifyListeners)
+            {
+                if (CatalogChanged != null)
+                {
+                    CatalogChanged();
+                }
+                m_NotifyListeners = false;
+            }
+        }
+
+        void LoadModelsInQueueAsync()
+        {
+            UnityEngine.Profiling.Profiler.BeginSample("PAC.LoadModelsInQueueAsync");
+            // Load one model at a time. The UnityGLTF import is time-sliced across frames (see
+            // NewGltfImporter), so we start a single async load and wait for it to finish before
+            // starting the next. Completion is detected in Update(), which clears the assetId from
+            // m_ModelsBeingLoaded once the load sets m_Valid or Error.
+            if (m_ModelsBeingLoaded.Count == 0 && m_LoadQueue.Count > 0)
+            {
+                var request = m_LoadQueue[0];
+                m_LoadQueue.RemoveAt(0);
+                m_IsLoadingMemo = null;
+
+                Model model = request.Model;
+                if (!model.m_Valid && model.Error == null)
+                {
+                    string assetId = model.GetLocation().AssetId;
+                    m_ModelsBeingLoaded.Add(assetId);
+                    LoadModelAsyncSafe(model, assetId);
+                }
+            }
+            UnityEngine.Profiling.Profiler.EndSample();
+        }
+
+        /// Fire-and-forget async model load. The normal completion path (valid or load error) is
+        /// observed in Update() via m_Valid/Error. This wrapper exists only to guard against an
+        /// unexpected exception leaving the asset stuck in m_ModelsBeingLoaded, which would stall
+        /// the single-at-a-time load queue indefinitely.
+        private async void LoadModelAsyncSafe(Model model, string assetId)
+        {
+            try
+            {
+                await model.LoadModelAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                m_ModelsBeingLoaded.Remove(assetId);
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+            }
+        }
+
+        private static HashSet<T> SetMinus<T>(HashSet<T> lhs, HashSet<T> rhs)
+        {
+            var result = new HashSet<T>(lhs);
+            result.ExceptWith(rhs);
+            return result;
+        }
+
+        private IEnumerator<Null> RefreshAssetSet(IcosaSetType type)
+        {
+            List<AssetDetails> models = new List<AssetDetails>();
+            // When the list is empty, make it the actual list acted upon so that results start
+            // showing up immediately.
+            if (m_AssetSetByType[type].m_Models.Count == 0)
+            {
+                m_AssetSetByType[type].m_Models = models;
+            }
+            AssetLister lister = VrAssetService.m_Instance.ListAssets(type, QueryOptionParametersForSet(type));
+            bool firstPass = true;
+            while (lister.HasMore || firstPass)
+            {
+                firstPass = false;
+                // TODO - it makes sense for a user to be allowed to access their own private assets
+                // But it might break assumptions in the rest of the code and in other apps.
+                // As well as presenting some challenges in terms of non-surprising behaviour
+                // So for now, just don't show them.
+                // bool includePrivate = type == IcosaSetType.User;
+                bool includePrivate = false;
+
+                using (var cr = lister.NextPage(models, m_ThumbnailSuffix, includePrivate))
+                {
+                    int prevCount = models.Count;
+                    while (true)
+                    {
+                        try
+                        {
+                            if (!cr.MoveNext())
+                            {
+                                break;
+                            }
+                        }
+                        catch (VrAssetServiceException e)
+                        {
+                            ControllerConsoleScript.m_Instance.AddNewLine(e.Message);
+                            Debug.LogException(e);
+                            yield break;
+                        }
+                        if (models.Count - prevCount > 5)  // Avoid updating the catalog too often
+                        {
+                            addFoundModels();
+                            prevCount = models.Count;
+                        }
+                        yield return cr.Current;
+                    }
+                }
+                if (models.Count == 0)
+                {
+                    break;
+                }
+            }
+            // Add any remaining models
+            addFoundModels();
+
+            void addFoundModels()
+            {
+                // As the assets may already have models loaded into them, just add any new models and
+                // remove old ones.
+                var newIds = new HashSet<string>(models.Select(m => m.AssetId));
+                var oldIds = new HashSet<string>(m_AssetSetByType[type].m_Models.Select(m => m.AssetId));
+                // These must be reified; if they are left as lazy IEnumerables, O(n^2) behavior results
+                HashSet<string> toAdd = SetMinus(newIds, oldIds);
+                HashSet<string> toRemove = SetMinus(oldIds, newIds);
+                m_AssetSetByType[type].m_Models.RemoveAll(m => toRemove.Contains(m.AssetId));
+                m_AssetSetByType[type].m_Models.InsertRange(0, models.Where(m => toAdd.Contains(m.AssetId)));
+                if (CatalogChanged != null)
+                {
+                    CatalogChanged();
+                }
+            }
+        }
+
+        void RefreshFetchCoroutines()
+        {
+            if (App.IcosaIsLoggedIn)
+            {
+                m_AssetSetByType[IcosaSetType.User].m_RefreshRequested = true;
+                m_AssetSetByType[IcosaSetType.Liked].m_RefreshRequested = true;
+            }
+            else
+            {
+                AssetSet set = m_AssetSetByType[IcosaSetType.User];
+                if (set.m_FetchMetadataCoroutine != null)
+                {
+                    StopCoroutine(set.m_FetchMetadataCoroutine);
+                    set.m_FetchMetadataCoroutine = null;
+                }
+                set.m_Models.Clear();
+                set = m_AssetSetByType[IcosaSetType.Liked];
+                if (set.m_FetchMetadataCoroutine != null)
+                {
+                    StopCoroutine(set.m_FetchMetadataCoroutine);
+                    set.m_FetchMetadataCoroutine = null;
+                }
+                set.m_Models.Clear();
+                if (CatalogChanged != null)
+                {
+                    CatalogChanged();
+                }
+            }
+        }
+
+        void OnProfileUpdated(OAuth2Identity identity)
+        {
+            if (identity.IsIcosa)
+            {
+                RefreshFetchCoroutines();
+            }
+        }
+
+        void OnDestroy()
+        {
+            OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
+        }
+
+        public int NumCloudModels(IcosaSetType type)
+        {
+            EnsureCatalogsExist();
+            return m_AssetSetByType[type].m_Models.Count();
+        }
+
+        public AssetDetails GetIcosaAsset(IcosaSetType type, int index)
+        {
+            return m_AssetSetByType[type].m_Models[index];
+        }
+
+        // Ideally we would check against the format info from Poly that we have all the required
+        // elements but for now we know there should be one root model file in a supported format.
+        // Returns the path of the root model file relative to dir, or null if not valid.
+        private static string ValidModelCache(string dir)
+        {
+            // We now don't require a .bin file, as some assets are glbs
+            // if (Directory.GetFiles(dir, "*.bin").Length == 0)
+            // {
+            //     return null;
+            // }
+
+            string[] preferredExtensions =
+            {
+                ".vox",
+                ".gltf2",
+                ".gltf",
+                ".glb",
+                ".obj",
+                ".ply"
+            };
+
+            var allFiles = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
+            var modelFiles = allFiles.Where(file =>
+                preferredExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())).ToArray();
+
+            if (modelFiles.Length != 1)
+            {
+                return null;
+            }
+
+            return modelFiles[0]
+                .Substring(dir.Length)
+                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        public void ClearLoadingQueue()
+        {
+            m_LoadQueue.Clear();
+            m_RequestLoadQueue.Clear();
+            m_PendingDownloads.Clear();
+            m_IsLoadingMemo = null;
+            foreach (var req in m_ActiveRequests)
+            {
+                req.IsCanceled = true;
+            }
+        }
+
+        public void UnloadUnusedModels()
+        {
+            foreach (var model in m_ModelsByAssetId.Values.Where(x => x != null && x.m_UsageCount == 0))
+            {
+                model.UnloadModel();
+            }
+            PruneModelCacheBookkeeping();
+        }
+
+        /// True if this model was measured (on a previous load this session) to be too large to be
+        /// worth auto-preloading/previewing.
+        public bool IsModelOversized(string assetId)
+        {
+            return m_OversizedModelIds.Contains(assetId);
+        }
+
+        /// Marks a loaded model as recently used so it survives LRU eviction.
+        public void MarkModelUsed(string assetId)
+        {
+            if (m_ModelLastUsedTime.ContainsKey(assetId))
+            {
+                m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
+            }
+        }
+
+        /// Records which assetIds the panel is currently showing. Pinned models are never evicted,
+        /// so the budget can only reclaim models that have scrolled off-screen / out of the open tab.
+        public void SetVisibleModels(IEnumerable<string> assetIds)
+        {
+            m_VisibleAssetIds.Clear();
+            foreach (var id in assetIds)
+            {
+                if (id != null) { m_VisibleAssetIds.Add(id); }
+            }
+        }
+
+        /// Drops cache bookkeeping for any asset that is no longer loaded.
+        private void PruneModelCacheBookkeeping()
+        {
+            var stale = m_LoadedModelBytes.Keys
+                .Where(id => !m_ModelsByAssetId.TryGetValue(id, out var m) || m == null || !m.m_Valid)
+                .ToList();
+            foreach (var id in stale)
+            {
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+            }
+        }
+
+        /// Estimates a loaded model's runtime footprint (meshes + textures) in bytes.
+        private static long EstimateModelBytes(Model model)
+        {
+            if (model == null || model.m_ModelParent == null)
+            {
+                return 0;
+            }
+            long bytes = 0;
+            var seenMeshes = new HashSet<Mesh>();
+            foreach (var mf in model.m_ModelParent.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var mesh = mf.sharedMesh;
+                if (mesh != null && seenMeshes.Add(mesh))
+                {
+                    bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(mesh);
+                }
+            }
+            var seenTextures = new HashSet<Texture>();
+            foreach (var renderer in model.m_ModelParent.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var mat in renderer.sharedMaterials)
+                {
+                    if (mat == null) { continue; }
+                    foreach (var nameId in mat.GetTexturePropertyNameIDs())
+                    {
+                        var tex = mat.GetTexture(nameId);
+                        if (tex != null && seenTextures.Add(tex))
+                        {
+                            bytes += UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(tex);
+                        }
+                    }
+                }
+            }
+            return bytes;
+        }
+
+        /// Evicts least-recently-used, unplaced, loaded models until the in-memory model cache is
+        /// back under kLoadedModelMemoryBudgetBytes. Models placed in the scene (m_UsageCount > 0)
+        /// are never evicted (but still count toward the total).
+        private void EnforceMemoryBudget()
+        {
+            PruneModelCacheBookkeeping();
+
+            long total = 0;
+            foreach (var kv in m_LoadedModelBytes)
+            {
+                total += kv.Value;
+            }
+            if (total <= kLoadedModelMemoryBudgetBytes)
+            {
+                return;
+            }
+
+            // Evict largest-first: one oversized model can exceed the whole budget, and dropping it
+            // frees space with a single eviction, keeping the many small/quick models cached. (Pure
+            // LRU would flush all the cheap models before the one expensive one - the worst outcome.)
+            var evictable = m_LoadedModelBytes.Keys
+                .Where(id => !m_VisibleAssetIds.Contains(id)
+                    && m_ModelsByAssetId.TryGetValue(id, out var m)
+                    && m != null && m.m_Valid && m.m_UsageCount == 0)
+                .OrderByDescending(id => m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0L)
+                .ToList();
+
+            bool evictedAny = false;
+            foreach (var id in evictable)
+            {
+                if (total <= kLoadedModelMemoryBudgetBytes) { break; }
+                long freed = m_LoadedModelBytes.TryGetValue(id, out var b) ? b : 0;
+                m_ModelsByAssetId[id].UnloadModel();
+                m_LoadedModelBytes.Remove(id);
+                m_ModelLastUsedTime.Remove(id);
+                total -= freed;
+                evictedAny = true;
+            }
+            if (evictedAny)
+            {
+                m_IsLoadingMemo = null;
+                m_NotifyListeners = true;
+            }
+        }
+
+        public IcosaQueryParameters QueryOptionParametersForSet(IcosaSetType set)
+        {
+            return m_AssetSetByType[set].QueryParams;
+        }
+
+        private void RefreshPanel()
+        {
+            var panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.Icosa);
+            if (panel == null) panel = (IcosaPanel)PanelManager.m_Instance.GetActivePanelByType(BasePanel.PanelType.IcosaMobile);
+            if (panel != null)
+            {
+                panel.RefreshCurrentSet(true);
+            }
+        }
+
+        public void UpdateSearchText(IcosaSetType set, string mLastInput, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.SearchText = mLastInput;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            if (requestRefresh) RefreshPanel();
+        }
+
+        public void UpdateTriangleCountMax(IcosaSetType set, int triangleCountMax, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            queryParams.TriangleCountMax = triangleCountMax;
+            m_AssetSetByType[set].QueryParams = queryParams;
+            if (requestRefresh) RefreshPanel();
+        }
+
+        public void UpdateLicense(IcosaSetType set, string license, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<LicenseChoices>(license))
+            {
+                queryParams.License = license;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateOrderBy(IcosaSetType set, string orderBy, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<OrderByChoices>(orderBy))
+            {
+                queryParams.OrderBy = orderBy;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateFormat(IcosaSetType set, string format, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<FormatChoices>(format))
+            {
+                queryParams.Formats = new[] { format };
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateCurated(IcosaSetType set, string curated, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<CuratedChoices>(curated))
+            {
+                queryParams.Curated = curated;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public void UpdateCategory(IcosaSetType set, string category, bool requestRefresh = false)
+        {
+            var queryParams = QueryOptionParametersForSet(set);
+            if (ChoicesHelper.IsValidChoice<CategoryChoices>(category))
+            {
+                queryParams.Category = category;
+                m_AssetSetByType[set].QueryParams = queryParams;
+                if (requestRefresh) RefreshPanel();
+            }
+        }
+
+        public JObject GetJsonForAsset(string assetId)
+        {
+            if (m_AssetJsonByAssetId == null)
+            {
+                m_AssetJsonByAssetId = new Dictionary<string, JObject>();
+            }
+            m_AssetJsonByAssetId.TryGetValue(assetId, out JObject json);
+            return json;
+        }
+
+        public void SetJsonForAsset(string toString, JObject asset)
+        {
+            m_AssetJsonByAssetId ??= new Dictionary<string, JObject>();
+            m_AssetJsonByAssetId[toString] = asset;
+        }
+    }
+
+} // namespace TiltBrush

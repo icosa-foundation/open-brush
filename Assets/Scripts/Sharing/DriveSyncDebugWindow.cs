@@ -22,7 +22,7 @@ namespace TiltBrush
     public partial class DriveSync
     {
 
-        [MenuItem("Tilt/DriveSync Debug Window")]
+        [MenuItem("Open Brush/DriveSync Debug Window")]
         public static void OpenDriveSyncWindow()
         {
             EditorWindow.GetWindow(typeof(DriveSync.DriveSyncWindow));

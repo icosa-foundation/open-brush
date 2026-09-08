@@ -125,7 +125,7 @@ namespace TiltBrush
             {
                 var bufferedStream = new BufferedStream(stream, 4096);
                 return SketchWriter.GetStrokes(
-                    bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian);
+                    bufferedStream, metadata.BrushIndex, BitConverter.IsLittleEndian, targetLayer: -1, timestampOffset: 0);
             }
         }
 
@@ -194,7 +194,7 @@ namespace TiltBrush
     // Unit tests run inside an ephemeral scene, so if you want to examine
     // the results you need to manually run the test
     static public class TestBrushHelper {
-      [MenuItem("Tilt/Run Tests In Scene")]
+      [MenuItem("Open Brush/Run Tests In Scene")]
       public static void RunTestsInScene() {
         var tb = new TestBrush();
         tb.RunBeforeAnyTests();

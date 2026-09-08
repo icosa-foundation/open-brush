@@ -53,6 +53,12 @@ namespace TiltBrush
             BaseStream = null;
         }
 
+        public void Guid(Guid guid)
+        {
+            byte[] guidBytes = guid.ToByteArray();
+            m_stream.Write(guidBytes, 0, guidBytes.Length);
+        }
+
         public void Color(Color color)
         {
             Float(color.r);

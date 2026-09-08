@@ -44,6 +44,7 @@ namespace TiltBrush
 #endif
 
         }
+
         /// Returns difference between two periodic values.
         /// Result range is [-period/2, period/2)
         static public float PeriodicDifference(

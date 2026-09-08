@@ -48,31 +48,108 @@ namespace TiltBrush
             m_AssetLocation = assetLocation;
         }
 
+        // Used for SVG exports
+        public void AddSvgIem(Material unityMaterial)
+        {
+            m_MaterialToIem.Add(
+                unityMaterial,
+                new DynamicExportableMaterial(
+                    parent: TbtSettings.Instance.m_SvgMaterial.descriptor,
+                    durableName: unityMaterial.name,
+                    uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
+                    uriBase: m_AssetLocation
+                )
+                {
+                    BaseColorFactor = Color.white,
+                    BaseColorTex = null,
+                }
+            );
+        }
+
 #if FBX_SUPPORTED
-  // Used for FBX imports
-  public void Add(
-      Material unityMaterial,
-      bool transparent, string baseColorUri, FbxSurfaceLambert fbxMaterial) {
-    if (baseColorUri != null) {
-      Debug.Assert(File.Exists(Path.Combine(m_AssetLocation, baseColorUri)));
-    }
+        // Used for FBX imports
+        public void Add(
+            Material unityMaterial,
+            bool transparent, string baseColorUri, FbxSurfaceLambert fbxMaterial)
+        {
+            if (baseColorUri != null)
+            {
+                Debug.Assert(File.Exists(Path.Combine(m_AssetLocation, baseColorUri)));
+            }
 
-    TbtSettings.PbrMaterialInfo pbrInfo = transparent
-        ? TbtSettings.Instance.m_PbrBlendDoubleSided
-        : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+            TbtSettings.PbrMaterialInfo pbrInfo = transparent
+                ? TbtSettings.Instance.m_PbrBlendDoubleSided
+                : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
 
-    m_MaterialToIem.Add(
-        unityMaterial,
-        new DynamicExportableMaterial(
-            parent: pbrInfo.descriptor,
-            durableName: fbxMaterial.GetName(),
-            uniqueName: MakeDeterministicUniqueName(m_numAdded++, fbxMaterial.GetName()),
-            uriBase: m_AssetLocation) {
-                BaseColorFactor = unityMaterial.GetColor("_Color"),
-                BaseColorTex = baseColorUri,
-            });
-  }
+            m_MaterialToIem.Add(
+                unityMaterial,
+                new DynamicExportableMaterial(
+                    parent: pbrInfo.descriptor,
+                    durableName: fbxMaterial.GetName(),
+                    uniqueName: MakeDeterministicUniqueName(m_numAdded++, fbxMaterial.GetName()),
+                    uriBase: m_AssetLocation)
+                {
+                    BaseColorFactor = unityMaterial.GetColor("_Color"),
+                    BaseColorTex = baseColorUri,
+                });
+        }
 #endif
+
+        // Used for UnityGLTF imports
+        // Can be removed once we stop using EnsureCollectorExists
+        public void Add(Material unityMaterial)
+        {
+            TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
+
+            Color color = Color.white;
+            bool hasColor = false;
+            if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
+            {
+                if (unityMaterial.HasColor("baseColorFactor"))
+                {
+                    color = unityMaterial.GetColor("baseColorFactor");
+                    hasColor = true;
+
+                    if (unityMaterial.shader.name == "PBRGraph-Transparent-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Double")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+                    }
+                    else if (unityMaterial.shader.name == "PBRGraph-Transparent")
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrBlendSingleSided;
+                    }
+                    else
+                    {
+                        pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
+                    }
+                }
+            }
+            if (!hasColor && unityMaterial.HasColor("_Color"))
+            {
+                color = unityMaterial.GetColor("_Color");
+                hasColor = true;
+            }
+            if (!hasColor && unityMaterial.HasColor("_BaseColor"))
+            {
+                color = unityMaterial.GetColor("_BaseColor");
+                hasColor = true;
+            }
+
+            var dynMat = new DynamicExportableMaterial(
+                parent: pbrInfo.descriptor,
+                durableName: unityMaterial.name,
+                uniqueName: MakeDeterministicUniqueName(m_numAdded++, unityMaterial.name),
+                uriBase: m_AssetLocation);
+
+            dynMat.BaseColorFactor = color;
+
+            m_MaterialToIem.Add(unityMaterial, dynMat);
+
+        }
 
         // Used for gltf imports
         public void Add(GltfMaterialConverter.UnityMaterial um,

@@ -29,13 +29,15 @@ Shader "Brush/Special/Intersection" {
       Blend Off
 
       CGPROGRAM
+      #pragma multi_compile __ SHADER_SCRIPTING_ON
 
 #pragma vertex vert
 #pragma fragment frag
 #pragma geometry geom
 
-#include "Assets/Shaders/Include/Brush.cginc"
-#include "Assets/Shaders/Include/PackInt.cginc"
+#include "UnityCG.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
 // TODO: This is currently disabled because of issues with back facing triangles.
 #define TILT_ENABLE_CONSERVATIVE_RASTER 0
@@ -45,6 +47,8 @@ Shader "Brush/Special/Intersection" {
 
       struct appdata_t {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -55,12 +59,18 @@ Shader "Brush/Special/Intersection" {
 #if TILT_ENABLE_CONSERVATIVE_RASTER // Saves some overhead when unused.
         float4 aabb : TEXCOORD1;
         float4 clipPos : TEXCOORD2;
-#endif
+        #endif
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert(appdata_t v)
       {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         o.worldPos = mul(unity_ObjectToWorld, v.vertex);
         o.color = half4(0, 0, 0, 0);
@@ -164,23 +174,9 @@ Shader "Brush/Special/Intersection" {
       {
         v2f test = (v2f)0;
 
-#if 1
         // This method also handles the case of large triangles.
-        bool hit = any(input[0].worldPos != input[1].worldPos)
-          && any(input[0].worldPos != input[2].worldPos)
-          && any(input[2].worldPos != input[1].worldPos)
-          && SphereInTriangle(input[0].worldPos, input[1].worldPos, input[2].worldPos, vSphereCenter, fSphereRad);
-
-#else
-        // TODO: Remove in M14.
-        // Explicitly not testing for extremely large triangles where the sphere is internal
-        bool hit = any(input[0].worldPos != input[1].worldPos)
-            && any(input[0].worldPos != input[2].worldPos)
-            && any(input[2].worldPos != input[1].worldPos)
-            && (SegmentSphereIntersection(input[0].worldPos, input[1].worldPos, vSphereCenter, fSphereRad)
-             || SegmentSphereIntersection(input[1].worldPos, input[2].worldPos, vSphereCenter, fSphereRad)
-             || SegmentSphereIntersection(input[2].worldPos, input[0].worldPos, vSphereCenter, fSphereRad));
-#endif
+        // TODO: the 'any' and 'all' functions appear to not work on Android. Have disabled check for now.
+        bool hit = SphereInTriangle(input[0].worldPos, input[1].worldPos, input[2].worldPos, vSphereCenter, fSphereRad);
 
         // Discard the triangle if there is no hit.
         if (!hit) {
@@ -229,7 +225,7 @@ Shader "Brush/Special/Intersection" {
 #endif
           test.vertex = currPos;
           test.worldPos = input[i].worldPos;
-          test.color = PackUint16x2ToRgba8(uint2(_BatchID, id));
+          test.color = PackUint16x2ToRgba8(uint2((uint)_BatchID, id));
 
           // Note, world space pos has not been inflated.
           OutputStream.Append(test);
@@ -256,6 +252,9 @@ Shader "Brush/Special/Intersection" {
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: if this shader fails to compile or load, we want the
+  // intersection RT to stay empty (all-zero, from the camera clear) rather than be
+  // silently filled by Unlit/Diffuse sampling each brush's MainTex - which would
+  // produce garbage batch/triangle IDs and silently-wrong selection results.
 
 }

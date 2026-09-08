@@ -25,6 +25,37 @@ namespace TiltBrush
     {
         private enum Axis { X, Y, Z }
 
+        private static Quaternion _LookAt(Vector3 sourcePoint, Vector3 destPoint)
+        {
+            Vector3 forwardVector = Vector3.Normalize(destPoint - sourcePoint);
+            float dot = Vector3.Dot(Vector3.forward, forwardVector);
+            if (Math.Abs(dot - (-1.0f)) < 0.000001f)
+            {
+                return new Quaternion(Vector3.up.x, Vector3.up.y, Vector3.up.z, 3.1415926535897932f);
+            }
+            if (Math.Abs(dot - (1.0f)) < 0.000001f)
+            {
+                return Quaternion.identity;
+            }
+
+            float rotAngle = (float)Math.Acos(dot);
+            Vector3 rotAxis = Vector3.Cross(Vector3.forward, forwardVector);
+            rotAxis = Vector3.Normalize(rotAxis);
+            return _CreateFromAxisAngle(rotAxis, rotAngle);
+        }
+
+        private static Quaternion _CreateFromAxisAngle(Vector3 axis, float angle)
+        {
+            float halfAngle = angle * .5f;
+            float s = Mathf.Sin(halfAngle);
+            Quaternion q;
+            q.x = axis.x * s;
+            q.y = axis.y * s;
+            q.z = axis.z * s;
+            q.w = Mathf.Cos(halfAngle);
+            return q;
+        }
+
         private static void _ChangeBrushBearing(float angle, Vector3 axis)
         {
             ApiManager.Instance.BrushRotation *= Quaternion.AngleAxis(angle, axis);
@@ -36,13 +67,22 @@ namespace TiltBrush
             cam.transform.rotation *= Quaternion.AngleAxis(angle, axis);
         }
 
-        private static TrTransform _CurrentTransform()
+        private static Vector3 _RotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rot)
+        {
+            Vector3 dir = point - pivot;
+            dir = rot * dir;
+            point = dir + pivot;
+            return point;
+        }
+
+        private static TrTransform _CurrentBrushTransform()
         {
             var tr = TrTransform.TR(
                 ApiManager.Instance.BrushPosition,
                 ApiManager.Instance.BrushRotation
             );
-            return tr;
+            var result = App.Scene.Pose * tr;
+            return result;
         }
 
         private static Vector3 _QuantizePosition(Vector3 pos, Vector3 grid)
@@ -55,8 +95,9 @@ namespace TiltBrush
         {
             foreach (Stroke stroke in SelectionManager.m_Instance.SelectedStrokes)
             {
-                var newCPs = new List<PointerManager.ControlPoint>();
-                for (var i = 0; i < stroke.m_ControlPoints.Length; i++)
+                int cpCount = stroke.m_ControlPoints.Length;
+                var newCPs = new List<PointerManager.ControlPoint>(cpCount);
+                for (var i = 0; i < cpCount; i++)
                 {
                     var cp = stroke.m_ControlPoints[i];
                     cp.m_Pos = func(cp.m_Pos);
@@ -90,27 +131,39 @@ namespace TiltBrush
             return new Vector3(pos.x * scale.x, pos.y * scale.y, pos.z * scale.z);
         }
 
-        private static void _PositionWidget(GrabWidget widget, Vector3 position)
+        private static void _SetWidgetPosition(GrabWidget widget, Vector3 position)
         {
+            var tr = widget.LocalTransform;
+            tr.translation = position;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    TrTransform.T(position),
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
-        private static void _ScaleWidget(GrabWidget widget, float scale)
+        private static void _SetWidgetRotation(GrabWidget widget, Vector3 rotation)
         {
+            _SetWidgetRotation(widget, Quaternion.Euler(rotation));
+        }
+
+        private static void _SetWidgetRotation(GrabWidget widget, Quaternion rotation)
+        {
+            var tr = widget.LocalTransform;
+            tr.rotation = rotation;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(
-                    widget,
-                    TrTransform.S(scale),
-                    widget.CustomDimension,
-                    true
-                )
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
+            );
+        }
+
+        private static void _SetWidgetScale(GrabWidget widget, float scale)
+        {
+            widget.SetSignedWidgetSize(scale);
+        }
+
+        private static void _SetWidgetTransform(GrabWidget widget, Vector3 translation, Quaternion rotation, float scale = 1)
+        {
+            var tr = TrTransform.TRS(translation, rotation, scale);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(widget, tr, widget.CustomDimension, true)
             );
         }
 
@@ -128,10 +181,28 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveImageWidgets[index].WidgetScript;
         }
 
+        private static TextWidget _GetActiveTextWidget(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
+            return WidgetManager.m_Instance.ActiveTextWidgets[index].WidgetScript;
+        }
+
+        private static LightWidget _GetActiveLight(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveLightWidgets);
+            return WidgetManager.m_Instance.ActiveLightWidgets[index].WidgetScript;
+        }
+
         private static VideoWidget _GetActiveVideo(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveVideoWidgets);
             return WidgetManager.m_Instance.ActiveVideoWidgets[index].WidgetScript;
+        }
+
+        private static SoundClipWidget _GetActiveSoundClip(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveSoundClipWidgets);
+            return WidgetManager.m_Instance.ActiveSoundClipWidgets[index].WidgetScript;
         }
 
         private static ModelWidget _GetActiveModel(int index)
@@ -140,69 +211,241 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveModelWidgets[index].WidgetScript;
         }
 
+        private static StencilWidget _GetActiveStencil(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveStencilWidgets);
+            return WidgetManager.m_Instance.ActiveStencilWidgets[index].WidgetScript;
+        }
+
         private static CameraPathWidget _GetActiveCameraPath(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveCameraPathWidgets);
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
 
-        private static string _DownloadMediaFileFromUrl(string url, string destinationFolder)
+        private static string _DownloadMediaFileFromUrl(string url, string relativeDestinationFolder)
         {
-            var request = System.Net.WebRequest.Create(url);
+            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
+        }
+
+        private static string _DownloadMediaFileFromUrl(
+            string url,
+            string relativeDestinationFolder,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            return _DownloadMediaFileFromUrl(
+                new Uri(url), relativeDestinationFolder, allowRedirects,
+                requiredContentTypePrefix);
+        }
+
+        private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
+        {
+            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
+        }
+
+        private static string _DownloadMediaFileFromUrl(
+            Uri url,
+            string relativeDestinationFolder,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            string absoluteDestinationPath = GetSafeRelativePathInDirectory(
+                App.MediaLibraryPath(), relativeDestinationFolder,
+                "media destination folder", allowBaseDirectory: true);
+            return _DownloadMediaFileFromUrlToDirectory(
+                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
+        }
+
+        private static string _DownloadMediaFileFromUrlToDirectory(
+            Uri url,
+            string absoluteDestinationPath,
+            bool allowRedirects,
+            string requiredContentTypePrefix = null)
+        {
+            var request = System.Net.WebRequest.CreateHttp(url);
+            request.UserAgent = ApiManager.WebRequestUserAgent;
             request.Method = "HEAD";
-            var response = request.GetResponse();
-            Uri uri = new Uri(url);
+            request.AllowAutoRedirect = allowRedirects;
+            using var response = (HttpWebResponse)request.GetResponse();
+            ThrowIfRedirectDisallowed(response, allowRedirects);
+            ThrowIfContentTypeDisallowed(response.ContentType, requiredContentTypePrefix);
 
-            string filename;
             var contentDisposition = response.Headers["Content-Disposition"];
-            if (!String.IsNullOrEmpty(contentDisposition))
+            string filename = GetSafeDownloadFilename(url, contentDisposition);
+
+            if (!Directory.Exists(absoluteDestinationPath))
             {
-                int idx = contentDisposition.IndexOf("filename=") + 10;
-                filename = contentDisposition.Substring(idx);
-                filename.Replace("\"", "");
-            }
-            else
-            {
-                filename = uri.AbsolutePath.Split('/').Last();
+                Directory.CreateDirectory(absoluteDestinationPath);
             }
 
-            var path = Path.Combine(App.MediaLibraryPath(), destinationFolder, filename);
-            WebClient wc = new WebClient();
-            wc.DownloadFile(uri, path);
+            // Check if file already exists
+            // If it does, append sequential numbers to the filename until we get a unique filename
+            string fullDestinationPath = GetSafePathInDirectory(
+                absoluteDestinationPath, filename, "download filename");
+            int fileVersion = 0;
+            string uniqueFilename = filename;
+            while (File.Exists(fullDestinationPath))
+            {
+                fileVersion++;
+                string baseFilename = Path.GetFileNameWithoutExtension(filename);
+                uniqueFilename = $"{baseFilename} ({fileVersion}){Path.GetExtension(filename)}";
+                fullDestinationPath = GetSafePathInDirectory(
+                    absoluteDestinationPath, uniqueFilename, "download filename");
+            }
+
+            // TODO - make this smarter
+            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
+                filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4") ||
+                filename.ToLower().EndsWith(".hdr") || filename.ToLower().EndsWith(".svg") ||
+                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
+                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
+                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))
+            {
+
+                if (allowRedirects)
+                {
+                    using var wc = new WebClient();
+                    wc.Headers.Add("user-agent", ApiManager.WebRequestUserAgent);
+                    wc.DownloadFile(url, fullDestinationPath);
+                }
+                else
+                {
+                    var downloadRequest = System.Net.WebRequest.CreateHttp(url);
+                    downloadRequest.UserAgent = ApiManager.WebRequestUserAgent;
+                    downloadRequest.AllowAutoRedirect = false;
+                    using var downloadResponse = (HttpWebResponse)downloadRequest.GetResponse();
+                    ThrowIfRedirectDisallowed(downloadResponse, allowRedirects: false);
+                    ThrowIfContentTypeDisallowed(
+                        downloadResponse.ContentType, requiredContentTypePrefix);
+                    using Stream input = downloadResponse.GetResponseStream();
+                    using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
+                    input.CopyTo(output);
+                }
+                return uniqueFilename;
+            }
+            return null;
+        }
+
+        internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)
+        {
+            string filename = GetContentDispositionFilename(contentDisposition);
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                filename = Uri.UnescapeDataString(url.AbsolutePath.Split('/').Last());
+            }
+
+            // HTTP header filenames are suggestions only. Treat both slash styles as directory
+            // separators even on platforms where one of them would otherwise be a valid character.
+            filename = Path.GetFileName(filename.Replace('\\', '/')).Trim();
+            ValidateSafeFilename(filename, "download filename");
             return filename;
         }
 
-        private static void _SpectatorShowHide(string thing, bool state)
+        private static string GetContentDispositionFilename(string contentDisposition)
         {
-            // Friendly names to layer names
-            string layerName = null;
-            switch (thing.Trim().ToLower())
+            if (string.IsNullOrWhiteSpace(contentDisposition)) return null;
+
+            string filename = null;
+            foreach (string part in contentDisposition.Split(';'))
+            {
+                int equalsIndex = part.IndexOf('=');
+                if (equalsIndex < 0) continue;
+
+                string key = part.Substring(0, equalsIndex).Trim();
+                string value = part.Substring(equalsIndex + 1).Trim().Trim('"');
+                if (key.Equals("filename*", StringComparison.OrdinalIgnoreCase))
+                {
+                    int encodingSeparator = value.IndexOf("''", StringComparison.Ordinal);
+                    if (encodingSeparator >= 0)
+                    {
+                        value = value.Substring(encodingSeparator + 2);
+                    }
+                    return Uri.UnescapeDataString(value);
+                }
+                if (key.Equals("filename", StringComparison.OrdinalIgnoreCase))
+                {
+                    filename = value;
+                }
+            }
+            return filename;
+        }
+
+        private static void ThrowIfRedirectDisallowed(
+            HttpWebResponse response, bool allowRedirects)
+        {
+            int statusCode = (int)response.StatusCode;
+            if (!allowRedirects && statusCode >= 300 && statusCode < 400)
+            {
+                throw new UnauthorizedAccessException(
+                    "Redirects are disabled for allowlist-granted Lua network access.");
+            }
+        }
+
+        internal static bool ContentTypeMatchesPrefix(
+            string contentType, string requiredContentTypePrefix)
+        {
+            if (requiredContentTypePrefix == null) return true;
+            if (string.IsNullOrWhiteSpace(contentType)) return false;
+
+            string mediaType = contentType.Split(';')[0].Trim();
+            return mediaType.StartsWith(
+                requiredContentTypePrefix, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ThrowIfContentTypeDisallowed(
+            string contentType, string requiredContentTypePrefix)
+        {
+            if (!ContentTypeMatchesPrefix(contentType, requiredContentTypePrefix))
+            {
+                throw new UnauthorizedAccessException(
+                    $"[LuaNetworkPolicy] Response Content-Type '{contentType ?? "<missing>"}' does not match required type '{requiredContentTypePrefix}'.");
+            }
+        }
+
+        public static bool _GetSpectatorLayerState(string friendlyName)
+        {
+            var layerName = _SpectatorConvertFriendlyName(friendlyName);
+            var layer = LayerMask.NameToLayer(layerName);
+            if (layer == -1) return false;
+            int mask = 1 << layer;
+            Camera cam = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
+            if (cam == null) return false;
+            return (cam.cullingMask & mask) != 0;
+        }
+
+        public static void _SpectatorShowHideFromFriendlyName(string friendlyName, bool state)
+        {
+            var layerName = _SpectatorConvertFriendlyName(friendlyName);
+            _SpectatorShowHide(layerName, state);
+        }
+
+        private static string _SpectatorConvertFriendlyName(string friendlyName)
+        {
+            switch (friendlyName.Trim().ToLower())
             {
                 case "widgets":
-                    layerName = "GrabWidgets";
-                    break;
+                    return "GrabWidgets";
                 case "strokes":
-                    layerName = "MainCanvas";
-                    break;
+                    return "MainCanvas";
                 case "selection":
-                    layerName = "SelectionCanvas";
-                    break;
+                    return "SelectionCanvas";
                 case "headset":
-                    layerName = "HeadMesh";
-                    break;
+                    return "HeadMesh";
                 case "panels":
-                    layerName = "Panels";
-                    break;
+                    return "Panels";
                 case "ui":
-                    layerName = "UI";
-                    break;
+                    return "UI";
                 case "usertools":
-                    layerName = "UserTools";
-                    break;
+                    return "UserTools";
+                default:
+                    return "";
             }
+        }
 
-            if (layerName == null) return;
-
+        private static void _SpectatorShowHide(string layerName, bool state)
+        {
+            if (string.IsNullOrEmpty(layerName)) return;
             int mask = 1 << LayerMask.NameToLayer(layerName);
             Camera cam = SketchControlsScript.m_Instance.GetDropCampWidget().GetComponentInChildren<Camera>();
             if (state)
@@ -214,6 +457,5 @@ namespace TiltBrush
                 cam.cullingMask = ~(~cam.cullingMask | mask);
             }
         }
-
     }
 }

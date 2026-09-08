@@ -7,13 +7,12 @@ using System.Text;
 using TiltBrush;
 using UnityEditor;
 using UnityEngine;
-using Valve.Newtonsoft.Json.Utilities;
 using Object = UnityEngine.Object;
 
 public class PanelLister : MonoBehaviour
 {
 
-    [MenuItem("Tilt/Info/Panel Lister")]
+    [MenuItem("Open Brush/Info/Panel Lister")]
     static void ListPanels()
     {
         StringBuilder panelList = new StringBuilder();
@@ -24,14 +23,14 @@ public class PanelLister : MonoBehaviour
         panelList.AppendLine($"m_Advanced\tm_Basic\tm_ModeGvr\tm_ModeMono\tm_ModeQuest\tm_ModeVr\tm_PanelPrefab\tm_ModeVrExperimental");
         foreach (var panel in m_PanelMap)
         {
-            panelList.AppendLine($"{panel.m_Advanced}\t{panel.m_Basic}\t{panel.m_ModeGvr}\t{panel.m_ModeMono}\t{panel.m_ModeQuest}\t{panel.m_ModeVr}\t{panel.m_PanelPrefab}\t{panel.m_ModeVrExperimental}");
+            panelList.AppendLine($"{panel.m_Advanced}\t{panel.m_Basic}\t{panel.m_ModeMono}\t{panel.m_ModeQuest}\t{panel.m_ModeVr}\t{panel.m_PanelPrefab}");
         }
 
 
         Debug.Log($"{panelList}");
     }
 
-    [MenuItem("Tilt/Info/Popup Lister")]
+    [MenuItem("Open Brush/Info/Popup Lister")]
     static void ListPopups()
     {
         StringBuilder popupList = new StringBuilder();

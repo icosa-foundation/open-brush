@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections;
+using System.IO;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace TiltBrush
 {
@@ -21,48 +25,178 @@ namespace TiltBrush
         private int m_SketchIndex;
         [SerializeField] private Renderer m_ProgressBar;
 
-        private GoogleDriveSketchSet.GoogleDriveFileInfo m_SceneFileInfo;
+        private SceneFileInfo m_SceneFileInfo;
+        private SketchSetType m_SketchSetType;
+
         private TaskAndCts m_DownloadTask;
+        private UnityWebRequest m_WebRequest;
+        private double m_WebRequestStartTime;
+        private string m_TempTiltPath;
+        private bool m_DownloadFailed;
 
         override public void SetPopupCommandParameters(int commandParam, int commandParam2)
         {
-            if (commandParam2 != (int)SketchSetType.Drive)
+            if (commandParam2 != (int)SketchSetType.Drive
+                && commandParam2 != (int)SketchSetType.Curated
+                && commandParam2 != (int)SketchSetType.Liked)
             {
+                Debug.LogWarning("Download popup window created for a " +
+                    "sketch in a non-cloud sketch set. Should still work but " +
+                    "it would be quicker to directly load the file.");
                 return;
             }
+
+            m_SketchSetType = (SketchSetType)commandParam2;
             m_SketchIndex = commandParam;
-            var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive) as GoogleDriveSketchSet;
-            m_SceneFileInfo =
-                sketchSet.GetSketchSceneFileInfo(commandParam) as GoogleDriveSketchSet.GoogleDriveFileInfo;
+
+            var set = SketchCatalog.m_Instance.GetSet(m_SketchSetType);
+            m_SceneFileInfo = set.GetSketchSceneFileInfo(m_SketchIndex);
+
+            if (m_SceneFileInfo == null)
+            {
+                Debug.LogWarning("Sketch file cannot be found for " +
+                    "download. Maybe the sketch set has refreshed.");
+                return;
+            }
 
             if (m_SceneFileInfo.Available)
             {
+                Debug.LogWarning("Download popup window created for an " +
+                    "already available sketch. Should still work but " +
+                    "it would be quicker to directly load the file.");
                 return;
             }
+
             m_ProgressBar.material.SetFloat("_Ratio", 0);
 
             m_DownloadTask = new TaskAndCts();
-            m_DownloadTask.Task = m_SceneFileInfo.DownloadAsync(m_DownloadTask.Token);
+            if (m_SketchSetType == SketchSetType.Drive)
+            {
+                m_DownloadTask.Task = (m_SceneFileInfo as GoogleDriveSketchSet.GoogleDriveFileInfo)
+                    .DownloadAsync(m_DownloadTask.Token);
+            }
+            else if (m_SketchSetType == SketchSetType.Curated
+                     || m_SketchSetType == SketchSetType.Liked)
+            {
+                StartCoroutine(RetryDownloadTiltCoroutine());
+            }
+        }
+
+        private IEnumerator RetryDownloadTiltCoroutine()
+        {
+            const int kDownloadBufferSize = 1024 * 1024;
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            var info = m_SceneFileInfo as IcosaSceneFileInfo;
+            if (info == null)
+            {
+                Debug.LogWarning("Unexpected file info type.");
+                MarkDownloadFailed("Could not download sketch.");
+                yield break;
+            }
+
+            const int kRetryAttempts = 3;
+            bool notifyOnError = true;
+            IcosaTiltDownloadResult lastResult = null;
+            for (int i = 0; i < kRetryAttempts; i++)
+            {
+                if (info.TiltDownloaded || m_DownloadTask.Cts.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                m_TempTiltPath = info.TiltPath + ".download";
+                yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                    info, info.TiltPath, downloadBuffer,
+                    isCanceled: () => m_DownloadTask.Cts.IsCancellationRequested,
+                    onRequestChanged: request =>
+                    {
+                        m_WebRequest = request;
+                        if (request != null)
+                        {
+                            m_WebRequestStartTime = Time.realtimeSinceStartupAsDouble;
+                        }
+                    },
+                    onComplete: result => lastResult = result);
+
+                if (lastResult != null && !lastResult.Succeeded &&
+                    lastResult.Status != IcosaTiltDownloadStatus.Canceled)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(lastResult.UserMessage, notifyOnError);
+                    notifyOnError = false;
+                    if (lastResult.Exception != null)
+                    {
+                        Debug.LogWarning($"{lastResult.Exception} {info.HumanName} {info.TiltPath}");
+                    }
+                    Debug.LogWarning($"ICOSATILT_LOAD {lastResult.Status}: {lastResult.Details ?? info.TiltPath}");
+                }
+                yield return null;
+            }
+
+            if (!info.TiltDownloaded && !m_DownloadTask.Cts.IsCancellationRequested)
+            {
+                MarkDownloadFailed(lastResult?.UserMessage ?? "Could not download sketch.");
+            }
+            m_TempTiltPath = null;
         }
 
         protected override void UpdateVisuals()
         {
             base.UpdateVisuals();
-            if (m_SceneFileInfo != null)
+            if (m_SceneFileInfo == null)
             {
-                m_ProgressBar.material.SetFloat("_Ratio", m_SceneFileInfo.Progress);
+                return;
             }
+
+            var progress = 0.0f;
+            if (m_SketchSetType == SketchSetType.Drive)
+            {
+                progress = (m_SceneFileInfo as GoogleDriveSketchSet.GoogleDriveFileInfo)
+                    .Progress;
+            }
+            else if (m_SketchSetType == SketchSetType.Curated
+                     || m_SketchSetType == SketchSetType.Liked)
+            {
+                // Make the bar go up while request is in-flight so the user
+                // knows something is happening.
+                const float kRequestProportion = 0.3f;
+                const float kDownloadProportion = 1 - kRequestProportion;
+                const float kRequestTime = 1.5f;
+                if (m_WebRequest == null || m_WebRequest.downloadProgress == 0)
+                {
+                    var delta = Time.realtimeSinceStartupAsDouble - m_WebRequestStartTime;
+                    var deltaProportion = Mathf.Clamp01((float)delta / kRequestTime);
+                    progress = kRequestProportion * deltaProportion;
+                }
+                else
+                {
+                    progress = kRequestProportion + kDownloadProportion * m_WebRequest.downloadProgress;
+                }
+            }
+
+            m_ProgressBar.material.SetFloat("_Ratio", progress);
         }
 
         protected override void BaseUpdate()
         {
             base.BaseUpdate();
-            if (m_SceneFileInfo?.Available ?? false)
+            if (m_DownloadFailed)
             {
-                if (m_ParentPanel)
-                {
-                    m_ParentPanel.ResolveDelayedButtonCommand(true);
-                }
+                return;
+            }
+            if (m_DownloadTask?.Task != null && m_DownloadTask.Task.IsFaulted)
+            {
+                Debug.LogWarning($"Drive sketch download failed: {m_DownloadTask.Task.Exception}");
+                MarkDownloadFailed("Could not download sketch.");
+                return;
+            }
+            if (m_SceneFileInfo == null || !m_SceneFileInfo.Available)
+            {
+                return;
+            }
+
+            if (m_ParentPanel)
+            {
+                m_ParentPanel.ResolveDelayedButtonCommand(true);
             }
         }
 
@@ -71,9 +205,65 @@ namespace TiltBrush
             bool close = base.RequestClose(bForceClose);
             if (close)
             {
-                m_DownloadTask.Cts.Cancel();
+                m_DownloadTask?.Cts.Cancel();
             }
             return close;
+        }
+
+        private void MarkDownloadFailed(string message)
+        {
+            m_DownloadFailed = true;
+            if (m_WindowText != null && !string.IsNullOrEmpty(message))
+            {
+                m_WindowText.text = message;
+            }
+            m_ProgressBar.material.SetFloat("_Ratio", 0);
+            if (m_ParentPanel)
+            {
+                m_ParentPanel.ResolveDelayedButtonCommand(false, bKeepOpen: true);
+            }
+        }
+
+        private void OnDestroy()
+        {
+
+            if (m_DownloadTask != null)
+            {
+                m_DownloadTask.Cts.Cancel();
+                m_DownloadTask.Cts?.Dispose();
+                m_DownloadTask = null;
+            }
+
+            // If we are destroyed while in the middle of a coroutine, the
+            // coroutine will not finish, and 'using' blocks will not dispose
+            // their arguments. Do it manually if we never reached the end of
+            // the coroutine.
+            StopAllCoroutines();
+            if (m_WebRequest != null)
+            {
+                m_WebRequest.Dispose();
+                m_WebRequest = null;
+            }
+
+            if (m_SceneFileInfo is IcosaSceneFileInfo icosaSceneFileInfo
+                && !icosaSceneFileInfo.TiltDownloaded)
+            {
+                // If anything goes wrong we may be left with a partial download
+                // at the temp path. Attempt to clean it up to prevent failed loads
+                // later.
+                try
+                {
+                    if (!string.IsNullOrEmpty(m_TempTiltPath))
+                    {
+                        File.Delete(m_TempTiltPath);
+                    }
+                }
+                catch (Exception e)
+                {
+                    // No big deal if we couldn't delete it.
+                    Debug.LogWarning($"Could not clean up failed download: {e}");
+                }
+            }
         }
     }
 } // namespace TiltBrush

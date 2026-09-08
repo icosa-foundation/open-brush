@@ -20,7 +20,7 @@ namespace TiltBrush
     {
 
         [SerializeField] private SerializedPropertyReferenceFloat m_Property;
-        [Vec2AsRange] [SerializeField] private Vector2 m_Range = Vector2.up;
+        [Vec2AsRange][SerializeField] private Vector2 m_Range = Vector2.up;
         [Tooltip("Values < 1 will bias the low end - Values > 1 will bias the high end.")]
         [SerializeField] private float m_PowerCurve = 1;
 

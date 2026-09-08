@@ -1,0 +1,40 @@
+---
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+# Taken from https://github.com/actions/cache/blob/main/tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy
+name: cleanup caches by a branch
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - closed
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup
+        run: |
+          gh extension install actions/gh-actions-cache
+
+          set -x
+          REPO=${{ github.repository }}
+          # The github.ref should be refs/pull/XXX/merge, but for some reason, it was set to 'main' in an actual run. Debugging this would be a ginormous pain, since it can apparently only be properly done on an actual merge/close (when I tried testing it locally with a close, it *did* work!), and so we'll just set this manually and ignore it for now. Accidentally deleting the caches on main is unacceptable.
+          # BRANCH=${{ github.ref }}
+          BRANCH=${PR_TARGET_NAME}
+
+          echo "Fetching list of cache key"
+          cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
+
+          ## Setting this to not fail the workflow while deleting cache keys.
+          set +e
+          echo "Deleting caches..."
+          for cacheKey in $cacheKeysForPR
+          do
+              gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+          done
+          echo "Done"
+        env:
+          # Note that this can only run on branches from the repo; otherwise, we don't have write permissions so we can't delete the caches
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TARGET_NAME: ${{ format('refs/pull/{0}/merge', github.event.number) }}

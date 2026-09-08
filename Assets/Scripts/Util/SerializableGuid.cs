@@ -22,7 +22,7 @@ namespace TiltBrush
 {
 
 #if UNITY_EDITOR
-// See http://docs.unity3d.com/ScriptReference/PropertyDrawer.html
+    // See http://docs.unity3d.com/ScriptReference/PropertyDrawer.html
     [CustomPropertyDrawer(typeof(SerializableGuid))]
     public class SerializableGuidDrawer : PropertyDrawer
     {

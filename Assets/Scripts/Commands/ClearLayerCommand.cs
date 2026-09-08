@@ -1,44 +1,70 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class ClearLayerCommand : BaseCommand
     {
-        private BatchManager m_BatchManager;
-        private List<BatchPool> batchPool;
+        private CanvasScript m_Layer;
+        private BatchSubset[] m_ActiveSubsets;
+        private GrabWidget[] m_Widgets;
 
-        public ClearLayerCommand(BatchManager batchManager)
+        public ClearLayerCommand(int layerIndex, BaseCommand parent = null) : base(parent)
         {
-            m_BatchManager = batchManager;
+            m_Layer = App.Scene.GetCanvasByLayerIndex(layerIndex);
+            Init();
+        }
+
+        public ClearLayerCommand(CanvasScript canvas)
+        {
+            m_Layer = canvas;
+            Init();
+        }
+
+        private void Init()
+        {
+            m_ActiveSubsets = m_Layer.BatchManager.AllBatches()
+                .SelectMany(batch => batch.m_Groups)
+                .Where(subset => subset.m_Active)
+                .ToArray();
+            m_Widgets = m_Layer.GetComponentsInChildren<GrabWidget>();
         }
 
         public override bool NeedsSave { get { return true; } }
 
         protected override void OnRedo()
         {
-            AudioManager.m_Instance.PlayRedoSound(m_BatchManager.Canvas.transform.position);
-            foreach (var batch in m_BatchManager.AllBatches())
+            AudioManager.m_Instance.PlayRedoSound(m_Layer.transform.position);
+            foreach (var subset in m_ActiveSubsets)
             {
-                foreach (var subset in batch.m_Groups)
+                if (subset.m_ParentBatch != null)
                 {
-                    batch.DisableSubset(subset);
+                    subset.m_ParentBatch.DisableSubset(subset);
                 }
+            }
+
+            foreach (var widget in m_Widgets)
+            {
+                widget.Hide();
             }
         }
 
         protected override void OnUndo()
         {
-            AudioManager.m_Instance.PlayUndoSound(m_BatchManager.Canvas.transform.position);
-            foreach (var batch in m_BatchManager.AllBatches())
+            AudioManager.m_Instance.PlayUndoSound(m_Layer.transform.position);
+            foreach (var subset in m_ActiveSubsets)
             {
-                foreach (var subset in batch.m_Groups)
+                if (subset.m_ParentBatch != null)
                 {
-                    batch.EnableSubset(subset);
+                    subset.m_ParentBatch.EnableSubset(subset);
                 }
             }
-        }
 
+            foreach (var widget in m_Widgets)
+            {
+                widget.RestoreFromToss();
+                widget.gameObject.SetActive(true);
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "tiltBrushVersion": "0.3.0",
+  "tiltBrushVersion": "2.0.0",
   "tiltBrushBuildStamp": "",
   "brushes": {
     "f72ec0e7-a844-4e38-82e3-140c44772699": {
@@ -1611,6 +1611,26 @@
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
+      }
+    },
+    "cf3401b3-4ada-4877-995a-1aa64e7b604a": {
+      "guid": "cf3401b3-4ada-4877-995a-1aa64e7b604a",
+      "name": "SvgTemplate",
+      "folderName": "SvgTemplate-cf3401b3-4ada-4877-995a-1aa64e7b604a",
+      "shaderVersion": "1.0",
+      "vertexShader": "SvgTemplate-cf3401b3-4ada-4877-995a-1aa64e7b604a-v1.0-vertex.glsl",
+      "fragmentShader": "SvgTemplate-cf3401b3-4ada-4877-995a-1aa64e7b604a-v1.0-fragment.glsl",
+      "blendMode": 0,
+      "enableCull": false,
+      "textures": {},
+      "textureSizes": {},
+      "floatParams": {
+        "MetallicFactor": 1.0,
+        "RoughnessFactor": 1.0
+      },
+      "vectorParams": {},
+      "colorParams": {
+        "BaseColorFactor": [ 1.0, 1.0, 1.0, 1.0 ]
       }
     },
     "1b897b7e-9b76-425a-b031-a867c48df409": {

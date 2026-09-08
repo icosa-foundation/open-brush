@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine.Localization;
+using UnityEngine;
+
 namespace TiltBrush
 {
 
@@ -23,7 +26,19 @@ namespace TiltBrush
         {
             if (ReferenceImage != null)
             {
-                SetDescriptionText(ReferenceImage.FileName);
+
+                // null if image doesn't have error
+                string errorMessage = ReferenceImage.ImageErrorExtraDescription();
+
+                if (errorMessage != null)
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName), errorMessage);
+                }
+                else
+                {
+                    SetDescriptionText(App.ShortenForDescriptionText(ReferenceImage.FileName));
+                }
+
             }
         }
 
@@ -42,7 +57,9 @@ namespace TiltBrush
             else
             {
                 CreateWidgetCommand command = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ImageWidgetPrefab, TrTransform.FromTransform(transform));
+                    WidgetManager.m_Instance.ImageWidgetPrefab, TrTransform.FromTransform(transform), null,
+                    false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+                );
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                 ImageWidget widget = command.Widget as ImageWidget;
                 widget.ReferenceImage = ReferenceImage;
@@ -66,6 +83,8 @@ namespace TiltBrush
             {
                 SetButtonAvailable(available);
             }
+
+            RefreshDescription();
         }
     }
 } // namespace TiltBrush

@@ -18,6 +18,8 @@ using System;
 using USD.NET;
 using USD.NET.Unity;
 using Unity.Formats.USD;
+#else
+using System.IO;
 #endif
 
 namespace TiltBrush
@@ -259,6 +261,86 @@ namespace TiltBrush
             m_UsdCamera.fov = m_RecordingCamera.fieldOfView;
             m_Scene.Write(m_xformName, m_UsdCamera);
         }
+        
+#else
+
+        // Non-desktop builds don't support the Unity USD library,
+        // but most of the functionality needed for still-frame rendering
+        // is independent of actual USD stuff
+        // So we provide a stub implementation with "just enough" functionality
+        // to support still-frame rendering
+
+        private bool m_IsRecording;
+        private double m_Time;
+        private double m_StartTime;
+        private double m_EndTime;
+        private string m_OutputPath;
+
+        public bool IsRecording => m_IsRecording;
+        public bool IsFinished => !m_IsRecording;
+        public double Duration => m_EndTime - m_StartTime;
+        public double Time
+        {
+            get => m_Time;
+            set
+            {
+                m_Time = value;
+                if (m_IsRecording && value > m_EndTime)
+                {
+                    m_EndTime = value;
+                }
+            }
+        }
+
+        public bool StartRecording(string path, string sketchName = "/Sketch", string xformName = "/VideoCamera")
+        {
+            m_OutputPath = path;
+            m_StartTime = 0;
+            m_EndTime = 0;
+            m_Time = 0;
+            m_IsRecording = true;
+            return true;
+        }
+
+        public void Stop()
+        {
+            m_IsRecording = false;
+        }
+
+        public void Save()
+        {
+            if (!string.IsNullOrEmpty(m_OutputPath))
+            {
+                try
+                {
+                    var dir = Path.GetDirectoryName(m_OutputPath);
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        Directory.CreateDirectory(dir);
+                    }
+                    File.WriteAllText(m_OutputPath,
+                        "USD camera path serialization not supported in this build.");
+                }
+                catch (IOException)
+                {
+                    // Ignore failures; stub can't guarantee file writing.
+                }
+            }
+        }
+
+        public bool Load(string path)
+        {
+            return false;
+        }
+
+        public void StartPlayback(string sketchName = "/Sketch", string xformName = "/VideoCamera", float smoothing = 0)
+        {
+            // No-op stub.
+        }
+
+        public void Deserialize() { }
+
+        public void Serialize() { }
 #endif
     }
 } // namespace TiltBrush

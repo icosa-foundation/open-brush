@@ -28,7 +28,6 @@ namespace TiltBrush
 
 
         private bool m_ValidBrushFoundThisFrame;
-        private bool m_SelectionValid;
         private Color m_SelectionColor;
         private BrushDescriptor m_SelectionBrush;
         private Stroke m_SelectionStroke;
@@ -75,8 +74,6 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
             ResetDetection();
-            m_SelectionValid = false;
-
             if (bEnable)
             {
                 EatInput();
@@ -90,7 +87,7 @@ namespace TiltBrush
             SnapIntersectionObjectToController();
         }
 
-        void Update()
+        protected void Update()
         {
             //update animations
             switch (m_CurrentState)

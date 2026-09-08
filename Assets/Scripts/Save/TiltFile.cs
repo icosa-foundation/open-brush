@@ -21,7 +21,7 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLibUnityPort.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
 #endif
 
 namespace TiltBrush
@@ -366,6 +366,27 @@ namespace TiltBrush
                     File.Exists(Path.Combine(m_Fullpath, FN_THUMBNAIL)));
             }
             return false;
+        }
+
+        public bool IsLoadable()
+        {
+            if (!IsHeaderValid())
+            {
+                return false;
+            }
+
+            using (Stream sketch = GetReadStream(FN_SKETCH))
+            {
+                if (sketch == null)
+                {
+                    return false;
+                }
+            }
+
+            using (Stream metadata = GetReadStream(FN_METADATA) ?? GetReadStream(FN_METADATA_LEGACY))
+            {
+                return metadata != null;
+            }
         }
 
     }

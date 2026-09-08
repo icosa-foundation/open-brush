@@ -68,6 +68,8 @@ namespace TiltBrush
         public float m_GrabDistance;
         public float m_CollisionRadius = 1.2f;
 
+        [NonSerialized] public CanvasScript m_PreviousCanvas;
+
         [SerializeField] private bool m_AllowTwoHandGrab = false;
         [SerializeField] private bool m_DestroyOnHide = false;
         [SerializeField] private bool m_AllowHideWithToss = false;
@@ -86,7 +88,16 @@ namespace TiltBrush
 
         [SerializeField] protected BoxCollider m_BoxCollider;
         [SerializeField] protected Transform m_Mesh;
-        [SerializeField] protected Transform[] m_HighlightMeshXfs;
+        [SerializeField] private Transform[] m_HighlightMeshXfs;
+        protected Transform[] HighlightMeshXfs
+        {
+            get => m_HighlightMeshXfs;
+            set
+            {
+                m_HighlightMeshXfs = value;
+                UpdateHighlightMeshFilters();
+            }
+        }
 
         [SerializeField] protected float m_ValidSnapRotationStickyAngle;
 
@@ -359,7 +370,10 @@ namespace TiltBrush
                     transform.localPosition = value.translation;
                     transform.localRotation = value.rotation;
                 }
-                SetSignedWidgetSize(value.scale);
+                if (!ShouldPreserveCustomSize())
+                {
+                    SetSignedWidgetSize(value.scale);
+                }
             }
         }
 
@@ -393,6 +407,30 @@ namespace TiltBrush
             axisDirection = default(Vector3);
             axisExtent = default(float);
             return Axis.Invalid;
+        }
+
+        // Return the bounds
+        public virtual Bounds GetBounds()
+        {
+            if (m_BoxCollider != null)
+            {
+                TrTransform boxColliderToCanvasXf = TrTransform.FromTransform(m_BoxCollider.transform);
+                Bounds bounds = new Bounds(boxColliderToCanvasXf * m_BoxCollider.center, Vector3.zero);
+
+                // Transform the corners of the widget bounds into canvas space and extend the total bounds
+                // to encapsulate them.
+                for (int i = 0; i < 8; i++)
+                {
+                    bounds.Encapsulate(boxColliderToCanvasXf * (m_BoxCollider.center + Vector3.Scale(
+                        m_BoxCollider.size,
+                        new Vector3((i & 1) == 0 ? -0.5f : 0.5f,
+                            (i & 2) == 0 ? -0.5f : 0.5f,
+                            (i & 4) == 0 ? -0.5f : 0.5f))));
+                }
+
+                return bounds;
+            }
+            return new Bounds();
         }
 
         // Return the bounds in selection canvas space.
@@ -689,13 +727,7 @@ namespace TiltBrush
 
         virtual protected void Awake()
         {
-            // TODO : Why do we serialize transforms when we pull the mesh filter out
-            // and never use the transform?  We should just serialize the filters.
-            if (m_HighlightMeshXfs != null)
-            {
-                m_HighlightMeshFilters = m_HighlightMeshXfs.Select(x => x.GetComponent<MeshFilter>()).ToArray();
-            }
-
+            UpdateHighlightMeshFilters();
             m_CurrentState = State.Invisible;
             Activate(false);
             m_NonScaleChild = gameObject.GetComponent<NonScaleChild>();
@@ -727,6 +759,16 @@ namespace TiltBrush
             RegisterWithWidgetManager();
         }
 
+        public void UpdateHighlightMeshFilters()
+        {
+            // TODO : Why do we serialize transforms when we pull the mesh filter out
+            // and never use the transform?  We should just serialize the filters.
+            if (HighlightMeshXfs != null)
+            {
+                m_HighlightMeshFilters = HighlightMeshXfs.Select(x => x.GetComponent<MeshFilter>()).ToArray();
+            }
+        }
+
         virtual protected void Start()
         {
             RegisterWithWidgetManager();
@@ -734,7 +776,10 @@ namespace TiltBrush
 
         void RegisterWithWidgetManager()
         {
-            if (!m_Registered && WidgetManager.m_Instance != null)
+            // Awake can run before SketchControlsScript calls WidgetManager.Init, so the
+            // manager may exist without its lists. Start registers us once it is ready.
+            if (!m_Registered && WidgetManager.m_Instance != null &&
+                WidgetManager.m_Instance.IsInitialized)
             {
                 WidgetManager.m_Instance.RegisterGrabWidget(gameObject);
                 m_Registered = true;
@@ -779,8 +824,17 @@ namespace TiltBrush
 
         virtual public GrabWidget Clone()
         {
+            return Clone(transform.position, transform.rotation, GetSignedWidgetSize());
+        }
+
+        public virtual GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
             Debug.LogWarning("You're cloning a base GrabWidget. This is probably not what you intended.");
-            GrabWidget clone = GameObject.Instantiate(this);
+            GrabWidget clone = Instantiate(this);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.SetSignedWidgetSize(size);
             clone.transform.parent = transform.parent;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
@@ -894,7 +948,7 @@ namespace TiltBrush
 
         private void LateUpdate()
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
     if (m_Highlighted != m_OldHighlighted) {
       if (m_Highlighted) {
         AddKeyword("HIGHLIGHT_ON");
@@ -927,13 +981,12 @@ namespace TiltBrush
         {
             if (m_InitialMaterials == null)
             {
-                m_WidgetRenderers = GetComponentsInChildren<Renderer>();
-                m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
-                m_NewMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.materials);
+                CloneInitialMaterials(null);
             }
 
             foreach (var renderer in m_WidgetRenderers)
             {
+                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {
@@ -952,6 +1005,7 @@ namespace TiltBrush
             }
             foreach (var renderer in m_WidgetRenderers)
             {
+                if (renderer == null) continue;
                 var materials = m_NewMaterials[renderer];
                 foreach (var material in materials)
                 {
@@ -964,7 +1018,7 @@ namespace TiltBrush
         /// It is necessary to call this function when cloning a widget as the widget will be selected
         /// and the clone will not have these values set, although they will be expected when deselection
         /// happens.
-        protected void CloneInitialMaterials(GrabWidget other)
+        protected virtual void CloneInitialMaterials(GrabWidget other)
         {
             m_WidgetRenderers = GetComponentsInChildren<Renderer>();
             m_InitialMaterials = m_WidgetRenderers.ToDictionary(x => x, x => x.sharedMaterials);
@@ -984,8 +1038,9 @@ namespace TiltBrush
             }
         }
 
-        public void HideNow()
+        public void HideNow(bool force = false)
         {
+            if (force) m_CurrentState = State.Tossed;
             if (m_CurrentState == State.Tossed)
             {
                 m_TossTimer = 0;
@@ -1078,9 +1133,17 @@ namespace TiltBrush
 
             if (m_RecordMovements && !m_IsSpinningFreely && !bFadingAway)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                bool recorded = SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new MoveWidgetCommand(this, newLocalTransform, CustomDimension, final: !IsMoving()),
                     discardIfNotMerged: true);
+                if (!recorded)
+                {
+                    // The drift couldn't merge into this widget's move command on the undo stack
+                    // (something else was recorded on top of it), so the transform above was never
+                    // applied. Halt the drift rather than freeze the widget mid-coast while its
+                    // velocities keep decaying.
+                    HaltDrift();
+                }
             }
             else
             {
@@ -1119,8 +1182,11 @@ namespace TiltBrush
             // Refresh snap input and enter/exit snapping state.
             if (m_AllowSnapping)
             {
-                SnapEnabled = SelectionManager.m_Instance.AngleOrPositionSnapEnabled() &&
-                    SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController) &&
+                bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
+                bool quickSnapPressed = IsQuickSnapPressed();
+                bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+                SnapEnabled = !snappingOverriddenOff &&
+                    (snapPanelSettingsActive || quickSnapPressed) &&
                     !m_Pinned;
 
                 if (!m_bWasSnapping && SnapEnabled)
@@ -1136,6 +1202,11 @@ namespace TiltBrush
             }
 
             var xf_GS = GetDesiredTransform(inputXf);
+
+            if (WidgetManager.m_Instance.m_EnableSnapToGuides)
+            {
+                MagnetizeToStencils(ref xf_GS);
+            }
 
             if (m_RecordMovements)
             {
@@ -1157,20 +1228,36 @@ namespace TiltBrush
                 }
             }
 
-            if (m_SnapGhost != null && SnapEnabled)
-            {
-                m_SnapGhost.position = inputXf.translation;
-                m_SnapGhost.rotation = inputXf.rotation;
-            }
+            UpdateSnapGhostTransform(inputXf, xf_GS);
 
             m_bWasSnapping = SnapEnabled;
 
             OnEndUpdateWithDesiredTransform();
         }
 
+        protected virtual bool MagnetizeToStencils(ref TrTransform xf_GS)
+        {
+            var pos = xf_GS.translation;
+            var rot = xf_GS.rotation;
+
+            bool usedStencil = WidgetManager.m_Instance.MagnetizeToStencils(ref pos, ref rot, GetStencilsToIgnore());
+            if (usedStencil)
+            {
+                xf_GS.translation = pos;
+                // If we're magnetizing to a stencil, we want to flip the widget
+                xf_GS.rotation = rot * Quaternion.Euler(0, 180, 0);
+            }
+            return usedStencil;
+        }
+
+        protected virtual IEnumerable<StencilWidget> GetStencilsToIgnore()
+        {
+            return new List<StencilWidget>();
+        }
+
         virtual public TrTransform GetGrabbedTrTransform()
         {
-            if (SnapEnabled && m_SnapGhost != null)
+            if (m_SnapGhost != null && m_SnapGhost.gameObject.activeSelf)
             {
                 return TrTransform.FromTransform(m_SnapGhost.transform);
             }
@@ -1206,27 +1293,104 @@ namespace TiltBrush
         // The scale of the returned TrTransform should be ignored.
         virtual protected TrTransform GetSnappedTransform(TrTransform xf_GS)
         {
+            bool snapPanelSettingsActive = IsSnapPanelSettingsActive();
+            bool quickSnapPressed = IsQuickSnapPressed();
+            bool angleSnapEnabled = SelectionManager.m_Instance.CurrentSnapAngleIndex != 0;
+            bool gridSnapEnabled = SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+
+            if (quickSnapPressed && snapPanelSettingsActive)
+            {
+                return xf_GS;
+            }
+            else if (quickSnapPressed)
+            {
+                return GetQuickSnapTransform(xf_GS);
+            }
+            else if (angleSnapEnabled || gridSnapEnabled)
+            {
+                return GetSnapPanelTransform(xf_GS);
+            }
+            else
+            {
+                return GetQuickSnapTransform(xf_GS);
+            }
+        }
+
+        protected virtual bool SnapButtonConflictsWithDuplicate => false;
+
+        private bool IsQuickSnapPressed()
+        {
+            return !SnapButtonConflictsWithDuplicate &&
+                InputManager.Controllers[(int)m_InteractingController].GetCommand(
+                    InputManager.SketchCommands.MenuContextClick) &&
+                SketchControlsScript.m_Instance.ShouldRespondToPadInput(m_InteractingController);
+        }
+
+        private bool IsSnapPanelSettingsActive()
+        {
+            return SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+        }
+
+        private void UpdateSnapGhostTransform(TrTransform inputXf, TrTransform snappedXf)
+        {
+            if (m_SnapGhost == null)
+            {
+                return;
+            }
+
+            bool showGhost = SnapEnabled && HasVisibleSnapDelta(inputXf, snappedXf);
+            m_SnapGhost.gameObject.SetActive(showGhost);
+            if (showGhost)
+            {
+                m_SnapGhost.position = inputXf.translation;
+                m_SnapGhost.rotation = inputXf.rotation;
+            }
+        }
+
+        private bool HasVisibleSnapDelta(TrTransform inputXf, TrTransform snappedXf)
+        {
+            const float positionEpsilonSqr = 0.000001f;
+            const float rotationEpsilon = 0.1f;
+            return
+                (inputXf.translation - snappedXf.translation).sqrMagnitude > positionEpsilonSqr ||
+                Quaternion.Angle(inputXf.rotation, snappedXf.rotation) > rotationEpsilon;
+        }
+
+        // The "new" snapping - based on the settings on the Snap Panel
+        private TrTransform GetSnapPanelTransform(TrTransform xf_GS)
+        {
             TrTransform outXf_GS = xf_GS;
 
             if (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0)
             {
-                var rot_CS = xf_GS.rotation * App.Scene.Pose.rotation.TrueInverse();
-                Quaternion nearestSnapRotation_CS = QuantizeAngle(rot_CS);
-
-                float snapAngle = SelectionManager.m_Instance.SnappingAngle;
-                float stickiness = m_ValidSnapRotationStickyAngle / 90f;
-                float stickyAngle = snapAngle * stickiness;
-
-                if (nearestSnapRotation_CS != m_PrevSnapRotation)
+                Quaternion snappedRotation_GS = GetConfiguredSnapRotation_GS(xf_GS.rotation);
+                if (snappedRotation_GS != xf_GS.rotation)
                 {
-                    float a = Quaternion.Angle(xf_GS.rotation, App.Scene.Pose.rotation * m_PrevSnapRotation);
-                    if (a > stickyAngle)
-                    {
-                        m_PrevSnapRotation = nearestSnapRotation_CS;
-                    }
+                    outXf_GS.rotation = snappedRotation_GS;
+                    Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
+                    Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
+                    Vector3 grabToCenter = xf_GS.translation - grabSpot;
+                    outXf_GS.translation = grabSpot + qDelta * grabToCenter;
                 }
+            }
 
-                outXf_GS.rotation = App.Scene.Pose.rotation * m_PrevSnapRotation;
+            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+            }
+
+            return outXf_GS;
+        }
+
+        // The "old" snapping - the A button on the brush controller (or equivalent)
+
+        private TrTransform GetQuickSnapTransform(TrTransform xf_GS)
+        {
+            TrTransform outXf_GS = xf_GS;
+            Quaternion snappedRotation_GS = GetSnapRotation_GS(xf_GS.rotation);
+            if (snappedRotation_GS != xf_GS.rotation)
+            {
+                outXf_GS.rotation = snappedRotation_GS;
 
                 Quaternion qDelta = outXf_GS.rotation * Quaternion.Inverse(xf_GS.rotation);
                 Vector3 grabSpot = InputManager.m_Instance.GetControllerPosition(m_InteractingController);
@@ -1236,35 +1400,76 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SnapToGrid(outXf_GS.translation);
+                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
             }
 
             return outXf_GS;
         }
 
-        private Quaternion QuantizeAngle(Quaternion rotation)
+        private Quaternion GetSnapRotation_GS(Quaternion rotation_GS)
         {
-            var snapAngle = SelectionManager.m_Instance.SnappingAngle;
-            float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
-
-            Vector3 euler = rotation.eulerAngles;
-            euler = new Vector3(round(euler.x), round(euler.y), round(euler.z));
-            return Quaternion.Euler(euler);
+            return SelectionManager.m_Instance.CurrentSnapAngleIndex != 0
+                ? GetConfiguredSnapRotation_GS(rotation_GS)
+                : GetLegacySnapRotation_GS(rotation_GS);
         }
 
-        public static Vector3 SnapToGrid(Vector3 position)
+        private Quaternion GetConfiguredSnapRotation_GS(Quaternion rotation_GS)
         {
-            float gridSize = SelectionManager.m_Instance.SnappingGridSize;
-            Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position);
-            float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }
-            Vector3 roundedCanvasPos = new Vector3(
-                round(localCanvasPos.x),
-                round(localCanvasPos.y),
-                round(localCanvasPos.z)
+            var rot_CS = App.Scene.Pose.rotation.TrueInverse() * rotation_GS;
+            Quaternion nearestSnapRotation_CS = SelectionManager.m_Instance.QuantizeAngle(rot_CS);
+
+            float snapAngle = SelectionManager.m_Instance.SnappingAngle;
+            float stickiness = m_ValidSnapRotationStickyAngle / 90f;
+            float stickyAngle = snapAngle * stickiness;
+            if (nearestSnapRotation_CS != m_PrevSnapRotation)
+            {
+                float a = Quaternion.Angle(rotation_GS, App.Scene.Pose.rotation * m_PrevSnapRotation);
+                if (a > stickyAngle)
+                {
+                    m_PrevSnapRotation = nearestSnapRotation_CS;
+                }
+            }
+
+            // QuantizeAngle may only affect some axes, so preserve the live values for disabled axes.
+            Vector3 currentEuler_CS = rot_CS.eulerAngles;
+            Vector3 stickyEuler_CS = m_PrevSnapRotation.eulerAngles;
+            Vector3 finalEuler_CS = new Vector3(
+                SelectionManager.m_Instance.m_EnableSnapRotationX ? stickyEuler_CS.x : currentEuler_CS.x,
+                SelectionManager.m_Instance.m_EnableSnapRotationY ? stickyEuler_CS.y : currentEuler_CS.y,
+                SelectionManager.m_Instance.m_EnableSnapRotationZ ? stickyEuler_CS.z : currentEuler_CS.z
             );
-            return App.ActiveCanvas.transform.localToWorldMatrix.MultiplyPoint3x4(roundedCanvasPos);
+            return App.Scene.Pose.rotation * Quaternion.Euler(finalEuler_CS);
         }
 
+        private Quaternion GetLegacySnapRotation_GS(Quaternion rotation_GS)
+        {
+            int iNearestIndex = GetBestSnapRotationIndex(rotation_GS);
+
+            // Update our rotation if we found a valid, new index and the angle difference is
+            // beyond our sticky threshold.
+            if (iNearestIndex != -1 && iNearestIndex != m_PrevValidSnapRotationIndex)
+            {
+                bool bUpdateRotation = true;
+                if (m_PrevValidSnapRotationIndex != -1)
+                {
+                    float a = Quaternion.Angle(rotation_GS, App.Scene.Pose.rotation *
+                        m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex]);
+                    bUpdateRotation = a > m_ValidSnapRotationStickyAngle;
+                }
+
+                if (bUpdateRotation)
+                {
+                    m_PrevValidSnapRotationIndex = iNearestIndex;
+                }
+            }
+
+            if (m_PrevValidSnapRotationIndex == -1)
+            {
+                return rotation_GS;
+            }
+
+            return App.Scene.Pose.rotation * m_ValidSnapRotations_SS[m_PrevValidSnapRotationIndex];
+        }
 
         protected int GetBestSnapRotationIndex(Quaternion rot)
         {
@@ -1348,12 +1553,7 @@ namespace TiltBrush
                         m_SnapGhost.gameObject.activeSelf : false;
 
                     // Hypothetically, if we were to snap, what should our orientation be?
-                    Quaternion qSnapOrient = transform.rotation;
-                    int iNearestIndex = GetBestSnapRotationIndex(qSnapOrient);
-                    if (iNearestIndex != -1)
-                    {
-                        qSnapOrient = App.Scene.Pose.rotation * m_ValidSnapRotations_SS[iNearestIndex];
-                    }
+                    Quaternion qSnapOrient = outXf_GS.rotation;
 
                     Vector3 vOffset = GetHomeSnapLocation(qSnapOrient);
 
@@ -1381,7 +1581,34 @@ namespace TiltBrush
                     }
                 }
             }
+
+            outXf_GS = ApplyAxisLocks(outXf_GS);
+
             return outXf_GS;
+        }
+
+        private TrTransform ApplyAxisLocks(TrTransform xf_GS)
+        {
+            if (this is ShapeWidget || this is MediaWidget || this is SelectionWidget)
+            {
+                xf_GS = CalculateAxisLocks(xf_GS);
+            }
+            return xf_GS;
+        }
+
+        private TrTransform CalculateAxisLocks(TrTransform xf_GS)
+        {
+            var outXf_CS = App.ActiveCanvas.Pose.inverse * xf_GS;
+            // Restore transforms for locked axes
+            if (SelectionManager.m_Instance.m_LockTranslationX) outXf_CS.translation.x = transform.localPosition.x;
+            if (SelectionManager.m_Instance.m_LockTranslationY) outXf_CS.translation.y = transform.localPosition.y;
+            if (SelectionManager.m_Instance.m_LockTranslationZ) outXf_CS.translation.z = transform.localPosition.z;
+            var euler = outXf_CS.rotation.eulerAngles;
+            if (SelectionManager.m_Instance.m_LockRotationX) euler.x = transform.localRotation.eulerAngles.x;
+            if (SelectionManager.m_Instance.m_LockRotationY) euler.y = transform.localRotation.eulerAngles.y;
+            if (SelectionManager.m_Instance.m_LockRotationZ) euler.z = transform.localRotation.eulerAngles.z;
+            outXf_CS.rotation.eulerAngles = euler;
+            return App.ActiveCanvas.Pose * outXf_CS;
         }
 
         protected virtual bool AllowSnapping()
@@ -1521,7 +1748,6 @@ namespace TiltBrush
 
         virtual public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
             if (m_HighlightMeshFilters != null)
             {
                 for (int i = 0; i < m_HighlightMeshFilters.Length; i++)
@@ -1529,14 +1755,13 @@ namespace TiltBrush
                     App.Instance.SelectionEffect.RegisterMesh(m_HighlightMeshFilters[i]);
                 }
             }
-#else
-    m_Highlighted = true;
+#if UNITY_ANDROID || UNITY_IOS
+            m_Highlighted = true;
 #endif
         }
 
         virtual protected void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
             if (m_HighlightMeshFilters != null)
             {
                 for (int i = 0; i < m_HighlightMeshFilters.Length; i++)
@@ -1544,8 +1769,8 @@ namespace TiltBrush
                     App.Instance.SelectionEffect.UnregisterMesh(m_HighlightMeshFilters[i]);
                 }
             }
-#else
-    m_Highlighted = false;
+#if UNITY_ANDROID || UNITY_IOS
+            m_Highlighted = false;
 #endif
         }
 
@@ -1648,9 +1873,10 @@ namespace TiltBrush
 
         virtual protected void OnTossComplete() { }
 
-        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser,
-                                  Quaternion? endForward = null)
+        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser, Quaternion? endForward = null,
+                                  bool forceTransform = false, float snapGridSize = 0, float snapAngle = 0)
         {
+            var xf = xfTarget;
             Vector3 vSpawnForwardNoY = xfSpawn.forward;
             vSpawnForwardNoY.y = 0.0f;
             Quaternion qSpawnOrient = Quaternion.LookRotation(vSpawnForwardNoY);
@@ -1670,27 +1896,45 @@ namespace TiltBrush
                 placementOffset.x *= -1.0f;
             }
             Vector3 vRotatedOffset = qSpawnOrient * placementOffset;
-            xfTarget.translation += vRotatedOffset;
+            xf.translation += vRotatedOffset;
 
             // Face us toward user.
             if (bFaceUser)
             {
-                Vector3 vToUser = headRay.origin - xfTarget.translation;
-                xfTarget.rotation = Quaternion.LookRotation(vToUser.normalized);
+                Vector3 vToUser = headRay.origin - xf.translation;
+                xf.rotation = Quaternion.LookRotation(vToUser.normalized);
             }
             else
             {
-                Vector3 vToPanel = xfTarget.translation - headRay.origin;
-                xfTarget.rotation = Quaternion.LookRotation(vToPanel.normalized);
+                Vector3 vToPanel = xf.translation - headRay.origin;
+                xf.rotation = Quaternion.LookRotation(vToPanel.normalized);
             }
 
             if (endForward != null)
             {
-                xfTarget.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+                xf.rotation *= Quaternion.RotateTowards(Quaternion.identity, endForward.Value, 180);
+            }
+
+            if (forceTransform)
+            {
+                // Ignore most of the above and just use the actual transform as passed in
+                xf = xfTarget;
             }
 
             m_xfIntroAnimSpawn_LS = ParentTransform.inverse * xfSpawn;
-            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xfTarget;
+            m_xfIntroAnimTarget_LS = ParentTransform.inverse * xf;
+
+            var sm = SelectionManager.m_Instance;
+
+            if (snapGridSize != 0)
+            {
+                m_xfIntroAnimTarget_LS.translation = sm.SnapToGrid_CS(m_xfIntroAnimTarget_LS.translation);
+            }
+
+            if (snapAngle != 0)
+            {
+                m_xfIntroAnimTarget_LS.rotation = sm.QuantizeAngle(m_xfIntroAnimTarget_LS.rotation);
+            }
         }
 
         virtual protected void UpdateIntroAnimState()
@@ -1857,6 +2101,12 @@ namespace TiltBrush
 
         /// Size of the widget, which may be negative if SupportsNegativeSize is true.
         virtual public float GetSignedWidgetSize() { return 1.0f; }
+
+        /// Override in derived classes to prevent size changes when custom size should be preserved
+        protected virtual bool ShouldPreserveCustomSize()
+        {
+            return false;
+        }
 
         /// This sets the overall size of a widget. For non-uniformly scalable widgets, this will be the
         /// scale along the maximum aspect ratio. It is an error to try to set a negative scale if

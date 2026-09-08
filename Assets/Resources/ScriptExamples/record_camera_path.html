@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+
+<p>Please choose a sketch containing a camera path. It must be in your Open Brush Sketches folder.</p>
+<input type="file" id="fileInput">
+<p></p>
+<button onclick="sendFileName()">Go</button>
+
+<script>
+
+    function sendCommands(commands) {
+        var xmlHttp = new XMLHttpRequest();
+        var url = '/api/v1?' + commands.join('&');
+        xmlHttp.open('GET', url, false);
+        xmlHttp.send(null);
+    }
+
+    function sendFileName() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        if (!file) return;
+        const fileName = file.name;
+        console.log(fileName);
+
+        sendCommands([
+            'load.named=' + fileName,
+            'camerapath.togglevisuals',
+            'camerapath.record',
+        ]);
+
+    }
+</script>
+
+</body>
+</html>

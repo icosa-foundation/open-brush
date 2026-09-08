@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -41,7 +42,47 @@ namespace TiltBrush
         // will attempt to load it but resize it to a more manageable size.
         public int ReferenceImagesResizeDimension;
 
+        // If the cache for a given sketch set (e.g., curated, liked) exceeds
+        // this size in bytes, prune it back down.
+        public long SketchSetMaxCacheSize;
+
         public int MemoryWarningVertCount;
+
+        public int GetMemoryWarningVertCount(int userOverride = 0)
+        {
+            if (userOverride > 0)
+            {
+                Debug.Log($"[MOBILE_VERTEX_LIMITS] User config override: warningVertices={userOverride}");
+                return userOverride;
+            }
+            if (userOverride < 0)
+            {
+                Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Ignoring negative user config " +
+                    $"MemoryWarningVertCount={userOverride}; using automatic device selection");
+            }
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using var build = new AndroidJavaClass("android.os.Build");
+                string manufacturer = build.GetStatic<string>("MANUFACTURER");
+                string model = build.GetStatic<string>("MODEL");
+                string device = build.GetStatic<string>("DEVICE");
+                string product = build.GetStatic<string>("PRODUCT");
+                bool isSteamFrame = SteamManager.IsSteamFrame;
+                int limit = MobileVertexLimits.GetMemoryWarningVertCount(
+                    manufacturer, model, device, product, MemoryWarningVertCount, isSteamFrame);
+                Debug.Log($"[MOBILE_VERTEX_LIMITS] manufacturer={manufacturer} model={model} " +
+                    $"device={device} product={product} steamFrame={isSteamFrame} warningVertices={limit}");
+                return limit;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Device detection failed: {ex.Message}; " +
+                    $"using warningVertices={MemoryWarningVertCount}");
+            }
+#endif
+            return MemoryWarningVertCount;
+        }
 
         // On some platforms (eg Android) the C# FileSystemWatcher API does not seem to work.
         // In that case we need to use some manual workarounds. This can be used to test those
@@ -60,7 +101,8 @@ namespace TiltBrush
 
         [Header("Poly")]
         [Tooltip("Preload Poly models while browsing, without requiring the user to click")]
-        public bool EnablePolyPreload;
+        [FormerlySerializedAs("EnablePolyPreload")]
+        public bool EnableIcosaPreload;
         [Tooltip("Workaround for b/150868218, but the workaround requires lots of memory")]
         public bool AvoidUploadHandlerFile;
 
@@ -73,8 +115,6 @@ namespace TiltBrush
         public bool EnableExportJson;
         // Usd export will crash if the usd libraries aren't available
         public bool EnableExportUsd;
-        // Latk export
-        public bool EnableExportLatk = true;
         // Trade off increased disk-space and export time for reduced memory
         public bool EnableExportMemoryOptimization;
 

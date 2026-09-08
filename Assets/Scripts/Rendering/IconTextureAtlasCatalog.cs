@@ -103,7 +103,7 @@ namespace TiltBrush
         }
 
         // TODO: maybe call this from BuildTiltBrush?
-        [MenuItem("Tilt/Pack all atlases")]
+        [MenuItem("Open Brush/Pack all atlases")]
         public static void PackAll()
         {
             foreach (var catalog in IterAssets<IconTextureAtlasCatalog>())

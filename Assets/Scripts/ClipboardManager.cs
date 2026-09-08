@@ -44,15 +44,33 @@ namespace TiltBrush
         }
 
         /// Copies and pastes the current selection to the current canvas.
-        public void DuplicateSelection(bool offsetDuplicate = false)
+        public void DuplicateSelection(bool stampMode = false)
         {
-            TrTransform xf = SelectionManager.m_Instance.SelectionTransform;
-            if (offsetDuplicate)
+            TrTransform dupXf = SelectionManager.m_Instance.SelectionTransform;
+            if (!stampMode)
             {
-                // Scoot all the strokes and widgets.
-                // TODO: Make this relative to the user's facing.
-                Vector3 offset = m_DuplicateOffset / App.Scene.Pose.scale * 0.5f;
-                xf.translation += offset;
+                // Offset the duplicated selection
+                float gridSize = SelectionManager.m_Instance.SnappingGridSize;
+
+                Vector3 offset;
+                if (gridSize > 0)
+                {
+                    // Use one grid square as offset in each enabled snap axis
+                    // Grid size is already in canvas space, so we don't divide by scale for grid axes
+                    offset = new Vector3(
+                        SelectionManager.m_Instance.m_EnableSnapTranslationX ? gridSize : m_DuplicateOffset.x * 0.5f / App.Scene.Pose.scale,
+                        SelectionManager.m_Instance.m_EnableSnapTranslationY ? gridSize : m_DuplicateOffset.y * 0.5f / App.Scene.Pose.scale,
+                        SelectionManager.m_Instance.m_EnableSnapTranslationZ ? gridSize : m_DuplicateOffset.z * 0.5f / App.Scene.Pose.scale
+                    );
+                }
+                else
+                {
+                    // No grid snapping, use default offset
+                    // Convert from room space to scene-relative space
+                    offset = m_DuplicateOffset * 0.5f / App.Scene.Pose.scale;
+                }
+
+                dupXf.translation += offset;
             }
 
             // Lil' jiggle.
@@ -64,7 +82,9 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHapticsPulse(controller, 3, 0.15f, 0.07f);
             AudioManager.m_Instance.PlayDuplicateSound(InputManager.m_Instance.GetControllerPosition(controller));
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DuplicateSelectionCommand(xf));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new DuplicateSelectionCommand(dupXf)
+            );
         }
     }
 

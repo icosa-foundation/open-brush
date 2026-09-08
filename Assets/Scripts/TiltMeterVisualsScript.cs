@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -21,7 +22,7 @@ namespace TiltBrush
     {
         [SerializeField] private Transform m_MeterBarTransform;
         [SerializeField] private Renderer m_MeterBGRenderer;
-        [SerializeField] private TextMesh m_CurrentPerformanceLevel;
+        [SerializeField] private TextMeshPro m_CurrentPerformanceLevel;
         [SerializeField] private float m_UpdateInterval = 1.0f;
         private float m_UpdateTimer;
 

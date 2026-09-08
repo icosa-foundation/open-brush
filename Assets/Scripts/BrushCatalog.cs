@@ -60,6 +60,7 @@ namespace TiltBrush
         public Texture2D m_GlobalNoiseTexture;
 
         [SerializeField] private Brush m_DefaultBrush;
+        [SerializeField] private Brush m_ZapboxDefaultBrush;
         private bool m_IsLoading;
         private Dictionary<Guid, Brush> m_GuidToBrush;
         private HashSet<Brush> m_AllBrushes;
@@ -82,7 +83,14 @@ namespace TiltBrush
         }
         public Brush DefaultBrush
         {
-            get { return m_DefaultBrush; }
+            get
+            {
+#if ZAPBOX_SUPPORTED
+                // TODO:Mikesky - Fix brush transparency!
+                return m_ZapboxDefaultBrush;
+#endif
+                return m_DefaultBrush;
+            }
         }
         public IEnumerable<Brush> AllBrushes
         {
@@ -96,6 +104,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
+            Init();
+        }
+
+        public void Init()
+        {
             m_GuidToBrush = new Dictionary<Guid, Brush>();
             m_MaterialToBrush = new Dictionary<Material, Brush>();
             m_AllBrushes = new HashSet<Brush>();
@@ -107,7 +120,6 @@ namespace TiltBrush
                 m_MaterialToBrush.Add(m_BlocksMaterials[i].brushDescriptor.Material,
                     m_BlocksMaterials[i].brushDescriptor);
             }
-
             Shader.SetGlobalTexture("_GlobalNoiseTexture", m_GlobalNoiseTexture);
         }
 
@@ -170,28 +182,34 @@ namespace TiltBrush
             }
 
             // Postprocess: put brushes into parse-friendly list
-
+            m_GuiBrushList.Clear();
             foreach (var brush in m_GuidToBrush.Values)
             {
-                if (brush.m_HiddenInGui)
+                // Some brushes are hardcoded as hidden
+                if (brush.m_HiddenInGui) continue;
+                // Always include if experimental mode is on
+                if (Config.IsExperimental || !App.Instance.IsBrushExperimental(brush))
                 {
-                    continue;
+                    m_GuiBrushList.Add(brush);
                 }
-                m_GuiBrushList.Add(brush);
             }
+            BrushCatalogChanged?.Invoke();
         }
 
 
-        public Brush[] GetTagFilteredBrushList()
+        public Brush[] GetTagFilteredBrushList(List<string> includeTags = null, List<string> excludeTags = null)
         {
-            string[] includeTags = App.UserConfig.Brushes.IncludeTags;
-            string[] excludeTags = App.UserConfig.Brushes.ExcludeTags;
+            includeTags ??= App.UserConfig.Brushes.IncludeTags.ToList();
+            excludeTags ??= App.UserConfig.Brushes.ExcludeTags.ToList();
 
-            Dictionary<string, string[]> test = App.UserConfig.Brushes.AddTagsToBrushes;
-
-            if (includeTags == null)
+            if (!includeTags.Any())
             {
                 Debug.LogError("There will be no brushes because there are no 'include' tags.");
+            }
+
+            if (App.VrSdk.PassthroughMode == PassthroughMode.None)
+            {
+                excludeTags.Add("passthrough");
             }
 
             // Filter m_GuiBrushList down to those that are both 'included' and not 'excluded'
@@ -199,7 +217,7 @@ namespace TiltBrush
             {
                 // Is this brush excluded?
                 bool? excluded = excludeTags?.Intersect(brush.m_Tags).Any();
-                if (excluded == true || includeTags == null)
+                if (excluded == true || includeTags == null || brush.m_Tags.Contains("broken"))
                 {
                     return false;
                 }
@@ -261,7 +279,7 @@ namespace TiltBrush
             {
                 string searchString = brushDescription.Trim();
                 StringComparison comparison = StringComparison.CurrentCultureIgnoreCase;
-                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.m_Description.Equals(searchString, comparison));
+                return m_AllBrushes.FirstOrDefault(descriptor => descriptor.Description.Equals(searchString, comparison));
             }
         }
 
@@ -270,7 +288,7 @@ namespace TiltBrush
         static private List<Brush> LoadBrushesInManifest()
         {
             List<Brush> output = new List<Brush>();
-            var manifest = App.Instance.m_Manifest;
+            var manifest = App.Instance.ManifestFull;
             foreach (var desc in manifest.Brushes)
             {
                 if (desc != null)

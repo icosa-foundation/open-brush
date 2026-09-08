@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System.Threading.Tasks;
+using Gsplat;
 
 namespace TiltBrush
 {
@@ -27,11 +31,39 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private bool m_PreserveCustomSize;
+
+
+        // What is Subtree?
+        // e.g. if we have 3d model with 3 chairs with the hierarchy below,
+        // then when the model is broken apart, we create a separate ModelWidget for each Chair1,Chair2,Chair3
+        // e.g for Chair1, Subtree = "Root/Chair1"
+        /*
+         Root (empty node) 
+            Chair1 (mesh)
+            Chair2 (mesh)
+            Chair3 (mesh)
+         */
+        private string m_Subtree;
+        public string Subtree
+        {
+            get => m_Subtree ??= "";
+            set => m_Subtree = value;
+        }
+
+        public event Action ScaleChanged;
+
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private GsplatRenderer m_GsplatRenderer;
+        private int m_GsplatHighlightFrame = -1;
+        private float m_GsplatBaseBrightness;
+        private bool m_HasGsplatBaseBrightness;
+        private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
+        public float InitSize_CS => m_InitSize_CS;
         private float m_HideSize_CS;
-        private bool m_PolyCallbackActive;
+        protected bool m_PolyCallbackActive;
 
         private int m_NumVertsTrackedByWidgetManager;
 
@@ -45,7 +77,7 @@ namespace TiltBrush
         // Do not mutate the return value.
         public MeshFilter[] GetMeshes()
         {
-            return m_ObjModelScript.m_MeshChildren;
+            return m_ObjModelScript?.m_MeshChildren ?? Array.Empty<MeshFilter>();
         }
 
         public Model Model
@@ -56,14 +88,16 @@ namespace TiltBrush
                 // Reduce usage count on old model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount--;
+                    m_Model.ReleaseUsage();
                 }
                 m_Model = value;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount++;
+                    m_Model.AcquireUsage();
                 }
+
+                m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
                 LoadModel();
             }
         }
@@ -116,7 +150,7 @@ namespace TiltBrush
         override protected void Awake()
         {
             base.Awake();
-            transform.parent = App.Instance.m_CanvasTransform;
+            transform.parent = App.ActiveCanvas.transform;
             transform.localScale = Vector3.one;
 
             // Custom pin scalar for models.
@@ -129,25 +163,33 @@ namespace TiltBrush
 
             if (m_PolyCallbackActive)
             {
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
             }
             // Set our model to null so its usage count is decremented.
             Model = null;
         }
 
-        override public GrabWidget Clone()
+        public override GrabWidget Clone()
         {
-            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
-            clone.Model = this.Model;
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
+            ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.m_Subtree = m_Subtree;
+            clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
+            clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(this.m_Size);
+            clone.SetSignedWidgetSize(size);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
@@ -166,7 +208,7 @@ namespace TiltBrush
 
             if (!clone.Model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
                 clone.m_PolyCallbackActive = true;
             }
             clone.CloneInitialMaterials(this);
@@ -181,7 +223,7 @@ namespace TiltBrush
 
         public void OnPacCatalogChanged()
         {
-            Model model = App.PolyAssetCatalog.GetModel(AssetId);
+            Model model = App.IcosaAssetCatalog.GetModel(AssetId);
             if (model != null && model.m_Valid)
             {
                 Model = model;
@@ -189,14 +231,51 @@ namespace TiltBrush
 
                 // TODO: We may not want to do this, eventually.  Perhaps we continue to receive messages,
                 // get our asset each time, and do a diff to see if we should reload it.
-                App.PolyAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged -= OnPacCatalogChanged;
                 m_PolyCallbackActive = false;
+            }
+        }
+
+        override protected void SetWidgetSizeInternal(float fScale)
+        {
+            base.SetWidgetSizeInternal(fScale);
+            if (Mathf.Abs(fScale - m_Size) > float.Epsilon)
+            {
+                ScaleChanged?.Invoke();
             }
         }
 
         public override string GetExportName()
         {
             return Model.GetExportName();
+        }
+
+        /// Prevents automatic size recalculation when model is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
         }
 
         void LoadModel()
@@ -206,6 +285,9 @@ namespace TiltBrush
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
+            m_GsplatRenderer = null;
+            m_GsplatHighlightFrame = -1;
+            m_HasGsplatBaseBrightness = false;
 
             // Early out if we don't have a model to clone.
             // This can happen if model loading is deferred.
@@ -215,14 +297,22 @@ namespace TiltBrush
             }
 
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
-            m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+            m_ModelInstance.gameObject.SetActive(true);
+            m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
+            CaptureGsplatBaseBrightness();
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;
-            if (maxExtent == 0.0f)
+            if (IsVoxModel())
+            {
+                // Keep VOX models at their authored voxel scale instead of normalizing to the
+                // generic initial size.
+                size = 0.1f * App.Scene.Pose.scale;
+            }
+            else if (maxExtent == 0.0f)
             {
                 // If we created a widget with a model that doesn't have geo, we won't have calculated a
                 // bounds worth much.  In that case, give us a default size.
@@ -233,7 +323,10 @@ namespace TiltBrush
                 size = kInitialSizeMeters_RS * App.METERS_TO_UNITS / maxExtent;
             }
 
-            m_InitSize_CS = size / Coords.CanvasPose.scale;
+            if (!m_PreserveCustomSize)
+            {
+                m_InitSize_CS = size / Coords.CanvasPose.scale;
+            }
 
             // Models are created in the main canvas.  Cache model layer in case it's overridden later.
             HierarchyUtils.RecursivelySetLayer(transform, App.Scene.MainCanvas.gameObject.layer);
@@ -244,12 +337,19 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
 
-            Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
-            m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
-            m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
-            m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
-            m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
-            m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            if (m_Model.IsGsplatModel)
+            {
+                m_ContainerBloat = Vector3.zero;
+            }
+            else
+            {
+                Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
+                m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
+                m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
+                m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
+                m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
+                m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            }
 
             m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
             m_BoxCollider.transform.localPosition = m_Model.m_MeshBounds.center;
@@ -261,8 +361,19 @@ namespace TiltBrush
             m_NumVertsTrackedByWidgetManager = 0;
 
             m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
-            m_ObjModelScript.Init();
-            if (m_ObjModelScript.NumMeshes == 0)
+            if (m_ObjModelScript == null)
+            {
+                OutputWindowScript.Error("Failed to find ObjModelScript on loaded model");
+                return;
+            }
+            m_ObjModelScript.UpdateAllMeshChildren();
+
+            if (m_SyncHierarchyPending && m_ObjModelScript != null)
+            {
+                SyncHierarchyToSubtree();
+                m_SyncHierarchyPending = false;
+            }
+            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel)
             {
                 OutputWindowScript.Error("No usable geometry in model");
             }
@@ -278,8 +389,253 @@ namespace TiltBrush
             }
         }
 
+        public bool HasMultipleNodes()
+        {
+            // TODO test all other 3d model formats work with "break apart" command
+            // Currently we assume that they do
+
+            // Check SVG models using different logic
+            if (m_Model.GetLocation().Extension == ".svg")
+            {
+                // SVG break-apart is not yet implemented, so return false
+                // TODO: When SVG break-apart is implemented, check SvgSceneInfo for sub-shapes
+                // return m_Model.SvgSceneInfo.Scene?.Root != null && m_Model.SvgSceneInfo.HasSubShapes();
+                return false;
+            }
+
+            // Check if we have more than one light or mesh
+            int meshCount = GetMeshes().Length;
+            int lightCount = m_ObjModelScript.GetComponentsInChildren<SceneLightGizmo>().Length;
+            if (lightCount + meshCount > 1) return true;
+            return false;
+        }
+
+        public bool MeshSplitPossible()
+        {
+            // Unsplit models initially always have the possibility of being split.
+            // We only return false if we're already tried to split this mesh
+            bool hasBeenSplit = false;
+            var allSplits = m_Model.m_SplitMeshPaths.Concat(m_Model.m_NotSplittableMeshPaths);
+            foreach (var path in allSplits)
+            {
+                if (Subtree.StartsWith(path))
+                {
+                    hasBeenSplit = true;
+                    break;
+                }
+            }
+
+            // If the model hasn't been split, then assume it splitting is possible.
+            return !hasBeenSplit;
+        }
+
+        public static (Transform node, bool excludeChildren) FindSubtreeRoot(Transform root, string subtree, string previousSubtree = null)
+        {
+            if (string.IsNullOrEmpty(subtree)) return (null, false);
+            // Walk the hierarchy and find the matching node
+            Transform node = root;
+
+            // We only want to walk the new part of the hierarchy
+            string subpathToTraverse;
+            if (!string.IsNullOrEmpty(previousSubtree))
+            {
+                // Example case:
+                //      previousSubtree = "/CarBody/Floor"
+                //      subtree = "/CarBody/Floor/Wheel1"
+                //      subpathToTraverse should be "Wheel1"
+                //
+                // Saved subtree paths may also include the imported root node, e.g.
+                // "/ImportedObjRoot[ob:0]/group688506095[ob:45]". Normalize leading
+                // slashes here so prefix matching works with both saved and runtime paths.
+                string normalizedPrevious = previousSubtree.Trim('/');
+                string normalizedSubtree = subtree.Trim('/');
+                subpathToTraverse = normalizedSubtree.StartsWith($"{normalizedPrevious}/")
+                    ? normalizedSubtree.Substring(normalizedPrevious.Length + 1)
+                    : normalizedSubtree;
+            }
+            else
+            {
+                subpathToTraverse = subtree;
+            }
+            subpathToTraverse = subpathToTraverse.Trim('/');
+
+            bool excludeChildren = false;
+            if (subpathToTraverse.EndsWith(".mesh"))
+            {
+                subpathToTraverse = subpathToTraverse.Substring(0, subpathToTraverse.Length - ".mesh".Length);
+                excludeChildren = true;
+            }
+            if (node.name == subpathToTraverse)
+            {
+                // We're already at the right node
+                // No need to do anything
+                Debug.LogWarning($"Didn't expect to get here...");
+            }
+            else
+            {
+                if (subpathToTraverse.StartsWith($"{node.name}/"))
+                {
+                    subpathToTraverse = subpathToTraverse.Substring(node.name.Length + 1);
+                }
+                node = string.IsNullOrEmpty(subpathToTraverse) ? node : node.Find(subpathToTraverse);
+            }
+            return (node, excludeChildren);
+        }
+
+        // Update the transform hierarchy of this ModelWidget to only contain m_Subtree
+        // e.g if Subtree = "CarBody/Floor/Wheel1", then this method will update the transform hierarchy to contain nodes
+        // starting at CarBody/Floor/Wheel1
+        public void SyncHierarchyToSubtree(string previousSubtree = null)
+        {
+            if (m_ObjModelScript == null)
+            {
+                m_ObjModelScript = GetComponentInChildren<ObjModelScript>(includeInactive: true);
+            }
+            if (m_ObjModelScript == null)
+            {
+                Debug.LogError("No ObjModelScript found in children");
+                // This is clunky but widgets with broken apart models weren't initialized properly when loading from sketch
+                var container = GetComponentInChildren<BoxCollider>().gameObject;
+                m_ObjModelScript = container.AddComponent<ObjModelScript>();
+                m_ObjModelScript.UpdateAllMeshChildren();
+                SyncHierarchyToSubtree();
+                return;
+            }
+            var originalCost = GetTiltMeterCost();
+            if (!m_ObjModelScript)
+            {
+                Debug.LogWarning($"Can't get m_ObjModelScript...");
+                return;
+                // m_ObjModelScript = m_Model.m_ModelParent.gameObject.AddComponent<ObjModelScript>();
+            }
+
+            var (node, excludeChildren) = FindSubtreeRoot(
+                m_ObjModelScript.transform,
+                Subtree,
+                previousSubtree
+            );
+
+            Transform oldRoot = m_ObjModelScript.transform;
+            if (node != null)
+            {
+                if (excludeChildren)
+                {
+                    foreach (Transform child in node)
+                    {
+                        Destroy(child.gameObject);
+                    }
+                }
+                var newRoot = new GameObject();
+                newRoot.transform.SetParent(transform);
+                switch (m_Model.GetLocation().GetLocationType())
+                {
+                    case Model.Location.Type.LocalFile:
+                        newRoot.name = $"LocalFile:{m_Model.RelativePath}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.IcosaAssetId:
+                        newRoot.name = $"RemoteFile:{m_Model.AssetId}#{m_Subtree}";
+                        break;
+                    case Model.Location.Type.Invalid:
+                        throw new InvalidOperationException("Invalid model location type");
+                }
+                m_ObjModelScript = newRoot.AddComponent<ObjModelScript>();
+                node.SetParent(newRoot.transform, worldPositionStays: true);
+
+                oldRoot.gameObject.SetActive(false); // TODO destroy might fail on first load so also hide
+                Destroy(oldRoot.gameObject);
+
+                m_ObjModelScript.UpdateAllMeshChildren();
+                if (excludeChildren)
+                {
+                    // Destroyed children aren't destroyed immediately, so we need to assign them manually
+                    var mf = node.GetComponent<MeshFilter>();
+                    var smr = node.GetComponent<SkinnedMeshRenderer>();
+                    m_ObjModelScript.m_MeshChildren = mf != null ? new[] { mf } : Array.Empty<MeshFilter>();
+                    m_ObjModelScript.m_SkinnedMeshChildren = smr != null ? new[] { smr } : Array.Empty<SkinnedMeshRenderer>();
+                }
+
+                CloneInitialMaterials(null);
+                RecalculateColliderBounds();
+
+                // Adjust the tilt meter cost based on the new model
+                var newCost = GetTiltMeterCost();
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(originalCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(newCost, up: true);
+
+            }
+        }
+
+        public void RecalculateColliderBounds()
+        {
+            var widgetTransform = m_ObjModelScript.transform.parent;
+
+            // Save the widget's original transform
+            var oldParent = widgetTransform.parent;
+            var oldPosition = widgetTransform.localPosition;
+            var oldRotation = widgetTransform.localRotation;
+            var oldScale = widgetTransform.localScale;
+
+            // Move it to the origin
+            widgetTransform.SetParent(null);
+            widgetTransform.localPosition = Vector3.zero;
+            widgetTransform.localRotation = Quaternion.identity;
+            widgetTransform.localScale = Vector3.one;
+
+            // Reset the collider gameobject transform
+            m_BoxCollider.transform.localPosition = Vector3.zero;
+            m_BoxCollider.transform.localRotation = Quaternion.identity;
+            m_BoxCollider.transform.localScale = Vector3.one;
+
+            // Collect the renderers
+            var meshRenderers = m_ObjModelScript
+                .m_MeshChildren
+                .Select(x => x.GetComponent<MeshRenderer>());
+            var skinnedMeshRenderers = m_ObjModelScript.m_SkinnedMeshChildren;
+
+            // Calculate the bounds
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = meshRenderers.Select(x => x.bounds).ToList();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+
+            for (var i = 0; i < boundsList.Count; i++)
+            {
+                var bounds = boundsList[i];
+
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+
+            m_MeshBounds = b;
+            m_BoxCollider.transform.localPosition = m_MeshBounds.center;
+            m_BoxCollider.size = m_MeshBounds.size;
+
+            // Restore the widget's original transform
+            widgetTransform.SetParent(oldParent);
+            widgetTransform.localPosition = oldPosition;
+            widgetTransform.localRotation = oldRotation;
+            widgetTransform.localScale = oldScale;
+        }
+
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
+            if (TryIntersectGsplat(vControllerPos, m_CollisionRadius, out float gsplatScore))
+            {
+                return gsplatScore;
+            }
+
+            if (m_Model != null && m_Model.IsGsplatModel)
+            {
+                return -1.0f;
+            }
+
             Vector3 vInvTransformedPos = m_BoxCollider.transform.InverseTransformPoint(vControllerPos);
             Vector3 vSize = m_BoxCollider.size * 0.5f;
             float xDiff = vSize.x - Mathf.Abs(vInvTransformedPos.x);
@@ -292,6 +648,31 @@ namespace TiltBrush
                 return (xDiff / vSize.x + yDiff / vSize.y + zDiff / vSize.z) / 3 / (minSize + 1);
             }
             return -1.0f;
+        }
+
+        public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
+        {
+            score = -1.0f;
+            if (m_Model == null || !m_Model.IsGsplatModel)
+            {
+                return false;
+            }
+
+            Collider collider = GrabCollider;
+            if (collider == null || collider.bounds.SqrDistance(center_GS) > radius_GS * radius_GS)
+            {
+                return false;
+            }
+
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+
+            return m_GsplatRenderer != null &&
+                m_GsplatRenderer.SupportsSpatialQueries &&
+                m_GsplatRenderer.TryIntersectSphere(center_GS, radius_GS, out score);
         }
 
         private static Vector3 GetBoundsRatios(Bounds bounds)
@@ -311,13 +692,12 @@ namespace TiltBrush
         {
             base.OnShow();
 
-            if (m_Model != null && m_Model.m_Valid)
-            {
-                SetSignedWidgetSize(0.0f);
-            }
-
             if (!m_LoadingFromSketch)
             {
+                if (m_Model != null && m_Model.m_Valid)
+                {
+                    SetSignedWidgetSize(0.0f);
+                }
                 m_IntroAnimState = IntroAnimState.In;
                 Debug.Assert(!IsMoving(), "Shouldn't have velocity!");
                 ClearVelocities();
@@ -337,6 +717,11 @@ namespace TiltBrush
             {
                 SetWidgetSizeAboutCenterOfMass(m_HideSize_CS * GetShowRatio());
             }
+
+            if (m_GsplatRenderer != null && m_GsplatHighlightFrame != Time.frameCount)
+            {
+                RestoreGsplatBrightness();
+            }
         }
 
         protected override void UpdateIntroAnim()
@@ -350,10 +735,24 @@ namespace TiltBrush
 
         protected override void UpdateScale()
         {
+            if (this == null) return; // BreakModelApartCommand can destroy us
             transform.localScale = Vector3.one * m_Size;
             if (m_Model != null && m_Model.m_Valid)
             {
-                m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
+                m_BoxCollider.size = MeshBounds.size + m_ContainerBloat;
+            }
+        }
+
+        private Bounds m_MeshBounds;
+        public Bounds MeshBounds
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_Subtree))
+                {
+                    return m_Model.m_MeshBounds;
+                }
+                return m_MeshBounds;
             }
         }
 
@@ -366,26 +765,66 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
-#if !UNITY_ANDROID
-            if (m_ObjModelScript != null)
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
                 return;
             }
-#endif
+            if (UpdateGsplatSelectionHighlight())
+            {
+                return;
+            }
             base.RegisterHighlight();
         }
 
         protected override void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
-            if (m_ObjModelScript != null)
+            RestoreGsplatBrightness();
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
-#endif
             base.UnregisterHighlight();
+        }
+
+        private bool UpdateGsplatSelectionHighlight()
+        {
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+            if (m_GsplatRenderer == null)
+            {
+                return false;
+            }
+
+            CaptureGsplatBaseBrightness();
+            m_GsplatHighlightFrame = Time.frameCount;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.realtimeSinceStartup * 4.0f);
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness * Mathf.Lerp(1.5f, 2.0f, pulse);
+            return true;
+        }
+
+        private void CaptureGsplatBaseBrightness()
+        {
+            if (m_GsplatRenderer == null || m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatBaseBrightness = m_GsplatRenderer.Brightness;
+            m_HasGsplatBaseBrightness = true;
+        }
+
+        private void RestoreGsplatBrightness()
+        {
+            if (m_GsplatRenderer == null || !m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness;
+            m_GsplatHighlightFrame = -1;
         }
 
         public TrTransform GetSaveTransform()
@@ -440,6 +879,7 @@ namespace TiltBrush
         protected void SetWidgetSizeAboutCenterOfMass(float size)
         {
             if (m_Size == size) { return; }
+            if (m_PreserveCustomSize) { return; }
 
             // Use WithUnitScale because we want only the pos/rot difference
             // Find delta such that delta * new = old
@@ -460,7 +900,7 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static void CreateFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -470,17 +910,33 @@ namespace TiltBrush
             bool ok;
             if (modelDatas.FilePath != null)
             {
-                ok = CreateModelsFromRelativePath(
+
+                Task<bool> okTask = CreateModelsFromRelativePath(
                     modelDatas.FilePath,
-                    modelDatas.Transforms, modelDatas.RawTransforms, modelDatas.PinStates,
-                    modelDatas.GroupIds);
+                    modelDatas.Subtrees,
+                    modelDatas.Transforms,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
+                );
+                ok = await okTask;
+
             }
             else if (modelDatas.AssetId != null)
             {
-                CreateModelsFromAssetId(
+                ok = await CreateModelsFromAssetId(
                     modelDatas.AssetId,
-                    modelDatas.RawTransforms, modelDatas.PinStates, modelDatas.GroupIds);
-                ok = true;
+                    modelDatas.Subtrees,
+                    modelDatas.RawTransforms,
+                    modelDatas.PinStates,
+                    modelDatas.GroupIds,
+                    modelDatas.LayerIds,
+                    modelDatas.SplitMeshPaths,
+                    modelDatas.NotSplittableMeshPaths
+                );
             }
             else
             {
@@ -498,21 +954,28 @@ namespace TiltBrush
         /// I believe (but am not sure) that this is synchronous.
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
-        public static bool CreateModelsFromRelativePath(
-            string relativePath,
-            TrTransform[] xfs, TrTransform[] rawXfs, bool[] pinStates, uint[] groupIds)
+        public static async Task<bool> CreateModelsFromRelativePath(
+            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-            if (model == null)
+            if (model == null) { return false; }
+
+            if (!model.m_Valid)
             {
-                return false;
+                // Reload the model if it's not valid or if we're loading a subtree.
+                Task t = model.LoadModelAsync();
+                await t;
             }
-            if (!model.m_Valid) { model.LoadModel(); }
             if (!model.m_Valid)
             {
                 return false;
             }
+
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+            model.InitMeshSplits();
 
             if (xfs != null)
             {
@@ -521,7 +984,7 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, xfs[i], pin, isNonRawTransform: true, groupId);
+                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0);
                 }
             }
             if (rawXfs != null)
@@ -531,19 +994,21 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId);
+                    int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
                 }
             }
             return true;
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, string assetId = null)
+        static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
+                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
+            modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
@@ -565,42 +1030,66 @@ namespace TiltBrush
 
             if (assetId != null && !model.m_Valid)
             {
-                App.PolyAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
+                App.IcosaAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
-        static void CreateModelsFromAssetId(
-            string assetId, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds)
+        static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.PolyAssetCatalog.GetModel(assetId);
+            Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (model == null)
             {
-                // This Model is transient; the Widget will replace it with a good Model from the PAC
-                // as soon as the PAC loads it.
-                model = new Model(Model.Location.PolyAsset(assetId, null));
+                // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
+                // as soon as the Icosa Asset Catalog loads it.
+                model = new Model(assetId, null);
+                model.ReleaseFromCatalog();
             }
-            if (!model.m_Valid)
+            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
+            // Set this before loading so mesh splits are available when the prefab is built.
+            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+
+            if (!model.m_Valid && model.GetLocation().AbsolutePath != null)
             {
-                App.PolyAssetCatalog.RequestModelLoad(assetId, "widget");
+                Task t = model.LoadModelAsync();
+                await t;
+            }
+            else if (!model.m_Valid)
+            {
+                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
+            }
+
+            if (model.m_Valid)
+            {
+                model.InitMeshSplits();
+            }
+
+            if (rawXfs == null)
+            {
+                return false;
             }
 
             // Create a widget for each transform.
             for (int i = 0; i < rawXfs.Length; ++i)
             {
-                bool pin = (i < pinStates.Length) ? pinStates[i] : true;
+                bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                CreateModel(model, rawXfs[i], pin, isNonRawTransform: false, groupId, assetId: assetId);
+                int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
+                CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
+                    groupId, layerId, assetId);
             }
+            return true;
         }
 
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null;
+            return m_ModelInstance != null && (m_Model == null || !m_Model.IsGsplatModel);
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)
@@ -616,6 +1105,36 @@ namespace TiltBrush
         override public bool CanSnapToHome()
         {
             return m_Model.m_MeshBounds.center == Vector3.zero;
+        }
+
+        private bool IsVoxModel()
+        {
+            string extension = m_Model?.GetLocation().Extension;
+            return string.Equals(extension, ".vox", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public void AddSceneLightGizmos()
+        {
+            var lights = m_ObjModelScript.transform.GetComponentsInChildren<Light>();
+            foreach (var light in lights)
+            {
+                // Probably not the right place to do it but we have to it somewhere
+                light.renderMode = LightRenderMode.ForceVertex;
+                Transform tr = Instantiate(
+                    WidgetManager.m_Instance.SceneLightGizmoPrefab.transform,
+                    light.transform
+                );
+                var gizmo = tr.GetComponent<SceneLightGizmo>();
+                gizmo.SetupLightGizmos(light);
+            }
+        }
+
+        public void UpdateBatchInfo()
+        {
+            // Set a new batchId on this model so it can be picked up in GPU intersections.
+            m_BatchId = GpuIntersector.GetNextBatchId();
+            HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
+            WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
         }
     }
 } // namespace TiltBrush

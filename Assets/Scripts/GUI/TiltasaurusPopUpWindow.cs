@@ -14,6 +14,7 @@
 
 using System.Collections;
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -24,8 +25,8 @@ namespace TiltBrush
                               No Peeking!
      Category: {0}";
 
-        [SerializeField] private TextMesh m_DrawingPrompt;
-        [SerializeField] private TextMesh m_Category;
+        [SerializeField] private TextMeshPro m_DrawingPrompt;
+        [SerializeField] private TextMeshPro m_Category;
         [SerializeField] private float m_DrawingPromptMaxWidth; // meters
         [SerializeField] private GameObject m_NoPeekingCameraPrefab;
         private GameObject m_NoPeekingCamera;
@@ -82,7 +83,7 @@ namespace TiltBrush
         }
 
         // maxWidth is in meters
-        static void SetTextResize(string text, TextMesh dest, float maxWidth)
+        static void SetTextResize(string text, TextMeshPro dest, float maxWidth)
         {
             maxWidth = maxWidth * App.METERS_TO_UNITS;
             dest.text = text;
@@ -111,7 +112,7 @@ namespace TiltBrush
             if (m_NoPeekingCamera != null)
             {
                 var categoryTrans = m_NoPeekingCamera.transform.Find("Category");
-                var categoryMesh = categoryTrans.GetComponent<TextMesh>();
+                var categoryMesh = categoryTrans.GetComponent<TextMeshPro>();
                 categoryMesh.text = sCategory;
             }
         }

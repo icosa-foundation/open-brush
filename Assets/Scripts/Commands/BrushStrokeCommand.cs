@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class BrushStrokeCommand : BaseCommand
     {
-        private Stroke m_Stroke;
+        public Stroke m_Stroke;
         private StencilWidget m_Widget;
         private float m_LineLength_CS; // Only valid if m_Widget != null
 
@@ -31,8 +32,27 @@ namespace TiltBrush
                                   float lineLength = -1, BaseCommand parent = null) : base(parent)
         {
             m_Stroke = stroke;
+            m_Stroke.Command = this;
             m_Widget = widget;
             m_LineLength_CS = lineLength;
+        }
+
+        // New constructor that accepts an existing Guid
+        public BrushStrokeCommand(Stroke stroke, Guid existingGuid, int timestamp, StencilWidget widget = null,
+                                  float lineLength = -1, BaseCommand parent = null)
+            : base(existingGuid, timestamp, parent)
+        {
+            m_Stroke = stroke;
+            m_Stroke.Command = this;
+            m_Widget = widget;
+            m_LineLength_CS = lineLength;
+        }
+
+        public override string Serialize()
+        {
+            //var data = Newtonsoft.Json.JsonConvert.SerializeObject(m_Stroke);
+            //UnityEngine.Debug.Log($"test: {data}");
+            return JsonUtility.ToJson(m_Stroke);
         }
 
         public override bool NeedsSave { get { return true; } }

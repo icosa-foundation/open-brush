@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using OpenBrush.Multiplayer;
+
 namespace TiltBrush
 {
     public class SwitchEnvironmentCommand : BaseCommand
@@ -19,9 +22,28 @@ namespace TiltBrush
         private CustomLights m_PrevLights;
         private CustomEnvironment m_PrevBackdrop;
         private Environment m_PrevEnvironment;
-        private Environment m_NextEnvironment;
+        public Environment m_NextEnvironment;
+
+        public override bool IsAvailable =>
+            !MultiplayerManager.m_Instance.IsViewOnly && !WouldLeavePassthroughMultiplayerRoom();
 
         public SwitchEnvironmentCommand(Environment nextEnv, BaseCommand parent = null) : base(parent)
+        {
+            m_NextEnvironment = nextEnv;
+            m_PrevBackdrop = SceneSettings.m_Instance.CustomEnvironment;
+            if (SceneSettings.m_Instance.IsTransitioning)
+            {
+                m_PrevEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+            }
+            else
+            {
+                m_PrevLights = LightsControlScript.m_Instance.CustomLights;
+                m_PrevEnvironment = SceneSettings.m_Instance.CurrentEnvironment;
+            }
+        }
+
+        public SwitchEnvironmentCommand(Environment nextEnv, Guid existingGuid, int timestamp, BaseCommand parent = null)
+            : base(existingGuid, timestamp, parent)
         {
             m_NextEnvironment = nextEnv;
             m_PrevBackdrop = SceneSettings.m_Instance.CustomEnvironment;
@@ -79,6 +101,18 @@ namespace TiltBrush
             if (command == null) { return false; }
             m_NextEnvironment = command.m_NextEnvironment;
             return true;
+        }
+
+        private bool WouldLeavePassthroughMultiplayerRoom()
+        {
+            if (MultiplayerManager.m_Instance == null || !MultiplayerManager.m_Instance.HasRemotePlayersInRoom())
+            {
+                return false;
+            }
+
+            Environment currentEnvironment = SceneSettings.m_Instance.GetDesiredPreset();
+            return currentEnvironment != null && currentEnvironment.isPassthrough &&
+                m_NextEnvironment != null && !m_NextEnvironment.isPassthrough;
         }
     }
 } // namespace TiltBrush

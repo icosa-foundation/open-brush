@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if LATK_SUPPORTED
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using SimpleJSON;
-using ICSharpCode.SharpZipLibUnityPort.Core;
-using ICSharpCode.SharpZipLibUnityPort.Zip;
+using Unity.SharpZipLib.Core;
+using Unity.SharpZipLib.Zip;
 using static TiltBrush.ExportUtils;
 
 namespace TiltBrush
@@ -245,4 +244,3 @@ namespace TiltBrush
     }
 
 }
-#endif

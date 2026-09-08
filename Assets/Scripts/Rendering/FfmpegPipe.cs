@@ -16,6 +16,7 @@ using UnityEngine;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
 {
@@ -135,12 +136,38 @@ namespace TiltBrush
     ///
     class FfmpegPipe
     {
+        // This value is also used by the build script
         public const string kFfmpegDir = "Support/ThirdParty/ffmpeg";
 
         public static string GetFfmpegExe()
         {
-            string exe = $"{kFfmpegDir}/bin/ffmpeg.exe";
-            if (File.Exists(exe)) { return exe; }
+            // Editor and Windows builds have different paths
+            // between Application.dataPath and the actual executable
+            string traverseToApp = "";
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.isEditor)
+            {
+                traverseToApp = "../";
+            }
+
+            string exeName = null;
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            exeName = "ffmpeg.exe";
+#endif
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            exeName = "ffmpeg";
+#endif
+
+            var combinedPath = Path.Combine(
+                Application.dataPath,
+                traverseToApp,
+                kFfmpegDir,
+                "bin",
+                exeName
+            );
+            string fullPath = Path.GetFullPath(combinedPath);
+            if (exeName != null && File.Exists(fullPath)) return fullPath;
+
+            // Only Android and Linux builds should hit this point
             return null;
         }
 
@@ -346,7 +373,7 @@ namespace TiltBrush
             string ffmpegExe = GetFfmpegExe();
             if (ffmpegExe == null)
             {
-                UnityEngine.Debug.LogError("ffmpeg.exe could not be found.");
+                UnityEngine.Debug.LogError("ffmpeg executable could not be found.");
                 return false;
             }
             m_encoderProc = new Process();

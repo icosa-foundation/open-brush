@@ -1,0 +1,200 @@
+// https://github.com/shaunabanana/unity-websocket-server
+
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001
+
+using System;
+// Networking libs
+using System.Net;
+using System.Net.Sockets;
+// For creating a thread
+using System.Threading;
+// For List & ConcurrentQueue
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using TiltBrush;
+// Unity & Unity events
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace WebSocketServer {
+    [System.Serializable]
+    public class WebSocketOpenEvent : UnityEvent<WebSocketConnection> {}
+
+    [System.Serializable]
+    public class WebSocketMessageEvent : UnityEvent<WebSocketMessage> {}
+
+    [System.Serializable]
+    public class WebSocketCloseEvent : UnityEvent<WebSocketConnection> {}
+
+    public class WebSocketServer : MonoBehaviour
+    {
+        // The tcpListenerThread listens for incoming WebSocket connections, then assigns the client to handler threads;
+        private TcpListener tcpListener;
+        private Thread tcpListenerThread;
+        private List<Thread> workerThreads;
+        private TcpClient connectedTcpClient;
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove these counters, call sites, and
+        // LogLeptonConnectionDecision once the Lepton host gateway behavior is confirmed.
+        private int loggedAcceptedLeptonConnection;
+        private int loggedRejectedLeptonConnection;
+        // LEPTON_HTTP_DIAGNOSTICS_END
+
+        public ConcurrentQueue<WebSocketEvent> events;
+
+        public string address;
+        public int port;
+        public WebSocketOpenEvent onOpen;
+        public WebSocketMessageEvent onMessage;
+        public WebSocketCloseEvent onClose;
+
+        void Awake() {
+            if (onMessage == null) onMessage = new WebSocketMessageEvent();
+        }
+
+        void Start() {
+            events = new ConcurrentQueue<WebSocketEvent>();
+            workerThreads = new List<Thread>();
+
+            tcpListenerThread = new Thread (new ThreadStart(ListenForTcpConnection));
+            tcpListenerThread.IsBackground = true;
+            tcpListenerThread.Start();
+        }
+
+        void Update() {
+            WebSocketEvent wsEvent;
+            while (events.TryDequeue(out wsEvent)) {
+                if (wsEvent.type == WebSocketEventType.Open) {
+                    onOpen.Invoke(wsEvent.connection);
+                    this.OnOpen(wsEvent.connection);
+                } else if (wsEvent.type == WebSocketEventType.Close) {
+                    onClose.Invoke(wsEvent.connection);
+                    this.OnClose(wsEvent.connection);
+                } else if (wsEvent.type == WebSocketEventType.Message) {
+                    WebSocketMessage message = new WebSocketMessage(wsEvent.connection, wsEvent.data);
+                    onMessage.Invoke(message);
+                    this.OnMessage(message);
+                }
+            }
+        }
+
+        private void ListenForTcpConnection () { 		
+            try {
+                // Create listener on <address>:<port>.
+                tcpListener = new TcpListener(port);
+                tcpListener.Start();
+                while (true) {
+                    // Accept a new client, then open a stream for reading and writing.
+                    connectedTcpClient = tcpListener.AcceptTcpClient();
+                    var endPoint = connectedTcpClient.Client.RemoteEndPoint as IPEndPoint;
+                    var isLeptonHostConnection =
+                        SteamManager.IsLeptonHostAddress(endPoint?.Address);
+                    if ((endPoint != null && IPAddress.IsLoopback(endPoint.Address)) ||
+                        App.UserConfig.Flags.EnableApiRemoteCalls ||
+                        isLeptonHostConnection)
+                    {
+                        // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
+                        LogLeptonConnectionDecision(endPoint, true, isLeptonHostConnection);
+                        // Create a new connection
+                        WebSocketConnection connection = new WebSocketConnection(connectedTcpClient, this);
+                        // Establish connection
+                        connection.Establish();
+                        // // Start a new thread to handle the connection.
+                        // Thread worker = new Thread (new ParameterizedThreadStart(HandleConnection));
+                        // worker.IsBackground = true;
+                        // worker.Start(connection);
+                        // // Add it to the thread list. TODO: delete thread when disconnecting.
+                        // workerThreads.Add(worker);
+                    }
+                    else
+                    {
+                        // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
+                        LogLeptonConnectionDecision(endPoint, false, false);
+                        connectedTcpClient.Close();
+                    }
+                }
+            }
+            catch (SocketException socketException) {
+                Debug.Log("SocketException " + socketException.ToString());
+            }
+        }
+
+        // private string ReceiveMessage(TcpClient client, NetworkStream stream) {
+        //     // Wait for data to be available, then read the data.
+        //     while (!stream.DataAvailable);
+        //     Byte[] bytes = new Byte[client.Available];
+        //     stream.Read(bytes, 0, bytes.Length);
+
+        //     return WebSocketProtocol.DecodeMessage(bytes);
+        // }
+
+        public virtual void OnOpen(WebSocketConnection connection) {}
+
+        public virtual void OnMessage(WebSocketMessage message) {}
+
+        public virtual void OnClose(WebSocketConnection connection) {}
+
+        public virtual void OnError(WebSocketConnection connection) {}
+
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove this method after on-device confirmation.
+        private void LogLeptonConnectionDecision(IPEndPoint endPoint, bool allowed,
+            bool isLeptonHostConnection)
+        {
+            if (!SteamManager.RunningUnderLepton)
+            {
+                return;
+            }
+
+            if (allowed && !isLeptonHostConnection)
+            {
+                return;
+            }
+
+            var wasAlreadyLogged = isLeptonHostConnection
+                ? Interlocked.Exchange(ref loggedAcceptedLeptonConnection, 1)
+                : Interlocked.Exchange(ref loggedRejectedLeptonConnection, 1);
+            if (wasAlreadyLogged != 0)
+            {
+                return;
+            }
+
+            Debug.Log($"[LEPTON_HTTP] WebSocket connection {(allowed ? "accepted" : "rejected")}; remote={endPoint}; matchedGateway={isLeptonHostConnection}");
+        }
+        // LEPTON_HTTP_DIAGNOSTICS_END
+
+
+        // private void SendMessage() {
+        //     if (connectedTcpClient == null) {
+        //         return;
+        //     }
+
+        //     try {
+        //         // Get a stream object for writing.
+        //         NetworkStream stream = connectedTcpClient.GetStream();
+        //         if (stream.CanWrite) {
+        //             string serverMessage = "This is a message from your server.";
+        //             // Convert string message to byte array.
+        //             byte[] serverMessageAsByteArray = Encoding.ASCII.GetBytes(serverMessage);
+        //             // Write byte array to socketConnection stream.
+        //             stream.Write(serverMessageAsByteArray, 0, serverMessageAsByteArray.Length);
+        //             Debug.Log("Server sent his message - should be received by client");
+        //         }
+        //     }
+        //     catch (SocketException socketException) {
+        //         Debug.Log("Socket exception: " + socketException);
+        //     }
+        // }
+    }
+}

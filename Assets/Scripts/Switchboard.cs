@@ -18,6 +18,7 @@ namespace TiltBrush
 {
     public class Switchboard
     {
+        public event Action BrushSizeChanged;
         public event Action ToolChanged;
         public event Action MirrorVisibilityChanged;
         public event Action PanelDismissed;
@@ -35,6 +36,7 @@ namespace TiltBrush
         public event Action AllWidgetsDestroyed;
         public event Action SelectionChanged;
         public event Action<VideoWidget> VideoWidgetActivated;
+        public event Action<SoundClipWidget> SoundClipWidgetActivated;
         public event Action VideoRecordingStopped;
 
         public void TriggerAdvancedPanelsChanged()
@@ -48,6 +50,11 @@ namespace TiltBrush
         public void TriggerToolChanged()
         {
             ToolChanged?.Invoke();
+        }
+
+        public void TriggerBrushSizeChanged()
+        {
+            BrushSizeChanged?.Invoke();
         }
 
         public void TriggerMirrorVisibilityChanged()
@@ -128,6 +135,11 @@ namespace TiltBrush
         public void TriggerVideoWidgetActivated(VideoWidget widget)
         {
             VideoWidgetActivated?.Invoke(widget);
+        }
+
+        public void TriggerSoundClipWidgetActivated(SoundClipWidget widget)
+        {
+            SoundClipWidgetActivated?.Invoke(widget);
         }
 
         public void TriggerVideoRecordingStopped()

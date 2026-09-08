@@ -1,0 +1,46 @@
+InstallScript {
+  Registry {
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\.tilt" {
+      string {
+        "(Default)"      "Icosa.OpenBrush.File"
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Icosa.OpenBrush.File" {
+      string {
+        "(Default)"      "Open Brush sketch file"
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Icosa.OpenBrush.File\\DefaultIcon" {
+      string {
+        "(Default)"      "%INSTALLDIR%\\{{ OPEN_BRUSH_WINDOWS_EXECUTABLE }}"
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\Icosa.OpenBrush.File\\Shell\\Open\\Command" {
+      string {
+        "(Default)"      "%WINDIR%\\System32\\WindowsPowershell\\v1.0\\powershell -windowstyle hidden -c \"try { $s=[uri]::EscapeDataString('%1'); (new-object System.Net.WebClient).DownloadString('http://localhost:40074/load?'+$s) } catch { & '%INSTALLDIR%\\{{ OPEN_BRUSH_WINDOWS_EXECUTABLE }}' '%1' }\""
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\tiltbrush" {
+      string {
+        "(Default)"      "URL:Open Brush"
+      }
+      string {
+        "URL Protocol"   ""
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\tiltbrush\\DefaultIcon" {
+      string {
+        "(Default)"      "%INSTALLDIR%\\{{ OPEN_BRUSH_WINDOWS_EXECUTABLE }}"
+      }
+    }
+    "HKEY_LOCAL_MACHINE\\SOFTWARE\\Classes\\tiltbrush\\Shell\\Open\\Command" {
+      string {
+        "(Default)"      "%WINDIR%\\System32\\WindowsPowershell\\v1.0\\powershell -windowstyle hidden -c \"try { $s=[uri]::EscapeDataString('%1'); (new-object System.Net.WebClient).DownloadString('http://localhost:40074/load?'+$s) } catch { & '%INSTALLDIR%\\{{ OPEN_BRUSH_WINDOWS_EXECUTABLE }}' '%1' }\""
+      }
+    }
+  }
+
+  Firewall {
+    "Open Brush" "%INSTALLDIR%\\{{ OPEN_BRUSH_WINDOWS_EXECUTABLE }}"
+  }
+}

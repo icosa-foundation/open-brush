@@ -14,7 +14,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using JetBrains.Annotations;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace TiltBrush
@@ -25,15 +25,16 @@ namespace TiltBrush
     [Serializable]
     public enum StencilType
     {
-        Plane,
-        Cube,
-        Sphere,
-        Capsule,
-        Cone,
-        Cylinder,
-        InteriorDome,
-        Pyramid,
-        Ellipsoid
+        Plane = 0,
+        Cube = 1,
+        Sphere = 2,
+        Capsule = 3,
+        Cone = 4,
+        Cylinder = 5,
+        InteriorDome = 6,
+        Pyramid = 7,
+        Ellipsoid = 8,
+        Custom = 9,
     }
 
     [Serializable]
@@ -82,7 +83,7 @@ namespace TiltBrush
     public class TypedWidgetData<T> : GrabWidgetData where T : GrabWidget
     {
         private readonly T m_typedWidget;
-        public new T WidgetScript => m_typedWidget;
+        public T WidgetScript => m_typedWidget;
         public TypedWidgetData(T widget) : base(widget)
         {
             m_typedWidget = widget;
@@ -105,6 +106,16 @@ namespace TiltBrush
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
+        [SerializeField] TextWidget m_TextWidgetPrefab;
+        [SerializeField] SoundClipWidget m_SoundClipWidgetPrefab;
+        [SerializeField] LightWidget m_LightWidgetPrefab;
+        [SerializeField] PortalSphereWidget m_PortalWidgetPrefab;
+        [SerializeField] PortalBoxWidget m_PortalBoxWidgetPrefab;
+        [SerializeField] GaussianCaptureSphereWidget m_GaussianCaptureSphereWidgetPrefab;
+        [SerializeField] GaussianCaptureEllipsoidWidget m_GaussianCaptureEllipsoidWidgetPrefab;
+        [SerializeField] GaussianCaptureHemisphereWidget m_GaussianCaptureHemisphereWidgetPrefab;
+        [SerializeField] GaussianCaptureBoxWidget m_GaussianCaptureBoxWidgetPrefab;
+        [SerializeField] SceneLightGizmo m_SceneLightGizmoPrefab;
         [SerializeField] CameraPathWidget m_CameraPathWidgetPrefab;
         [SerializeField] private GameObject m_CameraPathPositionKnotPrefab;
         [SerializeField] private GameObject m_CameraPathRotationKnotPrefab;
@@ -141,9 +152,14 @@ namespace TiltBrush
         // Widgets will be in the most specific list.
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
+        private List<TypedWidgetData<LightWidget>> m_LightWidgets;
+        private List<TypedWidgetData<PortalWidgetBase>> m_PortalWidgets;
+        private List<TypedWidgetData<GaussianCaptureWidgetBase>> m_GaussianCaptureWidgets;
         private List<TypedWidgetData<StencilWidget>> m_StencilWidgets;
         private List<TypedWidgetData<ImageWidget>> m_ImageWidgets;
+        private List<TypedWidgetData<TextWidget>> m_TextWidgets;
         private List<TypedWidgetData<VideoWidget>> m_VideoWidgets;
+        private List<TypedWidgetData<SoundClipWidget>> m_SoundClipWidgets;
         private List<TypedWidgetData<CameraPathWidget>> m_CameraPathWidgets;
 
         // These lists are used by the PinTool.  They're kept in sync by the
@@ -153,8 +169,10 @@ namespace TiltBrush
         public event Action RefreshPinAndUnpinAction;
 
         private TiltModels75[] m_loadingTiltModels75;
+        private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
+        private TiltSoundClip[] m_loadingTiltSoundClips;
 
         private List<GrabWidgetData> m_WidgetsNearBrush;
         private List<GrabWidgetData> m_WidgetsNearWand;
@@ -171,10 +189,12 @@ namespace TiltBrush
         // Camera path.
         [NonSerialized] public bool FollowingPath;
         private TypedWidgetData<CameraPathWidget> m_CurrentCameraPath;
+        private bool m_CreatingCameraPath;
         private bool m_CameraPathsVisible;
         private CameraPathTinter m_CameraPathTinter;
 
         static private Dictionary<ushort, GrabWidget> sm_BatchMap = new Dictionary<ushort, GrabWidget>();
+        public bool m_EnableSnapToGuides;
 
         public StencilWidget ActiveStencil
         {
@@ -261,10 +281,12 @@ namespace TiltBrush
             get { return m_ModelVertCount + m_ImageVertCount; }
         }
 
-        public bool AnyVideoWidgetActive => m_VideoWidgets.Any(x => x.m_WidgetObject.activeSelf);
+        public bool AnyVideoWidgetActive => m_VideoWidgets.Any(IsWidgetObjectActive);
+
+        public bool AnySoundClipWidgetActive => m_SoundClipWidgets.Any(IsWidgetObjectActive);
 
         public bool AnyCameraPathWidgetsActive =>
-            m_CameraPathWidgets.Any(x => x.m_WidgetObject.activeSelf);
+            m_CameraPathWidgets.Any(IsWidgetObjectActive);
 
         public CameraPathTinter PathTinter { get => m_CameraPathTinter; }
 
@@ -290,15 +312,24 @@ namespace TiltBrush
             m_Instance = this;
         }
 
+        /// True once Init has created the widget lists. Awake only assigns m_Instance,
+        /// so widgets registering from their own Awake must check this as well.
+        public bool IsInitialized => m_GrabWidgets != null;
+
         public void Init()
         {
             m_CameraPathTinter = gameObject.AddComponent<CameraPathTinter>();
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
+            m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
+            m_PortalWidgets = new List<TypedWidgetData<PortalWidgetBase>>();
+            m_GaussianCaptureWidgets = new List<TypedWidgetData<GaussianCaptureWidgetBase>>();
             m_StencilWidgets = new List<TypedWidgetData<StencilWidget>>();
             m_ImageWidgets = new List<TypedWidgetData<ImageWidget>>();
+            m_TextWidgets = new List<TypedWidgetData<TextWidget>>();
             m_VideoWidgets = new List<TypedWidgetData<VideoWidget>>();
+            m_SoundClipWidgets = new List<TypedWidgetData<SoundClipWidget>>();
             m_CameraPathWidgets = new List<TypedWidgetData<CameraPathWidget>>();
 
             m_CanBePinnedWidgets = new List<GrabWidget>();
@@ -320,17 +351,65 @@ namespace TiltBrush
 
             FollowingPath = false;
             m_CameraPathsVisible = false;
+
+            App.Scene.ActiveCanvasChanged += OnActiveCanvasChanged;
+        }
+
+        private void OnDestroy()
+        {
+            App.Scene.ActiveCanvasChanged -= OnActiveCanvasChanged;
+        }
+
+        private void OnActiveCanvasChanged(CanvasScript previous, CanvasScript current)
+        {
+            RefreshPinAndUnpinLists();
         }
 
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
+        public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
+        public SoundClipWidget SoundClipWidgetPrefab { get { return m_SoundClipWidgetPrefab; } }
+        public LightWidget LightWidgetPrefab { get { return m_LightWidgetPrefab; } }
+        public PortalSphereWidget PortalWidgetPrefab { get { return m_PortalWidgetPrefab; } }
+        public PortalBoxWidget PortalBoxWidgetPrefab { get { return m_PortalBoxWidgetPrefab; } }
+        public GaussianCaptureSphereWidget GaussianCaptureSphereWidgetPrefab { get { return m_GaussianCaptureSphereWidgetPrefab; } }
+        public GaussianCaptureEllipsoidWidget GaussianCaptureEllipsoidWidgetPrefab { get { return m_GaussianCaptureEllipsoidWidgetPrefab; } }
+        public GaussianCaptureHemisphereWidget GaussianCaptureHemisphereWidgetPrefab { get { return m_GaussianCaptureHemisphereWidgetPrefab; } }
+        public GaussianCaptureBoxWidget GaussianCaptureBoxWidgetPrefab { get { return m_GaussianCaptureBoxWidgetPrefab; } }
+        public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
         public GameObject CameraPathRotationKnotPrefab { get { return m_CameraPathRotationKnotPrefab; } }
         public GameObject CameraPathSpeedKnotPrefab { get { return m_CameraPathSpeedKnotPrefab; } }
         public GameObject CameraPathFovKnotPrefab { get { return m_CameraPathFovKnotPrefab; } }
         public GameObject CameraPathKnotSegmentPrefab { get { return m_CameraPathKnotSegmentPrefab; } }
+
+        public PortalSphereWidget CreatePortalWidget(TrTransform spawnXf, string destination)
+        {
+            var createCommand = new CreateWidgetCommand(m_PortalWidgetPrefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+            var portalWidget = createCommand.Widget as PortalSphereWidget;
+            if (portalWidget != null)
+            {
+                portalWidget.Destination = destination;
+            }
+            return portalWidget;
+        }
+
+        public void CreateGaussianCaptureWidget(TrTransform spawnXf, StencilType stencilType)
+        {
+            GrabWidget prefab = stencilType switch
+            {
+                StencilType.Cube => m_GaussianCaptureBoxWidgetPrefab,
+                StencilType.InteriorDome => m_GaussianCaptureHemisphereWidgetPrefab,
+                StencilType.Sphere => m_GaussianCaptureSphereWidgetPrefab,
+                StencilType.Ellipsoid => m_GaussianCaptureEllipsoidWidgetPrefab,
+                _ => throw new ArgumentOutOfRangeException(nameof(stencilType), stencilType, null)
+            };
+            var createCommand = new CreateWidgetCommand(prefab, spawnXf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
+        }
 
         public IEnumerable<GrabWidgetData> ActiveGrabWidgets
         {
@@ -339,52 +418,99 @@ namespace TiltBrush
                 if (m_InhibitGrabWhileLoading)
                 {
                     // Returns only widgets that are not part of the sketch
-                    return m_GrabWidgets.Where(x => x.m_WidgetObject.activeSelf);
+                    return m_GrabWidgets.Where(IsWidgetObjectActive);
                 }
                 return GetAllActiveGrabWidgets();
             }
+        }
+
+        private static bool IsWidgetObjectActive(GrabWidgetData data)
+        {
+            return data != null && data.m_WidgetObject != null && data.m_WidgetObject.activeSelf;
+        }
+
+        private static bool IsWidgetObjectActiveInHierarchy(GrabWidgetData data)
+        {
+            return data != null &&
+                   data.m_WidgetObject != null &&
+                   data.m_WidgetObject.activeInHierarchy;
         }
 
         private IEnumerable<GrabWidgetData> GetAllActiveGrabWidgets()
         {
             for (int i = 0; i < m_GrabWidgets.Count; ++i)
             {
-                if (m_GrabWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActive(m_GrabWidgets[i]))
                 {
                     yield return m_GrabWidgets[i];
                 }
             }
             for (int i = 0; i < m_ModelWidgets.Count; ++i)
             {
-                if (m_ModelWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActive(m_ModelWidgets[i]))
                 {
                     yield return m_ModelWidgets[i];
                 }
             }
+            for (int i = 0; i < m_LightWidgets.Count; ++i)
+            {
+                if (IsWidgetObjectActive(m_LightWidgets[i]))
+                {
+                    yield return m_LightWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_PortalWidgets.Count; ++i)
+            {
+                if (m_PortalWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_PortalWidgets[i];
+                }
+            }
+            for (int i = 0; i < m_GaussianCaptureWidgets.Count; ++i)
+            {
+                if (m_GaussianCaptureWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_GaussianCaptureWidgets[i];
+                }
+            }
             for (int i = 0; i < m_StencilWidgets.Count; ++i)
             {
-                if (m_StencilWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActive(m_StencilWidgets[i]))
                 {
                     yield return m_StencilWidgets[i];
                 }
             }
             for (int i = 0; i < m_ImageWidgets.Count; ++i)
             {
-                if (m_ImageWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActive(m_ImageWidgets[i]))
                 {
                     yield return m_ImageWidgets[i];
                 }
             }
+            for (int i = 0; i < m_TextWidgets.Count; ++i)
+            {
+                if (IsWidgetObjectActive(m_TextWidgets[i]))
+                {
+                    yield return m_TextWidgets[i];
+                }
+            }
             for (int i = 0; i < m_VideoWidgets.Count; ++i)
             {
-                if (m_VideoWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActive(m_VideoWidgets[i]))
                 {
                     yield return m_VideoWidgets[i];
                 }
             }
+            for (int i = 0; i < m_SoundClipWidgets.Count; ++i)
+            {
+                if (IsWidgetObjectActive(m_SoundClipWidgets[i]))
+                {
+                    yield return m_SoundClipWidgets[i];
+                }
+            }
             for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
             {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
+                if (IsWidgetObjectActiveInHierarchy(m_CameraPathWidgets[i]))
                 {
                     yield return m_CameraPathWidgets[i];
                 }
@@ -396,14 +522,28 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets).Concat(m_VideoWidgets);
+                return ret.Concat(m_ImageWidgets)
+                    .Concat(m_VideoWidgets)
+                    .Concat(m_TextWidgets)
+                    .Concat(m_SoundClipWidgets)
+                    .Concat(m_LightWidgets);
             }
         }
 
         public IEnumerable<TypedWidgetData<CameraPathWidget>> CameraPathWidgets =>
-            m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+            m_CameraPathWidgets.Where(IsWidgetObjectActive);
 
         public TypedWidgetData<CameraPathWidget> GetCurrentCameraPath() => m_CurrentCameraPath;
+
+        public bool CreatingCameraPath => m_CreatingCameraPath;
+
+        public void BeginCreatingCameraPath()
+        {
+            FollowingPath = false;
+            m_CreatingCameraPath = true;
+            SetCurrentCameraPath_Internal(null);
+            App.Switchboard.TriggerCurrentCameraPathChanged();
+        }
 
         public void SetCurrentCameraPath(CameraPathWidget path)
         {
@@ -418,6 +558,7 @@ namespace TiltBrush
                 if (m_CameraPathWidgets[i].m_WidgetScript == path)
                 {
                     FollowingPath = false;
+                    m_CreatingCameraPath = false;
                     SetCurrentCameraPath_Internal(m_CameraPathWidgets[i]);
                     App.Switchboard.TriggerCurrentCameraPathChanged();
                     return;
@@ -427,15 +568,20 @@ namespace TiltBrush
 
         public void ValidateCurrentCameraPath()
         {
+            if (m_CreatingCameraPath)
+            {
+                return;
+            }
+
             if (m_CurrentCameraPath == null ||
                 m_CurrentCameraPath.WidgetScript == null ||
-                !m_CurrentCameraPath.m_WidgetObject.activeSelf)
+                !IsWidgetObjectActive(m_CurrentCameraPath))
             {
                 var prevPath = m_CurrentCameraPath;
                 for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
                 {
                     if (m_CameraPathWidgets[i] != prevPath &&
-                        m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
+                        IsWidgetObjectActive(m_CameraPathWidgets[i]))
                     {
                         SetCurrentCameraPath_Internal(m_CameraPathWidgets[i]);
                         return;
@@ -478,7 +624,7 @@ namespace TiltBrush
         // cases, we can't pass a CameraPathWidget object.
         public CameraPathWidget GetNthActiveCameraPath(int nth)
         {
-            var activeCameraPathWidgets = m_CameraPathWidgets.Where(x => x.m_WidgetObject.activeSelf);
+            var activeCameraPathWidgets = m_CameraPathWidgets.Where(IsWidgetObjectActive);
             foreach (var cpw in activeCameraPathWidgets)
             {
                 if (nth == 0)
@@ -496,23 +642,6 @@ namespace TiltBrush
                 null;
             if (cpw == null) { return false; }
             return GetNthActiveCameraPath(pathIndex) == m_CurrentCameraPath.WidgetScript;
-        }
-
-        public int? GetIndexOfCameraPath(CameraPathWidget path)
-        {
-            int index = 0;
-            for (int i = 0; i < m_CameraPathWidgets.Count; ++i)
-            {
-                if (m_CameraPathWidgets[i].m_WidgetObject.activeSelf)
-                {
-                    if (m_CameraPathWidgets[i].WidgetScript == path)
-                    {
-                        return index;
-                    }
-                    ++index;
-                }
-            }
-            return null;
         }
 
         public CameraPathWidget CreatePathWidget()
@@ -551,7 +680,7 @@ namespace TiltBrush
             // I'm doing this because if we leave the camera path tool active, the camera path
             // panel shows the button highlighted, which affects the user's flow for being
             // invited to start a path.  It looks weird.
-            if (m_CurrentCameraPath == null || !m_CurrentCameraPath.WidgetScript.gameObject.activeSelf)
+            if (m_CurrentCameraPath == null || !IsWidgetObjectActive(m_CurrentCameraPath))
             {
                 if (SketchSurfacePanel.m_Instance.ActiveToolType == BaseTool.ToolType.CameraPathTool)
                 {
@@ -596,7 +725,12 @@ namespace TiltBrush
 
         public bool HasSelectableWidgets()
         {
-            return (m_ModelWidgets.Count > 0) || (m_ImageWidgets.Count > 0) || (m_VideoWidgets.Count > 0) ||
+            return m_ModelWidgets.Count > 0 ||
+                m_ImageWidgets.Count > 0 ||
+                m_TextWidgets.Count > 0 ||
+                m_VideoWidgets.Count > 0 ||
+                m_SoundClipWidgets.Count > 0 ||
+                (m_LightWidgets.Count > 0) ||
                 (!m_StencilsDisabled && m_StencilWidgets.Count > 0);
         }
 
@@ -613,7 +747,7 @@ namespace TiltBrush
                         App.Config.m_EnableReferenceModelExport &&
                         ExportableModelWidgets.Any(
                             w => w.gameObject.activeSelf &&
-                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.PolyAssetId);
+                                w.Model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId);
             }
         }
 
@@ -677,33 +811,83 @@ namespace TiltBrush
             return null;
         }
 
+        public static string GetPathRootedAtBlocks(string path)
+        {
+            if (!System.IO.Path.IsPathRooted(path))
+            {
+                throw new ArgumentException("Path is not rooted");
+            }
+            var blocks = App.BlocksModelLibraryPath();
+            if (string.IsNullOrEmpty(blocks))
+            {
+                return null;
+            }
+            if (CanonicalizeForCompare(path).StartsWith(CanonicalizeForCompare(blocks)))
+            {
+                // Derive the prefix from the actual BlocksModelLibraryPath
+                // e.g., if blocks = "C:/Users/.../Blocks/OfflineModels", prefix = "Blocks/OfflineModels"
+                var userPath = App.UserPath();
+                var userParent = System.IO.Directory.GetParent(userPath);
+                var blocksRoot = userParent != null ? userParent.FullName : userPath;
+                var relativePrefix = blocks.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/');
+                return relativePrefix + path.Substring(blocks.Length);
+            }
+            return null;
+        }
+
         // Returns path after Media Library/Models for models only
         // Input: absolute path
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
             string media = GetPathRootedAtMedia(fullPath);
+            string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
-            if (media == null || !media.StartsWith(modelPath))
+
+            if (media != null && media.StartsWith(modelPath))
             {
-                return null;
+                return media.Substring(modelPath.Length);
             }
-            return media.Substring(modelPath.Length);
+
+            if (blocks != null)
+            {
+                // Derive the blocks model path prefix dynamically
+                var blocksLibPath = App.BlocksModelLibraryPath();
+                if (!string.IsNullOrEmpty(blocksLibPath))
+                {
+                    var userPath = App.UserPath();
+                    var userParent = System.IO.Directory.GetParent(userPath);
+                    var blocksRoot = userParent != null ? userParent.FullName : userPath;
+                    var blocksModelPath = blocksLibPath.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/') + "/";
+
+                    if (blocks.StartsWith(blocksModelPath))
+                    {
+                        return blocks.Substring(blocksModelPath.Length);
+                    }
+                }
+            }
+            return null;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltModels75[] value)
+        public void SetModelDataFromTilt(TiltModels75[] value)
         {
             m_loadingTiltModels75 = value;
         }
 
         // Used only at .tilt-loading time
-        public void SetDataFromTilt(TiltImages75[] value)
+        public void SetImageDataFromTilt(TiltImages75[] value)
         {
             m_loadingTiltImages75 = value;
         }
 
-        public void SetDataFromTilt(CameraPathMetadata[] cameraPaths)
+        // Used only at .tilt-loading time
+        public void SetLightDataFromTilt(TiltLights[] value)
+        {
+            m_loadingTiltLights = value;
+        }
+
+        public void SetCameraPathDataFromTilt(CameraPathMetadata[] cameraPaths)
         {
             for (int i = 0; i < cameraPaths.Length; ++i)
             {
@@ -711,7 +895,58 @@ namespace TiltBrush
             }
         }
 
-        public void SetDataFromTilt(TiltVideo[] value)
+        public void SetTextDataFromTilt(TiltText[] tiltText)
+        {
+            for (int i = 0; i < tiltText.Length; ++i)
+            {
+                TextWidget.FromTiltText(tiltText[i]);
+            }
+        }
+
+        public void SetPortalDataFromTilt(TiltPortal[] tiltPortals)
+        {
+            for (int i = 0; i < tiltPortals.Length; ++i)
+            {
+                switch (tiltPortals[i].ShapeType)
+                {
+                    case StencilType.Sphere:
+                        PortalSphereWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    case StencilType.Cube:
+                        PortalBoxWidget.FromTiltPortal(tiltPortals[i]);
+                        break;
+                    default:
+                        Debug.LogWarning($"Unsupported portal shape '{tiltPortals[i].ShapeType}' while loading portal destination '{tiltPortals[i].Destination}'");
+                        break;
+                }
+            }
+        }
+
+        public void SetGaussianCaptureDataFromTilt(TiltGaussianCapture[] captures)
+        {
+            foreach (var capture in captures)
+            {
+                if (capture.ShapeType == StencilType.Sphere)
+                    GaussianCaptureSphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.Ellipsoid)
+                    GaussianCaptureEllipsoidWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.InteriorDome)
+                    GaussianCaptureHemisphereWidget.FromTiltGaussianCapture(capture);
+                else if (capture.ShapeType == StencilType.Cube)
+                    GaussianCaptureBoxWidget.FromTiltGaussianCapture(capture);
+            }
+        }
+
+
+        public void SetSoundDataFromTilt(TiltSoundClip[] tiltSoundClip)
+        {
+            for (int i = 0; i < tiltSoundClip.Length; ++i)
+            {
+                SoundClipWidget.FromTiltSoundClip(tiltSoundClip[i]);
+            }
+        }
+
+        public void SetVideoDataFromTilt(TiltVideo[] value)
         {
             m_loadingTiltVideos = value;
         }
@@ -815,15 +1050,17 @@ namespace TiltBrush
             }
         }
 
-        public void MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot)
+        public bool MagnetizeToStencils(ref Vector3 pos, ref Quaternion rot, IEnumerable<StencilWidget> stencilsToIgnore = null)
         {
             // Early out if stencils are disabled.
             if (m_StencilsDisabled && !App.UserConfig.Flags.GuideToggleVisiblityOnly)
             {
-                return;
+                return false;
             }
 
             Vector3 samplePos = pos;
+
+            bool stencilWasUsed = false;
 
             // If we're painting, we have a different path for magnetization that relies on the
             // previous frame.
@@ -832,7 +1069,8 @@ namespace TiltBrush
                 // If we don't have an active stencil, we're done here.
                 if (m_ActiveStencil == null)
                 {
-                    return;
+                    m_ActiveStencil = null;
+                    return false;
                 }
 
                 // Using the 0 index of m_StencilContactInfos as a shortcut.
@@ -842,6 +1080,7 @@ namespace TiltBrush
                 m_ActiveStencil.SetInUse(true);
                 pos = m_StencilContactInfos[0].pos;
                 rot = Quaternion.LookRotation(m_StencilContactInfos[0].normal);
+                stencilWasUsed = true;
             }
             else
             {
@@ -854,9 +1093,12 @@ namespace TiltBrush
                 int iPrimaryIndex = -1;
                 float fBestScore = 0;
                 int sIndex = 0;
-                foreach (var stencil in m_StencilWidgets)
+
+                IEnumerable<StencilWidget> widgetsToCheck = m_StencilWidgets
+                    .Select(w => w.WidgetScript);
+                if (stencilsToIgnore != null) widgetsToCheck = widgetsToCheck.Except(stencilsToIgnore);
+                foreach (var sw in widgetsToCheck)
                 {
-                    StencilWidget sw = stencil.WidgetScript;
                     Debug.Assert(sw != null);
 
                     // Reset tint
@@ -864,13 +1106,14 @@ namespace TiltBrush
 
                     // Does a rough check to see if the stencil might overlap. OverlapSphereNonAlloc is
                     // shockingly slow, which is why we don't use it.
-                    Collider collider = stencil.m_WidgetScript.GrabCollider;
+                    Collider collider = sw.GrabCollider;
                     float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
                     if (centerDist >
                         (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
                     {
                         continue;
                     }
+
                     m_StencilContactInfos[sIndex].widget = sw;
 
                     FindClosestPointOnWidgetSurface(samplePos, ref m_StencilContactInfos[sIndex]);
@@ -912,7 +1155,9 @@ namespace TiltBrush
                 {
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
-                    rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal);
+                    var up = rot * Vector3.up;
+                    rot = Quaternion.LookRotation(m_StencilContactInfos[iPrimaryIndex].normal, up);
+                    stencilWasUsed = true;
                 }
 
                 if (prevStencil != m_ActiveStencil)
@@ -921,7 +1166,7 @@ namespace TiltBrush
                 }
             }
 
-            return;
+            return stencilWasUsed;
         }
 
         bool FindClosestPointOnCollider(
@@ -951,11 +1196,41 @@ namespace TiltBrush
             }
         }
 
+        public IEnumerable<LightWidget> LightWidgets
+        {
+            get
+            {
+                return m_LightWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
         public IEnumerable<VideoWidget> VideoWidgets
         {
             get
             {
                 return m_VideoWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
+        public IEnumerable<TextWidget> TextWidgets
+        {
+            get
+            {
+                return m_TextWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
+        public IEnumerable<SoundClipWidget> SoundClipWidgets
+        {
+            get
+            {
+                return m_SoundClipWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
                     .Where(w => w != null);
             }
@@ -1013,12 +1288,19 @@ namespace TiltBrush
             }
         }
 
-        public List<GrabWidget> GetAllUnselectedActiveWidgets()
+        // If canvas is null then return all widgets
+        public List<GrabWidget> GetAllUnselectedActiveWidgets(CanvasScript canvas)
         {
             List<GrabWidget> widgets = new List<GrabWidget>();
+            if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
+            GetUnselectedActiveWidgetsInList(m_LightWidgets);
+            GetUnselectedActiveWidgetsInList(m_PortalWidgets);
+            GetUnselectedActiveWidgetsInList(m_GaussianCaptureWidgets);
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
+            GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
+            GetUnselectedActiveWidgetsInList(m_SoundClipWidgets);
             if (!m_StencilsDisabled)
             {
                 GetUnselectedActiveWidgetsInList(m_StencilWidgets);
@@ -1029,10 +1311,14 @@ namespace TiltBrush
             {
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    GrabWidget w = list[i].m_WidgetScript;
-                    if (!w.Pinned && w.transform.parent == App.Scene.MainCanvas.transform &&
-                        w.gameObject.activeSelf)
+                    if (!IsWidgetObjectActive(list[i]))
                     {
+                        continue;
+                    }
+                    GrabWidget w = list[i].m_WidgetScript;
+                    if (w != null && !w.Pinned)
+                    {
+                        if (w.transform.parent != canvas.transform) continue;
                         widgets.Add(w);
                     }
                 }
@@ -1047,8 +1333,13 @@ namespace TiltBrush
                 m_CanBeUnpinnedWidgets.Clear();
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
+                RefreshPinUnpinWidgetList(m_LightWidgets);
+                RefreshPinUnpinWidgetList(m_PortalWidgets);
+                RefreshPinUnpinWidgetList(m_GaussianCaptureWidgets);
                 RefreshPinUnpinWidgetList(m_ImageWidgets);
+                RefreshPinUnpinWidgetList(m_TextWidgets);
                 RefreshPinUnpinWidgetList(m_VideoWidgets);
+                RefreshPinUnpinWidgetList(m_SoundClipWidgets);
                 RefreshPinUnpinWidgetList(m_StencilWidgets);
 
                 RefreshPinAndUnpinAction();
@@ -1060,7 +1351,9 @@ namespace TiltBrush
                 foreach (var widgetData in widgetList)
                 {
                     var widget = widgetData.WidgetScript;
-                    if (widget.gameObject.activeSelf && widget.AllowPinning)
+                    if (widget.gameObject.activeSelf &&
+                        widget.AllowPinning &&
+                        widget.Canvas == App.ActiveCanvas)
                     {
                         if (widget.Pinned)
                         {
@@ -1114,6 +1407,18 @@ namespace TiltBrush
             {
                 m_ModelWidgets.Add(new TypedWidgetData<ModelWidget>(mw));
             }
+            else if (generic is LightWidget light)
+            {
+                m_LightWidgets.Add(new TypedWidgetData<LightWidget>(light));
+            }
+            else if (generic is PortalWidgetBase portal)
+            {
+                m_PortalWidgets.Add(new TypedWidgetData<PortalWidgetBase>(portal));
+            }
+            else if (generic is GaussianCaptureWidgetBase gcWidget)
+            {
+                m_GaussianCaptureWidgets.Add(new TypedWidgetData<GaussianCaptureWidgetBase>(gcWidget));
+            }
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
@@ -1122,9 +1427,17 @@ namespace TiltBrush
             {
                 m_ImageWidgets.Add(new TypedWidgetData<ImageWidget>(image));
             }
+            else if (generic is TextWidget textWidget)
+            {
+                m_TextWidgets.Add(new TypedWidgetData<TextWidget>(textWidget));
+            }
             else if (generic is VideoWidget video)
             {
                 m_VideoWidgets.Add(new TypedWidgetData<VideoWidget>(video));
+            }
+            else if (generic is SoundClipWidget soundClip)
+            {
+                m_SoundClipWidgets.Add(new TypedWidgetData<SoundClipWidget>(soundClip));
             }
             else if (generic is CameraPathWidget cpw)
             {
@@ -1173,11 +1486,44 @@ namespace TiltBrush
             }
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_GaussianCaptureWidgets, rWidget)) { return; }
             if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_SoundClipWidgets, rWidget)) { return; }
             if (RemoveFrom(m_CameraPathWidgets, rWidget)) { return; }
             RemoveFrom(m_GrabWidgets, rWidget);
+        }
+
+        public TextWidget GetNearestTextWidget(Vector3 pos, float maxDepth)
+        {
+            var widgetList = ActiveTextWidgets.Select(x => x.m_WidgetScript);
+            return GetNearestGrabWidget(pos, maxDepth, widgetList) as TextWidget;
+        }
+
+        public GrabWidget GetNearestGrabWidget(Vector3 pos, float maxDepth, IEnumerable<GrabWidget> widgetList)
+        {
+            GrabWidget bestWidget = null;
+            float leastDistance = float.MaxValue;
+            foreach (var widget in widgetList)
+            {
+                Vector3 dropper_QS;
+                Vector3 dropper_GS = pos;
+                Matrix4x4 xfQuadFromGlobal = widget.transform.worldToLocalMatrix;
+                dropper_QS = xfQuadFromGlobal.MultiplyPoint3x4(dropper_GS);
+                if (Mathf.Abs(dropper_QS.z) < leastDistance
+                    && Mathf.Abs(dropper_QS.x) <= 0.5f
+                    && Mathf.Abs(dropper_QS.y) <= 0.5f
+                    && Mathf.Abs(dropper_QS.z) <= maxDepth / Mathf.Abs(widget.GetSignedWidgetSize()))
+                {
+                    bestWidget = widget;
+                    leastDistance = Mathf.Abs(dropper_QS.z);
+                }
+            }
+            return bestWidget;
         }
 
         public ImageWidget GetNearestImage(Vector3 pos, float maxDepth, ref Vector3 sampleLoc)
@@ -1317,13 +1663,51 @@ namespace TiltBrush
             return fNearestWidget;
         }
 
+        public bool TryGetNearestPointableWidget(Ray ray, out GrabWidget widget, out RaycastHit hitInfo)
+        {
+            widget = null;
+            hitInfo = default;
+            float nearestDistance = float.MaxValue;
+
+            foreach (var elt in ActiveGrabWidgets)
+            {
+                GrabWidget candidate = elt.m_WidgetScript;
+                if (!(candidate is PortalWidgetBase))
+                {
+                    continue;
+                }
+
+                if (!candidate.DistanceToCollider(ray, out float distance) || distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = distance;
+                widget = candidate;
+                hitInfo = new RaycastHit
+                {
+                    distance = distance,
+                    point = ray.GetPoint(distance),
+                    normal = -ray.direction
+                };
+            }
+
+            return widget != null;
+        }
+
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
+            DestroyWidgetList(m_LightWidgets);
+            DestroyWidgetList(m_PortalWidgets);
+            DestroyWidgetList(m_GaussianCaptureWidgets);
             DestroyWidgetList(m_ImageWidgets);
+            DestroyWidgetList(m_TextWidgets);
             DestroyWidgetList(m_VideoWidgets);
+            DestroyWidgetList(m_SoundClipWidgets);
             DestroyWidgetList(m_StencilWidgets);
             DestroyWidgetList(m_CameraPathWidgets, false);
+            m_CreatingCameraPath = false;
             SetCurrentCameraPath_Internal(null);
             App.Switchboard.TriggerAllWidgetsDestroyed();
 
@@ -1349,6 +1733,7 @@ namespace TiltBrush
         ///   the Model will be automatically replaced with the loaded Model some time later.
         public IEnumerator<Null> CreateMediaWidgetsFromLoadDataCoroutine()
         {
+            // TODO reduce code duplication with the next two if blocks
             if (m_loadingTiltModels75 != null)
             {
                 OverlayManager.m_Instance.RefuseProgressBarChanges(true);
@@ -1360,19 +1745,19 @@ namespace TiltBrush
                     // Kick off a bunch of loads...
                     foreach (var assetId in assetIds)
                     {
-                        if (App.PolyAssetCatalog.GetAssetLoadState(assetId)
-                            != PolyAssetCatalog.AssetLoadState.Loaded)
+                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                            != IcosaAssetCatalog.AssetLoadState.Loaded)
                         {
-                            App.PolyAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
                         }
                     }
                     // ... and wait for them to complete
                     // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
                     bool IsLoading(string assetId)
                     {
-                        var state = App.PolyAssetCatalog.GetAssetLoadState(assetId);
-                        return (state == PolyAssetCatalog.AssetLoadState.Downloading ||
-                            state == PolyAssetCatalog.AssetLoadState.Loading);
+                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                            state == IcosaAssetCatalog.AssetLoadState.Loading);
                     }
                     while (assetIds.Any(IsLoading))
                     {
@@ -1382,14 +1767,31 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    ModelWidget.CreateFromSaveData(m_loadingTiltModels75[i]);
+                    Task createTask = ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
+                    using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
+                    {
+                        while (createCoroutine.MoveNext())
+                        {
+                            yield return createCoroutine.Current;
+                        }
+                    }
                     OverlayManager.m_Instance.UpdateProgress(
                         (float)(i + 1) / m_loadingTiltModels75.Length, true);
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
             }
+
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
+
+            if (m_loadingTiltLights != null)
+            {
+                foreach (var light in m_loadingTiltLights)
+                {
+                    LightWidget.FromTiltLight(light);
+                }
+                m_loadingTiltLights = null;
+            }
             if (m_loadingTiltImages75 != null)
             {
                 foreach (TiltImages75 import in m_loadingTiltImages75)
@@ -1425,16 +1827,16 @@ namespace TiltBrush
         {
             if (CreatingMediaWidgets) { return true; }
             // Widgets have been created, but some may not have their data yet
-            PolyAssetCatalog pac = App.PolyAssetCatalog;
+            IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
-                if (loc.GetLocationType() == Model.Location.Type.PolyAssetId)
+                if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {
                     switch (pac.GetAssetLoadState(loc.AssetId))
                     {
-                        case PolyAssetCatalog.AssetLoadState.Downloading:
-                        case PolyAssetCatalog.AssetLoadState.Loading:
+                        case IcosaAssetCatalog.AssetLoadState.Downloading:
+                        case IcosaAssetCatalog.AssetLoadState.Loading:
                             return true;
                     }
                 }
@@ -1484,13 +1886,31 @@ namespace TiltBrush
         }
 
         public List<TypedWidgetData<ImageWidget>> ActiveImageWidgets =>
-            m_ImageWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+            m_ImageWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<TextWidget>> ActiveTextWidgets =>
+            m_TextWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<LightWidget>> ActiveLightWidgets =>
+            m_LightWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<PortalWidgetBase>> ActivePortalWidgets =>
+            m_PortalWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<GaussianCaptureWidgetBase>> ActiveGaussianCaptureWidgets =>
+            m_GaussianCaptureWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
-            m_ModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+            m_ModelWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
-            m_VideoWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+            m_VideoWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<SoundClipWidget>> ActiveSoundClipWidgets =>
+            m_SoundClipWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<CameraPathWidget>> ActiveCameraPathWidgets =>
-            m_CameraPathWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
+            m_CameraPathWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<StencilWidget>> ActiveStencilWidgets =>
+            m_StencilWidgets.Where(IsWidgetObjectActive).ToList();
+
+        public int GetActiveWidgetIndex(ImageWidget widget) => ActiveImageWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(ModelWidget widget) => ActiveModelWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(VideoWidget widget) => ActiveVideoWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(CameraPathWidget widget) => ActiveCameraPathWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
+        public int GetActiveWidgetIndex(StencilWidget widget) => ActiveStencilWidgets.WithIndex().First(x => x.item.WidgetScript == widget).index;
 
     }
 }

@@ -42,6 +42,7 @@ namespace TiltBrush
 
         private SimpleReorderableList m_BrushList;
         private SimpleReorderableList m_EnvList;
+        private SimpleReorderableList m_LocaleList;
         private SimpleReorderableList m_CBrushList;
 
         private void OnEnable()
@@ -55,6 +56,9 @@ namespace TiltBrush
             // m_EnvList.onAddCallback = (list) => { AppendAssetToList(list, null); };
             m_EnvList.onAddDropdownCallback = (r, l) => OnAddBrushDropdown(r, l, "Environment");
             m_EnvList.m_elementsPerPage = 12;
+
+            m_LocaleList = new SimpleReorderableList(serializedObject, "Locales");
+            m_LocaleList.m_elementsPerPage = 6;
 
             m_CBrushList = new SimpleReorderableList(serializedObject, "CompatibilityBrushes");
             m_CBrushList.onAddDropdownCallback = (r, l) => OnAddBrushDropdown(r, l, "BrushDescriptor");
@@ -112,6 +116,7 @@ namespace TiltBrush
             serializedObject.Update();
             m_BrushList.DoLayoutList();
             m_EnvList.DoLayoutList();
+            m_LocaleList.DoLayoutList();
             m_CBrushList.DoLayoutList();
             serializedObject.ApplyModifiedProperties();
         }

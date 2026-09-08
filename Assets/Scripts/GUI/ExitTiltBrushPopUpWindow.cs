@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -19,7 +20,7 @@ namespace TiltBrush
 
     public class ExitTiltBrushPopUpWindow : PopUpWindow
     {
-        [SerializeField] protected TextMesh m_Title;
+        [SerializeField] protected TextMeshPro m_Title;
         [SerializeField] protected SaveAndConfirmButton m_SaveButton;
 
         [SerializeField] private string m_Title_Saving;

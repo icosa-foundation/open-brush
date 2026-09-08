@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VectorGraphics.OpenBrush;
+using Superla.RadianceHDR;
 using UnityEngine;
+using UnityEngine.Localization;
+using Object = UnityEngine.Object;
 
 namespace TiltBrush
 {
@@ -35,6 +40,10 @@ namespace TiltBrush
             // Same meaning as Future.State.Error
             // Invariant: m_coroutine == null
             Error,
+            // This is the only specific error message right now. ("Image too large to load")
+            // For other errors (e.g unknown format), we set Error state and display a generic error message "Image failed to load"
+            // ImageUtils.cs throws more specific errors, and we could implement them here as well in the future.
+            ErrorImageTooLarge = 31000
         }
 
         // See ImageState for invariants
@@ -45,6 +54,14 @@ namespace TiltBrush
         private int m_FullSizeReferences = 0;
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
+        private SVGParser.SceneInfo _SvgSceneInfo;
+
+        private LocalizedString m_ErrorImageTooLargeHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT");
+        private LocalizedString m_ErrorGenericHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_GENERICERRORTEXT");
+
+
+        // public bool IsComposite => _SvgSceneInfo.Scene.Root.getsh
+        public SVGParser.SceneInfo SvgSceneInfo => _SvgSceneInfo;
 
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
@@ -63,6 +80,23 @@ namespace TiltBrush
                     // In case someone asks for the aspect ratio of the error icon
                     return 1;
                 }
+            }
+        }
+
+        // returns null if no error in image
+        public string ImageErrorExtraDescription()
+        {
+            if (m_State != ImageState.Error && m_State != ImageState.ErrorImageTooLarge)
+            {
+                return null;
+            }
+            else if (m_State == ImageState.Error)
+            {
+                return m_ErrorGenericHelpText.GetLocalizedStringAsync().Result;
+            }
+            else
+            {
+                return m_ErrorImageTooLargeHelpText.GetLocalizedStringAsync().Result;
             }
         }
 
@@ -88,7 +122,8 @@ namespace TiltBrush
                 switch (m_State)
                 {
                     case ImageState.Ready: return m_Icon;
-                    case ImageState.Error: return ReferenceImageCatalog.m_Instance.ErrorImage;
+                    case ImageState.Error:
+                    case ImageState.ErrorImageTooLarge: return ReferenceImageCatalog.m_Instance.ErrorImage;
                     default:
                     case ImageState.Uninitialized:
                     case ImageState.NotReady: return null;
@@ -106,6 +141,10 @@ namespace TiltBrush
         /// This property is only for those who need to load the image data from disk.
         public string FilePath { get { return m_Path; } }
 
+        // Path relative to Catalog's HomeDirectory with forward slashes.
+        public string RelativePath =>
+            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+
         public ReferenceImage(string path)
         {
             m_Path = path;
@@ -116,17 +155,33 @@ namespace TiltBrush
         /// by the user of this method.
         public void AcquireImageFullsize(bool runForeground = false)
         {
-            m_FullSizeReferences++;
-            if (m_FullSizeReferences == 1)
+            if (FilePath.EndsWith(".svg"))
             {
                 // Try the cache first.
                 m_FullSize = ImageCache.LoadImageCache(FilePath);
                 if (m_FullSize == null)
                 {
-                    // Otherwise, this will generate a cache.
-                    m_FullSize = Object.Instantiate(Icon);
-                    var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
-                    App.Instance.StartCoroutine(co);
+                    // TODO Move into the async code path?
+                    var importer = new RuntimeSVGImporter();
+                    _SvgSceneInfo = importer.ParseToSceneInfo(File.ReadAllText(FilePath));
+                    m_FullSize = importer.ImportAsTexture(FilePath);
+                    ImageCache.SaveImageCache(m_FullSize, FilePath);
+                }
+            }
+            else
+            {
+                m_FullSizeReferences++;
+                if (m_FullSizeReferences == 1)
+                {
+                    // Try the cache first.
+                    m_FullSize = ImageCache.LoadImageCache(FilePath);
+                    if (m_FullSize == null)
+                    {
+                        // Otherwise, this will generate a cache.
+                        m_FullSize = Object.Instantiate(Icon);
+                        var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
+                        App.Instance.StartCoroutine(co);
+                    }
                 }
             }
         }
@@ -175,7 +230,7 @@ namespace TiltBrush
                     else
                     {
                         // Save the the image to the dest texture.
-                        dest.Resize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
+                        dest.Reinitialize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
                         dest.SetPixels32(result.ColorData);
                         dest.Apply();
                     }
@@ -265,7 +320,7 @@ namespace TiltBrush
                 // If this file is too large for the platform, don't load it.
                 if (!ValidateFileSize())
                 {
-                    m_State = ImageState.Error;
+                    m_State = ImageState.ErrorImageTooLarge;
                     ControllerConsoleScript.m_Instance.AddNewLine(
                         FileName + " is too large and could not be loaded.",
                         true);
@@ -285,6 +340,72 @@ namespace TiltBrush
             }
 
             Debug.Assert(m_State == ImageState.NotReady, "Invariant");
+
+            if (FilePath.EndsWith(".svg"))
+            {
+                // TODO Move into the async code path?
+                var importer = new RuntimeSVGImporter();
+                var tex = importer.ImportAsTexture(FilePath);
+
+                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                {
+                    m_State = ImageState.ErrorImageTooLarge;
+                    Object.Destroy(tex);
+                    return true;
+                }
+
+                ImageCache.SaveImageCache(tex, FilePath);
+                m_ImageAspect = (float)tex.width / tex.height;
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                {
+                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                    m_Icon = resizedTex;
+                    Object.Destroy(resizedTex);
+                }
+                else
+                {
+                    m_Icon = tex;
+                }
+                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                m_State = ImageState.Ready;
+                return true;
+            }
+
+            if (FilePath.EndsWith(".hdr"))
+            {
+                // TODO Move into the async code path?
+                var fileData = File.ReadAllBytes(FilePath);
+                RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                tex = hdr.texture;
+
+                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                {
+                    m_State = ImageState.ErrorImageTooLarge;
+                    Object.Destroy(tex);
+                    return true;
+                }
+
+                ImageCache.SaveImageCache(tex, FilePath);
+                m_ImageAspect = (float)tex.width / tex.height;
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                {
+                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
+                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
+                    m_Icon = resizedTex;
+                    Object.Destroy(resizedTex);
+                }
+                else
+                {
+                    m_Icon = tex;
+                }
+                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                m_State = ImageState.Ready;
+                return true;
+            }
 
             if (m_coroutine == null)
             {
@@ -353,7 +474,7 @@ namespace TiltBrush
             }
             else
             {
-                outTex.Resize(outWidth, outHeight, TextureFormat.RGBA32, true);
+                outTex.Reinitialize(outWidth, outHeight, TextureFormat.RGBA32, true);
             }
 
             // Copy the data, starting from mip
@@ -392,6 +513,14 @@ namespace TiltBrush
                     // from WWW.LoadImageIntoTexture
                     Texture2D inTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                     loader.LoadImageIntoTexture(inTex);
+
+                    if (!ValidateDimensions(inTex.width, inTex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                        Object.Destroy(inTex);
+                        yield break;
+                    }
+
                     DownsizeTexture(inTex, ref m_Icon, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
                     m_Icon.wrapMode = TextureWrapMode.Clamp;
                     m_ImageAspect = (float)inTex.width / inTex.height;
@@ -445,6 +574,18 @@ namespace TiltBrush
                 if (imageLoad != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(imageLoad.Message, true);
+                    if (imageLoad.imageLoadErrorCode == ImageLoadError.ImageLoadErrorCode.ImageTooLargeError)
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                    }
+                    else
+                    {
+                        m_State = ImageState.Error;
+                    }
+
+                    reader = null;
+                    yield break;
+
                 }
             }
 
@@ -462,7 +603,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    m_Icon.Resize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
+                    m_Icon.Reinitialize(result.ColorWidth, result.ColorHeight, TextureFormat.RGBA32, true);
                 }
                 m_ImageAspect = result.ColorAspect;
                 m_Icon.wrapMode = TextureWrapMode.Clamp;
@@ -486,8 +627,32 @@ namespace TiltBrush
 
         private bool ValidateFileSize()
         {
-            FileInfo info = new FileInfo(m_Path);
-            return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+            try
+            {
+                FileInfo info = new FileInfo(m_Path);
+                return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+            }
+            catch (Exception e)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine($"Could not access file size of {FileName}: {e.Message}", true);
+                return false;
+            }
+
+        }
+
+        private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)
+        {
+
+            // Cast to long as maxDimension is big enough on desktop to overflow
+            if (imageWidth * imageHeight > ((long)maxDimension * (long)maxDimension))
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+
         }
 
         public string GetExportName()

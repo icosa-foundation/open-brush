@@ -15,6 +15,8 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using TMPro;
 
 namespace TiltBrush
@@ -92,21 +94,29 @@ namespace TiltBrush
             Environment,
             Camera,
             Testing,
-            Poly,
+            Icosa,
             BrushExperimental,
             ToolsAdvanced,
             AppSettingsMobile,
             AdminPanel,
             ExtraPanel,
             ExtraMobile,
-            PolyMobile,
+            IcosaMobile,
             LabsMobile,
             ReferenceMobile,
             CameraPath,
             BrushLab,
+            Multiplayer,
+            WebcamPanel = 5200,
             Scripts = 6000,
+            SnapSettings = 8000,
+            QuillLibrary = 11600,
+            TransformPanel = 12000,
+            LayersPanel = 15000,
             StencilSettings = 20200,
-            LayersPanel = 15000
+            WhatsNewPanel = 20300,
+            BlocksPromoPanel = 20301,
+            AdminPanelViewOnly = 20302,
         }
 
         private enum FixedTransitionState
@@ -123,11 +133,32 @@ namespace TiltBrush
         [SerializeField] protected Collider m_Collider;
         [SerializeField] public GameObject m_Mesh;
         [SerializeField] protected Renderer m_Border;
+        [SerializeField] protected bool m_BorderIsSplit = false;
+        [SerializeField] protected Renderer m_BorderTop;
+        [SerializeField] protected Renderer m_BorderBottom;
         [SerializeField] protected Collider m_MeshCollider;
         [SerializeField] protected Vector3 m_ParticleBounds;
 
         [SerializeField] protected PopupMapKey[] m_PanelPopUpMap;
         [SerializeField] protected string m_PanelDescription;
+        [SerializeField] protected LocalizedString m_LocalizedPanelDescription;
+
+        public string PanelDescription
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedPanelDescription.GetLocalizedStringAsync().Result;
+                    return locString;
+                }
+                catch
+                {
+                    return m_PanelDescription;
+                }
+            }
+        }
+
         [SerializeField] protected GameObject m_PanelDescriptionPrefab;
 
         [SerializeField] protected Vector3 m_PanelDescriptionOffset;
@@ -279,6 +310,7 @@ namespace TiltBrush
         private bool m_PanelInitializationStarted;
         private bool m_PanelInitializationFinished;
         private float m_PanelDescriptionCounter;
+        public Action m_OverrideControllerMaterial;
 
         // Accessors/properties
 
@@ -428,6 +460,15 @@ namespace TiltBrush
         virtual public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             m_UIComponentManager.AssignControllerMaterials(controller);
+
+            // Allows components to override the regular controller material
+            // without worrying about execution order etc
+            if (m_OverrideControllerMaterial != null)
+            {
+                m_OverrideControllerMaterial();
+                // Clear afterwards. This needs to be set every frame
+                m_OverrideControllerMaterial = null;
+            }
         }
 
         /// This function is used to determine the value to be passed in to the controller pad mesh's
@@ -489,9 +530,10 @@ namespace TiltBrush
                 m_PanelDescriptionTextMeshPro = m_PanelDescriptionObject.GetComponent<TextMeshPro>();
                 if (m_PanelDescriptionTextMeshPro)
                 {
-                    m_PanelDescriptionTextMeshPro.text = m_PanelDescription;
+                    m_PanelDescriptionTextMeshPro.text = PanelDescription;
                     m_PanelDescriptionTextMeshPro.color = m_PanelDescriptionColor;
                 }
+                LocalizationSettings.SelectedLocaleChanged += OnSelectedLocaleChanged;
             }
 
             if (m_PanelFlairPrefab != null)
@@ -515,6 +557,11 @@ namespace TiltBrush
 
             PanelManager pm = PanelManager.m_Instance;
             m_Border.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+            if (m_BorderIsSplit)
+            {
+                m_BorderTop.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+                m_BorderBottom.material.SetColor("_Color", pm.PanelHighlightInactiveColor);
+            }
 
             m_DecorRenderers = new List<Renderer>();
             m_DecorTextMeshes = new List<TextMeshPro>();
@@ -608,9 +655,18 @@ namespace TiltBrush
             Color outlineCol = !m_AdvancedModePanel ? pm.PanelBorderMeshBaseColor : pm.PanelBorderMeshOutlineColor;
             BakedMeshOutline[] bakeries = GetComponentsInChildren<BakedMeshOutline>(true);
             BakedMeshOutline borderBakery = m_Border.GetComponent<BakedMeshOutline>();
+            BakedMeshOutline borderTopBakery = null;
+            BakedMeshOutline borderBottomBakery = null;
+            if (m_BorderTop != null)
+            {
+                borderTopBakery = m_BorderTop.GetComponent<BakedMeshOutline>();
+                borderBottomBakery = m_BorderBottom.GetComponent<BakedMeshOutline>();
+            }
             for (int i = 0; i < bakeries.Length; ++i)
             {
-                if (bakeries[i] == borderBakery)
+                if (bakeries[i] == borderBakery ||
+                    bakeries[i] == borderTopBakery ||
+                    bakeries[i] == borderBottomBakery)
                 {
                     // The border is the only bakery that gets custom treatment.
                     bakeries[i].Bake(baseCol, outlineCol, width);
@@ -697,10 +753,23 @@ namespace TiltBrush
             // If this popup isn't the active one, don't bother.
             if (activePopup == m_ActivePopUp)
             {
-                m_ActivePopUp = null;
+                m_ActivePopUp = activePopup.m_PreviousPopUp; // Might be null but that's ok
                 // Eat input when we close a popup so the close action doesn't carry over.
                 m_EatInput = true;
             }
+        }
+
+        private void OnSelectedLocaleChanged(Locale locale)
+        {
+            if (m_PanelDescriptionTextMeshPro)
+            {
+                m_PanelDescriptionTextMeshPro.text = PanelDescription;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            LocalizationSettings.SelectedLocaleChanged -= OnSelectedLocaleChanged;
         }
 
         void OnEnable()
@@ -1031,6 +1100,11 @@ namespace TiltBrush
                     if (m_Border.material == m_BorderMaterial)
                     {
                         m_Border.material.SetColor("_Color", rPanelColor);
+                        if (m_BorderIsSplit)
+                        {
+                            m_BorderTop.material.SetColor("_Color", rPanelColor);
+                            m_BorderBottom.material.SetColor("_Color", rPanelColor);
+                        }
                     }
 
                     if (fPrevPercent < 1.0f)
@@ -1439,45 +1513,63 @@ namespace TiltBrush
 
                 if (iPopUpIndex >= 0)
                 {
-                    // Create a new popup.
-                    GameObject popUp = (GameObject)Instantiate(m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab,
-                        m_Mesh.transform.position, m_Mesh.transform.rotation);
-                    m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
-
-                    // If we're replacing a popup, put the new one in the same position.
-                    if (bPopUpExisted)
-                    {
-                        popUp.transform.position = vPrevPopUpPos;
-                    }
-                    else
-                    {
-                        Vector3 vPos = m_Mesh.transform.position +
-                            (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
-                            m_Mesh.transform.TransformVector(vPopupOffset);
-                        popUp.transform.position = vPos;
-                    }
-                    popUp.transform.parent = m_Mesh.transform;
-                    m_ActivePopUp.Init(gameObject, sDelayedText);
-                    m_ActivePopUp.SetPopupCommandParameters(iCommandParam, iCommandParam2);
-
-                    m_ActivePopUp.m_OnClose += delayedClose;
-                    m_PopUpGazeTimer = 0;
-                    m_EatInput = !m_ActivePopUp.IsLongPressPopUp();
-
-                    // If we closed a popup to create this one, we wan't don't want the standard visual
-                    // fade that happens when a popup comes in.  We're spoofing the transition value
-                    // for visuals to avoid a pop.
-                    if (bPopUpExisted)
-                    {
-                        m_ActivePopUp.SpoofTransitionValue();
-                    }
-
-                    // Cache the intended command.
-                    m_DelayedCommand = rCommand;
-                    m_DelayedCommandParam = iCommandParam;
-                    m_DelayedCommandParam2 = iCommandParam2;
+                    Vector3 position = vPopupOffset;
+                    CreatePopUp(
+                        m_PanelPopUpMap[iPopUpIndex].m_PopUpPrefab, position,
+                        bPopUpExisted, bPopUpExisted, iCommandParam,
+                        iCommandParam2, rCommand, sDelayedText, delayedClose
+                    );
                 }
             }
+        }
+
+        public GameObject CreatePopUp(
+                            GameObject prefab, Vector3 position,
+                            bool explicitPosition, bool transition, int iCommandParam = -1, int iCommandParam2 = -1,
+                            SketchControlsScript.GlobalCommands delayedCommand = SketchControlsScript.GlobalCommands.Null,
+                            string sDelayedText = "", Action delayedClose = null)
+        {
+            // Create a new popup.
+            GameObject popUp = Instantiate(prefab,
+                m_Mesh.transform.position, m_Mesh.transform.rotation);
+
+            popUp.GetComponent<PopUpWindow>().m_PreviousPopUp = m_ActivePopUp;
+            m_ActivePopUp = popUp.GetComponent<PopUpWindow>();
+
+            if (explicitPosition)
+            {
+                popUp.transform.localPosition = position;
+            }
+            else
+            {
+                // Treat position as an offset
+                popUp.transform.position = m_Mesh.transform.position +
+                    (m_Mesh.transform.forward * m_ActivePopUp.GetPopUpForwardOffset()) +
+                    m_Mesh.transform.TransformVector(position);
+            }
+
+            popUp.transform.parent = m_Mesh.transform;
+            m_ActivePopUp.Init(gameObject, sDelayedText);
+            m_ActivePopUp.SetPopupCommandParameters(iCommandParam, iCommandParam2);
+
+            m_ActivePopUp.m_OnClose += delayedClose;
+            m_PopUpGazeTimer = 0;
+            m_EatInput = !m_ActivePopUp.IsLongPressPopUp();
+
+            // If we closed a popup to create this one, we wan't don't want the standard visual
+            // fade that happens when a popup comes in.  We're spoofing the transition value
+            // for visuals to avoid a pop.
+            if (!transition)
+            {
+                m_ActivePopUp.SpoofTransitionValue();
+            }
+
+            // Cache the intended command.
+            m_DelayedCommand = delayedCommand;
+            m_DelayedCommandParam = iCommandParam;
+            m_DelayedCommandParam2 = iCommandParam2;
+
+            return popUp;
         }
 
         public void PositionPopUp(Vector3 basePos)
@@ -1621,5 +1713,25 @@ namespace TiltBrush
           }
         }
         /**/
+
+        public void DetachFromWand(TrTransform tr, float initialTransitionAmount = 0)
+        {
+            m_WandTransitionTarget = tr;
+            m_Fixed = false;
+            m_TransitionState = FixedTransitionState.Floating;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void AttachToWand(float initialTransitionAmount = 0)
+        {
+            m_Fixed = true;
+            m_TransitionState = FixedTransitionState.Fixed;
+            m_WandTransitionPercent = initialTransitionAmount;
+        }
+
+        public void DismissThisPanel()
+        {
+            PanelManager.m_Instance.DismissNonCorePanel(this.m_PanelType);
+        }
     }
 } // namespace TiltBrush

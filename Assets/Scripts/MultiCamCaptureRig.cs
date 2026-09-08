@@ -14,6 +14,7 @@
 
 using System.Collections;
 using UnityEngine;
+using ODS;
 
 namespace TiltBrush
 {
@@ -24,7 +25,9 @@ namespace TiltBrush
         AutoGif,
         TimeGif,
         Video,
-        Num
+        Depth,
+        Snapshot360,
+        Num,
     }
 
     [System.Serializable]
@@ -77,6 +80,19 @@ namespace TiltBrush
                     m_CaptureObjects[i].m_CameraComponent.nearClipPlane;
                 m_CaptureObjects[i].m_CameraClipPlanesBase.y =
                     m_CaptureObjects[i].m_CameraComponent.farClipPlane;
+
+                HybridCamera odsCam =
+                    m_CaptureObjects[i].m_Camera.GetComponentInChildren<HybridCamera>(true);
+                if (odsCam != null)
+                {
+                    MultiCamStyle style = (MultiCamStyle)i;
+                    // Only the dedicated 360 snapshot uses the ODS slice renderer.
+                    // Other multicam modes manage their own rendering paths.
+                    if (style == MultiCamStyle.Snapshot360)
+                    {
+                        odsCam.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+                    }
+                }
             }
 
             m_VideoUsdSerializer = m_CaptureObjects[(int)MultiCamStyle.Video].m_Camera.GetComponentInChildren<UsdPathSerializer>(true);
@@ -164,9 +180,19 @@ namespace TiltBrush
             return m_CaptureObjects[(int)style].m_Manager;
         }
 
+        public HybridCamera OdsCameraFromStyle(MultiCamStyle style)
+        {
+            return m_CaptureObjects[(int)style].m_Camera.GetComponentInChildren<HybridCamera>(true);
+        }
+
         public void EnableCaptureObject(MultiCamStyle style, bool enable)
         {
             m_CaptureObjects[(int)style].m_Object.SetActive(enable);
+        }
+
+        public bool IsCaptureObjectEnabled(MultiCamStyle style)
+        {
+            return m_CaptureObjects[(int)style].m_Object.activeSelf;
         }
 
         public void ScaleVisuals(MultiCamStyle style, Vector3 scale)

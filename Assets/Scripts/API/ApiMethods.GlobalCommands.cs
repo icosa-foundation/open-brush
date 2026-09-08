@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System.IO;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 
 namespace TiltBrush
 {
@@ -33,6 +35,24 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, -1, -1);
         }
 
+        [ApiEndpoint(
+            "save.as",
+            "Saves the current scene under a new filename in the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "newSketch"
+
+        )]
+        public static void SaveAs(string filename)
+        {
+            string suffix = SaveLoadScript.TILT_SUFFIX;
+            if (filename.EndsWith(suffix))
+            {
+                filename = filename.Substring(0, filename.Length - suffix.Length);
+            }
+            ValidateSafeFilename(filename, "sketch filename");
+            var rEnum = SketchControlsScript.GlobalCommands.SaveAs;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, sParam: filename);
+        }
+
         [ApiEndpoint("save.new", "Saves the current scene in a new slot")]
         public static void SaveNew()
         {
@@ -40,13 +60,38 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
         }
 
-        // TODO 
-        // [ApiEndpoint("upload", "Saves the current scene and uploads it to Poly/Icosa")]
-        // public static void SaveAndUpload()
-        // {
-        //     var rEnum = SketchControlsScript.GlobalCommands.SaveAndUpload;
-        //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
-        // }
+        [ApiEndpoint("save.selected", "Saves the current selected strokes in a new slot")]
+        public static void SaveSelected()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.SaveSelected;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 1);
+        }
+
+#if UNITY_EDITOR
+        // Editor only for now to help with testing/debugging
+        // Unsure whether including these in builds would be a security risk.
+        [ApiEndpoint("icosa.devicelogin", "Login to the Icosa Gallery using a device code")]
+        public static void IcosaDeviceLogin(string code)
+        {
+            VrAssetService.m_Instance.IcosaDeviceLogin(code);
+        }
+
+        [ApiEndpoint("icosa.logout", "Logout of the Icosa Gallery")]
+        public static void IcosaLogout()
+        {
+            App.IcosaUserName = null;
+            App.IcosaUserId = null;
+            App.IcosaUserIcon = null;
+            App.Instance.IcosaToken = null;
+        }
+#endif
+
+        [ApiEndpoint("icosa.upload", "Uploads it to the Icosa Gallery")]
+        public static void IcosaUpload()
+        {
+            var rEnum = SketchControlsScript.GlobalCommands.UploadToGenericCloud;
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, (int)Cloud.Icosa);
+        }
 
         [ApiEndpoint("export.all", "Exports all the scenes in the users's sketch folder")]
         public static void ExportAll()
@@ -74,57 +119,87 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, 2);
         }
 
-        [ApiEndpoint("load.user", "Loads the sketch in the given slot number from the user's sketch folder")]
+        [ApiEndpoint(
+            "load.user",
+            "Loads the sketch from the user's sketch folder given an index (0 being most recent)",
+            "2"
+        )]
         public static void LoadUser(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 0);
         }
 
-        [ApiEndpoint("load.curated", "Loads the sketch in the given slot number from the curated sketch list")]
-        public static void LoadCurated(int slot)
+        [ApiEndpoint("load.featured",
+            "Loads the sketch in the given slot number from the featured sketch list",
+            "2"
+        )]
+        public static void LoadFeatured(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 1);
         }
 
-        [ApiEndpoint("load.liked", "Loads the sketch in the given slot number from the user's liked sketches")]
+        [ApiEndpoint(
+            "load.liked",
+            "Loads the sketch in the given slot number from the user's liked sketches",
+            "2"
+        )]
         public static void LoadLiked(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 2);
         }
 
-        [ApiEndpoint("load.drive", "Loads the sketch in the given slot number from the user's Google Drive")]
+        [ApiEndpoint(
+            "load.drive",
+            "Loads the sketch in the given slot number from the user's Google Drive",
+            "2"
+        )]
         public static void LoadDrive(int slot)
         {
             var rEnum = SketchControlsScript.GlobalCommands.Load;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, slot, 3);
         }
 
-        [ApiEndpoint("load.named", "Loads the sketch with the given name from the user's sketch folder")]
+        [ApiEndpoint(
+            "load.named",
+            "Loads a sketch filename from the user's Sketches folder. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "Untitled_1"
+        )]
         public static void LoadNamedFile(string filename)
         {
-            // TODO do we want to allow arbitrary directories?
-            // Does this even check for directory traversal?;
+            if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            {
+                filename += SaveLoadScript.TILT_SUFFIX;
+            }
+            string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile,
                 (int)SketchControlsScript.LoadSpeed.Quick,
                 -1,
-                Path.Combine(App.UserSketchPath(), filename)
+                path
             );
+            PanelManager.m_Instance.ToggleSketchbookPanels(true);
         }
 
-        [ApiEndpoint("merge.named", "Loads the sketch with the given name from the user's sketch folder")]
+        [ApiEndpoint(
+            "merge.named",
+            "Merges a sketch filename from the user's Sketches folder into the current sketch. Directory separators, rooted paths, and parent-directory traversal are rejected. The .tilt suffix is optional",
+            "Untitled_1"
+        )]
         public static void MergeNamedFile(string filename)
         {
-            // TODO do we want to allow arbitrary directories?
-            // Does this even check for directory traversal?;
+            if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
+            {
+                filename += SaveLoadScript.TILT_SUFFIX;
+            }
+            string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadNamedFile,
                 (int)SketchControlsScript.LoadSpeed.Quick,
                 1,
-                Path.Combine(App.UserSketchPath(), filename)
+                path
             );
         }
 
@@ -142,10 +217,10 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("symmetry.doublemirror", "Sets the symmetry mode to 'double mirror'")]
-        public static void SymmetryFour()
+        [ApiEndpoint("symmetry.multimirror", "Sets the symmetry mode to 'multimirror'")]
+        public static void MultiMirror()
         {
-            var rEnum = SketchControlsScript.GlobalCommands.SymmetryFour;
+            var rEnum = SketchControlsScript.GlobalCommands.MultiMirror;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
@@ -261,12 +336,11 @@ namespace TiltBrush
         public static void ShowSketchFolder(int index)
         {
             var rEnum = SketchControlsScript.GlobalCommands.ShowSketchFolder;
-            // TODO 0 is User folder. Do we need to support the other SketchSetTypes?
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, 0);
+            // TODO Do we need to support the other SketchSetTypes?
+            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, index, (int)SketchSetType.User);
         }
 
-        // TODO Why no "enabled" counterpart?
-        [ApiEndpoint("guides.disable", "Disables all guides")]
+        [ApiEndpoint("guides.disable", "Toggles guides on and off")]
         public static void StencilsDisable()
         {
             var rEnum = SketchControlsScript.GlobalCommands.StencilsDisabled;
@@ -354,16 +428,21 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum, iParam1);
         // }
 
-        // TODO Test this
-        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection")]
-        public static void Duplicate()
+        [ApiEndpoint("selection.duplicate", "Create a duplicate of the current selection (uses symmetry mirrors if active")]
+        public static void DuplicateSelection()
         {
             var rEnum = SketchControlsScript.GlobalCommands.Duplicate;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint("selection.delete", "Deletes the current selection")]
+        public static void DeleteSelection()
+        {
+            SelectionManager.m_Instance.DeleteSelection();
+        }
+
         // TODO explicit group/ungroup
-        [ApiEndpoint("selection.group", "Groups the current selection")]
+        [ApiEndpoint("selection.group", "Groups (or ungroups) the current selection")]
         public static void ToggleGroupStrokesAndWidgets()
         {
             var rEnum = SketchControlsScript.GlobalCommands.ToggleGroupStrokesAndWidgets;
@@ -401,6 +480,54 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
+        [ApiEndpoint(
+            "profiling.start",
+            "Starts profiling. Mode can be standard, light, or deep. Optional second value sets the profile label.",
+            "standard,rendergraph_normal_core")]
+        public static string StartProfiling(string mode = "standard", string profileName = null)
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (profilingManager.IsProfiling)
+            {
+                return "Profiling is already running.";
+            }
+
+            ProfilingManager.Mode profilingMode = ParseProfilingMode(mode);
+            profilingManager.StartProfiling(profilingMode, profileName);
+            return string.IsNullOrEmpty(profileName)
+                ? $"Started {profilingMode} profiling."
+                : $"Started {profilingMode} profiling for '{profileName}'.";
+        }
+
+        [ApiEndpoint("profiling.stop", "Stops profiling and writes the summary output")]
+        public static string StopProfiling()
+        {
+            ProfilingManager profilingManager = ProfilingManager.Instance;
+            if (!profilingManager.IsProfiling)
+            {
+                return "Profiling is not running.";
+            }
+
+            profilingManager.StopProfiling();
+            return "Stopped profiling.";
+        }
+
+        private static ProfilingManager.Mode ParseProfilingMode(string mode)
+        {
+            if (string.IsNullOrEmpty(mode))
+            {
+                return ProfilingManager.Mode.Standard;
+            }
+
+            if (System.Enum.TryParse(mode, ignoreCase: true, out ProfilingManager.Mode parsedMode))
+            {
+                return parsedMode;
+            }
+
+            UnityEngine.Debug.LogWarning($"[OB_PERF] Unknown profiling mode '{mode}', using Standard.");
+            return ProfilingManager.Mode.Standard;
+        }
+
         // // TODO Do we need this?
         // [ApiEndpoint("autoprofile", "Runs autoprofile")]
         // public static void DoAutoProfile()
@@ -409,6 +536,34 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
+        [ApiEndpoint("quality.get", "Returns the current quality level")]
+        public static string GetQualityLevel()
+        {
+            if (QualityControls.m_Instance == null)
+            {
+                return "QualityControls is not available.";
+            }
+
+            return $"Quality level is {QualityControls.m_Instance.QualityLevel}.";
+        }
+
+        [ApiEndpoint("quality.set", "Sets the current quality level by index", "2")]
+        public static string SetQualityLevel(int level)
+        {
+            if (QualityControls.m_Instance == null)
+            {
+                return "QualityControls is not available.";
+            }
+
+            int maxLevel = QualityControls.m_Instance.AppQualityLevels.Length - 1;
+            if (level < 0 || level > maxLevel)
+            {
+                return $"Quality level {level} is out of range 0..{maxLevel}.";
+            }
+
+            QualityControls.m_Instance.QualityLevel = level;
+            return $"Quality level set to {QualityControls.m_Instance.QualityLevel}.";
+        }
         // TODO Do we want panel toggles?
         [ApiEndpoint("settings.toggle", "Toggles the settings panel on or off")]
         public static void ToggleSettings()
@@ -431,11 +586,17 @@ namespace TiltBrush
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
 
-        [ApiEndpoint("select.all", "Selects all strokes and widgets in the scene")]
+        [ApiEndpoint("select.all", "Selects all strokes and widgets on the current layer")]
         public static void SelectAll()
         {
             var rEnum = SketchControlsScript.GlobalCommands.SelectAll;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+        }
+
+        [ApiEndpoint("select.none", "Deselects all strokes and widgets on the current layer")]
+        public static void SelectNone()
+        {
+            SelectionManager.m_Instance.ClearActiveSelection();
         }
 
         [ApiEndpoint("selection.flip", "Mirrors the current selection")]
@@ -536,7 +697,12 @@ namespace TiltBrush
             var rEnum = SketchControlsScript.GlobalCommands.RecordCameraPath;
             SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         }
+
+        [ApiEndpoint("camerapath.setactive", "Sets the active camera path")]
+        public static void SetActiveCameraPath(int index)
+        {
+            var widget = _GetActiveCameraPath(index);
+            WidgetManager.m_Instance.SetCurrentCameraPath(widget);
+        }
     }
 }
-
-

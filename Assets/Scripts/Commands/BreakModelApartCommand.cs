@@ -1,0 +1,349 @@
+﻿// Copyright 2024 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using UnityEngine;
+
+namespace TiltBrush
+{
+
+    public class BreakModelApartCommand : BaseCommand
+    {
+        private ModelWidget m_InitialWidget;
+        private List<ModelWidget> m_NewModelWidgets;
+        private List<LightWidget> m_NewLightWidgets;
+        private List<SoundClipWidget> m_NewSoundClipWidgets;
+        private List<string> m_NodePaths;
+
+        override public bool NeedsSave
+        {
+            get => true;
+        }
+
+        private static List<string> ExtractPaths(Transform root)
+        {
+            List<Transform> nodes = root.Cast<Transform>().ToList();
+            var resultPaths = new List<string>();
+            var nextNodes = new List<Transform>();
+            var validButNotAdded = new List<Transform>();
+
+            // Prevent infinite loops
+            const int maxIterations = 1000;
+            int failsafe = 0;
+
+            bool isValidSelf(Transform node)
+            {
+                // Skip UI elements (SceneLightGizmo presently)
+                if (node.gameObject.layer == LayerMask.NameToLayer("UI")) return false;
+                if (!node.gameObject.activeSelf) return false;
+                // Skip nodes with no valid children
+                if (node.GetComponent<MeshFilter>() == null &&
+                    node.GetComponent<Light>() == null &&
+                    node.GetComponent<GltfAudioSource>() == null) return false;
+                return true;
+            }
+
+            bool isValid(Transform node)
+            {
+                // Skip UI elements (SceneLightGizmo presently)
+                if (node.gameObject.layer == LayerMask.NameToLayer("UI")) return false;
+                if (!node.gameObject.activeSelf) return false;
+                // Skip nodes with no valid children
+                if (node.GetComponentInChildren<MeshFilter>() == null &&
+                    node.GetComponentInChildren<Light>() == null &&
+                    node.GetComponentInChildren<GltfAudioSource>() == null) return false;
+                return true;
+            }
+
+            bool hasValidDirectChildren(Transform node)
+            {
+                if (node.gameObject.activeInHierarchy == false) return false;
+                foreach (Transform child in node)
+                {
+                    if (isValid(child)) return true;
+                }
+                return false;
+            }
+
+            bool isSubPath(string basePath, string potentialSubPath)
+            {
+                var baseParts = basePath.Split('/');
+                var subParts = potentialSubPath.Split('/');
+
+                // If the potential subpath has more parts than the base path, it can't be a subpath
+                if (subParts.Length > baseParts.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < subParts.Length; i++)
+                {
+                    if (baseParts[i] != subParts[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            while (resultPaths.Count < 2 && failsafe < maxIterations)
+            {
+
+                validButNotAdded.Clear();
+
+                foreach (var child in nodes)
+                {
+                    if (isValidSelf(child) && hasValidDirectChildren(child)) // Both a leaf and a valid node
+                    {
+                        resultPaths.Add(GetHierarchyPath(root, child));
+                        // Add the children to the next level
+                        nextNodes.AddRange(child.Cast<Transform>().ToList());
+                    }
+                    else if (isValidSelf(child)) // A leaf but not a valid node
+                    {
+                        resultPaths.Add(GetHierarchyPath(root, child));
+                    }
+                    else if (hasValidDirectChildren(child)) // Not valid but children are
+                    {
+                        validButNotAdded.Add(child);
+                        nextNodes.AddRange(child.Cast<Transform>().ToList());
+                    }
+                }
+
+                // Break if have no more levels
+                if (nextNodes.Count == 0) break;
+
+                // If we found no meshes, continue to the next level
+                nodes = nextNodes.ToList(); // Clone the list
+
+                nextNodes.Clear();
+                failsafe++;
+            }
+
+            // If the while loop has decided we're done. there might still be some valid nodes that we haven't added
+            foreach (var child in validButNotAdded)
+            {
+                resultPaths.Add(GetHierarchyPath(root, child));
+            }
+
+            // Add the mesh suffix to all nodes if their descendents are also in the list
+            for (var i = 0; i < resultPaths.Count; i++)
+            {
+                var path = resultPaths[i];
+                for (var j = 0; j < resultPaths.Count; j++)
+                {
+                    if (i == j) continue;
+                    var pathToCompare = resultPaths[j];
+                    if (isSubPath(pathToCompare, path))
+                    {
+                        resultPaths[i] = $"{path}.mesh";
+                        break;
+                    }
+                }
+            }
+
+            return resultPaths;
+        }
+
+        public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
+        {
+            m_InitialWidget = initialWidget;
+            m_NewModelWidgets = new List<ModelWidget>();
+            m_NewLightWidgets = new List<LightWidget>();
+            m_NewSoundClipWidgets = new List<SoundClipWidget>();
+            var widgetObjScript = initialWidget.GetComponentInChildren<ObjModelScript>();
+            m_NodePaths = ExtractPaths(widgetObjScript.transform);
+        }
+
+        // Constructs a path from the root to the object, including the object's name
+        private static string GetHierarchyPath(Transform root, Transform obj)
+        {
+            if (obj == null) return "";
+
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.Insert(0, "/" + obj.name);
+
+            while (obj.transform.parent != null && obj.transform.parent != root)
+            {
+                obj = obj.transform.parent;
+                stringBuilder.Insert(0, "/" + obj.name);
+            }
+
+            return stringBuilder.ToString();
+        }
+
+        private void BreakApartSvg()
+        {
+            // TODO: Implement proper SVG break-apart functionality
+            // This requires:
+            // 1. Getting the SVG SceneInfo and extracting child nodes or individual shapes
+            // 2. For each child/shape, creating a new SceneInfo using FromChildIndex() or FromNode()
+            // 3. Tessellating each sub-SceneInfo into a mesh using RuntimeSVGImporter.SceneInfoToMesh()
+            // 4. Creating new GameObjects in the model prefab with these meshes
+            // 5. Updating m_NodePaths to reference these new child objects
+            //
+            // For now, we just log a message that SVG break-apart is not yet implemented
+
+            Debug.LogWarning("Break apart for SVG models is not yet fully implemented. " +
+                           "SVG models are currently imported as a single tessellated mesh and cannot be broken apart by vector shapes.");
+
+            // Prevent the command from proceeding by keeping m_NodePaths empty
+            m_NodePaths = new List<string>();
+        }
+
+        protected override void OnRedo()
+        {
+            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
+
+            var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
+
+            // Handle SVG models differently - break apart by scene nodes/shapes instead of mesh splitting
+            if (m_InitialWidget.Model.GetLocation().Extension == ".svg")
+            {
+                BreakApartSvg();
+                return;
+            }
+
+            // If we only have one mesh filter, we next have to split the mesh based on connected regions
+            if (widgetObjScript.m_MeshChildren.Length == 1)
+            {
+                var modelObjScript = m_InitialWidget.Model.m_ModelParent.GetComponent<ObjModelScript>();
+                string subtree = m_InitialWidget.Subtree;
+
+                Transform destRoot;
+                if (string.IsNullOrEmpty(subtree))
+                {
+                    destRoot = modelObjScript.m_MeshChildren[0].transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        subtree
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                if (destRoot == null)
+                {
+                    Debug.LogError($"BreakModelApartCommand: Unable to find destRoot for subtree '{subtree}'");
+                    return;
+                }
+
+                var modelMf = destRoot.GetComponentInChildren<MeshFilter>();
+                var splits = Model.ApplySplits(modelMf);
+
+                // Use the subtree or mesh name as the path if m_NodePaths is empty
+                var prevNodePath = m_NodePaths.Count > 0
+                    ? m_NodePaths[0]
+                    : (string.IsNullOrEmpty(subtree) ? GetHierarchyPath(modelObjScript.transform, destRoot) : subtree);
+                if (splits.Count == 1)
+                {
+                    // Destroy the split as it's superfluous
+                    GameObject.DestroyImmediate(splits[0].gameObject);
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                else
+                {
+                    // Remove the meshfilter from the original game object
+                    GameObject.DestroyImmediate(modelMf.GetComponent<MeshFilter>());
+
+                    m_NodePaths = new List<string>();
+                    foreach (var split in splits)
+                    {
+                        m_NodePaths.Add($"{prevNodePath}/{split.name}");
+                    }
+                    m_InitialWidget.Model.RegisterMeshSplit(String.IsNullOrEmpty(subtree) ? prevNodePath : subtree);
+                }
+                modelObjScript.UpdateAllMeshChildren();
+            }
+
+            // Create new widgets for each path
+            foreach (var path in m_NodePaths)
+            {
+                var newWidget = m_InitialWidget.Clone() as ModelWidget;
+                if (newWidget == null) continue;
+                var previousSubtree = newWidget.Subtree;
+                string newSubtree;
+                if (string.IsNullOrEmpty(previousSubtree))
+                {
+                    newSubtree = path;
+                }
+                else
+                {
+                    // Join the previous subtree with the new path
+                    // Remove the duplicate last part of the previous subtree
+                    var parts = previousSubtree.Split('/');
+                    newSubtree = string.Join('/', parts.Take(parts.Length - 1)) + path;
+                }
+                newWidget.Subtree = newSubtree;
+                newWidget.name = $"{newWidget.name} Subtree:{path}";
+                newWidget.SyncHierarchyToSubtree(previousSubtree);
+                newWidget.RegisterHighlight();
+                newWidget.UpdateBatchInfo();
+
+                // If a ModelWidget contains no more meshes, convert to widget(s) of the
+                // appropriate type based on what components the subtree contains.
+                var objModel = newWidget.GetComponentInChildren<ObjModelScript>();
+                if (objModel != null && objModel.NumMeshes == 0)
+                {
+                    if (newWidget.GetComponentInChildren<GltfAudioSource>() != null)
+                    {
+                        m_NewLightWidgets.AddRange(
+                            LightWidget.FromModelWidget(newWidget, destroyModelWidget: false));
+                        m_NewSoundClipWidgets.AddRange(SoundClipWidget.FromModelWidget(newWidget));
+                    }
+                    else
+                    {
+                        m_NewLightWidgets.AddRange(LightWidget.FromModelWidget(newWidget));
+                    }
+                }
+                else
+                {
+                    SelectionManager.m_Instance.SelectWidget(newWidget);
+                    m_NewModelWidgets.Add(newWidget);
+                }
+            }
+            m_InitialWidget.gameObject.SetActive(false);
+        }
+
+        protected override void OnUndo()
+        {
+            SelectionManager.m_Instance.DeselectWidgets(m_NewModelWidgets);
+            foreach (var widget in m_NewModelWidgets)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
+            }
+            SelectionManager.m_Instance.DeselectWidgets(m_NewLightWidgets);
+            foreach (var widget in m_NewLightWidgets)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
+            }
+            SelectionManager.m_Instance.DeselectWidgets(m_NewSoundClipWidgets);
+            foreach (var widget in m_NewSoundClipWidgets)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                GameObject.Destroy(widget.gameObject);
+            }
+            m_InitialWidget.gameObject.SetActive(true);
+            SelectionManager.m_Instance.SelectWidget(m_InitialWidget);
+        }
+    }
+} // namespace TiltBrush

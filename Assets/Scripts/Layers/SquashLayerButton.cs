@@ -14,12 +14,12 @@
 
 namespace TiltBrush.Layers
 {
-    public class SquashLayerButton : BaseButton
+    public class SquashLayerButton : OptionButton
     {
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().SquashLayer(transform.parent.gameObject);
+            GetComponentInParent<LayerUI_Manager>().SquashLayer(m_CommandParam);
         }
     }
 }

@@ -18,11 +18,10 @@ Properties {
 }
 
 SubShader {
-  Tags { "RenderType"="Opaque" }
+  Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
   LOD 100
 
   Pass {
-    Lighting Off
     Cull Off
 
     CGPROGRAM
@@ -32,15 +31,17 @@ SubShader {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Ods.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : SV_POSITION;
         UNITY_FOG_COORDS(1)
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       uniform float4 _Color;
@@ -49,6 +50,11 @@ SubShader {
       {
         PrepForOds(v.vertex);
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex);
         UNITY_TRANSFER_FOG(o,o.vertex);
         return o;

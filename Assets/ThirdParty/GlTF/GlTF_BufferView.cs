@@ -105,6 +105,10 @@ public sealed class GlTF_BufferView : GlTF_ReferencedObject, IDisposable {
     FastPopulate(vs.Select(i32 => (ushort)i32).ToList());
   }
 
+  public void PopulateUint(int[] vs) {
+      FastPopulate(vs.Select(i32 => (uint)i32).ToList());
+  }
+
   public override IEnumerable<GlTF_ReferencedObject> IterReferences() {
     yield return G.Lookup(m_buffer);
   }

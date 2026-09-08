@@ -12,9 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -25,6 +42,16 @@ namespace TiltBrush
     public class UserConfig
     {
         [Serializable]
+        public struct PluginWebRequestRule
+        {
+            // Exact host, HTTP methods, and response categories documented in
+            // Support/PluginWebRequestRules.md.
+            public string Host;
+            public string[] Methods;
+            public string[] FileTypes;
+        }
+
+        [Serializable]
         public struct YouTubeConfig
         {
             public string ChannelID;
@@ -32,31 +59,135 @@ namespace TiltBrush
         public YouTubeConfig YouTube;
 
         [Serializable]
+        public struct SplatsConfig
+        {
+            // Null leaves the imported asset or library/project default unchanged.
+            public int? SHDegree;
+            public float? SplatDownscaleFactor;
+            // User-facing frame interval: 1 sorts every frame, 2 every other frame.
+            public int? SortEveryNFrames;
+            public float? DepthPrepassAlphaCutoff;
+            public float? CameraTranslationRefreshThreshold;
+            public float? CameraRotationRefreshThreshold;
+            public bool? EnableGlobalSort;
+            public float? PruneOpacityBelow;
+            public float? PruneScaleFractionAbove;
+
+            internal Gsplat.GsplatImportFilter CreateImportFilter()
+            {
+                // Requiring both values avoids enabling pruning by default.
+                if (!PruneOpacityBelow.HasValue || !PruneScaleFractionAbove.HasValue) return null;
+                return new Gsplat.GsplatImportFilter(PruneOpacityBelow.Value, PruneScaleFractionAbove.Value);
+            }
+
+            internal void ApplyTo(Gsplat.GsplatRenderer renderer, Gsplat.GsplatSettings settings)
+            {
+                if (SHDegree.HasValue)
+                {
+                    renderer.SHDegree = Mathf.Clamp(SHDegree.Value, 0, renderer.GsplatAsset.SHBands);
+                }
+                if (SplatDownscaleFactor.HasValue)
+                {
+                    renderer.SplatDownscaleFactor = ClampFinite(SplatDownscaleFactor.Value, 0, 1);
+                }
+                if (SortEveryNFrames.HasValue)
+                {
+                    int interval = Math.Max(1, SortEveryNFrames.Value);
+                    renderer.SortMode = interval == 1
+                        ? Gsplat.GsplatRenderer.GsplatSortMode.Always
+                        : Gsplat.GsplatRenderer.GsplatSortMode.SortEveryNFrames;
+                    // UnitySplats converts the full interval to skipped frames internally.
+                    renderer.SortRefreshRate = (uint)interval;
+                }
+                if (DepthPrepassAlphaCutoff.HasValue)
+                {
+                    settings.DepthPrepassAlphaCutoff = ClampFinite(DepthPrepassAlphaCutoff.Value, 0, 1.1f);
+                }
+                if (CameraTranslationRefreshThreshold.HasValue)
+                {
+                    settings.CameraTranslationRefreshTreshold =
+                        ClampFinite(CameraTranslationRefreshThreshold.Value, 0.05f, 1);
+                }
+                if (CameraRotationRefreshThreshold.HasValue)
+                {
+                    settings.CameraRotationRefreshTreshold =
+                        ClampFinite(CameraRotationRefreshThreshold.Value, 0.2f, 30);
+                }
+                if (EnableGlobalSort.HasValue)
+                {
+                    settings.EnableGlobalSort = EnableGlobalSort.Value;
+                }
+            }
+
+            private static float ClampFinite(float value, float min, float max)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Splat settings must be finite.");
+                }
+                return Mathf.Clamp(value, min, max);
+            }
+        }
+        public SplatsConfig Splats;
+
+        [Serializable]
         public struct FlagsConfig
         {
+            // Positive values override the device's vertex warning threshold at startup.
+            // Zero (the default) uses automatic device selection.
+            public int MemoryWarningVertCount;
             public bool DisableAudio;
             public bool DisableAutosave;
-            public bool DisablePoly;
+            [FormerlySerializedAs("DisablePoly")] public bool DisableIcosa;
             public bool UnlockScale;
             public bool GuideToggleVisiblityOnly;
             public bool HighResolutionSnapshots; // Deprecated
             public bool ShowDroppedFrames;
-
-            public bool EnableApiRemoteCalls;
-            public bool EnableApiCorsHeaders;
-
-            bool? m_ShowDangerousBrushes;
-            public bool ShowDangerousBrushes
+            public bool LargeMeshSupport;
+            public bool EnableMonoscopicMode;
+            private bool m_ForceViewOnly;
+            public bool ForceViewOnly
             {
                 get
                 {
-#if EXPERIMENTAL_ENABLED || UNITY_EDITOR
-                    return m_ShowDangerousBrushes ?? true;
+#if OPEN_BRUSH_VIEWER
+                    return true;
 #else
-                    return m_ShowDangerousBrushes ?? false;
+                    return m_ForceViewOnly;
 #endif
                 }
-                set { m_ShowDangerousBrushes = value; }
+                set { m_ForceViewOnly = value; }
+            }
+
+            private bool? m_DisableXrMode;
+            public bool DisableXrMode
+            {
+                get
+                {
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+                    return true;
+#else
+                    return (m_DisableXrMode ?? false) || EnableMonoscopicMode;
+#endif
+                }
+                set { m_DisableXrMode = value; }
+            }
+
+            public bool EnableApiRemoteCalls;
+            public bool EnableApiCorsHeaders;
+            public bool WebScriptsCanControlPlugins;
+            public bool EnablePluginWebRequests;
+            public PluginWebRequestRule[] PluginWebRequestRules;
+            public bool EnablePluginClipboardAccess;
+
+            bool? m_AdvancedKeyboardShortcuts;
+            public bool AdvancedKeyboardShortcuts
+            {
+                get
+                {
+                    return m_AdvancedKeyboardShortcuts ?? false;
+                }
+                set { m_AdvancedKeyboardShortcuts = value; }
             }
 
             bool? m_PostEffectsOnCapture;
@@ -91,6 +222,13 @@ namespace TiltBrush
             {
                 get { return m_ShowControllers ?? true; }
                 set { m_ShowControllers = value; }
+            }
+
+            bool? m_SkipIntro;
+            public bool SkipIntro
+            {
+                get { return m_SkipIntro ?? false; }
+                set { m_SkipIntro = value; }
             }
 
             int? m_SnapshotHeight;
@@ -150,15 +288,25 @@ namespace TiltBrush
                 }
             }
 
-            private bool? m_PolyModelPreload;
-            public bool PolyModelPreloadValid => m_PolyModelPreload.HasValue;
-            public bool PolyModelPreload
+            private bool? m_IcosaModelPreload;
+            public bool IcosaModelPreload
             {
                 get
                 {
-                    return m_PolyModelPreload ?? App.PlatformConfig.EnablePolyPreload;
+                    // TODO Should we avoid preload if we are running offline rendering?
+                    return m_IcosaModelPreload ?? App.PlatformConfig.EnableIcosaPreload;
                 }
-                set { m_PolyModelPreload = value; }
+                set { m_IcosaModelPreload = value; }
+            }
+
+            // Models whose reported triangle count exceeds this are not auto-preloaded or previewed in
+            // the Icosa panel (they still load when explicitly selected). 0 or negative disables the
+            // limit. Triangle count is the only size signal the Icosa API exposes before download.
+            private int? m_IcosaMaxPreviewTriangleCount;
+            public int IcosaMaxPreviewTriangleCount
+            {
+                get { return m_IcosaMaxPreviewTriangleCount ?? 200000; }
+                set { m_IcosaMaxPreviewTriangleCount = value; }
             }
         }
 
@@ -213,14 +361,7 @@ namespace TiltBrush
                 {
                     if (m_IncludeTags == null)
                     {
-                        if (App.Config.m_IsExperimental)
-                        {
-                            m_IncludeTags = new[] { "default", "experimental" };
-                        }
-                        else
-                        {
-                            m_IncludeTags = new[] { "default" };
-                        }
+                        m_IncludeTags = new[] { "default", "experimental" };
                     }
                     return m_IncludeTags;
                 }
@@ -234,6 +375,12 @@ namespace TiltBrush
             }
         }
         public BrushConfig Brushes;
+
+        [Serializable]
+        public struct ImportConfig
+        {
+            public bool UseLegacyObjForIcosa;
+        }
 
         [Serializable]
         public struct ExportConfig
@@ -258,15 +405,65 @@ namespace TiltBrush
                 get { return m_ExportStrokeTimestamp ?? true; }
                 set { m_ExportStrokeTimestamp = value; }
             }
+
+            // Used by UnityGLTF exporter
+            bool? m_ExportStrokeMetadata;
+            public bool ExportStrokeMetadata
+            {
+                get { return m_ExportStrokeMetadata ?? false; }
+                set { m_ExportStrokeMetadata = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            bool? m_KeepStrokes;
+            public bool KeepStrokes
+            {
+                get { return m_KeepStrokes ?? false; }
+                set { m_KeepStrokes = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            bool? m_KeepGroups;
+            public bool KeepGroups
+            {
+                get { return m_KeepGroups ?? true; }
+                set { m_KeepGroups = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            private bool? m_ExportEnvironment;
+            public bool ExportEnvironment
+            {
+                get { return m_ExportEnvironment ?? false; }
+                set { m_ExportEnvironment = value; }
+            }
+
+            // Used by UnityGLTF exporter
+            private bool? m_ExportCustomSkybox;
+            public bool ExportCustomSkybox
+            {
+                get { return m_ExportCustomSkybox ?? false; }
+                set { m_ExportCustomSkybox = value; }
+            }
+
+            private Dictionary<string, bool> m_Formats;
+            [JsonProperty]
+            public Dictionary<string, bool> Formats
+            {
+                get { return m_Formats ?? null; }
+                set => m_Formats = value;
+            }
         }
+
+        public ImportConfig Import;
         public ExportConfig Export;
 
         [Serializable]
         public struct SharingConfig
         {
-            // For Poly testing allow us to use a different API host and landing page URL.
-            [JsonProperty("VrAssetServiceHost")] public string VrAssetServiceHostOverride;
-            [JsonProperty("VrAssetServiceUrl")] public string VrAssetServiceUrlOverride;
+            public string IcosaApiRoot;
+            public string IcosaHomePage;
+            public bool UseNewGlb;
         }
         public SharingConfig Sharing;
 
@@ -357,6 +554,26 @@ namespace TiltBrush
                 }
             }
 
+            bool? m_UsePngForFrameSequence;
+            public bool UsePngForFrameSequence
+            {
+                get { return m_UsePngForFrameSequence ?? false; }
+                set
+                {
+                    m_UsePngForFrameSequence = value;
+                }
+            }
+
+            bool? m_ForceFrameSequenceRender;
+            public bool ForceFrameSequenceRender
+            {
+                get { return m_ForceFrameSequenceRender ?? false; }
+                set
+                {
+                    m_ForceFrameSequenceRender = value;
+                }
+            }
+
             int? m_Resolution;
             public int Resolution
             {
@@ -374,6 +591,7 @@ namespace TiltBrush
             }
 
             int? m_OfflineResolution;
+            public bool OfflineResolutionValid { get { return m_OfflineResolution != null; } }
             public int OfflineResolution
             {
                 get { return m_OfflineResolution ?? kDefaultOfflineRes; }
@@ -489,40 +707,35 @@ namespace TiltBrush
                 get
                 {
                     Dictionary<Guid, Guid> results = new Dictionary<Guid, Guid>();
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-                    if (Config.IsExperimental)
+                    if (string.IsNullOrEmpty(BrushReplacements))
                     {
-                        if (string.IsNullOrEmpty(BrushReplacements))
+                        return results;
+                    }
+                    var replacements = BrushReplacements.Split(',');
+                    foreach (string replacement in replacements)
+                    {
+                        string[] pair = replacement.Split('=');
+                        if (pair.Length == 2)
                         {
-                            return results;
-                        }
-                        var replacements = BrushReplacements.Split(',');
-                        foreach (string replacement in replacements)
-                        {
-                            string[] pair = replacement.Split('=');
-                            if (pair.Length == 2)
+                            if (pair[0] == "*")
                             {
-                                if (pair[0] == "*")
+                                Guid guid = new Guid(pair[1]);
+                                foreach (var brush in App.Instance.ManifestFull.Brushes)
                                 {
-                                    Guid guid = new Guid(pair[1]);
-                                    foreach (var brush in App.Instance.m_Manifest.Brushes)
-                                    {
-                                        results.Add(brush.m_Guid, guid);
-                                    }
-                                }
-                                else
-                                {
-                                    results.Add(new Guid(pair[0]), new Guid(pair[1]));
+                                    results.Add(brush.m_Guid, guid);
                                 }
                             }
                             else
                             {
-                                OutputWindowScript.Error("BrushReplacement should be of the form:\n" +
-                                    "brushguidA=brushguidB,brushguidC=brushguidD");
+                                results.Add(new Guid(pair[0]), new Guid(pair[1]));
                             }
                         }
+                        else
+                        {
+                            OutputWindowScript.Error("BrushReplacement should be of the form:\n" +
+                                "brushguidA=brushguidB,brushguidC=brushguidD");
+                        }
                     }
-#endif
                     return results;
                 }
             }
@@ -542,7 +755,7 @@ namespace TiltBrush
         {
             public const int kDefaultScreenshotResolution = 1000;
             public string[] ProfilingFunctions { get; private set; }
-            public ProfilingManager.Mode ProflingMode { get; private set; }
+            public ProfilingManager.Mode ProfilingMode { get; private set; }
 
             public string Mode
             {
@@ -550,7 +763,7 @@ namespace TiltBrush
                 {
                     try
                     {
-                        ProflingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
+                        ProfilingMode = (ProfilingManager.Mode)Enum.Parse(typeof(ProfilingManager.Mode), value);
                     }
                     catch (ArgumentException)
                     {

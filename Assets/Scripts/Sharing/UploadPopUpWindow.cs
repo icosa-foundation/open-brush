@@ -14,6 +14,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using GlobalCommands = TiltBrush.SketchControlsScript.GlobalCommands;
 
 namespace TiltBrush
@@ -32,8 +33,9 @@ namespace TiltBrush
             UploadFailed,
             UploadingDenied,
             Waiting,
-            EmbeddedMediaWarningPoly,
+            EmbeddedMediaWarningIcosa,
             EmbeddedMediaWarningSketchfab,
+            EmbeddedMediaWarningViverse,
             NothingToUploadWarning,
             ConnectionError,
             OutOfDate,
@@ -46,14 +48,18 @@ namespace TiltBrush
 
         // Things that should be visible when confirming upload.
         [SerializeField] private GameObject m_ConfirmObjects;
-        [SerializeField] private GameObject m_PolyLoggedInObjects;
-        [SerializeField] private GameObject m_PolyLoggedOutObjects;
+        [SerializeField] private GameObject m_IcosaLoggedInObjects;
+        [SerializeField] private GameObject m_IcosaLoggedOutObjects;
         [SerializeField] private GameObject m_SketchfabLoggedInObjects;
         [SerializeField] private GameObject m_SketchfabLoggedOutObjects;
-        [SerializeField] private TMPro.TextMeshPro m_PolyUserName;
+        [SerializeField] private GameObject m_ViverseLoggedInObjects;
+        [SerializeField] private GameObject m_ViverseLoggedOutObjects;
+        [SerializeField] private TMPro.TextMeshPro m_IcosaUserName;
         [SerializeField] private TMPro.TextMeshPro m_SketchfabUserName;
-        [SerializeField] private Renderer m_GooglePhoto;
+        [SerializeField] private TMPro.TextMeshPro m_ViverseUserName;
+        [SerializeField] private Renderer m_IcosaPhoto;
         [SerializeField] private Renderer m_SketchfabPhoto;
+        [SerializeField] private Renderer m_ViversePhoto;
 
         // Things that should be visible when uploading.
         [SerializeField] private GameObject m_UploadObjects;
@@ -72,8 +78,9 @@ namespace TiltBrush
         [SerializeField] private GameObject m_WaitObjects;
 
         // Things that should be visible when media library content is in the scene.
-        [SerializeField] private GameObject m_EmbeddedMediaWarningPoly;
+        [SerializeField] private GameObject m_EmbeddedMediaWarningIcosa;
         [SerializeField] private GameObject m_EmbeddedMediaWarningSketchfab;
+        [SerializeField] private GameObject m_EmbeddedMediaWarningViverse;
 
         // Things that should be visible when there's nothing to upload.
         [SerializeField] private GameObject m_NothingToUploadWarning;
@@ -81,7 +88,7 @@ namespace TiltBrush
         // Things that should be visible when there has been a connection error.
         [SerializeField] private GameObject m_ConnectionErrorObjects;
 
-        // Things that should be visible when Tilt Brush can't talk to Poly because it is
+        // Things that should be visible when Open Brush can't talk to Icosa because it is
         // out of date.
         [SerializeField] private GameObject m_OutOfDateObjects;
 
@@ -100,8 +107,9 @@ namespace TiltBrush
             InitUI();
 
             OAuth2Identity.ProfileUpdated += OnProfileUpdated;
-            RefreshUploadButton(Cloud.Poly);
+            RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
             m_OnClose += OnClose;
 
             SketchMemoryScript.m_Instance.OperationStackChanged += OnOperationStackChanged;
@@ -123,9 +131,10 @@ namespace TiltBrush
             m_UploadFailedObjects.SetActive(displayMode == DisplayMode.UploadFailed);
             m_UploadingDeniedObjects.SetActive(displayMode == DisplayMode.UploadingDenied);
             m_WaitObjects.SetActive(displayMode == DisplayMode.Waiting);
-            m_EmbeddedMediaWarningPoly.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningPoly);
+            m_EmbeddedMediaWarningIcosa.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningIcosa);
             m_EmbeddedMediaWarningSketchfab.SetActive(
                 displayMode == DisplayMode.EmbeddedMediaWarningSketchfab);
+            m_EmbeddedMediaWarningViverse.SetActive(displayMode == DisplayMode.EmbeddedMediaWarningViverse);
             m_NothingToUploadWarning.SetActive(displayMode == DisplayMode.NothingToUploadWarning);
             m_ConnectionErrorObjects.SetActive(displayMode == DisplayMode.ConnectionError);
             m_OutOfDateObjects.SetActive(displayMode == DisplayMode.OutOfDate);
@@ -147,13 +156,13 @@ namespace TiltBrush
             m_LoggingInType = Cloud.None;
             SetMode(DisplayMode.Blank);
 
-            { // Turn off the poly option
-                (var name, var inEl, var outEl, var photo) = GetUiFor(Cloud.Poly);
-                name.gameObject.SetActive(false);
-                inEl.SetActive(false);
-                outEl.SetActive(false);
-                photo.gameObject.SetActive(false);
-            }
+            // { // Turn off the Icosa option
+            //     (var name, var inEl, var outEl, var photo) = GetUiFor(Cloud.Icosa);
+            //     name.gameObject.SetActive(false);
+            //     inEl.SetActive(false);
+            //     outEl.SetActive(false);
+            //     photo.gameObject.SetActive(false);
+            // }
 
             if (m_AssetService.UploadProgress <= 0.0f)
             {
@@ -201,8 +210,9 @@ namespace TiltBrush
             if (m_LoginOnDesktopObjects.activeSelf)
             {
                 // Check to see if we just logged in.
-                if ((m_LoggingInType == Cloud.Poly && App.GoogleIdentity.LoggedIn) ||
-                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn))
+                if ((m_LoggingInType == Cloud.Icosa && App.IcosaIsLoggedIn) ||
+                    (m_LoggingInType == Cloud.Sketchfab && App.SketchfabIdentity.LoggedIn) ||
+                    m_LoggingInType == Cloud.Vive && App.ViveIdentity.LoggedIn)
                 {
                     SetMode(DisplayMode.Loggedout);
                     // It's easy to get the logic wrong for how to re-initialize the UI, so just go through a
@@ -221,7 +231,7 @@ namespace TiltBrush
                     // If upload has not started and sketch is undone until upload is no longer available,
                     // close the popup.
                     if (!SketchControlsScript.m_Instance.IsCommandAvailable(
-                        GlobalCommands.UploadToGenericCloud))
+                            GlobalCommands.UploadToGenericCloud))
                     {
                         RequestClose(bForceClose: true);
                     }
@@ -261,32 +271,48 @@ namespace TiltBrush
                 case Cloud.Sketchfab:
                     return (m_SketchfabUserName,
                             m_SketchfabLoggedInObjects, m_SketchfabLoggedOutObjects, m_SketchfabPhoto);
-                case Cloud.Poly:
-                    return (m_PolyUserName, m_PolyLoggedInObjects,
-                            m_PolyLoggedOutObjects, m_GooglePhoto);
+                case Cloud.Icosa:
+                    return (m_IcosaUserName, m_IcosaLoggedInObjects,
+                            m_IcosaLoggedOutObjects, m_IcosaPhoto);
+                case Cloud.Vive:
+                    return (m_ViverseUserName, m_ViverseLoggedInObjects,
+                            m_ViverseLoggedOutObjects, m_ViversePhoto);
                 default: throw new InvalidOperationException($"{cloud}");
             }
         }
 
         void RefreshUploadButton(Cloud backend)
         {
-            if (backend == Cloud.Poly) { return; }
             var ui = GetUiFor(backend);
-            OAuth2Identity.UserInfo profile = App.GetIdentity(backend).Profile;
-            ui.loggedInElements.SetActive(profile != null);
-            ui.loggedOutElements.SetActive(profile == null);
-
-            if (profile != null)
+            if (backend == Cloud.Icosa)
             {
-                ui.name.text = profile.name;
-                ui.photo.material.mainTexture = profile.icon;
+                bool icosaLoggedIn = App.IcosaIsLoggedIn;
+                ui.loggedInElements.SetActive(icosaLoggedIn);
+                ui.loggedOutElements.SetActive(!icosaLoggedIn);
+                if (icosaLoggedIn)
+                {
+                    ui.name.text = App.IcosaUserName;
+                    ui.photo.material.mainTexture = App.IcosaUserIcon;
+                }
+            }
+            else
+            {
+                OAuth2Identity.UserInfo profile = App.GetIdentity(backend).Profile;
+                ui.loggedInElements.SetActive(profile != null);
+                ui.loggedOutElements.SetActive(profile == null);
+                if (profile != null)
+                {
+                    ui.name.text = profile.name;
+                    ui.photo.material.mainTexture = profile.icon;
+                }
             }
         }
 
         void OnProfileUpdated(OAuth2Identity _)
         {
-            RefreshUploadButton(Cloud.Poly);
+            RefreshUploadButton(Cloud.Icosa);
             RefreshUploadButton(Cloud.Sketchfab);
+            RefreshUploadButton(Cloud.Vive);
         }
 
         void OnClose()
@@ -300,13 +326,18 @@ namespace TiltBrush
             // An embedded media warning only shows up if the user has tried to upload and there was non-
             // exportable content. So we only need to be concerned with the case that the embedded warning
             // is showing and is no longer relevant.
-            if (m_EmbeddedMediaWarningPoly.activeSelf &&
-                !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Poly))
+            if (m_EmbeddedMediaWarningIcosa.activeSelf &&
+                !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Icosa))
             {
                 SetMode(DisplayMode.Confirming);
             }
             if (m_EmbeddedMediaWarningSketchfab.activeSelf &&
                 !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Sketchfab))
+            {
+                SetMode(DisplayMode.Confirming);
+            }
+            if (m_EmbeddedMediaWarningViverse.activeSelf &&
+                !WidgetManager.m_Instance.HasNonExportableContent(Cloud.Vive))
             {
                 SetMode(DisplayMode.Confirming);
             }
@@ -322,7 +353,6 @@ namespace TiltBrush
         /// show a warning or error.
         public void UserPressedUploadButton(Cloud cloud, Action onSafeToUpload)
         {
-            Debug.Assert(cloud == Cloud.Sketchfab);
             // User attempted to upload, but make sure there's actually something to upload.
             if (!WidgetManager.m_Instance.HasExportableContent(cloud))
             {
