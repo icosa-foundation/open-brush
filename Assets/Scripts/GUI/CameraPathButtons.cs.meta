@@ -1,6 +1,7 @@
 fileFormatVersion: 2
 guid: 63bafd01872414c43a23f62bae399696
 MonoImporter:
+  externalObjects: {}
   serializedVersion: 2
   defaultReferences:
   - m_ButtonTexture: {fileID: 2800000, guid: 41488feb372865440b7c01773f04c0cf, type: 3}
@@ -11,3 +12,4 @@ MonoImporter:
   icon: {instanceID: 0}
   userData: 
   assetBundleName: 
+  assetBundleVariant: 

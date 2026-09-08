@@ -56,10 +56,7 @@ namespace TiltBrush
                 Debug.Assert(value == Mathf.Clamp01(value));
                 m_Fov = Mathf.Lerp(kFovMin, kFovMax, value);
                 PlayerPrefs.SetFloat(CAMERA_FOV, m_Fov);
-                if (FovChanged != null)
-                {
-                    FovChanged();
-                }
+                FovChanged = InvokeChanged(FovChanged);
             }
         }
 
@@ -86,10 +83,7 @@ namespace TiltBrush
             {
                 m_PostEffects = value;
                 PlayerPrefs.SetInt(POST_EFFECTS, m_PostEffects ? 1 : 0);
-                if (PostEffectsChanged != null)
-                {
-                    PostEffectsChanged();
-                }
+                PostEffectsChanged = InvokeChanged(PostEffectsChanged);
             }
         }
 
@@ -100,11 +94,35 @@ namespace TiltBrush
             {
                 m_Watermark = value;
                 PlayerPrefs.SetInt(WATERMARK, m_Watermark ? 1 : 0);
-                if (WatermarkChanged != null)
+                WatermarkChanged = InvokeChanged(WatermarkChanged);
+            }
+        }
+
+        static private Action InvokeChanged(Action callbacks)
+        {
+            if (callbacks == null)
+            {
+                return null;
+            }
+
+            Action liveCallbacks = null;
+            foreach (Action callback in callbacks.GetInvocationList())
+            {
+                if (callback.Target is UnityEngine.Object target && target == null)
                 {
-                    WatermarkChanged();
+                    continue;
+                }
+
+                try
+                {
+                    callback();
+                    liveCallbacks += callback;
+                }
+                catch (MissingReferenceException)
+                {
                 }
             }
+            return liveCallbacks;
         }
 
         static public void Init()

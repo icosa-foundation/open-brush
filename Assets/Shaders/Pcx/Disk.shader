@@ -10,11 +10,12 @@ Shader "Point Cloud/Disk"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         Cull Off
         Pass
         {
-            Tags { "LightMode"="ForwardBase" }
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
             #pragma vertex Vertex
             #pragma geometry Geometry
@@ -40,3 +41,4 @@ Shader "Point Cloud/Disk"
     }
     CustomEditor "Pcx.DiskMaterialInspector"
 }
+
