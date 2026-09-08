@@ -556,11 +556,6 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
-      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
-        if: startsWith(matrix.name, 'Windows Rift')
-        run: |
-          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
-
       - name: Add bundled Windows tools
         if: matrix.targetPlatform == 'StandaloneWindows64'
         run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
@@ -1524,6 +1519,8 @@ jobs:
           mkdir releases
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
+          # Meta rejects the Steam DLL included in the shared Windows OpenXR artifact.
+          rm -f "OpenBrush_Rift_$VERSION/OpenBrush_Data/Plugins/x86_64/steam_api64.dll"
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
