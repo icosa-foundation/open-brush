@@ -49,7 +49,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -5564216473371103434, guid: 2fd5897dba61142d595b2d392a956e8e, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 35c401a1bc7464ba99b7753943dbce2e, type: 2}
     - target: {fileID: 919132149155446097, guid: 2fd5897dba61142d595b2d392a956e8e, type: 3}
@@ -57,11 +57,11 @@ PrefabInstance:
       value: logitech_vr_stylus_v1.0
       objectReference: {fileID: 0}
     - target: {fileID: 6790160926894396129, guid: 2fd5897dba61142d595b2d392a956e8e, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 35c401a1bc7464ba99b7753943dbce2e, type: 2}
     - target: {fileID: 8440019636835948524, guid: 2fd5897dba61142d595b2d392a956e8e, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 35c401a1bc7464ba99b7753943dbce2e, type: 2}
     m_RemovedComponents: []

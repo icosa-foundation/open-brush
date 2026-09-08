@@ -15,7 +15,6 @@ public class BrushBaker : MonoBehaviour
     public struct ComputeShaderMapping
     {
         public string name;
-        public Shader shader;
         public string brushGuid;
         public ComputeShader computeShader;
         public bool ModifyColor;
