@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: 360 Panorama Sphere
   m_Shader: {fileID: 4800000, guid: 2acb44a1aabdeb44ca27f9dd497c779a, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _STEREOSCOPIC_ON
@@ -18,6 +20,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -87,3 +90,4 @@ Material:
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _WarpParams: {r: 6, g: 0.5, b: 0.3, a: 0.1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

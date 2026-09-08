@@ -96,6 +96,10 @@ namespace TiltBrush
             }
             set
             {
+                // Matches the getter: with no MultiplayerManager there is no user info to
+                // update, so setting a nickname is a no-op rather than a null dereference.
+                if (!MultiplayerManager.m_Instance) { return; }
+
                 ConnectionUserInfo ui = new ConnectionUserInfo
                 {
                     Nickname = value,
@@ -126,8 +130,9 @@ namespace TiltBrush
 
         private List<Func<Tuple<bool, string>>> alertChecks;
 
-        public void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             data = new RoomCreateData
             {
                 roomName = "default room",
@@ -225,7 +230,7 @@ namespace TiltBrush
             SubscribeManualColocationEvents();
             if (MultiplayerManager.m_Instance.State == ConnectionState.INITIALIZED || MultiplayerManager.m_Instance.State == ConnectionState.DISCONNECTED)
             {
-                MultiplayerManager.m_Instance.Connect();
+                _ = MultiplayerManager.m_Instance.Connect();
             }
 
             if (updateDisplay) UpdateDisplay();
@@ -239,7 +244,7 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance == null) return;
             if (MultiplayerManager.m_Instance.State != ConnectionState.IN_ROOM)
             {
-                MultiplayerManager.m_Instance.Disconnect();
+                _ = MultiplayerManager.m_Instance.Disconnect();
             }
         }
 

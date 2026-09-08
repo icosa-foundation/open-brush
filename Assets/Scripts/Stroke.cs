@@ -45,23 +45,23 @@ namespace TiltBrush
         /// Valid only when type == BrushStroke. Never null; will always have a BaseBrushScript.
         public GameObject m_Object;
         /// Valid only when type == BatchedBrushStroke.
-        public BatchSubset m_BatchSubset;
+        [NonSerialized] public BatchSubset m_BatchSubset;
 
         /// Tracks whether this stroke is currently hidden from view.
         /// Used to determine snap hash membership.
         private bool m_IsHidden = false;
 
         /// used by SketchMemoryScript.m_Instance.m_MemoryList (ordered by time)
-        public LinkedListNode<Stroke> m_NodeByTime;
+        [NonSerialized] public LinkedListNode<Stroke> m_NodeByTime;
         /// used by one of the lists in ScenePlayback (ordered by time)
-        public LinkedListNode<Stroke> m_PlaybackNode;
+        [NonSerialized] public LinkedListNode<Stroke> m_PlaybackNode;
 
         /// A copy of the StrokeData part of the stroke.
         /// Used for the saving thread to serialize the sketch.
         private StrokeData m_CopyForSaveThread;
 
         /// The group this stroke is a part of. Cannot be null (as it is a struct).
-        public SketchGroupTag Group
+        public new SketchGroupTag Group
         {
             get => m_Group;
             set
