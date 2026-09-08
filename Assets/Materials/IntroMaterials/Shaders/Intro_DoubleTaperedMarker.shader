@@ -20,10 +20,12 @@ Category {
   Cull Off Lighting Off
 
   SubShader {
-    Tags{ "DisableBatching" = "True" }
+    Tags{ "RenderPipeline"="UniversalPipeline" "DisableBatching" = "True" }
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
+      #pragma multi_compile_instancing
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -32,8 +34,8 @@ Category {
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
       sampler2D _MainTex;
       half _IntroDissolve;
@@ -43,6 +45,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord0 : TEXCOORD0;
         float3 texcoord1 : TEXCOORD1; //per vert offset vector
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
@@ -50,16 +53,19 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         UNITY_FOG_COORDS(1)
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v)
       {
+UNITY_SETUP_INSTANCE_ID(v);
 
         //
         // XXX - THIS SHADER SHOULD BE DELETED AFTER TAPERING IS DONE IN THE GEOMETRY GENERATION
         //
 
-        v2f o;
+        v2f o = (v2f)0;
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         float envelope = sin(v.texcoord0.x * 3.14159);
 
         // Custom curve for the intro dissolve effect
@@ -76,6 +82,7 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
         UNITY_APPLY_FOG(i.fogCoord, i.color.rgb);
         return float4(i.color.rgb, 1);

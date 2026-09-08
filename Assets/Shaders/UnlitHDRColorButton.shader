@@ -20,14 +20,16 @@ Shader "Custom/UnlitHDRColorButton" {
         _EdgeWidth ("Edge Width", Float) = 1.5
     }
     SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 
         Tags {"RenderType"="Opaque"}
         LOD 100
 
         Pass {
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
             #include "UnityCG.cginc"
             #pragma target 3.0
 
@@ -47,11 +49,14 @@ Shader "Custom/UnlitHDRColorButton" {
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
 
-                UNITY_VERTEX_OUTPUT_STEREO
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             v2f vert (Input v) {
                 v2f o;
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
 
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(Input, o);
@@ -63,11 +68,13 @@ Shader "Custom/UnlitHDRColorButton" {
             }
 
             float4 frag(v2f i) : COLOR {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float vignette = pow( abs(i.uv - .5) * _EdgeWidth, _EdgeFalloff);
                 return lerp(_Color, _SecondaryColor, saturate(vignette));
             }
-            ENDCG
+            ENDHLSL
         }
     }
     FallBack "Diffuse"
 }
+
