@@ -53,6 +53,12 @@ namespace TiltBrush
             }
         }
 
+        public void SetCameraFov(float cameraFov)
+        {
+            float fovT = Mathf.InverseLerp(m_FovRange.x, m_FovRange.y, cameraFov);
+            FovValue = Mathf.Clamp(fovT * m_FovMaxVisualLength, 0.0f, m_FovMaxVisualLength);
+        }
+
         override public Transform GetGrabTransform(int control)
         {
             switch ((ControlType)control)

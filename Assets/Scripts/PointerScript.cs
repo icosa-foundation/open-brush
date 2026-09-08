@@ -15,9 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace TiltBrush
 {
@@ -54,10 +52,11 @@ namespace TiltBrush
         //this is the list of meshes that make up the standard pointer look: cone + ring
         [SerializeField] private Renderer[] m_PrimaryMeshes;
         [SerializeField] private Transform m_BrushSizeIndicator;
+        [SerializeField] private Transform m_BrushPressureIndicator;
         [SerializeField] private bool m_PreviewLineEnabled;
         [SerializeField] private float m_PreviewLineControlPointLife = 1.0f;
         [SerializeField] private float m_PreviewLineIdealLength = 1.0f;
-        [SerializeField] private GvrAudioSource[] m_AudioSources;
+        [SerializeField] private AudioSource[] m_AudioSources;
         [SerializeField] private Vector2 m_BrushAudioPitchVelocityRange;
         [SerializeField] private AudioClip m_BrushPlaybackAudioClip;
 
@@ -73,6 +72,8 @@ namespace TiltBrush
         private float m_CurrentBrushSize; // In pointer aka room space
         private Vector2 m_BrushSizeRange;
         private float m_CurrentPressure; // TODO: remove and query line instead?
+        public Color32? CurrentColorOverride { get; set; }
+        public ColorOverrideMode CurrentColorOverrideMode { get; set; }
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
@@ -93,12 +94,46 @@ namespace TiltBrush
 
         private List<PreviewControlPoint> m_PreviewControlPoints; // FIFO queue
         private List<PointerManager.ControlPoint> m_ControlPoints;
+        private List<Color32?> m_ControlPointColors;
+
+        // Used by the API
+        public List<TrTransform> CurrentPath
+        {
+            get
+            {
+                var path = new List<TrTransform>(m_ControlPoints.Count);
+                for (int i = 0; i < m_ControlPoints.Count; i++)
+                {
+                    var cp = m_ControlPoints[i];
+                    var tr = TrTransform.TR(cp.m_Pos, cp.m_Orient);
+                    path.Add(tr);
+                }
+                return path;
+            }
+            set
+            {
+                var startTime = m_ControlPoints[0].m_TimestampMs;
+                var endTime = m_ControlPoints[^1].m_TimestampMs;
+                m_ControlPoints = new List<PointerManager.ControlPoint>(value.Count);
+                for (var i = 0; i < value.Count; i++)
+                {
+                    var tr = value[i];
+                    m_ControlPoints.Add(new PointerManager.ControlPoint
+                    {
+                        m_Pos = tr.translation,
+                        m_Orient = tr.rotation,
+                        m_Pressure = tr.scale,
+                        m_TimestampMs = (uint)Mathf.RoundToInt(Mathf.Lerp(startTime, endTime, i))
+                    });
+                }
+            }
+        }
         private bool m_LastControlPointIsKeeper;
         private Vector3 m_PreviousPosition; //used for audio
 
         private float m_LineDepth;     // depth of stroke, only used in monoscopic mode. Room-space.
         private float m_LineLength_CS; // distance moved for the active line. Canvas-space.
-
+        private float m_MovementSpeed;
         private bool m_ShowDebugControlPoints = false;
         private List<Vector3> m_DebugViewControlPoints;
 
@@ -107,6 +142,9 @@ namespace TiltBrush
         private CanvasScript m_SubscribedCanvas;
 
         // ---- Public properties, accessors, events
+
+        public float LineLength_CS => m_LineLength_CS;
+        public float MovementSpeed => m_MovementSpeed;
 
         public event Action<TiltBrush.BrushDescriptor> OnBrushChange = delegate { };
 
@@ -322,6 +360,17 @@ namespace TiltBrush
                     // Adjust volume of each layer based on brush speed
                     m_AudioSources[i].volume = LayerVolume(i, m_CurrentTotalVolume);
                     m_AudioSources[i].pitch += fPitchAdjust;
+                }
+            }
+
+
+            // match pressure with indicator
+            if (App.Instance.IsInStateThatAllowsPainting())
+            {
+                if (m_BrushPressureIndicator != null)
+                {
+                    float scaledPressure = Remap(GetPressure(), 0, 1, m_BrushSizeRange.x, m_CurrentBrushSize);
+                    m_BrushPressureIndicator.localScale = new Vector3(scaledPressure, scaledPressure, scaledPressure);
                 }
             }
         }
@@ -541,7 +590,8 @@ namespace TiltBrush
                 return;
             }
 
-            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure);
+            Color32? colorOverride = CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
+            bool bQuadCreated = m_CurrentLine.UpdatePosition_LS(xf_LS, m_CurrentPressure, colorOverride);
 
             // TODO: let brush take care of storing control points, not us
             SetControlPoint(xf_LS, isKeeper: bQuadCreated);
@@ -551,30 +601,29 @@ namespace TiltBrush
             // the active stencil.
             if (PointerManager.m_Instance.MainPointer == this)
             {
-                // Increase stencil lift if we're painting on one.
                 StencilWidget stencil = WidgetManager.m_Instance.ActiveStencil;
+                float fPointerMovement_CS = GetMovementDelta() / Coords.CanvasPose.scale;
+                m_LineLength_CS += fPointerMovement_CS;
+
+                // Increase stencil lift if we're painting on one.
                 if (stencil != null && m_CurrentCreator == null)
                 {
-                    float fPointerMovement_CS = GetMovementDelta() / Coords.CanvasPose.scale;
                     stencil.AdjustLift(fPointerMovement_CS);
-                    m_LineLength_CS += fPointerMovement_CS;
                 }
             }
 
             UpdateLineVisuals();
 
-            // Update desired brush audio
+            m_MovementSpeed = Vector3.Distance(m_PreviousPosition, transform.position) /
+                Time.deltaTime; // Update desired brush audio
             if (m_AudioSources.Length > 0)
             {
-                float fMovementSpeed = Vector3.Distance(m_PreviousPosition, transform.position) /
-                    Time.deltaTime;
-
                 float fVelRangeRange = m_BrushAudioVolumeVelocityRange.y - m_BrushAudioVolumeVelocityRange.x;
-                float fVolumeRatio = Mathf.Clamp01((fMovementSpeed - m_BrushAudioVolumeVelocityRange.x) / fVelRangeRange);
+                float fVolumeRatio = Mathf.Clamp01((m_MovementSpeed - m_BrushAudioVolumeVelocityRange.x) / fVelRangeRange);
                 m_AudioVolumeDesired = fVolumeRatio;
 
                 float fPitchRangeRange = m_BrushAudioPitchVelocityRange.y - m_BrushAudioPitchVelocityRange.x;
-                float fPitchRatio = Mathf.Clamp01((fMovementSpeed - m_BrushAudioPitchVelocityRange.x) / fPitchRangeRange);
+                float fPitchRatio = Mathf.Clamp01((m_MovementSpeed - m_BrushAudioPitchVelocityRange.x) / fPitchRangeRange);
                 m_AudioPitchDesired = m_BrushAudioBasePitch + (fPitchRatio * m_BrushAudioMaxPitchShift);
             }
         }
@@ -584,11 +633,11 @@ namespace TiltBrush
         /// - Do _not_ apply any normal adjustment; it's baked into the control point
         /// - Do not update the mesh
         /// TODO: replace with a bulk-ControlPoint API
-        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp)
+        public void UpdateLineFromControlPoint(PointerManager.ControlPoint cp, Color32 color)
         {
             float scale = m_CurrentLine.StrokeScale;
             m_CurrentLine.UpdatePosition_LS(
-                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
         }
 
         /// Bulk control point addition
@@ -602,9 +651,13 @@ namespace TiltBrush
                 simplifier.CalculatePointsToDrop(stroke, CurrentBrushScript);
             }
             float scale = m_CurrentLine.StrokeScale;
-            foreach (var cp in stroke.m_ControlPoints.Where((x, i) => !stroke.m_ControlPointsToDrop[i]))
+            for (int i = 0; i < stroke.m_ControlPoints.Length; i++)
             {
-                m_CurrentLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                if (stroke.m_ControlPointsToDrop[i]) continue;
+                var cp = stroke.m_ControlPoints[i];
+                Color32 color = stroke.GetColor(i);
+                m_CurrentLine.UpdatePosition_LS(
+                    TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure, color);
             }
         }
 
@@ -647,7 +700,7 @@ namespace TiltBrush
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
-                line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.m_Description);
+                line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
@@ -686,6 +739,18 @@ namespace TiltBrush
         {
             m_CurrentPressure = fPressure;
         }
+
+        public float GetPressure()
+        {
+            return m_CurrentPressure;
+        }
+
+        // Utility that maps one range into another
+        float Remap(float value, float from1, float to1, float from2, float to2)
+        {
+            return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+        }
+
 
         public void SetColor(Color rColor)
         {
@@ -815,6 +880,18 @@ namespace TiltBrush
             }
 
             m_LastControlPointIsKeeper = isKeeper;
+
+            if (!m_CurrentLine) return;
+            if (m_ControlPointColors == null &&
+                CurrentColorOverrideMode == ColorOverrideMode.None) return;
+
+            m_ControlPointColors ??= Enumerable.Repeat((Color32?)null, m_ControlPoints.Count).ToList();
+            while (m_ControlPointColors.Count < m_ControlPoints.Count)
+            {
+                m_ControlPointColors.Add(null);
+            }
+            m_ControlPointColors[m_ControlPoints.Count - 1] =
+                CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.
@@ -909,31 +986,45 @@ namespace TiltBrush
         public void DetachLine(
             bool bDiscard,
             Stroke rMemoryObjectForPlayback,
-            SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None)
+            SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None,
+            bool isFinalStroke = false)
         {
-            if (ApiManager.Instance.HasOutgoingListeners)
-            {
-                var color = App.BrushColor.CurrentColor;
-                var pointsAsStrings = new List<string>();
-                foreach (var cp in m_ControlPoints)
-                {
-                    var pos = cp.m_Pos;
-                    var rot = cp.m_Orient.eulerAngles;
-                    pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
-                }
-                ApiManager.Instance.EnqueueOutgoingCommands(
-                    new List<KeyValuePair<string, string>>
-                    {
-                        new KeyValuePair<string, string>("brush.type", CurrentBrush.m_Guid.ToString()),
-                        new KeyValuePair<string, string>("color.set.rgb", $"{color.r},{color.g},{color.b}"),
-                        new KeyValuePair<string, string>("draw.stroke", string.Join(",", pointsAsStrings))
-                    }
-                );
-            }
 
             if (rMemoryObjectForPlayback != null)
             {
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);
+            }
+
+            if (ApiManager.Instance.HasOutgoingListeners)
+            {
+                if (rMemoryObjectForPlayback == null)
+                {
+                    // Painting
+                    ApiManager.Instance.HandleStrokeListeners(
+                        m_ControlPoints,
+                        CurrentBrush.m_Guid,
+                        App.BrushColor.CurrentColor,
+                        PointerManager.m_Instance.MainPointer.BrushSize01
+                    );
+                }
+                else
+                {
+                    // Playback
+                    var brush = BrushCatalog.m_Instance.GetBrush(rMemoryObjectForPlayback.m_BrushGuid);
+
+                    var size = Mathf.InverseLerp(
+                        _FromRadius(brush.m_BrushSizeRange.x),
+                        _FromRadius(brush.m_BrushSizeRange.y),
+                        _FromRadius(rMemoryObjectForPlayback.m_BrushSize)
+                    ) * rMemoryObjectForPlayback.m_BrushScale;
+
+                    ApiManager.Instance.HandleStrokeListeners(
+                        rMemoryObjectForPlayback.m_ControlPoints,
+                        rMemoryObjectForPlayback.m_BrushGuid,
+                        rMemoryObjectForPlayback.m_Color,
+                        size
+                    );
+                }
             }
 
             if (bDiscard)
@@ -964,7 +1055,13 @@ namespace TiltBrush
                         m_CurrentBrushSize,
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
-                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS, m_CurrentLine.RandomSeed);
+                        WidgetManager.m_Instance.ActiveStencil,
+                        m_LineLength_CS,
+                        m_CurrentLine.RandomSeed,
+                        isFinalStroke,
+                        m_ControlPointColors,
+                        CurrentColorOverrideMode
+                    );
                 }
                 else
                 {
@@ -1002,7 +1099,10 @@ namespace TiltBrush
                         m_CurrentBrushSize,
                         m_CurrentLine.StrokeScale,
                         m_ControlPoints, strokeFlags,
-                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS);
+                        WidgetManager.m_Instance.ActiveStencil, m_LineLength_CS,
+                        m_ControlPointColors,
+                        CurrentColorOverrideMode
+                    );
                 }
                 else
                 {
@@ -1028,6 +1128,7 @@ namespace TiltBrush
             }
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
+            m_ControlPointColors = null;
         }
 
         public bool ShouldCurrentLineEnd()
@@ -1076,6 +1177,7 @@ namespace TiltBrush
             CreateNewLine(canvas, xf_CS, null);
             m_CurrentLine.SetIsLoading();
             m_CurrentLine.RandomSeed = stroke.m_Seed;
+            m_CurrentLine.SetStrokeData(stroke);
 
             return m_CurrentLine.gameObject;
         }

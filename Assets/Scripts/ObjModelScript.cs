@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using Unity.VectorGraphics.OpenBrush;
 
 namespace TiltBrush
 {
@@ -31,19 +32,31 @@ namespace TiltBrush
         // - MeshRenderer exists
         // - root.activeInHierarchy  implies  gameObject.activeInHierarchy
         public MeshFilter[] m_MeshChildren;
+        public SkinnedMeshRenderer[] m_SkinnedMeshChildren;
 
         public int NumMeshes
         {
-            get { return m_MeshChildren.Length; }
+            get { return MeshChildren.Length + SkinnedMeshChildren.Length; }
         }
+        public SVGParser.SceneInfo SvgSceneInfo { get; set; }
+
+        private MeshFilter[] MeshChildren => m_MeshChildren ?? new MeshFilter[0];
+        private SkinnedMeshRenderer[] SkinnedMeshChildren =>
+            m_SkinnedMeshChildren ?? new SkinnedMeshRenderer[0];
 
         public int GetNumVertsInMeshes()
         {
             if (m_NumVertsInMeshes <= 0)
             {
-                for (int i = 0; i < m_MeshChildren.Length; ++i)
+                MeshFilter[] meshChildren = MeshChildren;
+                SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+                for (int i = 0; i < meshChildren.Length; ++i)
                 {
-                    m_NumVertsInMeshes += m_MeshChildren[i].sharedMesh.vertexCount;
+                    m_NumVertsInMeshes += meshChildren[i].sharedMesh.vertexCount;
+                }
+                for (int i = 0; i < skinnedMeshChildren.Length; ++i)
+                {
+                    m_NumVertsInMeshes += skinnedMeshChildren[i].sharedMesh.vertexCount;
                 }
 
                 m_NumVertsInMeshes = Mathf.Max(1,
@@ -52,7 +65,7 @@ namespace TiltBrush
             return m_NumVertsInMeshes;
         }
 
-        private static void GetAllMeshFilters(List<MeshFilter> filters, Transform t, bool isRoot)
+        private static void GetAllMeshes(List<MeshFilter> filters, List<SkinnedMeshRenderer> smrs, Transform t, bool isRoot)
         {
             // Only return meshes that will be visible when the hierarchy root is enabled
             if (!isRoot && !t.gameObject.activeSelf)
@@ -68,22 +81,26 @@ namespace TiltBrush
 
             var meshFilter = t.GetComponent<MeshFilter>();
             var meshRenderer = t.GetComponent<MeshRenderer>();
-            if (meshFilter != null && meshRenderer != null && meshFilter.sharedMesh != null)
+            if (meshFilter != null &&
+                meshRenderer != null &&
+                meshFilter.sharedMesh != null &&
+                meshFilter.gameObject.layer != LayerMask.NameToLayer("UI"))
             {
                 filters.Add(meshFilter);
             }
 
-            foreach (Transform child in t)
-            {
-                GetAllMeshFilters(filters, child, isRoot: false);
-            }
+            var smr = t.GetComponent<SkinnedMeshRenderer>();
+            if (smr != null && smr.sharedMesh != null) smrs.Add(smr);
+            foreach (Transform child in t) GetAllMeshes(filters, smrs, child, isRoot: false);
         }
 
-        public void Init()
+        public void UpdateAllMeshChildren()
         {
             var filters = new List<MeshFilter>();
-            GetAllMeshFilters(filters, transform, isRoot: true);
+            var smrs = new List<SkinnedMeshRenderer>();
+            GetAllMeshes(filters, smrs, transform, isRoot: true);
             m_MeshChildren = filters.ToArray();
+            m_SkinnedMeshChildren = smrs.ToArray();
         }
 
         void Awake()
@@ -97,26 +114,42 @@ namespace TiltBrush
                     Debug.Assert(mf != null);
                 }
             }
+            if (m_SkinnedMeshChildren != null)
+            {
+                foreach (var sm in m_SkinnedMeshChildren)
+                {
+                    Debug.Assert(sm != null);
+                }
+            }
         }
 
         public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
-            for (int i = 0; i < m_MeshChildren.Length; i++)
+            MeshFilter[] meshChildren = MeshChildren;
+            SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+            for (int i = 0; i < meshChildren.Length; i++)
             {
-                App.Instance.SelectionEffect.RegisterMesh(m_MeshChildren[i]);
+                App.Instance.SelectionEffect.RegisterMesh(meshChildren[i]);
             }
-#endif
+            for (int i = 0; i < skinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.RegisterMesh(skinnedMeshChildren[i]);
+            }
         }
 
         public void UnregisterHighlight()
         {
-#if !UNITY_ANDROID
-            for (int i = 0; i < m_MeshChildren.Length; i++)
+            MeshFilter[] meshChildren = MeshChildren;
+            SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
+            for (int i = 0; i < meshChildren.Length; i++)
             {
-                App.Instance.SelectionEffect.UnregisterMesh(m_MeshChildren[i]);
+                App.Instance.SelectionEffect.UnregisterMesh(meshChildren[i]);
             }
-#endif
+            for (int i = 0; i < skinnedMeshChildren.Length; i++)
+            {
+                App.Instance.SelectionEffect.UnregisterMesh(skinnedMeshChildren[i]);
+            }
         }
+
     }
 } // namespace TiltBrush

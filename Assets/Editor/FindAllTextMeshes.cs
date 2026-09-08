@@ -20,7 +20,6 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using USD.NET;
 using Object = UnityEngine.Object;
 
 namespace TiltBrush
@@ -28,7 +27,7 @@ namespace TiltBrush
     public class FindAllTextMeshes
     {
         // Uncomment to use this
-        // [MenuItem("Tilt/Find all Text Meshes")]
+        // [MenuItem("Open Brush/Find all Text Meshes")]
         public static void Find()
         {
             FindAllInScene();

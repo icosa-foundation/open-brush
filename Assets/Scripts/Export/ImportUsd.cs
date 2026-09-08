@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+#if USD_SUPPORTED
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;

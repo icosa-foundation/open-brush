@@ -19,53 +19,51 @@
 Shader "Custom/BlitLdrPmaOverlay" {
   Properties {
     _MainTex ("", 2D) = "white" {}
+    _BlitTexture ("", 2D) = "white" {}
     _OverlayTex ("Overlay Texture", 2D) = "black" {}
     _OverlayUvRange  ("Overlay UV Range", Vector) = (0, 0, 1, 1)
   }
 
-  SubShader {
+  SubShader
+  {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     ZTest Off Cull Off ZWrite Off Fog { Mode Off }
     Blend Off
 
     Pass{
-      CGPROGRAM
-      #pragma vertex vert
+      HLSLPROGRAM
+      #pragma vertex Vert
       #pragma fragment frag
-      #include "UnityCG.cginc"
+      #pragma multi_compile_instancing
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+      #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
 
-      struct v2f {
-        float4 pos : POSITION;
-        float2 uv : TEXCOORD0;
-      };
-
-      v2f vert(appdata_img v) {
-        v2f o;
-        o.pos = UnityObjectToClipPos(v.vertex);
-        o.uv = MultiplyUV(UNITY_MATRIX_TEXTURE0, v.texcoord.xy);
-        return o;
-      }
-
-      sampler2D _MainTex;
-      sampler2D _OverlayTex;
+      TEXTURE2D(_OverlayTex);
+      SAMPLER(sampler_OverlayTex);
       float4 _OverlayUvRange;
 
-      float4 frag(v2f i) : COLOR {
+      float4 frag(Varyings i) : SV_Target {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         // Get the original color.
-        float4 mainTex = tex2D(_MainTex, i.uv);
+        float4 mainTex = SAMPLE_TEXTURE2D_X_LOD(
+          _BlitTexture,
+          sampler_LinearClamp,
+          i.texcoord,
+          _BlitMipLevel);
 
         // Calculate the overlay's texture coordinates.
         float2 uvMin = _OverlayUvRange.xy;
         float2 uvMax = _OverlayUvRange.zw;
         float2 uvSize = uvMax - uvMin;
-        float2 overlayUV = saturate((i.uv - uvMin) / uvSize);
+        float2 overlayUV = saturate((i.texcoord - uvMin) / uvSize);
 
         // Get the overlay color.
-        float4 overlayTex = tex2D(_OverlayTex, overlayUV);
+        float4 overlayTex = SAMPLE_TEXTURE2D(_OverlayTex, sampler_OverlayTex, overlayUV);
 
         // Composite the result.
         return (1.0f - overlayTex.a) * saturate(mainTex) + overlayTex;
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }

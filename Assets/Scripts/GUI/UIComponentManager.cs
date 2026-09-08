@@ -51,11 +51,13 @@ namespace TiltBrush
 
         void Awake()
         {
-            m_UIComponents = new List<UIComponent>();
+            EnsureComponentList();
         }
 
         public void RegisterUIComponent(UIComponent comp)
         {
+            EnsureComponentList();
+
             // Assert this is a unique object.
             Debug.AssertFormat(!m_UIComponents.Contains(comp), "Duplicate in RegisterUIComponent");
             m_UIComponents.Add(comp);
@@ -63,8 +65,21 @@ namespace TiltBrush
 
         public void UnregisterUIComponent(UIComponent comp)
         {
+            if (m_UIComponents == null)
+            {
+                return;
+            }
+
             bool wasRemoved = m_UIComponents.Remove(comp);
             Debug.Assert(wasRemoved, "Attempted to unregister a UIComponent that wasn't registered!");
+        }
+
+        private void EnsureComponentList()
+        {
+            if (m_UIComponents == null)
+            {
+                m_UIComponents = new List<UIComponent>();
+            }
         }
 
         public BasePanel GetPanelForPopUps()

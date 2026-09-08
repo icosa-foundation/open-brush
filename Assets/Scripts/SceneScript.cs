@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
@@ -24,22 +27,26 @@ namespace TiltBrush
     // (e.g. component enabled vs. game object active).
     public class SceneScript : MonoBehaviour
     {
-        public delegate void PoseChangedEventHandler(
-            TrTransform prev, TrTransform current);
-        public delegate void ActiveCanvasChangedEventHandler(
-            CanvasScript prev, CanvasScript current);
+
+        public delegate void PoseChangedEventHandler(TrTransform prev, TrTransform current);
+        public event PoseChangedEventHandler PoseChanged;
+
+        public delegate void ActiveCanvasChangedEventHandler(CanvasScript prev, CanvasScript current);
+        public event ActiveCanvasChangedEventHandler ActiveCanvasChanged;
+
+        public delegate void LayerCanvasesUpdateEventHandler();
+        public event LayerCanvasesUpdateEventHandler LayerCanvasesUpdate;
 
         [SerializeField] private CanvasScript m_MainCanvas;
         [SerializeField] private CanvasScript m_SelectionCanvas;
+        [SerializeField] private Transform m_CanvasTransformPrefab;
 
         private bool m_bInitialized;
         private Light[] m_Lights;
+        private HashSet<int> m_DeletedLayers;
 
         private CanvasScript m_ActiveCanvas;
         private List<CanvasScript> m_LayerCanvases;
-
-        public event PoseChangedEventHandler PoseChanged;
-        public event ActiveCanvasChangedEventHandler ActiveCanvasChanged;
 
         /// Helper for getting and setting transforms on Transform components.
         /// Transform natively allows you to access parent-relative ("local")
@@ -53,9 +60,10 @@ namespace TiltBrush
         ///
         /// Safe to use during Awake()
         ///
-        public TransformExtensions.RelativeAccessor AsScene;
+        // Constructed in Awake; runtime-only helper.
+        [NonSerialized] public TransformExtensions.RelativeAccessor AsScene;
 
-        [System.NonSerialized]
+        [NonSerialized]
         public bool disableTiltProtection;
 
         /// The global pose of this scene. All scene modifications must go through this.
@@ -70,23 +78,7 @@ namespace TiltBrush
             set
             {
                 var prevScene = Coords.AsGlobal[transform];
-
-                value = SketchControlsScript.MakeValidScenePose(value,
-                    SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
-
-                // Clamp scale, and prevent tilt. These are last-ditch sanity checks
-                // and are not the proper way to impose UX constraints.
-                {
-                    value.scale = Mathf.Clamp(Mathf.Abs(value.scale), 1e-4f, 1e4f);
-                    bool bRestoreUp = true;
-                    bRestoreUp = !disableTiltProtection;
-                    if (bRestoreUp)
-                    {
-                        var qRestoreUp = Quaternion.FromToRotation(
-                            value.rotation * Vector3.up, Vector3.up);
-                        value = TrTransform.R(qRestoreUp) * value;
-                    }
-                }
+                value = SanitizePose(value);
 
                 Coords.AsGlobal[transform] = value;
 
@@ -107,6 +99,23 @@ namespace TiltBrush
             }
         }
 
+        public TrTransform SanitizePose(TrTransform pose)
+        {
+            pose = SketchControlsScript.MakeValidScenePose(pose,
+                SceneSettings.m_Instance.HardBoundsRadiusMeters_SS);
+
+            // Clamp scale, and prevent tilt. These are last-ditch sanity checks
+            // and are not the proper way to impose UX constraints.
+            pose.scale = Mathf.Clamp(Mathf.Abs(pose.scale), 1e-4f, 1e4f);
+            if (!disableTiltProtection)
+            {
+                var restoreUp = Quaternion.FromToRotation(
+                    pose.rotation * Vector3.up, Vector3.up);
+                pose = TrTransform.R(restoreUp) * pose;
+            }
+            return pose;
+        }
+
         /// Safe to use any time after initialization
         public CanvasScript ActiveCanvas
         {
@@ -124,12 +133,13 @@ namespace TiltBrush
                     m_ActiveCanvas = value;
                     if (ActiveCanvasChanged != null)
                     {
-                        ActiveCanvasChanged(prev, m_ActiveCanvas);
+                        ActiveCanvasChanged?.Invoke(prev, m_ActiveCanvas);
                         // This will be incredibly irritating, but until we have some other feedback...
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush,
-                            string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
-                            fPopScalar: 0.5f, false);
+                        // TODO:Mikesky - replace this popup (console?)
+                        // OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        //     InputManager.ControllerName.Brush,
+                        //     string.Format("Canvas is now {0}", ActiveCanvas.gameObject.name),
+                        //     fPopScalar: 0.5f, false);
                     }
                 }
             }
@@ -138,6 +148,7 @@ namespace TiltBrush
         /// The initial start-up canvas; guaranteed to always exist
         public CanvasScript MainCanvas { get { return m_MainCanvas; } }
         public CanvasScript SelectionCanvas { get { return m_SelectionCanvas; } }
+        public Transform CanvasTransformPrefab { get { return m_CanvasTransformPrefab; } }
 
         public IEnumerable<CanvasScript> AllCanvases
         {
@@ -159,15 +170,46 @@ namespace TiltBrush
             }
         }
 
+        // Same as AllCanvases except it ignores the selection canvas and excludes "deleted" layers
+        public IEnumerable<CanvasScript> LayerCanvases
+        {
+            get
+            {
+                yield return MainCanvas;
+
+                if (m_LayerCanvases != null)
+                {
+                    for (int i = 0; i < m_LayerCanvases.Count; ++i)
+                    {
+                        if (m_DeletedLayers.Contains(i)) continue;
+                        yield return m_LayerCanvases[i];
+                    }
+                }
+            }
+        }
+
+        public void ResetLayers(bool notify = false)
+        {
+            if (m_LayerCanvases != null)
+            {
+                foreach (var canvas in m_LayerCanvases.ToArray())
+                {
+                    DestroyLayer(canvas);
+                }
+            }
+            m_LayerCanvases = new List<CanvasScript>();
+            m_DeletedLayers = new HashSet<int>();
+            m_ActiveCanvas = MainCanvas;
+            if (notify) App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+
         // Init unless already initialized. Safe to call zero or multiple times.
         public void Init()
         {
-            if (m_bInitialized)
-            {
-                return;
-            }
+            if (m_bInitialized) return;
             m_bInitialized = true;
-            m_LayerCanvases = new List<CanvasScript>();
+            ResetLayers();
             AsScene = new TransformExtensions.RelativeAccessor(transform);
             m_ActiveCanvas = m_MainCanvas;
             foreach (var c in AllCanvases)
@@ -198,67 +240,49 @@ namespace TiltBrush
             m_Lights[(int)LightMode.NoShadow].renderMode = LightRenderMode.ForceVertex;
         }
 
-        public CanvasScript Test_AddLayer()
+        public CanvasScript AddLayerNow()
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                var go = new GameObject(string.Format("Layer {0}", m_LayerCanvases.Count));
-                go.transform.parent = transform;
-                Coords.AsLocal[go.transform] = TrTransform.identity;
-                go.transform.hasChanged = false;
-                var layer = go.AddComponent<CanvasScript>();
-                m_LayerCanvases.Add(layer);
-                App.Scene.ActiveCanvas = layer;
-                return layer;
-            }
-#endif
-            return null;
+            var go = new GameObject(string.Format("Layer {0}", LayerCanvases.Count()));
+            go.transform.parent = transform;
+            Coords.AsLocal[go.transform] = TrTransform.identity;
+            go.transform.hasChanged = false;
+
+            // Rather misleadingly the Unity layer "MainCanvas" is actually used for all non-selection canvases
+            // Otherwise GPU intersection filters them out
+            HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
+
+            var layer = go.AddComponent<CanvasScript>();
+            m_LayerCanvases.Add(layer);
+
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+            return layer;
         }
 
-        public void Test_SquashCurrentLayer()
+        // Destructive delete - no undo possible
+        public void DestroyLayer(CanvasScript layer)
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                var layer = ActiveCanvas;
-                if (layer == m_MainCanvas)
-                {
-                    return;
-                }
-                // TODO: this should defer updates to the batches until the end
-                foreach (var stroke in SketchMemoryScript.AllStrokes())
-                {
-                    if (stroke.Canvas == layer)
-                    {
-                        stroke.SetParentKeepWorldPosition(m_MainCanvas);
-                    }
-                }
-                // Hm. remove after squashing?
-                OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush,
-                    string.Format("Squashed {0}", layer.gameObject.name));
-                ActiveCanvas = m_MainCanvas;
-            }
-#endif
+            if (layer == MainCanvas) return;
+            m_LayerCanvases.Remove(layer);
+            foreach (Batch b in layer.BatchManager.AllBatches())
+                b.Destroy();
+            Destroy(layer.gameObject);
         }
 
-        public void Test_CycleCanvas()
+        public bool IsLayerDeleted(CanvasScript layer)
         {
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                // Klunky! Find the next canvas in the list (assumes AllCanvases has deterministic order)
-                // Skip over the selection canvas; it's internal.
-                var all = AllCanvases.ToList();
-                int next = (all.IndexOf(ActiveCanvas) + 1) % all.Count;
-                if (all[next] == m_SelectionCanvas)
-                {
-                    next = (next + 1) % all.Count;
-                }
-                ActiveCanvas = all[next];
-            }
-#endif
+            var layerIndex = GetIndexOfCanvas(layer) - 1;
+            return IsLayerDeleted(layerIndex);
+        }
+
+        public int GetIndexOfCanvas(CanvasScript canvas)
+        {
+            int index = m_LayerCanvases.IndexOf(canvas);
+            return index + 1;
+        }
+
+        public bool IsLayerDeleted(int layerIndex)
+        {
+            return m_DeletedLayers.Contains(layerIndex);
         }
 
         public int GetNumLights()
@@ -269,6 +293,171 @@ namespace TiltBrush
         public Light GetLight(int index)
         {
             return m_Lights[index];
+        }
+
+        public void ToggleLayerVisibility(int canvasIndex)
+        {
+            ToggleLayerVisibility(GetCanvasByLayerIndex(canvasIndex));
+        }
+
+        public void ToggleLayerVisibility(CanvasScript canvas)
+        {
+            if (canvas.gameObject.activeSelf) canvas.gameObject.SetActive(false);
+            else canvas.gameObject.SetActive(true);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public void ShowLayer(int canvasIndex) { ShowLayer(GetCanvasByLayerIndex(canvasIndex)); }
+        public void ShowLayer(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(true);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public void HideLayer(int canvasIndex) { HideLayer(GetCanvasByLayerIndex(canvasIndex)); }
+        public void HideLayer(CanvasScript canvas)
+        {
+            canvas.gameObject.SetActive(false);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public CanvasScript GetOrCreateLayer(int layerIndex)
+        {
+            // Layers are numbered 0=Main then 1, 2, 3
+            if (layerIndex == 0)
+                return App.Scene.MainCanvas;
+
+            for (var i = m_LayerCanvases.Count; i < layerIndex; ++i)
+                AddLayerNow();
+
+            // Subtract one to use it as index into m_LayerCanvases, which only stores extra layers
+            return m_LayerCanvases[layerIndex - 1];
+        }
+
+        public void ClearLayerContents(CanvasScript canvas)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ClearLayerCommand(canvas));
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public bool IsLayerVisible(CanvasScript layer)
+        {
+            return layer.gameObject.activeSelf;
+        }
+
+        public void MarkLayerAsDeleted(CanvasScript layer)
+        {
+            if (layer == MainCanvas) return;
+            m_DeletedLayers.Add(GetIndexOfCanvas(layer) - 1);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public void RenameLayer(CanvasScript layer, string newName)
+        {
+            if (layer == MainCanvas) return;
+            layer.gameObject.name = newName;
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        /// <summary>
+        /// Translates the provided strokes so that the center of their
+        /// bounding box is positioned at the given world space location.
+        /// </summary>
+        /// <param name="strokes">Collection of strokes to move.</param>
+        /// <param name="worldPosition">Target world-space position for the centroid.</param>
+        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
+        {
+            if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
+
+            var strokeList = strokes as IList<Stroke> ?? strokes.ToList();
+            if (strokeList.Count == 0) { return; }
+
+            CanvasScript canvas = strokeList[0].Canvas;
+            Bounds bounds = new Bounds();
+            bool initialized = false;
+
+            foreach (var stroke in strokeList)
+            {
+                Bounds strokeBounds;
+
+                if (stroke.m_BatchSubset != null)
+                {
+                    // Convert canvas-local bounds to world space
+                    Bounds localBounds = stroke.m_BatchSubset.m_Bounds;
+                    Vector3 worldMin = canvas.transform.TransformPoint(localBounds.min);
+                    Vector3 worldMax = canvas.transform.TransformPoint(localBounds.max);
+                    strokeBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
+                }
+                else if (stroke.m_Object != null)
+                {
+                    var renderer = stroke.m_Object.GetComponent<Renderer>();
+                    if (renderer == null) { continue; }
+                    strokeBounds = renderer.bounds; // Already in world space
+                }
+                else
+                {
+                    continue;
+                }
+
+                if (!initialized)
+                {
+                    bounds = strokeBounds;
+                    initialized = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(strokeBounds);
+                }
+            }
+
+            if (!initialized) { return; }
+
+            Vector3 currentCenter = bounds.center; // Already in world space
+            Vector3 worldOffset = worldPosition - currentCenter;
+
+            if (worldOffset == Vector3.zero) { return; }
+
+            // Convert world-space offset to canvas-local space for Recreate
+            Vector3 localOffset = canvas.transform.InverseTransformVector(worldOffset);
+
+            // Apply translation by recreating strokes with local-space offset transform
+            foreach (var stroke in strokeList)
+            {
+                stroke.Recreate(TrTransform.T(localOffset));
+            }
+        }
+
+        public void MarkLayerAsNotDeleted(CanvasScript layer)
+        {
+            m_DeletedLayers.Remove(GetIndexOfCanvas(layer) - 1);
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public void BroadcastCanvasUpdate()
+        {
+            App.Scene.LayerCanvasesUpdate?.Invoke();
+        }
+
+        public CanvasScript GetCanvasByLayerIndex(int layerIndex)
+        {
+            return LayerCanvases.ToArray()[layerIndex];
+        }
+
+        public LayerMetadata[] LayerCanvasesSerialized()
+        {
+            var layers = LayerCanvases.ToArray();
+            var meta = new LayerMetadata[layers.Length];
+            for (var i = 0; i < layers.Length; i++)
+            {
+                var layer = layers[i];
+                meta[i] = new LayerMetadata
+                {
+                    Visible = layer.gameObject.activeSelf,
+                    Name = layer.name,
+                    Transform = layer.LocalPose
+                };
+            }
+            return meta;
         }
     }
 

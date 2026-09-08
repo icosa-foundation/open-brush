@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.IO;
+using UnityEngine;
+
 namespace TiltBrush
 {
 
@@ -19,12 +22,6 @@ namespace TiltBrush
     {
         public override void SetPopupCommandParameters(int iCommandParam, int iCommandParam2)
         {
-            // TODO : Fix this hangnail.
-            OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
-            foreach (OptionButton button in optionButtons)
-            {
-                button.SetCommandParameters(iCommandParam, iCommandParam2);
-            }
         }
     }
 

@@ -82,10 +82,7 @@ public sealed class GlTF_Node : GlTF_ReferencedObject {
 
   public override IEnumerable<GlTF_ReferencedObject> IterReferences() {
     if (cameraName != null) {
-      // No node.camera in gltf2
-      if (! G.Gltf2) {
-        yield return G.Lookup<GlTF_Camera>(cameraName);
-      }
+      yield return G.Lookup<GlTF_Camera>(cameraName);
     } else if (m_mesh != null) {
       yield return G.Lookup(m_mesh);
     }
@@ -100,10 +97,7 @@ public sealed class GlTF_Node : GlTF_ReferencedObject {
 
     G.CNI.WriteNamedString("name", PresentationName);
     if (cameraName != null) {
-      // No node.camera in gltf2
-      if (! G.Gltf2) {
-        G.CNI.WriteNamedReference<GlTF_Camera>("camera", cameraName);
-      }
+      G.CNI.WriteNamedReference<GlTF_Camera>("camera", cameraName);
     } else if (lightNameThatDoesNothing != null) {
       // This does absolutely nothing
       if (!G.Gltf2) {

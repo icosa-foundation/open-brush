@@ -143,7 +143,8 @@ namespace TiltBrush
 
                 m_MemoryObjectsDrawn++;
                 var pointer = PointerManager.m_Instance.GetPointer(InputManager.ControllerName.Brush);
-                playback.Init(stroke, pointer, targetCanvas);
+                var canvas = stroke.m_IntendedCanvas ?? targetCanvas;
+                playback.Init(stroke, pointer, canvas);
                 while (!playback.IsDone())
                 {
                     playback.Update(); // mutates m_metersRemaining and m_OutOfMeters

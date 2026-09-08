@@ -29,7 +29,7 @@ namespace TiltBrush
         private static TiltBrushManifest brushManifest;
         private static TiltBrushManifest brushManifestX;
 
-        [MenuItem("Tilt/Info/Brush Lister")]
+        [MenuItem("Open Brush/Info/Brush Lister")]
         static void ListBrushes()
         {
             brushList = new StringBuilder();
@@ -85,7 +85,15 @@ namespace TiltBrush
             {
                 manifest = "Experimental";
             }
-            return $"{brush.m_Description}\t{brush.m_AudioReactive}\t{prefabName}\t{materialName}\t{shaderName}\t{brushScripts}\t{experimental}\t{brush.m_SupersededBy}\t{manifest}";
+
+            string semantics = "";
+            if (brush.m_BrushPrefab != null)
+            {
+                var script = brush.m_BrushPrefab.GetComponentInChildren<BaseBrushScript>();
+                var layout = script.GetVertexLayout(brush);
+                semantics = $"{layout.texcoord0.semantic}\t{layout.texcoord1.semantic}\t{layout.texcoord2.semantic}";
+            }
+            return $"{brush.m_DurableName}\t{brush.m_AudioReactive}\t{prefabName}\t{materialName}\t{shaderName}\t{brushScripts}\t{experimental}\t{brush.m_SupersededBy}\t{manifest}\t{semantics}";
         }
 
         public static string sniffBrushScript(BrushDescriptor brush)

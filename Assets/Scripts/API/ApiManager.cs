@@ -21,15 +21,19 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
+using WebSocketServer;
 
 namespace TiltBrush
 {
     public class ApiManager : MonoBehaviour
     {
+        public static string WebRequestUserAgent =>
+            $"OpenBrush/{Application.version} (https://openbrush.app/)";
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -38,9 +42,10 @@ namespace TiltBrush
 <body>{0}</body></html>";
 
 
-        private FileWatcher m_FileWatcher;
+        private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
+        private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
         private static ApiManager m_Instance;
@@ -50,10 +55,24 @@ namespace TiltBrush
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
 
+        public enum ForcePaintingMode
+        {
+            None,
+            ForcedOn,
+            ForcedOff,
+            ForceNewStroke,
+            WasForceNewStroke,
+        }
+
         [NonSerialized] public Vector3 BrushOrigin = new Vector3(0, 13, 3);
         [NonSerialized] public Quaternion BrushInitialRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public Vector3 BrushPosition = new Vector3(0, 13, 3); // Good origin for monoscopic
+        [NonSerialized] public float PathSmoothing = 0.25f;
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+        [NonSerialized] public ForcePaintingMode ForcePainting;
+        [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
+        public BaseCommand ActiveUndo { get; set; }
+
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
 
@@ -63,6 +82,10 @@ namespace TiltBrush
         }
         [NonSerialized] public Stack<(Vector3, Quaternion)> BrushTransformStack;
         [NonSerialized] public Dictionary<string, string> CommandExamples;
+        public string m_startupScriptName = "startup.sketchscript";
+
+        // Need to set this on the main thread because of localiztion
+        private string m_BrushesJson;
 
         public string UserScriptsPath() { return m_UserScriptsPath; }
 
@@ -73,86 +96,90 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
+            App.HttpServer.AddHttpHandler($"/device_login/v1", DeviceLoginCallback);
             App.HttpServer.AddRawHttpHandler("/cameraview", CameraViewCallback);
             PopulateApi();
+
             m_UserScripts = new Dictionary<string, string>();
             m_ExampleScripts = new Dictionary<string, string>();
+            m_CommandStatuses = new Dictionary<string, string>();
             PopulateExampleScripts();
             PopulateUserScripts();
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
+            ResetBrushTransform();
+
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
             }
             if (Directory.Exists(m_UserScriptsPath))
             {
-                m_FileWatcher = new FileWatcher(m_UserScriptsPath, "*.html");
+                m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnScriptsDirectoryChanged;
-                m_FileWatcher.FileCreated += OnScriptsDirectoryChanged;
+                m_FileWatcher.Created += OnScriptsDirectoryChanged;
+                m_FileWatcher.Changed += OnScriptsDirectoryChanged;
                 // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
                 m_FileWatcher.EnableRaisingEvents = true;
             }
-
-            CommandExamples = new Dictionary<string, string>
-            {
-                { "draw.paths", "[[0,0,0],[1,0,0],[1,1,0]],[[0,0,-1],[-1,0,-1],[-1,1,-1]]" },
-                { "draw.path", "[0,0,0],[1,0,0],[1,1,0],[0,1,0]" },
-                { "draw.stroke", "[0,0,0,0,180,90,.75],[1,0,0,0,180,90,.75],[1,1,0,0,180,90,.75],[0,1,0,0,180,90,.75]" },
-                { "listenfor.strokes", "http://localhost:8000/" },
-                { "draw.polygon", "5,1,0" },
-                { "draw.text", "hello" },
-                { "draw.svg", "M 184,199 116,170 53,209.6 60,136.2 4.3,88" },
-                { "draw.camerapath", "0" },
-                { "brush.type", "ink" },
-                { "color.add.hsv", "0.1,0.2,0.3" },
-                { "color.add.rgb", "0.1,0.2,0.3" },
-                { "color.set.rgb", "0.1,0.2,0.3" },
-                { "color.set.hsv", "0.1,0.2,0.3" },
-                { "color.set.html", "darkblue" },
-                { "brush.size.set", ".5" },
-                { "brush.size.add", ".1" },
-                { "spectator.move.to", "1,1,1" },
-                { "spectator.move.by", "1,1,1" },
-                { "spectator.turn.y", "45" },
-                { "spectator.turn.x", "45" },
-                { "spectator.turn.z", "45" },
-                { "spectator.direction", "45,45,0" },
-                { "spectator.look.at", "1,2,3" },
-                { "spectator.mode", "circular" },
-                { "spectator.show", "panels" },
-                { "spectator.hide", "widgets" },
-                { "user.move.to", "1,1,1" },
-                { "user.move.by", "1,1,1" },
-                { "brush.move.to", "1,1,1" },
-                { "brush.move.by", "1,1,1" },
-                { "brush.move", "1" },
-                { "brush.draw", "1" },
-                { "brush.turn.y", "45" },
-                { "brush.turn.x", "45" },
-                { "brush.turn.z", "45" },
-                { "brush.look.at", "1,1,1" },
-                { "stroke.delete", "0" },
-                { "stroke.select", "0" },
-                { "strokes.select", "0,3" },
-                { "selection.trim", "2" },
-                { "selection.points.addnoise", "x,0.5" },
-                { "selection.points.quantize", "0.1" },
-                { "strokes.join", "0,2" },
-                { "stroke.add", "0" },
-                { "load.user", "0" },
-                { "load.curated", "0" },
-                { "load.liked", "0" },
-                { "load.drive", "0" },
-                { "load.named", "Untitled_0.tilt" },
-                { "showfolder.sketch", "0" },
-                { "import.model", "Andy\\Andy.obj" },
-                { "import.image", "TiltBrushLogo.png" },
-                { "import.video", "animated-logo.mp4" }
-            };
-
             App.Instance.StateChanged += RunStartupScript;
+        }
 
+        private string DeviceLoginCallback(HttpListenerRequest request)
+        {
+            // TODO Use AddRawHttpHandler and return appropriate status codes
+            if (!HttpServer.IsTrustedLocalBrowserRequest(request))
+            {
+                return "Please login from the local browser";
+            }
+            string formdata = null;
+            if (request.HasEntityBody)
+            {
+                using (Stream body = request.InputStream)
+                {
+                    using (var reader = new StreamReader(body, request.ContentEncoding))
+                    {
+                        formdata = Uri.UnescapeDataString(reader.ReadToEnd()).Trim();
+                    }
+                }
+            }
+#if UNITY_EDITOR
+            if (string.IsNullOrEmpty(formdata))
+            {
+                formdata = request.Url.Query;
+            }
+#endif
+            if (string.IsNullOrEmpty(formdata)) return "Invalid request";
+            string deviceCodeIfValid = _ValidateandExtractDeviceCode(formdata);
+            if (deviceCodeIfValid != null)
+            {
+                VrAssetService.m_Instance.IcosaDeviceLogin(deviceCodeIfValid);
+            }
+            var successPageUrl = $"{VrAssetService.m_Instance.IcosaHomePage}/device-login-success";
+            var redirectHtml = $@"<!doctype html><html lang='en'><head><meta charset='UTF-8'>
+<meta http-equiv='refresh' content='0; url={successPageUrl}' />
+<title>Login Successful</title>
+</head>
+<body>
+Success. If you are not automatically redirected, please visit <a href='{successPageUrl}'>{successPageUrl}</a>
+</body></html>";
+            return redirectHtml;
+        }
+
+        void Start()
+        {
+            // HTTP API String substitutions
+            // Don't move to Awake() as that runs too early
+            string[] brushNameList = BrushCatalog.m_Instance.GetTagFilteredBrushList()
+                .Select(ApiFriendlyBrushName)
+                .ToArray();
+            m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
+        }
+
+        public void ResetBrushTransform()
+        {
+            // Resets the "turtle" transform back to it's original values
+            BrushPosition = BrushOrigin;
+            BrushRotation = BrushInitialRotation;
         }
 
         public void RunStartupScript(App.AppState oldState, App.AppState newState)
@@ -160,41 +187,65 @@ namespace TiltBrush
 
             if (!(oldState == App.AppState.LoadingBrushesAndLighting && newState == App.AppState.Standard)) return;
 
-            var startupScriptPath = Path.Combine(m_UserScriptsPath, "startup.sketchscript");
+            var startupScriptPath = Path.Combine(m_UserScriptsPath, m_startupScriptName);
 
             if (File.Exists(startupScriptPath))
             {
                 var lines = File.ReadAllLines(startupScriptPath);
                 foreach (string pair in lines)
                 {
-                    EnqueueCommandString(pair);
+                    EnqueueCommand(pair);
                 }
             }
-
         }
 
-        private void EnqueueCommandString(string commandString)
+        private class EnqueuedApiCommand
         {
-            string[] commandPair = commandString.Split(new[] { '=' }, 2);
-            if (commandPair.Length == 1 && commandPair[0] != "")
+            private Guid m_Handle;
+            private string m_Command;
+            private string m_Parameters;
+
+            public Guid Handle => m_Handle;
+            public string Command => m_Command;
+            public string Parameters => m_Parameters;
+
+            public EnqueuedApiCommand(string command, string parameters)
             {
-                Debug.Log($"Queuing {commandPair[0]}");
-                m_RequestedCommandQueue.Enqueue(
-                    new KeyValuePair<string, string>(commandPair[0], "")
-                );
-            }
-            else if (commandPair.Length == 2)
-            {
-                Debug.Log($"Queuing {commandPair[0]}={commandPair[1]}");
-                m_RequestedCommandQueue.Enqueue(
-                    new KeyValuePair<string, string>(
-                        commandPair[0],
-                        UnityWebRequest.UnEscapeURL(commandPair[1]
-                        )
-                    )
-                );
+                m_Handle = Guid.NewGuid();
+                m_Command = command;
+                m_Parameters = parameters;
             }
         }
+
+        private EnqueuedApiCommand EnqueueCommand(string commandString)
+        {
+            if (string.IsNullOrWhiteSpace(commandString)) return null;
+            if (commandString.StartsWith("//")) return null;
+            string[] commandPair = commandString.Split(new[] { '=' }, 2);
+            if (commandPair.Length < 1) return null;
+            string parameters;
+            parameters = commandPair.Length == 2 ? UnityWebRequest.UnEscapeURL(commandPair[1]) : "";
+            EnqueuedApiCommand cmd = new EnqueuedApiCommand(commandPair[0], parameters);
+            m_RequestedCommandQueue.Enqueue(cmd);
+            return cmd;
+        }
+
+        private string _ValidateandExtractDeviceCode(string formdata)
+        {
+            // Handle device code login requests from local browser
+            var queryParams = formdata.Split("&");
+            if (queryParams.Length != 2) return null;
+            var secret_param = queryParams[0].Split("=");
+            if (secret_param.Length != 2 || secret_param[0] != "client_secret") return null;
+            string secret = secret_param[1];
+            var device_code_param = queryParams[1].Split("=");
+            if (device_code_param.Length != 2 || device_code_param[0] != "device_code") return null;
+            string device_code = device_code_param[1];
+            if (device_code.Length != 5) return null;
+            bool isValidSecret = VrAssetService.m_Instance.IsValidDeviceCodeSecret(secret);
+            return isValidSecret ? device_code : null;
+        }
+
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             var fileinfo = new FileInfo(e.FullPath);
@@ -209,6 +260,9 @@ namespace TiltBrush
             {
                 case "commands":
 
+                    var host = $"{request.LocalEndPoint.Address}:{request.LocalEndPoint.Port}";
+                    host = host.Replace("127.0.0.1", "localhost");
+
                     if (request.Url.Query.Contains("raw"))
                     {
                         html = String.Join("\n", endpoints.Keys);
@@ -221,10 +275,10 @@ namespace TiltBrush
                     {
                         var commandList = ListApiCommandsAsStrings();
                         builder = new StringBuilder("<h3>Open Brush API Commands</h3>");
-                        builder.AppendLine("<p>To run commands a request to this url with http://localhost:40074/api/v1?</p>");
+                        builder.AppendLine($"<p>To run commands a request to this url with http://{host}/api/v1?</p>");
                         builder.AppendLine("<p>Commands are querystring parameters: commandname=parameters</p>");
                         builder.AppendLine("<p>Separate multiple commands with &</p>");
-                        builder.AppendLine("<p>Example: <a href='http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1'>http://localhost:40074/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
+                        builder.AppendLine($"<p>Example: <a href='http://{host}/api/v1?brush.turn.y=45&brush.draw=1'>http://{host}/api/v1?brush.turn.y=45&brush.draw=1</a></p>");
                         builder.AppendLine("<dl>");
                         foreach (var key in commandList.Keys)
                         {
@@ -234,7 +288,7 @@ namespace TiltBrush
                                 paramList = $"({paramList})";
                             }
                             builder.AppendLine($@"<dt><strong>{key}</strong> {paramList}
- <a href=""http://localhost:40074/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
+ <a href=""/api/v1?{getCommandExample(key)}"" target=""_blank"">Try it</a></dt>
 <dd>{commandList[key].Item2}<br><br></dd>");
                         }
                         builder.AppendLine("</dl>");
@@ -333,8 +387,10 @@ namespace TiltBrush
         private void PopulateApi()
         {
             endpoints = new Dictionary<string, ApiEndpoint>();
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(t => t.GetTypes())
+            // AppDomain.GetAssemblies() can hand back already-unloaded assemblies in
+            // Unity. Every TiltBrush type lives in this assembly - nothing outside
+            // Photon has an asmdef - so scan it directly.
+            var types = typeof(ApiManager).Assembly.GetTypes()
                 .Where(t => t.IsClass && t.Namespace == "TiltBrush");
 
             foreach (var type in types)
@@ -381,21 +437,39 @@ namespace TiltBrush
             App.HttpServer.AddHttpHandler(ROOT_API_URL, ApiCommandCallback);
         }
 
-        public bool InvokeEndpoint(KeyValuePair<string, string> command)
+        private string InvokeEndpoint(EnqueuedApiCommand command)
         {
-            if (endpoints.ContainsKey(command.Key))
+            if (endpoints.ContainsKey(command.Command))
             {
-                var endpoint = endpoints[command.Key];
-                var parameters = endpoint.DecodeParams(command.Value);
-                endpoint.Invoke(parameters);
-                return true;
+                if (IsWebPluginControlEndpoint(command.Command))
+                {
+                    EnsureWebPluginControlAllowed(
+                        command.Command, App.UserConfig.Flags.WebScriptsCanControlPlugins);
+                }
+                var endpoint = endpoints[command.Command];
+                var parameters = endpoint.DecodeParams(command.Parameters);
+                return endpoint.Invoke(parameters)?.ToString();
             }
-            else
+            if (!command.Command.StartsWith("//"))
             {
-                Debug.LogError($"Invalid API command: {command.Key}");
+                Debug.LogError($"Invalid API command: {command.Command}");
             }
-            return false;
+            return null;
         }
+
+        internal static void EnsureWebPluginControlAllowed(
+            string command, bool webScriptsCanControlPlugins)
+        {
+            if (!webScriptsCanControlPlugins && IsWebPluginControlEndpoint(command))
+            {
+                throw new UnauthorizedAccessException(
+                    $"{command} requires Flags.WebScriptsCanControlPlugins to be enabled in the user config.");
+            }
+        }
+
+        private static bool IsWebPluginControlEndpoint(string command) =>
+            command.StartsWith("scripts.", StringComparison.Ordinal);
+
         [ContextMenu("Log Api Commands")]
         public void LogCommandsList()
         {
@@ -414,22 +488,41 @@ namespace TiltBrush
             }
         }
 
+        public (string paramInfo, string Description) GetCommandInfo(string endpoint)
+        {
+            var paramInfoText = new List<string>();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                string typeName = param.ParameterType.Name
+                    .Replace("Single", "float")
+                    .Replace("Int32", "int")
+                    .Replace("String", "string");
+                paramInfoText.Add($"{typeName} {param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
+        public (string paramInfo, string Description) GetRuntimeCommandInfo(string luaName)
+        {
+            var paramInfoText = new List<string>();
+            // Convert lua name to Http Api name (split camel case parts and add ".")
+            string[] parts = Regex.Split(luaName, @"(?<!^)(?=[A-Z])");
+            string endpoint = string.Join(".", parts).ToLower();
+            foreach (var param in endpoints[endpoint].parameterInfo)
+            {
+                paramInfoText.Add($"{param.Name}");
+            }
+            string paramInfo = String.Join(", ", paramInfoText);
+            return (paramInfo, endpoints[endpoint].Description);
+        }
+
         Dictionary<string, (string, string)> ListApiCommandsAsStrings()
         {
             var commandList = new Dictionary<string, (string, string)>();
             foreach (var endpoint in endpoints.Keys)
             {
-                var paramInfoText = new List<string>();
-                foreach (var param in endpoints[endpoint].parameterInfo)
-                {
-                    string typeName = param.ParameterType.Name
-                        .Replace("Single", "float")
-                        .Replace("Int32", "int")
-                        .Replace("String", "string");
-                    paramInfoText.Add($"{typeName} {param.Name}");
-                }
-                string paramInfo = String.Join(", ", paramInfoText);
-                commandList[endpoint] = (paramInfo, endpoints[endpoint].Description);
+                commandList[endpoint] = GetCommandInfo(endpoint);
             }
             return commandList;
         }
@@ -500,39 +593,75 @@ namespace TiltBrush
 
         private string ScriptTemplateSubstitution(string html)
         {
-            string[] brushNameList = BrushCatalog.m_Instance.AllBrushes
-                .Where(x => x.m_Description != "")
-                .Where(x => x.m_SupersededBy == null)
-                .Select(x => x.m_Description.Replace(" ", "").Replace(".", "").Replace("(", "").Replace(")", ""))
-                .ToArray();
-            string brushesJson = JsonConvert.SerializeObject(brushNameList);
-            html = html.Replace("{{brushesJson}}", brushesJson);
 
-            string[] environmentNameList = EnvironmentCatalog.m_Instance.AllEnvironments
-                .Select(x => x.m_Description.Replace(" ", ""))
+            // TODO Document these
+            html = html.Replace("{{brushesJson}}", m_BrushesJson);
+
+            string pointFamilies = JsonConvert.SerializeObject(Enum.GetNames(typeof(SymmetryGroup.R)), Formatting.Indented);
+            html = html.Replace("{{pointFamiliesJson}}", pointFamilies);
+
+            string wallpaperGroups = JsonConvert.SerializeObject(Enum.GetNames(typeof(PointSymmetry.Family)), Formatting.Indented);
+            html = html.Replace("{{wallpaperGroupsJson}}", wallpaperGroups);
+
+            string[] environmentNameList = EnvironmentCatalog.m_Instance.m_EnvironmentDescriptions
+                .Select(x => x.Replace(" ", ""))
                 .ToArray();
-            string environmentsJson = JsonConvert.SerializeObject(environmentNameList);
+
+            string environmentsJson = JsonConvert.SerializeObject(environmentNameList, Formatting.Indented);
             html = html.Replace("{{environmentsJson}}", environmentsJson);
 
-            string commandsJson = JsonConvert.SerializeObject(ListApiCommands());
+            string commandsJson = JsonConvert.SerializeObject(ListApiCommands(), Formatting.Indented);
             html = html.Replace("{{commandsJson}}", commandsJson);
+
+            var toolScripts = new List<string>();
+            var symmetryScripts = new List<string>();
+            var pointerScripts = new List<string>();
+            var backgroundScripts = new List<string>();
+
+            if (LuaManager.Instance.IsInitialized)
+            {
+                toolScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.ToolScript);
+                symmetryScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.SymmetryScript);
+                pointerScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.PointerScript);
+                backgroundScripts = LuaManager.Instance.GetScriptNames(LuaApiCategory.BackgroundScript);
+            }
+
+            html = html.Replace("{{toolScripts}}", JsonConvert.SerializeObject(toolScripts));
+            html = html.Replace("{{symmetryScripts}}", JsonConvert.SerializeObject(symmetryScripts));
+            html = html.Replace("{{pointerScripts}}", JsonConvert.SerializeObject(pointerScripts));
+            html = html.Replace("{{backgroundScripts}}", JsonConvert.SerializeObject(backgroundScripts));
 
             return html;
         }
 
+        public static string ApiFriendlyBrushName(BrushDescriptor brush)
+        {
+            if (brush.Description == null)
+            {
+                Debug.LogWarning($"Brush {brush.m_DurableName} has no description");
+                return "";
+            }
+            return brush.Description
+                .Replace(" ", "")
+                .Replace(".", "")
+                .Replace("(", "")
+                .Replace(")", "");
+        }
+
+        public void ReceiveWebSocketMessage(WebSocketMessage message)
+        {
+            foreach (var cmd in message.data.Split("&"))
+            {
+                EnqueueCommand(cmd);
+            }
+        }
+
         string ApiCommandCallback(HttpListenerRequest request)
         {
+            // GET commands
+            List<string> commandStrings = request.Url.Query.TrimStart('?').Split('&').ToList();
 
-            KeyValuePair<string, string> command;
-
-            // Handle GET
-            foreach (string pair in request.Url.Query.TrimStart('?').Split('&'))
-            {
-                EnqueueCommandString(pair);
-            }
-
-            // Handle POST
-            // TODO also accept JSON
+            // POST commands
             if (request.HasEntityBody)
             {
                 using (Stream body = request.InputStream)
@@ -540,19 +669,92 @@ namespace TiltBrush
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
                         var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var pairs = formdata.Replace("+", " ").Split('&');
-                        foreach (var pair in pairs)
-                        {
-                            EnqueueCommandString(pair);
-                        }
+                        var formdataCommands = formdata.Replace("+", " ")
+                            .Split('&')
+                            .Where(s => s.Trim().Length > 0)
+                            .ToList();
+
+                        // TODO also accept JSON
+                        commandStrings.AddRange(formdataCommands);
                     }
                 }
             }
 
-            return "OK";
+            List<string> responses = new List<string>();
+
+            foreach (string commandString in commandStrings)
+            {
+                if (commandString.StartsWith("query."))
+                {
+                    responses.Add(HandleApiQuery(commandString));
+                }
+                else
+                {
+                    EnqueueCommand(commandString);
+                }
+            }
+
+            return String.Join("\n", responses);
+        }
+
+        private string HandleApiQuery(string commandString)
+        {
+
+            // API queries are distinct from commands in that they return immediate results and never change the scene
+
+            string[] commandPair = commandString.Split(new[] { '=' }, 2);
+            if (commandPair.Length < 1) return null;
+            switch (commandPair[0])
+            {
+                case "query.queue":
+                    return m_OutgoingCommandQueue.Count.ToString();
+                case "query.quill.stats":
+                    return JsonConvert.SerializeObject(Quill.QuillDiagnostics.LastLoad, Formatting.Indented);
+                case "query.command":
+                    if (m_CommandStatuses.ContainsKey(commandPair[1]))
+                    {
+                        return m_CommandStatuses[commandPair[1]];
+                    }
+                    else
+                    {
+                        return $"pending";
+                    }
+                case "query.spectator.position":
+                    return ApiMainThreadObserver.Instance.SpectatorCamPosition.ToString();
+                case "query.spectator.rotation":
+                    return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
+                case "query.spectator.target":
+                    return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+            }
+            return "unknown query";
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+
+        // TODO Find a better home for this. It won't always be API specific
+        public CHRFont TextFont
+        {
+            get
+            {
+                if (m_TextFont == null)
+                {
+                    TextFont = Resources.Load<CHRFont>("arcade");
+                }
+                return m_TextFont;
+            }
+
+            set
+            {
+                m_TextFont = value;
+            }
+        }
+        private CHRFont m_TextFont;
+
+        public void SetTextFont(string chrData)
+        {
+            TextFont.DataRaw = chrData;
+            TextFont.Initialize();
+        }
 
         public void EnqueueOutgoingCommands(List<KeyValuePair<string, string>> commands)
         {
@@ -587,14 +789,36 @@ namespace TiltBrush
 
             foreach (var listenerUrl in m_OutgoingApiListeners)
             {
-                string uri = $"{listenerUrl}?{command.Key}={command.Value}";
-                StartCoroutine(GetRequest(uri));
+                string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
+                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
+                {
+                    StartCoroutine(GetRequest(getUri));
+                }
+                else
+                {
+                    var formData = new Dictionary<string, string>
+                    {
+                        {command.Key, command.Value}
+                    };
+                    StartCoroutine(PostRequest(listenerUrl.ToString(), formData));
+                }
             }
         }
 
         IEnumerator GetRequest(string uri)
         {
+#if  UNITY_EDITOR
+            Debug.Log($"GetRequest: {uri}");
+#endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
+            {
+                yield return webRequest.SendWebRequest();
+            }
+        }
+
+        IEnumerator PostRequest(string uri, Dictionary<string, string> formData)
+        {
+            using (UnityWebRequest webRequest = UnityWebRequest.Post(uri, formData))
             {
                 yield return webRequest.SendWebRequest();
             }
@@ -602,17 +826,35 @@ namespace TiltBrush
 
         private bool HandleApiCommand()
         {
-            KeyValuePair<string, string> command;
+            EnqueuedApiCommand command;
             try
             {
-                command = (KeyValuePair<string, string>)m_RequestedCommandQueue.Dequeue();
+                command = (EnqueuedApiCommand)m_RequestedCommandQueue.Dequeue();
             }
             catch (InvalidOperationException)
             {
                 return false;
             }
-            Debug.Log($"Invoking {command.Key}={command.Value}");
-            return Instance.InvokeEndpoint(command);
+            string result = InvokeEndpointForStatus(() => Instance.InvokeEndpoint(command));
+            m_CommandStatuses[command.Handle.ToString()] = result;
+            return true;
+        }
+
+        internal static string InvokeEndpointForStatus(Func<string> invokeEndpoint)
+        {
+            try
+            {
+                return invokeEndpoint();
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (TargetInvocationException e)
+                when (e.InnerException is UnauthorizedAccessException authorizationError)
+            {
+                return $"error: {authorizationError.Message}";
+            }
         }
 
         private void Update()
@@ -717,14 +959,14 @@ namespace TiltBrush
         {
             // Same as calling Model.RequestModelPreload -> RequestModelLoadInternal, except
             // this won't ignore the request if the load-into-memory previously failed.
-            App.PolyAssetCatalog.RequestModelLoad(assetId, reason);
+            App.IcosaAssetCatalog.RequestModelLoad(assetId, reason);
 
             // It is possible from this section forward that the user may have moved on to a different page
             // on the Poly panel, which is why we use a local copy of 'model' rather than m_Model.
             Model model;
             // A model in the catalog will become non-null once the gltf has been downloaded or is in the
             // cache.
-            while ((model = App.PolyAssetCatalog.GetModel(assetId)) == null)
+            while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
             }
@@ -744,18 +986,67 @@ namespace TiltBrush
             }
             else
             {
-                TrTransform xfSpawn = new TrTransform();
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                ModelWidget modelWidget = createCommand.Widget as ModelWidget;
+                var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, new TrTransform(), forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                ModelWidget modelWidget = cmd.Widget as ModelWidget;
                 modelWidget.Model = model;
                 modelWidget.Show(true);
-                createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                cmd.SetWidgetCost(modelWidget.GetTiltMeterCost());
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();
                 SelectionManager.m_Instance.RemoveFromSelection(false);
             }
+        }
+
+        public void HandleStrokeListeners(IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
+        {
+            if (!HasOutgoingListeners) return;
+            var pointsAsStrings = new List<string>();
+            foreach (var cp in controlPoints)
+            {
+                var pos = cp.m_Pos;
+                var rot = cp.m_Orient.eulerAngles;
+                pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+            }
+            EnqueueOutgoingCommands(
+                new List<KeyValuePair<string, string>>
+                {
+                    new ("brush.type", guid.ToString()),
+                    new ("brush.size.set", size.ToString()),
+                    new ("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                    new ("draw.stroke", string.Join(",", pointsAsStrings))
+                }
+            );
+        }
+
+        // Undo currently only affects stroke creation
+        // but any command can be supported as long as you set it's parent to ActiveUndo
+        // Mainly used by lua scripts at the moment.
+
+        public void StartUndo()
+        {
+            ActiveUndo = new BaseCommand();
+        }
+
+        public void EndUndo()
+        {
+            if (ActiveUndo != null && ActiveUndo.HasChildren)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);
+            }
+            ActiveUndo = null;
+        }
+
+        public static bool ParameterRequiresScriptingKeyword(string parameter)
+        {
+            return parameter is
+                "_ClipStart" or
+                "_ClipEnd" or
+                "_Dissolve" or
+                "_TimeOverrideValue" or
+                "_TimeBlend" or
+                "_TimeSpeed";
         }
     }
 }

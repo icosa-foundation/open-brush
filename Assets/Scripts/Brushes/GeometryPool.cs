@@ -880,6 +880,45 @@ namespace TiltBrush
             {
                 mesh.SetTangents(m_Tangents);
             }
+
+            // If we aren't using the geometry shader, we need to generate triangle IDs
+            if (!App.Config.GeometryShaderSuppported)
+            {
+                GenerateTriangleIds(mesh);
+            }
+        }
+
+        private void GenerateTriangleIds(Mesh mesh)
+        {
+            var triangleIds = new Vector2[mesh.vertexCount];
+            int triCount = mesh.triangles.Length / 3;
+            var tris = mesh.triangles;
+            for (int i = 0; i < triCount; i++)
+            {
+                Vector2 uv = new Vector2(i, 0);
+                int triIndex = i * 3;
+                triangleIds[tris[triIndex]] = uv;
+                triangleIds[tris[triIndex + 1]] = uv;
+                triangleIds[tris[triIndex + 2]] = uv;
+            }
+            mesh.SetUVs(4, triangleIds);
+        }
+
+        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
+        {
+            var triangleIds = new Vector2[nVert];
+            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            {
+                int triIndex = Mathf.FloorToInt(i / 3);
+                Vector2 uv = new Vector2(triIndex, 0);
+                if (mesh.triangles[i] >= iVert && mesh.triangles[i] < iVert + nVert)
+                    triangleIds[mesh.triangles[i] - iVert] = uv;
+                if (mesh.triangles[i + 1] >= iVert && mesh.triangles[i + 1] < iVert + nVert)
+                    triangleIds[mesh.triangles[i + 1] - iVert] = uv;
+                if (mesh.triangles[i + 2] >= iVert && mesh.triangles[i + 2] < iVert + nVert)
+                    triangleIds[mesh.triangles[i + 2] - iVert] = uv;
+            }
+            mesh.SetUVs(4, triangleIds);
         }
 
         /// Like CopyToMesh(), except copies a sub-chunk of verts and triangles.
@@ -931,13 +970,22 @@ namespace TiltBrush
             {
                 mesh.tangents = SubArray(m_Tangents, iVert, nVert);
             }
+
+            // If we aren't using the geometry shader, we need to generate triangle IDs
+            if (!App.Config.GeometryShaderSuppported)
+            {
+                GenerateTriangleIds(mesh, iVert, nVert);
+            }
         }
 
         static int GetVertexCount(Stroke stroke)
         {
             if (stroke.m_Type == Stroke.Type.BrushStroke)
             {
-                return stroke.m_Object.GetComponent<MeshFilter>().sharedMesh.vertexCount;
+                var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
+                if (mesh != null) return mesh.vertexCount;
+                Debug.LogWarning($"Stroke of type {BrushCatalog.m_Instance.GetBrush(stroke.m_BrushGuid)} has no mesh");
+                return 0;
             }
             else if (stroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {

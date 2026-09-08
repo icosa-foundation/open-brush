@@ -213,7 +213,7 @@ namespace TiltBrush
             /// The default vertexLimit is the maximum size allowed by Unity.
             /// If a single stroke exceeds the vertex limit, the stroke will be ignored.
             /// TODO: dangerous! vertexLimit should be a soft limit, with a hard limit of 65k
-            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit = 65534)
+            public IEnumerable<PoolAndStrokes> ToGeometryBatches(int vertexLimit)
             {
                 var layout = BrushCatalog.m_Instance.GetBrush(m_desc.m_Guid).VertexLayout;
                 var pool = new GeometryPool();
@@ -278,29 +278,29 @@ namespace TiltBrush
         // This class uses the order of export to determine the id.
         public class DeterministicIdGenerator
         {
-            private Dictionary<int, int> m_instanceIdToId = new Dictionary<int, int>();
+            private Dictionary<UnityEngine.Object, int> m_objectToId =
+                new Dictionary<UnityEngine.Object, int>();
             private int m_nextAvailable = 1;
             public int GetIdFromInstanceId(UnityEngine.Object obj)
             {
-                int instanceId = obj.GetInstanceID();
-                if (m_instanceIdToId.ContainsKey(instanceId))
+                if (m_objectToId.ContainsKey(obj))
                 {
-                    return m_instanceIdToId[instanceId];
+                    return m_objectToId[obj];
                 }
                 else
                 {
                     var ret = m_nextAvailable;
                     m_nextAvailable += 1;
-                    m_instanceIdToId[instanceId] = ret;
+                    m_objectToId[obj] = ret;
                     return ret;
                 }
             }
         }
-        /// The current exportable SceneState of Tilt Brush.
+        /// The current exportable SceneState of Open Brush.
         public class SceneStatePayload
         {
             // Metadata.
-            public string generator = "Tilt Brush {0}.{1}";
+            public string generator = "Tilt Brush 23.3.841faedfb compatible (Actually: Open Brush {0}.{1})";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
 
             // Space Bases.
@@ -473,7 +473,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (model.GetLocation().GetLocationType() == Model.Location.Type.PolyAssetId)
+                    if (model.GetLocation().GetLocationType() == Model.Location.Type.IcosaAssetId)
                     {
                         return model.AssetId; // blows up if type is not PolyAssetId
                     }
@@ -513,6 +513,12 @@ namespace TiltBrush
 
         /// Filters and returns geometry in a convenient format for export.
         /// Returns geometry for the main canvas
+
+        private static HashSet<Guid> AllowedBrushGuids => new(
+            BrushCatalog.m_Instance.AllBrushes
+                .Where(b => b.m_AllowExport)
+                .Select(b => (Guid)b.m_Guid));
+
         public static ExportCanvas ExportMainCanvas()
         {
             // This is probably the more-useful one; it assumes we only have
@@ -526,29 +532,31 @@ namespace TiltBrush
             // Of course, the selection canvas does play fast-and-loose, but
             // we smack the canvas into place (via a deselect/reselect) before
             // getting here.
-            var allowedBrushGuids = new HashSet<Guid>(
-                BrushCatalog.m_Instance.AllBrushes
-                    .Where(b => b.m_AllowExport)
-                    .Select(b => (Guid)b.m_Guid));
             var main = App.Scene.MainCanvas;
             var selection = App.Scene.SelectionCanvas;
             var mainStrokes = SketchMemoryScript.AllStrokes()
-                .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) &&
+                .Where(stroke => AllowedBrushGuids.Contains(stroke.m_BrushGuid) &&
                     stroke.IsGeometryEnabled &&
                     (stroke.Canvas == main || stroke.Canvas == selection));
+            return new ExportCanvas(main, mainStrokes.ToList());
+        }
+
+        // Same as ExportAllCanvases but pretends all strokes are on the main canvas
+        // Does NOT transform strokes so ensure all canvases have identity transforms
+        public static ExportCanvas ExportAllCanvasesIgnoreLayers()
+        {
+            var main = App.Scene.MainCanvas;
+            var mainStrokes = SketchMemoryScript
+                .AllStrokes()
+                .Where(stroke => AllowedBrushGuids.Contains(stroke.m_BrushGuid) && stroke.IsGeometryEnabled);
             return new ExportCanvas(main, mainStrokes.ToList());
         }
 
         /// Filters and returns geometry in a convenient format for export.
         public static List<ExportCanvas> ExportAllCanvases()
         {
-            var allowedBrushGuids = new HashSet<Guid>(
-                BrushCatalog.m_Instance.AllBrushes
-                    .Where(b => b.m_AllowExport)
-                    .Select(b => (Guid)b.m_Guid));
-
             return SketchMemoryScript.AllStrokes()
-                .Where(stroke => allowedBrushGuids.Contains(stroke.m_BrushGuid) &&
+                .Where(stroke => AllowedBrushGuids.Contains(stroke.m_BrushGuid) &&
                     stroke.IsGeometryEnabled)
                 .GroupBy(stroke => stroke.Canvas)
                 .Select(canvasStrokes => new ExportCanvas(canvasStrokes))

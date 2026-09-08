@@ -1,0 +1,87 @@
+#icosa-viewer {
+    margin: 0;
+    height: 100%;
+}
+
+#c {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+}
+
+#c.grabbed {
+    cursor: grabbing;
+}
+
+.control-panel {
+    display: block;
+    opacity: 1;
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    border: 0;
+    z-index: 5;
+    color: white;
+}
+
+.panel-button {
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+    width: 24px;
+    height: 24px;
+    outline: none;
+    overflow: hidden;
+    position: relative;
+}
+
+.fullscreen-button {
+    background: url("../img/fullscreen_white_24dp.svg");
+}
+
+.fullscreen-button.fullscreen {
+    background: url("../img/fullscreen_exit_white_24dp.svg");
+}
+
+#loadscreen {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #1d222e;
+    z-index: 5;
+    opacity: 1;
+    transition: 1s opacity;
+}
+
+#loadscreen.fade-out {
+    opacity: 0;
+}
+
+#loadscreen.loaded {
+    z-index: -5;
+}
+
+.loadlogo {
+    width: 256px;
+    height: 256px;
+    margin: 0;
+    display: inline-block;
+    background: url("../img/loading-logo.png");
+    animation: load-anim 1s steps(24) infinite;
+}
+
+.loaderror .loadlogo {
+    background: url("../img/error-logo.png");
+    animation: none;
+}
+
+@keyframes load-anim {
+    100% {
+        background-position: -6144px;
+    }
+}

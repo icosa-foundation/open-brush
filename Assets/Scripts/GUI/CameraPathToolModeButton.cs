@@ -37,8 +37,10 @@ namespace TiltBrush
         {
             base.UpdateVisuals();
 
-            // Availability visuals.
-            if (m_Mode != CameraPathTool.Mode.AddPositionKnot)
+            // Availability visuals.  Modes that create a new path don't need an
+            // existing path to be useful.
+            if (m_Mode != CameraPathTool.Mode.AddPositionKnot &&
+                m_Mode != CameraPathTool.Mode.DrawPath)
             {
                 bool wasAvailable = IsAvailable();
                 bool available = WidgetManager.m_Instance.AnyActivePathHasAKnot();

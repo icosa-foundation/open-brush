@@ -26,7 +26,7 @@ namespace TiltBrush
         [SerializeField] private Material m_Material;
         [SerializeField] private int m_Width;
         [SerializeField] private int m_Height;
-        [SerializeField] [Multiline(16)] private string m_Text;
+        [SerializeField][Multiline(16)] private string m_Text;
 
         private RenderTexture m_TargetTexture;
         private Texture2D m_SourceTexture;

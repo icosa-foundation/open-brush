@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace TiltBrush
 {
@@ -41,6 +43,11 @@ namespace TiltBrush
 
     public class AudioCaptureManager : MonoBehaviour
     {
+#if UNITY_ANDROID
+        private const float kAndroidSourceProbeSeconds = 6.0f;
+        private const float kAndroidSignalThreshold = 0.0001f;
+#endif
+
         // Number of seconds to delay before searching for active audio device.
         // From experimentation this seems to be the minimum to ensure we don't pick up
         // any residual audio.
@@ -50,7 +57,9 @@ namespace TiltBrush
         {
             File,
             System,
-            App
+            App,
+            Mic,
+            Script
         }
 
         static public AudioCaptureManager m_Instance;
@@ -60,22 +69,109 @@ namespace TiltBrush
         [SerializeField] private GameObject m_AppAudio;
 
         private AudioCaptureType m_Type;
+        private AndroidMicAudioMonitor m_MicAudio;
         private int m_CaptureRequestedCount;
+#if UNITY_ANDROID
+        private float m_AndroidSourceProbeStartTime;
+#endif
 
         void Awake()
         {
             m_Instance = this;
+            EnsureMicAudioMonitor();
+            ResetAudioCaptureType();
+        }
+
+        private void ResetAudioCaptureType()
+        {
+            m_Instance = this;
+            if (LuaManager.Instance != null) LuaManager.Instance.VisualizerScriptingEnabled = false;
 #if UNITY_ANDROID
-    m_Type = AudioCaptureType.App;
+            StopAndroidCaptureSources();
+#endif
+#if UNITY_ANDROID
+            // Probe Android sources in order: app audio, then mic.
+            m_Type = AudioCaptureType.App;
+#elif UNITY_IOS
+            m_Type = AudioCaptureType.App;
 #else
             m_Type = AudioCaptureType.System;
 #endif
             m_CaptureRequestedCount = 0;
+
+        }
+
+        private void EnsureMicAudioMonitor()
+        {
+            if (m_MicAudio != null)
+            {
+                return;
+            }
+
+            var micAudio = new GameObject("AndroidMicAudio");
+            micAudio.transform.SetParent(transform, false);
+            micAudio.SetActive(true);
+            m_MicAudio = micAudio.AddComponent<AndroidMicAudioMonitor>();
         }
 
         public bool CaptureRequested
         {
             get { return m_CaptureRequestedCount > 0; }
+        }
+
+        public void EnableScripting()
+        {
+            m_FileAudio.SetActive(false);
+            m_AppAudio.SetActive(false);
+            m_MicAudio.Activate(false);
+            m_SystemAudio.gameObject.SetActive(false);
+            m_Type = AudioCaptureType.Script;
+            LuaManager.Instance.VisualizerScriptingEnabled = true;
+            App.Instance.AudioReactiveBrushesActive(true);
+        }
+
+        public void DisableScripting()
+        {
+            App.Instance.AudioReactiveBrushesActive(false);
+            ResetAudioCaptureType();
+        }
+
+        public void EnableAudioFileSource(bool enable, string path)
+        {
+            if (enable)
+            {
+                LuaManager.Instance.VisualizerScriptingEnabled = false;
+                m_AppAudio.SetActive(false);
+                m_MicAudio.Activate(false);
+                m_SystemAudio.Deactivate();
+                m_SystemAudio.gameObject.SetActive(false);
+                m_Type = AudioCaptureType.File;
+                StartCoroutine(LoadAudio(path));
+            }
+            else
+            {
+                ResetAudioCaptureType();
+            }
+        }
+
+        IEnumerator LoadAudio(string path)
+        {
+            using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + path, AudioType.UNKNOWN))
+            {
+                yield return www.SendWebRequest();
+
+                if (www.result == UnityWebRequest.Result.Success)
+                {
+                    var audioSource = m_FileAudio.GetComponent<AudioSource>();
+                    AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
+                    audioSource.clip = audioClip;
+                    audioSource.Play();
+                }
+                else
+                {
+                    Debug.LogError("Failed to load audio: " + www.error);
+                }
+            }
         }
 
         public int SampleRate
@@ -91,6 +187,10 @@ namespace TiltBrush
                         return m_SystemAudio.GetAudioDeviceSampleRate();
                     case AudioCaptureType.App:
                         return AudioSettings.outputSampleRate;
+                    case AudioCaptureType.Mic:
+                        return m_MicAudio.SampleRate;
+                    case AudioCaptureType.Script:
+                        return LuaManager.Instance.ScriptedWaveformSampleRate;
                 }
                 return 0;
             }
@@ -108,6 +208,10 @@ namespace TiltBrush
                         return m_SystemAudio.gameObject.activeSelf && m_SystemAudio.AudioDeviceSelected();
                     case AudioCaptureType.App:
                         return m_AppAudio.activeSelf;
+                    case AudioCaptureType.Mic:
+                        return m_MicAudio.IsCapturing;
+                    case AudioCaptureType.Script:
+                        return LuaManager.Instance.VisualizerScriptingEnabled;
                 }
                 return false;
             }
@@ -117,9 +221,11 @@ namespace TiltBrush
         {
             switch (m_Type)
             {
-                case AudioCaptureType.File: return "Listening to Mic'";
+                case AudioCaptureType.File: return "Listening to audio file";
                 case AudioCaptureType.System: return m_SystemAudio.GetCaptureStatusMessage();
-                case AudioCaptureType.App: return "Jammin'";
+                case AudioCaptureType.App: return "Listening to app audio";
+                case AudioCaptureType.Mic: return "Listening to microphone";
+                case AudioCaptureType.Script: return "Scripted Waveform";
             }
             return "";
         }
@@ -156,9 +262,81 @@ namespace TiltBrush
                     }
                     break;
                 case AudioCaptureType.App:
-                    m_AppAudio.SetActive(bCapture);
+                    bool appAudioWasActive = m_AppAudio.activeSelf;
+                    if (!bWasRequested && CaptureRequested)
+                    {
+                        ResetAndroidSourceProbeTimer();
+                    }
+                    m_AppAudio.SetActive(CaptureRequested);
+                    if (appAudioWasActive != m_AppAudio.activeSelf)
+                    {
+                        VisualizerManager.m_Instance.AudioCaptureStatusChange(m_AppAudio.activeSelf);
+                    }
+                    break;
+                case AudioCaptureType.Mic:
+                    m_MicAudio.Activate(CaptureRequested);
+                    VisualizerManager.m_Instance.AudioCaptureStatusChange(CaptureRequested);
+                    break;
+                case AudioCaptureType.Script:
                     break;
             }
         }
+
+#if UNITY_ANDROID
+        void Update()
+        {
+            if (!CaptureRequested)
+            {
+                return;
+            }
+
+            if (m_Type == AudioCaptureType.App)
+            {
+                var appMonitor = m_AppAudio.GetComponent<AppAudioMonitor>();
+                if (appMonitor != null && appMonitor.LastPeak > kAndroidSignalThreshold)
+                {
+                    ResetAndroidSourceProbeTimer();
+                    return;
+                }
+                if (Time.unscaledTime - m_AndroidSourceProbeStartTime > kAndroidSourceProbeSeconds)
+                {
+                    SwitchAndroidCaptureSource(AudioCaptureType.Mic);
+                }
+            }
+        }
+
+        private void SwitchAndroidCaptureSource(AudioCaptureType nextType)
+        {
+            StopAndroidCaptureSources();
+
+            m_Type = nextType;
+            ResetAndroidSourceProbeTimer();
+
+            if (m_Type == AudioCaptureType.App)
+            {
+                m_AppAudio.SetActive(true);
+                VisualizerManager.m_Instance.AudioCaptureStatusChange(true);
+            }
+            else if (m_Type == AudioCaptureType.Mic)
+            {
+                m_MicAudio.Activate(true);
+                VisualizerManager.m_Instance.AudioCaptureStatusChange(true);
+            }
+        }
+
+        private void StopAndroidCaptureSources()
+        {
+            m_AppAudio.SetActive(false);
+            m_MicAudio.Activate(false);
+        }
+
+        private void ResetAndroidSourceProbeTimer()
+        {
+            m_AndroidSourceProbeStartTime = Time.unscaledTime;
+        }
+
+#else
+        private void ResetAndroidSourceProbeTimer() { }
+#endif
     }
 }

@@ -20,8 +20,22 @@ using UnityEngine.Networking;
 
 namespace TiltBrush
 {
+
+
+
     public class ImageLoadError : Exception
     {
+
+        public enum ImageLoadErrorCode
+        {
+            // This is the default one; errors like unknown format, corruption, etc.
+            ImageGenericError,
+            // too large dimensions
+            ImageTooLargeError
+        }
+
+        public ImageLoadErrorCode imageLoadErrorCode = ImageLoadErrorCode.ImageGenericError;
+
         public ImageLoadError(string message) : base(message) { }
         public ImageLoadError(string fmt, params System.Object[] args)
             : base(string.Format(fmt, args))
@@ -30,6 +44,11 @@ namespace TiltBrush
         public ImageLoadError(Exception inner, string fmt, params System.Object[] args)
             : base(string.Format(fmt, args), inner)
         {
+        }
+
+        public ImageLoadError(string message, ImageLoadErrorCode imageLoadErrorCode) : base(message)
+        {
+            this.imageLoadErrorCode = imageLoadErrorCode;
         }
     }
 
@@ -87,11 +106,12 @@ namespace TiltBrush
                 }
             }
 
-            if (imageWidth > maxDimension || imageHeight > maxDimension)
+            // Cast to long as maxDimension is big enough on desktop to overflow
+            if (imageWidth * imageHeight > ((long)maxDimension * (long)maxDimension))
             {
                 throw new ImageLoadError(
                     String.Format("Image dimensions {0}x{1} are greater than max dimensions of {2}x{2}!",
-                        imageWidth, imageHeight, maxDimension));
+                        imageWidth, imageHeight, maxDimension), ImageLoadError.ImageLoadErrorCode.ImageTooLargeError);
             }
         }
 

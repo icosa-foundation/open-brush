@@ -26,7 +26,7 @@ namespace TiltBrush
                 m_Manager.GetComponent<UploadPopUpWindow>() : null;
             if (popup != null)
             {
-                if (m_Command == SketchControlsScript.GlobalCommands.LoginToGenericCloud)
+                if (m_Command == SketchControlsScript.GlobalCommands.LoginToGenericCloud || m_Command == SketchControlsScript.GlobalCommands.LoginToIcosa)
                 {
                     popup.UserPressedLoginButton(m_CommandParam);
                 }

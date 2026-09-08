@@ -12,8 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them - for this file that would
+// corrupt saved .tilt sketches.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -372,6 +389,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform[] Transforms { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string[] Subtrees { get; set; }
+
         /// Prior to M13, always null.
         /// Post M13, never null or empty; but an empty array is allowed on read.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -392,7 +412,7 @@ namespace TiltBrush
             {
                 if (AssetId != null)
                 {
-                    return Model.Location.PolyAsset(AssetId, null);
+                    return Model.Location.IcosaAsset(AssetId, null);
                 }
                 else if (FilePath != null)
                 {
@@ -410,7 +430,7 @@ namespace TiltBrush
                     FilePath = value.RelativePath;
                     AssetId = null;
                 }
-                else if (value.GetLocationType() == Model.Location.Type.PolyAssetId)
+                else if (value.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {
                     FilePath = null;
                     AssetId = value.AssetId;
@@ -421,6 +441,15 @@ namespace TiltBrush
         // Group IDs for widgets. 0 for ungrouped items. Added in M22.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> SplitMeshPaths { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> NotSplittableMeshPaths { get; set; }
     }
 
     [Serializable]
@@ -441,6 +470,7 @@ namespace TiltBrush
             public bool Pinned { get; set; }
             // Group ID for widget. 0 for ungrouped items. Added in M22.
             public uint GroupId { get; set; }
+            public int LayerId { get; set; }
         }
 
         // This is the accessor used by Json.NET for reading/writing the "Type" field.
@@ -547,6 +577,8 @@ namespace TiltBrush
         public Color32 FogColor { get; set; }
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }
+
+        public string Skybox { get; set; }
     }
 
     [Serializable]
@@ -589,6 +621,17 @@ namespace TiltBrush
         public CameraPathFovKnotMetadata[] FovKnots { get; set; }
     }
 
+    [Serializable]
+    public class LayerMetadata
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string Name;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool Visible;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform Transform { get; set; }
+    }
+
     // TODO: deprecate (7.5b-only)
     // Left just to avoid breaking trusted testers' art
     [Serializable]
@@ -615,10 +658,29 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class TiltLights
+    {
+        public Color? LightColor;
+        public float? Intensity;
+        public LightType PunctualLightType;
+        public float? Range;
+        public float? InnerConeAngle;
+        public float? OuterConeAngle;
+
+        public bool Pinned;
+        public TrTransform Transform;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
     public class TiltImages75
     {
         /// *.png or *.jpg, should have no path
         public string FileName { get; set; }
+        /// FileName plus path relative to images directory
+        public string FilePath { get; set; }
         /// width / height
         public float AspectRatio { get; set; }
         // True if image should be pinned on load. Added in M15.
@@ -630,12 +692,35 @@ namespace TiltBrush
         // Group IDs for widgets. 0 for ungrouped items. Added in M22.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public uint[] GroupIds { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
+        public bool[] TwoSidedFlags { get; set; }
+        public float[] ExtrusionDepths { get; set; }
+        public Color[] ExtrusionColors { get; set; }
+        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] Opacities { get; set; }
     }
 
     [Serializable]
     public class Mirror
     {
         public TrTransform Transform { get; set; }
+    }
+
+    [Serializable]
+    public class TiltText
+    {
+        public TrTransform Transform { get; set; }
+        public string Text { get; set; }
+        public Color FillColor { get; set; }
+        public Color StrokeColor { get; set; }
+        public string Font { get; set; }
+        public float ExtrudeDepth { get; set; }
+        public TextWidgetMode Mode { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -650,6 +735,59 @@ namespace TiltBrush
         public float Volume { get; set; }
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+        public bool TwoSided { get; set; }
+    }
+
+    [Serializable]
+    public class TiltSoundClip
+    {
+        public string FilePath { get; set; } // relative to Media Library folder
+        public float AspectRatio { get; set; }
+        public bool Pinned;
+        public TrTransform Transform;
+        public bool Paused { get; set; }
+        public float Time { get; set; }
+        public float Volume { get; set; }
+        public bool Loop { get; set; } = true;
+        public float SpatialBlend { get; set; }
+        public float MinDistance { get; set; } = 1f;
+        public float MaxDistance { get; set; } = 500f;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
+    public class TiltPortal
+    {
+        public StencilType ShapeType { get; set; }
+        public TrTransform Transform { get; set; }
+        public string Destination { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
+    }
+
+    [Serializable]
+    public class TiltGaussianCapture
+    {
+        public StencilType ShapeType { get; set; }
+        public TrTransform Transform { get; set; }
+        public Vector3 AspectRatio { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? NumRings { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? ViewsPerRing { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivX { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivY { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? SubdivZ { get; set; }
+        public bool Pinned { get; set; }
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -658,7 +796,7 @@ namespace TiltBrush
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
-        static public int kSchemaVersion = 2;
+        static public int kSchemaVersion = 3;
 
         // Reference to environment GUID.
         public string EnvironmentPreset;
@@ -677,13 +815,6 @@ namespace TiltBrush
         {
             return SceneTransformInRoomSpace != TrTransform.identity;
         }
-        public TrTransform CanvasTransformInSceneSpace = TrTransform.identity;
-        // Callback for JSON.net (name is magic and special)
-        public bool ShouldSerializeCanvasTransformInSceneSpace()
-        {
-            return CanvasTransformInSceneSpace != TrTransform.identity;
-        }
-
         // This was the old name of ThumbnailCameraTransformInRoomSpace.
         [Serializable]
         public struct UnusedSketchTransform
@@ -721,6 +852,9 @@ namespace TiltBrush
         /// Added in 7.5
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltModels75[] ModelIndex { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltLights[] LightIndex { get; set; }
 
         // Added in 7.5b; never released to public.
         // Write-only so it gets serialized in but not serialized out.
@@ -762,6 +896,8 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltVideo[] Videos { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public LayerMetadata[] Layers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
 
         // Added for 24.0b Open-source edition
@@ -769,5 +905,15 @@ namespace TiltBrush
         public string ApplicationName { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string ApplicationVersion { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltText[] TextWidgets { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltSoundClip[] SoundClips { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltPortal[] Portals { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltGaussianCapture[] GaussianCaptures { get; set; }
     }
 } // namespace TiltBrush

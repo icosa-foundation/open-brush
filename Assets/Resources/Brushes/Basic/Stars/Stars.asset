@@ -17,8 +17,7 @@ MonoBehaviour:
   m_DurableName: Stars
   m_CreationVersion: 10.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 1000012812167754, guid: 24aca64ac0ed6654f9ec99da6d0d5692,
-    type: 3}
+  m_BrushPrefab: {fileID: 1000012812167754, guid: 24aca64ac0ed6654f9ec99da6d0d5692, type: 3}
   m_Tags:
   - default
   - audioreactive
@@ -27,7 +26,15 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 4242ebaeed2cfe04e86dd996d79f52c0, type: 3}
-  m_Description: Stars
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81207756761653248
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 4576e8bea0534f04da7dd52138bc2194, type: 3}
@@ -42,6 +49,8 @@ MonoBehaviour:
   m_AudioReactive: 1
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 2b586b958dc9fe846ad73133f0cfd285, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 4
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0
@@ -64,7 +73,7 @@ MonoBehaviour:
   m_M11Compatibility: 0
   m_SolidMinLengthMeters_PS: 0.002
   m_TubeStoreRadiusInTexcoord0Z: 0
-  m_RenderBackfaces: 0
+  m_RenderBackfaces: 1
   m_BackIsInvisible: 0
   m_BackfaceHueShift: 0
   m_BoundsPadding: 0
@@ -78,3 +87,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 1
+  references:
+    version: 2
+    RefIds: []

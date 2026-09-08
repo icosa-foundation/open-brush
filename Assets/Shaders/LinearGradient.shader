@@ -22,45 +22,60 @@ Shader "Custom/LinearGradient" {
 
     SubShader
     {
-        Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
+        Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
         Cull Off ZWrite Off
 
         Pass
         {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Frag
+            #pragma multi_compile_instancing
 
-            struct vertexIn {
-                float4 pos : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct v2f {
-                float4 pos : SV_POSITION;
-                float2 uv : TEXCOORD0;
-                float3 modelpos : TEXCOORD1;
-            };
-
-            v2f vert(vertexIn input)
-            {
-                v2f output;
-
-                output.pos = UnityObjectToClipPos(input.pos);
-                output.uv = input.uv;
-                output.modelpos = input.pos;
-                return output;
-            }
+            #include "UnityCG.cginc"
 
             fixed4 _ColorA, _ColorB;
             float3 _GradientDirection;
 
-            fixed4 frag(v2f input) : COLOR
+            struct Attributes {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct Varyings {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float3 modelPos : TEXCOORD1;
+
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+
+              UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            Varyings Vert(Attributes IN)
             {
-                float t = (dot(normalize(input.modelpos), _GradientDirection) + 1.0f) / 2.0f;
-            return lerp(_ColorA, _ColorB, t);
+                Varyings OUT;
+
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_OUTPUT(Varyings, OUT);
+                UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+
+                OUT.positionHCS = UnityObjectToClipPos(IN.positionOS);
+                OUT.uv = IN.uv;
+                OUT.modelPos = IN.positionOS.xyz;
+                return OUT;
             }
-            ENDCG
+
+            half4 Frag(Varyings IN) : SV_Target
+            {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+                float t = (dot(normalize(IN.modelPos), _GradientDirection) + 1.0f) / 2.0f;
+                return lerp(_ColorA, _ColorB, (half)t);
+            }
+            ENDHLSL
         }
 
     }

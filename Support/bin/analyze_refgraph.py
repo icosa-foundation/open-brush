@@ -114,8 +114,7 @@ def main(args):
             except LookupError as e:
                 print(e)
                 continue
-            for guid in guids:
-                yield guid
+            yield from guids
 
     for guid in iter_desired_guids():
         name = rg.guid_to_name.get(guid, guid)

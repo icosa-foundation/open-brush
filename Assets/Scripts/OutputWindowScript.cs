@@ -123,10 +123,10 @@ namespace TiltBrush
             }
             else
             {
-                Debug.LogErrorFormat("User-visible error: {0}\nDetail: {1}", msg, detail);
+                Debug.LogError($"User-visible error: {msg}\nDetail: {detail}");
 
                 // In the future, maybe use color or something instead of prepending ERROR
-                string card = string.Format("ERROR: {0}", msg);
+                string card = $"ERROR: {msg}";
                 float cardPop = 1.0f + InfoCardAnimation.s_NumCards * 0.2f;
                 m_Instance.CreateInfoCardAtController(controller, card, cardPop, false);
 

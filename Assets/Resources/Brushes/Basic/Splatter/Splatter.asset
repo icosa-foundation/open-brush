@@ -24,7 +24,15 @@ MonoBehaviour:
   m_Supersedes: {fileID: 11400000, guid: f3974944e708baf4e8bd5059dfa0c828, type: 2}
   m_LooksIdentical: 1
   m_ButtonTexture: {fileID: 2800000, guid: f22b8b31df5ec524baf9042a3a2c2041, type: 3}
-  m_Description: Splatter
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81207574603030528
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers:
   - {fileID: 8300000, guid: 879acab3afe5e5248a964d6e3c56cadb, type: 3}
@@ -38,7 +46,9 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 2
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 4d856d60aed7f3f40b112bc15af14828, type: 2}
+  m_Material: {fileID: 2100000, guid: e3033b2ec92a3ab4b85aa5770a476452, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 4
   m_TileRate: 0.2
   m_UseBloomSwatchOnColorPicker: 0
@@ -61,7 +71,7 @@ MonoBehaviour:
   m_M11Compatibility: 0
   m_SolidMinLengthMeters_PS: 0.002
   m_TubeStoreRadiusInTexcoord0Z: 0
-  m_RenderBackfaces: 0
+  m_RenderBackfaces: 1
   m_BackIsInvisible: 0
   m_BackfaceHueShift: 0
   m_BoundsPadding: 0
@@ -75,3 +85,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 1
+  references:
+    version: 2
+    RefIds: []

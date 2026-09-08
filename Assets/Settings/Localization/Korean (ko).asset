@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bb1838fe8befb0429646b938e757ff3, type: 3}
+  m_Name: Korean (ko)
+  m_EditorClassIdentifier: 
+  m_Identifier:
+    m_Code: ko
+  m_Metadata:
+    m_Items:
+    - rid: 7458765345141817364
+  m_LocaleName: Korean
+  m_CustomFormatCultureCode: 
+  m_UseCustomFormatter: 0
+  m_SortOrder: 6
+  references:
+    version: 2
+    RefIds:
+    - rid: 7458765345141817364
+      type: {class: FallbackLocale, ns: UnityEngine.Localization.Metadata, asm: Unity.Localization}
+      data:
+        m_Locale: {fileID: 11400000, guid: 35f3779472064f74bafddfc140d73eb6, type: 2}

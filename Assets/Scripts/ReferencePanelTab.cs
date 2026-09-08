@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -31,11 +32,12 @@ namespace TiltBrush
             public abstract void Refresh(int catalog);
         }
 
-        [SerializeField] private string m_PanelName;
+        [SerializeField] private LocalizedString m_PanelName;
         protected ReferenceIcon[] m_Icons = new ReferenceIcon[0];
         protected int m_IndexOffset;
 
-        public string PanelName { get { return m_PanelName; } }
+        public string PanelName => m_PanelName.GetLocalizedStringAsync().Result;
+
         public int PageIndex { get; set; }
         public abstract IReferenceItemCatalog Catalog { get; }
         public List<BaseButton> Buttons
@@ -74,6 +76,7 @@ namespace TiltBrush
         public virtual void RefreshTab(bool selected)
         {
             m_IndexOffset = PageIndex * m_Icons.Length;
+
             for (int i = 0; i < m_Icons.Length; ++i)
             {
                 int index = m_IndexOffset + i;

@@ -65,6 +65,8 @@ namespace TiltBrush
 
         void DeleteSketch(int toDelete);
 
+        void RenameSketch(int toRename, string newName);
+
         void PrecacheSketchModels(int iSketchIndex);
 
         void NotifySketchCreated(string fullpath);

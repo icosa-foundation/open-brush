@@ -12,23 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
     public class ReferencePanel : ModalPanel
     {
         [Header("Reference Panel")]
-        [SerializeField] private TextMesh m_PanelText;
+        [SerializeField] private TextMeshPro m_PanelText;
         [SerializeField] private GameObject m_NoData;
+        [SerializeField] private GameObject m_NoSavedStrokes;
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private ReferencePanelTab[] m_Tabs;
         [SerializeField] private MeshRenderer[] m_ExtraBorders;
         [SerializeField] private GameObject m_RefreshingSpinner;
+        [SerializeField] private TextOptionButton m_DirectoryChooserPopupButton;
+        [SerializeField] private ActionButton m_DirectoryHomeButton;
+        [SerializeField] private ActionButton m_DirectoryUpButton;
+        [SerializeField] private TextMeshPro m_InfoText;
+        [SerializeField] private GameObject m_AddMediaButton;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
+        private string[] m_CurrentSubdirectories;
+        private bool m_FolderNavButtonsNeedUpdate;
+
+        public string[] CurrentSubdirectories => m_CurrentSubdirectories;
 
         public Texture2D UnknownImageTexture
         {
@@ -48,6 +60,7 @@ namespace TiltBrush
                 return m_CurrentTab.Buttons;
             }
         }
+        public ReferencePanelTab CurrentTab => m_CurrentTab;
 
         public override bool IsInButtonMode(ModeButton button)
         {
@@ -102,12 +115,19 @@ namespace TiltBrush
             {
                 m_RefreshingSpinner.SetActive(m_CurrentTab != null && m_CurrentTab.Catalog.IsScanning);
             }
+
+            if (m_FolderNavButtonsNeedUpdate)
+            {
+                UpdateNavButtonState();
+                m_FolderNavButtonsNeedUpdate = false;
+            }
         }
 
         public override void OnWidgetHide()
         {
             // Reset all overlays for a clean slate on the panel respawn
             m_NoData.SetActive(false);
+            m_NoSavedStrokes.SetActive(false);
         }
 
         protected override void Awake()
@@ -118,7 +138,9 @@ namespace TiltBrush
                 tab.InitTab();
                 tab.Catalog.CatalogChanged += OnCatalogChanged;
             }
-
+#if UNITY_IOS || UNITY_ANDROID
+            m_AddMediaButton.SetActive(false);
+#endif
             m_CurrentPageFlipState = PageFlipState.Standard;
         }
 
@@ -203,9 +225,133 @@ namespace TiltBrush
             }
             m_NumPages = m_CurrentTab.PageCount;
 
-            m_NoData.gameObject.SetActive(m_CurrentTab.Catalog.ItemCount == 0);
+            string currentDir = m_CurrentTab.ReferenceButtonType switch
+            {
+                ReferenceButton.Type.Images => ReferenceImageCatalog.m_Instance.CurrentImagesDirectory,
+                ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
+                ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
+                ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
+                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory,
+                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory,
+                _ => throw new System.InvalidOperationException(
+                    $"Unsupported reference tab type: {m_CurrentTab.ReferenceButtonType}")
+            };
+
+            string displayPath;
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+            {
+                // Show "Models" for the root directory
+                if (currentDir.Equals(App.ModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Models";
+                }
+                else if (!string.IsNullOrEmpty(App.BlocksModelLibraryPath()) &&
+                         currentDir.Equals(App.BlocksModelLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Open Blocks";
+                }
+                else if (currentDir.StartsWith(App.MediaLibraryPath()))
+                {
+                    displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                }
+                else
+                {
+                    displayPath = new DirectoryInfo(currentDir).Name;
+                }
+            }
+            else
+            {
+                displayPath = currentDir?.Substring(App.MediaLibraryPath().Length);
+            }
+
+            if (m_DirectoryChooserPopupButton != null)
+            {
+                m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
+                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
+                {
+                    var mainModelsPath = App.ModelLibraryPath();
+                    var blocksPath = App.BlocksModelLibraryPath();
+                    bool isMainRoot = currentDir.Equals(mainModelsPath, System.StringComparison.OrdinalIgnoreCase);
+                    bool isBlocksRoot = !string.IsNullOrEmpty(blocksPath) &&
+                                       currentDir.Equals(blocksPath, System.StringComparison.OrdinalIgnoreCase);
+
+                    // At main root: show real subdirectories + Open Blocks as virtual subdirectory
+                    if (isMainRoot)
+                    {
+                        var subdirList = new System.Collections.Generic.List<string>(m_CurrentSubdirectories);
+
+                        // Add Open Blocks as a virtual subdirectory
+                        if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
+                        {
+                            subdirList.Add(blocksPath);
+                        }
+
+                        m_CurrentSubdirectories = subdirList.ToArray();
+                    }
+                    // At Blocks root: hide subdirectories (flat hierarchy)
+                    else if (isBlocksRoot)
+                    {
+                        m_CurrentSubdirectories = new string[0];
+                    }
+                }
+            }
 
             base.RefreshPage();
+            m_FolderNavButtonsNeedUpdate = m_DirectoryChooserPopupButton != null;
+            UpdateInfoText();
+        }
+
+        private void UpdateNavButtonState()
+        {
+            if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
+            {
+                m_DirectoryHomeButton.SetButtonAvailable(true);
+                m_DirectoryUpButton.SetButtonAvailable(true);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(false);
+                m_DirectoryUpButton.SetDescriptionUnavailable(false);
+            }
+            else
+            {
+                m_DirectoryHomeButton.SetButtonAvailable(false);
+                m_DirectoryUpButton.SetButtonAvailable(false);
+
+                m_DirectoryHomeButton.SetDescriptionUnavailable(true);
+                m_DirectoryUpButton.SetDescriptionUnavailable(true);
+            }
+
+            if (m_CurrentSubdirectories.Length == 0)
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(false);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
+            }
+            else
+            {
+                m_DirectoryChooserPopupButton.SetButtonAvailable(true);
+                m_DirectoryChooserPopupButton.SetDescriptionUnavailable(false);
+            }
+
+            m_NoData.gameObject.SetActive(false);
+            m_NoSavedStrokes.gameObject.SetActive(false);
+            // Only show for truly empty home directories
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.SavedStrokes)
+            {
+                m_NoSavedStrokes.gameObject.SetActive(
+                    m_CurrentTab.Catalog.IsHomeDirectory() &&
+                    m_CurrentTab.Catalog.ItemCount == 0 &&
+                    m_CurrentSubdirectories.Length == 0
+                );
+            }
+            else
+            {
+                m_NoData.gameObject.SetActive(
+                    m_CurrentTab.Catalog.IsHomeDirectory() &&
+                    m_CurrentTab.Catalog.ItemCount == 0 &&
+                    m_CurrentSubdirectories.Length == 0
+                );
+            }
         }
 
         void OnCatalogChanged()
@@ -234,8 +380,74 @@ namespace TiltBrush
             {
                 return true;
             }
-            return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
+            // Gaze raycasts reach us before the panel is first enabled, and m_CurrentTab
+            // is only assigned in OnEnablePanel.
+            return m_CurrentTab != null &&
+                m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
+        public void ChangeDirectoryForCurrentTab(string path)
+        {
+            m_CurrentTab.PageIndex = 0;
+            GotoPage(m_CurrentTab.PageIndex);
+            m_CurrentTab.Catalog.ChangeDirectory(path);
+        }
+
+        private void UpdateInfoText()
+        {
+            if (m_InfoText != null)
+            {
+                // TODO localize
+                m_InfoText.text = $"{m_CurrentTab.Catalog.ItemCount} Files {m_CurrentSubdirectories.Length} Subfolders";
+            }
+        }
+
+        public void ChangeRelativeFolderForCurrentTab(string relativePath)
+        {
+            var path = Path.Join(m_CurrentTab.Catalog.HomeDirectory, relativePath);
+            ChangeDirectoryForCurrentTab(path);
+        }
+
+        public void HomeFolderForCurrentTab(string path)
+        {
+            ChangeDirectoryForCurrentTab(m_CurrentTab.Catalog.HomeDirectory);
+        }
+
+        public void NavigateUpForCurrentTab()
+        {
+            if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
+            {
+                var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
+                var currentPath = m_CurrentTab.Catalog.GetCurrentDirectory();
+                var parentPath = currentDir.Parent?.FullName;
+
+                if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models && parentPath != null)
+                {
+                    var homeDir = m_CurrentTab.Catalog.HomeDirectory;
+                    var blocksRoot = App.BlocksModelLibraryPath();
+
+                    // If we're at the Blocks root, go back to home
+                    if (!string.IsNullOrEmpty(blocksRoot) &&
+                        currentPath.Equals(blocksRoot, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        ChangeDirectoryForCurrentTab(homeDir);
+                    }
+                    // If parent is within home directory, navigate to it
+                    else if (parentPath.StartsWith(homeDir, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        ChangeDirectoryForCurrentTab(parentPath);
+                    }
+                    // Otherwise go to home
+                    else
+                    {
+                        ChangeDirectoryForCurrentTab(homeDir);
+                    }
+                }
+                else if (parentPath != null)
+                {
+                    ChangeDirectoryForCurrentTab(parentPath);
+                }
+            }
+        }
     }
 } // namespace TiltBrush

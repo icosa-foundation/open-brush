@@ -33,11 +33,12 @@ namespace TiltBrush
         public event Action CatalogChanged;
         private int m_TexturesCreatedThisFrame;
 
-        private FileWatcher m_FileWatcher;
-        private string m_ReferenceDirectory;
+        protected FileWatcher m_FileWatcher;
+        protected string m_CurrentImagesDirectory;
+        public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
-        private List<ReferenceImage> m_Images;
-        private Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
+        protected List<ReferenceImage> m_Images;
+        protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
         private bool m_DirNeedsProcessing;
         private string m_ChangedFile;
         private int m_InCompositorLoad;
@@ -45,7 +46,7 @@ namespace TiltBrush
         private bool m_ResetImageEnumeration;
 
         [SerializeField] private Texture2D m_ErrorImage;
-        [SerializeField] string[] m_DefaultImages;
+        [SerializeField] protected string[] m_DefaultImages;
 
         public bool IsScanning => m_RunningImageCacheCoroutine;
 
@@ -68,11 +69,17 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
-            m_ReferenceDirectory = App.ReferenceImagePath();
+            ImageCache.DeleteObsoleteCaches();
+            ChangeDirectory(HomeDirectory);
+        }
 
-            if (Directory.Exists(m_ReferenceDirectory))
+        public virtual void ChangeDirectory(string newPath)
+        {
+            m_CurrentImagesDirectory = newPath;
+
+            if (Directory.Exists(m_CurrentImagesDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_ReferenceDirectory);
+                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
@@ -80,10 +87,25 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = true;
             }
 
-            ImageCache.DeleteObsoleteCaches();
-
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
+        }
+
+        public virtual string HomeDirectory => App.ReferenceImagePath();
+
+        public virtual bool IsHomeDirectory()
+        {
+            return m_CurrentImagesDirectory == HomeDirectory;
+        }
+
+        public virtual bool IsSubDirectoryOfHome()
+        {
+            return m_CurrentImagesDirectory.StartsWith(HomeDirectory);
+        }
+
+        public virtual string GetCurrentDirectory()
+        {
+            return m_CurrentImagesDirectory;
         }
 
         // This is not persistent state; it avoids allocating a transient Stack every frame
@@ -240,7 +262,7 @@ namespace TiltBrush
             return false;
         }
 
-        void OnChanged(object source, FileSystemEventArgs e)
+        protected void OnChanged(object source, FileSystemEventArgs e)
         {
             m_DirNeedsProcessing = true;
 
@@ -266,6 +288,19 @@ namespace TiltBrush
             {
                 return null;
             }
+        }
+
+        public int FilenameToIndex(string filename)
+        {
+            for (var i = 0; i < m_Images.Count; i++)
+            {
+                var img = m_Images[i];
+                if (img.FileName == filename)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         /// Returns an index to a catalog entry, or -1 if the handle is invalid.
@@ -331,9 +366,14 @@ namespace TiltBrush
             }
         }
 
+        protected virtual void ProcessReferenceDirectory(bool userOverlay = true)
+        {
+            _ProcessReferenceDirectory_Impl(m_CurrentImagesDirectory, userOverlay);
+        }
+
         // Update m_Images with latest contents of reference directory.
         // Preserves items if they're still in the directory.
-        void ProcessReferenceDirectory(bool userOverlay = true)
+        protected void _ProcessReferenceDirectory_Impl(string imageDir, bool userOverlay = true)
         {
             m_DirNeedsProcessing = false;
             var oldImagesByPath = m_Images.ToDictionary(image => image.FilePath);
@@ -356,10 +396,10 @@ namespace TiltBrush
             try
             {
                 // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(m_ReferenceDirectory))
+                foreach (var filePath in Directory.GetFiles(imageDir))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
-                    if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") { continue; }
+                    if (!ValidExtension(ext)) { continue; }
                     try
                     {
                         m_Images.Add(oldImagesByPath[filePath]);
@@ -407,6 +447,27 @@ namespace TiltBrush
             {
                 CatalogChanged();
             }
+        }
+
+        protected virtual bool ValidExtension(string ext)
+        {
+            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
+        }
+
+        public ReferenceImage RelativePathToImage(string relativePath)
+        {
+            // Protect against path traversal below HomeDirectory
+            string fullPath = Path.GetFullPath(Path.Combine(HomeDirectory, relativePath));
+            if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
+
+            // TODO change to a dictionary to avoid O(n) lookup
+            var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
+            if (refImage == null)
+            {
+                refImage = new ReferenceImage(fullPath);
+                m_Images.Add(refImage);
+            }
+            return refImage;
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

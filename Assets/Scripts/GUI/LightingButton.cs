@@ -38,7 +38,7 @@ namespace TiltBrush
             m_Preset = rPreset;
 
             SetButtonTexture(m_Preset.m_IconTexture);
-            SetDescriptionText(m_Preset.m_Description);
+            SetDescriptionText(m_Preset.Description);
         }
 
         override protected void OnButtonPressed()

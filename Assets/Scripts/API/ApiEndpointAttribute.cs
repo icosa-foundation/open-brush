@@ -32,10 +32,18 @@ namespace TiltBrush
         private string m_Endpoint;
         private string m_Description;
 
-        public ApiEndpoint(string endpoint, string description)
+        public ApiEndpoint(string endpoint, string description, string exampleUsage = null)
         {
-            this.m_Endpoint = endpoint;
-            this.m_Description = description;
+            m_Endpoint = endpoint;
+            m_Description = description;
+            if (exampleUsage != null)
+            {
+                if (ApiManager.Instance.CommandExamples == null)
+                {
+                    ApiManager.Instance.CommandExamples = new Dictionary<string, string>();
+                }
+                ApiManager.Instance.CommandExamples[endpoint] = exampleUsage;
+            }
         }
 
         public virtual string Endpoint
@@ -58,22 +66,27 @@ namespace TiltBrush
             return paramInfo;
         }
 
-        public void Invoke(System.Object[] parameters)
+        public object Invoke(System.Object[] parameters)
         {
-            methodInfo.Invoke(instance, parameters);
+            return methodInfo.Invoke(instance, parameters);
         }
 
         public object[] DecodeParams(string commandValue)
         {
             var parameters = new object[parameterInfo.Length];
 
-            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).ToArray();
+            string[] tokens = commandValue.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
 
             int tokenIndex = 0;
+
             for (var i = 0; i < parameterInfo.Length; i++)
             {
                 ParameterInfo paramType = parameterInfo[i];
                 object paramValue;
+
+                // Stop parsing if we run out of tokens and the current param is optional
+                // (All following params can be assumed to also be optional)
+                if (i >= tokens.Length && paramType.IsOptional) break;
 
                 if (paramType.ParameterType == typeof(string))
                 {
@@ -104,11 +117,21 @@ namespace TiltBrush
                         float.Parse(tokens[tokenIndex++])
                     );
                 }
+                else if (paramType.ParameterType == typeof(bool))
+                {
+                    paramValue = tokens[tokenIndex++];
+                    string str = paramValue.ToString().ToLower();
+                    paramValue = (str == "true" || str == "on" || str == "1");
+                }
                 else
                 {
                     paramValue = TypeDescriptor.GetConverter(paramType).ConvertFromString(tokens[tokenIndex++]);
                 }
                 parameters[i] = paramValue;
+
+                // Running out of tokens happens if we're calling a method with optional parameters
+                if (tokenIndex >= tokens.Length) break;
+
             }
             return parameters;
         }

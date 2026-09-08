@@ -902,7 +902,7 @@ namespace TiltBrush
         [Test]
         public void TestLinearResampleOne()
         {
-            // https://github.com/icosa-gallery/open-brush/issues/77
+            // https://github.com/icosa-foundation/open-brush/issues/77
             // LinearResample was breaking on arrays of length 1
             float[] floats1 = new float[] { 3.5f };
             float[] floats4 = MathUtils.LinearResampleCurve(floats1, 4).ToArray();

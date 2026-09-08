@@ -25,7 +25,15 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 23d54c8635d7fc44ab5ddf2c8308967a, type: 3}
-  m_Description: Marbled Rainbow
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 81206004192698368
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 1
@@ -34,9 +42,11 @@ MonoBehaviour:
   m_BrushVolumeUpSpeed: 4
   m_BrushVolumeDownSpeed: 4
   m_VolumeVelocityRangeMultiplier: 1
-  m_AudioReactive: 1
+  m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 3e4c4177e058e624487799021cbd1d60, type: 2}
+  m_Material: {fileID: 2100000, guid: 88376eb5fa9f47543bdbce53085a9c0f, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1
   m_TileRate: 0.2
   m_UseBloomSwatchOnColorPicker: 0
@@ -73,3 +83,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -25,6 +26,15 @@ namespace TiltBrush
     {
         const string EXPORT_TEXTURE_DIR = "Support/ExportTextures";
         const string EXPORT_TEXTURE_EXTENSION = ".png";
+
+        public void OnEnable()
+        {
+            m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
+            if (m_BrushScript == null)
+            {
+                throw new ApplicationException("BaseBrushScript not found for brush prefab");
+            }
+        }
 
         /// Use this attribute on fields that are stored as a string guid, but
         /// which want user-friendly UI that looks like a BrushDescriptor.
@@ -91,11 +101,28 @@ namespace TiltBrush
         [Header("GUI")]
         public Texture2D m_ButtonTexture;
         [Tooltip("Name of the brush, in the UI and elsewhere")]
-        public string m_Description;
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
+        public LocalizedString m_LocalizedDescription;
+
+        public string Description
+        {
+            get
+            {
+                try
+                {
+                    var locString = m_LocalizedDescription.GetLocalizedStringAsync().Result;
+                    return locString;
+                }
+                catch
+                {
+                    return m_DurableName;
+                }
+            }
+        }
+
+        // Previously Experimental-Mode only
         [Tooltip("Optional, experimental-only information about the brush")]
         public string m_DescriptionExtra;
-#endif
+
         [System.NonSerialized] public bool m_HiddenInGui = false;
 
         [Header("Audio")]
@@ -111,6 +138,8 @@ namespace TiltBrush
 
         [Header("Material")]
         [SerializeField] private Material m_Material;
+        [SerializeField] private Material m_TestingMaterial;
+        public Material m_OverlayMaterial;
         // Number of atlas textures in the V direction
         public int m_TextureAtlasV;
         public float m_TileRate;
@@ -180,6 +209,7 @@ namespace TiltBrush
         public int m_TailMinPoints = 1;
         public int m_TailPointStep = 1;
         public int m_MiddlePointStep = 0;
+        private BaseBrushScript m_BrushScript;
 
         // ===============================================================================================
         // BEGIN IExportableMaterial interface
@@ -197,21 +227,21 @@ namespace TiltBrush
         {
             get
             {
-                BaseBrushScript brush = m_BrushPrefab.GetComponent<BaseBrushScript>();
-                if (brush == null)
+                if (m_BrushScript == null)
                 {
                     throw new ApplicationException("BaseBrushScript not found for brush prefab");
                 }
-                return brush.GetVertexLayout(this);
+                return m_BrushScript.GetVertexLayout(this);
             }
         }
 
         public bool HasExportTexture()
         {
-            if (m_Material != null)
+            Material material = Material;
+            if (material != null)
             {
-                return m_Material.HasProperty("_MainTex") &&
-                    m_Material.mainTexture is Texture2D;
+                return material.HasProperty("_MainTex") &&
+                    material.mainTexture is Texture2D;
             }
             return false;
         }
@@ -302,6 +332,7 @@ namespace TiltBrush
                 ExportGlTF.ExportedBrush ret;
                 if (!GltfManifest.brushes.TryGetValue(m_Guid, out ret))
                 {
+                    Debug.LogWarning($"GltfManifest.brushes has no {BrushCatalog.m_Instance.GetBrush(m_Guid).name} {m_Guid}");
                     throw new InvalidOperationException("No detailed material info");
                 }
                 return ret;
@@ -331,13 +362,20 @@ namespace TiltBrush
         {
             get
             {
+                if (DevOptions.I != null &&
+                    DevOptions.I.UseBrushTestingMaterial &&
+                    m_TestingMaterial != null)
+                {
+                    return m_TestingMaterial;
+                }
+
                 return m_Material;
             }
         }
 
         public override string ToString()
         {
-            return string.Format("BrushDescriptor<{0} {1} {2}>", this.name, m_Description, m_Guid);
+            return string.Format("BrushDescriptor<{0} {1} {2}>", this.name, Description, m_Guid);
         }
 
         /// Forwarding property to ease Poly Toolkit code compat issues
@@ -406,8 +444,9 @@ namespace TiltBrush
 #if UNITY_EDITOR
         private string GetExportTextureFilenameEditor()
         {
-            Debug.Assert(m_Material != null);
-            Texture2D mainTex = (Texture2D)m_Material.mainTexture;
+            Material material = Material;
+            Debug.Assert(material != null);
+            Texture2D mainTex = (Texture2D)material.mainTexture;
             if (mainTex != null)
             {
                 // Kind of junky... this is because we hardcode this extension
@@ -417,7 +456,7 @@ namespace TiltBrush
                 {
                     throw new InvalidOperationException(string.Format(
                         "{0} texture filetype ({1}) should be a '{2}'.",
-                        m_Description, path, EXPORT_TEXTURE_EXTENSION));
+                        Description, path, EXPORT_TEXTURE_EXTENSION));
                 }
                 return path;
             }

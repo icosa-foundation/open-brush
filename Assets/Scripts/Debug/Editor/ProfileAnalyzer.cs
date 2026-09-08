@@ -165,7 +165,7 @@ namespace TiltBrush
 
         private Histogram m_Histogram;
 
-        [MenuItem("Tilt/Open New Profile Analyzer")]
+        [MenuItem("Open Brush/Open New Profile Analyzer")]
         public static void OpenProfileAnalyzer()
         {
             ProfileAnalyzer analyzer = CreateInstance<ProfileAnalyzer>();
@@ -337,8 +337,8 @@ namespace TiltBrush
 
             // Alternate background styles are used for each line to make the table easier to read.
             GUIStyle[] lineStyles = new GUIStyle[2];
-            lineStyles[0] = new GUIStyle(TreeView.DefaultStyles.backgroundEven);
-            lineStyles[1] = new GUIStyle(TreeView.DefaultStyles.backgroundOdd);
+            lineStyles[0] = new GUIStyle(TreeView<int>.DefaultStyles.backgroundEven);
+            lineStyles[1] = new GUIStyle(TreeView<int>.DefaultStyles.backgroundOdd);
             lineStyles[0].border = new RectOffset(3, 3, 3, 3);
             lineStyles[1].border = new RectOffset(3, 3, 3, 3);
             lineStyles[0].margin = new RectOffset(3, 3, 3, 3);

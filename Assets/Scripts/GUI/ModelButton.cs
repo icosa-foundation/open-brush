@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
 using System.Collections;
+using Gsplat;
+using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -26,7 +28,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnloadedTexture;
         [SerializeField] private Texture2D m_LoadedTexture;
         [SerializeField] private Texture2D m_ErrorTexture;
-        [SerializeField] private string m_LoadHelpText;
+        [SerializeField] private LocalizedString m_LoadHelpText;
         protected Model m_Model;
         protected Model m_ModelPreviewModel;
         protected int m_ModelIndex;
@@ -56,8 +58,21 @@ namespace TiltBrush
 
             // Build the actual preview.
             m_ModelPreview = Instantiate(m_Model.m_ModelParent);
+            foreach (var gsplatRenderer in
+                     m_ModelPreview.GetComponentsInChildren<GsplatRenderer>(includeInactive: true))
+            {
+                gsplatRenderer.ParticipateInGlobalSort = false;
+            }
+            // Disable model lights when it's a panel preview
+            foreach (var light in m_ModelPreview.GetComponentsInChildren<Light>())
+            {
+                light.enabled = false;
+            }
             HierarchyUtils.RecursivelySetLayer(m_ModelPreview, LayerMask.NameToLayer("Panels"));
             m_ModelPreview.gameObject.SetActive(true);
+            var animationComponent = m_ModelPreview.GetComponentInChildren<Animation>();
+            if (animationComponent != null) animationComponent.Play();
+            m_CurrentButtonState = ButtonState.Hover; // Start off animating
             m_ModelPreview.parent = m_PreviewParent;
             float maxSide = Mathf.Max(m_Model.m_MeshBounds.size.x,
                 Mathf.Max(m_Model.m_MeshBounds.size.y, m_Model.m_MeshBounds.size.z));
@@ -154,13 +169,15 @@ namespace TiltBrush
             TrTransform xfSpawn = Coords.AsGlobal[transform]
                 * TrTransform.R(Quaternion.AngleAxis(180, Vector3.up));
             CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation);
+                WidgetManager.m_Instance.ModelWidgetPrefab, xfSpawn, m_PreviewBaseRotation,
+                false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
+            );
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
             ModelWidget modelWidget = createCommand.Widget as ModelWidget;
             modelWidget.Model = model;
             modelWidget.Show(true);
+            modelWidget.AddSceneLightGizmos();
             createCommand.SetWidgetCost(modelWidget.GetTiltMeterCost());
-
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
@@ -178,7 +195,7 @@ namespace TiltBrush
         // the extra description.
         virtual public string UnloadedExtraDescription()
         {
-            return m_LoadHelpText;
+            return m_LoadHelpText.GetLocalizedStringAsync().Result;
         }
         virtual public string LoadedExtraDescription()
         {
@@ -207,17 +224,33 @@ namespace TiltBrush
             }
             else if (m_Model != null)
             {
+                var animationComponent = m_PreviewParent.GetComponentInChildren<Animation>();
                 if (m_CurrentButtonState == ButtonState.Hover)
                 {
-                    m_AnimateValue += Time.deltaTime / m_RotationSeconds;
-                    Vector3 vLocalRot = m_PreviewBaseRotation.eulerAngles;
-                    vLocalRot.y += m_AnimateValue * 360;
-                    m_PreviewParent.localRotation = Quaternion.Euler(vLocalRot);
+                    if (animationComponent != null)
+                    {
+                        animationComponent.Play();
+                    }
+                    else
+                    {
+                        m_AnimateValue += Time.deltaTime / m_RotationSeconds;
+                        Vector3 vLocalRot = m_PreviewBaseRotation.eulerAngles;
+                        vLocalRot.y += m_AnimateValue * 360;
+                        m_PreviewParent.localRotation = Quaternion.Euler(vLocalRot);
+                    }
                 }
                 else
                 {
-                    m_AnimateValue = 0;
-                    m_PreviewParent.localRotation = m_PreviewBaseRotation;
+                    if (animationComponent != null)
+                    {
+                        animationComponent.Stop();
+                        animationComponent.Rewind();
+                    }
+                    else
+                    {
+                        m_AnimateValue = 0;
+                        m_PreviewParent.localRotation = m_PreviewBaseRotation;
+                    }
                 }
 
                 // Both of the following methods protect against invalid models.

@@ -112,15 +112,16 @@ namespace TiltBrush
             var currentCameraPath = WidgetManager.m_Instance.GetCurrentCameraPath();
             bool currentCameraPathIsAFullPath = (currentCameraPath != null) &&
                 (currentCameraPath.WidgetScript.Path.NumPositionKnots > 1);
-            bool showPathButtons = anyPathsActive &&
+            bool showPathButtons = !WidgetManager.m_Instance.CreatingCameraPath &&
+                anyPathsActive &&
                 (currentCameraPath == null || currentCameraPathIsAFullPath);
             m_PathObjects.SetActive(showPathButtons);
             m_NoPathObjects.SetActive(!showPathButtons);
 
             // No Path Text should reflect whether we're creating our first path, or building out
             // another path.
-            m_NoPathText.text = anyPathsActive ||
-                SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.CameraPathTool ?
+            // Used to be anyPathsActive || [...] but that didn't make sense to me
+            m_NoPathText.text = SketchSurfacePanel.m_Instance.GetCurrentToolType() == BaseTool.ToolType.CameraPathTool ?
                     m_NonFirstPathMessage : m_FirstPathMessage;
 
             m_RecordButton.UpdateVisuals();

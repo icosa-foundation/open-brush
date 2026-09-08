@@ -49,6 +49,8 @@ namespace TiltBrush
             None
         }
 
+        protected override IWidgetShape Shape => BoxShape.Instance;
+
         public override Vector3 Extents
         {
             get
@@ -287,15 +289,6 @@ namespace TiltBrush
 
             surfaceNorm = transform.TransformDirection(normal);
             surfacePos = transform.TransformPoint(closestPos);
-        }
-
-        public override float GetActivationScore(
-            Vector3 vControllerPos, InputManager.ControllerName name)
-        {
-            float baseScore = base.GetActivationScore(vControllerPos, name);
-            // don't try to scale if invalid; scaling by zero will make it look valid
-            if (baseScore < 0) { return baseScore; }
-            return baseScore * Mathf.Pow(1 - m_Size / m_MaxSize_CS, 2);
         }
 
         static void FindClosestPointWithStrokeInFace(Vector3 pos, Vector3 halfWidth, CubeFace face, bool preview,

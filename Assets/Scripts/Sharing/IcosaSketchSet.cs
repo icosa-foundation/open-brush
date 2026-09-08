@@ -1,0 +1,1404 @@
+﻿// Copyright 2020 The Tilt Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using UnityEngine;
+using UnityEngine.Networking;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Newtonsoft.Json.Linq;
+
+namespace TiltBrush
+{
+
+    // TODO: Specify tag for which sketches to query (curated, liked etc.)
+    public class IcosaSketchSet : SketchSet
+    {
+
+        const int kDownloadBufferSize = 1024 * 1024; // 1MB
+        private const string kSharedIcosaCacheFolder = "Icosa Sketches";
+        private static readonly object s_SharedCachePruneLock = new object();
+        private static readonly HashSet<string> s_InFlightTiltPaths =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Downloading is handled by IcosaSketchSet which will set the local paths
+
+        private class IcosaSketch : Sketch
+        {
+            // This value holds the count of sketches that were downloaded by the sketch set
+            // before this one.  It's used during our sort to retain order from Icosa, while
+            // allowing a custom sort on top.
+            public int m_DownloadIndex;
+            private IcosaSceneFileInfo m_FileInfo;
+            private Texture2D m_Icon;
+
+            public SceneFileInfo SceneFileInfo
+            {
+                get { return m_FileInfo; }
+            }
+
+            public string[] Authors
+            {
+                get
+                {
+                    return m_FileInfo.Author != null
+                        ? new string[] { m_FileInfo.Author }
+                        : new string[] { };
+                }
+            }
+
+            public Texture2D Icon
+            {
+                get { return m_Icon; }
+                set { m_Icon = value; }
+            }
+
+            public bool IconAndMetadataValid
+            {
+                get { return m_Icon != null; }
+            }
+
+            public IcosaSketch(IcosaSceneFileInfo info)
+            {
+                m_FileInfo = info;
+            }
+
+            public void UnloadIcon()
+            {
+                UnityEngine.Object.Destroy(m_Icon);
+                m_Icon = null;
+            }
+
+            // Not part of the interface
+            public IcosaSceneFileInfo IcosaSceneFileInfo
+            {
+                get { return m_FileInfo; }
+            }
+        }
+
+        private const string kIntroSketchAssetId = "agqmaia62KE";
+        private const int kIntroSketchIndex = 1;
+
+        private List<IcosaSketch> m_Sketches;
+        private Dictionary<string, IcosaSketch> m_AssetIds;
+        private int m_TotalCount = 0;
+        private VrAssetService m_AssetService;
+        private MonoBehaviour m_Parent;
+        private bool m_Ready;
+        private bool m_RefreshRequested;
+        private bool m_NeedsLogin;
+        private bool m_LoggedIn;
+        private bool m_ActivelyRefreshingSketches;
+
+        private SketchSetType m_Type;
+        private string m_CacheDir;
+        private Coroutine m_RefreshCoroutine;
+        private float m_CooldownTimer;
+        private List<int> m_RequestedIcons = new List<int>();
+        private Coroutine m_TextureLoaderCoroutine;
+        private readonly Dictionary<string, Coroutine> m_PreloadingTiltsByAssetId =
+            new Dictionary<string, Coroutine>();
+
+        public SketchSetType Type { get { return m_Type; } }
+        public SketchCatalog.SketchQueryParameters m_QueryParams;
+
+        public VrAssetService VrAssetService
+        {
+            set { m_AssetService = value; }
+        }
+
+        public IcosaSketchSet(MonoBehaviour parent, SketchSetType type, bool needsLogin = false)
+        {
+            m_Parent = parent;
+            m_Sketches = new List<IcosaSketch>();
+            m_AssetIds = new Dictionary<string, IcosaSketch>();
+            m_Ready = false;
+            m_RefreshRequested = false;
+            m_Type = type;
+            m_NeedsLogin = needsLogin;
+        }
+
+        public void Init()
+        {
+            VrAssetService = VrAssetService.m_Instance;
+            m_LoggedIn = false;
+            m_RefreshRequested = true;
+            m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.REMIXABLE,
+                        OrderBy = OrderByChoices.BEST,
+                        Curated = CuratedChoices.TRUE,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                case SketchSetType.Liked:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.REMIXABLE,
+                        OrderBy = OrderByChoices.LIKED_TIME,
+                        Curated = CuratedChoices.ANY,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                case SketchSetType.User:
+                    m_QueryParams = new()
+                    {
+                        SearchText = "",
+                        License = LicenseChoices.ANY,
+                        OrderBy = OrderByChoices.NEWEST,
+                        Curated = CuratedChoices.ANY,
+                        Category = CategoryChoices.ANY
+                    };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public bool IsReadyForAccess
+        {
+            get { return m_Ready; }
+        }
+
+        public bool IsActivelyRefreshingSketches
+        {
+            get { return m_ActivelyRefreshingSketches; }
+            private set
+            {
+                m_ActivelyRefreshingSketches = value;
+                OnSketchRefreshingChanged();
+            }
+        }
+
+        public bool RequestedIconsAreLoaded
+        {
+            get { return false; }
+        }
+
+        public int NumSketches
+        {
+            get { return m_TotalCount; }
+        }
+
+        public void NotifySketchCreated(string fullpath) { }
+
+        public void NotifySketchChanged(string fullpath) { }
+
+
+        public void RequestForcedRefresh()
+        {
+            ResetLists();
+            // Stop the current refresh and start a new one
+            m_Parent.StopCoroutine(m_RefreshCoroutine);
+            m_RefreshRequested = true;
+            m_RefreshCoroutine = m_Parent.StartCoroutine(PeriodicRefreshCoroutine());
+
+        }
+
+        public void RequestRefresh()
+        {
+            m_RefreshRequested = true;
+        }
+
+        public bool IsSketchIndexValid(int index)
+        {
+            return index >= 0 && index < m_TotalCount;
+        }
+
+        public void RequestOnlyLoadedMetadata(List<int> requests)
+        {
+            // Stop any current texture loading
+            if (m_TextureLoaderCoroutine != null)
+            {
+                m_Parent.StopCoroutine(m_TextureLoaderCoroutine);
+                m_TextureLoaderCoroutine = null;
+            }
+            // Nuke textures on all icons
+            foreach (var sketch in m_Sketches)
+            {
+                sketch.UnloadIcon();
+            }
+            m_RequestedIcons.Clear();
+            m_RequestedIcons.AddRange(requests);
+            m_TextureLoaderCoroutine = m_Parent.StartCoroutine(TextureLoaderCoroutine());
+        }
+
+        public bool GetSketchIcon(int iSketchIndex, out Texture2D icon, out string[] authors,
+                                  out string description)
+        {
+            description = null;
+            if (iSketchIndex >= m_Sketches.Count)
+            {
+                icon = null;
+                authors = null;
+                return false;
+            }
+            IcosaSketch sketch = m_Sketches[iSketchIndex];
+            icon = sketch.Icon;
+            authors = sketch.Authors;
+            return icon != null;
+        }
+
+        public bool TryGetIconForAssetId(string assetId, out Texture2D icon)
+        {
+            icon = null;
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (TryGetLoadedIcon(sketch, out icon))
+            {
+                return true;
+            }
+
+            return TryMaterializeCachedIcon(sketch, out icon);
+        }
+
+        public bool TryGetSketchIndexForAssetId(string assetId, out int index)
+        {
+            return TryGetSketchForAssetId(assetId, out _, out index);
+        }
+
+        public bool TryPreloadSketchForAssetId(string assetId)
+        {
+            if (!TryGetSketchForAssetId(assetId, out var sketch, out _))
+            {
+                return false;
+            }
+
+            if (!EnsureCacheDirAvailable())
+            {
+                return false;
+            }
+
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            RestoreLocalCacheState(sceneFileInfo);
+
+            if (sceneFileInfo.TiltDownloaded)
+            {
+                return true;
+            }
+
+            if (m_PreloadingTiltsByAssetId.ContainsKey(assetId))
+            {
+                return true;
+            }
+
+            m_PreloadingTiltsByAssetId[assetId] =
+                m_Parent.StartCoroutine(PreloadSketchForAssetCoroutine(assetId, sketch));
+            return true;
+        }
+
+        public bool IsPreloadingSketchForAssetId(string assetId)
+        {
+            return !string.IsNullOrWhiteSpace(assetId) &&
+                m_PreloadingTiltsByAssetId.ContainsKey(assetId);
+        }
+
+        private bool TryGetSketchForAssetId(string assetId, out IcosaSketch sketch, out int index)
+        {
+            sketch = null;
+            index = -1;
+            if (string.IsNullOrWhiteSpace(assetId))
+            {
+                return false;
+            }
+
+            if (!m_AssetIds.TryGetValue(assetId, out sketch))
+            {
+                return false;
+            }
+
+            index = m_Sketches.IndexOf(sketch);
+            return index >= 0;
+        }
+
+        private static bool TryGetLoadedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = sketch.Icon;
+            return icon != null;
+        }
+
+        private static bool TryMaterializeCachedIcon(IcosaSketch sketch, out Texture2D icon)
+        {
+            icon = null;
+            var sceneFileInfo = sketch.IcosaSceneFileInfo;
+            if (!sceneFileInfo.IconDownloaded || string.IsNullOrWhiteSpace(sceneFileInfo.IconPath) ||
+                !File.Exists(sceneFileInfo.IconPath))
+            {
+                return false;
+            }
+
+            byte[] data = File.ReadAllBytes(sceneFileInfo.IconPath);
+            var texture = new Texture2D(2, 2);
+            texture.LoadImage(data);
+            sketch.Icon = texture;
+            icon = texture;
+            return true;
+        }
+
+        private void RestoreLocalCacheState(IcosaSceneFileInfo info)
+        {
+            info.TiltPath = Path.Combine(m_CacheDir, string.Format("{0}.tilt", info.AssetId));
+            info.IconPath = Path.Combine(m_CacheDir, string.Format("{0}.png", info.AssetId));
+            info.TiltDownloaded = IsCachedTiltValid(info);
+            info.IconDownloaded = File.Exists(info.IconPath);
+        }
+
+        private bool EnsureCacheDirAvailable()
+        {
+            if (!string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return true;
+            }
+
+            m_CacheDir = CacheDir(Type);
+            if (string.IsNullOrWhiteSpace(m_CacheDir))
+            {
+                return false;
+            }
+
+            try
+            {
+                Directory.CreateDirectory(m_CacheDir);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (!(ex is SystemException) || ex is ArgumentNullException)
+                {
+                    Debug.LogException(ex);
+                }
+                return false;
+            }
+        }
+
+        private IEnumerator PreloadSketchForAssetCoroutine(string assetId, IcosaSketch sketch)
+        {
+            try
+            {
+                yield return DownloadTiltsCoroutine(new List<IcosaSketch> { sketch });
+
+                if (sketch.IcosaSceneFileInfo.TiltDownloaded)
+                {
+                    OnChanged();
+                }
+            }
+            finally
+            {
+                m_PreloadingTiltsByAssetId.Remove(assetId);
+            }
+        }
+
+        public SceneFileInfo GetSketchSceneFileInfo(int i)
+        {
+            return i < m_Sketches.Count ? m_Sketches[i].SceneFileInfo : null;
+        }
+
+        public string GetSketchName(int i)
+        {
+            return i < m_Sketches.Count ? m_Sketches[i].SceneFileInfo.HumanName : null;
+        }
+
+        public void RenameSketch(int toRename, string newName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PrecacheSketchModels(int i)
+        {
+            if (i < m_Sketches.Count)
+            {
+                App.IcosaAssetCatalog.PrecacheModels(m_Sketches[i].SceneFileInfo, $"IcosaSketchSet {i}");
+            }
+        }
+
+        public void DeleteSketch(int toDelete)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Update()
+        {
+            if (!VrAssetService.m_Instance.Available)
+            {
+                return;
+            }
+
+            if (m_NeedsLogin)
+            {
+                bool loggedIn = App.IcosaIsLoggedIn;
+                if (loggedIn != m_LoggedIn)
+                {
+                    m_LoggedIn = loggedIn;
+                    if (!loggedIn)
+                    {
+                        if (m_RefreshCoroutine != null)
+                        {
+                            ResetLists();
+                            m_Parent.StopCoroutine(m_RefreshCoroutine);
+                            IsActivelyRefreshingSketches = false;
+                            m_RefreshCoroutine = null;
+                            OnChanged();
+                        }
+                    }
+                    else
+                    {
+                        // Lie about refreshing.  The refresh coroutine will happen in time, but
+                        // for the user, we want them to know something will happen [soon].
+                        IsActivelyRefreshingSketches = true;
+                        m_RefreshCoroutine = m_Parent.StartCoroutine(PeriodicRefreshCoroutine());
+                    }
+                }
+            }
+            else if (m_RefreshRequested && m_RefreshCoroutine == null)
+            {
+                m_RefreshCoroutine = m_Parent.StartCoroutine(PeriodicRefreshCoroutine());
+            }
+        }
+
+        public event Action OnChanged = delegate { };
+
+        public event Action OnSketchRefreshingChanged = delegate { };
+
+        private IEnumerator PeriodicRefreshCoroutine()
+        {
+            while (true)
+            {
+                if (m_RefreshRequested)
+                {
+                    yield return Refresh();
+                    m_RefreshRequested = false;
+
+                    m_CooldownTimer = VrAssetService.m_Instance.m_SketchbookRefreshInterval;
+                }
+                else
+                {
+                    yield return null;
+                }
+                while (m_CooldownTimer > 0.0f)
+                {
+                    m_CooldownTimer -= Time.deltaTime;
+                    yield return null;
+                }
+            }
+        }
+
+        // Update our state from the cloud.
+        // There are three stages to this, each with a separate coroutine:
+        // 1: Pull all the metadata from the server and populate m_Sketches
+        // If there are changes:
+        //   2: Download any thumbnails and tilt files we don't already have
+        //   3: Clean up any cached files that are no longer referenced
+        private IEnumerator Refresh()
+        {
+            if (m_NeedsLogin && !m_LoggedIn)
+            {
+                ResetLists();
+                OnChanged();
+                yield break;
+            }
+
+            if (m_CacheDir == null)
+            {
+                m_CacheDir = CacheDir(Type);
+                try
+                {
+                    Directory.CreateDirectory(m_CacheDir);
+                }
+                catch (Exception ex)
+                {
+                    // Most of the system exceptions returned by CreateDirectory are just things the user needs
+                    // to fix, and may well be sorted by reinstalling. If it's an ArgumentNullExeption or not a
+                    // SystemException, we need to know about it, so log the exception.
+                    if (!(ex is SystemException) || ex is ArgumentNullException)
+                    {
+                        Debug.LogException(ex);
+                    }
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                        $"Error creating cache directory. Try restarting {App.kAppDisplayName}.\n" +
+                        $"If this error persists, try reinstalling {App.kAppDisplayName}.", true);
+                    yield break;
+                }
+            }
+
+            // While we're fetching metadata, hold a flag so we can message state in the UI.
+            IsActivelyRefreshingSketches = true;
+            try
+            {
+                yield return PopulateSketchesCoroutine();
+            }
+            finally
+            {
+                IsActivelyRefreshingSketches = false;
+            }
+        }
+
+        private void ResetLists()
+        {
+            m_Sketches.Clear();
+            m_AssetIds.Clear();
+            m_TotalCount = 0;
+            m_CacheDir = null;
+        }
+
+        // Fetch asset metadata from server and populate m_Sketches
+        private IEnumerator PopulateSketchesCoroutine()
+        {
+            // Replacement data structures that will be populated with incoming data.  These
+            // temporary structures will be copied to the "live" structures in chunks, so
+            // beware of modifications that may reference incomplete data.
+            List<IcosaSketch> sketches = new List<IcosaSketch>();
+            Dictionary<string, IcosaSketch> assetIds = new Dictionary<string, IcosaSketch>();
+
+            bool fromEmpty = m_AssetIds.Count == 0;
+            int loadSketchCount = 0;
+
+            AssetLister lister = null;
+            List<IcosaSceneFileInfo> infos = new List<IcosaSceneFileInfo>();
+
+            // If we don't have a connection to Icosa and we're querying the Showcase, use
+            // the json metadatas stored in resources, instead of trying to get them from Icosa.
+            if (VrAssetService.m_Instance.m_UseLocalFeaturedSketches && m_Type == SketchSetType.Curated)
+            {
+                TextAsset[] textAssets =
+                    Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
+                for (int i = 0; i < textAssets.Length; ++i)
+                {
+                    JObject jo = JObject.Parse(textAssets[i].text);
+                    infos.Add(new IcosaSceneFileInfo(jo));
+                }
+            }
+            else
+            {
+                lister = m_AssetService.ListAssets(Type, m_QueryParams);
+            }
+
+            bool changed = false;
+            int pagesFetched = 0;
+            while (lister == null || lister.HasMore || assetIds.Count == 0)
+            {
+                if (sketches.Count >= 180)
+                {
+                    break; // Don't allow the sketchbook to become too big.
+                }
+
+                // lister will be null if we can't connect to Icosa and we've pre-populated infos
+                // with data from Resources.
+                if (lister != null)
+                {
+                    using (var cr = lister.NextPage(infos))
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                if (!cr.MoveNext())
+                                {
+                                    break;
+                                }
+                            }
+                            catch (VrAssetServiceException e)
+                            {
+                                ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                                Debug.LogException(e);
+                                yield break;
+                            }
+                            yield return cr.Current;
+                        }
+                    }
+                }
+                if (infos.Count == 0)
+                {
+                    if (lister != null && lister.HasMore)
+                    {
+                        continue;
+                    }
+                    break;
+                }
+                if (m_CacheDir == null)
+                {
+                    yield break;
+                }
+                for (int i = 0; i < infos.Count; i++)
+                {
+                    IcosaSceneFileInfo info = infos[i];
+                    if (info == null || !info.Valid)
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Skipping invalid Icosa sketch metadata at index {i}");
+                        continue;
+                    }
+                    IcosaSketch sketch;
+                    if (m_AssetIds.TryGetValue(info.AssetId, out sketch))
+                    {
+                        RestoreLocalCacheState(sketch.IcosaSceneFileInfo);
+                    }
+                    else
+                    {
+                        sketch = new IcosaSketch(info);
+                        sketch.m_DownloadIndex = loadSketchCount++;
+                        RestoreLocalCacheState(info);
+                        changed = true;
+                    }
+                    if (assetIds.ContainsKey(info.AssetId))
+                    {
+                        Debug.LogWarning($"VR Asset Service has returned two objects for: {info.AssetId} {info.HumanName}");
+                    }
+                    else
+                    {
+                        sketches.Add(sketch);
+                        assetIds.Add(info.AssetId, sketch);
+                    }
+                }
+                infos.Clear();
+
+                // Only download the files with every other page, otherwise the sketch pages change too often,
+                // Which results in a bad user experience.
+                if ((++pagesFetched & 1) == 0 || lister == null || !lister.HasMore)
+                {
+                    // TODO - check it's ok to remove this and rely entirely on server sorting
+                    // if (Type == SketchSetType.Curated)
+                    // {
+                    //     sketches.Sort(CompareSketchesByTriangleCountAndDownloadIndex);
+                    // }
+
+                    // If populating the set from new then show stuff as it comes in.
+                    // (We don't have to worry about anything being removed)
+                    if (fromEmpty)
+                    {
+                        yield return DownloadIconsCoroutine(sketches);
+                        // Copying sketches to m_Sketches before sketches has completed populating is a bit
+                        // dangerous, but as long as they're copied and then listeners are notified
+                        // immediately afterward with OnChanged(), there data should be stable.
+                        m_TotalCount = sketches.Count;
+                        m_Sketches = new List<IcosaSketch>(sketches);
+                        m_AssetIds = assetIds;
+                        m_Ready = true;
+                        OnChanged();
+                    }
+                }
+            }
+
+            if (!fromEmpty)
+            {
+                // Find anything that was removed
+                int removed = m_Sketches.Count(s => !assetIds.ContainsKey(s.IcosaSceneFileInfo.AssetId));
+                if (removed > 0)
+                {
+                    changed = true;
+                }
+
+                // Download new files before we notify our listeners that we've got new stuff for them.
+                if (changed)
+                {
+                    yield return DownloadIconsCoroutine(sketches);
+                }
+
+                // PruneOldSketchesCoroutine relies on m_AssetIds being up to date, so set these before
+                // we try to cull the herd.
+                m_AssetIds = assetIds;
+                if (changed)
+                {
+                    yield return PruneOldSketchesCoroutine();
+                }
+
+                // Set new data live
+                m_TotalCount = sketches.Count;
+                m_Sketches = new List<IcosaSketch>(sketches);
+                m_Ready = true;
+                if (changed)
+                {
+                    OnChanged();
+                }
+            }
+            else
+            {
+                // On first run populate, take the time to clean out any cobwebs.
+                // Note that this is particularly important for the curated sketches, which do not have
+                // a periodic refresh, meaning old sketches will never been deleted in the other path.
+                yield return PruneOldSketchesCoroutine();
+                OnChanged();
+            }
+        }
+
+        private bool IsCachedTiltValid(IcosaSceneFileInfo sceneFileInfo)
+        {
+            if (sceneFileInfo.TryUseCachedTiltFile())
+            {
+                return true;
+            }
+
+            if (!File.Exists(sceneFileInfo.TiltPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                File.Delete(sceneFileInfo.TiltPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Could not delete invalid cached sketch: {ex}");
+            }
+            return false;
+        }
+
+        public IEnumerator DownloadFilesCoroutine(System.Action onComplete = null, Action onDownload = null)
+        {
+            yield return DownloadIconsCoroutine(m_Sketches);
+            yield return DownloadTiltsCoroutine(m_Sketches, onDownload);
+            onComplete?.Invoke();
+        }
+
+        public IEnumerator DownloadFilesCoroutine(List<int> indices, Action onComplete = null, Action onDownload = null)
+        {
+            var sketchesToDownload = indices
+                .Where(i => i >= 0 && i < m_Sketches.Count)
+                .Select(i => m_Sketches[i])
+                .ToList();
+
+            yield return DownloadIconsCoroutine(sketchesToDownload);
+            yield return DownloadTiltsCoroutine(sketchesToDownload, onDownload);
+            onComplete?.Invoke();
+        }
+
+        private IEnumerator DownloadIconsCoroutine(List<IcosaSketch> sketches)
+        {
+            bool notifyOnError = true;
+            void NotifyCreateError(IcosaSceneFileInfo sceneFileInfo, string type, Exception ex)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogException(ex);
+                Debug.LogError($"{sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            void NotifyWriteError(IcosaSceneFileInfo sceneFileInfo, string type, UnityWebRequest www)
+            {
+                string error = $"Error downloading {type} file for {sceneFileInfo.HumanName}.\n" +
+                    "Out of disk space?";
+                ControllerConsoleScript.m_Instance.AddNewLine(error, notifyOnError);
+                notifyOnError = false;
+                Debug.LogError($"{www.error} {sceneFileInfo.HumanName} {sceneFileInfo.TiltPath}");
+            }
+
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            foreach (IcosaSketch sketch in sketches)
+            {
+                IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
+                // TODO(b/36270116): Check filesizes when Icosa can give it to us to detect incomplete downloads
+                if (!sceneFileInfo.IconDownloaded)
+                {
+                    if (string.IsNullOrEmpty(sceneFileInfo.IconUrl))
+                    {
+                        Debug.LogWarning($"ICOSATILT_LOAD Missing icon URL for {sceneFileInfo.HumanName}");
+                    }
+                    else if (File.Exists(sceneFileInfo.IconPath))
+                    {
+                        sceneFileInfo.IconDownloaded = true;
+                    }
+                    else
+                    {
+                        using (UnityWebRequest www = UnityWebRequest.Get(sceneFileInfo.IconUrl))
+                        {
+                            DownloadHandlerFastFile downloadHandler;
+                            try
+                            {
+                                downloadHandler = new DownloadHandlerFastFile(sceneFileInfo.IconPath, downloadBuffer);
+                            }
+                            catch (Exception ex)
+                            {
+                                NotifyCreateError(sceneFileInfo, "icon", ex);
+                                continue;
+                            }
+                            www.downloadHandler = downloadHandler;
+                            yield return www.SendWebRequest();
+                            if (www.isNetworkError || www.responseCode >= 400 || !string.IsNullOrEmpty(www.error))
+                            {
+                                NotifyWriteError(sceneFileInfo, "icon", www);
+                            }
+                            else
+                            {
+                                sceneFileInfo.IconDownloaded = true;
+                            }
+                        }
+                    }
+                }
+                yield return null;
+            }
+            yield return null;
+        }
+
+        private IEnumerator DownloadTiltsCoroutine(List<IcosaSketch> sketches, Action onDownload = null)
+        {
+            bool notifyOnError = true;
+            void NotifyDownloadResult(IcosaSceneFileInfo sceneFileInfo, IcosaTiltDownloadResult result)
+            {
+                if (result == null || result.Succeeded || result.Status == IcosaTiltDownloadStatus.Canceled)
+                {
+                    return;
+                }
+                ControllerConsoleScript.m_Instance.AddNewLine(result.UserMessage, notifyOnError);
+                notifyOnError = false;
+                if (result.Exception != null)
+                {
+                    Debug.LogException(result.Exception);
+                }
+                Debug.LogError($"ICOSATILT_LOAD {result.Status}: {result.Details ?? sceneFileInfo.TiltPath}");
+            }
+
+            byte[] downloadBuffer = new byte[kDownloadBufferSize];
+            foreach (IcosaSketch sketch in sketches)
+            {
+                IcosaSceneFileInfo sceneFileInfo = sketch.IcosaSceneFileInfo;
+                if (!sceneFileInfo.TiltDownloaded)
+                {
+                    string protectedTiltPath = Path.GetFullPath(sceneFileInfo.TiltPath);
+                    lock (s_SharedCachePruneLock)
+                    {
+                        s_InFlightTiltPaths.Add(protectedTiltPath);
+                    }
+                    try
+                    {
+                        if (IsCachedTiltValid(sceneFileInfo))
+                        {
+                            sceneFileInfo.TiltDownloaded = true;
+                        }
+                        else
+                        {
+                            IcosaTiltDownloadResult result = null;
+                            yield return IcosaTiltDownloader.DownloadTiltCoroutine(
+                                sceneFileInfo, sceneFileInfo.TiltPath, downloadBuffer,
+                                isCanceled: null,
+                                onRequestChanged: null,
+                                onComplete: r => result = r);
+                            if (result != null && !result.Succeeded)
+                            {
+                                NotifyDownloadResult(sceneFileInfo, result);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        lock (s_SharedCachePruneLock)
+                        {
+                            s_InFlightTiltPaths.Remove(protectedTiltPath);
+                        }
+                    }
+                    onDownload?.Invoke();
+                }
+                yield return null;
+            }
+            yield return null;
+        }
+
+        // If we've exceeded our max cache size, prune the shared Icosa cache by deleting the
+        // least recently accessed entries first. This cache is shared across all Icosa-backed
+        // sketch sets, so pruning cannot rely on one set's current asset ids.
+        private IEnumerator PruneOldSketchesCoroutine()
+        {
+            yield return null;
+
+            if (m_CacheDir == null) yield break;
+
+            long maxSize = App.PlatformConfig.SketchSetMaxCacheSize;
+            var protectedTiltPaths = GetLiveTiltPaths();
+
+            var task = new Future<(int, long)>(() =>
+            {
+                lock (s_SharedCachePruneLock)
+                {
+                    protectedTiltPaths.UnionWith(s_InFlightTiltPaths);
+                    var cacheFiles = new DirectoryInfo(m_CacheDir).EnumerateFiles();
+                    var pruneCandidates = new List<FileInfo>();
+
+                    var totalSize = (long)0;
+                    foreach (var file in cacheFiles)
+                    {
+                        totalSize += file.Length;
+
+                        // Use the tilt timestamp as the cache recency signal and delete its
+                        // paired icon at the same time.
+                        if (string.Equals(file.Extension, ".tilt", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (!protectedTiltPaths.Contains(file.FullName))
+                            {
+                                pruneCandidates.Add(file);
+                            }
+                        }
+                    }
+
+                    if (totalSize <= maxSize)
+                    {
+                        // No need to prune - sketch size within bounds.
+                        return (0, totalSize);
+                    }
+
+                    // Prune the cache.
+                    var prunedCount = 0;
+                    pruneCandidates.Sort(CompareLastAccessTimeAscending);
+                    for (int i = 0;
+                         i < pruneCandidates.Count && totalSize > maxSize;
+                         i++)
+                    {
+                        var candidateTilt = pruneCandidates[i];
+                        if (!candidateTilt.Exists)
+                        {
+                            continue;
+                        }
+
+                        var candidateImg = new FileInfo(
+                            Path.ChangeExtension(candidateTilt.FullName, ".png"));
+
+                        totalSize -= candidateTilt.Length;
+                        if (candidateImg.Exists)
+                        {
+                            totalSize -= candidateImg.Length;
+                            candidateImg.Delete();
+                        }
+
+                        candidateTilt.Delete();
+
+                        prunedCount++;
+                    }
+
+                    return (prunedCount, totalSize);
+                }
+            });
+
+            // Poll for task complete.
+            while (true)
+            {
+                var taskComplete = false;
+                var prunedCountAndSize = (0, (long)0);
+                try
+                {
+                    taskComplete = task.TryGetResult(out prunedCountAndSize);
+                }
+                catch (FutureFailed e)
+                {
+                    // We're not too concerned if the cache couldn't be deleted.
+                    // Just make sure the error gets surfaced.
+                    Debug.LogWarning(e);
+                    yield break;
+                }
+
+                if (taskComplete)
+                {
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            static int CompareLastAccessTimeAscending(FileInfo a, FileInfo b)
+            {
+                return (int)(a.LastAccessTimeUtc.Ticks - b.LastAccessTimeUtc.Ticks);
+            }
+        }
+
+        private HashSet<string> GetLiveTiltPaths()
+        {
+            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            AddLiveTiltPaths(paths);
+
+            if (SketchCatalog.m_Instance == null)
+            {
+                return paths;
+            }
+
+            foreach (SketchSetType setType in new[]
+                     {
+                         SketchSetType.Curated,
+                         SketchSetType.Liked,
+                         SketchSetType.User,
+                     })
+            {
+                if (SketchCatalog.m_Instance.GetSet(setType) is IcosaSketchSet icosaSet &&
+                    !ReferenceEquals(icosaSet, this))
+                {
+                    icosaSet.AddLiveTiltPaths(paths);
+                }
+            }
+
+            return paths;
+        }
+
+        private void AddLiveTiltPaths(HashSet<string> paths)
+        {
+            foreach (IcosaSketch sketch in m_Sketches)
+            {
+                string tiltPath = sketch.IcosaSceneFileInfo.TiltPath;
+                if (!string.IsNullOrWhiteSpace(tiltPath))
+                {
+                    paths.Add(Path.GetFullPath(tiltPath));
+                }
+            }
+
+            foreach (string assetId in m_PreloadingTiltsByAssetId.Keys)
+            {
+                paths.Add(Path.GetFullPath(Path.Combine(m_CacheDir, $"{assetId}.tilt")));
+            }
+        }
+
+        // Read the icon textures for all sketches in m_RequestedIcons
+        private IEnumerator TextureLoaderCoroutine()
+        {
+            while (m_RequestedIcons.Count > 0)
+            {
+                foreach (int i in m_RequestedIcons)
+                {
+                    if (i < 0 || i >= m_Sketches.Count)
+                    {
+                        continue;
+                    }
+
+                    IcosaSketch sketch = m_Sketches[i];
+                    TryMaterializeCachedIcon(sketch, out _);
+                    yield return null;
+                }
+                m_RequestedIcons.RemoveAll(RequestedIconIsLoadedOrUnavailable);
+            }
+        }
+
+        private bool RequestedIconIsLoadedOrUnavailable(int i)
+        {
+            if (i < 0 || i >= m_Sketches.Count)
+            {
+                return true;
+            }
+
+            IcosaSketch sketch = m_Sketches[i];
+            IcosaSceneFileInfo info = sketch.IcosaSceneFileInfo;
+            if (sketch.Icon != null)
+            {
+                return true;
+            }
+
+            return info == null ||
+                !info.IconDownloaded ||
+                string.IsNullOrEmpty(info.IconPath) ||
+                !File.Exists(info.IconPath);
+        }
+
+        private static string CacheDir(SketchSetType type)
+        {
+            switch (type)
+            {
+                case SketchSetType.Curated:
+                case SketchSetType.Liked:
+                case SketchSetType.User:
+                    return Path.Combine(Application.persistentDataPath, kSharedIcosaCacheFolder);
+                default:
+                    return null;
+            }
+        }
+
+        // When we sort the sketches, we sort them into buckets while retaining order within those
+        // buckets. We bucket the sketches using the gltf triangle count, but how we bucket depends on
+        // whether we are sorting the liked sketches or the curated sketches.
+        // Liked sketches get split into normal, complex (requires a warning), and impossible.
+        // Curated sketches get bucketed by the nearest 100,000 triangles.
+        private static int CompareSketchesByTriangleCountAndDownloadIndex(IcosaSketch a, IcosaSketch b)
+        {
+            int compareResult = CloudSketchComplexityBucket(a).CompareTo(CloudSketchComplexityBucket(b));
+
+            // If both sketches are in the same grouping, sort them relative to download index.
+            if (compareResult == 0)
+            {
+                return a.m_DownloadIndex.CompareTo(b.m_DownloadIndex);
+            }
+
+            return compareResult;
+        }
+
+        // Buckets the sketches into buckets 100000 tris in size.
+        private static int CloudSketchComplexityBucket(IcosaSketch s)
+        {
+            return s.IcosaSceneFileInfo.GltfTriangleCount / 100000;
+        }
+    }
+
+    public class IcosaSceneFileInfo : SceneFileInfo
+    {
+
+        // Asset
+        private string m_AssetId;
+        private string m_HumanName;
+        private string m_License;
+
+        private string m_localTiltFile;
+        private string m_localIcon;
+        private string m_TiltFileUrl;
+        private string m_IconUrl;
+        private int m_GltfTriangleCount;
+
+        private TiltFile m_DownloadedFile;
+        private bool m_IconDownloaded;
+
+        public bool IsValid => !string.IsNullOrEmpty(m_AssetId) &&
+            !string.IsNullOrEmpty(m_HumanName) &&
+            !string.IsNullOrEmpty(m_TiltFileUrl);
+
+        // Populate metadata from the JSON returned by Icosa for a single asset
+        // See go/vr-assets-service-api
+        public IcosaSceneFileInfo(JToken json)
+        {
+            m_AssetId = json?["assetId"]?.ToString();
+            m_HumanName = json?["displayName"]?.ToString();
+            if (string.IsNullOrWhiteSpace(m_HumanName))
+            {
+                m_HumanName = string.IsNullOrWhiteSpace(m_AssetId) ? "Untitled" : m_AssetId;
+            }
+
+            TiltDownloadStrategy strategy = VrAssetService.m_Instance != null
+                ? VrAssetService.m_Instance.m_TiltDownloadStrategy
+                : TiltDownloadStrategy.AvoidArchive;
+            JToken formats = json?["formats"];
+            JToken format = SelectTiltFormat(formats, strategy);
+            m_TiltFileUrl = format?["root"]?["url"]?.ToString();
+            m_IconUrl = json?["thumbnail"]?["url"]?.ToString();
+            m_License = json?["license"]?.ToString();
+
+            // Some assets (old ones? broken ones?) are missing the "formatComplexity" field
+            var validFormat = formats?.FirstOrDefault(x =>
+                x["formatType"]?.ToString() == "GLTF2" ||
+                x["formatType"]?.ToString() == "GLTF" ||
+                x["formatType"]?.ToString() == "OBJ"
+            );
+            string triCount = validFormat?["formatComplexity"]?["triangleCount"]?.ToString();
+            if (!Int32.TryParse(triCount, out m_GltfTriangleCount) || m_GltfTriangleCount < 1)
+            {
+                m_GltfTriangleCount = 1;
+            }
+
+            m_DownloadedFile = null;
+            m_IconDownloaded = false;
+        }
+
+        private static JToken SelectTiltFormat(JToken formats, TiltDownloadStrategy strategy)
+        {
+            if (formats == null)
+            {
+                return null;
+            }
+
+            List<JToken> tiltFormats = formats
+                .Where(x => x["formatType"]?.ToString() == "TILT"
+                    && !string.IsNullOrEmpty(GetFormatUrl(x)))
+                .ToList();
+            if (tiltFormats.Count == 0)
+            {
+                return null;
+            }
+
+            if (strategy == TiltDownloadStrategy.AvoidArchive)
+            {
+                List<JToken> nonArchiveFormats = tiltFormats
+                    .Where(x => !IsArchiveUrl(GetFormatUrl(x)))
+                    .ToList();
+                if (nonArchiveFormats.Count > 0)
+                {
+                    return GetPreferredFormat(nonArchiveFormats) ?? nonArchiveFormats[0];
+                }
+            }
+
+            return GetPreferredFormat(tiltFormats) ?? tiltFormats[0];
+        }
+
+        private static JToken GetPreferredFormat(List<JToken> formats)
+        {
+            return formats.FirstOrDefault(x => x["isPreferredForDownload"]?.Value<bool>() == true);
+        }
+
+        private static string GetFormatUrl(JToken format)
+        {
+            return format?["root"]?["url"]?.ToString();
+        }
+
+        private static bool IsArchiveUrl(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+            {
+                return false;
+            }
+
+            if (Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return uri.Host.Equals("archive.org", StringComparison.OrdinalIgnoreCase)
+                    || uri.Host.EndsWith(".archive.org", StringComparison.OrdinalIgnoreCase);
+            }
+            return url.IndexOf("archive.org", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public override string ToString()
+        {
+            return $"CloudFile {AssetId} file {TiltPath}";
+        }
+
+        public FileInfoType InfoType
+        {
+            get { return FileInfoType.Cloud; }
+        }
+
+        public string HumanName
+        {
+            get { return m_HumanName; }
+        }
+
+        // Allow setting since it is not in the asset json object itself
+        public string Author { get; set; }
+
+        public bool Valid => IsValid;
+
+        public bool Available
+        {
+            get { return m_DownloadedFile != null; }
+        }
+
+        public string FullPath
+        {
+            get { return m_localTiltFile; }
+        }
+
+        public bool Exists => Valid;
+
+        public bool ReadOnly
+        {
+            get { return true; }
+        }
+
+        public string SourceId
+        {
+            get { return null; }
+        }
+
+        public void Delete()
+        {
+            throw new NotImplementedException();
+        }
+
+        public string Rename(string newName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsHeaderValid()
+        {
+            // Assume it's valid until we download it
+            return true;
+        }
+
+        // Cloud specific stuff
+        public string AssetId
+        {
+            get { return m_AssetId; }
+        }
+
+        public string TiltFileUrl
+        {
+            get { return m_TiltFileUrl; }
+        }
+
+        public string IconUrl
+        {
+            get { return m_IconUrl; }
+        }
+
+        public string License
+        {
+            get { return m_License; }
+        }
+
+        // Path to the locally downloaded .tilt file
+        public string TiltPath
+        {
+            get { return m_localTiltFile; }
+            set { m_localTiltFile = value; }
+        }
+
+        // Path to the locally downloaded icon
+        public string IconPath
+        {
+            get { return m_localIcon; }
+            set { m_localIcon = value; }
+        }
+
+        public bool IconDownloaded
+        {
+            get { return m_IconDownloaded; }
+            set { m_IconDownloaded = value; }
+        }
+
+        public bool TiltDownloaded
+        {
+            get { return m_DownloadedFile != null; }
+            set
+            {
+                if (value)
+                {
+                    m_DownloadedFile = new TiltFile(m_localTiltFile);
+                }
+                else
+                {
+                    m_DownloadedFile = null;
+                }
+            }
+        }
+
+        public bool TryUseCachedTiltFile()
+        {
+            if (m_DownloadedFile != null)
+            {
+                return true;
+            }
+            if (string.IsNullOrEmpty(m_localTiltFile) || !File.Exists(m_localTiltFile))
+            {
+                return false;
+            }
+
+            TiltFile tiltFile = new TiltFile(m_localTiltFile);
+            if (!tiltFile.IsLoadable())
+            {
+                return false;
+            }
+
+            m_DownloadedFile = tiltFile;
+            return true;
+        }
+
+        // Not part of the interface
+        public int? TriangleCount => m_GltfTriangleCount;
+
+        public Stream GetReadStream(string subfileName)
+        {
+            return m_DownloadedFile.GetReadStream(subfileName);
+        }
+
+        // Not part of the interface
+        public int GltfTriangleCount => m_GltfTriangleCount;
+    }
+} // namespace TiltBrush

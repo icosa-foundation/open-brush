@@ -41,7 +41,7 @@ namespace TiltBrush
             // If our info just became valid, update our selection text
             if (!m_SelectionInfoQueryWasComplete && m_SelectionInfoQueryComplete)
             {
-                string description = (m_SelectionBrush != null) ? m_SelectionBrush.m_Description : "";
+                string description = (m_SelectionBrush != null) ? m_SelectionBrush.Description : "";
                 SetExtraText(description);
                 SetColor(m_SelectionColor);
             }

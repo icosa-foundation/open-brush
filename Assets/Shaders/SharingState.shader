@@ -22,15 +22,17 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "RenderType"="Opaque" }
   LOD 100
 
   Pass {
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
     #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
     sampler2D _MainTex;
     sampler2D _BGTex;
@@ -45,16 +47,27 @@ SubShader {
     float4 vertex : POSITION;
     float3 color : COLOR;
     float2 texcoord : TEXCOORD0;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
     float4 vertex : SV_POSITION;
     float4 color : COLOR;
     float2 texcoord : TEXCOORD0;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vert (appdata_t v) {
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     // Hold animation 'til _Ratio < 0
     if (_Ratio == 0) {
@@ -72,6 +85,8 @@ SubShader {
   }
 
   fixed4 frag (v2f i) : COLOR {
+
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
     float duration = i.color;
     float2 UVs = i.texcoord;
@@ -114,9 +129,11 @@ SubShader {
     float4 color = (float4(tex, 1) + bg_tex) * _Color;
     return encodeHdr(color);
   }
-    ENDCG
+    ENDHLSL
   }
 }
 
 }
+
+
 

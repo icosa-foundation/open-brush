@@ -16,8 +16,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using Newtonsoft.Json;
+using Unity.SharpZipLib.Zip;
+using static TiltBrush.SketchWriter;
 
 namespace TiltBrush
 {
@@ -35,6 +38,8 @@ namespace TiltBrush
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
         private GroupIdMapping m_GroupIdMapping;
+
+        private bool m_SelectedOnly;
 
         public byte[] Thumbnail
         {
@@ -58,12 +63,33 @@ namespace TiltBrush
         public SketchSnapshot(
             JsonSerializer jsonSerializer,
             SaveIconCaptureScript saveIconCapture,
-            out IEnumerator<Timeslice> timeslicedConstructor)
+            out IEnumerator<Timeslice> timeslicedConstructor, bool selectedOnly)
         {
             m_JsonSerializer = jsonSerializer;
             m_SaveIconCapture = saveIconCapture;
             m_GroupIdMapping = new GroupIdMapping();
+            m_SelectedOnly = selectedOnly;
             timeslicedConstructor = TimeslicedConstructor();
+        }
+
+        public static void ExportMetadata(string path)
+        {
+            var instance = new SketchSnapshot();
+            using (var jsonWriter = new CustomJsonWriter(new StreamWriter(new FileStream(path, FileMode.Create))))
+            {
+                instance.m_JsonSerializer.Serialize(jsonWriter, instance.m_Metadata);
+            }
+        }
+
+        // Initialize just enough to generate metadata JSON for export
+        public SketchSnapshot()
+        {
+            m_JsonSerializer = new JsonSerializer();
+            m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
+            m_SaveIconCapture = null;
+            m_GroupIdMapping = new GroupIdMapping();
+            m_Metadata = GetSketchMetadata();
+            m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
@@ -72,10 +98,19 @@ namespace TiltBrush
             stopwatch.Start();
             long maxTicks =
                 (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
-            var strokes = SketchMemoryScript.AllStrokes();
-            int numStrokes = SketchMemoryScript.AllStrokesCount();
-            m_Strokes = new List<SketchWriter.AdjustedMemoryBrushStroke>(numStrokes);
-            foreach (var strokeSnapshot in SketchWriter.EnumerateAdjustedSnapshots(strokes))
+
+            IEnumerable<Stroke> strokes;
+            if (m_SelectedOnly)
+            {
+                strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+                SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
+            }
+            else
+            {
+                strokes = SketchMemoryScript.AllStrokes();
+            }
+            m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
+            foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
             {
                 if (stopwatch.ElapsedTicks > maxTicks)
                 {
@@ -87,13 +122,24 @@ namespace TiltBrush
             }
             stopwatch.Stop();
 
+            m_Metadata = GetSketchMetadata();
+            if (m_SelectedOnly)
+            {
+                // Reselect strokes
+                SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
+                SelectionManager.m_Instance.SelectStrokes(strokes, true);
+            }
+        }
+
+        public SketchMetadata GetSketchMetadata()
+        {
             // Note: This assumes Room space == Global space.
             TrTransform xfThumbnail_RS = SketchControlsScript.m_Instance.GetSaveIconTool()
                 .LastSaveCameraRigState.GetLossyTrTransform();
 
             bool hasAuthor = !string.IsNullOrEmpty(App.UserConfig.User.Author);
 
-            m_Metadata = new SketchMetadata
+            return new SketchMetadata
             {
                 //      BrushIndex = brushGuids.ToArray(), // Need to do this on actual save!
                 EnvironmentPreset = SceneSettings.m_Instance.GetDesiredPreset().m_Guid.ToString("D"),
@@ -101,19 +147,24 @@ namespace TiltBrush
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
                 ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping),
+                LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping),
                 ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
                 Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
+                TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping),
+                SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping),
+                Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping),
+                GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping),
                 Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
                 GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping),
                 Palette = CustomColorPaletteStorage.m_Instance.GetPaletteForSaving(),
                 Lights = LightsControlScript.m_Instance.CustomLights,
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
                 SceneTransformInRoomSpace = Coords.AsRoom[App.Instance.m_SceneTransform],
-                CanvasTransformInSceneSpace = App.Scene.AsScene[App.Instance.m_CanvasTransform],
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
+                Layers = MetadataUtils.GetLayers(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
@@ -131,7 +182,7 @@ namespace TiltBrush
             if (hiResTexture != null)
             {
                 tool.CurrentCameraRigState = iconXform;
-                saveIconScreenshotManager.RenderToTexture(hiResTexture);
+                saveIconScreenshotManager.RenderToTexture(hiResTexture, includePostProcessing: true);
                 yield return null;
             }
 
@@ -144,7 +195,7 @@ namespace TiltBrush
                 for (int i = 0; i < gifTextures.Length; ++i)
                 {
                     m_SaveIconCapture.SetSaveIconTransformForGifFrame(basePos, baseRot, i);
-                    saveIconScreenshotManager.RenderToTexture(gifTextures[i]);
+                    saveIconScreenshotManager.RenderToTexture(gifTextures[i], includePostProcessing: true);
                     yield return null;
                 }
             }
@@ -183,6 +234,53 @@ namespace TiltBrush
             }
             return brush.m_Guid;
         }
+
+        public string WriteSnapshotToStream(Stream outputStream)
+        {
+            try
+            {
+                using (var zip = new ZipOutputStream(outputStream))
+                {
+                    zip.SetLevel(9); // Set compression level
+
+                    // Write metadata
+                    zip.PutNextEntry(new ZipEntry(TiltFile.FN_METADATA));
+                    using (var writer = new StreamWriter(zip, Encoding.UTF8, 1024, true))
+                    {
+                        m_JsonSerializer.Serialize(writer, m_Metadata);
+                    }
+                    zip.CloseEntry();
+
+                    // Prepare the necessary data for WriteMemory
+                    List<Stroke> strokes = new List<Stroke>(SketchMemoryScript.m_Instance.GetMemoryList);
+                    IList<AdjustedMemoryBrushStroke> strokeCopies = EnumerateAdjustedSnapshots(strokes).ToList();
+                    GroupIdMapping groupIdMapping = new GroupIdMapping();
+                    List<Guid> brushList;
+
+                    // Write sketch data
+                    zip.PutNextEntry(new ZipEntry(TiltFile.FN_SKETCH));
+                    WriteMemory(zip, strokeCopies, groupIdMapping, out brushList);
+                    zip.CloseEntry();
+
+                    // Write thumbnail if available
+                    if (Thumbnail != null)
+                    {
+                        zip.PutNextEntry(new ZipEntry(TiltFile.FN_THUMBNAIL));
+                        zip.Write(Thumbnail, 0, Thumbnail.Length);
+                        zip.CloseEntry();
+                    }
+
+                    // Add other necessary files as needed
+                }
+
+                return null; // No error
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
 
         /// Returns null on successful completion. If IO or UnauthorizedAccess exceptions are thrown,
         /// returns their messages. Should not normally raise exceptions.

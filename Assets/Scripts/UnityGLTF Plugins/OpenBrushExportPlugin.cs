@@ -1,0 +1,920 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using GLTF.Schema;
+using Newtonsoft.Json.Linq;
+using UnityEngine;
+using UnityGLTF;
+using UnityGLTF.Plugins;
+using Object = UnityEngine.Object;
+
+namespace TiltBrush
+{
+    public class OpenBrushExportPlugin : GLTFExportPlugin
+    {
+        public override string DisplayName => "Open Brush Export";
+        public override string Description => "Handles Open Brush specific export logic.";
+        public override bool EnabledByDefault => true;
+
+        public override GLTFExportPluginContext CreateInstance(ExportContext context)
+        {
+            return new OpenBrushExportPluginConfig();
+        }
+    }
+
+    public class OpenBrushExportPluginConfig : GLTFExportPluginContext
+    {
+        private static int s_MeshFixtureExportDepth;
+        private static BrushDescriptor s_MeshFixtureBrush;
+
+        private Dictionary<int, Batch> _meshesToBatches;
+        private Dictionary<Mesh, TimestampSource> m_TimestampSources;
+        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
+        private List<Mesh> m_TemporaryBatchMeshes;
+        private List<Camera> m_CameraPathsCameras;
+        private GameObject m_ThumbnailCamera;
+        private bool m_WasUsingBatchedBrushes;
+        private List<(Node node, SoundClipWidget widget)> m_SoundClipNodes;
+
+        private const string kTimestampAttribute = "_TB_TIMESTAMP";
+
+        public static IDisposable BeginIsolatedMeshFixtureExport(BrushDescriptor brush)
+        {
+            if (brush == null) throw new ArgumentNullException(nameof(brush));
+            BrushDescriptor previousBrush = s_MeshFixtureBrush;
+            ++s_MeshFixtureExportDepth;
+            s_MeshFixtureBrush = brush;
+            return new MeshFixtureExportScope(previousBrush);
+        }
+
+        private static bool IsIsolatedMeshFixtureExport => s_MeshFixtureExportDepth > 0;
+
+        private sealed class MeshFixtureExportScope : IDisposable
+        {
+            private readonly BrushDescriptor m_PreviousBrush;
+            private bool m_Disposed;
+
+            public MeshFixtureExportScope(BrushDescriptor previousBrush)
+            {
+                m_PreviousBrush = previousBrush;
+            }
+
+            public void Dispose()
+            {
+                if (m_Disposed) return;
+                m_Disposed = true;
+                s_MeshFixtureBrush = m_PreviousBrush;
+                --s_MeshFixtureExportDepth;
+                Debug.Assert(s_MeshFixtureExportDepth >= 0);
+            }
+        }
+
+        private readonly struct TimestampSource
+        {
+            public Batch Batch { get; }
+            public Stroke Stroke { get; }
+
+            private TimestampSource(Batch batch, Stroke stroke)
+            {
+                Batch = batch;
+                Stroke = stroke;
+            }
+
+            public static TimestampSource ForBatch(Batch batch)
+            {
+                return new TimestampSource(batch, null);
+            }
+
+            public static TimestampSource ForStroke(Stroke stroke)
+            {
+                return new TimestampSource(null, stroke);
+            }
+        }
+
+        public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        {
+            _meshesToBatches = new Dictionary<int, Batch>();
+            m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
+            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
+            m_TemporaryBatchMeshes = new List<Mesh>();
+            if (IsIsolatedMeshFixtureExport) return;
+
+            if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.CreateSkyStandin();
+            }
+            SelectionManager.m_Instance?.ClearActiveSelection();
+            m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
+            GenerateCameraPathsCameras();
+            m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
+            m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
+        }
+
+        private void GenerateCameraPathsCameras()
+        {
+            if (!Application.isPlaying) return;
+            m_CameraPathsCameras = new List<Camera>();
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var widget = cameraPathWidgets[i];
+                var layer = widget.m_WidgetScript.Canvas;
+                var go = GameObject.Instantiate(new GameObject(), layer.transform);
+                go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
+                var cam = go.AddComponent<Camera>();
+                m_CameraPathsCameras.Add(cam);
+                cam.stereoTargetEye = StereoTargetEyeMask.None;
+            }
+        }
+
+        private void ExportCameraPaths(GLTFSceneExporter exporter)
+        {
+            var cameraPathWidgets = WidgetManager.m_Instance.CameraPathWidgets.ToArray();
+            for (var i = 0; i < cameraPathWidgets.Length; i++)
+            {
+                var cam = m_CameraPathsCameras[i];
+                var widget = cameraPathWidgets[i];
+
+                GLTFAnimation anim = new GLTFAnimation();
+                anim.Name = cam.gameObject.name;
+
+                var posKnots = widget.WidgetScript.Path.PositionKnots;
+                var posTimes = new float[posKnots.Count];
+                var posValues = new object[posKnots.Count];
+                for (var j = 0; j < posKnots.Count; j++)
+                {
+                    var knot = posKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    posTimes[j] = t;
+                    posValues[j] = xf.position;
+                }
+                exporter.AddAnimationData(cam.gameObject, "translation", anim, posTimes, posValues);
+
+                var rotKnots = widget.WidgetScript.Path.RotationKnots;
+                var rotTimes = new float[rotKnots.Count];
+                var rotValues = new object[rotKnots.Count];
+                for (var j = 0; j < rotKnots.Count; j++)
+                {
+                    var knot = rotKnots[j];
+                    var xf = knot.KnotXf;
+                    var t = knot.PathT.T;
+                    rotTimes[j] = t;
+                    rotValues[j] = xf.rotation;
+                }
+                exporter.AddAnimationData(cam.gameObject, "rotation", anim, rotTimes, rotValues);
+
+                var fovKnots = widget.WidgetScript.Path.FovKnots;
+                var fovTimes = new float[fovKnots.Count];
+                var fovValues = new object[fovKnots.Count];
+                for (var j = 0; j < fovKnots.Count; j++)
+                {
+                    var knot = fovKnots[j];
+                    var t = knot.PathT.T;
+                    fovTimes[j] = t;
+                    fovValues[j] = knot.CameraFov;
+                }
+                exporter.AddAnimationData(cam, "field of view", anim, fovTimes, fovValues);
+
+                exporter.GetRoot().Animations.Add(anim);
+            }
+        }
+
+        private void CleanupCameraPathsCameras()
+        {
+            if (m_CameraPathsCameras == null) return;
+
+            foreach (var cam in m_CameraPathsCameras)
+            {
+                if (cam == null) continue;
+                cam.enabled = false;
+                Object.Destroy(cam.gameObject);
+            }
+            m_CameraPathsCameras.Clear();
+        }
+
+        private Transform GetOrCreateGroupTransform(CanvasScript layer, int group)
+        {
+            if (layer.transform.childCount == 0)
+            {
+                var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
+                groupTransform.parent = layer.transform;
+                groupTransform.localPosition = Vector3.zero;
+                groupTransform.localRotation = Quaternion.identity;
+                groupTransform.localScale = Vector3.one;
+                return groupTransform;
+            }
+            else
+            {
+                foreach (Transform child in layer.transform)
+                {
+                    if (child.name == $"_StrokeGroup_{group}")
+                    {
+                        return child;
+                    }
+                }
+                var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
+                groupTransform.parent = layer.transform;
+                groupTransform.localPosition = Vector3.zero;
+                groupTransform.localRotation = Quaternion.identity;
+                groupTransform.localScale = Vector3.one;
+                return groupTransform;
+            }
+        }
+
+        public void BeforeLayerExport(Transform transform)
+        {
+            var canvas = transform.GetComponent<CanvasScript>();
+
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
+                App.Config.m_UseBatchedBrushes = false;
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var subsets = batch.m_Groups.ToArray();
+                    for (var i = 0; i < subsets.Length; i++)
+                    {
+                        var subset = subsets[i];
+                        var stroke = subset.m_Stroke;
+                        stroke.m_IntendedCanvas = stroke.Canvas;
+                        if (stroke.m_Type != Stroke.Type.BatchedBrushStroke) continue;
+                        stroke.Uncreate();
+                        stroke.Recreate(null, canvas);
+                        var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
+                        if (mesh.vertexCount > 0)
+                        {
+                            mesh = BrushBaker.m_Instance.ProcessMesh(mesh, stroke.m_BrushGuid.ToString());
+                            stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
+                            stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
+                            if (App.UserConfig.Export.ExportStrokeTimestamp)
+                            {
+                                m_TimestampSources[mesh] = TimestampSource.ForStroke(stroke);
+                            }
+                        }
+                        stroke.m_Object.name = $"{stroke.m_Object.name}_{i}";
+                        if (App.UserConfig.Export.KeepGroups)
+                        {
+                            var group = stroke.Group.GetHashCode();
+                            var groupTransform = GetOrCreateGroupTransform(canvas, group);
+                            stroke.m_Object.transform.SetParent(groupTransform, true);
+                        }
+                    }
+                    batch.tag = "EditorOnly";
+                }
+                canvas.BatchManager.FlushMeshUpdates();
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var brush = batch.Brush;
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    Mesh mesh = new Mesh();
+                    batch.Geometry.CopyToMesh(mesh);
+                    if (mesh == null)
+                    {
+                        Debug.LogError($"No mesh found for brush {brush.name}");
+                        continue;
+                    }
+                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
+                    if (mesh.vertexCount > 0)
+                    {
+                        mesh = BrushBaker.m_Instance.ProcessMesh(mesh, brush.m_Guid.ToString());
+                        m_TemporaryBatchMeshes.Add(mesh);
+                        mf.sharedMesh = mesh;
+                        mf.mesh = mesh;
+                        if (App.UserConfig.Export.ExportStrokeTimestamp)
+                        {
+                            m_TimestampSources[mesh] = TimestampSource.ForBatch(batch);
+                        }
+                    }
+                }
+            }
+        }
+
+        public override bool ShouldNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform)
+        {
+            if (transform.GetComponent<Batch>() != null)
+            {
+                var mf = transform.GetComponent<MeshFilter>();
+                if (mf == null) return false;
+                var mesh = mf.sharedMesh;
+                if (mesh == null) return false;
+                if (mesh.vertexCount == 0) return false;
+            }
+
+            if (transform.GetComponent<BaseBrushScript>() != null)
+            {
+                if (transform.gameObject.name.StartsWith("Preview "))
+                {
+                    return false;
+                }
+            }
+
+            Type[] excludedTypes =
+            {
+                typeof(SnapGrid3D),
+                typeof(StencilWidget),
+                typeof(CameraPathWidget)
+            };
+            bool hasExcludedComponent = excludedTypes.Any(t => transform.GetComponent(t) != null);
+            bool excludedName = false; // TODO
+
+            // Exclude children of SoundClipWidget (distance visualisation spheres etc.)
+            // but keep the widget node itself so we can attach the audio emitter to it.
+            if (transform.GetComponent<SoundClipWidget>() == null &&
+                transform.GetComponentInParent<SoundClipWidget>() != null)
+            {
+                return false;
+            }
+
+            return !hasExcludedComponent && !excludedName;
+        }
+
+        public override void BeforeNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
+        {
+            if (transform.GetComponent<CanvasScript>() != null)
+            {
+                BeforeLayerExport(transform);
+            }
+            if (!Application.isPlaying) return;
+            if (App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeTimestamp)
+            {
+                var brush = transform.GetComponent<BaseBrushScript>();
+                var mesh = transform.GetComponent<MeshFilter>()?.sharedMesh;
+                if (brush?.Stroke != null && mesh != null && mesh.vertexCount > 0)
+                {
+                    m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                }
+            }
+            if (!App.UserConfig.Export.KeepStrokes &&
+                App.UserConfig.Export.ExportStrokeMetadata)
+            {
+                // We'll need a way to find the batch for each mesh later
+                var batch = transform.GetComponent<Batch>();
+                var mf = transform.GetComponent<MeshFilter>();
+                if (batch != null && mf != null)
+                {
+                    var mesh = mf.sharedMesh;
+                    _meshesToBatches[mesh.GetHashCode()] = batch;
+                }
+            }
+        }
+
+        public void AfterLayerExport(Transform transform)
+        {
+            var canvas = transform.GetComponent<CanvasScript>();
+            if (App.UserConfig.Export.KeepStrokes)
+            {
+                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
+                foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
+                {
+                    var stroke = brushScript.Stroke;
+                    if (stroke == null || stroke.m_Type != Stroke.Type.BrushStroke) continue;
+                    var strokeGo = stroke.m_Object;
+                    stroke.InvalidateCopy();
+                    stroke.Uncreate();
+                    stroke.Recreate(null, canvas);
+                    if (stroke.m_BatchSubset != null)
+                    {
+                        stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
+                    }
+                    SafeDestroy(strokeGo);
+                }
+                canvas.BatchManager.FlushMeshUpdates();
+
+                if (App.UserConfig.Export.KeepStrokes)
+                {
+                    foreach (Transform child in canvas.transform)
+                    {
+                        if (child.name.StartsWith($"_StrokeGroup_"))
+                        {
+                            SafeDestroy(child.gameObject);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                foreach (var batch in canvas.BatchManager.AllBatches())
+                {
+                    var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
+                    {
+                        mf.sharedMesh = originalMesh;
+                    }
+                }
+
+                foreach (var mesh in m_TemporaryBatchMeshes)
+                {
+                    SafeDestroy(mesh);
+                }
+                m_TemporaryBatchMeshes.Clear();
+            }
+        }
+
+        public override void AfterNodeExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Transform transform, Node node)
+        {
+            if (transform.GetComponent<CanvasScript>() != null)
+            {
+                AfterLayerExport(transform);
+            }
+
+            if (!Application.isPlaying) return;
+
+            var soundClipWidget = transform.GetComponent<SoundClipWidget>();
+            if (soundClipWidget != null &&
+                soundClipWidget.SoundClip != null &&
+                !string.IsNullOrEmpty(soundClipWidget.SoundClip.AbsolutePath))
+            {
+                m_SoundClipNodes.Add((node, soundClipWidget));
+            }
+
+            if (App.UserConfig.Export.KeepStrokes && App.UserConfig.Export.ExportStrokeMetadata)
+            {
+                var brush = transform.GetComponent<BaseBrushScript>();
+                if (brush != null)
+                {
+                    Stroke stroke = brush.Stroke;
+                    if (stroke != null && node.Mesh != null)
+                    {
+                        if (App.UserConfig.Export.ExportStrokeTimestamp)
+                        {
+                            var strokeInfo = new Dictionary<string, string>();
+                            strokeInfo["HeadTimestampMs"] = stroke.HeadTimestampMs.ToString();
+                            strokeInfo["TailTimestampMs"] = stroke.TailTimestampMs.ToString();
+                            strokeInfo["Group"] = stroke.Group.GetHashCode().ToString();
+                            strokeInfo["Seed"] = stroke.m_Seed.ToString();
+                            strokeInfo["Color"] = stroke.m_Color.ToString();
+                            var primitiveExtras = new Dictionary<string, Dictionary<string, string>>
+                            {
+                                ["ICOSA_strokeInfo"] = strokeInfo
+                            };
+
+                            node.Mesh.Value.Extras = JToken.FromObject(primitiveExtras);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    if (node.Name.StartsWith("Batch_"))
+                    {
+                        var parts = node.Name.Split("_");
+                        Guid brushGuid = new Guid(parts.Last());
+                        string brushName = BrushCatalog.m_Instance.GetBrush(brushGuid).DurableName;
+                        brushName = brushName.Replace(" ", "_").ToLower();
+                        node.Name = $"brush_{brushName}_{parts[1]}";
+                        node.Mesh.Value.Name = $"brush_{brushName}_{parts[1]}";
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Failed to rename node {node.Name} based on brush guid: {e.Message}");
+                }
+            }
+        }
+
+        public override void AfterPrimitiveExport(GLTFSceneExporter exporter, Mesh mesh, MeshPrimitive primitive, int index)
+        {
+            if (!Application.isPlaying) return;
+            if (App.UserConfig.Export.ExportStrokeMetadata)
+            {
+                if (!App.UserConfig.Export.KeepStrokes)
+                {
+                    Batch batch;
+                    var result = _meshesToBatches.TryGetValue(mesh.GetHashCode(), out batch);
+                    if (result)
+                    {
+                        var batchInfo = new List<Dictionary<string, string>>();
+                        foreach (var subset in batch.m_Groups)
+                        {
+                            var subsetInfo = new Dictionary<string, string>();
+                            subsetInfo["StartVertIndex"] = subset.m_StartVertIndex.ToString();
+                            subsetInfo["VertLength"] = subset.m_VertLength.ToString();
+                            subsetInfo["HeadTimestampMs"] = subset.m_Stroke.HeadTimestampMs.ToString();
+                            subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
+                            subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
+                            subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
+                            subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
+                            batchInfo.Add(subsetInfo);
+                        }
+                        var primitiveExtras = new Dictionary<string, List<Dictionary<string, string>>>
+                        {
+                            ["ICOSA_batchInfo"] = batchInfo
+                        };
+                        primitive.Extras = JToken.FromObject(primitiveExtras);
+                    }
+                }
+            }
+        }
+
+        public override void AfterMeshExport(
+            GLTFSceneExporter exporter, Mesh mesh, GLTFMesh gltfMesh, int index)
+        {
+            if (!Application.isPlaying ||
+                !App.UserConfig.Export.ExportStrokeTimestamp ||
+                !m_TimestampSources.TryGetValue(mesh, out TimestampSource source))
+            {
+                return;
+            }
+
+            byte[] timestampData = source.Stroke != null
+                ? CreateTimestampData(source.Stroke, mesh.vertexCount)
+                : CreateTimestampData(source.Batch, mesh.vertexCount);
+            if (timestampData == null)
+            {
+                return;
+            }
+
+            AccessorId timestampAccessor = exporter.ExportAccessor(
+                timestampData,
+                (uint)mesh.vertexCount,
+                GLTFAccessorAttributeType.VEC3,
+                GLTFComponentType.Float,
+                null,
+                null);
+            timestampAccessor.Value.BufferView.Value.Target = BufferViewTarget.ArrayBuffer;
+
+            foreach (MeshPrimitive primitive in gltfMesh.Primitives)
+            {
+                primitive.Attributes[kTimestampAttribute] = timestampAccessor;
+            }
+        }
+
+        private static byte[] CreateTimestampData(Batch batch, int vertexCount)
+        {
+            if (batch == null || vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            foreach (BatchSubset subset in batch.m_Groups)
+            {
+                if (subset.m_StartVertIndex < 0 || subset.m_VertLength < 0 ||
+                    subset.m_StartVertIndex + subset.m_VertLength > vertexCount)
+                {
+                    Debug.LogWarning($"Cannot export timestamps for an invalid batch subset in {batch.name}");
+                    return null;
+                }
+
+                if (!WriteStrokeTimestamps(
+                    data, subset.m_StartVertIndex, subset.m_VertLength, subset.m_Stroke))
+                {
+                    return null;
+                }
+            }
+            return data;
+        }
+
+        private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)
+        {
+            if (vertexCount == 0)
+            {
+                return null;
+            }
+
+            byte[] data = new byte[vertexCount * sizeof(float) * 3];
+            return WriteStrokeTimestamps(data, 0, vertexCount, stroke) ? data : null;
+        }
+
+        // Matches the legacy exporter: x/y are the stroke endpoints in seconds and z is a
+        // linear resampling of the control-point timestamps over the stroke's vertices.
+        private static unsafe bool WriteStrokeTimestamps(
+            byte[] data, int startVertex, int vertexCount, Stroke stroke)
+        {
+            PointerManager.ControlPoint[] controlPoints = stroke?.m_ControlPoints;
+            if (controlPoints == null || controlPoints.Length == 0)
+            {
+                Debug.LogWarning("Cannot export timestamps for a stroke without control points");
+                return false;
+            }
+
+            float startTime = controlPoints[0].m_TimestampMs * .001f;
+            float endTime = controlPoints[controlPoints.Length - 1].m_TimestampMs * .001f;
+            double controlPointFromVertex = vertexCount > 1
+                ? (controlPoints.Length - 1) / ((double)vertexCount - 1)
+                : 0;
+
+            fixed (byte* dataBytes = data)
+            {
+                float* timestamps = (float*)dataBytes;
+                for (int vertex = 0; vertex < vertexCount; ++vertex)
+                {
+                    double controlPointIndex = controlPointFromVertex * vertex;
+                    int lowerIndex = (int)Math.Floor(controlPointIndex);
+                    int upperIndex = Mathf.Min(lowerIndex + 1, controlPoints.Length - 1);
+                    float t = (float)(controlPointIndex - lowerIndex);
+                    float interpolatedTime = Mathf.LerpUnclamped(
+                        controlPoints[lowerIndex].m_TimestampMs * .001f,
+                        controlPoints[upperIndex].m_TimestampMs * .001f,
+                        t);
+
+                    int timestamp = (startVertex + vertex) * 3;
+                    timestamps[timestamp] = startTime;
+                    timestamps[timestamp + 1] = endTime;
+                    timestamps[timestamp + 2] = interpolatedTime;
+                }
+            }
+            return true;
+        }
+
+        void AddExtension(GLTFMaterial materialNode, IExtension blend)
+        {
+            if (materialNode.Extensions == null)
+                materialNode.Extensions = new Dictionary<string, IExtension>();
+            materialNode.Extensions.Add(EXT_blend_operations.EXTENSION_NAME, blend);
+        }
+
+        public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
+        {
+            // Only process Open Brush or Open Blocks materials
+            // Use shaderName to determine if this is the case
+            string shaderName = material.shader.name;
+
+            if (shaderName.StartsWith("Brush/"))
+            {
+                BrushDescriptor manifest;
+                if (IsIsolatedMeshFixtureExport)
+                {
+                    manifest = s_MeshFixtureBrush;
+                    if (manifest == null)
+                    {
+                        Debug.LogError($"No brush supplied for isolated mesh fixture material {material.name}");
+                        return;
+                    }
+                }
+                else
+                {
+                    // TODO - This assumes that every brush material has a unique name
+                    // (or at least if two brush materials have the same name then they are interchangeable)
+                    // Currently, the former is true, but this may not always be the case
+                    var brushes = BrushCatalog.m_Instance.AllBrushes
+                        .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
+                        .ToList();
+
+                    switch (brushes.Count)
+                    {
+                        case 0:
+                            Debug.LogError($"No matching brush found for material {material.name}");
+                            return;
+                        case > 1:
+                            Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
+                            break;
+                    }
+
+                    var brush = brushes[0];
+                    manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
+                }
+
+                materialNode.Name = $"ob-{manifest.DurableName}";
+                // Do we need to override the regular UnityGLTF logic here?
+                materialNode.DoubleSided = manifest.m_RenderBackfaces;
+
+                switch (manifest.m_BlendMode)
+                {
+                    case ExportableMaterialBlendMode.AdditiveBlend:
+                        AddExtension(materialNode, EXT_blend_operations.Add);
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaMask:
+                        materialNode.AlphaMode = AlphaMode.MASK;
+                        break;
+                    case ExportableMaterialBlendMode.AlphaBlend:
+                        materialNode.AlphaMode = AlphaMode.BLEND;
+                        break;
+                }
+            }
+            else if (shaderName.StartsWith("Blocks/"))
+            {
+                float r = material.color.r;
+                float g = material.color.g;
+                float b = material.color.b;
+                float a = material.color.a;
+                var pbr = new PbrMetallicRoughness
+                {
+                    BaseColorFactor = new GLTF.Math.Color(r, g, b, a),
+                    MetallicFactor = 0.0f,
+                    RoughnessFactor = Mathf.Sqrt(2f / (material.GetFloat("_Shininess") + 2f))
+                };
+                if (shaderName == "Blocks/BlocksGlass")
+                {
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    materialNode.DoubleSided = true;
+                }
+                else if (shaderName == "Blocks/BlocksGem")
+                {
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                }
+                materialNode.PbrMetallicRoughness = pbr;
+            }
+        }
+
+        private static string AudioMimeType(string filePath)
+        {
+            return Path.GetExtension(filePath).ToLowerInvariant() switch
+            {
+                ".mp3" => "audio/mpeg",
+                ".wav" => "audio/wav",
+                ".ogg" => "audio/ogg",
+                _ => "audio/mpeg"
+            };
+        }
+
+        private void ExportSoundClips(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        {
+            if (m_SoundClipNodes == null || m_SoundClipNodes.Count == 0) return;
+
+            var rootExt = new GLTF.Schema.KHR_audio_emitter();
+
+            foreach (var (node, widget) in m_SoundClipNodes)
+            {
+                var soundClip = widget.SoundClip;
+                var (paused, volume, loop, spatialBlend, minDistance, maxDistance) =
+                    widget.GetAudioExportSettings();
+
+                if (!File.Exists(soundClip.AbsolutePath))
+                {
+                    Debug.LogWarning($"KHR_audio_emitter: audio file not found, skipping: {soundClip.AbsolutePath}");
+                    continue;
+                }
+
+                // Export the audio file — bufferView for GLB, sidecar file for GLTF
+                var fileStream = new FileStream(soundClip.AbsolutePath, FileMode.Open, FileAccess.Read);
+                var result = exporter.ExportFile(
+                    Path.GetFileName(soundClip.AbsolutePath),
+                    AudioMimeType(soundClip.AbsolutePath),
+                    fileStream);
+
+                int audioIndex = rootExt.audio.Count;
+                var audioData = new KHR_AudioData();
+                if (string.IsNullOrEmpty(result.uri))
+                {
+                    audioData.mimeType = result.mimeType;
+                    audioData.bufferView = result.bufferView;
+                }
+                else
+                {
+                    audioData.uri = result.uri;
+                }
+                rootExt.audio.Add(audioData);
+
+                int sourceIndex = rootExt.sources.Count;
+                rootExt.sources.Add(new KHR_AudioSource
+                {
+                    audio = new AudioDataId { Id = audioIndex, Root = gltfRoot },
+                    gain = volume,
+                    loop = loop,
+                    autoPlay = !paused,
+                    Name = soundClip.HumanName,
+                });
+
+                bool isSpatial = spatialBlend > 0.5f;
+                int emitterIndex = rootExt.emitters.Count;
+                rootExt.emitters.Add(new KHR_AudioEmitter
+                {
+                    type = isSpatial ? "positional" : "global",
+                    gain = 1.0f,
+                    sources = new List<AudioSourceId>
+                    {
+                        new AudioSourceId { Id = sourceIndex, Root = gltfRoot }
+                    },
+                    positional = isSpatial ? new PositionalEmitterData
+                    {
+                        distanceModel = PositionalAudioDistanceModel.inverse,
+                        refDistance = minDistance,
+                        maxDistance = maxDistance,
+                        rolloffFactor = 1.0f
+                    } : null
+                });
+
+                node.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName,
+                    new KHR_NodeAudioEmitterRef
+                    {
+                        emitter = new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                    });
+            }
+
+            if (rootExt.audio.Count == 0) return;
+
+            gltfRoot.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName, rootExt);
+            exporter.DeclareExtensionUsage(GLTF.Schema.KHR_audio_emitter.ExtensionName);
+        }
+
+        public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
+        {
+            if (!Application.isPlaying) return;
+            if (IsIsolatedMeshFixtureExport)
+            {
+                gltfRoot.Asset.Generator =
+                    $"Open Brush UnityGLTF Mesh Fixture {App.Config.m_VersionNumber}." +
+                    $"{App.Config.m_BuildStamp}";
+                m_OriginalBatchMeshes?.Clear();
+                m_TemporaryBatchMeshes?.Clear();
+                return;
+            }
+
+            try
+            {
+                ExportSoundClips(exporter, gltfRoot);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting sound clips: {e.Message}");
+            }
+
+            try
+            {
+                ExportCameraPaths(exporter);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error exporting camera paths: {e.Message}");
+            }
+            finally
+            {
+                CleanupCameraPathsCameras();
+            }
+
+            if (App.UserConfig.Export.ExportCustomSkybox)
+            {
+                GltfExportStandinManager.m_Instance.DestroySkyStandin();
+            }
+
+            gltfRoot.Asset.Generator = $"Open Brush UnityGLTF Exporter {App.Config.m_VersionNumber}.{App.Config.m_BuildStamp})";
+
+            JToken ColorToJString(Color c, bool includeAlpha = false) =>
+                string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}" + (includeAlpha ? ", {3}" : ""), c.r, c.g, c.b, c.a);
+            JToken Vector3ToJString(Vector3 c) => string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", c.x, c.y, c.z);
+
+            var metadata = new SketchSnapshot().GetSketchMetadata();
+
+            var settings = SceneSettings.m_Instance;
+            Environment env = settings.GetDesiredPreset();
+            var extras = new JObject();
+
+
+            var pose = metadata.SceneTransformInRoomSpace;
+            extras["TB_EnvironmentGuid"] = env.m_Guid.ToString("D");
+            extras["TB_Environment"] = env.Description;
+            extras["TB_UseGradient"] = settings.InGradient ? "true" : "false";
+            extras["TB_SkyColorA"] = ColorToJString(settings.SkyColorA);
+            extras["TB_SkyColorB"] = ColorToJString(settings.SkyColorB);
+            Matrix4x4 exportFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltf2);
+            extras["TB_SkyGradientDirection"] = Vector3ToJString(
+                exportFromUnity * (settings.GradientOrientation * Vector3.up));
+            extras["TB_FogColor"] = ColorToJString(settings.FogColor);
+            extras["TB_FogDensity"] = string.Format(CultureInfo.InvariantCulture, "{0}", settings.FogDensity);
+            extras["TB_AmbientLightColor"] = ColorToJString(RenderSettings.ambientLight);
+            for (int i = 0; i < App.Scene.GetNumLights(); i++)
+            {
+                var transform = App.Scene.GetLight(i).transform;
+                Light unityLight = transform.GetComponent<Light>();
+                Debug.Assert(unityLight != null);
+                Color lightColor = unityLight.color * unityLight.intensity;
+                lightColor.a = 1.0f;
+                extras[$"TB_SceneLight{i}Color"] = ColorToJString(lightColor);
+                Vector3 rot = transform.localEulerAngles;
+                rot.y = 360 - rot.y; // Backwards compatibility
+                rot.z = 0; // Roll is irrelevant for directional lights
+                extras[$"TB_SceneLight{i}Rotation"] = Vector3ToJString(rot);
+            }
+            extras["TB_PoseTranslation"] = Vector3ToJString(pose.translation);
+            extras["TB_PoseRotation"] = Vector3ToJString(pose.rotation.eulerAngles);
+            extras["TB_PoseScale"] = string.Format(CultureInfo.InvariantCulture, "{0}", pose.scale);
+            extras["TB_ExportedFromVersion"] = App.Config.m_VersionNumber;
+
+            TrTransform cameraPose = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
+            extras["TB_CameraTranslation"] = Vector3ToJString(cameraPose.translation);
+            extras["TB_CameraRotation"] = Vector3ToJString(cameraPose.rotation.eulerAngles);
+
+            // This is a new mode that solves the issue of finding a sane pivot for Orbit Camera Controller
+            // And better suits Open Brush sketches
+            extras["TB_FlyMode"] = "true";
+
+            // Experimental
+            // extras["TB_metadata"] = JObject.FromObject(metadata);
+            gltfRoot.Extras = extras;
+
+            Object.Destroy(m_ThumbnailCamera);
+            m_OriginalBatchMeshes?.Clear();
+            m_TemporaryBatchMeshes?.Clear();
+        }
+
+        private static void SafeDestroy(Object o)
+        {
+            if (!o) return;
+            if (Application.isPlaying)
+                Object.Destroy(o);
+            else
+                Object.DestroyImmediate(o);
+        }
+    }
+}

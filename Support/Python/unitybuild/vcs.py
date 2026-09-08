@@ -46,7 +46,7 @@ def git(cmd, cwd=None):
     except OSError as e:
         raise subprocess.CalledProcessError(1, cmd, str(e))
 
-    (stdout, stderr) = proc.communicate()
+    stdout, stderr = proc.communicate()
     if proc.wait() != 0:
         raise subprocess.CalledProcessError(
             proc.wait(), cmd, "In %s:\nstderr: %s\nstdout: %s" % (cwd, stderr, stdout)
@@ -60,8 +60,7 @@ def create():
         git("status")
     except subprocess.CalledProcessError:
         return NullVcs()
-    else:
-        return GitVcs()
+    return GitVcs()
 
 
 class VcsBase:  # pylint: disable=too-few-public-methods
@@ -130,7 +129,8 @@ class GitVcs(VcsBase):  # pylint: disable=too-few-public-methods
           <sha>
           <sha>+<local changes>
         <sha> is a sha of the lastest GoB commit included in the current build.
-        <local changes> is a tiny description of any changes in the build that aren't on GoB."""
+        <local changes> is a tiny description of any changes in the build that aren't on GoB.
+        """
         try:
             status = git("status --porcelain", cwd=input_directory)
         except subprocess.CalledProcessError as e:

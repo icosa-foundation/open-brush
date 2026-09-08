@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -26,21 +27,21 @@ namespace TiltBrush
     public class TextMeasureScript : MonoBehaviour
     {
         static public TextMeasureScript m_Instance;
-        private TextMesh m_TextMesh;
-        private Renderer m_TextRenderer;
+        private TextMeshPro m_TextMesh;
+        private bool m_HasLoggedMissingFont;
 
         //dictionary key-- override IEquatable to cut down on GC and increase speed
         private struct TextParams : IEquatable<TextParams>
         {
-            public float m_CharSize;
-            public int m_FontSize;
-            public Font m_Font;
+            public float m_FontSize;
+            public TMP_FontAsset m_Font;
             public string m_Text;
 
             public bool Equals(TextParams other)
             {
-                return (m_CharSize == other.m_CharSize) && (m_FontSize == other.m_FontSize) &&
-                    m_Text.Equals(other.m_Text) && m_Font.name.Equals(other.m_Font.name);
+                return m_FontSize == other.m_FontSize &&
+                    m_Font == other.m_Font &&
+                    string.Equals(m_Text, other.m_Text, StringComparison.Ordinal);
             }
             public override bool Equals(object other)
             {
@@ -52,17 +53,22 @@ namespace TiltBrush
             }
             public override int GetHashCode()
             {
-                return m_CharSize.GetHashCode() ^ m_FontSize.GetHashCode() ^ m_Text.GetHashCode();
+                unchecked
+                {
+                    int hash = m_FontSize.GetHashCode();
+                    hash = (hash * 397) ^ (m_Font != null ? m_Font.GetHashCode() : 0);
+                    hash = (hash * 397) ^
+                        (m_Text != null ? StringComparer.Ordinal.GetHashCode(m_Text) : 0);
+                    return hash;
+                }
             }
             public static bool operator ==(TextParams a, TextParams b)
             {
-                return a.m_CharSize == b.m_CharSize && a.m_FontSize == b.m_FontSize &&
-                    a.m_Text.Equals(b.m_Text) && a.m_Font.name.Equals(b.m_Font.name);
+                return a.Equals(b);
             }
             public static bool operator !=(TextParams a, TextParams b)
             {
-                return a.m_CharSize == b.m_CharSize && a.m_FontSize == b.m_FontSize &&
-                    a.m_Text.Equals(b.m_Text) && a.m_Font.name.Equals(b.m_Font.name);
+                return !a.Equals(b);
             }
         }
         private Dictionary<TextParams, Vector2> m_StringSizeMap;
@@ -70,28 +76,28 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            m_TextMesh = GetComponent<TextMesh>();
-            m_TextRenderer = GetComponent<Renderer>();
+            m_TextMesh = GetComponent<TextMeshPro>();
             m_StringSizeMap = new Dictionary<TextParams, Vector2>();
         }
 
-        static public float GetTextWidth(TextMesh text)
+        static public float GetTextWidth(TextMeshPro text)
         {
-            return m_Instance.GetTextWidth(text.characterSize, text.fontSize, text.font, text.text);
+            return m_Instance.GetTextWidth(text.fontSize, text.font, text.text);
         }
 
-        static public float GetTextHeight(TextMesh text)
+        static public float GetTextHeight(TextMeshPro text)
         {
-            return m_Instance.GetTextHeight(text.characterSize, text.fontSize, text.font, text.text);
+            return m_Instance.GetTextHeight(text.fontSize, text.font, text.text);
         }
 
-        public float GetTextWidth(float fCharSize, int iFontSize, Font rFont, string sText)
+        public float GetTextWidth(float fFontSize, TMP_FontAsset rFont, string sText)
         {
+            sText = sText ?? string.Empty;
+
             //look for this string in the dictionary first
             TextParams rParams = new TextParams
             {
-                m_CharSize = fCharSize,
-                m_FontSize = iFontSize,
+                m_FontSize = fFontSize,
                 m_Font = rFont,
                 m_Text = sText
             };
@@ -102,17 +108,18 @@ namespace TiltBrush
             }
 
             //add new string to our map
-            Vector2 vSize = AddNewString(rParams, fCharSize, iFontSize, rFont, sText);
+            Vector2 vSize = AddNewString(rParams, fFontSize, rFont, sText);
             return vSize.x;
         }
 
-        public float GetTextHeight(float fCharSize, int iFontSize, Font rFont, string sText)
+        public float GetTextHeight(float fFontSize, TMP_FontAsset rFont, string sText)
         {
+            sText = sText ?? string.Empty;
+
             //look for this string in the dictionary first
             TextParams rParams = new TextParams
             {
-                m_CharSize = fCharSize,
-                m_FontSize = iFontSize,
+                m_FontSize = fFontSize,
                 m_Font = rFont,
                 m_Text = sText
             };
@@ -123,17 +130,45 @@ namespace TiltBrush
             }
 
             //add new string to our map
-            Vector2 vSize = AddNewString(rParams, fCharSize, iFontSize, rFont, sText);
+            Vector2 vSize = AddNewString(rParams, fFontSize, rFont, sText);
             return vSize.y;
         }
 
-        Vector2 AddNewString(TextParams rParams, float fCharSize, int iFontSize, Font rFont, string sText)
+        Vector2 AddNewString(TextParams rParams, float fFontSize, TMP_FontAsset rFont, string sText)
         {
-            m_TextMesh.characterSize = fCharSize;
-            m_TextMesh.fontSize = iFontSize;
+            if (rFont == null)
+            {
+                if (!m_HasLoggedMissingFont)
+                {
+                    Debug.LogWarning(
+                        "TEXT_MEASURE_NULL_FONT Falling back to estimated text dimensions");
+                    m_HasLoggedMissingFont = true;
+                }
+
+                Vector2 fallbackSize = new Vector2(sText.Length * fFontSize * 0.5f, fFontSize);
+                m_StringSizeMap.Add(rParams, fallbackSize);
+                return fallbackSize;
+            }
+
+            m_TextMesh.fontSize = fFontSize;
             m_TextMesh.font = rFont;
             m_TextMesh.text = sText;
-            Vector2 vSize = new Vector2(m_TextRenderer.bounds.size.x, m_TextRenderer.bounds.size.y);
+            Vector2 vSize;
+            try
+            {
+                m_TextMesh.ForceMeshUpdate(true, true);
+                vSize = new Vector2(m_TextMesh.preferredWidth, m_TextMesh.preferredHeight);
+            }
+            catch (Exception e)
+            {
+                // Cloud-authored text can contain glyphs that TMP fails on (e.g. emoji, or a dynamic
+                // fallback-atlas material bug in player builds). A throw here must never repeat: if we
+                // don't cache a result, this string is re-measured (and re-throws) every frame, which
+                // produces a per-frame exception storm. Cache a rough estimate so layout still gets a
+                // value and we never retry this string.
+                Debug.LogWarning($"TextMeasureScript: failed to measure \"{sText}\": {e.Message}");
+                vSize = new Vector2(sText.Length * fFontSize * 0.5f, fFontSize);
+            }
             m_StringSizeMap.Add(rParams, vSize);
             return vSize;
         }

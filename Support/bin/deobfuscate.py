@@ -143,8 +143,8 @@ class ObfuscationMap:
     def _create_ob_to_syms(self):
         # Create a simple aggregation of the lookup table
         ob_to_syms = defaultdict(set)
-        for (_, section) in sorted(self.sections_by_name.items()):
-            for (ob, syms) in section.ob_to_syms.items():
+        for _, section in sorted(self.sections_by_name.items()):
+            for ob, syms in section.ob_to_syms.items():
                 ob_to_syms[ob] |= syms
         self.ob_to_syms = dict(ob_to_syms)
 
@@ -160,11 +160,10 @@ class ObfuscationMap:
                 if ob in COMMON_WORDS_11:
                     return ob
                 return "<? %s ?>" % ob
-            else:
-                short_syms = {ObfuscationSection.shorten(s) for s in syms}
-                if len(short_syms) == 1:
-                    return short_syms.pop()
-                return "< " + " or ".join(sorted(syms)) + " >"
+            short_syms = {ObfuscationSection.shorten(s) for s in syms}
+            if len(short_syms) == 1:
+                return short_syms.pop()
+            return "< " + " or ".join(sorted(syms)) + " >"
 
         pat = re.compile(r"\b[a-z]{11}\b")
         return pat.sub(lookup, text)

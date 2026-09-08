@@ -423,5 +423,5 @@ def main(args=None):
 if __name__ == "__main__":
     try:
         main()
-    except BuildFailed as e:
-        print("ERROR: %s" % e)
+    except BuildFailed as ex:
+        print("ERROR: %s" % ex)

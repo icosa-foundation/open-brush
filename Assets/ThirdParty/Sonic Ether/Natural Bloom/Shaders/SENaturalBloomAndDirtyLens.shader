@@ -15,7 +15,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 	
 	CGINCLUDE
 		#include "UnityCG.cginc"
-		#include "Assets/Shaders/Include/Hdr.cginc"
+		#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 		#pragma target 3.0
 		#pragma multi_compile __ HDR_EMULATED
 
@@ -78,7 +78,7 @@ Shader "Hidden/SENaturalBloomAndDirtyLens" {
 			return fixed3(x, x, x);
 		}
 
-		#if !SHADER_API_VULKAN
+		#if !SHADER_API_VULKAN && !SHADER_API_METAL
 		float Luminance(float3 c)
 		{
 			return dot(c, float3(0.33333, 0.33333, 0.33333));

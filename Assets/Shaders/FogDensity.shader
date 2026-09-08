@@ -29,7 +29,7 @@ Shader "Custom/FogDensity" {
 
   CGINCLUDE
   #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/Hdr.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
   #pragma target 3.0
 
     sampler2D _FogTex_0;
@@ -50,12 +50,18 @@ Shader "Custom/FogDensity" {
       float3 normal : NORMAL;
       float4 tangent : TANGENT;
       float2 texcoord : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
       float4 vertex : SV_POSITION;
       float4 color : COLOR;
       float2 texcoord : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vertInflate (appdata_t v, float currentSliceIndex) {
@@ -63,6 +69,11 @@ Shader "Custom/FogDensity" {
     float ratioMultiplier = -.5;
 
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     v.tangent.w = 1.0;
     float totalNumSlices = 5;
     float  ratio = (currentSliceIndex / (totalNumSlices - 1));
@@ -96,6 +107,7 @@ Shader "Custom/FogDensity" {
   }
 
   fixed4 fragFog0 (v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     fixed4 tex = tex2D(_FogTex_0, i.texcoord.xy);
     _NeutralColor.rgb *= tex.rgb;
     float4 myColor = lerp(_NeutralColor, _Color, saturate(((8 * _FogDensity) + .5) * _FogDensity));
@@ -108,6 +120,7 @@ Shader "Custom/FogDensity" {
   }
 
   fixed4 fragFog1 (v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     fixed4 tex = tex2D(_FogTex_1, i.texcoord.xy);
     _NeutralColor.rgb *= tex.rgb;
     float4 myColor = lerp(_NeutralColor, _Color, saturate(((5 * _FogDensity) + .5) * _FogDensity));
@@ -121,6 +134,7 @@ Shader "Custom/FogDensity" {
   }
 
   fixed4 fragFog2(v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     fixed4 tex = tex2D(_FogTex_2, i.texcoord.xy);
     _NeutralColor.rgb *= tex.rgb;
     float4 myColor = lerp(_NeutralColor, _Color, saturate(((2.5 * _FogDensity) + .5) * _FogDensity));
@@ -134,6 +148,7 @@ Shader "Custom/FogDensity" {
   }
 
   fixed4 fragFog3(v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     fixed4 tex = tex2D(_FogTex_3, i.texcoord.xy);
     _NeutralColor.rgb *= tex.rgb;
     float4 myColor = lerp(_NeutralColor, _Color, saturate(((1 * _FogDensity) + .5) * _FogDensity));
@@ -147,6 +162,7 @@ Shader "Custom/FogDensity" {
   }
 
   fixed4 fragFog4(v2f i) : SV_TARGET {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
     fixed4 tex = tex2D(_FogTex_4, i.texcoord.xy);
     _NeutralColor.rgb *= tex.rgb;
     float4 myColor = lerp(_NeutralColor, _Color, saturate(((.5 * _FogDensity) + .5) * _FogDensity));
@@ -162,53 +178,65 @@ Shader "Custom/FogDensity" {
   ENDCG
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
     AlphaTest Greater .01
 
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer0
       #pragma fragment fragFog0
+      #pragma multi_compile_instancing
       ENDCG
     }
 
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer1
       #pragma fragment fragFog1
+      #pragma multi_compile_instancing
       ENDCG
     }
 
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer2
       #pragma fragment fragFog2
+      #pragma multi_compile_instancing
       ENDCG
     }
 
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer3
       #pragma fragment fragFog3
+      #pragma multi_compile_instancing
       ENDCG
     }
 
     Zwrite On
     Ztest LEqual
     Pass{
+      Tags { "LightMode"="SRPDefaultUnlit" }
       CGPROGRAM
       #pragma vertex vertLayer4
       #pragma fragment fragFog4
+      #pragma multi_compile_instancing
       ENDCG
     }
   }
   FallBack "Diffuse"
 }
+

@@ -21,15 +21,15 @@ Properties {
   _GridSize ("Grid Size", Float) = 1
   _GridLineWidth ("Grid Line Width", Float) = .01
   _FrameWidth ("Frame Width", Float) = .1
-  [KeywordEnum(Plane, Cube, Sphere, Capsule)] _Shape ("Shape Type", Float) = 0
+  [KeywordEnum(Plane, Cube, Sphere, Capsule, Mesh)] _Shape ("Shape Type", Float) = 0
 }
 
 CGINCLUDE
   #include "UnityCG.cginc"
-  #include "Assets/Shaders/Include/Brush.cginc"
-  #include "Assets/Shaders/Include/MobileSelection.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
-  #pragma multi_compile _SHAPE_PLANE _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
+  #pragma multi_compile _SHAPE_PLANE _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE _SHAPE_MESH
   #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 
   uniform float4 _Color;
@@ -49,6 +49,8 @@ CGINCLUDE
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
   };
 
   struct v2f {
@@ -57,11 +59,20 @@ CGINCLUDE
     float3 normal : TEXCOORD2;
     float2 texcoord : TEXCOORD3;
     float4 screenPos : TEXCOORD4;
+
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+
+    UNITY_VERTEX_OUTPUT_STEREO
   };
 
   v2f vert (appdata_t v)
   {
     v2f o;
+
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_OUTPUT(v2f, o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
     o.pos = v.vertex;
     o.vertex = UnityObjectToClipPos(v.vertex);
@@ -178,6 +189,22 @@ CGINCLUDE
     outerEdges += abs(fmod(i.pos.x * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.y * 2 + 0 , 1)) < gridWidthX * 2;
     outerEdges += abs(fmod(i.pos.z * 2 + 0 , 1)) < gridWidthX * 2;
+#elif _SHAPE_MESH
+    const float gridWidthX = _FrameWidth / _LocalScale.x;
+    const float gridWidthY = _FrameWidth / _LocalScale.y;
+    const float gridWidthZ = _FrameWidth / _LocalScale.z;
+
+    // top / bottom
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingY * (abs(.5 - i.texcoord.y) > (.5 - gridWidthZ));
+
+    // left / right
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.x) > (.5 - gridWidthZ));
+    outerEdges += facings.facingX * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
+
+    // front / back
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
+    outerEdges += facings.facingZ * (abs(.5 - i.texcoord.y) > (.5 - gridWidthY));
 #else
     return float4(1,0,1,1);
 #endif
@@ -204,64 +231,63 @@ CGINCLUDE
 ENDCG
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
 Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
 
 LOD 100
 ColorMask RGB
-Lighting Off Fog { Color (0,0,0,0) }
+
 ZWrite Off
-
-// back faces
-Cull Front
+Cull Off
 Blend SrcAlpha OneMinusSrcAlpha // overlay
 
+// Single URP-compatible pass: branches on VFACE to apply the original two-pass
+// behavior. URP's forward renderer dispatches only one pass per material per
+// draw, so the previous Cull Front + Cull Back two-pass structure rendered only
+// the back faces under URP.
 Pass {
+  Tags { "LightMode" = "UniversalForward" }
   CGPROGRAM
     #pragma vertex vert
     #pragma fragment frag
-    fixed4 frag (v2f i) : SV_Target
+    #pragma multi_compile_instancing
+
+    fixed4 frag (v2f i, fixed face : VFACE) : SV_Target
     {
-      float4 c = createStencilGrid(i,2,.5,.25);
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+      if (face > 0) {
+        // Front face — was the Cull Back pass.
+        float4 c = createStencilGrid(i,1,1,.5);
 
-      #if SELECTION_ON
-         return float4(GetSelectionColor().rgb, c.r) * 0.65;
-      #elif HIGHLIGHT_ON
-         return float4(_BrushColor.rgb, c.r) * 0.65;
-      #endif
+        #if SELECTION_ON
+           return float4(GetSelectionColor().rgb, c.r);
+        #elif HIGHLIGHT_ON
+           return float4(_BrushColor.rgb, c.r);
+        #endif
 
-      c.a = c.r * .65;
-      c.rgb += float3(.2,.2,.2);
-      c.a = _WidgetsDormant ? max (.5, c.a) : c.a;
-      return c * c.a * _Color * _BackColor;
+        c.a = c.r * .65;
+        c.rgb *= 1.5;
+        return c * c.a * _Color;
+      } else {
+        // Back face — was the Cull Front pass.
+        float4 c = createStencilGrid(i,2,.5,.25);
+
+        #if SELECTION_ON
+           return float4(GetSelectionColor().rgb, c.r) * 0.65;
+        #elif HIGHLIGHT_ON
+           return float4(_BrushColor.rgb, c.r) * 0.65;
+        #endif
+
+        c.a = c.r * .65;
+        c.rgb += float3(.2,.2,.2);
+        c.a = _WidgetsDormant ? max (.5, c.a) : c.a;
+        return c * c.a * _Color * _BackColor;
+      }
     }
   ENDCG
-  }
-
-// front faces
-Cull Back
-Blend SrcAlpha OneMinusSrcAlpha // overlay
-Pass {
-  CGPROGRAM
-    #pragma vertex vert
-    #pragma fragment frag
-
-    fixed4 frag (v2f i) : SV_Target
-    {
-      float4 c = createStencilGrid(i,1,1,.5);
-
-      #if SELECTION_ON
-         return float4(GetSelectionColor().rgb, c.r);
-      #elif HIGHLIGHT_ON
-         return float4(_BrushColor.rgb, c.r);
-      #endif
-
-      c.a = c.r * .65;
-      c.rgb *= 1.5;
-      return c * c.a * _Color;
-    }
-  ENDCG
-  }
+}
 
 } // end subshader
 Fallback "Unlit/Diffuse"
 }
+

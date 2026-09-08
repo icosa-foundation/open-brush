@@ -35,11 +35,10 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         [SerializeField] private InputManager.ControllerName m_ControllerName;
         [SerializeField] private ControllerGeometry m_ControllerGeometryPrefab;
-        [FormerlySerializedAs("m_Offset")] [SerializeField] private Vector3 m_GeometryOffset;
+        [FormerlySerializedAs("m_Offset")][SerializeField] private Vector3 m_GeometryOffset;
         [FormerlySerializedAs("m_Rotation")]
         [SerializeField]
-        private Quaternion m_GeometryRotation
-            = Quaternion.identity;
+        private Quaternion m_GeometryRotation = Quaternion.identity;
 
         // -------------------------------------------------------------------------------------------- //
         // Private Fields
@@ -47,22 +46,16 @@ namespace TiltBrush
         private Color m_Tint;
         private float m_BaseIntensity;
         private float m_GlowIntensity;
+        private bool m_TransformVisualsActive;
 
         private GripState m_CurrentGripState;
         private ControllerGeometry m_ControllerGeometry;
+        private bool m_LoggedControllerMaterialState;
 
         // -------------------------------------------------------------------------------------------- //
         // Public Properties
         // -------------------------------------------------------------------------------------------- //
-        public InputManager.ControllerName ControllerName
-        {
-            get { return m_ControllerName; }
-        }
-
-        private GameObject TransformVisuals
-        {
-            get { return ControllerGeometry.TransformVisualsRenderer.gameObject; }
-        }
+        public InputManager.ControllerName ControllerName => m_ControllerName;
 
         public ControllerGeometry ControllerGeometry
         {
@@ -171,31 +164,15 @@ namespace TiltBrush
             // If the transform visuals are active and the user is interacting with a widget, add the
             // transform visuals to the highlight queue. Eventually, we may:
             //
-            // (a) only have the post process higlight in which case these transform visuals will not need
+            // (a) only have the post process highlight in which case these transform visuals will not need
             //     a renderer/material or
             // (b) modify the highlight queue to a dynamic list that retains state across frames in which
             //     case this logic can be moved into EnableTransformVisuals().
             //
-            if (TransformVisuals.activeSelf
+            if (m_TransformVisualsActive
                 && SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget())
             {
-                App.Instance.SelectionEffect.RegisterMesh(TransformVisuals.GetComponent<MeshFilter>());
-
-                switch (ControllerGeometry.Style)
-                {
-                    case ControllerStyle.OculusTouch:
-                    case ControllerStyle.Knuckles:
-                        App.Instance.SelectionEffect.RegisterMesh(
-                            ControllerGeometry.JoystickPad.GetComponent<MeshFilter>());
-                        break;
-                    case ControllerStyle.Vive:
-                        App.Instance.SelectionEffect.RegisterMesh(
-                            ControllerGeometry.PadMesh.GetComponent<MeshFilter>());
-                        break;
-                    case ControllerStyle.Wmr:
-                        // TODO What should be here?  Joystick or pad?
-                        break;
-                }
+                ControllerGeometry.RegisterTransformVisualMeshes(App.Instance.SelectionEffect);
             }
 
             OnUpdate();
@@ -209,7 +186,7 @@ namespace TiltBrush
 
         virtual public void ActivateHint(bool bActivate) { }
 
-        // Displays the swap effect on the controller. This may be overridden in sublcasses
+        // Displays the swap effect on the controller. This may be overridden in subclasses
         // if specific controllers have different implementations.
         virtual public void DisplayControllerSwapAnimation()
         {
@@ -313,6 +290,7 @@ namespace TiltBrush
                 // This value assumes loc is normalized to the range [-1,1].
                 Vector2 offset = new Vector2(loc.x * m_ControllerGeometry.TouchLocatorTranslateScale,
                     loc.y * m_ControllerGeometry.TouchLocatorTranslateScale);
+
                 if (offset.magnitude > m_ControllerGeometry.TouchLocatorTranslateClamp)
                 {
                     offset = offset.normalized * m_ControllerGeometry.TouchLocatorTranslateClamp;
@@ -331,13 +309,9 @@ namespace TiltBrush
             m_GlowIntensity = fGlowIntensity;
 
             Color rTintedColor = GetTintColor();
-            ControllerGeometry.MainMesh.material.SetColor("_EmissionColor", rTintedColor);
-            ControllerGeometry.TriggerMesh.material.SetColor("_EmissionColor", rTintedColor);
-            for (int i = 0; i < ControllerGeometry.OtherMeshes.Length; ++i)
-            {
-                ControllerGeometry.OtherMeshes[i].material.SetColor("_EmissionColor", rTintedColor);
-            }
-            ControllerGeometry.TransformVisualsRenderer.material.SetColor("_Color", rTintColor);
+            ControllerGeometry.SetControllerEmission(rTintedColor);
+            ControllerGeometry.SetTransformVisualsTint(rTintColor);
+            LogControllerMaterialStateOnce(rTintedColor);
 
             if (ControllerGeometry.GuideLine)
             {
@@ -350,66 +324,60 @@ namespace TiltBrush
             return m_Tint * (m_BaseIntensity + m_GlowIntensity);
         }
 
+        private void LogControllerMaterialStateOnce(Color tintedColor)
+        {
+            if (m_LoggedControllerMaterialState)
+            {
+                return;
+            }
+            m_LoggedControllerMaterialState = true;
+
+            const string prefix = "OB_CTRL_MAT_20260520";
+            LogRendererMaterialState(prefix, "MainMesh", ControllerGeometry.MainMesh, tintedColor);
+            LogRendererMaterialState(prefix, "TriggerMesh", ControllerGeometry.TriggerMesh, tintedColor);
+        }
+
+        private void LogRendererMaterialState(
+            string prefix, string label, Renderer renderer, Color tintedColor)
+        {
+            if (renderer == null)
+            {
+                Debug.Log($"{prefix} {ControllerName} {label} renderer=null");
+                return;
+            }
+
+            Material material = renderer.material;
+            Texture mainTex = material != null && material.HasProperty("_MainTex")
+                ? material.GetTexture("_MainTex")
+                : null;
+            string textureInfo = mainTex == null
+                ? "null"
+                : $"{mainTex.name} {mainTex.width}x{mainTex.height}";
+            string shaderName = material != null && material.shader != null
+                ? material.shader.name
+                : "null";
+
+            Debug.Log(
+                $"{prefix} controller={ControllerName} style={ControllerGeometry.Style} " +
+                $"platform={Application.platform} graphics={SystemInfo.graphicsDeviceType} " +
+                $"colorSpace={QualitySettings.activeColorSpace} renderer={renderer.name} " +
+                $"label={label} material={(material == null ? "null" : material.name)} " +
+                $"shader={shaderName} mainTex={textureInfo} tint={m_Tint} " +
+                $"baseIntensity={m_BaseIntensity} glowIntensity={m_GlowIntensity} " +
+                $"emissionColor={tintedColor}");
+        }
+
         public void EnableTransformVisuals(bool bEnable, float fIntensity)
         {
-            TransformVisuals.SetActive(bEnable && App.Instance.ShowControllers);
-            ControllerGeometry.TransformVisualsRenderer.material.SetFloat("_Intensity", fIntensity);
+            m_TransformVisualsActive = bEnable && App.Instance.ShowControllers;
+            ControllerGeometry.SetTransformVisualsActive(m_TransformVisualsActive, fIntensity);
         }
 
         public void SetGripState(GripState state)
         {
             if (m_CurrentGripState != state)
             {
-                ControllerStyle style = ControllerGeometry.Style;
-                if (style != ControllerStyle.InitializingSteamVR &&
-                    style != ControllerStyle.None &&
-                    style != ControllerStyle.Unset)
-                {
-
-                    bool manuallyAnimateGrips = (style == ControllerStyle.Vive ||
-                        style == ControllerStyle.Wmr);
-
-                    switch (state)
-                    {
-                        case GripState.Standard:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition = Vector3.zero;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = Vector3.zero;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = ControllerGeometry.BaseGrippedMaterial;
-                            ControllerGeometry.RightGripMesh.material = ControllerGeometry.BaseGrippedMaterial;
-                            break;
-                        case GripState.ReadyToGrip:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition =
-                                    m_ControllerGeometry.LeftGripPopOutVector;
-                                Vector3 vRightPopOut = m_ControllerGeometry.LeftGripPopOutVector;
-                                vRightPopOut.x *= -1.0f;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = vRightPopOut;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = m_ControllerGeometry.GripReadyMaterial;
-                            ControllerGeometry.RightGripMesh.material = m_ControllerGeometry.GripReadyMaterial;
-                            ControllerGeometry.LeftGripMesh.material.SetColor("_Color", m_Tint);
-                            ControllerGeometry.RightGripMesh.material.SetColor("_Color", m_Tint);
-                            break;
-                        case GripState.Gripped:
-                            if (manuallyAnimateGrips)
-                            {
-                                ControllerGeometry.LeftGripMesh.transform.localPosition =
-                                    m_ControllerGeometry.LeftGripPopInVector;
-                                Vector3 vRightPopIn = m_ControllerGeometry.LeftGripPopInVector;
-                                vRightPopIn.x *= -1.0f;
-                                ControllerGeometry.RightGripMesh.transform.localPosition = vRightPopIn;
-                            }
-                            ControllerGeometry.LeftGripMesh.material = m_ControllerGeometry.GrippedMaterial;
-                            ControllerGeometry.RightGripMesh.material = m_ControllerGeometry.GrippedMaterial;
-                            ControllerGeometry.LeftGripMesh.material.SetColor("_Color", m_Tint);
-                            ControllerGeometry.RightGripMesh.material.SetColor("_Color", m_Tint);
-                            break;
-                    }
-                }
+                ControllerGeometry.SetGripVisualState(state, m_Tint);
             }
             m_CurrentGripState = state;
         }

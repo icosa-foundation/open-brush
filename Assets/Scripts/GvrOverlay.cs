@@ -42,6 +42,12 @@ namespace TiltBrush
             get { return m_Message; }
         }
 
+        public string MessageStatus
+        {
+            get { return m_Message.text; }
+            set { m_Message.text = value; }
+        }
+
         public float Progress
         {
             set { m_ProgressIndicator.material.SetFloat("_Progress", value); }

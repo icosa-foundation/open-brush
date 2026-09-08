@@ -20,28 +20,37 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 
 namespace TiltBrush
 {
-    /// Class for responding to Http Requests. request handlers can be added for specfic paths.
+    /// Class for responding to Http Requests. request handlers can be added for specific paths.
     public class HttpServer : MonoBehaviour
     {
-        [SerializeField] private int m_httpListenerPort = 40074;
-
-        public int HttpPort => m_httpListenerPort;
+        public const int HTTP_PORT = 40074;
 
         private HttpListener m_HttpListener;
         private Dictionary<string, Action<HttpListenerContext>> m_HttpRequestHandlers =
             new Dictionary<string, Action<HttpListenerContext>>();
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove these counters, the call site below, and
+        // LogLeptonRequestDecision once the Lepton host gateway behavior is confirmed.
+        private int m_LoggedAcceptedLeptonRequest;
+        private int m_LoggedRejectedLeptonRequest;
+        // LEPTON_HTTP_DIAGNOSTICS_END
 
         void Awake()
+        {
+            Task.Run(() => { InitListener(); });
+        }
+
+        void InitListener()
         {
             try
             {
                 m_HttpListener = new HttpListener();
-                m_HttpListener.Prefixes.Add(String.Format("http://+:{0}/", m_httpListenerPort));
+                m_HttpListener.Prefixes.Add(String.Format($"http://+:{HTTP_PORT}/"));
                 m_HttpListener.Start();
                 ThreadPool.QueueUserWorkItem((o) =>
                 {
@@ -75,7 +84,14 @@ namespace TiltBrush
 
                         try
                         {
-                            if (ctx.Request.IsLocal || App.UserConfig.Flags.EnableApiRemoteCalls)
+                            var isLeptonHostConnection = IsLeptonHostConnection(ctx.Request);
+                            var allowRequest = ctx.Request.IsLocal ||
+                                App.UserConfig.Flags.EnableApiRemoteCalls ||
+                                isLeptonHostConnection;
+                            // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
+                            LogLeptonRequestDecision(
+                                ctx.Request, allowRequest, isLeptonHostConnection);
+                            if (allowRequest)
                             {
                                 var handlerKey = m_HttpRequestHandlers.Keys.FirstOrDefault(
                                     x => ctx.Request.Url.LocalPath.StartsWith(x));
@@ -140,7 +156,7 @@ namespace TiltBrush
 
         /// Adds a handler to the Http server that responds to a given path.
         /// Path should include / at the start - e.g. /load  /files  /pages  etc
-        /// The function takes a request and should return its response as an html string. 
+        /// The function takes a request and should return its response as an html string.
         /// The response does not need to be closed.
         public void AddHttpHandler(string path, Func<HttpListenerRequest, string> handler)
         {
@@ -184,5 +200,62 @@ namespace TiltBrush
         {
             return m_HttpRequestHandlers.ContainsKey(path);
         }
+
+        public static bool IsLeptonHostConnection(HttpListenerRequest request)
+        {
+            return request != null && IsLoopbackHost(request.Url?.Host) &&
+                SteamManager.IsLeptonHostAddress(request.RemoteEndPoint?.Address);
+        }
+
+        public static bool IsTrustedLocalBrowserRequest(HttpListenerRequest request)
+        {
+            return request != null && IsLoopbackHost(request.Url?.Host) &&
+                (request.IsLocal || IsLeptonHostConnection(request));
+        }
+
+        private static bool IsLoopbackHost(string host)
+        {
+            return !string.IsNullOrWhiteSpace(host) &&
+                (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                 (IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address)));
+        }
+
+        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove this method after on-device confirmation.
+        private void LogLeptonRequestDecision(HttpListenerRequest request, bool allowed,
+            bool isLeptonHostConnection)
+        {
+            if (!SteamManager.RunningUnderLepton)
+            {
+                return;
+            }
+
+            if (allowed && !isLeptonHostConnection)
+            {
+                return;
+            }
+
+            var wasAlreadyLogged = isLeptonHostConnection
+                ? Interlocked.Exchange(ref m_LoggedAcceptedLeptonRequest, 1)
+                : Interlocked.Exchange(ref m_LoggedRejectedLeptonRequest, 1);
+            if (wasAlreadyLogged != 0)
+            {
+                return;
+            }
+
+            var matchedGateway = SteamManager.IsLeptonHostAddress(
+                request.RemoteEndPoint?.Address);
+            var requestDetails = string.Join("; ", new[]
+            {
+                $"remote={request.RemoteEndPoint}",
+                $"local={request.LocalEndPoint}",
+                $"host={request.UserHostName}",
+                $"isLocal={request.IsLocal}",
+                $"loopbackHost={IsLoopbackHost(request.Url?.Host)}",
+                $"matchedGateway={matchedGateway}",
+                $"trustedLeptonConnection={isLeptonHostConnection}",
+            });
+            Debug.Log($"[LEPTON_HTTP] HTTP request {(allowed ? "accepted" : "rejected")}; {requestDetails}");
+        }
+        // LEPTON_HTTP_DIAGNOSTICS_END
     }
 } // namespace TiltBrush

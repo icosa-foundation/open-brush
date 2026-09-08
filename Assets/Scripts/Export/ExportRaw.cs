@@ -98,9 +98,10 @@ namespace TiltBrush
             var strokes = SketchMemoryScript.AllStrokes().ToList();
             for (int i = 0; i < strokes.Count; ++i)
             {
-                if (strokes[i].IsGeometryEnabled)
+                var stroke = strokes[i];
+                if (stroke.IsGeometryEnabled && App.Scene.IsLayerVisible(stroke.Canvas))
                 {
-                    WriteStroke(json, strokes[i], brushMap);
+                    WriteStroke(json, stroke, brushMap);
                 }
             }
             json.WriteEnd();

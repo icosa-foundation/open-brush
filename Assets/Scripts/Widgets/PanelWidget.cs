@@ -204,12 +204,10 @@ namespace TiltBrush
 
         override public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
             if (!m_PanelSibling.m_Fixed)
             {
                 base.RegisterHighlight();
             }
-#endif
         }
 
         override public bool CanGrabDuringDeselection()

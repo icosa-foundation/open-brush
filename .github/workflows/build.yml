@@ -1,5 +1,6 @@
-# yamllint disable rule:line-length
 ---
+# yamllint disable rule:line-length
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Builds
 
 on:  # yamllint disable-line rule:truthy
@@ -9,18 +10,17 @@ on:  # yamllint disable-line rule:truthy
       - "**"
     tags:
       - "v*"
+  schedule:
+    - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "2019.4.25f1"
-  UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-  UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-  UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-  # If UNITY_SERIAL is not set, then use a hardcoded license. Otherwise, don't set this, so the game-ci actions will use EMAIL/PASS/SERIAL
-  UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"576562626572264761624c65526f7578\"/>\n            <Binding Key=\"2\" Value=\"576562626572264761624c65526f7578\"/>\n        </MachineBindings>\n        <MachineID Value=\"D7nTUnjNAmtsUMcnoyrqkgIbYdM=\"/>\n        <SerialHash Value=\"56bce8b03146a1a47339b2bc8a7a40af276146b9\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LURFWjQtVVk1TS04M1lULTNOWVAtNEtXNg==\"/>\n        <SerialMasked Value=\"F4-DEZ4-UY5M-83YT-3NYP-XXXX\"/>\n        <StartDate Value=\"2021-01-27T00:00:00\"/>\n        <UpdateDate Value=\"2021-05-06T05:54:38\"/>\n        <InitialActivationDate Value=\"2021-01-27T07:00:51\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2019.4.25f1\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License>\n<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>xCBKYap0JQVBqX22jba4k5Da5t0=</DigestValue></Reference></SignedInfo><SignatureValue>n8eYH6Exi6mpw6onE5blxgQY1bAb+NLrsblMlFLUTPVTGw5KmugyVHedyZiI47D3nZVK/FpGaVxJ\n2xcNBr8yR1lfQrakloAZhvlCTiNi/O8N+6aHGZgyi/5+2SLqj0E/ZB+bVlTaSioLy/cF6iOt0d0T\nvW+VEdhht9iWrKKeNBakcXGccX5tQhJFaTR8aYevp0t0TMz3cfGPhs5qDivufqoFl34Y6qa8HjAC\n+OvrlD0TIgMyev+czK0KMIRsT/euOoyOHupXb93BuiMWceRIqf4mYvPKJbhx15Zy3uxHbsF6lV8q\nGah5JCb8iGRTDmG2JzMg6pXCjiznPFNk4Tkl7Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
-
+  UNITY_VERSION: "6000.6.0f1"
+  PHOTON_SDK_VERSION: "fusion-2.1.2-voice-2.63-realtime5"
+  PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
     if: |
+      (github.event_name == 'schedule') ||
       (github.event_name == 'pull_request') ||
       (
         github.event_name == 'push' &&
@@ -34,260 +34,435 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version}}
+      androidVersionCode: ${{ steps.version.outputs.androidVersionCode }}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
+      previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
+      previousfullrelease: ${{ steps.rawchangelogdata.outputs.previousfullrelease }}
+      currentrelease: ${{ steps.rawchangelogdata.outputs.currentrelease }}
+      rawchangelog: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
+      fastlanelane: ${{ steps.version.outputs.fastlanelane}}
+      googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
+      googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
+      googleplayhasproduction: ${{ steps.version.outputs.googleplayhasproduction }}
+      uid: ${{ steps.github.outputs.uid }}
+      gid: ${{ steps.github.outputs.gid }}
+      flavors: ${{ steps.flavors.outputs.flavors }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
-
+      - name: Check for tags and fetch from Open Brush repo if needed
+        if: github.repository != 'icosa-foundation/open-brush'
+        run: |
+          if [ $(git tag | wc -l) -eq 0 ]; then
+            echo "No tags found in current repository. Fetching tags from icosa-foundation/open-brush..."
+            git remote add openbrush https://github.com/icosa-foundation/open-brush.git
+            git fetch --tags openbrush
+          fi
       - name: Calculate version and stamp
         id: version
+        env:
+          # Google Play uploads default to completed internal-track releases so testers receive them.
+          # Override either release type independently with repository variables.
+          GOOGLE_PLAY_RELEASE_TRACK: ${{ vars.GOOGLE_PLAY_RELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_RELEASE_STATUS: ${{ vars.GOOGLE_PLAY_RELEASE_STATUS || 'completed' }}
+          GOOGLE_PLAY_PRERELEASE_TRACK: ${{ vars.GOOGLE_PLAY_PRERELEASE_TRACK || 'internal' }}
+          GOOGLE_PLAY_PRERELEASE_STATUS: ${{ vars.GOOGLE_PLAY_PRERELEASE_STATUS || 'completed' }}
         run: |
+          # General note: for pull requests, we query github.event.pull_request.head.sha rather than the default sha, which is a merge commit of the target branch into the head. For pushes or tag commits, there's no additional commits made by the CI, so we can use the default, current, reference
+
+          # Get the first two numbers from the last tag, including a tag on the current commit (to handle the case of a formal build)
           MAJOR_MINOR=$(git describe --tags --abbrev=0 --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }})
-          PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
-          STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
-          if [ $PATCH_VERSION == $MAJOR_MINOR ]
+
+          # How many commits have been made since the last tag of the form vX.Y.
+          #
+          # We used to use this version, however, it couldn't handle these two cases at the same time:
+          #                    (v2.1)
+          #                       |
+          #             /-c2..c4..c5-\
+          #            /              \
+          #   c...c0..c1....c3.........m6..c7....c10.c11.....m13...c14 <- [main]
+          #       ^                         \               /
+          #    (v2.0)                        \-c8..c9..c12-/
+          # If we use --first-parent, it wouldn't find a tag that was not a first parent, and so it'll think we're now in 2.0.8, though it skips the commits on the branches. If we did not use --first-parent, it gets the proper tag (v2.1), but counts each commit in the feature branch, and gives 2.1.10. While we almost always squash, if we ever do have an explicit merge commit, we don't want to count the commits on the feature branch. In this case, we actually want to get 2.1.7 (commits c3, m6, c7, c10, c11, m13, and c14).
+          ######## OLD CODE ########
+          # # If the value is not equal to zero, git describe will give us a version in the form vX.Y-Z-gAAAAAAA, where Z is the count. If the current commit has a vX.Y tag, it'll just return that, so the 'cut' does nothing. We test for this below
+          # PATCH_VERSION=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent ${{ github.event.pull_request.head.sha }} | cut -d'-' -f2)
+          ######## END OLD CODE ########
+
+          # Instead, we'll find the last tag, wherever it is, and then count the --first-parent commits "since" then (i.e., not included; they might be historically behind it)
+          CLOSEST_TAG=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD)
+          PATCH_VERSION=$(git log ${CLOSEST_TAG}.. --oneline --first-parent | wc -l)
+
+          if [ $PATCH_VERSION == "0" ]
           then
-            PATCH_VERSION="0"
             STAMP=""
-            echo "Formal version: $MAJOR_MINOR.$PATCH_VERSION"
-            echo "::set-output name=prerelease::false"
-            echo "::set-output name=itchchannelname::release"
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+            echo "itchchannelname=release" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_RELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_RELEASE_STATUS"
 
           else
-            echo "Prerelease version $MAJOR_MINOR.$PATCH_VERSION $STAMP"
-            echo "::set-output name=prerelease::true"
-            echo "::set-output name=itchchannelname::beta"
+            # This is the first 7 characters of the commit; we do it this way rather than via rev-parse to avoid an 'if' conditional depending on whether it's a PR or push. (unlike git describe, git rev-parse doesn't default to the current HEAD)
+            STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+            echo "itchchannelname=beta" >> $GITHUB_OUTPUT
+            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
+            GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
+          # upload-google-play accepts a comma-separated track list. Remove
+          # whitespace before exporting it, then match the exact production token.
+          NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
+          echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
+          echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
+
+          case ",$NORMALIZED_GOOGLE_PLAY_TRACKS," in
+            *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
+            *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
+          esac
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
-          echo "::set-output name=version::$VERSION"
-          echo "::set-output name=stamp::$STAMP"
-      - name: Calculate Changelog
-        id: changelog
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "stamp=$STAMP" >> $GITHUB_OUTPUT
+          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
+          MINOR=$(echo $VERSION | cut -d '.' -f 2)
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # PR builds use a Unix timestamp as the version code instead of the
+            # commit-count formula. The formula counts first-parent commits on main
+            # since the last tag, so it stays fixed for the entire lifetime of a PR
+            # (adding commits to the branch doesn't change it). That causes "version
+            # code already used" rejections when uploading successive test builds to
+            # Google Play.
+            #
+            # DOWNSIDE: timestamp codes (~1.78B today after suffix) are permanently
+            # higher than production codes (~20M), so any build uploaded to Play with
+            # a timestamp code must never be promoted to production — upload test
+            # builds to an internal/closed track only. Also, Unix timestamps exceed
+            # Android's hard limit of 2,100,000,000 around 2036.
+            #
+            # We divide by 10 because the build matrix appends a single-digit
+            # versionSuffix as a string (e.g. "0"), effectively multiplying by 10.
+            # Without the division, the final code would be 11 digits and exceed
+            # Android's 2,100,000,000 limit. Dividing first keeps it within range
+            # while retaining 10-second granularity — sufficient since CI builds
+            # take much longer than 10 seconds.
+            ANDROID_VERSION_CODE=$(( $(date +%s) / 10 ))
+          else
+            ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          fi
+          echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
+      - name: Calculate Release tags for Changelog and raw changelog
+        id: rawchangelogdata
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           if [ "$PRERELEASE" == "true" ]
           then
             PREV=$(git describe --tags --abbrev=0 HEAD^)
           else
-            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --abbrev=0 HEAD^)
+            PREV=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent --abbrev=0 HEAD^)
           fi
-          CHANGELOG=$(git log --pretty=oneline --first-parent $PREV..HEAD)
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          echo "::set-output name=changelog::$CHANGELOG"
+          PREVFULL=$(git describe --tags --match "v[0-9]*.[0-9]*" --first-parent --abbrev=0 HEAD^)
+          CUR="$(git rev-parse HEAD)"
+          echo "previousrelease=$PREV" >> $GITHUB_OUTPUT
+          echo "previousfullrelease=$PREVFULL" >> $GITHUB_OUTPUT
+          echo "currentrelease=$CUR" >> $GITHUB_OUTPUT
+          LAST_TAG=$(git describe --tags --match 'v[0-9]*.[0-9]*' --abbrev=0 HEAD^)
+          RAW_CHANGELOG=$(echo "$(git log --first-parent ${LAST_TAG}.. --pretty=format:'%D-g%h: %s' | sed -e 's/tag: //' -e 's/HEAD -> main, //')" | sed -e "s/origin\/main/$VERSION/" | tac)
+          echo "rawchangelog=${RAW_CHANGELOG//$'\n'/'\n'}" >> $GITHUB_OUTPUT
+
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.rawchangelogdata.outputs.rawchangelog}}
+        run: |
+          echo "CHANGELOG=$CHANGELOG"
+
       - name: Set custom app name and package name, if relevant
         id: github
         env:
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          # For a PR action (i.e., syncronize / open), the value of github.ref will be refs/pull/1234/merge
+          # For a PR action (i.e., synchronize / open), the value of github.ref will be refs/pull/1234/merge
           # For a push action, it will be either refs/heads/foo_branch_name OR refs/tags/v1234.
           # We want to use the base name for pushes of tags or to main, the PR number for PRs, and the branch name for named branches.
           if [[ "$PRERELEASE" == "false" || ${{ github.ref }} == refs/heads/main ]]
           then
-            echo "::set-output name=basename::OpenBrush"
-            echo "::set-output name=description::"
+            echo "basename=OpenBrush" >> $GITHUB_OUTPUT
+            echo "description=" >> $GITHUB_OUTPUT
           else
             if [[ ${{ github.ref }} == refs/pull/* ]]
             then
-              DESCRIPTION="PR#$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
+              DESCRIPTION="PR$(echo ${{ github.ref }} | sed -e 's#refs/pull/##' -e 's#/merge##')"
             elif [[ ${{ github.ref }} == refs/heads/* ]]
             then
               DESCRIPTION="$(echo ${{ github.ref }} | sed -e 's#refs/heads/##')"
             else
               DESCRIPTION="Unknown"
             fi
-            echo "::set-output name=description::-btb-description ${DESCRIPTION}"
+            echo "description=-btb-description ${DESCRIPTION}" >> $GITHUB_OUTPUT
             IDENTIFIER=$(echo ${DESCRIPTION} | sed -e 's/[\/#_-]//g')
-            echo "::set-output name=basename::OpenBrush-${IDENTIFIER}"
+            echo "basename=OpenBrush-${IDENTIFIER}" >> $GITHUB_OUTPUT
           fi
+          echo "uid=$(id -u)" >> $GITHUB_OUTPUT
+          echo "gid=$(id -g)" >> $GITHUB_OUTPUT
+
+      - name: Determine whether to build Development builds or not
+        id: flavors
+        run: |
+          set -x
+          if [[ $(git log --format=%B ${{ github.event.pull_request.head.sha }} -1) == *'[CI BUILD DEV]'* ]]
+          then
+            echo 'flavors=[{"development": true, "title": "Development"}, {"development": false}]' >> $GITHUB_OUTPUT
+
+          else
+            echo 'flavors=[{"development": false}]' >> $GITHUB_OUTPUT
+          fi
+
   build:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # We don't use an actual matrix because there's more exceptions than actual cases!
+        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
-          - name: Windows SteamVR
+          - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
-            vrsdk: SteamVR
-          - name: Windows Rift
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-          - name: Windows SteamVR Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: SteamVR
-            extraoptions: -btb-experimental
-          - name: Windows Rift Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Oculus
-            extraoptions: -btb-experimental
-          - name: Windows Monoscopic Experimental
-            targetPlatform: StandaloneWindows64
-            vrsdk: Monoscopic
-            extraoptions: -btb-experimental
-          - name: Linux SteamVR
-            targetPlatform: StandaloneLinux64
-            vrsdk: SteamVR
-          - name: Linux SteamVR Experimental
-            targetPlatform: StandaloneLinux64
-            vrsdk: SteamVR
-            extraoptions: -btb-experimental
-          - name: Linux Monoscopic Experimental
-            targetPlatform: StandaloneLinux64
-            vrsdk: Monoscopic
-            extraoptions: -btb-experimental
-          - name: OSX Monoscopic Experimental
-            targetPlatform: StandaloneOSX  # SteamVR was removed in Mar 2020
-            vrsdk: Monoscopic
-            extraoptions: -btb-experimental
-          - name: Oculus Quest
-            targetPlatform: Android
-            vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc
-          - name: Oculus Quest Experimental
-            targetPlatform: Android
-            vrsdk: Oculus
-            extraoptions: -setDefaultPlatformTextureFormat astc -btb-experimental
+            vrsdk: OpenXR
+            cache: Windows
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
+          - name: Linux
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
+            cache: Linux
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: MacOS
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android OpenXR
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android AndroidXR
+            targetPlatform: Android
+            vrsdk: AndroidXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            androidExportType: androidAppBundle
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          # The Viewer is a product variant, not a flat-only runtime. Keep a generic
+          # OpenXR APK alongside the AndroidXR AAB so both of its runtime modes are
+          # exercised without conflating the Google Play and non-Google artifacts.
+          - name: Android Viewer OpenXR
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android Viewer AndroidXR
+            targetPlatform: Android
+            vrsdk: AndroidXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            androidExportType: androidAppBundle
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Oculus Quest (1)
+            targetPlatform: Android
+            vrsdk: OpenXR
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: USE_QUEST_PACKAGE_NAME  # :(
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: iOS Zapbox
+            targetPlatform: iOS
+            vrsdk: Zapbox
+            cache: iOS
+            extraoptions: -btb-il2cpp
+            extra_defines: ZAPBOX_SUPPORTED
+            packages_to_remove: com.unity.formats.usd
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER  # The Fusion plugin does not reliably set these Fusion symbols for iOS command-line builds.
 
     steps:
+      - name: Set masking
+        run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # This takes several minutes, so we only do it where required
-        if: matrix.targetPlatform == 'Android'
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
         run: |
           echo "Initial free space"
-          df -h
-          sudo swapoff -a
-          sudo rm -f /swapfile
-          docker rmi $(docker image ls -aq)
-          #echo "Listing 100 largest packages"
-          #dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
-          echo "Removing large packages"
-          sudo apt-get update
-          sudo apt-get remove -y '^ghc-.*' '^dotnet-.*' azure-cli google-cloud-sdk 'adoptopenjdk-.*-hotspot' google-chrome-stable firefox 'php.*'
-          sudo apt-get autoremove -y
+          df -h /
+          echo "Removing all pre-loaded docker images"
+          docker image ls -aq | xargs -r docker rmi # Removes ~3GB
+          df -h /
+          echo "Listing 100 largest packages"
+          dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -rn | head -n 100
+          echo "Removing unneeded large packages"
+          sudo apt update
+
+          echo "Disabling slow triggers and package update hooks"
+          sudo rm -rf /var/lib/man-db # remove man-db database completely
+          sudo mkdir -p /etc/dpkg/dpkg.cfg.d/
+          echo "path-exclude=/usr/share/man/*" | sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          echo "path-exclude=/usr/share/icons/hicolor/*" | sudo tee -a /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null
+          sudo dpkg-divert --local --rename --add /usr/bin/update-mime-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-desktop-database
+          sudo dpkg-divert --local --rename --add /usr/bin/update-icon-caches
+          sudo dpkg-divert --local --rename --add /usr/bin/mandb
+          sudo ln -sf /bin/true /usr/bin/mandb
+
+          # Disable dpkg triggers temporarily
+          if [ -d /var/lib/dpkg/triggers ]; then
+            sudo mv /var/lib/dpkg/triggers /var/lib/dpkg/triggers.bak
+            sudo mkdir -p /var/lib/dpkg/triggers
+          fi
+
+          # Force remove google-cloud-cli directly instead of using apt
+          echo "Removing Google Cloud CLI directly"
+          sudo rm -rf /usr/lib/google-cloud-sdk
+          sudo find /etc/apt/ /var/lib/dpkg/ -name 'google-cloud*' -delete
+
+          # Remove packages with faster options
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" -yq remove \
+            '^ghc-.*' '^dotnet-.*' azure-cli powershell google-chrome-stable firefox \
+            microsoft-edge-stable 'mongodb-*' 'mysql-*' 'mariadb-*' 'temurin-*' 'openjdk-*' \
+            default-jre-headless mono-devel libgl1-mesa-dri man-db hicolor-icon-theme
+
+          sudo apt-get autoremove -y --purge
           sudo apt-get clean
+
+          if [ -d /var/lib/dpkg/triggers.bak ]; then
+            sudo rm -rf /var/lib/dpkg/triggers
+            sudo mv /var/lib/dpkg/triggers.bak /var/lib/dpkg/triggers
+          fi
+
+          df -h /
+          echo "Removing Android"
+          sudo rm -rf /usr/local/lib/android # Removes ~9GB
+          df -h /
           echo "Removing remaining large directories"
-          rm -rf /usr/share/dotnet/
-          rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/share/dotnet/  # ~1GB
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"  # ~7GB
           echo "Disk space after cleanup"
-          df -h
+          df -h /
 
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
-      - name: Install Oculus unity package
-        if: matrix.vrsdk == 'Oculus'
-        run: |
-          # version 34.0
-          # Code courtesy of Jonathan Perret, released freely. Download the package and manually extract it to Assets/Oculus. We only need VR and Platform.
-          wget -q https://securecdn.oculus.com/binaries/download/?id=4585423734833742 -O package.tmp
-          mkdir tmp
-          tar -C tmp -xzf package.tmp
-          find tmp -type f | xargs chmod a-x
-          for pn in tmp/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp/$d"
-            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
-            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
-          done
-          mkdir -p Assets/Oculus
-          cp -R tmp/Assets/Oculus/VR Assets/Oculus/
-          cp -R tmp/Assets/Oculus/Platform Assets/Oculus/
-          rm -rf tmp package.tmp
-          ln -s ../../Assets/Oculus/VR/Editor/OVRPluginUpdater.cs Assets/Editor/
+      - name: Checkout private photon repository if available
+        if: ${{ env.PHOTON_PAT }}
+        uses: actions/checkout@v7
+        with:
+          token: ${{ env.PHOTON_PAT }}
+          repository: icosa-mirror/photon-fusion
+          ref: fusion-2.1.2-voice-2.63-realtime5-unity6
+          path: photon-fusion-mirror/
 
-      - name: Install TextMesh Pro package
+      - name: Copy photon files
+        if: ${{ env.PHOTON_PAT }}
         run: |
-          # version 2.1.4; must be updated if the version changes
-          # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
-          mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-2.1.4.tgz -O tmp.plugin/plugin.tgz
-          tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
-          mkdir tmp.package
-          tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
-          for pn in tmp.package/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp.package/$d"
-            [ -f "tmp.package/$id/asset" ] && cp -v "tmp.package/$id/asset" "tmp.package/$p"
-            cp "tmp.package/$id/asset.meta" "tmp.package/${p}.meta"
-          done
-          mkdir -p 'Assets/TextMesh Pro'
-          cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
-          rm -rf tmp.plugin tmp.package
+          rsync -a --ignore-existing photon-fusion-mirror/ ./
+          echo "For debugging: these are the files in Assets/Photon:"
+          find Assets/Photon
 
-      - uses: actions/cache@v2
+      - name: Restore Library/
+        id: cache_library
+        uses: actions/cache/restore@v6
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
           path: Library
-          # We only use the targetPlatform for caching; saving a cache for each commit is far too expensive. Worst case, it's a few commits out of date.
-          key: Library-${{ matrix.targetPlatform }}-${{ env.UNITY_VERSION }}
-          restore-keys: |
-            Library-${{ matrix.targetPlatform }}-
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
 
-      - name: Update Oculus OVR Plugin
-        uses: game-ci/unity-builder@v2.0-alpha-13
-        if: matrix.vrsdk == 'Oculus'
+      - name: Restore Library/PackageCache
+        id: cache_packagecache
+        if: false
+        uses: actions/cache/restore@v6
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          versioning: Custom
-          version: ${{ needs.configuration.outputs.version }}
-          buildMethod: OVRPluginUpdater.BatchmodePluginUpdate  # We created this symlink above
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+          restore-keys: |
+            Library_PackageCache_${{ env.UNITY_VERSION }}
+            Library_PackageCache
 
-      - name: Set filename (for Windows)
-        if: matrix.targetPlatform == 'StandaloneWindows64'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+      - name: Remove problematic packages
+        if: ${{ matrix.packages_to_remove }}
+        run: |
+          cp Packages/manifest.json{,.bak}
+          cp Packages/packages-lock.json{,.bak}
+          for PACKAGE in ${{ matrix.packages_to_remove }}; do
+            cat Packages/manifest.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/manifest.json.new
+            mv Packages/manifest.json.new Packages/manifest.json
+            cat Packages/packages-lock.json | jq 'del( .dependencies ["'${PACKAGE}'"] )' > Packages/packages-lock.json.new
+            mv Packages/packages-lock.json.new Packages/packages-lock.json
+          done
+          diff -u Packages/manifest.json.bak Packages/manifest.json || true
+          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
 
-      - name: Set filename (for Linux)
-        if: matrix.targetPlatform == 'StandaloneLinux64'
+      - name: Set output filename
         env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME" >> $GITHUB_ENV
-
-      - name: Set filename (for OSX)
-        if: matrix.targetPlatform == 'StandaloneOSX'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=$BASENAME.app" >> $GITHUB_ENV
-
-      - name: Set filename (for Android)
-        if: matrix.targetPlatform == 'Android'
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename}}
-        run:
-          echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+          BASENAME: ${{ needs.configuration.outputs.basename }}
+        run: |
+          if [[ "${{ matrix.targetPlatform}}" == "StandaloneWindows64" ]]; then
+            echo "filename=$BASENAME.exe" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
+            echo "filename=$BASENAME" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
+            echo "filename=$BASENAME.app" >> $GITHUB_ENV
+          elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
+            if [[ "${{ matrix.androidExportType || 'androidPackage' }}" == "androidAppBundle" ]]; then
+              echo "filename=com.Icosa.$BASENAME.aab" >> $GITHUB_ENV
+            else
+              echo "filename=com.Icosa.$BASENAME.apk" >> $GITHUB_ENV
+            fi
+          fi
 
       - name: Set build stamp
         if: ${{ needs.configuration.outputs.stamp }}
         # We checkout the merge commit, but for the purpose of the tag, use the version from the PR, not the merge commit, which is rather hard to find later. We skip the version tag, since this comes from the code and can't be easily overwritten
         run: |
           echo "stamp=-btb-stamp ${{needs.configuration.outputs.stamp}}" >> $GITHUB_ENV
+
+      - name: Enable Development Mode
+        if: ${{ matrix.flavors.development == true }}
+        run: |
+          echo "btbbopts=-btb-bopt Development" >> $GITHUB_ENV
 
       - name: Update version
         env:
@@ -309,228 +484,599 @@ jobs:
           SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
           sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
 
-      - name: Enable the use of a custom keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          ANDROID_KEYALIAS_NAME: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          ANDROID_KEYALIAS_PASS: ${{ secrets.ANDROID_KEYALIAS_PASS }}
-        if: |
-          github.event_name == 'push' &&
-          env.ANDROID_KEYSTORE_BASE64 != null &&
-          env.ANDROID_KEYSTORE_PASS != null &&
-          env.ANDROID_KEYALIAS_NAME != null &&
-          env.ANDROID_KEYALIAS_PASS != null
+      - name: Enable keystore
+        if: matrix.targetPlatform == 'Android'
         run: |
           sed -e 's/androidUseCustomKeystore.*$/androidUseCustomKeystore: 1/' -i ProjectSettings/ProjectSettings.asset
 
+      - name: Update build matrix specific defines in csc.rsp
+        if: ${{ matrix.extra_defines }}
+        run: |
+          for DEFINE in ${{ matrix.extra_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
+      - name: Update build matrix specific defines in csc.rsp (PHOTON_PAT only)
+        if: ${{ env.PHOTON_PAT && matrix.extra_photon_defines }}
+        run: |
+          for DEFINE in ${{ matrix.extra_photon_defines }}; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
+      - name: Generate ViverseViewer.bytes from source
+        run: |
+          python Support/Python/unitybuild/viverseviewer.py .
+
       - name: Build project
-        uses: game-ci/unity-builder@v2.0-alpha-13
+        uses: Wandalen/wretry.action@v3
         env:
+          GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
+          UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_PASSWORD: ${{ fromJSON(format('["DoNotStealThis1", "{0}"]', secrets.UNITY_PASSWORD))[secrets.UNITY_SERIAL != null] }}
+          UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
-          allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
-          unityVersion: ${{ env.UNITY_VERSION }}
-          targetPlatform: ${{ matrix.targetPlatform }}
-          customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ matrix.extraoptions }}
-          versioning: Custom
-          version: ${{ needs.configuration.outputs.version }}
-          buildMethod: BuildTiltBrush.CommandLine
-          androidKeystoreName: openbrush.keystore
-          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
-          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
-          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+          retry_condition: steps._this.outputs.engineExitCode == 1
+          action: game-ci/unity-builder@v4
+          with: |
+            allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
+            unityVersion: ${{ env.UNITY_VERSION }}
+            targetPlatform: ${{ matrix.targetPlatform }}
+            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
+            versioning: Custom
+            androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
+            version: ${{ needs.configuration.outputs.version }}
+            buildName: ${{ needs.configuration.outputs.basename }}
+            buildsPath: build/${{ matrix.vrsdk }}
+            chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
+            buildMethod: BuildTiltBrush.CommandLine
+            androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
+            androidKeystoreName: openbrush.keystore
+            androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '/u3+7QAAAAIAAAABAAAAAQAWb3BlbmJydXNoLW5vbi1vZmZpY2lhbAAAAX66M2FtAAAFATCCBP0wDgYKKwYBBAEqAhEBAQUABIIE6Wufa9OVstw7Bu/gdATKqoPafXGefygChsN1d4LGY0SMLPORjHXiryEVMKi2rt61kNeXzeLkiM4yIQAam4HZtNTxgjoFQ6KB7uzkqMJYKViBUgg1HCAl2e+QpYjqG+YNJT67CiPgjpsJHNE628CwKAvjJ85FhqFz+MKzNF8BOpS5g5waqFda67oxaE4qO8eAL+F9P7us+ziY5B4O3EJC9s7xpT2GV2ro0m0fZI2dr3OO9UdUO72CYTg5qs250JiSij26Haf4t8Vq28F2S8rTcMUVtN4FRtzeR/wjeeZ3laER+WoxYni4MrZEXhYYCGhfor8Zcfi3p5ka8TJCQxywTKpghpSwgykgMJLn1HksxB0vhIMGTb87c2CTqS4t5Js/OPdcYS4Jnr7mHdQtOGfJCvl3TJC7NJwzLLOzUTmVIogaZCA9GlRballbD7XYbR8mcPxs+jLq5HJJk8/3B8ojAz/YA9vp6ml3RSYDA+yv9fBIefxNniAredJeqAnmH4o9er3+n0rKmpoqiXdzFkp1ywYbDDxrsFTiPrTc0gEiLRbfCERBx8GZ/7zGv6exKW1mc1L7QcFRmT1PRuJo6vRfCOtjdAdp0Mj1bllGGe9oBSKOxqtxs/NFygaVZjMDqryRvObKaJaj5CDhNdwsa21EsQ3+YvQWBzlcs5FTi5S2zG3W4+tMb+HoyV36SEV4yBLtqqrczhVCuPMlZu2p1iFLyODJJOxrWnmZy49BlQiudmiR7wILJoYKIFFvGv1jCJnTl9cI6UGX8IwSHYjGJIdLxaQM6c/7tw15+h+3jPajzZqkIQ7r0fyBp2TxE+QXMCP/knYu/dVzzQoBe5CgnAr5Fj60eEF78mJZbU3m9EjuVglURCTs2hDiyl3eRENgJjTc8p9iho4aK5eT5BVF7v2TAsTkfm+AwOq78chbWfh7J5OYnycG+v6S76LE6T8Yy0Arkk4lOF5SC05SmrDQpFcbRC9B7pR8XwJx3rabt4jvFsdqQtqv7TRasNQs95oROSC8335tzsaQfPwL/sGH4wi4zsH3YZ6As2V9myMEytqVEX5DdGBtzRr1opkx0aisyG48Evtk1UHMR9ROoZmkbNOIFNDUxCBvw7CU20aJSri4GX7kahg8Lj670Lfpx1C9OMwH0xRGUHE4e2ZWaw6Smkjc0Rru7j4YFKel0KtJgQaei2fz2i+6wOv1uz+H4j6f98pVMsf3HODmnh4x+qlUXaJWbNILQEGwv3zVReY123TPHIzkwImNLej62BLaqnEgiPkKr/gp/2MdrgepUEGC8FN0MTPbazDR4aE5XqLtnehhq8/9EfIk3b5WzNh00IAELwFrWnabkob5xmSLORBH8SpS3J6NwWa4jJMADRAGPYOUH7tYUM1/GRUK1HuboNP9v3KAny/k30CrxLvNHwe/zkXgoU9+M+gXVXL8pJJLMawVe/Dg13XyqTTa00UX7TsQFJZGm6lHrgeFIejKBEMLsMXNAIccphZe6sDnycDm/GY8vqmfjg9R05GwJOhBd46vhDi7Ph8YbLjohEoT4KfE5o8+Norzc/VHbRv5Y+G6JCL6hRV72meb3LswLYGUzGYP4nh2Y/yixg+rAtre80xjbXFfdvXVF6CuibKn5gmjCmiRN31rvEfdwVPIQDCaqv19Do2cQYDN+yGCo7yDHAAAAAEABVguNTA5AAADhzCCA4MwggJroAMCAQICBGNtJJswDQYJKoZIhvcNAQELBQAwcTELMAkGA1UEBhMCR0IxFzAVBgNVBAgTDldlc3QgWW9ya3NoaXJlMQ4wDAYDVQQHEwVMZWVkczEOMAwGA1UEChMFSWNvc2ExEzARBgNVBAsTCk9wZW4gQnJ1c2gxFDASBgNVBAMTC01pa2UgTWlsbGVyMCAXDTIyMDIwMjExMzAyNVoYDzIwNzIwMTIxMTEzMDI1WjBxMQswCQYDVQQGEwJHQjEXMBUGA1UECBMOV2VzdCBZb3Jrc2hpcmUxDjAMBgNVBAcTBUxlZWRzMQ4wDAYDVQQKEwVJY29zYTETMBEGA1UECxMKT3BlbiBCcnVzaDEUMBIGA1UEAxMLTWlrZSBNaWxsZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCZOlUSd2Z9VSuVE1NK2AKiKCYR3ADh3f3PN6ipTtqUdxP44l5jJnPVXc5YXJ4DyBsXHGTqCSiL9wiqdRCNTMcRf6vrpcuRWxqwMMu4bid0eDiFBU+wModQl70N0VblMolYZzD/y0NpXWh7VKPSXyA22ZwygeOPQFzxR4j2jRvM/g+9HeJeVN1p5f+6pvceg/9FBSCEOQg5fbDtO+ytZfMiawcyhSSwwlOzEOGT0Dq6d9xIs1/zTA8LxAlGYHLSpQCT/n3X27LNgUMNrCpWgLTtxH/qQ61NU3juqTqBBWT4nzTXl1J9JyPaHH1yzC908YiI5PQSFehX80KTvsf0B65DAgMBAAGjITAfMB0GA1UdDgQWBBTThSJ0yfVNgUC4h3Sa9o8aUmLY3jANBgkqhkiG9w0BAQsFAAOCAQEAUqE9NJA+PaMBrCcVHkxmk32DsVNIVCM/eaTPCyjBM3V5COgxscven160OKGHRn6Xhplr/UDy+StphE9Hwk8MAwSJ4reBdPiNMQvIsDEQ/aXSAyTiKQeIU5Zc+cYuJvHcyxIOVektDe8Er2AITvpXQDK1JRvYU6lFKym3j/CZ4comUwjdolB1C6fzlTkhP3ZuuFMfv543WyuVtb3A1mioLzQ5kfFlbTO0uXqEm+gltkK8AMqU6B5RJDYtQXIJkjR//UzNgpaILVvQ4pyyS6VvBNbUbrHaUKabtP3daDtQ0AQw3gSkCJ+QPpY9joIq38LMcVY5/x5/nbcxTuYvUlHozn/+qtNvA7MtikSNPcblNpmifg4o' }}
+            androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
+            androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
+            androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
-          # Change owner back to the builder user; docker, by default, leaves these files as owned by root, so we can't do the chmod.
-          # (The chmod itself is also attempted in the unity-builder image, but because the paths don't match, they don't find our filename)
-          docker run -v $(pwd)/build:/mnt alpine chown $(id -u).$(id -g) -R /mnt/
-          chmod a+x build/${{ matrix.targetPlatform }}-${{ matrix.vrsdk }}/${{ env.filename }}/Contents/MacOS/*
+          mv build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/Support "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}/Contents/"
+          find build -name 'UnityFbxSdkNative.bundle' -delete
           # Compress, but skip the top directories
-          tar -c -v -z -f OpenBrush.tgz -C build ${{ matrix.targetPlatform}}-${{ matrix.vrsdk }}
-          rm -rf build/*
-          mv OpenBrush.tgz build/
+          tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
+          rm -rf build/${{ matrix.vrsdk }}/*
+          mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
+
+      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
+        if: startsWith(matrix.name, 'Windows Rift')
+        run: |
+          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
+
+      - name: Add bundled Windows tools
+        if: matrix.targetPlatform == 'StandaloneWindows64'
+        run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
 
       - name: Upload build/
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.name }}
-          path: build
+          name: ${{ matrix.name }} ${{ matrix.flavors.title }}
+          path: |
+            build/${{ matrix.vrsdk }}
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
+
+      - name: Check if packages-lock.json has changed or if it's cacheable
+        if: false
+        id: check_packagecache
+        run: |
+          # Check if there are any changes to the packages-lock.json file
+          set +e
+          git diff --exit-code -- Packages/packages-lock.json
+          CHANGES="$?"
+          set -e
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          echo "diff returned: $CHANGES"
+
+      - name: Save Library/PackageCache cache
+        uses: actions/cache/save@v6
+        if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library/PackageCache
+          key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
+
+      - name: Clean Library before caching
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        run: |
+          # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
+          # Debugging
+          echo "Library/ directories"
+          du -mcsh Library/*
+          find Library -size +50M -exec ls -altrh {} \;
+          # chown all files, since some are owned by root after the docker run
+          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
+          # Print the files to be deleted
+          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
+          cat todelete.txt | xargs -r rm
+          # The package cache is stored in a separate, shared, cache
+          rm -rf Library/PackageCache
+          echo "Final space used"
+          du -mcsh Library
+
+      - name: Save Library/ cache
+        uses: actions/cache/save@v6
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library
+          # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
+
+  signmacos:
+    name: Sign the MacOS .app
+    needs: [configuration, build]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    runs-on: macos-26
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: MacOS
+          path: build_macos
+
+      # See https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development
+      - name: Install the Apple certificate and provisioning profile
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_BUILD_CERTIFICATE_BASE64 }}
+          INSTALL_CERTIFICATE_BASE64: ${{ secrets.APPLE_INSTALL_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_BUILD_PROVISION_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ secrets.APPLE_KEYCHAIN_PASSWORD }}
+        run: |
+          BUILD_CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+          INSTALL_CERTIFICATE_PATH=$RUNNER_TEMP/install_certificate.p12
+          PP_PATH=$RUNNER_TEMP/openbrushmac.provisionprofile
+          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+
+          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $BUILD_CERTIFICATE_PATH
+          echo -n "$INSTALL_CERTIFICATE_BASE64" | base64 --decode -o $INSTALL_CERTIFICATE_PATH
+          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+
+          # import certificate to keychain
+          security import $BUILD_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security import $INSTALL_CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+          security list-keychain -d user -s $KEYCHAIN_PATH
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+
+      - name: Sign the release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+
+          cd StandaloneOSX/
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
+          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
+              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
+          done
+          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
+          cd -
+
+          tar -c -v -z -f OpenBrush.tgz StandaloneOSX
+      - name: Upload signed app
+        uses: actions/upload-artifact@v7
+        with:
+          name: MacOS (signed)
+          path: |
+            OpenBrush.tgz
+
+  createdmg:
+    name: Create and Notarize DMG
+    needs: [configuration, signmacos]
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    runs-on: macos-26
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
+          sparse-checkout: |
+            Support/macos
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: MacOS (signed)
+          path: build_macos
+
+      - name: Create a notarized DMG
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          tar xvfz build_macos/*tgz
+
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          mkdir dist
+
+          cp Support/macos/background.png StandaloneOSX/
+          cp Support/macos/background@2x.png StandaloneOSX/
+          pip install jinjanator
+          jinjanate Support/macos/openbrush-dmg.json.j2 > StandaloneOSX/openbrush-dmg.json
+          pushd StandaloneOSX/
+          npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
+          popd
+
+          xcrun notarytool submit \
+          --team-id ${{ vars.APPLE_TEAM_ID }} \
+          --apple-id ${{ vars.APPLE_ID }} \
+          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
+          --wait \
+          dist/OpenBrush.dmg
+
+          xcrun stapler staple dist/OpenBrush.dmg
+
+      - name: Upload notarized dmg
+        uses: actions/upload-artifact@v7
+        with:
+          name: MacOS (DMG)
+          path: |
+            dist/OpenBrush.dmg
 
   release:
     name: Create Github Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
-    strategy:
-      fail-fast: false
-
     steps:
-      - name: Download Build Artifacts (Windows SteamVR)
-        uses: actions/download-artifact@v2
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v6
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
+          fromTag: "${{ needs.configuration.outputs.previousrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ],
+              "pr_template": "- #{{TITLE}} (PR ##{{NUMBER}} by @#{{AUTHOR}})"
+            }
 
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
+      - name: Echo Changelog (for debugging purposes)
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: echo "$CHANGELOG"
 
-      - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows Rift
-          path: build_windows_rift
+          name: Windows OpenXR
+          path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows Rift Experimental)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows Rift Experimental
-          path: build_windows_rift_experimental
+          name: Android OpenXR
+          path: build_android_openxr
 
-      - name: Download Build Artifacts (Linux SteamVR)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Android Quest)
+        uses: actions/download-artifact@v6
         with:
-          name: Linux SteamVR
-          path: build_linux_steamvr
+          name: Android OpenXR
+          path: build_android_quest
 
-      - name: Download Build Artifacts (Linux SteamVR Experimental)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v8
         with:
-          name: Linux SteamVR Experimental
-          path: build_linux_steamvr_experimental
+          name: Linux
+          path: build_linux
 
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest
-          path: build_oculus_quest
-
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
-          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
-          mv build_windows_rift_experimental/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_Experimental_$VERSION/
-          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
-          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+          mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
-          zip -r OpenBrush_Desktop_Experimental_$VERSION.zip OpenBrush_Desktop_Experimental_$VERSION/
-          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          zip -r OpenBrush_Rift_Experimental_$VERSION.zip OpenBrush_Rift_Experimental_$VERSION/
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
-          tar cvfz OpenBrush_Linux_$VERSION.tgz OpenBrush_Linux_$VERSION/
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
-          tar cvfz OpenBrush_Linux_Experimental_$VERSION.tgz OpenBrush_Linux_Experimental_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
-          rm -rf OpenBrush_Desktop_Experimental_$VERSION
-          rm -rf OpenBrush_Rift_$VERSION
-          rm -rf OpenBrush_Rift_Experimental_$VERSION
-          rm -rf OpenBrush_Linux_$VERSION
-          rm -rf OpenBrush_Linux_Experimental_$VERSION
+          zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
+
       - name: Publish
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v3
         with:
-          body: ${{ needs.configuration.outputs.changelog }}
+          body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ needs.configuration.outputs.prerelease }}
+          target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
           files: releases/*
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+  publish_gitbook:
+    name: Publish changelog from last major build to open-brush-docs
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: "Build Changelog"
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v6
+        with:
+          fromTag: "${{ needs.configuration.outputs.previousfullrelease }}"
+          toTag: "${{ needs.configuration.outputs.currentrelease }}"
+          configurationJson: |
+            {
+              "categories": [
+                {
+                    "title": "## 🚀 Features",
+                    "labels": ["feature", "enhancement"]
+                },
+                {
+                    "title": "## 🎨 UI / UX",
+                    "labels": ["ux"]
+                },
+                {
+                    "title": "## 🐛 Fixes",
+                    "labels": ["fix", "bugfix"]
+                },
+                {
+                    "title": "## 🛠️ Infrastructure",
+                    "labels": ["infrastructure"]
+                },
+                {
+                    "title": "## 📦 Dependencies / Maintenance",
+                    "labels": ["dependencies", "maintenance"]
+                },
+                {
+                    "title": "## 💬 Uncategorized",
+                    "labels": []
+                }
+              ],
+              "template": "# Changelog since #{{FROM_TAG}}\n\n[Full release details](#{{RELEASE_DIFF}})\n\n#{{CHANGELOG}}\n\n",
+              "pr_template": "- #{{TITLE}} ([PR ##{{NUMBER}}](#{{URL}}) by @#{{AUTHOR}})\n"
+            }
+
+      - name: Get the current contents of the docs repository
+        uses: actions/checkout@v7
+        with:
+          repository: icosa-foundation/open-brush-docs
+          path: open-brush-docs
+          ref: master
+          fetch-depth: 0
+          sparse-checkout: |
+            release-history/
+
+      - name: Create Changelog file
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          echo "$CHANGELOG" | tee open-brush-docs/release-history/automatic-changelog.md
+
+      - name: Publish release notes
+        uses: cpina/github-action-push-to-another-repository@composite-1.5.1
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.OPENBRUSH_DOCS_SSH_DEPLOY_KEY }}
+        with:
+          source-directory: 'open-brush-docs/release-history/'
+          target-directory: 'release-history/'
+          destination-github-username: 'icosa-foundation'
+          destination-repository-name: 'open-brush-docs'
+          user-name: 'release-note-bot'
+          user-email: automatic-release@icosa
+          target-branch: master
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build]
+    needs: [configuration, build, signmacos]
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          sparse-checkout: |
+            Support/steam
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
       - name: Setup steamcmd
-        uses: CyberAndrii/setup-steamcmd@v1.1.1
+        uses: CyberAndrii/setup-steamcmd@v1.3.0
       - name: Restore steam login config
         run: |
           mkdir -p /home/runner/Steam/config
-          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - > /home/runner/Steam/config/config.vdf
-          echo "${{ secrets.STEAM_SSFN }}" | base64 -d - > /home/runner/Steam/${{ secrets.STEAM_SSFN_FILENAME }}
-      - name: Download Build Artifacts (Windows SteamVR)
-        uses: actions/download-artifact@v2
+          echo "${{ secrets.STEAM_CONFIG_VDF}}" | base64 -d - | gunzip - > /home/runner/Steam/config/config.vdf
+          md5sum /home/runner/Steam/config/config.vdf
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
-        uses: actions/download-artifact@v2
+          name: Windows OpenXR
+          path: build_windows_openxr
+      - name: Download Build Artifacts (MacOS Signed)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
-      - name: Upload Regular Build
+          name: MacOS (signed)
+          path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v8
+        with:
+          name: Linux
+          path: build_linux
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+      - name: Upload Build
         run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_steamvr/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr/main_depot.vdf
-          cp Support/steam/installscript_win.vdf build_windows_steamvr/
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr/app.vdf +quit
+          cd build_macos
+          tar xvfz OpenBrush.tgz
+          cd -
+          pip install -U jinjanator
+          jinjanate Support/steam/app.vdf.j2 > app.vdf
+          jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
+          jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
+          jinjanate Support/steam/main_depot.android.vdf.j2 > build_android_openxr/main_depot.vdf
+          jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
+          steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
         env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_USERNAME: ${{ vars.STEAM_USERNAME }}
           STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
           VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          CHANNEL: prerelease
-      - name: Upload Experimental Build
+          OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
+          OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
+          OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
+          OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
+          OPEN_BRUSH_ANDROID_DEPOT_ID: ${{ vars.STEAM_ANDROID_DEPOT_ID }}
+          OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
+          CHANNEL: beta
+      - name: Update steam login secret
         run: |
-          pip install -U j2cli
-          j2 Support/steam/app.vdf.j2 > build_windows_steamvr_experimental/app.vdf
-          j2 Support/steam/main_depot.vdf.j2 > build_windows_steamvr_experimental/main_depot.vdf
-          cp Support/steam/installscript_win.vdf build_windows_steamvr_experimental/
-          steamcmd +login $STEAM_USERNAME $STEAM_PASSWORD +run_app_build $(pwd)/build_windows_steamvr_experimental/app.vdf +quit
+          gzip /home/runner/Steam/config/config.vdf -c | base64 | gh secret set --visibility all --org icosa-foundation STEAM_CONFIG_VDF
+          md5sum /home/runner/Steam/config/config.vdf
         env:
-          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
-          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
-          VERSION: ${{ needs.configuration.outputs.version }}
-          OPEN_BRUSH_APP_ID: 1634870
-          OPEN_BRUSH_WINDOWS_DEPOT_ID: 1634871
-          CHANNEL: prerelease-experimental
+          GITHUB_TOKEN: ${{ secrets.SECRET_UPDATER_PAT }}
       - name: Save logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: steamcmd logs
           path: build_output/
 
+  publish_pimax:
+    name: Publish Pimax Release
+    needs: [configuration, build]
+    runs-on: windows-latest
+    env:
+      PIMAX_APP_ID: ${{ vars.PIMAX_APP_ID }}
+      PIMAX_USERNAME: ${{ vars.PIMAX_USERNAME }}
+      PIMAX_PASSWORD: ${{ secrets.PIMAX_PASSWORD }}
+      VERSION: ${{ needs.configuration.outputs.version}}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download Build Artifacts (Windows Pimax)
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Publish Pimax Builds
+        run: |
+          New-Item "releases" -Type Directory
+          Move-Item -Path build_windows_openxr/StandaloneWindows64/* releases/
+          Set-Location -Path "releases"
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_${Env:VERSION}.zip
+          Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
+          ./pimax-dev-util.exe login -u $Env:PIMAX_USERNAME  -p $Env:PIMAX_PASSWORD
+          ./pimax-dev-util.exe upload-pc-build -a $Env:PIMAX_APP_ID -d OpenBrush_Pimax_${Env:VERSION}.zip
+
+  publish_viveport:
+    name: Publish Viveport Release
+    needs: [configuration, build]
+    runs-on: windows-latest
+    env:
+      VIVEPORT_EMAIL: ${{ vars.VIVEPORT_EMAIL }}
+      VIVEPORT_PASSWORD: ${{ secrets.VIVEPORT_PASSWORD }}
+      VIVEPORT_APP_ID: ${{ vars.VIVEPORT_APP_ID }}
+      VIVEPORT_ORG_ID: ${{ vars.VIVEPORT_ORG_ID }}
+      VERSION: ${{ needs.configuration.outputs.version}}
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Publish Viveport Builds
+        run: |
+          New-Item "releases" -Type Directory
+          Move-Item -Path build_windows_openxr/StandaloneWindows64/* releases/
+          Set-Location -Path "releases"
+          Compress-Archive -Path ./* -DestinationPath OpenBrush_Viveport_${Env:VERSION}.zip
+          Invoke-WebRequest -Uri https://assets-global.viveport.com/static-misc/developer-tool/ViveportUploader.exe -OutFile ViveportUploader.exe
+          ./ViveportUploader.exe -email ${Env:VIVEPORT_EMAIL} -password ${Env:VIVEPORT_PASSWORD} -filepath OpenBrush_Viveport_${Env:VERSION}.zip -appid ${Env:VIVEPORT_APP_ID} -orgid ${Env:VIVEPORT_ORG_ID} -version ${VERSION}
 
   publish_itch:
     name: Publish Itch.io Release
-    needs: [configuration, build]
+    needs: [configuration, build, createdmg]
     runs-on: ubuntu-latest
     env:
       ITCH_SUBCHANNEL_NAME: ${{ needs.configuration.outputs.itchchannelname }}
@@ -540,136 +1086,609 @@ jobs:
       VERSION: ${{ needs.configuration.outputs.version }}
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
-    strategy:
-      fail-fast: false
-
     steps:
-      - name: Download Build Artifacts (Windows SteamVR)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows SteamVR
-          path: build_windows_steamvr
+          name: Windows OpenXR
+          path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows SteamVR Experimental)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Windows SteamVR Experimental
-          path: build_windows_steamvr_experimental
+          name: Android OpenXR
+          path: build_android_openxr
 
-      - name: Download Build Artifacts (Linux SteamVR)
-        uses: actions/download-artifact@v2
+      - name: Download Build Artifacts (Mac)
+        uses: actions/download-artifact@v8
         with:
-          name: Linux SteamVR
-          path: build_linux_steamvr
-
-      - name: Download Build Artifacts (Linux SteamVR Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Linux SteamVR Experimental
-          path: build_linux_steamvr_experimental
-
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest
-          path: build_oculus_quest
-
-      - name: Download Build Artifacts (Oculus Quest Experimental)
-        uses: actions/download-artifact@v2
-        with:
-          name: Oculus Quest Experimental
-          path: build_oculus_quest_experimental
+          name: MacOS (DMG)
+          path: build_macos
 
       - name: Package Artifacts for release
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest_experimental/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_Experimental_$VERSION.apk
-          mv build_windows_steamvr/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_steamvr_experimental/StandaloneWindows64-SteamVR/ releases/OpenBrush_Desktop_Experimental_$VERSION/
-          mv build_linux_steamvr/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_$VERSION/
-          mv build_linux_steamvr_experimental/StandaloneLinux64-SteamVR/ releases/OpenBrush_Linux_Experimental_$VERSION/
-          cd releases
-          chmod a+x OpenBrush_Linux_$VERSION/OpenBrush*
-          chmod a+x OpenBrush_Linux_Experimental_$VERSION/OpenBrush*
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
+          mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+
       - name: Publish Windows
-        uses: josephbmanley/butler-publish-itchio-action@master
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}
           PACKAGE: releases/OpenBrush_Desktop_${{ needs.configuration.outputs.version }}
-      - name: Publish Windows Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: windows-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Desktop_Experimental_${{ needs.configuration.outputs.version }}
-      - name: Publish Linux
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}
-          PACKAGE: releases/OpenBrush_Linux_${{ needs.configuration.outputs.version }}
-      - name: Publish Linux Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
-        env:
-          CHANNEL: linux-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Linux_Experimental_${{ needs.configuration.outputs.version }}
       - name: Publish Quest
-        uses: josephbmanley/butler-publish-itchio-action@master
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
-          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
-      - name: Publish Quest Experimental
-        uses: josephbmanley/butler-publish-itchio-action@master
+          PACKAGE: releases/OpenBrush_Android_${{ needs.configuration.outputs.version }}.apk
+      - name: Publish Mac
+        uses: yeslayla/butler-publish-itchio-action@master
         env:
-          CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}-experimental
-          PACKAGE: releases/OpenBrush_Quest_Experimental_${{ needs.configuration.outputs.version }}.apk
+          CHANNEL: mac-${{ env.ITCH_SUBCHANNEL_NAME }}
+          PACKAGE: releases/OpenBrush_Mac_${{ needs.configuration.outputs.version }}.dmg
 
-  publish_oculus:
-    name: Publish Oculus Release
+  google_play_review_state:
+    name: Determine Google Play review state
     needs: [configuration, build]
-    runs-on: macos-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      github.repository == 'icosa-gallery/open-brush' &&
+      github.repository == 'icosa-foundation/open-brush' &&
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-
-    strategy:
-      fail-fast: false
+    outputs:
+      openbrush_changes_not_sent_for_review: ${{ steps.review_state.outputs.openbrush_changes_not_sent_for_review }}
+      viewer_changes_not_sent_for_review: ${{ steps.review_state.outputs.viewer_changes_not_sent_for_review }}
 
     steps:
-      - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v2
+      # google-github-actions/auth writes its temporary credentials beneath the
+      # workspace, so checkout must run first even though this job reads no files.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Authenticate with Google
+        uses: google-github-actions/auth@v3
         with:
-          name: Windows Rift
-          path: build_windows_rift
-      - name: Download Build Artifacts (Oculus Quest)
-        uses: actions/download-artifact@v2
+          credentials_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Determine required review behavior
+        id: review_state
+        shell: bash
+        run: |
+          # Google Play does not expose the app-level review mode as readable
+          # state. Instead, edits.validate rejects an otherwise empty edit with
+          # one of two contradictory instructions depending on the package's
+          # review history. In particular, an app with a rejected release must
+          # set changesNotSentForReview=true, while an app in the normal state
+          # rejects that same parameter.
+          #
+          # Probe each package with a disposable, empty edit before uploading a
+          # several-hundred-megabyte bundle. A successful validation means the
+          # normal false value is required. Only Google's exact manual-review
+          # error selects true; every other response fails the job rather than
+          # guessing and potentially changing review behavior.
+          ACCESS_TOKEN="$(gcloud auth application-default print-access-token \
+            --scopes=https://www.googleapis.com/auth/androidpublisher)"
+          API_ROOT="https://androidpublisher.googleapis.com/androidpublisher/v3/applications"
+          MANUAL_REVIEW_MESSAGE="Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true."
+
+          determine_review_state() {
+            local package_name="$1"
+            local output_name="$2"
+            local edit_response edit_id response_file http_status curl_status
+
+            edit_response="$(curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data '{}' \
+              "$API_ROOT/$package_name/edits")"
+            edit_id="$(jq --exit-status --raw-output '.id' <<< "$edit_response")"
+            response_file="$(mktemp)"
+
+            curl_status=0
+            http_status="$(curl --silent --show-error \
+              --output "$response_file" \
+              --write-out '%{http_code}' \
+              --request POST \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              --header "Content-Type: application/json" \
+              --data '{}' \
+              "$API_ROOT/$package_name/edits/$edit_id:validate")" || curl_status=$?
+
+            # The probe edit contains no changes, but delete it explicitly so
+            # it cannot linger until Google's edit-expiry timeout.
+            curl --fail-with-body --silent --show-error \
+              --request DELETE \
+              --header "Authorization: Bearer $ACCESS_TOKEN" \
+              "$API_ROOT/$package_name/edits/$edit_id"
+
+            if [ "$curl_status" -ne 0 ]; then
+              cat "$response_file" >&2
+              rm -f "$response_file"
+              return "$curl_status"
+            fi
+
+            if [ "$http_status" = "200" ]; then
+              echo "$output_name=false" >> "$GITHUB_OUTPUT"
+            elif [ "$http_status" = "400" ] &&
+              jq --exit-status --arg expected "$MANUAL_REVIEW_MESSAGE" \
+                '.error.message | startswith($expected)' "$response_file" > /dev/null; then
+              echo "$output_name=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Unexpected Google Play validation response for $package_name (HTTP $http_status):" >&2
+              cat "$response_file" >&2
+              rm -f "$response_file"
+              return 1
+            fi
+
+            rm -f "$response_file"
+          }
+
+          determine_review_state \
+            "foundation.icosa.openbrush" \
+            "openbrush_changes_not_sent_for_review"
+          determine_review_state \
+            "foundation.icosa.openbrushviewer" \
+            "viewer_changes_not_sent_for_review"
+
+  publish_google_play:
+    name: Publish Google Play AndroidXR Release
+    needs: [configuration, build, google_play_review_state]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android AndroidXR)
+        uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest
-          path: build_oculus_quest
+          name: Android AndroidXR
+          path: build_android_androidxr
+
+      - name: Prepare Google Play release
+        id: google_play_release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          mkdir releases
+          AAB="$(find build_android_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_androidxr -name '*.symbols.zip' -print -quit)"
+          if [ -z "$AAB" ]; then
+            echo "No Android App Bundle found in build_android_androidxr" >&2
+            find build_android_androidxr -maxdepth 4 -type f >&2
+            exit 1
+          fi
+
+          cp "$AAB" "releases/OpenBrush_AndroidXR_$VERSION.aab"
+          if [ -n "$SYMBOLS" ]; then
+            cp "$SYMBOLS" "releases/OpenBrush_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrush_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish Google Play Build
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: foundation.icosa.openbrush
+          releaseFiles: releases/OpenBrush_AndroidXR_${{ needs.configuration.outputs.version }}.aab
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
+          releaseName: ${{ needs.configuration.outputs.version }}
+          status: ${{ needs.configuration.outputs.googleplaystatus }}
+          debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          # Testing-track releases must reach testers without submitting reviewable changes.
+          # The probe above supplies the package-specific API spelling required
+          # to express that intent. Production-track releases retain the action
+          # default so they cannot silently remain waiting for manual review.
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
+
+  publish_google_play_viewer:
+    name: Publish Google Play AndroidXR Viewer Release
+    needs: [configuration, build, google_play_review_state]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Viewer AndroidXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android Viewer AndroidXR
+          path: build_android_viewer_androidxr
+
+      - name: Prepare Google Play release
+        id: google_play_release
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          mkdir releases
+          AAB="$(find build_android_viewer_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_viewer_androidxr -name '*.symbols.zip' -print -quit)"
+          if [ -z "$AAB" ]; then
+            echo "No Android App Bundle found in build_android_viewer_androidxr" >&2
+            find build_android_viewer_androidxr -maxdepth 4 -type f >&2
+            exit 1
+          fi
+
+          cp "$AAB" "releases/OpenBrushViewer_AndroidXR_$VERSION.aab"
+          if [ -n "$SYMBOLS" ]; then
+            cp "$SYMBOLS" "releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish Google Play Build
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: foundation.icosa.openbrushviewer
+          releaseFiles: releases/OpenBrushViewer_AndroidXR_${{ needs.configuration.outputs.version }}.aab
+          tracks: ${{ needs.configuration.outputs.googleplaytrack }}
+          releaseName: ${{ needs.configuration.outputs.version }}
+          status: ${{ needs.configuration.outputs.googleplaystatus }}
+          debugSymbols: ${{ steps.google_play_release.outputs.debugSymbols }}
+          # See google_play_review_state. Viewer currently requires true because
+          # of its retained rejected beta release; the probe keeps this adaptive
+          # if Google later changes either package's hidden review state.
+          changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
+
+  publish_oculus_quest:
+    name: Publish Android Quest Release
+    needs: [configuration, build]
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android Quest)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
           PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
-          OCULUS_RIFT_APP_ID: ${{ secrets.OCULUS_RIFT_APP_ID }}
-          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
-          OCULUS_QUEST_APP_ID: ${{ secrets.OCULUS_QUEST_APP_ID }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_QUEST_APP_ID: ${{ vars.OCULUS_QUEST_APP_ID }}
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_windows_rift/StandaloneWindows64-Oculus/ releases/OpenBrush_Rift_$VERSION/
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
+
+          cd releases
+          unzip symbols.zip
+          curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
+          chmod 755 ovr-platform-util
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+          fi
+
+  publish_oculus_quest_arborxr:
+    name: Publish Oculus Quest 2+ Release ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli --with 'setuptools<82.0.0'
+
+      - name: Download Build Artifacts (Android Quest)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_quest
+
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_Q2_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q2_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q2_BETA_CHANNEL }}
+        run: |
+          set -x
+          mkdir releases
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 600 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
+  publish_oculus_quest1_arborxr:
+    name: Publish Oculus Quest 1 Release ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli --with 'setuptools<82.0.0'
+
+      - name: Download Build Artifacts (Oculus Quest 1)
+        uses: actions/download-artifact@v8
+        with:
+          name: Oculus Quest (1)
+          path: build_android_quest
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_Q1_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_Q1_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_Q1_BETA_CHANNEL }}
+        run: |
+          set -x
+          mkdir releases1
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+
+          cd releases1
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Quest1_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
+  publish_oculus_rift:
+    name: Publish Oculus Rift Release
+    needs: [configuration, build]
+    runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Windows OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows OpenXR
+          path: build_windows_openxr
+
+      - name: Publish Oculus Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          OCULUS_RIFT_APP_ID: ${{ vars.OCULUS_RIFT_APP_ID }}
+          OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
+
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE
             ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel LIVE --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
           else
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta
-            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789
+            CHANGELOG="${RAW_CHANGELOG}"
+            ./ovr-platform-util upload-rift-build --app-id ${OCULUS_RIFT_APP_ID} --app-secret ${OCULUS_RIFT_APP_SECRET} --build-dir OpenBrush_Rift_$VERSION --launch-file OpenBrush.exe --channel BETA --version $VERSION --firewall_exceptions true --redistributables 822786567843179,1675031999409058,2657209094360789 --notes "${CHANGELOG}"
           fi
+
+  publish_pico:
+    name: Publish Pico Releases
+    needs: [configuration, build]
+    runs-on: ubuntu-latest  # the ovr-platform-util tool is only available for Mac and Windows
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          PICO_APP_ID: ${{ vars.PICO_APP_ID }}
+          PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
+        run: |
+          mkdir releases
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+
+          cd releases
+          # pico-cli v1.0.3
+          curl -L 'https://p16-platform-static-va.ibyteimg.com/tos-maliva-i-jo6vmmv194-us/linux-noncn/202304111056/pico-cli?r=1681181814847245000' -o pico-cli
+          chmod 755 pico-cli
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
+          else
+            # For Pico, Beta channels can only get one build, not a separate China / non-China build
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
+          fi
+
+  publish_pico_arborxr:
+    name: Publish Pico Releases ArborXR
+    needs: [configuration, build]
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          ignore-empty-workdir: true
+          enable-cache: false
+
+      - name: Install ArborXR CLI
+        run: |
+          uv tool install abxrcli --with 'setuptools<82.0.0'
+
+      - name: Download Build Artifacts (Android OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android OpenXR
+          path: build_android_openxr
+      - name: Publish Pico Builds
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          PRERELEASE: ${{ needs.configuration.outputs.prerelease }}
+          RAW_CHANGELOG: ${{ needs.configuration.outputs.rawchangelog }}
+          ARBORXR_ACCESS_TOKEN: ${{ secrets.ARBORXR_ACCESS_TOKEN }}
+          ARBORXR_ORG_ID: ${{ vars.ARBORXR_ORG_ID }}
+          ARBORXR_APP_ID: ${{ vars.ARBORXR_PICO_APP_ID }}
+          ARBORXR_LIVE_CHANNEL: ${{ vars.ARBORXR_PICO_LIVE_CHANNEL }}
+          ARBORXR_BETA_CHANNEL: ${{ vars.ARBORXR_PICO_BETA_CHANNEL }}
+        run: |
+          set -x
+          mkdir releases
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+
+          cd releases
+
+          if [ "$PRERELEASE" == "false" ]
+          then
+            CHANGELOG="Version $VERSION"
+            ARBORXR_CHANNEL="${ARBORXR_LIVE_CHANNEL}"
+          else
+            CHANGELOG="${RAW_CHANGELOG}"
+            ARBORXR_CHANNEL="${ARBORXR_BETA_CHANNEL}"
+          fi
+          VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
+          abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
+  publish_ios_zapbox:
+    name: Publish Zapbox iOS
+    needs: [configuration, build]
+    runs-on: macos-26
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+
+      - name: Free extra space
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        run: |
+          echo "Initial free space"
+          df -h
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
+          df -h
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: iOS Zapbox
+          path: build
+
+      - name: Fix File Permissions
+        run: |
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          find $IOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Run fastlane
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
+          PROJECT_NAME: Open Brush for Zapbox
+          FASTLANE_LANE: ${{ needs.configuration.outputs.fastlanelane }}
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          bundle install
+          bundle exec fastlane ios ${FASTLANE_LANE}
+
+      - name: Save logs
+        uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: fastlane logs
+          path: /Users/runner/Library/Logs/gym/

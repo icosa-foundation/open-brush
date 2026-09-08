@@ -30,6 +30,7 @@ namespace TiltBrush
 
         private ReferenceVideo m_Video;
         private VideoState m_InitialState;
+        private bool m_PreserveCustomSize;
 
         public ReferenceVideo Video
         {
@@ -43,14 +44,18 @@ namespace TiltBrush
             m_Video = video;
             ImageTexture = m_NoImageTexture;
 
-            var size = GetWidgetSizeRange();
-            if (m_Video.Aspect > 1)
+            // Only recalculate size if we're not preserving a custom size
+            if (!m_PreserveCustomSize)
             {
-                m_Size = Mathf.Clamp(2 / m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
-            }
-            else
-            {
-                m_Size = Mathf.Clamp(2 * m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                var size = GetWidgetSizeRange();
+                if (m_Video.Aspect > 1)
+                {
+                    m_Size = Mathf.Clamp(2 / m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                }
+                else
+                {
+                    m_Size = Mathf.Clamp(2 * m_Video.Aspect / Coords.CanvasPose.scale, size.x, size.y);
+                }
             }
 
             // Create in the main canvas.
@@ -62,6 +67,34 @@ namespace TiltBrush
         }
 
         public override float? AspectRatio => m_Video?.Aspect;
+
+        /// Prevents automatic size recalculation when video is set
+        public void SetPreserveCustomSize(bool preserve)
+        {
+            m_PreserveCustomSize = preserve;
+        }
+
+        /// Override to check if custom size should be preserved
+        protected override bool ShouldPreserveCustomSize()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Public accessor for API to check preserve flag
+        public bool ShouldPreserveCustomSizePublic()
+        {
+            return m_PreserveCustomSize;
+        }
+
+        /// Override SetSignedWidgetSize to respect preserve flag
+        public new void SetSignedWidgetSize(float fScale)
+        {
+            if (m_PreserveCustomSize)
+            {
+                return;
+            }
+            base.SetSignedWidgetSize(fScale);
+        }
 
         protected override void OnShow()
         {
@@ -133,7 +166,7 @@ namespace TiltBrush
             }
         }
 
-        public static void FromTiltVideo(TiltVideo tiltVideo)
+        public static VideoWidget FromTiltVideo(TiltVideo tiltVideo)
         {
             VideoWidget videoWidget = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab);
             videoWidget.m_LoadingFromSketch = true;
@@ -166,21 +199,30 @@ namespace TiltBrush
                 videoWidget.PinFromSave();
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
+            videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId));
+            videoWidget.TwoSided = tiltVideo.TwoSided;
+
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);
             videoWidget.UpdateScale();
+            return videoWidget;
         }
 
-        public override GrabWidget Clone()
+        override public GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+        override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             VideoWidget clone = Instantiate(WidgetManager.m_Instance.VideoWidgetPrefab) as VideoWidget;
+            clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;
             clone.SetVideo(m_Video);
-            clone.SetSignedWidgetSize(m_Size);
+            clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
-            clone.transform.position = transform.position;
-            clone.transform.rotation = transform.rotation;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);

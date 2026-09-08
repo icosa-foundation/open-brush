@@ -147,14 +147,18 @@ namespace TiltBrush
                         // Delay show timer.
                         m_VisualScaleTimer = -m_ShowDelay * m_TransitionSpeed;
 
-                        // Set selection.
-                        if (m_HighlightedItem == -1)
+                        if (SketchControlsScript.m_Instance == null ||
+                            !SketchControlsScript.m_Instance.IsViewOnly)
                         {
-                            SketchSurfacePanel.m_Instance.EnableDefaultTool();
-                        }
-                        else
-                        {
-                            SketchSurfacePanel.m_Instance.EnableSpecificTool(m_Items[m_HighlightedItem].Tool);
+                            // Set selection.
+                            if (m_HighlightedItem == -1)
+                            {
+                                SketchSurfacePanel.m_Instance.EnableDefaultTool();
+                            }
+                            else
+                            {
+                                SketchSurfacePanel.m_Instance.EnableSpecificTool(m_Items[m_HighlightedItem].Tool);
+                            }
                         }
                         m_HighlightedItem = -1;
                         m_CurrentVisualState = VisualState.Hidden;

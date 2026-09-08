@@ -37,6 +37,7 @@ namespace TiltBrush
         private bool m_SurfaceIsDrawable = true;
 
         [NonSerialized] public bool m_UpdatedToolThisFrame = false;
+        [NonSerialized] public BaseCommand m_LastCommand;
 
         public bool IsSurfaceDrawable() { return m_SurfaceIsDrawable; }
         public bool IsSketchSurfaceToolActive()
@@ -74,14 +75,17 @@ namespace TiltBrush
             m_ToolsToMonitor = new List<BaseTool>();
             m_PanelDescriptionState = DescriptionState.Closed;
             m_PanelFlairState = DescriptionState.Closed;
+
+            // Collected here rather than in Start so that ActiveTool is valid for anything
+            // running in Start: every Awake completes before the first Start, whereas the
+            // order between two Starts depends on execution order. Tool Init stays in Start
+            // because the tools themselves need the rest of the app to be up.
+            m_Tools = GetComponentsInChildren<BaseTool>(true);
+            m_ActiveToolIndex = 0;
         }
 
         void Start()
         {
-            //get all tools from our children
-            m_Tools = GetComponentsInChildren<BaseTool>(true);
-
-            m_ActiveToolIndex = 0;
             m_ToolSelectionAggregateValue = 0.0f;
 
             //init and then turn them all off
@@ -97,10 +101,11 @@ namespace TiltBrush
         void OnDisable()
         {
             m_AddedNewPoseListener = false;
-            App.VrSdk.NewControllerPosesApplied -= OnNewPoses;
+            App.VrSdk.OnNewControllerPosesApplied -= OnNewPoses;
         }
 
         bool m_AddedNewPoseListener = false;
+
         void Update()
         {
             // Do this here instead of OnEnable() to ensure that our event handler gets
@@ -110,7 +115,7 @@ namespace TiltBrush
             if (!m_AddedNewPoseListener)
             {
                 m_AddedNewPoseListener = true;
-                App.VrSdk.NewControllerPosesApplied += OnNewPoses;
+                App.VrSdk.OnNewControllerPosesApplied += OnNewPoses;
             }
 
             BaseUpdate();
@@ -253,10 +258,34 @@ namespace TiltBrush
             return null;
         }
 
+        public bool RegisterRuntimeTool(BaseTool tool)
+        {
+            if (tool == null || m_Tools == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < m_Tools.Length; ++i)
+            {
+                if (m_Tools[i] == tool || m_Tools[i].m_Type == tool.m_Type)
+                {
+                    return true;
+                }
+            }
+
+            tool.Init();
+            tool.gameObject.SetActive(false);
+            Array.Resize(ref m_Tools, m_Tools.Length + 1);
+            m_Tools[m_Tools.Length - 1] = tool;
+            return true;
+        }
+
         public void VerifyValidToolWithColorUpdate()
         {
             if (ActiveTool.m_Type != BaseTool.ToolType.RepaintTool &&
-                ActiveTool.m_Type != BaseTool.ToolType.RecolorTool)
+                ActiveTool.m_Type != BaseTool.ToolType.RecolorTool &&
+                ActiveTool.m_Type != BaseTool.ToolType.TintColorTool &&
+                ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool)
             {
                 EnableDefaultTool();
             }

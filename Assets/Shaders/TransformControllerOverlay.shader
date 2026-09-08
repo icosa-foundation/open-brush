@@ -22,20 +22,22 @@ Properties {
 
 Category {
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
    Tags {"Queue"="AlphaTest+20"}
 
   Pass {
       Cull Front
       ZWrite On
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/ColorSpace.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
 
       uniform float _BlackOutlineInflation;
       uniform float _Intensity;
@@ -44,36 +46,50 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v) {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         o.vertex = UnityObjectToClipPos(v.vertex + float4(v.normal * _BlackOutlineInflation * _Intensity,0));
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         return float4(0,0,0,1);
       }
-      ENDCG
+      ENDHLSL
     }
 
   Pass {
       Cull Front
     ZWrite On
 
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/ColorSpace.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
 
       uniform float _ColoredOutlineInflation;
       uniform float _BaseInflation;
@@ -82,10 +98,16 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       uniform float4 _Color;
@@ -93,17 +115,26 @@ Category {
 
       v2f vert (appdata_t v) {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
         _ColoredOutlineInflation += _BaseInflation * abs(sin(_Time.w*2));
         o.vertex = UnityObjectToClipPos(v.vertex + float4(v.normal * _ColoredOutlineInflation * _Intensity,0));
         return o;
       }
 
       fixed4 frag (v2f i) : COLOR {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         _Color = GetAnimatedSelectionColor(_Color);
         return float4(_Color.xyz,1);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+
+

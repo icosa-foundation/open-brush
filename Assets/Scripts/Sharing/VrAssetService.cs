@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Apis.Http;
 using Newtonsoft.Json.Linq;
+using Org.OpenAPITools.Api;
+using Org.OpenAPITools.Client;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -33,9 +36,11 @@ namespace TiltBrush
     [Serializable]
     public enum Cloud
     {
-        None,
-        Poly,
-        Sketchfab
+        None = 0,
+        Google = 1,
+        Sketchfab = 2,
+        Icosa = 3,
+        Vive = 4
     }
 
     [Serializable]
@@ -45,32 +50,44 @@ namespace TiltBrush
         TILT,
         GLTF,
         GLTF2,
+        OBJ,
+        OBJ_NGON,
+        BLOCKS,
+        PLY,
+        VOX
+    }
+
+    [Serializable]
+    public enum TiltDownloadStrategy
+    {
+        AvoidArchive,
+        UsePreferred
     }
 
     public class VrAssetService : MonoBehaviour
     {
         // Constants
 
-        const string kGltfName = "sketch.gltf";
+        const string kDefaultName = "sketch";
 
-        public const string kApiHost = "https://poly.googleapis.com";
-        private const string kAssetLandingPage = "https://vr.google.com/sketches/uploads/publish/";
+        private const string kListAssetsUri = "/assets";
+        private const string kUserAssetsUri = "/users/me/assets";
+        private const string kUserLikesUri = "/users/me/likedassets";
 
-        private const string kListAssetsUri = "/v1/assets";
-        private const string kUserAssetsUri = "/v1/users/me/assets";
-        private const string kUserLikesUri = "/v1/users/me/likedassets";
-        private const string kGetVersionUri = "/$discovery/rest?version=v1";
+        // Used when requesting a device code from the system browser
+        private string m_CurrentDeviceCodeSecret;
+        private DateTime? m_CurrentDeviceCodeCreateTime;
 
-        public static string kPolyApiKey => App.Config.GoogleSecrets?.ApiKey;
-
-        public const string kCreativeCommonsLicense = "CREATIVE_COMMONS_BY";
-
-        // Poly API used by Tilt Brush.
-        // If Poly doesn't support this version, don't try to talk to Poly and prompt the user to upgrade.
-        private const string kPolyApiVersion = "v1";
+        // Icosa API used by Open Brush.
+        // If Icosa doesn't support this version, don't try to talk to Icosa and prompt the user to upgrade.
+        private const string kIcosaApiVersion = "v1";
 
         /// Change-of-basis transform
-        public static readonly TrTransform kPolyFromUnity;
+        public static readonly TrTransform kIcosaFromUnity;
+
+        // Used for device code logins
+        private static Action _pendingMainThreadAction;
+
 
         private static Dictionary<string, string> kGltfMimetypes = new Dictionary<string, string>
         {
@@ -96,7 +113,7 @@ namespace TiltBrush
         }
 
         // These are progress values at the start of each step.
-        // TODO(b/146892613): have a different set for Poly vs Sketchfab?
+        // TODO(b/146892613): have a different set for Icosa vs Sketchfab?
         private static double[] kProgressSteps =
         {
             0.01, // UploadStep.CreateGltf -- progress > 0 means we have begun
@@ -231,24 +248,36 @@ namespace TiltBrush
         public static VrAssetService m_Instance;
 
         // Currently this always returns the standard API host when running unit tests
-        public static string ApiHost
+        public string IcosaApiRoot
         {
             get
             {
-                string cfg = App.UserConfig?.Sharing.VrAssetServiceHostOverride;
+                string cfg = App.UserConfig?.Sharing.IcosaApiRoot;
                 if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kApiHost;
+                return "https://api.icosa.gallery/v1";
             }
         }
 
-        /// Returns true if Poly would accept a PATCH of the specified asset
+        public string IcosaHomePage
+        {
+            get
+            {
+                string cfg = App.UserConfig.Sharing.IcosaHomePage;
+                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
+                return "https://icosa.gallery";
+            }
+        }
+
+        private string IcosaUploadPage => $"{IcosaHomePage}/uploads";
+
+        /// Returns true if Icosa would accept a PATCH of the specified asset
         /// from the specified user.
         ///
         /// Pass:
         ///   type -
         ///     Where you found the assetId. Necessary because of some shortcuts
         ///     taken by the implementation.
-        ///   userId - Poly user id of the currently-logged-in OAuth user. Get it
+        ///   userId - Icosa user id of the currently-logged-in OAuth user. Get it
         ///     with GetAccountIdAsync().
         public static async Task<bool> IsMutableAssetIdAsync(
             FileInfoType type, string assetId, string userId, string apiHost)
@@ -267,7 +296,7 @@ namespace TiltBrush
                 // Assumption: this asset is mutable because it's unlikely for a cloud-based .tilt
                 // to be in the user's Sketches/ folder. Local sketches always become un-published
                 // and mutable assets when uploaded (remember, publishing makes a copy).
-                // If someone grabbed a .tilt from their Poly asset cache and put it in Sketches/
+                // If someone grabbed a .tilt from their Icosa asset cache and put it in Sketches/
                 // that would break this assumption and I'm not sure what would happen.
                 if (userId == null) { return false; }
                 // It's mutable, but check whether it's mutable by _us_.
@@ -275,8 +304,8 @@ namespace TiltBrush
                 {
                     // The null == null case is handled earlier
                     WebRequest request = new WebRequest(
-                        $"{apiHost}{kListAssetsUri}/{assetId}?key={kPolyApiKey}",
-                        App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+                        $"{apiHost}{kListAssetsUri}/{assetId}",
+                        App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
                     return (await request.SendAsync()).JObject?["accountId"].ToString() == userId;
                 }
                 catch (VrAssetServiceException)
@@ -294,16 +323,18 @@ namespace TiltBrush
 
         static VrAssetService()
         {
-            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToPoly);
+            Matrix4x4 polyFromUnity = AxisConvention.GetFromUnity(AxisConvention.kGltfAccordingToIcosa);
 
             // Provably non-lossy: the mat4 is purely TRS, and the S is uniform
-            kPolyFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
+            kIcosaFromUnity = TrTransform.FromMatrix4x4(polyFromUnity);
         }
 
         // Instance API
 
-        [SerializeField] private int m_AssetsPerPage;
+        private const int m_AssetsPerPage = 9; // Doesn't have to match the number of icons per UI page
         [SerializeField] public float m_SketchbookRefreshInterval;
+        public bool m_UseLocalFeaturedSketches = false;
+        public TiltDownloadStrategy m_TiltDownloadStrategy = TiltDownloadStrategy.AvoidArchive;
 
         private float m_UploadProgress;
         private bool m_LastUploadFailed;
@@ -312,21 +343,20 @@ namespace TiltBrush
         private bool m_UserCanceledLastUpload;
         private string m_LastUploadCompleteUrl;
         TaskAndCts<(string url, long bytes)> m_UploadTask = null;
+        private string m_IcosaAccountId;
+        private int m_MaxPolySketchTriangles;
 
-        // Poly account id associated with the Google identity
-        private string m_PolyAccountId;
-
-        private enum PolyStatus
+        private enum IcosaStatus
         {
             Ok,
             Disabled,
             NoConnection
         }
-        private PolyStatus m_PolyStatus;
+        private IcosaStatus m_IcosaStatus;
 
-        public bool Available => m_PolyStatus == PolyStatus.Ok;
+        public bool Available => m_IcosaStatus == IcosaStatus.Ok;
 
-        public bool NoConnection => m_PolyStatus == PolyStatus.NoConnection;
+        public bool NoConnection => m_IcosaStatus == IcosaStatus.NoConnection;
 
         public float UploadProgress => m_UploadProgress;
 
@@ -355,16 +385,6 @@ namespace TiltBrush
             get { return m_LastUploadCompleteUrl; }
         }
 
-        private string AssetLandingPage
-        {
-            get
-            {
-                string cfg = App.UserConfig.Sharing.VrAssetServiceUrlOverride;
-                if (!string.IsNullOrEmpty(cfg)) { return cfg; }
-                return kAssetLandingPage;
-            }
-        }
-
         // Cannot be an UploadProgress setter because the getter's type is different.
         // pct is how much of that step has been completed.
         private void SetUploadProgress(UploadStep step, double pct)
@@ -381,22 +401,16 @@ namespace TiltBrush
 
         void Start()
         {
-            if (!string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceHostOverride) ||
-                !string.IsNullOrEmpty(App.UserConfig.Sharing.VrAssetServiceUrlOverride))
-            {
-                Debug.LogFormat("Overriding VrAssetService Api Host: {0}  Landing Page: {1}",
-                    ApiHost, AssetLandingPage);
-            }
-
-            // If auto profiling is enabled, disable automatic Poly downloading.
+            // If auto profiling is enabled, disable automatic Icosa downloading.
             if (!App.UserConfig.Profiling.AutoProfile)
             {
-                VerifyPolyConnectionAndCheckApiVersionAsync();
+                VerifyIcosaConnectionAndCheckApiVersion();
             }
             else
             {
-                m_PolyStatus = PolyStatus.Disabled;
+                m_IcosaStatus = IcosaStatus.Disabled;
             }
+            m_MaxPolySketchTriangles = QualityControls.m_Instance.AppQualityLevels.MaxPolySketchTriangles;
         }
 
         /// Consume the result of the previous upload (if any)
@@ -431,8 +445,6 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayUploadCanceledSound(InputManager.Wand.Transform.position);
             }
 
-            Debug.LogFormat("UploadCurrentSketch(demo: {0})", isDemoUpload);
-
             // Cancel previous upload coroutine if necessary.
             if (m_UploadTask != null)
             {
@@ -464,16 +476,31 @@ namespace TiltBrush
                     AudioManager.m_Instance.UploadLoop(true);
                     var timer = System.Diagnostics.Stopwatch.StartNew();
                     m_UploadTask = new TaskAndCts<(string url, long bytes)>();
-                    Debug.Assert(backend == Cloud.Sketchfab);
-                    m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
-                        isDemoUpload);
-                    var (url, totalUploadLength) = await m_UploadTask.Task;
+
+                    switch (backend)
+                    {
+                        case Cloud.Icosa:
+                            m_UploadTask.Task = UploadCurrentSketchIcosaAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                        case Cloud.Sketchfab:
+                            m_UploadTask.Task = UploadCurrentSketchSketchfabAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+                        case Cloud.Vive:
+                            m_UploadTask.Task = UploadCurrentSketchViverseAsync(m_UploadTask.Token, tempUploadDir.Value,
+                                isDemoUpload);
+                            break;
+
+                    }
+                    var (url, _) = await m_UploadTask.Task;
                     m_LastUploadCompleteUrl = url;
                     ControllerConsoleScript.m_Instance.AddNewLine("Upload succeeded!");
                     AudioManager.m_Instance.PlayUploadCompleteSound(InputManager.Wand.Transform.position);
                     PanelManager.m_Instance.GetAdminPanel().ActivatePromoBorder(true);
                     // Don't auto-open the URL on mobile because it steals focus from the user.
-                    if (!isDemoUpload && !App.Config.IsMobileHardware && m_LastUploadCompleteUrl != null)
+                    if (!isDemoUpload && m_LastUploadCompleteUrl != null &&
+                        (backend == Cloud.Vive || !App.Config.IsMobileHardware))
                     {
                         // Can't pass a string param because this is also called from mobile GUI
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -520,46 +547,44 @@ namespace TiltBrush
             m_UploadTask?.Cancel();
         }
 
-        private async void VerifyPolyConnectionAndCheckApiVersionAsync()
+        private void VerifyIcosaConnectionAndCheckApiVersion()
         {
-            m_PolyStatus = await GetPolyStatus();
+            m_IcosaStatus = GetIcosaStatus();
         }
 
-        private static async Task<PolyStatus> GetPolyStatus()
+        private IcosaStatus GetIcosaStatus()
         {
-            return PolyStatus.Disabled;
-
             // UserConfig override
-            if (App.UserConfig.Flags.DisablePoly ||
-                string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey))
+            if (App.UserConfig.Flags.DisableIcosa)
             {
-                return PolyStatus.Disabled;
+                return IcosaStatus.Disabled;
             }
 
-            string uri = String.Format("{0}{1}", ApiHost, kGetVersionUri);
             try
             {
-                var result = (await new WebRequest(uri, App.GoogleIdentity).SendAsync()).JObject;
-                string version = result["version"].Value<string>();
-                if (version == kPolyApiVersion)
+                // TODO need a do-nothing endpoint we can use for this
+                var api = new LoginApi(IcosaApiRoot);
+                var result = new Dictionary<string, string> { { "version", "v1" } }; // TODO: get version from API
+                string version = result["version"];
+                if (version == kIcosaApiVersion)
                 {
-                    return PolyStatus.Ok;
+                    return IcosaStatus.Ok;
                 }
                 else
                 {
-                    Debug.LogWarning($"Poly requires API {version} > {kPolyApiVersion}");
-                    return PolyStatus.Disabled;
+                    Debug.LogWarning($"Icosa requires API {version} > {kIcosaApiVersion}");
+                    return IcosaStatus.Disabled;
                 }
             }
             catch (VrAssetServiceException e)
             {
-                Debug.LogWarning($"Error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogWarning($"Error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
             catch (Exception e)
             {
-                Debug.LogError($"Internal error connecting to Poly: {e}");
-                return PolyStatus.NoConnection;
+                Debug.LogError($"Internal error connecting to Icosa: {e}");
+                return IcosaStatus.NoConnection;
             }
         }
 
@@ -633,6 +658,7 @@ namespace TiltBrush
                             Debug.LogWarning($"Ignoring {path} not under {rootDir}");
                             continue;
                         }
+                        archivedName = archivedName.Replace('\\', '/');
                         ZipArchiveEntry entry = archive.CreateEntry(archivedName);
                         using (Stream writer = entry.Open())
                         {
@@ -654,6 +680,111 @@ namespace TiltBrush
             }
         }
 
+        // TODO: Refactor. This is largely the same as UploadCurrentSketchSketchFabAsync aside from a few url changes and the response.
+        private async Task<(string, long)> UploadCurrentSketchIcosaAsync(
+            CancellationToken token, string tempUploadDir, bool _)
+        {
+            // Until gallery viewer support for new glb files, prefer legacy
+            // unless we have elements that the old format can't handle
+            bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
+            bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
+            bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
+            //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
+            bool publishLegacyGltf = false;
+
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+            uploadName = FileUtils.GetValidFilename(uploadName);
+            if (string.IsNullOrEmpty(uploadName))
+            {
+                uploadName = FileUtils.GetValidFilename(kDefaultName);
+            }
+            string gltfUploadName = $"{uploadName}.gltf";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+
+            // Collect files into a .zip file, including the .tilt file and thumbnail
+            string zipName = Path.Combine(tempUploadDir, "archive.zip");
+            var filesToZip = new List<string>();
+            int? faceCount = null;
+
+            if (publishLegacyGltf)
+            {
+                // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
+                string gltfFile = Path.Combine(tempUploadDir, gltfUploadName);
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        gltfFile,
+                        AxisConvention.kGltf2, binary: false, doExtras: true,
+                        includeLocalMediaContent: true, gltfVersion: 2,
+                        selfContained: false));
+                if (!exportResults.success)
+                {
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+                }
+                filesToZip.AddRange(exportResults.exportedFiles);
+                faceCount = exportResults.numTris;
+            }
+
+            // Construct options to set the background color to the current environment's clear color.
+            Color bgColor = SceneSettings.m_Instance.CurrentEnvironment.m_RenderSettings.m_ClearColor;
+            IcosaService.Options options = null;
+            // options.SetBackgroundColor(bgColor);
+
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            var thumbnail = await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            // Create a copy of the .tilt file in tempUploadDir.
+            string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
+            File.Copy(fileInfo.FullPath, tempTiltPath);
+
+            // Save thumbnail as a png to temp path
+            string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
+            File.WriteAllBytes(tempThumbnailPath, thumbnail);
+
+            filesToZip.Add(tempTiltPath);
+            filesToZip.Add(tempThumbnailPath);
+
+            // Always use new glb if we're not publishing legacy glTF.
+            // Otherwise it's based on user config.
+            //
+            // Forcing this to false for now as the Legacy GLTF has issues with environment positioning
+            if (App.UserConfig.Sharing.UseNewGlb || !publishLegacyGltf)
+            {
+                string newGlbPath = Path.Combine(tempUploadDir, $"{uploadName}.glb");
+                int glbTriangleCount = Export.ExportNewGlb(tempUploadDir, uploadName, App.UserConfig.Export.ExportEnvironment);
+                // Always use the new GLB count since it includes all content (brush strokes + models + widgets)
+                // whereas legacy export only includes brush strokes
+                faceCount = glbTriangleCount;
+                filesToZip.Add(newGlbPath);
+            }
+
+            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+
+            // Collect remix IDs if this sketch is derived from another asset
+            var remixIds = new List<string>();
+            string sourceId = SaveLoadScript.m_Instance.TransferredSourceIdFrom(currentScene);
+            if (!string.IsNullOrEmpty(sourceId))
+            {
+                remixIds.Add(sourceId);
+            }
+
+            var service = new IcosaService(App.Instance.IcosaToken);
+            var progress = new Progress<double>(d => SetUploadProgress(UploadStep.UploadElements, d));
+            IcosaService.CreateResponse response = await service.CreateModel(
+                zipName, progress, token, options, tempUploadDir,
+                objFaceCount: faceCount,
+                remixIds: remixIds.Count > 0 ? remixIds : null);
+            // TODO(b/146892613): return the UID and stick it into the .tilt file?
+            // Or do we not care since we aren't recording provenance and remixing
+            string uri = $"{response.publishUrl}";
+            return (uri, 0);
+        }
+
         private async Task<(string, long)> UploadCurrentSketchSketchfabAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
@@ -661,12 +792,12 @@ namespace TiltBrush
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
-            string gltfFile = Path.Combine(tempUploadDir, kGltfName);
+            string gltfFile = Path.Combine(tempUploadDir, $"{kDefaultName}.gltf");
             var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
                 OverlayType.Export, fadeDuration: 0.5f,
                 action: () => new ExportGlTF().ExportBrushStrokes(
                     gltfFile,
-                    AxisConvention.kGltf2, binary: false, doExtras: false,
+                    AxisConvention.kGltf2, binary: false, doExtras: true,
                     includeLocalMediaContent: true, gltfVersion: 2,
                     // Sketchfab doesn't support absolute texture URIs
                     selfContained: true));
@@ -711,6 +842,219 @@ namespace TiltBrush
             return (uri, uploadLength);
         }
 
+        private async Task<(string, long)> UploadCurrentSketchViverseAsync(
+                    CancellationToken token, string tempUploadDir, bool isDemoUpload)
+        {
+            bool publishLegacyGltf = false;
+            DiskSceneFileInfo fileInfo = GetWritableFile();
+            var currentScene = SaveLoadScript.m_Instance.SceneFile;
+            string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
+
+            // Generate title + description
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string title = $"{uploadName}_{timestamp}";
+            if (title.Length > 30) title = title.Substring(0, 30);
+            string description = currentScene.Valid ? currentScene.HumanName : "Uploaded from Open Brush";
+
+            SetUploadProgress(UploadStep.CreateGltf, 0);
+
+            // Create export directory
+            string exportDir = Path.Combine(tempUploadDir, "sketch_export");
+            Directory.CreateDirectory(exportDir);
+
+            // Copy ViverseViewer files FIRST directly to exportDir (not to a subdirectory)
+            // This establishes the base structure: libs/, css/, helpers/, img/, legacy/, icosa-viewer.module.js, etc.
+#if UNITY_EDITOR
+            // Keep the resource asset up to date for editor workflows that still reference it.
+            GenerateViverseViewerBytes();
+            // In editor, copy directly from the source tree so publishing always uses the
+            // latest Support/ViverseViewer contents instead of a potentially stale imported asset.
+            CopyViverseViewerToDirectory(exportDir);
+#else
+            string tempZip = Path.Combine(Application.temporaryCachePath, "viverseviewer_temp.zip");
+            FileUtils.WriteBytesFromResources("ViverseViewer", tempZip);
+
+            if (!File.Exists(tempZip))
+                throw new VrAssetServiceException("ViverseViewer.bytes not found in Resources folder");
+
+            using (var zip = ZipFile.OpenRead(tempZip))
+            {
+                int extractedCount = 0;
+                foreach (var entry in zip.Entries)
+                {
+                    string entryPath = entry.FullName;
+                    // Strip leading "ViverseViewer/" folder if present in ZIP
+                    if (entryPath.StartsWith("ViverseViewer/"))
+                        entryPath = entryPath.Substring("ViverseViewer/".Length);
+                    if (string.IsNullOrEmpty(entryPath))
+                        continue;
+
+                    string fullPath = Path.Combine(exportDir, entryPath);
+
+                    if (string.IsNullOrEmpty(entry.Name))
+                    {
+                        Directory.CreateDirectory(fullPath);
+                        continue;
+                    }
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                    entry.ExtractToFile(fullPath, overwrite: true);
+
+                    extractedCount++;
+
+#if !UNITY_STANDALONE
+                    // Yield every 10 files to prevent freezing on mobile
+                    if (extractedCount % 10 == 0)
+                    {
+                        await Awaiters.NextFrame;
+                        token.ThrowIfCancellationRequested();
+                    }
+#endif
+                }
+            }
+
+            File.Delete(tempZip);
+#endif
+
+            // Now create/ensure assets folder exists in exportDir
+            string assetsDir = Path.Combine(exportDir, "assets");
+            if (!Directory.Exists(assetsDir))
+            {
+                Directory.CreateDirectory(assetsDir);
+            }
+
+            // Export GLB to assets/scene.glb
+            if (publishLegacyGltf) // The old way
+            {
+                string glbPath = Path.Combine(assetsDir, "scene.glb");
+                var exportResults = await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => new ExportGlTF().ExportBrushStrokes(
+                        glbPath,
+                        AxisConvention.kGltf2,
+                        binary: true,
+                        doExtras: true,
+                        includeLocalMediaContent: true,
+                        gltfVersion: 2,
+                        selfContained: false));
+
+                if (!exportResults.success)
+                    throw new VrAssetServiceException("Internal error creating upload data.");
+            }
+            else
+            {
+                // NewGLB format
+                await OverlayManager.m_Instance.RunInCompositorAsync(
+                    OverlayType.Export, fadeDuration: 0.5f,
+                    action: () => Export.ExportNewGlb(assetsDir, "scene", App.UserConfig.Export.ExportEnvironment));
+            }
+
+            SetUploadProgress(UploadStep.CreateTilt, 0);
+            await CreateTiltForUploadAsync(fileInfo);
+            token.ThrowIfCancellationRequested();
+
+            var publishManager = FindObjectOfType<ViversePublishManager>();
+            if (publishManager == null)
+                throw new VrAssetServiceException("ViversePublishManager not found");
+
+            if (!publishManager.IsAuthenticated())
+                throw new VrAssetServiceException("Not authenticated with VIVERSE");
+
+            // CREATE WORLD FIRST to get new sceneSid
+            var createTcs = new TaskCompletionSource<string>();
+
+            StartCoroutine(publishManager.CreateWorldContent(title, description, (success, sid, error) =>
+            {
+                if (success)
+                    createTcs.SetResult(sid);
+                else
+                    createTcs.SetException(new VrAssetServiceException($"Failed to create world: {error}"));
+            }));
+
+            string sceneSid = await createTcs.Task;
+            token.ThrowIfCancellationRequested();
+
+            // NOW generate HTML with NEW sceneSid
+            SetUploadProgress(UploadStep.ZipElements, 0);
+
+            string htmlPath = Path.Combine(exportDir, "index.html");
+            string html = ViewerHTMLGenerator.GenerateViewerHTML("./assets/scene.glb", sceneSid);
+            File.WriteAllText(htmlPath, html);
+
+            token.ThrowIfCancellationRequested();
+
+
+            var filesToZip = new List<string>();
+
+            // Add all files from exportDir except .meta
+            foreach (var file in Directory.GetFiles(exportDir, "*", SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".meta"))
+                    continue;
+                filesToZip.Add(file);
+            }
+
+            // Create ZIP at exportDir/content.zip
+            string zipPath = Path.Combine(tempUploadDir, "content.zip");
+
+            await CreateZipFileAsync(zipPath, exportDir, filesToZip.ToArray(), token);
+            long uploadLength = new FileInfo(zipPath).Length;
+
+            // Upload the content to the world we created
+            var uploadTcs = new TaskCompletionSource<bool>();
+
+            // progress
+            void OnProgress(float p) => SetUploadProgress(UploadStep.UploadElements, p);
+            publishManager.OnUploadProgress += OnProgress;
+
+            // completion
+            void OnComplete(bool success, string msg)
+            {
+                publishManager.OnUploadProgress -= OnProgress;
+                publishManager.OnPublishComplete -= OnComplete;
+
+                if (success) uploadTcs.SetResult(true);
+                else uploadTcs.SetException(new VrAssetServiceException(msg));
+            }
+            publishManager.OnPublishComplete += OnComplete;
+
+            var lastResponse = publishManager.GetLastResponse();
+            string hubSid = lastResponse != null ? lastResponse.hub_sid : "";
+
+            // Upload to existing world
+            StartCoroutine(publishManager.UploadWorldContent(sceneSid, hubSid, zipPath));
+
+            // wait for completion
+            await uploadTcs.Task;
+
+            // Result url
+            WorldContentResponse resp = publishManager.GetLastResponse();
+            string accessToken = await App.ViveIdentity.GetAccessToken();
+            string uri = "";
+            if (resp != null && !string.IsNullOrEmpty(resp.hub_sid))
+            {
+                uri = string.Format(ViverseEndpoints.WORLD_VIEW_FORMAT, resp.hub_sid);
+            }
+            return (uri, uploadLength);
+        }
+
+        private void CopyDirectory(string sourceDir, string destDir)
+        {
+            Directory.CreateDirectory(destDir);
+
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string destFile = Path.Combine(destDir, Path.GetFileName(file));
+                File.Copy(file, destFile, true);
+            }
+
+            foreach (string subDir in Directory.GetDirectories(sourceDir))
+            {
+                string destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+                CopyDirectory(subDir, destSubDir);
+            }
+        }
+
         /// Helper for UploadCurrentSketchXxxAsync
         /// Writes the sketch to the passed fileInfo and returns a sketch thumbnail.
         private async Task<byte[]> CreateTiltForUploadAsync(DiskSceneFileInfo fileInfo)
@@ -745,7 +1089,7 @@ namespace TiltBrush
             return thumbnail;
         }
 
-        public AssetGetter GetAsset(string assetId, VrAssetFormat type, string reason)
+        public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
         {
             string uri;
             if (assetId.ToLower().StartsWith("https%3a%2f%2f") || assetId.ToLower().StartsWith("http%3a%2f%2f"))
@@ -754,45 +1098,62 @@ namespace TiltBrush
             }
             else
             {
-                uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
+                uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
             }
-            return new AssetGetter(uri, assetId, type, reason);
+            return new AssetGetter(uri, assetId, assetTypes, reason);
         }
 
-        public AssetLister ListAssets(SketchSetType type)
+        private string CombineQueryParams(string uriPath, string additionalParams)
         {
-            string filter = null;
+            string separator = uriPath.Contains("?") ? "&" : "?";
+            return $"{uriPath}{separator}{additionalParams}";
+        }
+
+        private static void AppendQueryParam(ref string uri, string key, string value)
+        {
+            if (string.IsNullOrEmpty(value)) { return; }
+            uri += $"{key}={UnityWebRequest.EscapeURL(value)}&";
+        }
+
+        public AssetLister ListAssets(SketchSetType sketchSetType, SketchCatalog.SketchQueryParameters queryParams)
+        {
+            string filteredUriPath = null;
             string errorMessage = null;
-            switch (type)
+            string commonParams = $"triangleCountMax={m_MaxPolySketchTriangles}&format=TILT";
+            switch (sketchSetType)
             {
+                // TODO Add User sketches
+                // TODO Allow non-CC-BY sketches to be loaded as read-only
                 case SketchSetType.Liked:
-                    if (!App.GoogleIdentity.LoggedIn)
+                    if (!App.IcosaIsLoggedIn)
                     {
                         return null;
                     }
-                    filter = $"{kUserLikesUri}?format=TILT&orderBy=LIKED_TIME&key={kPolyApiKey}";
+                    filteredUriPath = CombineQueryParams(kUserLikesUri, $"{commonParams}");
                     errorMessage = "Failed to access your liked sketches.";
                     break;
                 case SketchSetType.Curated:
-                    if (string.IsNullOrEmpty(kPolyApiKey))
-                    {
-                        return null;
-                    }
-                    filter = $"{kListAssetsUri}?format=TILT&curated=true&orderBy=NEWEST&key={kPolyApiKey}";
+                    filteredUriPath = CombineQueryParams(kListAssetsUri, $"{commonParams}");
                     errorMessage = "Failed to access featured sketches.";
                     break;
             }
-
-            string uri = $"{ApiHost}{filter}&pageSize={m_AssetsPerPage}";
+            string uri = $"{IcosaApiRoot}{filteredUriPath}&";
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
             return new AssetLister(uri, errorMessage);
         }
 
-        // Get a specific sketch and insert it into the listed sketches at the specified index.
-        public IEnumerator<object> InsertSketchInfo(
-            string assetId, int index, List<PolySceneFileInfo> infos)
+        public IEnumerator GetSketchInfo(
+            string assetId,
+            Action<IcosaSceneFileInfo> onSuccess,
+            Action onFailure = null)
         {
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, assetId, kPolyApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
+            string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, assetId);
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
             using (var cr = request.SendAsync().AsIeNull())
             {
                 while (!request.Done)
@@ -805,6 +1166,7 @@ namespace TiltBrush
                     {
                         Debug.LogException(e);
                         Debug.LogError("Failed to fetch sketch " + assetId);
+                        onFailure?.Invoke();
                         yield break;
                     }
                     yield return cr.Current;
@@ -813,66 +1175,348 @@ namespace TiltBrush
 
             Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
             JObject json;
-            while (!f.TryGetResult(out json)) { yield return null; }
-            infos.Insert(index, new PolySceneFileInfo(json.Root));
+            while (!f.TryGetResult(out json))
+            {
+                yield return null;
+            }
+
+            var info = new IcosaSceneFileInfo(json.Root);
+            if (!info.Valid)
+            {
+                Debug.LogWarning($"ICOSATILT_LOAD Fetched sketch {assetId} has no valid tilt download");
+                onFailure?.Invoke();
+                yield break;
+            }
+
+            onSuccess?.Invoke(info);
         }
 
-        public AssetLister ListAssets(PolySetType type)
+        public AssetLister ListAssets(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
         {
-            string uri = null;
-            switch (type)
+            string uri = type switch
             {
-                case PolySetType.Liked:
-                    uri = $"{ApiHost}{kUserLikesUri}?format=GLTF2&orderBy=LIKED_TIME&pageSize={m_AssetsPerPage}";
-                    break;
-                case PolySetType.User:
-                    uri = $"{ApiHost}{kUserAssetsUri}?format=GLTF2&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
-                    break;
-                case PolySetType.Featured:
-                    uri = $"{ApiHost}{kListAssetsUri}?key={kPolyApiKey}" +
-                        $"&format=GLTF2&curated=true&orderBy=NEWEST&pageSize={m_AssetsPerPage}";
-                    break;
+                IcosaSetType.Liked => $"{IcosaApiRoot}{kUserLikesUri}?",
+                IcosaSetType.User => $"{IcosaApiRoot}{kUserAssetsUri}?",
+                IcosaSetType.Featured => $"{IcosaApiRoot}{kListAssetsUri}?",
+                IcosaSetType.AllModels => $"{IcosaApiRoot}{kListAssetsUri}?",
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            foreach (var format in queryParams.Formats)
+            {
+                uri += $"format={format}&";
             }
-            return new AssetLister(uri, "Failed to connect to Poly.");
+            AppendQueryParam(ref uri, "pageSize", m_AssetsPerPage.ToString());
+            AppendQueryParam(ref uri, "triangleCountMax", queryParams.TriangleCountMax.ToString());
+            // A reported triangle count of 0 means "unknown complexity". We can't size-gate those, and
+            // at least one such model is pathologically large, so exclude them server-side.
+            uri += "triangleCountMin=1&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
+
+            return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
 
         // Download a tilt file to a temporary file and load it
-        public IEnumerator LoadTiltFile(string id)
+        public IEnumerator LoadTiltFile(string id, Action<float> onProgress = null)
         {
-            string path = Path.GetTempFileName();
-            string uri = String.Format("{0}{1}/{2}?key={3}", ApiHost, kListAssetsUri, id, kPolyApiKey);
-            WebRequest request = new WebRequest(uri, App.GoogleIdentity, UnityWebRequest.kHttpVerbGET);
-            using (var cr = request.SendAsync().AsIeNull())
+            BeginLoadSketchOverlap();
+            bool loadIssued = false;
+            try
             {
-                while (!request.Done)
+                onProgress?.Invoke(0.05f);
+
+                string uri = String.Format("{0}{1}/{2}", IcosaApiRoot, kListAssetsUri, id);
+                WebRequest request = new WebRequest(uri, App.Instance.IcosaToken, UnityWebRequest.kHttpVerbGET);
+                double requestStartTime = Time.realtimeSinceStartupAsDouble;
+                using (var cr = request.SendAsync().AsIeNull())
                 {
-                    try
+                    while (!request.Done)
                     {
-                        cr.MoveNext();
+                        const float kMetadataProportion = 0.2f;
+                        const float kMetadataTime = 0.75f;
+                        float requestElapsed = (float)(Time.realtimeSinceStartupAsDouble - requestStartTime);
+                        float metadataProgress = Mathf.Clamp01(requestElapsed / kMetadataTime);
+                        onProgress?.Invoke(kMetadataProportion * metadataProgress);
+                        try
+                        {
+                            cr.MoveNext();
+                        }
+                        catch (VrAssetServiceException e)
+                        {
+                            ControllerConsoleScript.m_Instance.AddNewLine(e.UserFriendly);
+                            Debug.LogWarning($"ICOSATILT_LOAD Failed to fetch sketch {id}: {e}");
+                            yield break;
+                        }
+                        yield return cr.Current;
                     }
-                    catch (VrAssetServiceException)
+                }
+                JObject json = JObject.Parse(request.Result);
+                var info = new IcosaSceneFileInfo(json);
+                if (!info.Valid)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine("Could not load sketch from Icosa.");
+                    Debug.LogWarning($"ICOSATILT_LOAD Sketch {id} has no valid tilt download");
+                    yield break;
+                }
+
+                string path = FileUtils.GenerateNonexistentFilename(
+                    Application.temporaryCachePath, "IcosaTilt", SaveLoadScript.TILT_SUFFIX);
+                const int kDownloadBufferSize = 1024 * 1024;
+                byte[] downloadBuffer = new byte[kDownloadBufferSize];
+                IcosaTiltDownloadResult result = null;
+                UnityWebRequest downloadRequest = null;
+                IEnumerator download = IcosaTiltDownloader.DownloadTiltCoroutine(
+                    info, path, downloadBuffer,
+                    isCanceled: null,
+                    onRequestChanged: r => downloadRequest = r,
+                    onComplete: r => result = r);
+                while (download.MoveNext())
+                {
+                    if (downloadRequest != null)
                     {
-                        yield break;
+                        onProgress?.Invoke(0.2f + 0.8f * downloadRequest.downloadProgress);
                     }
-                    yield return cr.Current;
+                    yield return download.Current;
+                }
+
+                if (result == null || !result.Succeeded)
+                {
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                        result?.UserMessage ?? "Could not load sketch from Icosa.");
+                    Debug.LogWarning($"ICOSATILT_LOAD Failed to download sketch {id}: {result?.Details}");
+                    yield break;
+                }
+
+                SketchControlsScript.m_Instance.IssueGlobalCommand(
+                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                loadIssued = true;
+                onProgress?.Invoke(1.0f);
+            }
+            finally
+            {
+                if (!loadIssued)
+                {
+                    EndLoadSketchOverlap();
                 }
             }
-            JObject json = JObject.Parse(request.Result);
-            var info = new PolySceneFileInfo(json);
-            using (UnityWebRequest www = UnityWebRequest.Get(info.TiltFileUrl))
+        }
+
+        private static void BeginLoadSketchOverlap()
+        {
+            if (OverlayManager.m_Instance == null)
             {
-                yield return www.SendWebRequest();
-                while (!www.downloadHandler.isDone) { yield return null; }
-                FileStream stream = File.Create(path);
-                byte[] data = www.downloadHandler.data;
-                stream.Write(data, 0, data.Length);
-                stream.Close();
+                return;
             }
 
-            SketchControlsScript.m_Instance.IssueGlobalCommand(
-                SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
-            File.Delete(path);
+            OverlayManager.m_Instance.SetOverlayFromType(OverlayType.LoadSketch);
+            if (ViewpointScript.m_Instance != null)
+            {
+                if (ViewpointScript.m_Instance.AllowsFading)
+                {
+                    OverlayManager.m_Instance.FadeToCompositor(0);
+                }
+                else
+                {
+                    ViewpointScript.m_Instance.SetOverlayToBlack();
+                }
+            }
         }
+
+        private static void EndLoadSketchOverlap()
+        {
+            if (OverlayManager.m_Instance != null)
+            {
+                OverlayManager.m_Instance.PauseRendering(false);
+                OverlayManager.m_Instance.FadeFromCompositor(0);
+                OverlayManager.m_Instance.SetOverlayTransitionRatio(0);
+            }
+
+            if (ViewpointScript.m_Instance != null)
+            {
+                ViewpointScript.m_Instance.FadeToScene(float.MaxValue);
+            }
+        }
+
+        public bool IsValidDeviceCodeSecret(string secret)
+        {
+            if (string.IsNullOrEmpty(secret) || string.IsNullOrEmpty(m_CurrentDeviceCodeSecret)) return false;
+            if (secret != m_CurrentDeviceCodeSecret) return false;
+            // Check the secret is less than 120 seconds old
+            if (!m_CurrentDeviceCodeCreateTime.HasValue) return false;
+            if (m_CurrentDeviceCodeCreateTime.Value + TimeSpan.FromSeconds(120) < DateTime.UtcNow)
+            {
+                // The secret is too old
+                return false;
+            }
+            // Invalidate the secret so it can't be used again
+            m_CurrentDeviceCodeSecret = null;
+            m_CurrentDeviceCodeCreateTime = null;
+
+            return true;
+        }
+
+        public static void RunOnMainThread(Action action)
+        {
+            _pendingMainThreadAction = action;
+        }
+
+        void Update()
+        {
+            if (_pendingMainThreadAction != null)
+            {
+                _pendingMainThreadAction.Invoke();
+                _pendingMainThreadAction = null;
+            }
+        }
+
+        public void IcosaDeviceLogin(string code)
+        {
+            RunOnMainThread(() =>
+            {
+                StartCoroutine(_IcosaDeviceLogin(code));
+            });
+        }
+
+        private IEnumerator _IcosaDeviceLogin(string code)
+        {
+            var config = new Configuration();
+            var loginApi = new LoginApi(m_Instance.IcosaApiRoot);
+            config.BasePath = m_Instance.IcosaApiRoot;
+            loginApi.Configuration = config;
+
+            var loginTask = loginApi.DeviceLoginLoginDeviceLoginPostAsync(code);
+            while (!loginTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var token = loginTask.Result;
+            App.Instance.IcosaToken = token.AccessToken;
+
+            var usersApi = new UsersApi(VrAssetService.m_Instance.IcosaApiRoot);
+            config = new Configuration { AccessToken = App.Instance.IcosaToken };
+            config.BasePath = VrAssetService.m_Instance.IcosaApiRoot;
+            usersApi.Configuration = config;
+
+            var userTask = usersApi.GetUsersMeUsersMeGetAsync();
+            while (!userTask.IsCompleted)
+            {
+                yield return null;
+            }
+            var userData = userTask.Result;
+
+            if (userData != null)
+            {
+                App.IcosaUserName = userData.Displayname;
+                App.IcosaUserId = userData.Id;
+            }
+            PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
+        }
+
+        public string GenerateDeviceCodeSecret()
+        {
+            m_CurrentDeviceCodeCreateTime = DateTime.UtcNow;
+            m_CurrentDeviceCodeSecret = Guid.NewGuid().ToString();
+            return m_CurrentDeviceCodeSecret;
+        }
+
+#if UNITY_EDITOR
+        private static void CopyViverseViewerToDirectory(string exportDir)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            foreach (string sourcePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                string relativePath = Path.GetRelativePath(sourceDir, sourcePath);
+                string targetPath = Path.Combine(exportDir, relativePath);
+                string targetDir = Path.GetDirectoryName(targetPath);
+
+                if (!Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+
+                File.Copy(sourcePath, targetPath, overwrite: true);
+            }
+        }
+
+        /// <summary>
+        /// Generates Assets/Resources/ViverseViewer.bytes from ViverseViewer/ source directory
+        /// Called automatically in editor before ViveVerse publishing
+        /// </summary>
+        private static void GenerateViverseViewerBytes()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string sourceDir = Path.Combine(projectRoot, "Support", "ViverseViewer");
+            string outputFile = Path.Combine(Application.dataPath, "Resources", "ViverseViewer.bytes");
+
+            // Validate source directory exists
+            if (!Directory.Exists(sourceDir))
+            {
+                throw new VrAssetServiceException(
+                    $"ViverseViewer source directory not found: {sourceDir}\n" +
+                    "This directory must exist and contain the ViverseViewer files."
+                );
+            }
+
+            // Ensure Resources directory exists
+            string resourcesDir = Path.GetDirectoryName(outputFile);
+            if (!Directory.Exists(resourcesDir))
+            {
+                Directory.CreateDirectory(resourcesDir);
+            }
+
+            // Create zip file
+            try
+            {
+                // Delete existing file if present
+                if (File.Exists(outputFile))
+                {
+                    File.Delete(outputFile);
+                }
+
+                using (var zip = ZipFile.Open(outputFile, ZipArchiveMode.Create))
+                {
+                    AddDirectoryToZip(zip, sourceDir, "");
+                }
+            }
+            catch (Exception e)
+            {
+                throw new VrAssetServiceException(
+                    $"Failed to generate ViverseViewer.bytes: {e.Message}"
+                );
+            }
+        }
+
+        private static void AddDirectoryToZip(ZipArchive zip, string sourceDir, string entryPrefix)
+        {
+            foreach (string file in Directory.GetFiles(sourceDir))
+            {
+                string relativePath = Path.Combine(entryPrefix, Path.GetFileName(file));
+                // Normalize path separators to forward slashes for zip
+                relativePath = relativePath.Replace('\\', '/');
+                zip.CreateEntryFromFile(file, relativePath, System.IO.Compression.CompressionLevel.Optimal);
+            }
+
+            foreach (string dir in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                string newPrefix = Path.Combine(entryPrefix, dirName);
+                AddDirectoryToZip(zip, dir, newPrefix);
+            }
+        }
+#endif
     }
 
 } // namespace TiltBrush

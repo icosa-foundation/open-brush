@@ -16,6 +16,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 
@@ -24,6 +25,10 @@ namespace TiltBrush
 
     public class FileSketchSet : SketchSet
     {
+        private FileSystemEventHandler fileCreatedHandler;
+        private FileSystemEventHandler fileDeletedHandler;
+        private FileSystemEventHandler fileChangedHandler;
+
         static int ICON_LOAD_PER_FRAME = 3;
 
         /// Synchronously read thumbnail. Returns null on error.
@@ -73,6 +78,16 @@ namespace TiltBrush
             {
                 m_FileInfo = info;
                 m_bMetadataValid = false;
+
+                if (m_Authors == null || m_Authors.Length == 0)
+                {
+                    if (m_FileInfo.HumanName.Contains(" by "))
+                    {
+                        var sections = m_FileInfo.HumanName.Split(" by ");
+                        m_Authors = new[] { sections.LastOrDefault() };
+                        m_FileInfo.HumanName = string.Join(" by ", sections.SkipLast(1));
+                    }
+                }
             }
 
             public bool IconAndMetadataValid
@@ -183,6 +198,15 @@ namespace TiltBrush
             {
                 return rCompareSketch.m_FileInfo.CreationTime.CompareTo(m_FileInfo.CreationTime);
             }
+
+            public void ForceLoadThumbnail()
+            {
+                var data = ReadThumbnail(SceneFileInfo);
+                var icon = new Texture2D(128, 128, TextureFormat.RGB24, true);
+                icon.LoadImage(data);
+                icon.Apply();
+                m_Icon = icon;
+            }
         }
 
         protected SketchSetType m_Type;
@@ -195,6 +219,8 @@ namespace TiltBrush
         // File watcher thread is producer, main thread is consumer.
         private Queue m_ToAdd;
         private Queue m_ToDelete;
+        private bool m_ReadOnly;
+        private string m_SketchesPath;
 
         public SketchSetType Type
         {
@@ -221,14 +247,31 @@ namespace TiltBrush
             get { return m_Sketches.Count; }
         }
 
-        public FileSketchSet()
+        public FileSketchSet(SketchSetType sketchSetType)
         {
-            m_Type = SketchSetType.User;
+            m_Type = sketchSetType;
             m_ReadyForAccess = false;
             m_RequestedLoads = new Stack<int>();
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
+            switch (m_Type)
+            {
+                case SketchSetType.Curated:
+                    m_ReadOnly = true;
+                    m_SketchesPath = App.FeaturedSketchesPath();
+                    break;
+                case SketchSetType.SavedStrokes:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.SavedStrokesPath();
+                    break;
+                case SketchSetType.User:
+                    m_ReadOnly = false;
+                    m_SketchesPath = App.UserSketchPath();
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -288,7 +331,7 @@ namespace TiltBrush
                 Debug.Log("SketchCatalog Error: Invalid index for Sketch Name requested.");
                 return;
             }
-            App.PolyAssetCatalog.PrecacheModels(
+            App.IcosaAssetCatalog.PrecacheModels(
                 m_Sketches[iSketchIndex].SceneFileInfo, $"FileSketchSet {iSketchIndex}");
         }
 
@@ -315,38 +358,72 @@ namespace TiltBrush
             m_Sketches[toDelete].SceneFileInfo.Delete();
         }
 
+        public virtual void RenameSketch(int toRename, string newName)
+        {
+            // Notify our file watcher to make sure it got the memo this sketch was deleted.
+            m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
+
+            // Notify the drive sketchset as the deleted file may now be visible there.
+            var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
+            if (driveSet != null)
+            {
+                driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
+            }
+
+            var newPath = m_Sketches[toRename].SceneFileInfo.Rename(newName);
+
+            m_FileWatcher.NotifyCreated(newPath);
+
+        }
+
         public virtual void Init()
         {
-            string sSketchDirectory = App.UserSketchPath();
-            ProcessDirectory(sSketchDirectory);
+            if (!m_Sketches.Any())
+            {
+                ProcessDirectory(m_SketchesPath);
+            }
             m_ReadyForAccess = true;
 
             // No real reason to do this; SaveLoadScript creates the directory itself
-            try { Directory.CreateDirectory(sSketchDirectory); }
+            try { Directory.CreateDirectory(m_SketchesPath); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
 
-            if (Directory.Exists(sSketchDirectory))
+            if (Directory.Exists(m_SketchesPath) && !m_ReadOnly)
             {
-                m_FileWatcher = new FileWatcher(sSketchDirectory, "*" + SaveLoadScript.TILT_SUFFIX);
+                if (m_FileWatcher != null)
+                {
+                    m_FileWatcher.FileCreated -= fileCreatedHandler;
+                    m_FileWatcher.FileDeleted -= fileDeletedHandler;
+                    m_FileWatcher.FileChanged -= fileChangedHandler;
+                }
+
+                m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
+
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
                 // Note: Renamed event not implemented on OS X, so we rely on Deleted + Created
                 // If we ever start doing something special (like warning the user) with deleted or added, we
                 // may need to add an explicit 'changed' queue, but delete then create works fine for now.
-                m_FileWatcher.FileCreated += (object sender, FileSystemEventArgs e) =>
+
+                fileCreatedHandler = (_, e) =>
                 {
                     m_ToAdd.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileDeleted += (object sender, FileSystemEventArgs e) =>
+                fileDeletedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                 };
-                m_FileWatcher.FileChanged += (object sender, FileSystemEventArgs e) =>
+                fileChangedHandler = (_, e) =>
                 {
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
+
+                m_FileWatcher.FileCreated += fileCreatedHandler;
+                m_FileWatcher.FileDeleted += fileDeletedHandler;
+                m_FileWatcher.FileChanged += fileChangedHandler;
+
                 m_FileWatcher.EnableRaisingEvents = true;
             }
         }
@@ -410,7 +487,7 @@ namespace TiltBrush
             if (m_ToAdd.Count > 0)
             {
                 string path = (string)m_ToAdd.Dequeue();
-                var fileInfo = new DiskSceneFileInfo(path);
+                var fileInfo = new DiskSceneFileInfo(path, readOnly: m_ReadOnly);
                 if (fileInfo.IsHeaderValid())
                 {
                     AddSketchToSet(fileInfo);
@@ -442,6 +519,12 @@ namespace TiltBrush
             }
         }
 
+        public Texture2D ForceLoadThumbnail(int index)
+        {
+            m_Sketches[index].ForceLoadThumbnail();
+            return m_Sketches[index].Icon;
+        }
+
         private void ProcessDirectory(string path)
         {
             var di = new DirectoryInfo(path);
@@ -449,7 +532,7 @@ namespace TiltBrush
             {
                 return;
             }
-            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di))
+            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
             {
                 //don't add bogus files to the catalog
                 if (info.IsHeaderValid())

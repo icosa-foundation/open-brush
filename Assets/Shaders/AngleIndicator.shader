@@ -26,31 +26,44 @@ Category {
   Cull Off Lighting Off ZWrite Off Fog { Color (0, 0, 0, 0) }
 
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma target 3.0
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/ColorSpace.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/ColorSpace.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float4 texcoord : TEXCOORD0;
+
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         float3 uv : TEXCOORD0;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
+
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       v2f vert (appdata_t v) {
         v2f o;
+
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         float age = _Time.y;
 
@@ -64,6 +77,7 @@ Category {
       uniform float _CircleCutoutSize;
 
       fixed4 frag (v2f i) : COLOR {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         const float PI = 3.1415926535;
         float x = i.uv.x - 0.5;
         float y = i.uv.y - 0.5;
@@ -77,8 +91,9 @@ Category {
         grid = grid > .98 ? 1 : 0;
         return fixed4((0.05 + grid) * withinAngle * withinCircle * _Color.rgb, 1);
       }
-      ENDCG
+      ENDHLSL
     }
   }
 }
 }
+

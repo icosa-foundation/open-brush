@@ -8,6 +8,7 @@ using System.IO;
 using System.Reflection;
 using Debug = UnityEngine.Debug;
 using TiltBrush;
+using UnityEngine.Rendering;
 
 namespace ODS {
 
@@ -20,7 +21,16 @@ public class HybridCamera : MonoBehaviour {
   };
 
   const int MaxRenders = 1000;
-  const int MaxImageWidth = 6000;
+#if UNITY_ANDROID || UNITY_IOS
+  // The slice renderer issues one Camera.Render per angular slice. Large batches can overflow the
+  // mobile Vulkan driver's practical render-pass limit before Unity submits the frame.
+  const int MaxMobileRendersPerFrame = 16;
+#endif
+  public const int MaxImageWidth = 8192;
+  // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
+  // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
+  // platform bound; maxTextureSize is not itself a render-texture guarantee.
+  const int MaxRenderTextureWidth = 8192;
                        
   public float interPupillaryDistance = 0.05f;
   public int imageWidth = 4096;
@@ -30,7 +40,7 @@ public class HybridCamera : MonoBehaviour {
   private int eyeImageWidth;
   private bool vr180 = false;
   private bool lastvr180 = false;
-  private OdsRendererType rendererType;
+  [NonSerialized] public OdsRendererType rendererType;
   private OdsRendererType lastRendererType;
 
   public float particleScaleFactor = 100.0f;
@@ -47,11 +57,12 @@ public class HybridCamera : MonoBehaviour {
 
   public string outputFolder = null;
   public string basename = null;
+  public bool includePostProcessing = true;
 
   private int frameCount = 0;
   private bool isRendering = false;
 
-  private OdsRenderer odsRenderer = null;
+  [NonSerialized] public OdsRenderer odsRenderer = null;
 
 #if ENABLE_TIMING
   public System.Diagnostics.Stopwatch m_timer = new System.Diagnostics.Stopwatch();
@@ -69,29 +80,21 @@ public class HybridCamera : MonoBehaviour {
     get { return finalImage; }
   }
 
-  public void SetOdsRendererType(OdsRendererType type) {
-  //Currently StereoCubemap ODS rendering is only supported in the editor or when experimental is 
-  //enabled. If/When StereoCubemap ODS rendering is fully supported, removed this #if/#else/#endif.
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-    if (!isExperimental()) {
-      type = OdsRendererType.StereoCubemap;
-    }
-#else
-    type = OdsRendererType.StereoCubemap;
-#endif
+  public void SetOdsRendererType(OdsRendererType type)
+  {
+    //Currently StereoCubemap ODS rendering is only supported in the editor or when experimental is
+    //enabled. If/When StereoCubemap ODS rendering is fully supported, removed this #if/#else/#endif.
 
-    if (type != rendererType) {
+    if (type != rendererType || odsRenderer == null) {
       Debug.Assert( type < OdsRendererType.Count );
       if (odsRenderer != null) { 
         odsRenderer.Release();
       }
       
       if (type == OdsRendererType.Slice) {
-        Debug.Log("ODS Mode: Slice");
         odsRenderer = new OdsSlice();
       }
       else {
-        Debug.Log("ODS Mode: Stereo Cubemap");
         odsRenderer = new OdsStereoCubemap();
       }
       odsRenderer.SetVr180(vr180);
@@ -104,7 +107,37 @@ public class HybridCamera : MonoBehaviour {
     odsRenderer.SetVr180(enable);
   }
 
+  public void ReleaseTextures() {
+    if (stitched != null) {
+      stitched.Release();
+      Destroy(stitched);
+      stitched = null;
+    }
+    if (bloomed != null) {
+      bloomed.Release();
+      Destroy(bloomed);
+      bloomed = null;
+    }
+    if (finalImage != null) {
+      finalImage.Release();
+      Destroy(finalImage);
+      finalImage = null;
+    }
+    if (returnImage != null) {
+      Destroy(returnImage);
+      returnImage = null;
+    }
+    if (odsRenderer != null) {
+      odsRenderer.Release();
+    }
+
+    // Force the next render to recreate every size-dependent resource.
+    lastImageWidth = 0;
+  }
+
   private void SetupTextures() {
+    ReleaseTextures();
+
     imageHeight    = imageWidth;
 
     int bloomPadding;
@@ -116,7 +149,15 @@ public class HybridCamera : MonoBehaviour {
     }
     eyeImageWidth  = imageWidth + bloomPadding;
             
-    RenderTextureFormat format = HDR ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.Default;
+    bool useHdr = HDR;
+#if UNITY_ANDROID || UNITY_IOS
+    // Avoid float ODS buffers on mobile when the capture camera has HDR disabled.
+    Camera sourceCamera = GetComponent<Camera>();
+    useHdr = useHdr && sourceCamera != null && sourceCamera.allowHDR;
+#endif
+    RenderTextureFormat format = useHdr
+      ? RenderTextureFormat.ARGBFloat
+      : RenderTextureFormat.Default;
 
     stitched = new RenderTexture(eyeImageWidth, imageHeight, 0, format);
     stitched.antiAliasing = 1;
@@ -124,8 +165,7 @@ public class HybridCamera : MonoBehaviour {
     bloomed = new RenderTexture(stitched.width, stitched.height, 0, format);
     bloomed.antiAliasing = 1;
             
-    finalImage  = new RenderTexture( imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32 );
-    returnImage = new Texture2D( finalImage.width, finalImage.height, TextureFormat.RGB24, false );
+    finalImage = new RenderTexture(imageWidth, imageHeight, 0, RenderTextureFormat.ARGB32);
 
     odsRenderer.SetWidth(imageWidth, eyeImageWidth, bloomRadius);
     odsRenderer.SetupTextures(format);
@@ -138,19 +178,39 @@ public class HybridCamera : MonoBehaviour {
     rendererType = OdsRendererType.Slice;
     lastRendererType = rendererType;
 
-    Debug.Log("Init ODS Mode: " + rendererType.ToString());
-
     if ( outputFolder == null ) {
       outputFolder = System.Environment.GetFolderPath(
         System.Environment.SpecialFolder.DesktopDirectory) + "/ODS";
     }
   }
 
-  public IEnumerator Render(Transform node) {
+  public void OnDisable() {
+    ReleaseTextures();
+  }
+
+  public int GetClampedImageWidth(int requestedImageWidth) {
+    int bloomPaddingMultiplier = vr180 ? 4 : 2;
+    int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
+    int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
+    int clampedBloomRadius = Math.Min(bloomRadius, maxBloomRadius);
+    int bloomPadding = bloomPaddingMultiplier * clampedBloomRadius;
+    int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
+    maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
+    int clampedImageWidth = Math.Max(4, Math.Min(requestedImageWidth, maxImageWidth));
+    return ((clampedImageWidth + 3) / 4) * 4;
+  }
+
+  public IEnumerator Render(Transform node, bool saveImage = true) {
     if ( imageWidth != lastImageWidth || bloomRadius  != lastBloomRadius ||
         lastRendererType != rendererType || lastvr180 != vr180) {
-      // Round image width to a mutiple of four to keep symmetry with the image height.
-      imageWidth = Math.Min( ((imageWidth + 3) / 4) * 4, MaxImageWidth );
+      // Round image width to a multiple of four to keep symmetry with the image height.
+      // Account for bloom padding because stitched/bloomed render textures are wider than the final image.
+      int bloomPaddingMultiplier = vr180 ? 4 : 2;
+      // Clamp against the intermediate render texture width, not just the final image width.
+      int maxRenderTextureWidth = Math.Min(MaxRenderTextureWidth, SystemInfo.maxTextureSize);
+      int maxBloomRadius = Math.Max(0, (maxRenderTextureWidth - 4) / bloomPaddingMultiplier);
+      bloomRadius = Math.Min(bloomRadius, maxBloomRadius);
+      imageWidth = GetClampedImageWidth(imageWidth);
 
       SetupTextures();
 
@@ -160,8 +220,8 @@ public class HybridCamera : MonoBehaviour {
       lastvr180        = vr180;
     }
 
-    if ( outputFolder != null  && !Directory.Exists( outputFolder ) ) {
-      Directory.CreateDirectory( outputFolder );
+    if ( saveImage && outputFolder != null && !Directory.Exists(outputFolder) ) {
+      Directory.CreateDirectory(outputFolder);
     }
 
     GameObject renderCameraObject = new GameObject();
@@ -175,9 +235,15 @@ public class HybridCamera : MonoBehaviour {
     }
 
     renderCamera.CopyFrom( parentCamera );
+    // ODS renders this camera manually. Keep Unity from rendering it during mobile batch yields and
+    // overwriting the last slice before OdsSlice copies that slice into the output texture.
+    renderCamera.enabled = false;
     renderCamera.cullingMask = parentCamera.cullingMask;
     renderCamera.name = "Hybrid ODS Camera";
     renderCamera.fieldOfView = 90.0f;
+    bool usingScriptableRenderPipeline = GraphicsSettings.currentRenderPipeline != null;
+    UrpPostProcessingController.CameraPostProcessingState postProcessingState =
+      default(UrpPostProcessingController.CameraPostProcessingState);
 
     if ( opaqueBackground ) {
       // TBD - Specify full alpha for exported image
@@ -206,13 +272,40 @@ public class HybridCamera : MonoBehaviour {
 #endif
 
     isRendering = true;
+    int maxRendersPerFrame = MaxRenders;
+#if UNITY_ANDROID || UNITY_IOS
+    maxRendersPerFrame = MaxMobileRendersPerFrame;
+    Debug.Log($"[Snapshot360Mobile] Starting {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}, capped at {maxRendersPerFrame} renders per frame.");
+#endif
     //This suspends the execution of this function while running the odsRenderer.Render() function 
     //as a coroutine and will then resume execution when it is done.
-    yield return StartCoroutine( 
-      odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
-                         MaxRenders)
-    );
+    float timeScaleRestore = Time.timeScale;
+    try {
+      // Mobile captures span many frames so freeze animations and simulation for every entry point.
+      Time.timeScale = 0.0f;
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        postProcessingState =
+          UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+            renderCamera, includePostProcessing);
+      }
+
+      yield return StartCoroutine(
+        odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
+                           maxRendersPerFrame)
+      );
+    }
+    finally {
+      Time.timeScale = timeScaleRestore;
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+      }
+    }
     isRendering = false;
+#if UNITY_ANDROID || UNITY_IOS
+    Debug.Log($"[Snapshot360Mobile] Finished {imageWidth}x{imageHeight} capture with " +
+              $"{rendererType}.");
+#endif
 
 #if ENABLE_TIMING
     double deltaMs = timerStop();
@@ -232,19 +325,21 @@ public class HybridCamera : MonoBehaviour {
     RenderTexture.active = oldActiveTexture;
 
     bool useBloomedImage = false;
-    MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
-    foreach (MonoBehaviour b in behaviours) {
-      MethodInfo m = b.GetType().GetMethod("OnRenderImage");
-      if (m != null && m.IsPublic && b.enabled) {
-        //Apply the bloom and composite.
-        if (vr180) {
-          SbsBloomAndComposite(stitched, finalImage, b, m);
+    if (includePostProcessing && !usingScriptableRenderPipeline) {
+      MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
+      foreach (MonoBehaviour b in behaviours) {
+        MethodInfo m = b.GetType().GetMethod("OnRenderImage");
+        if (m != null && m.IsPublic && b.enabled) {
+          //Apply the bloom and composite.
+          if (vr180) {
+            SbsBloomAndComposite(stitched, finalImage, b, m);
+          }
+          else {
+            StackedBloomAndComposite(stitched, finalImage, b, m);
+          }
+          useBloomedImage = true;
+          break;
         }
-        else {
-          StackedBloomAndComposite(stitched, finalImage, b, m);
-        }
-        useBloomedImage = true;
-        break;
       }
     }
 
@@ -258,35 +353,46 @@ public class HybridCamera : MonoBehaviour {
       }
     }
 
-    oldActiveTexture = RenderTexture.active;
-    RenderTexture.active = finalImage;
-    returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
-    RenderTexture.active = oldActiveTexture;
-
     Graphics.Blit(finalImage, (RenderTexture)null);
 
-    byte[] image = returnImage.EncodeToPNG();
+    if (saveImage) {
+      if (returnImage == null ||
+          returnImage.width != finalImage.width || returnImage.height != finalImage.height) {
+        if (returnImage != null) {
+          Destroy(returnImage);
+        }
+        returnImage = new Texture2D(
+          finalImage.width, finalImage.height, TextureFormat.RGB24, false);
+      }
 
-    string file = String.Format(basename + "_{0:d6}.png", frameCount);
-    string path = Path.Combine(outputFolder, file);
+      oldActiveTexture = RenderTexture.active;
+      RenderTexture.active = finalImage;
+      returnImage.ReadPixels(new Rect(0, 0, finalImage.width, finalImage.height), 0, 0);
+      RenderTexture.active = oldActiveTexture;
+
+      byte[] image = returnImage.EncodeToPNG();
+
+      string file = String.Format(basename + "_{0:d6}.png", frameCount);
+      string path = Path.Combine(outputFolder, file);
 
 #if MULTI_THREADED
-  Thread imageWriter = new Thread(() => {
-    File.WriteAllBytes(path, image);
+      Thread imageWriter = new Thread(() => {
+        File.WriteAllBytes(path, image);
 #if LOG_IMAGE_WRITES
-    Debug.Log( "Wrote image " + path );
+        Debug.Log( "Wrote image " + path );
 #endif
-  });
-  imageWriter.IsBackground = true;
-  imageWriter.Start();
+      });
+      imageWriter.IsBackground = true;
+      imageWriter.Start();
 #else
-    File.WriteAllBytes( path, image );
+      File.WriteAllBytes( path, image );
 #if LOG_IMAGE_WRITES
-  Debug.Log( "Wrote image " + path );
+      Debug.Log( "Wrote image " + path );
 #endif
 #endif
 
-    frameCount++;
+      frameCount++;
+    }
   }  // Render method
 
   //This render function can be called from the Editor to make testing easier.

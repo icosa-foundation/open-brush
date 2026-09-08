@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class DeleteStrokeCommand : BaseCommand
     {
-        private Stroke m_TargetStroke;
+        public Stroke m_TargetStroke;
         private bool m_SilenceFirstAudio;
 
         private Vector3 CommandAudioPosition
@@ -33,6 +35,13 @@ namespace TiltBrush
             m_SilenceFirstAudio = true;
         }
 
+        public DeleteStrokeCommand(Stroke stroke, Guid existingGuid, int timestamp, BaseCommand parent = null)
+            : base(existingGuid, timestamp, parent)
+        {
+            m_TargetStroke = stroke;
+            m_SilenceFirstAudio = true;
+        }
+
         public override bool NeedsSave { get { return true; } }
 
         protected override void OnRedo()
@@ -42,27 +51,7 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
             }
             m_SilenceFirstAudio = false;
-
-            switch (m_TargetStroke.m_Type)
-            {
-                case Stroke.Type.BrushStroke:
-                    BaseBrushScript rBrushScript =
-                        m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
-                    if (rBrushScript)
-                    {
-                        rBrushScript.HideBrush(true);
-                    }
-                    break;
-                case Stroke.Type.BatchedBrushStroke:
-                    var batch = m_TargetStroke.m_BatchSubset.m_ParentBatch;
-                    batch.DisableSubset(m_TargetStroke.m_BatchSubset);
-                    break;
-                case Stroke.Type.NotCreated:
-                    Debug.LogError("Unexpected: redo delete NotCreated stroke");
-                    break;
-            }
-
-            TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: false);
+            m_TargetStroke.Hide(true);
         }
 
         protected override void OnUndo()
@@ -72,25 +61,7 @@ namespace TiltBrush
                 AudioManager.m_Instance.PlayRedoSound(CommandAudioPosition);
             }
             m_SilenceFirstAudio = false;
-
-            switch (m_TargetStroke.m_Type)
-            {
-                case Stroke.Type.BrushStroke:
-                    BaseBrushScript rBrushScript = m_TargetStroke.m_Object.GetComponent<BaseBrushScript>();
-                    if (rBrushScript)
-                    {
-                        rBrushScript.HideBrush(false);
-                    }
-                    break;
-                case Stroke.Type.BatchedBrushStroke:
-                    m_TargetStroke.m_BatchSubset.m_ParentBatch.EnableSubset(m_TargetStroke.m_BatchSubset);
-                    break;
-                case Stroke.Type.NotCreated:
-                    Debug.LogError("Unexpected: undo delete NotCreated stroke");
-                    break;
-            }
-
-            TiltMeterScript.m_Instance.AdjustMeter(m_TargetStroke, up: true);
+            m_TargetStroke.Hide(false);
         }
     }
 } // namespace TiltBrush

@@ -42,6 +42,7 @@ namespace TiltBrush
             private FileStream m_DownloadStream;
             private string m_SourceId; // If this is a derivative work of a poly asset, that asset id.
             private string m_Source;
+            private bool m_InvalidDownloadThisSession;
 
             public Texture2D Thumbnail => m_Thumbnail;
 
@@ -102,7 +103,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        m_TiltFile = new TiltFile(m_FileName);
+                        TryUseCachedTiltFile();
                     }
                 }
 
@@ -114,14 +115,19 @@ namespace TiltBrush
                 throw new NotImplementedException();
             }
 
+            public string Rename(string newName)
+            {
+                throw new NotImplementedException();
+            }
+
             public bool IsHeaderValid()
             {
-                return true; // TODO
+                return m_TiltFile != null && m_TiltFile.IsLoadable();
             }
 
             public Stream GetReadStream(string subfileName)
             {
-                return m_TiltFile.GetReadStream(subfileName);
+                return m_TiltFile?.GetReadStream(subfileName);
             }
 
             public IEnumerator LoadThumbnail()
@@ -151,6 +157,11 @@ namespace TiltBrush
 
             public async Task DownloadAsync(CancellationToken token)
             {
+                if (m_InvalidDownloadThisSession)
+                {
+                    throw new InvalidDataException($"Downloaded Drive sketch file was invalid: {m_FileName}");
+                }
+
                 Directory.CreateDirectory(CachePath);
                 using (m_DownloadStream = new FileStream(m_FileName, FileMode.Create))
                 {
@@ -169,7 +180,39 @@ namespace TiltBrush
                     }
                 }
                 File.SetLastWriteTime(m_FileName, m_File.ModifiedTime.Value);
-                m_TiltFile = new TiltFile(m_FileName);
+                if (!TryUseCachedTiltFile())
+                {
+                    m_InvalidDownloadThisSession = true;
+                    throw new InvalidDataException($"Downloaded Drive sketch file was invalid: {m_FileName}");
+                }
+                m_InvalidDownloadThisSession = false;
+            }
+
+            private bool TryUseCachedTiltFile()
+            {
+                if (!File.Exists(m_FileName))
+                {
+                    m_TiltFile = null;
+                    return false;
+                }
+
+                var tiltFile = new TiltFile(m_FileName);
+                if (tiltFile.IsLoadable())
+                {
+                    m_TiltFile = tiltFile;
+                    return true;
+                }
+
+                m_TiltFile = null;
+                try
+                {
+                    File.Delete(m_FileName);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"Could not delete invalid Drive sketch cache: {ex}");
+                }
+                return false;
             }
         }
 
@@ -254,12 +297,18 @@ namespace TiltBrush
             throw new NotImplementedException();
         }
 
+        public void RenameSketch(int toRename, string newName)
+        {
+            throw new NotImplementedException();
+        }
+
         public void PrecacheSketchModels(int i)
         {
+            if (string.IsNullOrEmpty(App.Config.GoogleSecrets?.ApiKey)) return;
             if (i >= 0 && i < NumSketches)
             {
                 // TODO: this currently causes the models to also be loaded into memory
-                App.PolyAssetCatalog.PrecacheModels(m_Sketches[i], $"GoogleDriveSketchSet {i}");
+                App.IcosaAssetCatalog.PrecacheModels(m_Sketches[i], $"GoogleDriveSketchSet {i}");
             }
         }
 

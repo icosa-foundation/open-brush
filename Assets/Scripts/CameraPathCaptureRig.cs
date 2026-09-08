@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -21,6 +22,9 @@ namespace TiltBrush
     {
         [SerializeField] private GameObject m_Object;
         [SerializeField] private GameObject m_Camera;
+
+        [SerializeField] private LocalizedString m_PathRecorded;
+        [SerializeField] private LocalizedString m_PathCancelled;
 
         private CameraPathPreviewWidget m_Widget;
         private ScreenshotManager m_Manager;
@@ -41,6 +45,7 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated += RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged += RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged += RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate += OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged += OnPoseChanged;
         }
 
@@ -53,7 +58,13 @@ namespace TiltBrush
             App.Switchboard.CameraPathCreated -= RefreshVisibility;
             App.Switchboard.CameraPathKnotChanged -= RefreshVisibility;
             App.Switchboard.CurrentCameraPathChanged -= RefreshVisibility;
+            App.Scene.LayerCanvasesUpdate -= OnLayerCanvasesUpdate;
             App.Scene.MainCanvas.PoseChanged -= OnPoseChanged;
+        }
+
+        private void OnLayerCanvasesUpdate()
+        {
+            RefreshVisibility();
         }
 
         public void Init()
@@ -118,9 +129,26 @@ namespace TiltBrush
 
         public void StopRecordingPath(bool saveCapture)
         {
-            string message = saveCapture ? "Path Recorded!" : "Recording Canceled";
+            string message;
+            if (saveCapture)
+            {
+                if (VideoRecorderUtils.IsUsingStillFrameFallback)
+                {
+                    message = "Camera path exported as still frame sequence.";
+                }
+                else
+                {
+                    message = m_PathRecorded.GetLocalizedStringAsync().Result;
+                }
+            }
+            else
+            {
+                message = m_PathCancelled.GetLocalizedStringAsync().Result;
+            }
+
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message);
+
             if (saveCapture)
             {
                 string filePath = null;
@@ -128,11 +156,17 @@ namespace TiltBrush
                 {
                     filePath = VideoRecorderUtils.ActiveVideoRecording.FilePath;
                 }
+                else if (VideoRecorderUtils.ActiveStillFrameExporter != null)
+                {
+                    filePath = VideoRecorderUtils.ActiveStillFrameExporter.FilePath;
+                }
+
                 if (filePath != null)
                 {
                     ControllerConsoleScript.m_Instance.AddNewLine(filePath);
                 }
             }
+
             VideoRecorderUtils.StopVideoCapture(saveCapture);
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();
@@ -146,7 +180,17 @@ namespace TiltBrush
 
         void RefreshVisibility()
         {
-            m_Object.SetActive(WidgetManager.m_Instance.CameraPathsVisible);
+            if (m_Object != null)
+            {
+                var currentPath = WidgetManager.m_Instance.GetCurrentCameraPath();
+                m_Object.SetActive(
+                    currentPath != null &&
+                    // Current path's layer is visible.
+                    currentPath.m_WidgetObject.activeInHierarchy &&
+                    // Camera paths in general are visible
+                    WidgetManager.m_Instance.CameraPathsVisible
+                );
+            }
             m_Widget.Show(WidgetManager.m_Instance.CanRecordCurrentCameraPath());
         }
 

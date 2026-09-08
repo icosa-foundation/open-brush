@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using TMPro;
 
 namespace TiltBrush
 {
@@ -52,7 +53,7 @@ namespace TiltBrush
         public class InfoLine
         {
             public GameObject m_Line;
-            public TextMesh m_TextMesh;
+            public TextMeshPro m_TextMesh;
             public Renderer m_Renderer;
             public float m_LineWidth;
         }
@@ -90,9 +91,9 @@ namespace TiltBrush
                 m_InfoLines[i] = new InfoLine();
 
                 GameObject rLine = (GameObject)Instantiate(m_InfoLinePrefab);
-                rLine.transform.parent = m_RenderablesParent;
+                rLine.transform.SetParent(m_RenderablesParent, false);
                 m_InfoLines[i].m_Line = rLine;
-                m_InfoLines[i].m_TextMesh = rLine.GetComponent<TextMesh>();
+                m_InfoLines[i].m_TextMesh = rLine.GetComponent<TextMeshPro>();
                 m_InfoLines[i].m_Renderer = rLine.GetComponent<Renderer>();
 
                 Vector3 vLocalPos = m_BaseLineLocalPositionOffset;
@@ -110,25 +111,12 @@ namespace TiltBrush
 
             InputManager.OnSwapControllers += AttachToBrush;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                m_AutosaveIcon.gameObject.SetActive(true);
-            }
-#endif
+            m_AutosaveIcon.gameObject.SetActive(true);
         }
 
         void OnDestroy()
         {
             InputManager.OnSwapControllers -= AttachToBrush;
-        }
-
-        void Start()
-        {
-            if (App.Config.VrHardware == VrHardware.None)
-            {
-                gameObject.SetActive(false);
-            }
         }
 
         void Update()
@@ -158,8 +146,7 @@ namespace TiltBrush
                 }
 
                 // Resize all particles.
-                ParticleSystem.Particle[] aParticles =
-                    new ParticleSystem.Particle[m_Notification.main.maxParticles];
+                ParticleSystem.Particle[] aParticles = new ParticleSystem.Particle[m_Notification.main.maxParticles];
                 int iNumParticles = m_Notification.GetParticles(aParticles);
                 for (int i = 0; i < iNumParticles; ++i)
                 {
@@ -406,15 +393,10 @@ namespace TiltBrush
             vClockAnchorPos.x = -fBGWidth;
             m_Clock.localPosition = vClockAnchorPos;
 
-#if (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                //position autosave dot on the right hand side.
-                Vector3 vAutosavePos = m_AutosaveIcon.localPosition;
-                vAutosavePos.x = fBGWidth;
-                m_AutosaveIcon.localPosition = vAutosavePos;
-            }
-#endif
+            //position autosave dot on the right hand side.
+            Vector3 vAutosavePos = m_AutosaveIcon.localPosition;
+            vAutosavePos.x = fBGWidth;
+            m_AutosaveIcon.localPosition = vAutosavePos;
         }
 
         private void AttachToBrush()

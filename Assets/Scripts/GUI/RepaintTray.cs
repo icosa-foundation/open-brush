@@ -20,8 +20,21 @@ namespace TiltBrush
 {
     public class RepaintTray : BaseTray
     {
-        private RepaintTool m_repaintTool;
+        public ToggleButton m_RecolorButton;
+        public ToggleButton m_ResizeButton;
+        public ToggleButton m_RebrushButton;
+        public ToggleButton m_JitterButton;
 
+        protected override void OnToolChanged()
+        {
+            base.OnToolChanged();
+            var pm = PointerManager.m_Instance;
+            m_RecolorButton.IsToggledOn = pm.RecolorOn;
+            m_ResizeButton.IsToggledOn = pm.ResizeOn;
+            m_RebrushButton.IsToggledOn = pm.RebrushOn;
+            m_JitterButton.IsToggledOn = pm.JitterOn;
+
+        }
         enum ButtonType
         {
             Recolor,
@@ -32,45 +45,42 @@ namespace TiltBrush
 
         private void SetRepaintFlags(ButtonType buttonType, bool state)
         {
-            if (m_repaintTool == null)
-            {
-                m_repaintTool = SketchControlsScript.m_Instance.GetComponentInChildren<RepaintTool>();
-            }
+            var pm = PointerManager.m_Instance;
             switch (buttonType)
             {
                 case ButtonType.Recolor:
-                    m_repaintTool.RecolorOn = state;
+                    pm.RecolorOn = state;
                     break;
                 case ButtonType.Rebrush:
-                    m_repaintTool.RebrushOn = state;
+                    pm.RebrushOn = state;
                     break;
                 case ButtonType.Resize:
-                    m_repaintTool.ResizeOn = state;
+                    pm.ResizeOn = state;
                     break;
                 case ButtonType.Jitter:
-                    m_repaintTool.JitterOn = state;
+                    pm.JitterOn = state;
                     break;
             }
         }
 
         public void RecolorToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Recolor, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Recolor, button.IsToggledOn);
         }
 
         public void RebrushToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Rebrush, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Rebrush, button.IsToggledOn);
         }
 
         public void ResizeToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Resize, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Resize, button.IsToggledOn);
         }
 
         public void JitterToggled(ToggleButton button)
         {
-            SetRepaintFlags(ButtonType.Jitter, button.m_IsToggledOn);
+            SetRepaintFlags(ButtonType.Jitter, button.IsToggledOn);
         }
     }
 

@@ -1,0 +1,372 @@
+﻿using System.IO;
+using System;
+using MoonSharp.Interpreter;
+using ODS;
+using UnityAsyncAwaitUtil;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    [LuaDocsDescription("Various properties and methods that effect the entire app")]
+    [MoonSharpUserData]
+    public static class AppApiWrapper
+    {
+        [LuaDocsDescription("The time in seconds since Open Brush was launched")]
+        public static float time => UnityEngine.Time.realtimeSinceStartup;
+
+        [LuaDocsDescription("The number of frames that have been rendered since Open Brush was launched")]
+        public static float frames => UnityEngine.Time.frameCount;
+
+        [LuaDocsDescription("Whether physics simulation is active (defaults is off)")]
+        public static bool physics
+        {
+            get => UnityEngine.Physics.autoSimulation;
+            set => UnityEngine.Physics.autoSimulation = value;
+        }
+
+        [LuaDocsDescription("The current scale of the scene")]
+        public static float currentScale => App.Scene.Pose.scale;
+
+        [LuaDocsDescription("Undo the last action")]
+        [LuaDocsExample("App:Undo()")]
+        public static void Undo() => ApiMethods.Undo();
+
+        [LuaDocsDescription("Redo the previously undone action")]
+        [LuaDocsExample("App:Redo()")]
+        public static void Redo() => ApiMethods.Redo();
+
+        [LuaDocsDescription("Adds a URL that receives data for each completed stroke. Stroke forwarding is independent of the Lua web-request configuration")]
+        [LuaDocsExample(@"App:AddListener(""http://example.com"")")]
+        [LuaDocsParameter("url", "The URL that receives completed stroke data")]
+        public static void AddListener(string url)
+        {
+            ApiMethods.AddListener(url);
+        }
+
+        [LuaDocsDescription("Reset all panels")]
+        [LuaDocsExample("App:ResetPanels()")]
+        public static void ResetPanels() => ApiMethods.ResetAllPanels();
+
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Scripts folder on the desktop (Mac/Windows only)")]
+        [LuaDocsExample("App:ShowScriptsFolder()")]
+        public static void ShowScriptsFolder() => ApiMethods.OpenUserScriptsFolder();
+
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR showing the user's Export folder on the desktop (Mac/Windows only)")]
+        [LuaDocsExample("App:ShowExportFolder()")]
+        public static void ShowExportFolder() => ApiMethods.OpenExportFolder();
+
+        [LuaDocsDescription("Opens an Explorer/Finder window outside of VR a folder containing a given sketch (Mac/Windows only)")]
+        [LuaDocsExample("App:ShowSketchesFolder(index)")]
+        [LuaDocsParameter("index", "The index of the sketch (0 being the most recent, then 1 and so on)")]
+        public static void ShowSketchesFolder(int index) => ApiMethods.ShowSketchFolder(index);
+
+        [LuaDocsDescription("Activate or deactivate straight edge mode")]
+        [LuaDocsExample("App:StraightEdge(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void StraightEdge(bool active) => LuaApiMethods.StraightEdge(active);
+
+        [LuaDocsDescription("Activate or deactivate auto orientation mode")]
+        [LuaDocsExample("App:AutoOrient(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void AutoOrient(bool active) => LuaApiMethods.AutoOrient(active);
+
+        [LuaDocsDescription("Activate or deactivate view only mode")]
+        [LuaDocsExample("App:ViewOnly(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void ViewOnly(bool active) => LuaApiMethods.ViewOnly(active);
+
+        [LuaDocsDescription("Activate or deactivate auto simplification mode")]
+        [LuaDocsExample("App:AutoSimplify(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void AutoSimplify(bool active) => LuaApiMethods.AutoSimplify(active);
+
+        [LuaDocsDescription("Activate or deactivate disco mode")]
+        [LuaDocsExample("App:Disco(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void Disco(bool active) => LuaApiMethods.Disco(active);
+
+        [LuaDocsDescription("Activate or deactivate profiling mode")]
+        [LuaDocsExample("App:Profiling(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void Profiling(bool active) => LuaApiMethods.Profiling(active);
+
+        [LuaDocsDescription("Activate or deactivate post-processing")]
+        [LuaDocsExample("App:PostProcessing(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void PostProcessing(bool active) => LuaApiMethods.PostProcessing(active);
+
+        [LuaDocsDescription("Set the drafting mode to visible")]
+        [LuaDocsExample("App:DraftingVisible()")]
+        public static void DraftingVisible() => ApiMethods.DraftingVisible();
+
+        [LuaDocsDescription("Set the drafting mode to transparent")]
+        [LuaDocsExample("App:DraftingTransparent()")]
+        public static void DraftingTransparent() => ApiMethods.DraftingTransparent();
+
+        [LuaDocsDescription("Set the drafting mode to hidden")]
+        [LuaDocsExample("App:DraftingHidden()")]
+        public static void DraftingHidden() => ApiMethods.DraftingHidden();
+
+        [LuaDocsDescription("Get or set the current environment by name")]
+        // [LuaDocsExample("App.environment = ""Space"")]
+        public static string environment
+        {
+            get => SceneSettings.m_Instance.CurrentEnvironment.Description;
+            set => ApiMethods.SetEnvironment(value);
+        }
+
+        [LuaDocsDescription("Activate or deactivate the watermark")]
+        [LuaDocsExample("App:Watermark(true)")]
+        [LuaDocsParameter("active", "True means activate, false means deactivate")]
+        public static void Watermark(bool active) => LuaApiMethods.Watermark(active);
+
+        // TODO Unified API for tools and panels
+        // [LuaDocsDescription("Shows or hides the settings panel")]
+        // public static void SettingsPanel(bool active) => )LuaApiMethods.SettingsPanel)(active);
+        // public static void SketchOrigin(bool active) => )LuaApiMethods.SketchOrigin)(active);
+
+        [LuaDocsDescription("Get or set the clipboard text. Disabled by default; requires Flags.EnablePluginClipboardAccess to be enabled in the user config")]
+        public static string clipboardText
+        {
+            get
+            {
+                EnsureLuaClipboardAccessEnabled();
+                return SystemClipboard.GetClipboardText();
+            }
+            set
+            {
+                EnsureLuaClipboardAccessEnabled();
+                SystemClipboard.SetClipboardText(value);
+            }
+        }
+
+        private static void EnsureLuaClipboardAccessEnabled()
+        {
+            if (!App.UserConfig.Flags.EnablePluginClipboardAccess)
+            {
+                throw new UnauthorizedAccessException(
+                    "Lua clipboard access requires Flags.EnablePluginClipboardAccess to be enabled in the user config.");
+            }
+        }
+
+        // [LuaDocsDescription("Gets the current image in the clipboard")]
+        // public static Texture2D clipboardImage {
+        //     get => SystemClipboard.GetClipboardImage();
+        //     // set => SystemClipboard.SetClipboardImage(value);
+        // }
+
+        [LuaDocsDescription("Reads a text file contained within the user's Plugins folder")]
+        [LuaDocsExample(@"App:ReadFile(""data/file.txt"")")]
+        [LuaDocsParameter("path", "A relative path contained within the Plugins folder. Rooted paths and paths that traverse outside that folder are rejected")]
+        [LuaDocsReturnValue("The contents of the file as a string")]
+        public static string ReadFile(string path)
+        {
+            if (Path.IsPathRooted(path))
+            {
+                throw new ArgumentException($"Invalid plugin file path: {path}");
+            }
+
+            string fullPath = Path.GetFullPath(Path.Join(LuaManager.Instance.UserPluginsPath(), path));
+            if (!_IsSubdirectory(fullPath, LuaManager.Instance.UserPluginsPath()))
+            {
+                throw new ArgumentException($"Invalid plugin file path: {path}");
+            }
+
+            Stream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            string contents;
+            using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
+            fileStream.Close();
+
+            return contents;
+        }
+
+        [LuaDocsDescription("Displays an error message on the back of the user's brush controller")]
+        [LuaDocsExample(@"App:Error(""This is an error message."")")]
+        [LuaDocsParameter("message", "The error message to display")]
+        public static void Error(string message) => LuaManager.Instance.LogLuaErrorRaisedByScript(message);
+
+        [LuaDocsDescription("Set the font used for drawing text")]
+        [LuaDocsExample(@"App:SetFont(""fontData"")")]
+        [LuaDocsParameter("fontData", "Font data in .chr format")]
+        public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
+
+        [LuaDocsDescription("Take a color snapshot and optionally save depth and normals sidecars to your Snapshots folder")]
+        [LuaDocsExample(@"App:TakeSnapshot(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, 1, true, false, true, true)")]
+        [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
+        [LuaDocsParameter("filename", "The filename for the color snapshot and base name for optional sidecars. Directory separators, rooted paths, and parent-directory traversal are rejected")]
+        [LuaDocsParameter("width", "Image width")]
+        [LuaDocsParameter("height", "Image height")]
+        [LuaDocsParameter("superSampling", "The supersampling strength to apply (between 0.125 and 4.0)")]
+        [LuaDocsParameter("renderDepth", "If true, also save a depth map with the suffix _depth.png")]
+        [LuaDocsParameter("removeBackground", "If true then render with a transparent background")]
+        [LuaDocsParameter("renderNormals", "If true, also save a normals map with the suffix _normals.png")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static void TakeSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling = 1f,
+            bool renderDepth = false,
+            bool removeBackground = false,
+            bool renderNormals = false,
+            DynValue includePostProcessing = null)
+        {
+            ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
+            ApiMethods.ValidateSnapshotDimensions(
+                width, height, includesSidecars: renderDepth || renderNormals);
+            ScreenshotManager.TakeSnapshot(
+                tr,
+                filename,
+                width,
+                height,
+                superSampling,
+                removeBackground,
+                renderDepth,
+                renderNormals,
+                ResolveCapturePostProcessing(includePostProcessing));
+        }
+
+        [LuaDocsDescription("Queue an Auto GIF capture to the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeAutoGif(""autogif.gif"", true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved GIF")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeAutoGif(string filename, DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureAutoGif(
+                filename,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Queue a Time GIF capture to the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeTimeGif(""timegif.gif"", true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved GIF")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeTimeGif(string filename, DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureTimeGif(
+                filename,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Render the DropCam camera to a PNG in the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeDropCamSnapshot(""dropcam.png"", 1024, 576, true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved PNG")]
+        [LuaDocsParameter("width", "Image width")]
+        [LuaDocsParameter("height", "Image height")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeDropCamSnapshot(
+            string filename,
+            int width = 1024,
+            int height = 576,
+            DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureDropCam(
+                filename,
+                width,
+                height,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Render the save-icon/sketch-thumbnail camera to a PNG in the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeSaveIconSnapshot(""saveicon.png"")")]
+        [LuaDocsParameter("filename", "The filename to use for the saved PNG")]
+        public static string TakeSaveIconSnapshot(string filename)
+        {
+            return ApiMethods.CaptureSaveIcon(filename);
+        }
+
+        [LuaDocsDescription("Queue a short video-camera frame-sequence capture to the Videos folder")]
+        [LuaDocsExample(@"App:TakeVideo(""video.mp4"", 1.0, true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved video")]
+        [LuaDocsParameter("seconds", "Capture duration in seconds")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeVideo(
+            string filename,
+            float seconds = 1.0f,
+            DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureVideo(
+                filename,
+                seconds,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
+        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096, true)")]
+        [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
+        [LuaDocsParameter("filename", "A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
+        [LuaDocsParameter("width", "The width of the image")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            bool includePostProcessing)
+        {
+            Take360Snapshot(tr, filename, width, DynValue.NewBoolean(includePostProcessing));
+        }
+
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width = 4096,
+            DynValue includePostProcessing = null)
+        {
+            bool usePostProcessing = ResolveCapturePostProcessing(includePostProcessing);
+            ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
+            var odsDriver = App.Instance.InitOds();
+            for (Transform transform = odsDriver.OdsCamera.transform; transform != null; transform = transform.parent)
+            {
+                transform.gameObject.SetActive(true);
+            }
+            App.Scene.AsScene[odsDriver.gameObject.transform] = tr;
+            odsDriver.FramesToCapture = 1;
+            odsDriver.OdsCamera.basename = filename;
+            odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
+            odsDriver.OdsCamera.imageWidth = width;
+            odsDriver.OdsCamera.includePostProcessing = usePostProcessing;
+            odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
+            odsDriver.OdsCamera.gameObject.SetActive(true);
+            odsDriver.OdsCamera.enabled = true;
+            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+        }
+
+        private static bool ResolveCapturePostProcessing(DynValue includePostProcessing)
+        {
+            if (includePostProcessing == null ||
+                includePostProcessing.Type == DataType.Nil ||
+                includePostProcessing.Type == DataType.Void)
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (includePostProcessing.Type == DataType.Boolean)
+            {
+                return includePostProcessing.Boolean;
+            }
+
+            if (includePostProcessing.Type == DataType.String &&
+                bool.TryParse(includePostProcessing.String, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"[OB_URP_CAPTURE_API] Invalid Lua post-processing value " +
+                $"{includePostProcessing}; using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
+        }
+
+        private static bool _IsSubdirectory(string path, string basePath)
+        {
+            var relPath = Path.GetRelativePath(
+                basePath.Replace('\\', '/'),
+                path.Replace('\\', '/')
+            );
+            return relPath != "." && relPath != ".."
+                && !relPath.StartsWith("../")
+                && !Path.IsPathRooted(relPath);
+        }
+    }
+}

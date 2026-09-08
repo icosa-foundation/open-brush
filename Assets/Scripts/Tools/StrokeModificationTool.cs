@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using UnityEngine;
 
 namespace TiltBrush
@@ -41,7 +42,7 @@ namespace TiltBrush
             On,
             FadingOut
         }
-        private GvrAudioSource m_ToolAudio;
+        private AudioSource m_ToolAudio;
         private AudioState m_CurrentAudioState;
         private float m_AudioFadeRatio;
         public float m_AudioVolumeMax;
@@ -55,7 +56,9 @@ namespace TiltBrush
         {
             get
             {
-                return !m_EatInput && !m_ToolHidden &&
+                return !m_EatInput &&
+                    !m_ToolHidden &&
+                    !MultiplayerManager.m_Instance.IsViewOnly &&
                     InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             }
         }
@@ -66,7 +69,7 @@ namespace TiltBrush
 
             m_CurrentSize = Mathf.Lerp(m_SizeRange.x, m_SizeRange.y, 0.5f);
             m_ToolTransform.localScale = Vector3.one * m_CurrentSize;
-            m_ToolAudio = m_ToolTransform.GetComponent<GvrAudioSource>();
+            m_ToolAudio = m_ToolTransform.GetComponent<AudioSource>();
 
             m_LockToController = m_SketchSurface.IsInFreePaintMode();
 
@@ -145,7 +148,7 @@ namespace TiltBrush
             return LayerMask.NameToLayer("SelectionCanvas");
         }
 
-        void Update()
+        protected void Update()
         {
             // Note this isn't in UpdateAudioVisuals() because we want it to run while the
             // tool is deactivated.

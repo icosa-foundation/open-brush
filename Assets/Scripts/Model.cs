@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Gsplat;
 using TiltBrushToolkit;
+using Unity.Profiling;
+using Unity.VectorGraphics.OpenBrush;
 using Debug = UnityEngine.Debug;
 using UObject = UnityEngine.Object;
 
@@ -34,27 +38,40 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                PolyAssetId
+                IcosaAssetId
             }
 
             private Type type;
             private string path;
-            private string id; // Only valid when the type is PolyAssetId.
+            private string id; // Only valid when the type is IcosaAssetId.
 
             public static Location File(string relativePath)
             {
+                int lastIndex = relativePath.LastIndexOf('#');
+                string path, fragment;
+
+                if (lastIndex == -1)
+                {
+                    path = relativePath;
+                    fragment = null;
+                }
+                else
+                {
+                    path = relativePath.Substring(0, lastIndex);
+                    fragment = relativePath.Substring(lastIndex + 1);
+                }
                 return new Location
                 {
                     type = Type.LocalFile,
-                    path = relativePath
+                    path = path,
                 };
             }
 
-            public static Location PolyAsset(string assetId, string path)
+            public static Location IcosaAsset(string assetId, string path)
             {
                 return new Location
                 {
-                    type = Type.PolyAssetId,
+                    type = Type.IcosaAssetId,
                     path = path,
                     id = assetId
                 };
@@ -73,8 +90,14 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
+                            if (System.IO.File.Exists(blocksPath))
+                            {
+                                return blocksPath.Replace("\\", "/");
+                            }
+
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
-                        case Type.PolyAssetId:
+                        case Type.IcosaAssetId:
                             return path.Replace("\\", "/");
                     }
                     return null;
@@ -90,12 +113,14 @@ namespace TiltBrush
                 }
             }
 
+            public string Extension => Path.GetExtension(AbsolutePath)?.ToLowerInvariant() ?? "";
+
             public string AssetId
             {
                 get
                 {
-                    if (type == Type.PolyAssetId) { return id; }
-                    throw new Exception("Invalid Poly asset id request");
+                    if (type == Type.IcosaAssetId) { return id; }
+                    throw new Exception("Invalid Icosa asset id request");
                 }
             }
 
@@ -108,14 +133,16 @@ namespace TiltBrush
 
             public override string ToString()
             {
-                if (type == Type.PolyAssetId)
+                string str;
+                if (type == Type.IcosaAssetId)
                 {
-                    return $"{type}:{id}";
+                    str = $"{type}:{id}";
                 }
                 else
                 {
-                    return $"{type}:{path}";
+                    str = $"{type}:{path}";
                 }
+                return str;
             }
 
             public override bool Equals(object obj)
@@ -144,7 +171,7 @@ namespace TiltBrush
         {
             rescalingMode = GltfImportOptions.RescalingMode.CONVERT,
             scaleFactor = App.METERS_TO_UNITS,
-            axisConventionOverride = AxisConvention.kGltfAccordingToPoly,
+            axisConventionOverride = AxisConvention.kGltfAccordingToIcosa,
             recenter = false
         };
 
@@ -191,6 +218,12 @@ namespace TiltBrush
 
         // How many widgets are using this model?
         public int m_UsageCount;
+        private bool m_CatalogOwnershipReleased;
+
+        // Store the paths of meshes that have been through MeshSplitter
+        public List<string> m_SplitMeshPaths;
+        public List<string> m_NotSplittableMeshPaths;
+        private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
 
@@ -198,6 +231,12 @@ namespace TiltBrush
         private bool m_AllowExport;
 
         private ImportMaterialCollector m_ImportMaterialCollector;
+
+        // Store SVG scene info for SVG models (persists across instantiation)
+        public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
+
+        public bool IsGsplatModel { get; private set; }
+        private GsplatAsset m_OwnedGsplatAsset;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -213,7 +252,29 @@ namespace TiltBrush
 
         public string HumanName
         {
-            get { return Path.GetFileNameWithoutExtension(m_Location.RelativePath); }
+            get
+            {
+                if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
+                {
+                    return AssetId;
+                }
+
+                string relativePath = m_Location.RelativePath;
+                string filename = Path.GetFileName(relativePath);
+
+                // For Blocks models (always named "model.obj"), use the parent directory name
+                if (filename != null && filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
+                {
+                    string parentDir = Path.GetDirectoryName(relativePath);
+                    if (!string.IsNullOrEmpty(parentDir))
+                    {
+                        // Get the last directory name in the path
+                        return Path.GetFileName(parentDir);
+                    }
+                }
+
+                return Path.GetFileNameWithoutExtension(relativePath);
+            }
         }
 
         public bool AllowExport
@@ -221,20 +282,67 @@ namespace TiltBrush
             get { return m_AllowExport; }
         }
 
+        private void Init()
+        {
+            m_SplitMeshPaths = new List<string>();
+            m_NotSplittableMeshPaths = new List<string>();
+            m_AppliedMeshSplits = new HashSet<string>();
+        }
+
         /// Only allowed if AllowExport = true
         public IExportableMaterial GetExportableMaterial(Material material)
         {
-            // TODO: Maybe throw InvalidOperation if AllowExport==false rather than blowing
-            // up with NullReference?
+            EnsureCollectorExists(); // TODO Remove this and thus probably remove AssignMaterialsToCollector
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
-        public Model(Location location)
+        // Constructor for local models i.e. Media Library assets
+        public Model(string relativePath)
         {
-            m_Location = location;
+            m_Location = Location.File(relativePath);
+            Init();
+        }
+
+        // Constructor for remote models i.e. Icosa Gallery assets
+        public Model(string assetId, string path)
+        {
+            m_Location = Location.IcosaAsset(assetId, path);
+            Init();
         }
 
         public Location GetLocation() { return m_Location; }
+
+        internal void AcquireUsage()
+        {
+            m_UsageCount++;
+        }
+
+        internal void ReleaseUsage()
+        {
+            Debug.Assert(m_UsageCount > 0, $"Model usage count underflow for {m_Location}.");
+            if (m_UsageCount <= 0)
+            {
+                return;
+            }
+
+            m_UsageCount--;
+            if (m_UsageCount == 0 && m_CatalogOwnershipReleased)
+            {
+                UnloadModel();
+            }
+        }
+
+        internal void ReleaseFromCatalog()
+        {
+            m_CatalogOwnershipReleased = true;
+            if (m_UsageCount == 0)
+            {
+                UnloadModel();
+            }
+            // Otherwise retain the inactive owner hierarchy. Active widgets borrow its
+            // procedural meshes and runtime splat asset, and may still consult it for
+            // operations such as breaking a model apart. The final ReleaseUsage unloads it.
+        }
 
         /// A helper class which allows import to run I/O on a background thread before producing Unity
         /// GameObject(s). Usage:
@@ -337,6 +445,10 @@ namespace TiltBrush
                     {
                         return false;
                     }
+                    m_ImportMaterialCollector = new ImportMaterialCollector(
+                        Path.GetDirectoryName(m_localPath),
+                        uniqueSeed: m_localPath
+                    );
                     m_meshEnumerator = enumerable.GetEnumerator();
                     m_root.SetActive(false);
                 }
@@ -393,21 +505,25 @@ namespace TiltBrush
         class GltfModelBuilder : ModelBuilder
         {
             private readonly bool m_useThreadedImageLoad;
-            private readonly bool m_fromPoly;
+            private readonly bool m_fromIcosa;
 
             public GltfModelBuilder(Location location, bool useThreadedImageLoad)
                 : base(location.AbsolutePath)
             {
                 m_useThreadedImageLoad = useThreadedImageLoad;
-                m_fromPoly = (location.GetLocationType() == Location.Type.PolyAssetId);
+                m_fromIcosa = (location.GetLocationType() == Location.Type.IcosaAssetId);
             }
 
             protected override IDisposable DoBackgroundThreadWork()
             {
                 var loader = new TiltBrushUriLoader(
                     m_localPath, Path.GetDirectoryName(m_localPath), m_useThreadedImageLoad);
-                var options = m_fromPoly ? kPolyGltfImportOptions : kGltfImportOptions;
-                return ImportGltf.BeginImport(m_localPath, loader, options);
+                var options = m_fromIcosa ? kPolyGltfImportOptions : kGltfImportOptions;
+                if (m_fromIcosa)
+                {
+                    return ImportGltf.BeginImport(m_localPath, loader, options);
+                }
+                return new NewGltfImporter.ImportState(AxisConvention.kGltf2);
             }
 
             protected override GameObject DoUnityThreadWork(IDisposable state__,
@@ -415,12 +531,10 @@ namespace TiltBrush
                                                             out ImportMaterialCollector
                                                                 importMaterialCollector)
             {
-                meshEnumerable = null;
-                importMaterialCollector = null;
                 GameObject rootObject = null;
-                using (IDisposable state_ = state__)
+                if (m_fromIcosa)
                 {
-                    var state = state_ as ImportGltf.ImportState;
+                    var state = state__ as ImportGltf.ImportState;
                     if (state != null)
                     {
                         string assetLocation = Path.GetDirectoryName(m_localPath);
@@ -439,22 +553,313 @@ namespace TiltBrush
                             importMaterialCollector = (ImportMaterialCollector)result.materialCollector;
                         }
                     }
+                    IsValid = rootObject != null;
+                    meshEnumerable = null;
+                    importMaterialCollector = null;
+                    return rootObject;
                 }
-                IsValid = (rootObject != null);
-                return rootObject;
+                else
+                {
+                    meshEnumerable = null;
+                    importMaterialCollector = null;
+                    using (IDisposable state_ = state__)
+                    {
+                        var state = state_ as NewGltfImporter.ImportState;
+                        if (state != null)
+                        {
+                            string assetLocation = Path.GetDirectoryName(m_localPath);
+                            // EndImport doesn't try to use the loadImages functionality of UriLoader anyway.
+                            // It knows it's on the main thread, so chooses to use Unity's fast loading.
+                            rootObject = state.root;
+                            importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                        }
+                    }
+                    IsValid = rootObject != null;
+                    return rootObject;
+                }
             }
         } // GltfModelBuilder
 
+        // Untested. Not used as we aren't using the async path currently
+        // I sketched out an implementation before realizing this
+        // so keeping it here for reference.
+        class ObjModelBuilder : ModelBuilder
+        {
+            private readonly bool m_useThreadedImageLoad;
+            private readonly bool m_fromIcosa;
+
+            public ObjModelBuilder(Location location, bool useThreadedImageLoad)
+                : base(location.AbsolutePath)
+            {
+                m_useThreadedImageLoad = useThreadedImageLoad;
+                m_fromIcosa = (location.GetLocationType() == Location.Type.IcosaAssetId);
+            }
+
+            class DummyDisposable : IDisposable
+            {
+                public void Dispose() { }
+            }
+
+            protected override IDisposable DoBackgroundThreadWork()
+            {
+                return new DummyDisposable();
+            }
+
+            protected override GameObject DoUnityThreadWork(IDisposable state__,
+                                                            out IEnumerable<Null> meshEnumerable,
+                                                            out ImportMaterialCollector
+                                                                importMaterialCollector)
+            {
+                GameObject rootObject = new GameObject("ImportedObjModel");
+                var objLoader = rootObject.AddComponent<OBJ>();
+                objLoader.BeginLoad(m_localPath);
+                meshEnumerable = null;
+                importMaterialCollector = null;
+                string assetLocation = Path.GetDirectoryName(m_localPath);
+                importMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_localPath);
+                IsValid = rootObject != null;
+                return rootObject;
+            }
+        }
+
         GameObject LoadUsd(List<string> warnings)
         {
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            if (Config.IsExperimental)
-            {
-                return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
-            }
-#endif
+#if USD_SUPPORTED
+            return ImportUsd.Import(m_Location.AbsolutePath, out warnings);
+#else
             m_LoadError = new LoadError("usd not supported");
             return null;
+#endif
+        }
+
+        GameObject LoadPly(List<string> warningsOut)
+        {
+
+            try
+            {
+                var reader = new PlyReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+
+        }
+
+        static bool IsGsplatPly(string path)
+        {
+            bool hasColor = false;
+            bool hasOpacity = false;
+            bool hasScale = false;
+            bool hasRotation = false;
+
+            using (var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var reader = new StreamReader(stream))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line == "end_header")
+                    {
+                        break;
+                    }
+
+                    string[] tokens = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (tokens.Length != 3 || tokens[0] != "property")
+                    {
+                        continue;
+                    }
+
+                    switch (tokens[2])
+                    {
+                        case "f_dc_0":
+                            hasColor = true;
+                            break;
+                        case "opacity":
+                            hasOpacity = true;
+                            break;
+                        case "scale_0":
+                            hasScale = true;
+                            break;
+                        case "rot_0":
+                            hasRotation = true;
+                            break;
+                    }
+                }
+            }
+
+            return hasColor && hasOpacity && hasScale && hasRotation;
+        }
+
+        GameObject LoadGsplat(List<string> warningsOut)
+        {
+            GsplatAsset asset = null;
+            GameObject root = null;
+            try
+            {
+                string path = m_Location.AbsolutePath;
+                string ext = m_Location.Extension;
+                SourceCoordinates sourceCoordinates = GetGsplatSourceCoordinates(ext);
+                asset = GsplatRuntimeLoader.LoadFile(
+                    path,
+                    Gsplat.CompressionMode.Spark,
+                    sourceCoordinates);
+#if UNITY_EDITOR || DEBUG
+                Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
+                    $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
+#endif
+
+                root = new GameObject("ImportedGsplatRoot");
+                GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
+                rendererObject.transform.SetParent(root.transform, false);
+
+                var gsplatRenderer = rendererObject.AddComponent<GsplatRenderer>();
+                gsplatRenderer.GsplatAsset = asset;
+                gsplatRenderer.SHDegree = asset.SHBands;
+                gsplatRenderer.AsyncUpload = true;
+                gsplatRenderer.RenderBeforeUploadComplete = false;
+                gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+
+                var collider = rendererObject.AddComponent<BoxCollider>();
+                collider.center = asset.Bounds.center;
+                collider.size = asset.Bounds.size;
+
+                warningsOut.Add(
+                    "Gaussian splat models are viewable in Open Brush, but are not exportable as mesh geometry.");
+                IsGsplatModel = true;
+                m_AllowExport = false;
+                return root;
+            }
+            catch (Exception ex)
+            {
+                if (root != null)
+                {
+                    UObject.Destroy(root);
+                }
+                DestroyRuntimeGsplatAsset(asset);
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        private static SourceCoordinates GetGsplatSourceCoordinates(string extension)
+        {
+            return extension == ".sog" ? SourceCoordinates.RDB : SourceCoordinates.RUB;
+        }
+
+        private void FinishGsplatLoad(GameObject root, List<string> warnings)
+        {
+            if (root == null)
+            {
+                DisplayWarnings(warnings);
+                return;
+            }
+
+            GsplatAsset asset = root
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+            try
+            {
+                CalcBoundsNonGltf(root);
+                EndCreatePrefab(root, warnings);
+            }
+            catch (Exception ex)
+            {
+                if (m_ModelParent == root.transform)
+                {
+                    m_ModelParent = null;
+                    m_OwnedGsplatAsset = null;
+                }
+                UObject.Destroy(root);
+                DestroyRuntimeGsplatAsset(asset);
+                IsGsplatModel = false;
+                m_Valid = false;
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+            }
+        }
+
+        GameObject LoadVox(List<string> warningsOut)
+        {
+            try
+            {
+                // Default to optimized mode with face culling
+                var reader = new VoxImporter(m_Location.AbsolutePath, VoxImporter.MeshMode.Optimized);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
+        }
+
+        GameObject LoadSvg(List<string> warningsOut, out SVGParser.SceneInfo sceneInfo)
+        {
+            try
+            {
+                var reader = new SvgMeshReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector, si) = reader.Import();
+                sceneInfo = si;
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                sceneInfo = new SVGParser.SceneInfo();
+                return null;
+            }
+        }
+
+        async Task<GameObject> LoadObj()
+        {
+            try
+            {
+                GameObject gameObject = new GameObject("ImportedObjRoot");
+                var objLoader = gameObject.AddComponent<OBJ>();
+                await objLoader.BeginLoadAsync(m_Location.AbsolutePath);
+                string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
+                gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
+                m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                // m_Valid = true;
+                GameObject parent = new GameObject("ImportedObjParent");
+                gameObject.transform.SetParent(parent.transform, true);
+
+                // Apply unique naming during import (matching GLTF EnsureUniquePathsImport plugin behavior)
+                // This ensures OBJ files have unique node names immediately after loading
+                // Note: Apply to gameObject, not parent, since the OBJ hierarchy is under gameObject
+                GenerateUniqueNames(gameObject.transform);
+                return parent;
+            }
+            catch (Exception ex)
+            {
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                m_AllowExport = false;
+                Debug.LogException(ex);
+                return null;
+            }
         }
 
         ///  Load model using FBX SDK.
@@ -464,50 +869,46 @@ namespace TiltBrush
             m_LoadError = new LoadError("fbx not supported");
             return null;
 #else
-    try {
-      var reader = new FbxReader(m_Location.AbsolutePath);
-      var (gameObject, warnings, collector) = reader.Import();
-      warningsOut.AddRange(warnings);
-      m_ImportMaterialCollector = collector;
-      m_AllowExport = (m_ImportMaterialCollector != null);
-      return gameObject;
-    } catch (Exception ex) {
-      m_LoadError = new LoadError("Invalid data", ex.Message);
-      m_AllowExport = false;
-      Debug.LogException(ex);
-      return null;
-    }
-#endif
-        }
-
-        GameObject LoadGltf(List<string> warnings)
-        {
-            // This is intended to be identical to using GltfModelBuilder, except synchronous.
-            GameObject go;
-            bool fromPoly = (m_Location.GetLocationType() == Location.Type.PolyAssetId);
-            string localPath = m_Location.AbsolutePath;
-            string assetLocation = Path.GetDirectoryName(localPath);
-            // Synchronous, so don't use slow image loading
-            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
             try
             {
-                ImportGltf.GltfImportResult result = ImportGltf.Import(
-                    localPath, loader,
-                    new ImportMaterialCollector(assetLocation, uniqueSeed: localPath),
-                    fromPoly ? kPolyGltfImportOptions : kGltfImportOptions);
-                go = result.root;
-                m_ImportMaterialCollector = (ImportMaterialCollector)result.materialCollector;
+                var reader = new FbxReader(m_Location.AbsolutePath);
+                var (gameObject, warnings, collector) = reader.Import();
+                warningsOut.AddRange(warnings);
+                m_ImportMaterialCollector = collector;
+                m_AllowExport = (m_ImportMaterialCollector != null);
+                return gameObject;
             }
             catch (Exception ex)
             {
                 m_LoadError = new LoadError("Invalid data", ex.Message);
-                go = null;
                 m_AllowExport = false;
                 Debug.LogException(ex);
+                return null;
             }
+#endif
+        }
 
-            m_AllowExport = (go != null);
-            return go;
+        async Task LoadGltf(List<string> warnings)
+        {
+            string localPath = m_Location.AbsolutePath;
+            string assetLocation = Path.GetDirectoryName(localPath);
+            try
+            {
+                Task t = NewGltfImporter.StartSyncImport(
+                    localPath,
+                    assetLocation,
+                    this,
+                    warnings
+                );
+                m_AllowExport = true;
+                await t;
+            }
+            catch (Exception ex)
+            {
+                m_AllowExport = false;
+                m_LoadError = new LoadError("Invalid data", ex.Message);
+                Debug.LogException(ex);
+            }
         }
 
         private ModelBuilder m_builder;
@@ -531,21 +932,33 @@ namespace TiltBrush
             }
 
             bool allowUsd = false;
-#if USD_SUPPORTED && (UNITY_EDITOR || EXPERIMENTAL_ENABLED)
-            allowUsd = Config.IsExperimental;
+#if USD_SUPPORTED
+            allowUsd = true;
 #endif
 
             // Experimental usd loading.
             if (allowUsd &&
                 m_Location.GetLocationType() == Location.Type.LocalFile &&
-                Path.GetExtension(m_Location.AbsolutePath).ToLower().StartsWith(".usd"))
+                m_Location.Extension == ".usd")
             {
                 throw new NotImplementedException();
             }
-            else if (m_Location.GetLocationType() == Location.Type.PolyAssetId)
+
+            if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
             {
-                // If we pulled this from Poly, it's going to be a gltf file.
-                m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
+                if (m_Location.Extension == ".gltf" || m_Location.Extension == ".gltf2" ||
+                    m_Location.Extension == ".glb")
+                {
+                    m_builder = new GltfModelBuilder(m_Location, useThreadedImageLoad);
+                }
+                else if (m_Location.Extension == ".obj")
+                {
+                    m_builder = new ObjModelBuilder(m_Location, useThreadedImageLoad);
+                }
+                else
+                {
+                    throw new NotImplementedException($"Unsupported format {m_Location.Extension}");
+                }
             }
             else
             {
@@ -605,17 +1018,25 @@ namespace TiltBrush
             else
             {
                 m_AllowExport = go != null;
-                CreatePrefab(go);
+                _ = StartCreatePrefab(go);
             }
+
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
 
             // Even if an exception occurs above, return true because the return value indicates async load
             // is complete.
             return true;
         }
 
+        public async Task LoadModelAsync()
+        {
+            Task t = StartCreatePrefab(null);
+            await t;
+        }
+
         public void LoadModel()
         {
-            CreatePrefab(null);
+            _ = StartCreatePrefab(null);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -627,7 +1048,7 @@ namespace TiltBrush
         /// - Its transform is identity
         /// - Every visible mesh also has a BoxCollider
         /// - Every BoxCollider also has a visible mesh
-        private void CreatePrefab(GameObject go)
+        private async Task StartCreatePrefab(GameObject go)
         {
             if (m_Valid)
             {
@@ -644,81 +1065,241 @@ namespace TiltBrush
                 // TODO: if it's not already null, why did we get here? Probably want to check for error
                 // and bail at a higher level, and require as a precondition that error == null
                 m_LoadError = null;
+                IsGsplatModel = false;
+                bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
-                string ext = Path.GetExtension(m_Location.AbsolutePath).ToLower();
-                if (m_Location.GetLocationType() == Location.Type.LocalFile &&
-                    ext.StartsWith(".usd"))
+                string ext = m_Location.Extension;
+                // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time
+                // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
+                var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
+                int __icosaStartFrame = Time.frameCount;
+                if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
                     go = LoadUsd(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
-                else if (m_Location.GetLocationType() == Location.Type.PolyAssetId ||
-                    ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
+                else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {
-                    // If we pulled this from Poly, it's going to be a gltf file.
-                    go = LoadGltf(warnings);
+                    Task t = LoadGltf(warnings);
+                    await t;
+                }
+#if FBX_SUPPORTED
+                // Allow users to force the old OBJ loader.
+                // Currently - always use the legacy OBJ loader for local files.
+                // This is to ensure we don't change the behavior of existing sketches
+                else if (ext == ".obj" && (!App.UserConfig.Import.UseLegacyObjForIcosa || isLocal))
+#else
+                // Always use the new loader when FBX SDK is not supported.
+                else if (ext == ".obj")
+#endif
+                {
+                    go = await LoadObj();
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else if (ext == ".fbx" || ext == ".obj")
                 {
                     go = LoadFbx(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".ply")
+                {
+                    bool isGsplatPly = IsGsplatPly(m_Location.AbsolutePath);
+                    go = isGsplatPly ? LoadGsplat(warnings) : LoadPly(warnings);
+                    if (isGsplatPly)
+                    {
+                        FinishGsplatLoad(go, warnings);
+                    }
+                    else
+                    {
+                        CalcBoundsNonGltf(go);
+                        EndCreatePrefab(go, warnings);
+                    }
+                }
+                else if (ext == ".spz" || ext == ".sog")
+                {
+                    go = LoadGsplat(warnings);
+                    FinishGsplatLoad(go, warnings);
+                }
+                else if (ext == ".vox")
+                {
+                    go = LoadVox(warnings);
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".svg")
+                {
+                    go = LoadSvg(warnings, out SVGParser.SceneInfo sceneInfo);
+                    SvgSceneInfo = sceneInfo;
+                    CalcBoundsNonGltf(go);
+                    EndCreatePrefab(go, warnings);
                 }
                 else
                 {
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
+                __icosaSw.Stop();
+                int __icosaFrames = Time.frameCount - __icosaStartFrame + 1;
+                Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
+                    $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
+                    $"(valid={m_Valid} error={m_LoadError.HasValue})");
             }
 
+        }
+
+        public void CalcBoundsGltf(GameObject go)
+        {
+            Bounds b = new Bounds();
+            bool first = true;
+            var boundsList = go.GetComponentsInChildren<MeshRenderer>().Select(x => x.bounds).ToList();
+            var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+            boundsList.AddRange(skinnedMeshRenderers.Select(x => x.bounds));
+            foreach (Bounds bounds in boundsList)
+            {
+                if (first)
+                {
+                    b = bounds;
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bounds);
+                }
+            }
+            m_MeshBounds = b;
+            if (first)
+            {
+                // There was no geometry
+                Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
+            }
+        }
+
+        private void CalcBoundsNonGltf(GameObject go)
+        {
+            // TODO: this list of colliders is assumed to match the modelScript.m_MeshChildren array
+            // This should be enforced.
+
+            // bc.bounds is world-space; therefore this calculation requires that
+            // go.transform be identity
+            Debug.Assert(Coords.AsGlobal[go.transform] == TrTransform.identity);
+            Bounds b = new Bounds();
+            bool first = true;
+            foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>())
+            {
+                if (first)
+                {
+                    b = new Bounds(bc.bounds.center, bc.bounds.size);
+                    first = false;
+                }
+                else
+                {
+                    b.Encapsulate(bc.bounds);
+                }
+                UnityEngine.Object.Destroy(bc);
+            }
+            m_MeshBounds = b;
+            if (first)
+            {
+                // There was no geometry
+                Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
+            }
+
+        }
+
+        public bool EndCreatePrefab(GameObject go, List<string> warnings)
+        {
             if (go == null)
             {
                 m_LoadError = m_LoadError ?? new LoadError("Bad data");
                 DisplayWarnings(warnings);
+                return false;
             }
-            else
+
+            float maxSide = Mathf.Max(m_MeshBounds.size.x,
+                Mathf.Max(m_MeshBounds.size.y, m_MeshBounds.size.z));
+            if (maxSide <= Mathf.Epsilon)
             {
-                // TODO: this list of colliders is assumed to match the modelScript.m_MeshChildren array
-                // This should be enforced.
-
-                // bc.bounds is world-space; therefore this calculation requires that
-                // go.transform be identity
-                Debug.Assert(Coords.AsGlobal[go.transform] == TrTransform.identity);
-                Bounds b = new Bounds();
-                bool first = true;
-                foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>())
-                {
-                    if (first)
-                    {
-                        b = new Bounds(bc.bounds.center, bc.bounds.size);
-                        first = false;
-                    }
-                    else
-                    {
-                        b.Encapsulate(bc.bounds);
-                    }
-                    UnityEngine.Object.Destroy(bc);
-                }
-                m_MeshBounds = b;
-
-                if (first)
-                {
-                    // There was no geometry
-                    Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
-                }
-
-                // Adopt the GameObject
-                go.name = m_Location.ToString();
-                go.AddComponent<ObjModelScript>().Init();
-                go.SetActive(false);
-                if (m_ModelParent != null)
-                {
-                    UnityEngine.Object.Destroy(m_ModelParent.gameObject);
-                }
-                m_ModelParent = go.transform;
-
-                // !!! Add to material dictionary here?
-
-                m_Valid = true;
+                m_Valid = false;
+                m_LoadError = new LoadError("No usable geometry");
+                UObject.Destroy(go);
                 DisplayWarnings(warnings);
+                return false;
             }
+
+            GsplatAsset newOwnedGsplatAsset = go
+                .GetComponentInChildren<GsplatRenderer>(includeInactive: true)?.GsplatAsset;
+
+            // Adopt the GameObject
+            go.name = m_Location.ToString();
+            go.AddComponent<ObjModelScript>().UpdateAllMeshChildren();
+            go.SetActive(false);
+            if (m_ModelParent != null)
+            {
+                UnityEngine.Object.Destroy(m_ModelParent.gameObject);
+            }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = newOwnedGsplatAsset;
+            m_ModelParent = go.transform;
+
+            // For glTF format models, we will have already done this via the import plugin
+            // It's safe to run for all formats as it checks for existing suffixes
+            // For a small performance improvement on deep hierarchies
+            // we could skip this for glTF models
+            GenerateUniqueNames(m_ModelParent);
+
+            // Clear the applied splits tracker since we have a new hierarchy
+            // This ensures splits are re-applied when models are reloaded
+            if (m_AppliedMeshSplits != null)
+            {
+                m_AppliedMeshSplits.Clear();
+            }
+
+            if (m_SplitMeshPaths != null && m_SplitMeshPaths.Count > 0)
+            {
+                InitMeshSplits();
+            }
+
+            // !!! Add to material dictionary here?
+            m_Valid = true;
+            EnsureCollectorExists();
+            // TODO We are probably calling the following too many times on import
+            // However the code paths have become a bit convoluted so err on the side of caution
+            AssignMaterialsToCollector(m_ImportMaterialCollector);
+            DisplayWarnings(warnings);
+            return true;
+        }
+
+
+        // This method is called when the model has been loaded and the node tree is available
+        // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
+        // and (2) there's code in at least ModelWidget that searches for specific nodes using node names
+        // 
+        // CRITICAL: This logic must match EnsureUniquePathsImportContext exactly.
+        // Both functions ensure unique node names using the same naming pattern and safety checks.
+        // If you modify this function, you MUST update EnsureUniquePathsImportContext accordingly.
+        private static void GenerateUniqueNames(Transform rootNode)
+        {
+            void SetUniqueNameForNode(Transform node)
+            {
+                int index = 0;
+                foreach (Transform child in node)
+                {
+                    string oldName = child.name;
+
+                    // Skip renaming if already has our suffix (safety check - matches EnsureUniquePathsImportContext)
+                    if (!System.Text.RegularExpressions.Regex.IsMatch(oldName, @"\[ob:\d+\]$"))
+                    {
+                        string newName = oldName + $"[ob:{index}]";
+                        child.name = newName;
+                    }
+                    index++;
+                    SetUniqueNameForNode(child);
+                }
+            }
+            SetUniqueNameForNode(rootNode);
         }
 
         public void UnloadModel()
@@ -742,6 +1323,26 @@ namespace TiltBrush
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
+            m_OwnedGsplatAsset = null;
+            m_AppliedMeshSplits?.Clear();
+        }
+
+        private static void DestroyRuntimeGsplatAsset(GsplatAsset asset)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                UObject.Destroy(asset);
+            }
+            else
+            {
+                UObject.DestroyImmediate(asset);
+            }
         }
 
         /// Resets this.Error and tries to load the model again.
@@ -759,8 +1360,8 @@ namespace TiltBrush
                     yield return OverlayManager.m_Instance.RunInCompositor(
                         OverlayType.LoadModel, LoadModel, 0.25f);
                     break;
-                case Location.Type.PolyAssetId:
-                    App.PolyAssetCatalog.RequestModelLoad(this, reason);
+                case Location.Type.IcosaAssetId:
+                    App.IcosaAssetCatalog.RequestModelLoad(this, reason);
                     yield return null;
                     while (!m_Valid && !m_LoadError.HasValue)
                     {
@@ -789,7 +1390,7 @@ namespace TiltBrush
 
         public bool IsCached()
         {
-            return m_Location.GetLocationType() == Location.Type.PolyAssetId &&
+            return m_Location.GetLocationType() == Location.Type.IcosaAssetId &&
                 Directory.Exists(m_Location.AbsolutePath);
         }
 
@@ -817,11 +1418,164 @@ namespace TiltBrush
             {
                 case Model.Location.Type.LocalFile:
                     return Path.GetFileNameWithoutExtension(RelativePath);
-                case Model.Location.Type.PolyAssetId:
+                case Model.Location.Type.IcosaAssetId:
                     return AssetId;
             }
             return "Unknown";
         }
 
+        public void AssignMaterialsToCollector(ImportMaterialCollector collector)
+        {
+            m_ImportMaterialCollector = collector;
+            foreach (var mf in GetMeshes())
+            {
+                foreach (var unityMat in mf.GetComponent<MeshRenderer>().materials)
+                {
+                    m_ImportMaterialCollector.Add(unityMat);
+                }
+            }
+        }
+
+        public void EnsureCollectorExists()
+        {
+            if (m_ImportMaterialCollector == null)
+            {
+                var localPath = GetLocation().AbsolutePath;
+                m_ImportMaterialCollector = new ImportMaterialCollector(
+                    Path.GetDirectoryName(localPath),
+                    uniqueSeed: localPath
+                );
+            }
+        }
+
+
+        public void SetMeshSplitData(IEnumerable<string> splitMeshPaths, IEnumerable<string> notSplittableMeshPaths)
+        {
+            m_SplitMeshPaths = splitMeshPaths?.ToList() ?? new List<string>();
+            m_NotSplittableMeshPaths = notSplittableMeshPaths?.ToList() ?? new List<string>();
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Clear();
+        }
+
+        public void RegisterMeshSplit(string splitPath)
+        {
+            splitPath ??= string.Empty;
+            if (m_SplitMeshPaths == null)
+            {
+                m_SplitMeshPaths = new List<string>();
+            }
+            if (!m_SplitMeshPaths.Contains(splitPath))
+            {
+                m_SplitMeshPaths.Add(splitPath);
+            }
+            if (m_NotSplittableMeshPaths == null)
+            {
+                m_NotSplittableMeshPaths = new List<string>();
+            }
+            m_NotSplittableMeshPaths.Remove(splitPath);
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+            m_AppliedMeshSplits.Remove(splitPath);
+        }
+
+        public static List<MeshFilter> ApplySplits(MeshFilter rootMf)
+        {
+            var splits = MeshSplitter.DoSplit(rootMf);
+            return splits;
+        }
+
+        public void InitMeshSplits()
+        {
+            if (m_ModelParent == null)
+            {
+                Debug.LogWarning($"[MeshSplit] Model {m_Location}: m_ModelParent is null, skipping");
+                return;
+            }
+            if (m_SplitMeshPaths == null || m_SplitMeshPaths.Count == 0)
+            {
+                return;
+            }
+            if (m_AppliedMeshSplits == null)
+            {
+                m_AppliedMeshSplits = new HashSet<string>();
+            }
+
+            var modelObjScript = m_ModelParent.GetComponentInChildren<ObjModelScript>();
+            if (modelObjScript == null)
+            {
+                Debug.LogError($"[MeshSplit] Model {m_Location} has no ObjModelScript to process mesh splits");
+                return;
+            }
+
+            foreach (var split in m_SplitMeshPaths)
+            {
+                if (m_NotSplittableMeshPaths != null && m_NotSplittableMeshPaths.Contains(split))
+                {
+                    continue;
+                }
+                if (m_AppliedMeshSplits.Contains(split))
+                {
+                    continue;
+                }
+
+                Transform destRoot;
+                if (string.IsNullOrEmpty(split))
+                {
+                    if (modelObjScript.m_MeshChildren == null || modelObjScript.m_MeshChildren.Length == 0)
+                    {
+                        Debug.LogError($"[MeshSplit] Model {m_Location} has no meshes to split for root path");
+                        continue;
+                    }
+                    destRoot = modelObjScript.m_MeshChildren[0]?.transform;
+                }
+                else
+                {
+                    var (subTreeRoot, _) = ModelWidget.FindSubtreeRoot(
+                        modelObjScript.transform,
+                        split
+                    );
+                    destRoot = subTreeRoot;
+                }
+
+                if (destRoot == null)
+                {
+                    Debug.LogError($"[MeshSplit] Model {m_Location} has no subtree for split '{split}'");
+                    // Log the hierarchy to help debug
+                    Debug.LogError($"[MeshSplit] Available hierarchy under {modelObjScript.transform.name}:");
+                    LogHierarchy(modelObjScript.transform, 0);
+                    continue;
+                }
+
+                var modelMf = destRoot.GetComponent<MeshFilter>();
+                if (modelMf == null)
+                {
+                    Debug.LogWarning($"[MeshSplit] Node '{destRoot.name}' has no MeshFilter (already split or not a mesh)");
+                    // Already split or nothing to split at this node.
+                    m_AppliedMeshSplits.Add(split);
+                    continue;
+                }
+
+                ApplySplits(modelMf);
+                // Remove the meshfilter from the original game object
+                GameObject.DestroyImmediate(modelMf);
+                modelObjScript.UpdateAllMeshChildren();
+                m_AppliedMeshSplits.Add(split);
+            }
+        }
+
+        private void LogHierarchy(Transform root, int depth)
+        {
+            string indent = new string(' ', depth * 2);
+            Debug.LogError($"[MeshSplit] {indent}- {root.name} (MeshFilter: {root.GetComponent<MeshFilter>() != null})");
+            foreach (Transform child in root)
+            {
+                LogHierarchy(child, depth + 1);
+            }
+        }
     }
 } // namespace TiltBrush;

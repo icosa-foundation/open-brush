@@ -20,20 +20,68 @@ namespace TiltBrush
 
     // TODO Refactor ToggleButton and OptionButton so that ToggleButton
     // carries less baggage that it doesn't need from OptionButton.
+    // Also - why do we also need ActionToggleButton?
     public class ToggleButton : OptionButton
     {
-        public bool m_IsToggledOn;
         public UnityEvent m_OnToggle;
 
-        protected override bool IsButtonActive()
+        private bool m_IsToggledOn;
+        public bool IsToggledOn
         {
-            return m_IsToggledOn;
+            get => m_IsToggledOn;
+            set
+            {
+                m_IsToggledOn = value;
+                UpdateToggleStateVisuals();
+            }
         }
 
-        override protected void OnButtonPressed()
+        // I expected UpdateVisuals to handle this but it's hard to untangle everything it does
+        // so it's simpler to duplicate the important bits in a method specific to ToggleButton
+        private void UpdateToggleStateVisuals()
         {
-            m_IsToggledOn = !m_IsToggledOn;
-            m_OnToggle.Invoke();
+            // m_ToggleActive = m_IsToggledOn;
+            if (m_IsToggledOn)
+            {
+                SetButtonActivated(true);
+
+                if (m_ToggleOnDescription != "")
+                {
+                    SetDescriptionText(m_ToggleOnDescription);
+                }
+                if (m_ToggleOnTexture != null)
+                {
+                    SetButtonTexture(m_ToggleOnTexture);
+                }
+            }
+            else
+            {
+                SetButtonActivated(false);
+
+                if (m_ToggleOnDescription != "")
+                {
+                    SetDescriptionText(m_DefaultDescription);
+                }
+                if (m_ToggleOnTexture != null)
+                {
+                    SetButtonTexture(m_DefaultTexture);
+                }
+            }
+
+        }
+
+        public override bool IsButtonActive()
+        {
+            return IsToggledOn;
+        }
+
+        protected override void OnButtonPressed()
+        {
+            IsToggledOn = !IsToggledOn;
+            if (m_OnToggle != null)
+            {
+                m_OnToggle.Invoke();
+            }
         }
     }
 } // namespace TiltBrush

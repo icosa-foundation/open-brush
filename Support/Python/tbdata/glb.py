@@ -18,7 +18,6 @@ import json
 import os
 import struct
 
-
 SIZES = {
     # accessor.type
     "SCALAR": 1,
@@ -249,6 +248,7 @@ class Glb2(BaseGltf):
 #
 # Testing
 #
+
 
 # pylint: disable=all
 # flake8: noqa

@@ -21,14 +21,16 @@ Properties {
 }
 
 SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
   Tags { "Queue"="Background" "RenderType"="Background" "PreviewType"="Skybox" }
   Cull Off ZWrite Off
 
   Pass {
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
+    #pragma multi_compile_instancing
 
     #include "UnityCG.cginc"
 
@@ -49,16 +51,28 @@ SubShader {
 
     struct appdata_t {
       float4 vertex : POSITION;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct v2f {
       float4 vertex : SV_POSITION;
       float3 texcoord : TEXCOORD0;
+
+      UNITY_VERTEX_INPUT_INSTANCE_ID
+
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     v2f vert (appdata_t v)
     {
       v2f o;
+
+      UNITY_SETUP_INSTANCE_ID(v);
+      UNITY_INITIALIZE_OUTPUT(v2f, o);
+      UNITY_TRANSFER_INSTANCE_ID(v, o);
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
       float4 quatConjugate = float4(-_SkyboxRotation.x, -_SkyboxRotation.y, -_SkyboxRotation.z, _SkyboxRotation.w);
       o.vertex = UnityObjectToClipPos(quat_mult(_SkyboxRotation, quat_mult(v.vertex, quatConjugate)));
       o.texcoord = v.vertex;
@@ -67,6 +81,7 @@ SubShader {
 
     fixed4 frag (v2f i) : SV_Target
     {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
       half4 tex = texCUBE (_Tex, i.texcoord);
       half3 c = DecodeHDR (tex, _Tex_HDR);
       //c = c * _Tint.rgb * unity_ColorSpaceDouble;
@@ -74,7 +89,7 @@ SubShader {
       c *= _Exposure;
       return half4(c, 1);
     }
-    ENDCG
+    ENDHLSL
   }
 }
 
@@ -82,3 +97,5 @@ SubShader {
 Fallback Off
 
 }
+
+

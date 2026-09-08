@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
@@ -49,7 +50,9 @@ namespace TiltBrush
             var prefab = new Rect(baseX + 155, pos.y, 150, baseHeight);
 
             string panelTypeString = new System.String(label.text.Where(System.Char.IsDigit).ToArray());
-            BasePanel.PanelType panelType = (BasePanel.PanelType)System.Convert.ToInt32(panelTypeString);
+            var panelTypes = Enum.GetValues(typeof(BasePanel.PanelType)).Cast<BasePanel.PanelType>().ToList();
+            int panelTypeIndex = Mathf.Min(Convert.ToInt32(panelTypeString), panelTypes.Count - 1);
+            BasePanel.PanelType panelType = panelTypes[panelTypeIndex];
             EditorGUI.LabelField(type, new GUIContent(panelType.ToString()));
 
             if (panelType != BasePanel.PanelType.SketchSurface)
@@ -60,30 +63,19 @@ namespace TiltBrush
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeVr"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("VR"));
-
-                NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeVrExperimental"),
-                    GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("Exp"));
-
-                NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeMono"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("Mo", "Monoscopic"));
+                NextRect(baseX, pos.y, 40, baseHeight, 40);
+                EditorGUI.LabelField(drawRect, new GUIContent("PCVR"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeQuest"),
                     GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("OQ", "Oculus Quest"));
+                NextRect(baseX, pos.y, 40, baseHeight, 40);
+                EditorGUI.LabelField(drawRect, new GUIContent("Quest", "Oculus Quest"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
-                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeGvr"), GUIContent.none);
-                NextRect(baseX, pos.y, 30, baseHeight, 30);
-                EditorGUI.LabelField(drawRect, new GUIContent("GVR"));
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ModeMono"), GUIContent.none);
+                NextRect(baseX, pos.y, 40, baseHeight, 60);
+                EditorGUI.LabelField(drawRect, new GUIContent("Mono", "Monoscopic"));
 
                 NextRect(baseX, pos.y, 10, baseHeight, 12);
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Basic"), GUIContent.none);
@@ -94,6 +86,16 @@ namespace TiltBrush
                 EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Advanced"), GUIContent.none);
                 NextRect(baseX, pos.y, 60, baseHeight, 60);
                 EditorGUI.LabelField(drawRect, new GUIContent("Advanced"));
+
+                NextRect(baseX, pos.y, 10, baseHeight, 12);
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_ViewOnly"), GUIContent.none);
+                NextRect(baseX, pos.y, 60, baseHeight, 60);
+                EditorGUI.LabelField(drawRect, new GUIContent("ViewOnly", "View Only"));
+
+                NextRect(baseX, pos.y, 10, baseHeight, 12);
+                EditorGUI.PropertyField(drawRect, prop.FindPropertyRelative("m_Multiplayer"), GUIContent.none);
+                NextRect(baseX, pos.y, 45, baseHeight, 45);
+                EditorGUI.LabelField(drawRect, new GUIContent("Multi", "Multiplayer"));
             }
 
             // Set indent back to what it was

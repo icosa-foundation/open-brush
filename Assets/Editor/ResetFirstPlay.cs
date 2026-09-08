@@ -21,7 +21,7 @@ namespace TiltBrush
     public class ResetFirstPlay : MonoBehaviour
     {
 
-        [MenuItem("Tilt/Reset First Play")]
+        [MenuItem("Open Brush/Reset First Play")]
         static public void Execute()
         {
             PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);

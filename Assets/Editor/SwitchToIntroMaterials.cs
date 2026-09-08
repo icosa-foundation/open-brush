@@ -23,7 +23,7 @@ namespace TiltBrush
     public class SwitchToIntroMaterials : MonoBehaviour
     {
 
-        [MenuItem("Tilt/Convert to Intro Materials")]
+        [MenuItem("Open Brush/Convert to Intro Materials")]
         public static void SwitchMaterials()
         {
             string instance = " (Instance)";

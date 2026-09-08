@@ -23,12 +23,12 @@ using UnityEditor;
 namespace TiltBrush
 {
 
-    public partial class PolyAssetCatalog
+    public partial class IcosaAssetCatalog
     {
 
         private class DebugWindow : EditorWindow
         {
-            [MenuItem("Tilt/Poly Asset Catalog Debug Window")]
+            [MenuItem("Open Brush/Poly Asset Catalog Debug Window")]
             private static void OpenDebugWindow() => GetWindow<DebugWindow>();
 
             private static string ToString(AssetGetter ag)
@@ -60,7 +60,7 @@ namespace TiltBrush
                     EditorGUILayout.HelpBox("Only works in Play Mode.", MessageType.Info);
                     return;
                 }
-                var pac = App.PolyAssetCatalog;
+                var pac = App.IcosaAssetCatalog;
 
                 DrawCollection(ref m_showActiveRequests, "Downloads", pac.m_ActiveRequests, ToString);
                 DrawCollection(ref m_showRequestQueue, "RequestLoadQueue", pac.m_RequestLoadQueue, ToString);
