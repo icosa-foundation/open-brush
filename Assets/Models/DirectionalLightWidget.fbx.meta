@@ -1,46 +1,94 @@
 fileFormatVersion: 2
 guid: ef544b9123fcfad40a80fff600625738
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: ArrowandRays
-    100002: //RootNode
-    100004: LightsIndicator
-    100006: LightsIndicator 1
-    100008: Arrow
-    100010: LightsIndicator1
-    400000: ArrowandRays
-    400002: //RootNode
-    400004: LightsIndicator
-    400006: LightsIndicator 1
-    400008: Arrow
-    400010: LightsIndicator1
-    2300000: ArrowandRays
-    2300002: LightsIndicator 1
-    2300004: Arrow
-    2300006: LightsIndicator1
-    3300000: ArrowandRays
-    3300002: LightsIndicator 1
-    3300004: Arrow
-    3300006: LightsIndicator1
-    4300000: LightsIndicator
-    4300002: ArrowandRays
-    4300004: Arrow
-    4300006: LightsIndicator1
+  serializedVersion: 24600
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: ArrowandRays
+  - first:
+      1: 100002
+    second: //RootNode
+  - first:
+      1: 100004
+    second: LightsIndicator
+  - first:
+      1: 100006
+    second: LightsIndicator 1
+  - first:
+      1: 100008
+    second: Arrow
+  - first:
+      1: 100010
+    second: LightsIndicator1
+  - first:
+      4: 400000
+    second: ArrowandRays
+  - first:
+      4: 400002
+    second: //RootNode
+  - first:
+      4: 400004
+    second: LightsIndicator
+  - first:
+      4: 400006
+    second: LightsIndicator 1
+  - first:
+      4: 400008
+    second: Arrow
+  - first:
+      4: 400010
+    second: LightsIndicator1
+  - first:
+      23: 2300000
+    second: ArrowandRays
+  - first:
+      23: 2300002
+    second: LightsIndicator 1
+  - first:
+      23: 2300004
+    second: Arrow
+  - first:
+      23: 2300006
+    second: LightsIndicator1
+  - first:
+      33: 3300000
+    second: ArrowandRays
+  - first:
+      33: 3300002
+    second: LightsIndicator 1
+  - first:
+      33: 3300004
+    second: Arrow
+  - first:
+      33: 3300006
+    second: LightsIndicator1
+  - first:
+      43: 4300000
+    second: LightsIndicator
+  - first:
+      43: 4300002
+    second: ArrowandRays
+  - first:
+      43: 4300004
+    second: Arrow
+  - first:
+      43: 4300006
+    second: LightsIndicator1
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
     materialLocation: 0
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -62,25 +110,43 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -89,10 +155,11 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
   importAnimation: 0
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -102,13 +169,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 5
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

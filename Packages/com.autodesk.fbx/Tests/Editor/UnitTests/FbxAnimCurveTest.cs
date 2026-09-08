@@ -175,7 +175,7 @@ namespace Autodesk.Fbx.UnitTests
             // this test is much simpler than the usual FbxObject test.
             var curve = CreateObject("a");
             DisposeTester.TestDispose(curve);
-            using (CreateObject("b"));
+            using (CreateObject("b")) { }
 
             curve = CreateObject("c");
             curve.Destroy();
