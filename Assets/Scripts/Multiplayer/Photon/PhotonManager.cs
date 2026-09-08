@@ -56,7 +56,7 @@ namespace OpenBrush.Multiplayer
             };
         }
 
-        public async Task<bool> Init()
+        public bool Init()
         {
             try
             {
@@ -67,7 +67,7 @@ namespace OpenBrush.Multiplayer
                 m_Runner.ProvideInput = true;
                 m_Runner.AddCallbacks(this);
 
-                Log.LogLevel = Fusion.LogType.Error;
+
 
             }
             catch (Exception ex)
@@ -174,7 +174,7 @@ namespace OpenBrush.Multiplayer
                     State = ConnectionState.ERROR;
                     LastError = "[PhotonManager] Room is full.";
                     ControllerConsoleScript.m_Instance.AddNewLine(LastError);
-                    Disconnect();
+                    await Disconnect();
                     return false;
                 }
 
@@ -401,14 +401,6 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcSyncToSharedAnchor(string uuid)
-        {
-            PhotonRPCBatcher.EnqueueRPC(() =>
-            { PhotonRPC.RPC_SyncToSharedAnchor(m_Runner, uuid); });
-            await Task.Yield();
-            return true;
-        }
-
         public async Task<bool> RpcPublishManualColocationReference(
             ManualColocationReference reference)
         {
@@ -449,7 +441,7 @@ namespace OpenBrush.Multiplayer
             return true;
         }
 
-        public async Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
+        public Task<bool> RpcTransferRoomOwnership(int playerId, RemotePlayerSettings[] playerSettings, RoomCreateData currentRoomData)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
 
@@ -471,16 +463,16 @@ namespace OpenBrush.Multiplayer
                 PhotonRPC.RPC_TransferRoomOwnership(m_Runner, targetPlayer, networkSettings, roomData);
             });
 
-            return true;
+            return Task.FromResult(true);
         }
 
 
-        public async Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
+        public Task<bool> RpcSetUserViewOnlyMode(bool value,int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_SetUserViewOnlyMode(m_Runner,value, targetPlayer); });
-            return true;
+            return Task.FromResult(true);
         }
 
         public async Task<bool> RpcSetRoomVoiceEnabled(bool enabled, int playerId)
@@ -637,12 +629,12 @@ namespace OpenBrush.Multiplayer
             return m_Runner != null && m_Runner.IsRunning && playerId >= 0;
         }
 
-        public async Task<bool> RpcKickPlayerOut(int playerId)
+        public Task<bool> RpcKickPlayerOut(int playerId)
         {
             PlayerRef targetPlayer = PlayerRef.FromEncoded(playerId);
             PhotonRPCBatcher.EnqueueRPC(() =>
             { PhotonRPC.RPC_DisconnectRemoteUser(m_Runner, targetPlayer); });
-            return true;
+            return Task.FromResult(true);
         }
 
         public void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage)
@@ -940,7 +932,7 @@ namespace OpenBrush.Multiplayer
             m_Manager.roomDataRefreshed?.Invoke(roomData);
         }
 
-        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data)
         {
             //Debug.Log("Server received complete reliable data");
 
@@ -948,13 +940,13 @@ namespace OpenBrush.Multiplayer
             key.GetInts(out _, out _, out _, out percentage);
             //Debug.Log($"Data received with percentage: {percentage}%");
 
-            byte[] receivedData = data.Array;
-            if (receivedData == null || receivedData.Length == 0)
+            if (data.IsEmpty)
             {
                 Debug.LogWarning("Received data is null or empty.");
                 return;
             }
 
+            byte[] receivedData = data.ToArray();
             MultiplayerSceneSync.m_Instance.onLargeDataReceived?.Invoke(receivedData,percentage);
         }
 

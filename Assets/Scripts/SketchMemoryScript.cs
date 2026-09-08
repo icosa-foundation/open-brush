@@ -104,6 +104,12 @@ namespace TiltBrush
         //    * edit case:  update current position in sequence-time list every frame (same as playback)
         //      so we're always ready to insert new strokes
         private LinkedList<Stroke> m_MemoryList = new LinkedList<Stroke>();
+
+        public struct MemoryListCursor
+        {
+            internal LinkedListNode<Stroke> Next;
+            internal bool IsInitialized;
+        }
         // Used as a starting point for any search by time.  Either null or a node contained in
         // m_MemoryList.
         // TODO: Have Update() advance this position to match current sketch time so that we
@@ -203,6 +209,32 @@ namespace TiltBrush
             get { return m_MemoryList; }
         }
 
+        /// Returns one stroke at a time without allocating a snapshot of the memory list. The
+        /// cursor keeps its position across unrelated insertions and removals. If its saved next
+        /// node is removed, it safely starts a new pass; strokes inserted before a valid cursor
+        /// are intentionally deferred until the next pass so continuous additions cannot starve
+        /// later strokes.
+        public bool TryGetNextStroke(ref MemoryListCursor cursor, out Stroke stroke)
+        {
+            if (!cursor.IsInitialized ||
+                (cursor.Next != null && cursor.Next.List != m_MemoryList))
+            {
+                cursor.Next = m_MemoryList.First;
+                cursor.IsInitialized = true;
+            }
+
+            if (cursor.Next == null)
+            {
+                stroke = null;
+                return false;
+            }
+
+            LinkedListNode<Stroke> current = cursor.Next;
+            cursor.Next = current.Next;
+            stroke = current.Value;
+            return true;
+        }
+
         public IEnumerable<BaseCommand> GetAllOperations()
         {
             var allCommands = m_OperationStack.Concat(m_NetworkStack);
@@ -229,7 +261,7 @@ namespace TiltBrush
                     return m_Instance.m_MemoryList.ElementAt(index);
                 }
             }
-            catch (IndexOutOfRangeException e)
+            catch (IndexOutOfRangeException)
             {
             }
             return null;
@@ -269,8 +301,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded && !m_MemoryWarningAccepted)
             {
                 int vertCount = numVerts +
-                    App.Scene.MainCanvas.BatchManager.CountAllBatchVertices() +
-                    App.Scene.SelectionCanvas.BatchManager.CountAllBatchVertices() +
+                    App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                     WidgetManager.m_Instance.WidgetsVertCount;
                 return vertCount > m_MemoryWarningVertCount;
             }
@@ -286,8 +317,7 @@ namespace TiltBrush
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
-                        App.Scene.MainCanvas.BatchManager.CountAllBatchVertices() +
-                        App.Scene.SelectionCanvas.BatchManager.CountAllBatchVertices() +
+                        App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                         WidgetManager.m_Instance.WidgetsVertCount;
                     if (m_LastCheckedVertCount > m_MemoryWarningVertCount)
                     {
@@ -338,7 +368,8 @@ namespace TiltBrush
             m_Instance = this;
             m_xfSketchInitial_RS = TrTransform.identity;
 
-            m_MemoryWarningVertCount = App.PlatformConfig.MemoryWarningVertCount;
+            m_MemoryWarningVertCount = App.PlatformConfig.GetMemoryWarningVertCount(
+                App.UserConfig.Flags.MemoryWarningVertCount);
         }
 
         void Update()
@@ -876,7 +907,9 @@ namespace TiltBrush
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints, StrokeFlags strokeFlags,
             StencilWidget stencil, float lineLength, int seed,
-            bool isFinalStroke)
+            bool isFinalStroke,
+            List<Color32?> controlPointColors = null,
+            ColorOverrideMode colorMode = ColorOverrideMode.None)
         {
             // NOTE: PointerScript calls ClearRedo() in batch case
 
@@ -891,6 +924,8 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
+            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_ColorOverrideMode = colorMode;
             subset.m_Stroke = rNewStroke;
             RecordStrokeInCurrentTimeSession(rNewStroke);
 
@@ -919,7 +954,9 @@ namespace TiltBrush
             float fBrushSize, float brushScale,
             List<PointerManager.ControlPoint> rControlPoints,
             StrokeFlags strokeFlags,
-            StencilWidget stencil, float lineLength)
+            StencilWidget stencil, float lineLength,
+            List<Color32?> controlPointColors = null,
+            ColorOverrideMode colorMode = ColorOverrideMode.None)
         {
             ClearRedo();
 
@@ -933,6 +970,8 @@ namespace TiltBrush
             rNewStroke.m_BrushSize = fBrushSize;
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
+            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_ColorOverrideMode = colorMode;
             brushScript.Stroke = rNewStroke;
             RecordStrokeInCurrentTimeSession(rNewStroke);
 
@@ -1937,7 +1976,8 @@ namespace TiltBrush
                 {
                     if (!stroke.m_ControlPointsToDrop[i])
                     {
-                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i]);
+                        Color32 color = stroke.GetColor(i);
+                        pointer.UpdateLineFromControlPoint(stroke.m_ControlPoints[i], color);
                     }
                 }
 

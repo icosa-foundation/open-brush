@@ -130,7 +130,6 @@ namespace TiltBrush
             var xforms = new List<TrTransform>();
             var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
-            int i = 0;
             foreach (var stroke in strokes)
             {
                 var snappedPos = SelectionManager.m_Instance.SnapToGrid_CS(stroke.m_BatchSubset.m_Bounds.center);

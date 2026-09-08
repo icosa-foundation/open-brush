@@ -31,7 +31,7 @@ namespace OpenBrush.Multiplayer
 
         public static async Task<byte[]> SerializeAndCompressMemoryListAsync(List<Stroke> memoryList)
         {
-            byte[] serializedData = await SerializeMemoryList(memoryList);
+            byte[] serializedData = SerializeMemoryList(memoryList);
             return await Compress(serializedData);
         }
 
@@ -41,7 +41,7 @@ namespace OpenBrush.Multiplayer
             List<Stroke> serializableStrokes = memoryList
                 .Where(stroke => stroke.IsGeometryEnabled)
                 .ToList();
-            byte[] strokeData = await SerializeMemoryList(serializableStrokes);
+            byte[] strokeData = SerializeMemoryList(serializableStrokes);
             byte[] envelope;
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
@@ -210,7 +210,7 @@ namespace OpenBrush.Multiplayer
 
         // Serializes a LinkedList of Strokes into a byte array using SketchWriter.
         // We did not event anything new we are using SketchWriter.WriteMemory from TiltBrush.
-        public static async Task<byte[]> SerializeMemoryList(List<Stroke> strokeList)
+        public static byte[] SerializeMemoryList(List<Stroke> strokeList)
         {
             try
             {
