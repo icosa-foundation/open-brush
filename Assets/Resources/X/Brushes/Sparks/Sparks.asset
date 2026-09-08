@@ -17,8 +17,7 @@ MonoBehaviour:
   m_DurableName: Sparks
   m_CreationVersion: 
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 1000014087813492, guid: 8438beec189531f46a5c7a7bfa41decf,
-    type: 3}
+  m_BrushPrefab: {fileID: 1000014087813492, guid: 8438beec189531f46a5c7a7bfa41decf, type: 3}
   m_Tags:
   - experimental
   m_Nondeterministic: 0
@@ -45,6 +44,8 @@ MonoBehaviour:
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 4aacc68ef76cee74084447a53a61c12c, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 1
