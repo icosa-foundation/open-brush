@@ -35,7 +35,8 @@ namespace TiltBrush
 
         /// Sorted by initial vert index
         /// (if this is violated, RemoveSubset() will fail)
-        public List<BatchSubset> m_Groups;
+        // Built at runtime by the batcher; never authored in a scene or prefab.
+        [NonSerialized] public List<BatchSubset> m_Groups;
 #if UNITY_EDITOR
         public bool m_EditorDebug;
         public Vector3 m_EditorDebugMeshScale;
@@ -71,7 +72,10 @@ namespace TiltBrush
             newObj.AddComponent<MeshFilter>();
 
             Renderer renderer = newObj.AddComponent<MeshRenderer>();
-            renderer.material = brush.Material;
+            if (brush.m_OverlayMaterial != null)
+                renderer.materials = new Material[] { brush.Material, brush.m_OverlayMaterial };
+            else
+                renderer.material = brush.Material;
 
             var propertyBlock = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(propertyBlock);

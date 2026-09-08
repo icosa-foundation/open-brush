@@ -18,50 +18,59 @@ Shader "Custom/ReferenceImageIcon" {
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader {
-    Tags { "RenderType"="Opaque" }
+    Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" }
     LOD 100
 
-    CGPROGRAM
-    #pragma surface surf Unlit
-    half4 LightingUnlit(SurfaceOutput s, half3 lightDir, half atten) {
-          half4 c;
-            c.rgb = s.Albedo;
-            c.a = 1.0;
-            return c;
-        }
+    Pass {
+      Name "ForwardUnlit"
+      Tags { "LightMode"="UniversalForward" }
+      HLSLPROGRAM
+      #pragma vertex Vert
+      #pragma fragment Frag
+      #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-    sampler2D _MainTex;
-    fixed4 _Color;
-    uniform float _Activated;
+      TEXTURE2D(_MainTex);
+      SAMPLER(sampler_MainTex);
 
-    struct Input {
-      float2 uv_MainTex;
-      float3 worldPos;
-    };
+      CBUFFER_START(UnityPerMaterial)
+      half4 _Color;
+      float _Activated;
+      CBUFFER_END
 
-    void surf (Input IN, inout SurfaceOutput o) {
-      fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-      if( _Activated > 0.5f )
-      {
-        if( (abs(IN.uv_MainTex.y - .5f) < .45f) && (abs(IN.uv_MainTex.x - .5f) < .45f) )
-        {
-          c.rgb = dot(c.rgb, float3(0.299, 0.587, 0.114));
-        }
-        else
-        {
-          c.rgb = .9;
-        }
-      }
-      else
-      {
-        c.rgb *= .75;
+      struct Attributes {
+        float4 positionOS : POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      struct Varyings {
+        float4 positionHCS : SV_POSITION;
+        float2 uv : TEXCOORD0;
+      };
+
+      Varyings Vert(Attributes IN) {
+        Varyings OUT;
+        OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+        OUT.uv = IN.uv;
+        return OUT;
       }
 
-      c *= _Color;
-      o.Emission = c.rgb;
-      o.Alpha = c.a;
+      half4 Frag(Varyings IN) : SV_Target {
+        half4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+        if (_Activated > 0.5) {
+          if ((abs(IN.uv.y - 0.5) < 0.45) && (abs(IN.uv.x - 0.5) < 0.45)) {
+            half g = dot(c.rgb, half3(0.299h, 0.587h, 0.114h));
+            c.rgb = g.xxx;
+          } else {
+            c.rgb = 0.9h.xxx;
+          }
+        } else {
+          c.rgb *= 0.75h;
+        }
+        c *= _Color;
+        return c;
+      }
+      ENDHLSL
     }
-    ENDCG
   }
-  FallBack "Diffuse"
+  FallBack Off
 }
