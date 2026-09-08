@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
 guid: 6cc8ecb517438b74ebc0f3c77a668f50
+========
+guid: 2eb883923c5e034499417b30761f7ce9
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -21,7 +25,11 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
   isReadable: 0
+========
+  isReadable: 1
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -53,7 +61,12 @@ TextureImporter:
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 0
+  spriteTessellationMethod: 0
   spriteTessellationDetail: -1
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
+========
+  spriteGeometrySubdivision: -1
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
   textureType: 0
   textureShape: 1
   singleChannelComponent: 0
@@ -67,9 +80,9 @@ TextureImporter:
   swizzle: 50462976
   cookieLightType: 0
   platformSettings:
-  - serializedVersion: 3
+  - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -80,7 +93,11 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
   - serializedVersion: 3
+========
+  - serializedVersion: 4
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
     buildTarget: Standalone
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -93,6 +110,7 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
   - serializedVersion: 3
     buildTarget: iPhone
     maxTextureSize: 2048
@@ -120,6 +138,9 @@ TextureImporter:
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
+========
+  - serializedVersion: 4
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
     buildTarget: Android
     maxTextureSize: 2048
     resizeAlgorithm: 0
@@ -132,10 +153,53 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
+========
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 128
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 128
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 128
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
   spriteSheet:
     serializedVersion: 2
     sprites: []
     outline: []
+    customData: 
     physicsShape: []
     bones: []
     spriteID:
@@ -145,9 +209,19 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
     nameFileIdTable: {}
+<<<<<<<< HEAD:Assets/Polyhydra/Resources/Shape Gallery Presets old/Smooth Rounded Icosahedron.png.meta
   mipmapLimitGroupName:
   pSDRemoveMatte: 0
   userData:
   assetBundleName:
   assetBundleVariant:
+========
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+>>>>>>>> main:Assets/Resources/Icons/reshape.png.meta

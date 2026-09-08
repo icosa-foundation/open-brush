@@ -157,5 +157,11 @@
         {
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
         }
+
+        [ApiEndpoint("tool.tintcolor", "Activates the Tint Color Tool")]
+        public static void ActivateTintColorTool()
+        {
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.TintColorTool);
+        }
     }
 }

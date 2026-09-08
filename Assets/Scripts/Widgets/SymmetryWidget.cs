@@ -62,10 +62,7 @@ namespace TiltBrush
         [SerializeField] private Color m_SnapColor;
         [SerializeField] private float m_SnapOrientationSpeed = 0.2f;
 
-        [SerializeField] private float m_SnapAngleXZPlane = 45.0f;
         [SerializeField] private float m_SnapXZPlaneStickyAmount;
-        private float m_SnapQuantizeAmount = 15.0f;
-        private float m_SnapStickyAngle = 1.0f;
 
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
@@ -315,76 +312,6 @@ namespace TiltBrush
             }
         }
 
-
-        override protected TrTransform GetSnappedTransform(TrTransform xf_GS)
-        {
-            TrTransform outXf_GS = xf_GS;
-
-            // Move rot into canvas space
-            Quaternion localRot = Quaternion.Inverse(m_NonScaleChild.parent.rotation) * xf_GS.rotation;
-            // Determine "last frames" roll value for hysteresis measurement.
-            Vector3 vPrevRight = m_NonScaleChild.localRotation * Vector3.right;
-            Vector3 vPrevRightNoY = vPrevRight;
-            vPrevRightNoY.y = 0.0f;
-            float fPrevRoll = Vector3.Angle(vPrevRight, vPrevRightNoY.normalized);
-
-            // We're looking at axis angles for determining snap.
-            Vector3 vDesiredRight = localRot * Vector3.right;
-            Vector3 vDesiredForward = localRot * Vector3.forward;
-            Vector3 vDesiredUp = localRot * Vector3.up;
-
-            Vector3 vRightNoY = vDesiredRight;
-            vRightNoY.y = 0.0f;
-            Vector3 vForwardNoY = vDesiredForward;
-            vForwardNoY.y = 0.0f;
-
-            // If we were snapping to XZ plane last frame, make it sticky to unsnap.
-            float fRollThreshold = m_SnapAngleXZPlane;
-            if (fPrevRoll > m_SnapAngleXZPlane)
-            {
-                fRollThreshold -= m_SnapXZPlaneStickyAmount;
-            }
-
-            float fRoll = Vector3.Angle(vDesiredRight, vRightNoY.normalized);
-            if (fRoll > fRollThreshold)
-            {
-                // Snap to the XZ plane.  (normal up/down)
-                Vector3 vUpNoY = vDesiredUp;
-                vUpNoY.y = 0.0f;
-                outXf_GS.rotation = m_NonScaleChild.parent.rotation *
-                    Quaternion.LookRotation(vForwardNoY.normalized, vUpNoY.normalized);
-            }
-            else
-            {
-                // Quantize Y to m_SnapQuantizeAmount degree increments.
-                float fSnapPad = m_SnapQuantizeAmount + m_SnapStickyAngle;
-                Vector3 vPrevEulers = m_NonScaleChild.localRotation.eulerAngles;
-                float fPrevQuantizedY = Mathf.Floor((vPrevEulers.y + (m_SnapQuantizeAmount * 0.5f)) /
-                    m_SnapQuantizeAmount);
-
-                // Normal should be on the XZ plane.
-                Vector3 vUpNoXZ = vDesiredUp;
-                vUpNoXZ.x = 0.0f;
-                vUpNoXZ.z = 0.0f;
-
-                // Only pop to the new angle if we've moved beyond our pad amount.
-                Vector3 vEulers = Quaternion.LookRotation(vForwardNoY.normalized, vUpNoXZ.normalized).eulerAngles;
-                float fQuantizedY = Mathf.Floor((vEulers.y + (m_SnapQuantizeAmount * 0.5f)) /
-                    m_SnapQuantizeAmount);
-                float fFinalY = fPrevQuantizedY;
-                if (fPrevQuantizedY != fQuantizedY)
-                {
-                    if (Mathf.Abs(MathUtils.PeriodicDifference(vPrevEulers.y, vEulers.y, 360.0f)) > fSnapPad)
-                    {
-                        fFinalY = fQuantizedY;
-                    }
-                }
-
-                vEulers.y = fFinalY * m_SnapQuantizeAmount;
-                outXf_GS.rotation = m_NonScaleChild.parent.rotation * Quaternion.Euler(vEulers);
-            }
-            return outXf_GS;
-        }
 
         override public void Activate(bool bActive)
         {

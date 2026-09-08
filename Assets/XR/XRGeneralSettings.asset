@@ -29,7 +29,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
   m_Name: Android Settings
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: -7676514244823948856}
+  m_Manager: {fileID: -7676514244823948856}
   m_InitManagerOnStart: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -43,13 +43,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d2dc886499c26824283350fa532d087d, type: 3}
   m_Name: XRGeneralSettings
   m_EditorClassIdentifier: 
-  Keys: 01000000070000000d0000000e00000004000000
-  Values:
-  - {fileID: 5604525069898709079}
-  - {fileID: -5428386068462531570}
-  - {fileID: 7811015363008633083}
-  - {fileID: 8915350425150617969}
-  - {fileID: 4436211510375909911}
+  Keys: 
+  Values: []
+  m_SettingsPerBuildTarget:
+  - buildTarget: 1
+    settings: {fileID: 5604525069898709079}
+  - buildTarget: 7
+    settings: {fileID: -5428386068462531570}
+  - buildTarget: 13
+    settings: {fileID: 7811015363008633083}
+  - buildTarget: 14
+    settings: {fileID: 8915350425150617969}
+  - buildTarget: 4
+    settings: {fileID: 4436211510375909911}
 --- !u!114 &195705616145022394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -95,8 +101,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
   m_Name: iPhone Settings
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: 6946956650545175336}
-  m_InitManagerOnStart: 1
+  m_Manager: {fileID: 6946956650545175336}
+  m_InitManagerOnStart: 0
 --- !u!114 &5604525069898709079
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,7 +115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
   m_Name: Standalone Settings
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: 8705794667931902858}
+  m_Manager: {fileID: 8705794667931902858}
   m_InitManagerOnStart: 0
 --- !u!114 &6946956650545175336
 MonoBehaviour:
@@ -139,8 +145,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
   m_Name: WebGL Settings
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: 195705616145022394}
-  m_InitManagerOnStart: 1
+  m_Manager: {fileID: 195705616145022394}
+  m_InitManagerOnStart: 0
 --- !u!114 &8705794667931902858
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -170,5 +176,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
   m_Name: WSA Settings
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: 4286762984707549258}
-  m_InitManagerOnStart: 1
+  m_Manager: {fileID: 4286762984707549258}
+  m_InitManagerOnStart: 0
