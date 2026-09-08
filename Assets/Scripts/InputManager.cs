@@ -86,6 +86,8 @@ namespace TiltBrush
             Trash,
             Share,
             Fly,
+            ToggleReshape = 5100,
+            ToggleTintColor = 5101,
             ScriptedTool = 6000,
             ToggleSculpt = 11100
         }
@@ -401,7 +403,12 @@ namespace TiltBrush
 
         public void EnablePoseTracking(bool enabled)
         {
-            UnityEngine.XR.XRDevice.DisableAutoXRCameraTracking(App.VrSdk.GetVrCamera(), !enabled);
+            var vrCamera = App.VrSdk.GetVrCamera();
+            var poseDriver = vrCamera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            if (poseDriver != null)
+            {
+                poseDriver.enabled = enabled;
+            }
             if (enabled)
             {
                 App.VrSdk.RestorePoseTracking();
@@ -431,6 +438,24 @@ namespace TiltBrush
         {
             CreateControllerInfos();
             ShowControllers(false);
+        }
+
+        void OnDisable()
+        {
+            if (m_ControllerInfos == null)
+            {
+                return;
+            }
+
+            foreach (ControllerInfo controllerInfo in m_ControllerInfos)
+            {
+                if (controllerInfo is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+
+            m_ControllerInfos = null;
         }
 
         public void CreateControllerInfos()
@@ -720,6 +745,8 @@ namespace TiltBrush
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
                 case SketchCommands.ToggleSculpt:
+                case SketchCommands.ToggleReshape:
+                case SketchCommands.ToggleTintColor:
                     return Brush.GetCommandDown(rCommand);
 
                 // Misc

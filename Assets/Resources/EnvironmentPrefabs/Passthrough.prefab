@@ -10,6 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 413308}
   - component: {fileID: 2894341405841368711}
+  - component: {fileID: 671514100984563759}
+  - component: {fileID: 2200318192125775268}
   m_Layer: 0
   m_Name: Passthrough
   m_TagString: Untagged
@@ -24,13 +26,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 118944}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2894341405841368711
 MonoBehaviour:
@@ -42,5 +44,47 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3974c6c53f3f8942b147e7e86cb0e75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_PassthroughLayer: {fileID: 671514100984563759}
+--- !u!114 &671514100984563759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118944}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3adf0bb75a444c61bde2e7841591bf41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_UICanvas: {fileID: 0}
+  m_UIMirrorComponent: {fileID: 0}
+  m_LayerOutline: {fileID: 2200318192125775268}
+  m_Order: -1
+  m_LayerData:
+    rid: 681864465657364485
+  m_PlatformLayerDataKeys: []
+  m_PlatformLayerDataTexts: []
+  m_PlatformLayerDataBinary: 
+  references:
+    version: 2
+    RefIds:
+    - rid: 681864465657364485
+      type: {class: FBPassthroughLayerData, ns: OpenXR.Extensions, asm: OpenXR.Extensions}
+      data:
+        m_BlendType: 0
+        m_SubmitDepth: 0
+--- !u!114 &2200318192125775268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 118944}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c239b33ee5aee77488aadc51463c91de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

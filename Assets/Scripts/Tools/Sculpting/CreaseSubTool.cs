@@ -17,30 +17,65 @@ namespace TiltBrush
 {
     public class CreaseSubTool : BaseSculptSubTool
     {
+        private BoxCollider m_BoxCollider;
 
-        void Awake()
+        public override SculptSubToolManager.SubTool SubToolIdentifier =>
+            SculptSubToolManager.SubTool.Pinch;
+
+        private void Awake()
         {
-            m_SubToolIdentifier = SculptSubToolManager.SubTool.Crease;
-            m_Collider = GetComponent<Collider>();
+            m_BoxCollider = GetComponent<BoxCollider>();
+            m_Collider = m_BoxCollider;
         }
 
-        /// Move vertex towards center of geometry if it's within the subtool
-        override public Vector3 ManipulateVertex(Vector3 vertex, bool bPushing, TrTransform canvasPose, Transform toolTransform, float toolSize, BatchSubset rGroup)
+        public override bool IsInReach(Vector3 vertex, TrTransform canvasPose)
         {
-            Vector3 vertToTool = vertex - (canvasPose.inverse * toolTransform.position);
-            float strength = bPushing ? m_DefaultStrength : -m_DefaultStrength;
+            Vector3 localPoint = m_BoxCollider.transform.InverseTransformPoint(canvasPose * vertex);
+            Vector3 offset = localPoint - m_BoxCollider.center;
+            float halfLength = m_BoxCollider.size.z * 0.5f;
+            return Mathf.Abs(offset.z) <= halfLength;
+        }
 
+        public override float CalculateStrength(
+            Vector3 vertex, float distance, float radius, TrTransform canvasPose, bool bPushing)
+        {
+            return m_DefaultStrength * CalculateWorldLineOffset(vertex, canvasPose).magnitude /
+                canvasPose.scale;
+        }
 
-            if (vertToTool.magnitude <= toolSize / canvasPose.scale)
-            {
-                Vector3 closestPoint = m_Collider.ClosestPoint(canvasPose * vertex);
-                bool bInSubTool = Vector3.Distance(closestPoint, m_Collider.bounds.center) >= (canvasPose * vertex - (m_Collider.bounds.center)).magnitude;
-                if (bInSubTool)
-                {
-                    return vertex + strength * -(vertex - rGroup.m_Bounds.center).normalized;
-                }
-            }
-            return vertex;
+        public override float CalculateInfluence(
+            Vector3 vertex, Vector3 toolPosition, float radius, TrTransform canvasPose)
+        {
+            Vector3 linePoint = canvasPose.inverse *
+                m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
+            Vector3 lineDirection = Quaternion.Inverse(canvasPose.rotation) *
+                m_BoxCollider.transform.forward;
+            return StrokeSculptInfluence.CalculateLineWeight(
+                vertex, linePoint, lineDirection, radius);
+        }
+
+        public override Vector3 CalculateDirection(Vector3 vertex, Transform toolTransform, TrTransform canvasPose, bool bPushing, BatchSubset rGroup)
+        {
+            Vector3 lineOffset = CalculateWorldLineOffset(vertex, canvasPose);
+            Vector3 direction = Quaternion.Inverse(canvasPose.rotation) * lineOffset;
+            return (bPushing ? 1f : -1f) * direction.normalized;
+        }
+
+        public override float ScaleDisplacementForReferenceUpdates(
+            Vector3 vertex, float displacement, float referenceUpdates,
+            TrTransform canvasPose, bool bPushing)
+        {
+            float distanceToLine =
+                CalculateWorldLineOffset(vertex, canvasPose).magnitude / canvasPose.scale;
+            return StrokeSculptInfluence.ScaleProportionalDisplacement(
+                distanceToLine, displacement, referenceUpdates, towardTarget: bPushing);
+        }
+
+        private Vector3 CalculateWorldLineOffset(Vector3 vertex, TrTransform canvasPose)
+        {
+            Vector3 linePoint = m_BoxCollider.transform.TransformPoint(m_BoxCollider.center);
+            return StrokeSculptInfluence.CalculateLineOffset(
+                canvasPose * vertex, linePoint, m_BoxCollider.transform.forward);
         }
     }
 

@@ -14,6 +14,7 @@
 
 using UnityEngine;
 
+
 namespace TiltBrush
 {
     public class SculptTool : ToggleStrokeModificationTool
@@ -28,7 +29,7 @@ namespace TiltBrush
         /// vertex interactions, and also just for visual representations for the
         /// user.
         [SerializeField]
-        public BaseSculptSubTool m_ActiveSubTool;
+        public LegacySculpting.BaseSculptSubTool m_ActiveSubTool;
 
         override public void EnableTool(bool bEnable)
         {
@@ -48,7 +49,7 @@ namespace TiltBrush
             return m_bIsPushing;
         }
 
-        public void SetSubTool(BaseSculptSubTool subTool)
+        public void SetSubTool(LegacySculpting.BaseSculptSubTool subTool)
         {
             m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
@@ -72,7 +73,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleSculpt))
             {
-                if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten)
+                if (m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
@@ -128,7 +129,7 @@ namespace TiltBrush
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (m_ActiveSubTool.m_SubToolIdentifier != SculptSubToolManager.SubTool.Flatten)
+            if (m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
@@ -137,5 +138,3 @@ namespace TiltBrush
     }
 
 } // namespace TiltBrush
-
-

@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-namespace TiltBrush
+namespace TiltBrush.LegacySculpting
 {
     public class RotateSubTool : BaseSculptSubTool
     {
@@ -48,4 +48,4 @@ namespace TiltBrush
         }
     }
 
-}// namespace TiltBrush
+}// namespace TiltBrush.LegacySculpting
