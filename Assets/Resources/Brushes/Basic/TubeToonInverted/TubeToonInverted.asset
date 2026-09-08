@@ -24,7 +24,6 @@ MonoBehaviour:
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: 9519037349fb540ae9a61d5de51d6ae9, type: 3}
-  m_Description: BRUSH_TUBETOONINVERTED
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -45,6 +44,8 @@ MonoBehaviour:
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: 175538d5a24264e109b76297bee9c3b6, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1
   m_TileRate: 0.15
   m_UseBloomSwatchOnColorPicker: 0

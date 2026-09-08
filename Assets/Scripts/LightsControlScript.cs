@@ -22,7 +22,9 @@ namespace TiltBrush
         static public LightsControlScript m_Instance;
         public const int kLightCount = 2;
         public const float kRotationChangeEpsilon = .0001f;
-        public CustomEnvLight[] m_EnvLights;
+        // Allocated and filled in code; CustomEnvLight is not a serializable type and
+        // this never appears in Main.unity.
+        [System.NonSerialized] public CustomEnvLight[] m_EnvLights;
 
         [SerializeField] private List<Color> m_Colors;
         [SerializeField] private float m_BeatThreshold;

@@ -282,7 +282,7 @@ namespace TiltBrush
                 var guid = new Guid(brushType);
                 brushDescriptor = BrushCatalog.m_Instance.GetBrush(guid);
             }
-            catch (FormatException e)
+            catch (FormatException)
             {
             }
 

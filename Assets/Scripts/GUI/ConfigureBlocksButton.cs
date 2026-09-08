@@ -25,24 +25,22 @@ namespace TiltBrush
 
         public static string GetBlocksStoreUrl()
         {
-#if UNITY_ANDROID
-            bool isQuestNative = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
-#else
-            bool isQuestNative = false;
-#endif
-            if (isQuestNative)
+            // CI's USE_QUEST_PACKAGE_NAME preserves the Meta store's registered identifier.
+            bool isQuestBuild = Application.platform == RuntimePlatform.Android &&
+                Application.identifier == "com.Icosa.OpenBrush";
+            if (isQuestBuild)
             {
-                // Actually running on a Quest. Open the Quest store link.
+                // Quest builds use the Meta store link.
                 return "https://www.meta.com/en-gb/experiences/open-blocks-low-poly-3d-modelling/8043509915705378/";
             }
-            else if (!App.Config.IsMobileHardware)
+            else if (!App.Config.IsMobileHardware || SteamManager.RunningUnderLepton)
             {
-                // All PC users should use Steam for now.
+                // PC users and Steam Frame users should use Steam.
                 return "https://store.steampowered.com/app/3077230/Open_Blocks/";
             }
             else
             {
-                // At this point it should be an Android device that is not a Quest.
+                // Other mobile devices use the installation guidance.
                 // Docs url. Good fallback and easy to update with current advice
                 return "https://docs.openblocks.app/getting-open-blocks";
             }
