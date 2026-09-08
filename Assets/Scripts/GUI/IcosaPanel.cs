@@ -76,8 +76,6 @@ namespace TiltBrush
         IcosaSetType m_LastSetTypeForLoad = IcosaSetType.User;
         IcosaBrowseMode m_LastBrowseModeForLoad = IcosaBrowseMode.Standard;
 
-        // Flag to defer RefreshPage to once per frame
-        private bool m_RefreshRequested = false;
         private Dictionary<IcosaSetType, float> m_CooldownByType = new Dictionary<IcosaSetType, float>();
 
         public bool ShowingFeatured { get { return m_CurrentSet == IcosaSetType.Featured; } }

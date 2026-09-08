@@ -24,14 +24,15 @@ Shader "Unlit/GroundPlaneOverlay"
   SubShader
   {
 	LOD 201
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
+        #pragma multi_compile_instancing
         #pragma exclude_renderers d3d9 d3d11_9x
 
         #include "UnityCG.cginc"
@@ -46,6 +47,8 @@ Shader "Unlit/GroundPlaneOverlay"
           float4 vertex : SV_POSITION;
           float3 worldPosition : COLOR;
 
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+
           UNITY_VERTEX_OUTPUT_STEREO
         };
 
@@ -59,6 +62,7 @@ Shader "Unlit/GroundPlaneOverlay"
 
           UNITY_SETUP_INSTANCE_ID(v);
           UNITY_INITIALIZE_OUTPUT(v2f, o);
+          UNITY_TRANSFER_INSTANCE_ID(v, o);
           UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
           o.vertex = UnityObjectToClipPos(v.vertex);
@@ -68,6 +72,7 @@ Shader "Unlit/GroundPlaneOverlay"
 
         fixed4 frag (v2f i) : SV_Target
         {
+          UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
           float t = _Color.w;
           float outer_distance = 100 * t;
           _ChaperoneScaleX = _ChaperoneScaleX * (t * .25 + .75);
@@ -107,32 +112,38 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1 * t;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 
   // MOBILE VERSION
   SubShader {
 	LOD 100
-    Tags { "Queue"="Overlay" "RenderType"="Transparent" }
+    Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Overlay" "RenderType"="Transparent" }
     Blend SrcAlpha OneMinusSrcAlpha, Zero One
     ZTest Always
     ZWrite Off
     Pass {
-      CGPROGRAM
+      HLSLPROGRAM
         #pragma vertex vert
         #pragma fragment frag
+        #pragma multi_compile_instancing
         #pragma exclude_renderers d3d9 d3d11_9x
 
         #include "UnityCG.cginc"
 
         struct appdata_t {
           float4 vertex : POSITION;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
           float4 vertex : SV_POSITION;
           float3 worldPosition : COLOR;
+
+          UNITY_VERTEX_INPUT_INSTANCE_ID
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
         uniform float4 _Color;
@@ -142,6 +153,9 @@ Shader "Unlit/GroundPlaneOverlay"
         v2f vert (appdata_t v)
         {
           v2f o;
+          UNITY_SETUP_INSTANCE_ID(v);
+          UNITY_TRANSFER_INSTANCE_ID(v, o);
+          UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
           o.vertex = UnityObjectToClipPos(v.vertex);
           o.worldPosition = mul(unity_ObjectToWorld, v.vertex).xyz;
           return o;
@@ -149,6 +163,7 @@ Shader "Unlit/GroundPlaneOverlay"
 
         fixed4 frag (v2f i) : SV_Target
         {
+		  UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 		  // Mobile version does not animate.
 
           float outer_distance = 100;
@@ -187,7 +202,8 @@ Shader "Unlit/GroundPlaneOverlay"
           _Color.w = .1;
           return grid * _Color;
         }
-      ENDCG
+      ENDHLSL
     }
   }
 }
+

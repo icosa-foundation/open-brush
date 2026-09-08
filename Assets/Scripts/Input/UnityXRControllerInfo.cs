@@ -19,17 +19,18 @@ using System;
 
 namespace TiltBrush
 {
-    public class UnityXRControllerInfo : ControllerInfo
+    public class UnityXRControllerInfo : ControllerInfo, IDisposable
     {
         private UnityEngine.XR.InputDevice device;
         private readonly UnityXRInputAction actionSet = new();
+        private bool m_IsDisposed;
 
         private Vector2 padAxisPrevious = new Vector2();
         private const float kInputScrollScalar = 0.5f;
 
         private bool isBrush = false;
 
-        private StylusInputs stylusState => VrStylusHandler.m_Instance.CurrentState;
+        private StylusInputs stylusState => VrStylusHandler.m_Instance?.CurrentState;
 
         private string actionMap
         {
@@ -47,6 +48,18 @@ namespace TiltBrush
         {
             isBrush = !isBrush;
             Init();
+        }
+
+        public void Dispose()
+        {
+            if (m_IsDisposed)
+            {
+                return;
+            }
+
+            actionSet.Disable();
+            actionSet.Dispose();
+            m_IsDisposed = true;
         }
 
         private void Init()
@@ -136,7 +149,20 @@ namespace TiltBrush
 
         private InputAction FindAction(string actionName)
         {
-            return actionSet.asset.FindActionMap($"{actionMap}").FindAction($"{actionName}");
+            InputActionMap map = actionSet.asset.FindActionMap(actionMap);
+            return map?.FindAction(actionName);
+        }
+
+        private bool IsActionInProgress(string actionName)
+        {
+            InputAction action = FindAction(actionName);
+            return action != null && action.inProgress;
+        }
+
+        private bool IsActionPressed(string actionName)
+        {
+            InputAction action = FindAction(actionName);
+            return action != null && action.IsPressed();
         }
 
         public override bool IsTrackedObjectValid
@@ -150,19 +176,22 @@ namespace TiltBrush
 
         public override Vector2 GetPadValue()
         {
-            return FindAction("PadAxis").ReadValue<Vector2>();
+            InputAction action = FindAction("PadAxis");
+            return action != null ? action.ReadValue<Vector2>() : Vector2.zero;
         }
 
         public override Vector2 GetThumbStickValue()
         {
-            return FindAction("ThumbAxis").ReadValue<Vector2>();
+            InputAction action = FindAction("ThumbAxis");
+            return action != null ? action.ReadValue<Vector2>() : Vector2.zero;
         }
 
         public override void Update()
         {
             base.Update();
 
-            if (!FindAction("PadTouch").inProgress)
+            InputAction padTouch = FindAction("PadTouch");
+            if (padTouch == null || !padTouch.inProgress)
             {
                 padAxisPrevious = Vector2.zero;
             }
@@ -170,13 +199,15 @@ namespace TiltBrush
 
         private bool IsStylusActive()
         {
-            return stylusState.isActive && isBrush;
+            return stylusState != null &&
+                stylusState.isActive &&
+                stylusState.isOnRightHand == isBrush;
         }
 
         public override Vector2 GetPadValueDelta()
         {
-            var action = FindAction("ThumbAxis");
-            if (action.inProgress)
+            InputAction action = FindAction("ThumbAxis");
+            if (action != null && action.inProgress)
             {
                 Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
                 Vector2 stick = action.ReadValue<Vector2>();
@@ -185,7 +216,8 @@ namespace TiltBrush
             else
             {
                 action = FindAction("PadAxis");
-                if (FindAction("PadTouch").IsPressed())
+                InputAction padTouch = FindAction("PadTouch");
+                if (action != null && padTouch != null && padTouch.IsPressed())
                 {
                     Vector2 range = App.VrSdk.VrControls.TouchpadActivationRange;
                     Vector2 padAxisCurrent = action.ReadValue<Vector2>();
@@ -220,13 +252,12 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
-#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
                 return stylusState.cluster_front_value ? 1.0f : 0;
             }
-#endif
-            return FindAction("GripAxis").ReadValue<float>();
+            InputAction action = FindAction("GripAxis");
+            return action != null ? action.ReadValue<float>() : 0f;
         }
 
         public override float GetTriggerRatio()
@@ -236,13 +267,12 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
-#if OCULUS_SUPPORTED
             if (IsStylusActive())
             {
                 return Math.Max(stylusState.tip_value, stylusState.cluster_middle_value);
             }
-#endif
-            return FindAction("TriggerAxis").ReadValue<float>();
+            InputAction action = FindAction("TriggerAxis");
+            return action != null ? action.ReadValue<float>() : 0f;
         }
 
         private bool MapVrTouch(VrInput input)
@@ -251,17 +281,17 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                    return FindAction("ThumbTouch").inProgress;
+                    return IsActionInProgress("ThumbTouch");
                 case VrInput.Touchpad:
-                    return FindAction("PadTouch").inProgress;
+                    return IsActionInProgress("PadTouch");
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-                    return FindAction("PrimaryTouch").inProgress;
+                    return IsActionInProgress("PrimaryTouch");
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    return FindAction("SecondaryTouch").inProgress;
+                    return IsActionInProgress("SecondaryTouch");
 
 
             }
@@ -280,33 +310,27 @@ namespace TiltBrush
             {
                 case VrInput.Directional:
                 case VrInput.Thumbstick:
-                    return FindAction("ThumbButton").IsPressed();
+                    return IsActionPressed("ThumbButton");
                 case VrInput.Touchpad:
-                    return FindAction("PadButton").IsPressed();
+                    return IsActionPressed("PadButton");
                 case VrInput.Trigger:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                         return stylusState.cluster_middle_value > 0.2 || stylusState.tip_value > 0.2;
-#endif
-                    return FindAction("TriggerAxis").IsPressed();
+                    return IsActionPressed("TriggerAxis");
                 case VrInput.Grip:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                         return stylusState.cluster_front_value;
-#endif
-                    return FindAction("GripAxis").IsPressed();
+                    return IsActionPressed("GripAxis");
                 case VrInput.Button01:
                 case VrInput.Button04:
                 case VrInput.Button06:
-#if OCULUS_SUPPORTED
                     if (IsStylusActive())
                         return stylusState.cluster_back_value;
-#endif
-                    return FindAction("PrimaryButton").IsPressed();
+                    return IsActionPressed("PrimaryButton");
                 case VrInput.Button02:
                 case VrInput.Button03:
                 case VrInput.Button05:
-                    return FindAction("SecondaryButton").IsPressed();
+                    return IsActionPressed("SecondaryButton");
             }
             return false;
         }
@@ -350,7 +374,13 @@ namespace TiltBrush
 
             if (!string.IsNullOrEmpty(selectedAction))
             {
-                return down ? FindAction(selectedAction).WasPressedThisFrame() : FindAction(selectedAction).WasReleasedThisFrame();
+                InputAction action = FindAction(selectedAction);
+                if (action == null)
+                {
+                    return false;
+                }
+
+                return down ? action.WasPressedThisFrame() : action.WasReleasedThisFrame();
             }
             return false;
         }

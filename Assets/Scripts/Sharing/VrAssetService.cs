@@ -407,7 +407,7 @@ namespace TiltBrush
             // If auto profiling is enabled, disable automatic Icosa downloading.
             if (!App.UserConfig.Profiling.AutoProfile)
             {
-                VerifyIcosaConnectionAndCheckApiVersionAsync();
+                VerifyIcosaConnectionAndCheckApiVersion();
             }
             else
             {
@@ -550,12 +550,12 @@ namespace TiltBrush
             m_UploadTask?.Cancel();
         }
 
-        private async void VerifyIcosaConnectionAndCheckApiVersionAsync()
+        private void VerifyIcosaConnectionAndCheckApiVersion()
         {
-            m_IcosaStatus = await GetIcosaStatus();
+            m_IcosaStatus = GetIcosaStatus();
         }
 
-        private async Task<IcosaStatus> GetIcosaStatus()
+        private IcosaStatus GetIcosaStatus()
         {
             // UserConfig override
             if (App.UserConfig.Flags.DisableIcosa)

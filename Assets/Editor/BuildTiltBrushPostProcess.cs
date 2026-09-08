@@ -25,6 +25,10 @@ public class BuildTiltBrushPostProcess
     : IPostGenerateGradleAndroidProject
 #endif
 {
+    private const string kAndroidNamespace = "http://schemas.android.com/apk/res/android";
+    private const string kPlayerActivity = "com.unity3d.player.UnityPlayerActivity";
+    private const string kGameActivity = "com.unity3d.player.UnityPlayerGameActivity";
+
     // OVRGradleGeneration is 99999, so we'll just go to the extreme.
     public int callbackOrder => 1000000;
 
@@ -38,70 +42,86 @@ public class BuildTiltBrushPostProcess
             XmlDocument doc = new XmlDocument();
             doc.Load(file);
 
-            XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
-            var androidNamespaceURI = element.GetAttribute("xmlns:android");
-
-
-
-#if FORCE_QUEST_SUPPORT_DEVICE
-            UnityEngine.Debug.Log("Add quest as a supported devices");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application",
-                "meta-data",
-                "com.oculus.supportedDevices",
-                true,
-                true,
-                "value", "quest"
-            );
-#endif
-
-#if FORCE_FOCUSAWARE
-            UnityEngine.Debug.Log("Add com.oculus.vr.focusaware");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application/activity",
-                "meta-data",
-                "com.oculus.vr.focusaware",
-                true,
-                true,
-                "value", "true"
-            );
-#endif
-
-#if ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
-            UnityEngine.Debug.Log("Add com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
-                    true,
-                    true,
-                    "required", "true"
-            );
-#endif
-
-#if FORCE_HEADTRACKING
-            UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "android.hardware.vr.headtracking",
-                    true,
-                    true,
-                    "version", "1",
-                    "required", "true"
-            );
-#endif
+            ConfigureGameActivityLauncher(doc);
 
             doc.Save(file);
         }
         catch (System.Exception e)
         {
             UnityEngine.Debug.LogException(e);
+            throw;
         }
+    }
+
+    /// <summary>
+    /// Makes the generated launcher agree with Unity's selected Android application entry point.
+    /// </summary>
+    /// <remarks>
+    /// Our custom source manifest declares PlayerActivity so established Android targets retain
+    /// their existing launcher. For an AndroidXR build, BuildTiltBrush temporarily selects
+    /// GameActivity as required by Unity's Android XR package. Unity disables PlayerActivity but
+    /// leaves the custom MAIN/LAUNCHER intent on it, producing an application with no usable
+    /// launcher.
+    ///
+    /// Change only the generated Gradle manifest. This avoids modifying and reimporting a shared
+    /// project asset during a build, and leaves every build that selects PlayerActivity untouched.
+    /// Unity's XR manifest processor will merge its Android XR properties into this activity later.
+    /// </remarks>
+    private static void ConfigureGameActivityLauncher(XmlDocument doc)
+    {
+        if (PlayerSettings.Android.applicationEntry != AndroidApplicationEntry.GameActivity)
+        {
+            return;
+        }
+
+        var namespaceManager = new XmlNamespaceManager(doc.NameTable);
+        namespaceManager.AddNamespace("android", kAndroidNamespace);
+        var launcherActivity = doc.SelectSingleNode(
+            "/manifest/application/activity[@android:name='" + kPlayerActivity + "']" +
+            "[intent-filter/action[@android:name='android.intent.action.MAIN']]" +
+            "[intent-filter/category[@android:name='android.intent.category.LAUNCHER']]",
+            namespaceManager) as XmlElement;
+        if (launcherActivity == null)
+        {
+            throw new BuildTiltBrush.BuildFailedException(
+                "The generated Android manifest has no PlayerActivity launcher to convert " +
+                "for the selected GameActivity entry point.");
+        }
+
+        // Preserve Unity's generated launch mode, configuration changes, orientation, and other
+        // project-specific attributes. Only the GameActivity-specific identity and bootstrap
+        // values need to differ.
+        launcherActivity.SetAttribute("name", kAndroidNamespace, kGameActivity);
+        launcherActivity.SetAttribute("theme", kAndroidNamespace,
+            "@style/BaseUnityGameActivityTheme");
+        launcherActivity.SetAttribute("enabled", kAndroidNamespace, "true");
+
+        SetMetadata(doc, launcherActivity, namespaceManager,
+            "unityplayer.UnityActivity", "true");
+        SetMetadata(doc, launcherActivity, namespaceManager,
+            "android.app.lib_name", "game");
+
+        UnityEngine.Debug.Log(
+            "Configured the generated Android manifest to launch GameActivity.");
+    }
+
+    private static void SetMetadata(
+        XmlDocument doc,
+        XmlElement activity,
+        XmlNamespaceManager namespaceManager,
+        string name,
+        string value)
+    {
+        var metadata = activity.SelectSingleNode(
+            "meta-data[@android:name='" + name + "']", namespaceManager) as XmlElement;
+        if (metadata == null)
+        {
+            metadata = doc.CreateElement("meta-data");
+            metadata.SetAttribute("name", kAndroidNamespace, name);
+            activity.AppendChild(metadata);
+        }
+
+        metadata.SetAttribute("value", kAndroidNamespace, value);
     }
 
     private static void AddOrRemoveTag(XmlDocument doc, string @namespace, string path, string elementName, string name,
