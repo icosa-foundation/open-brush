@@ -13,7 +13,7 @@ OcclusionCullingSettings:
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 9
+  serializedVersion: 10
   m_Fog: 0
   m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_FogMode: 3
@@ -38,13 +38,12 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
-  m_GIWorkflowMode: 0
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 1
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -67,9 +66,6 @@ LightmapSettings:
     m_LightmapParameters: {fileID: 0}
     m_LightmapsBakeMode: 1
     m_TextureCompression: 1
-    m_FinalGather: 0
-    m_FinalGatherFiltering: 1
-    m_FinalGatherRayCount: 256
     m_ReflectionCompression: 2
     m_MixedBakeMode: 2
     m_BakeBackend: 0
@@ -250,8 +246,7 @@ LightingSettings:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
-  serializedVersion: 6
-  m_GIWorkflowMode: 0
+  serializedVersion: 10
   m_EnableBakedLightmaps: 1
   m_EnableRealtimeLightmaps: 1
   m_RealtimeEnvironmentLighting: 1
@@ -261,9 +256,17 @@ LightingSettings:
   m_UsingShadowmask: 1
   m_BakeBackend: 1
   m_LightmapMaxSize: 1024
+  m_LightmapSizeFixed: 0
+  m_UseMipmapLimits: 1
   m_BakeResolution: 40
   m_Padding: 2
   m_LightmapCompression: 2
+  m_LightmapPackingMode: 1
+  m_LightmapPackingMethod: 0
+  m_XAtlasPackingAttempts: 16384
+  m_XAtlasBruteForce: 0
+  m_XAtlasBlockAlign: 0
+  m_XAtlasRepackUnderutilizedLightmaps: 1
   m_AO: 0
   m_AOMaxDistance: 1
   m_CompAOExponent: 1
@@ -274,13 +277,11 @@ LightingSettings:
   m_FilterMode: 1
   m_LightmapParameters: {fileID: 15204, guid: 0000000000000000f000000000000000, type: 0}
   m_ExportTrainingData: 0
+  m_EnableWorkerProcessBaking: 1
   m_TrainingDataDestination: TrainingData
   m_RealtimeResolution: 2
   m_ForceWhiteAlbedo: 0
   m_ForceUpdates: 0
-  m_FinalGather: 0
-  m_FinalGatherRayCount: 256
-  m_FinalGatherFiltering: 1
   m_PVRCulling: 1
   m_PVRSampling: 1
   m_PVRDirectSampleCount: 32
@@ -304,9 +305,15 @@ LightingSettings:
   m_PVRFilteringAtrousPositionSigmaDirect: 0.5
   m_PVRFilteringAtrousPositionSigmaIndirect: 2
   m_PVRFilteringAtrousPositionSigmaAO: 1
-  m_PVRTiledBaking: 0
-  m_NumRaysToShootPerTexel: -1
   m_RespectSceneVisibilityWhenBakingGI: 0
+  m_DirectLightSamplingMode: 2
+  m_DirectRISCandidateCount: 4
+  m_IndirectLightSamplingMode: 1
+  m_IndirectRISCandidateCount: 1
+  m_LightAccelerationStructure: 0
+  m_LightGridMaxCells: 262144
+  m_DirectEmissiveSamplingMode: 2
+  m_IndirectEmissiveSamplingMode: 1
 --- !u!1001 &1684060408
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -367,43 +374,35 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 23498908856396254, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23498908856396254, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 23745920848099880, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23745920848099880, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 23812645850062454, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23812645850062454, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 23842888787298190, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23842888787298190, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 23882558773302420, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23882558773302420, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 23953077191729990, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 23953077191729990, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 33152007889839154, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 33152007889839154, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_Mesh
       value: 
       objectReference: {fileID: 0}
-    - target: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810,
-        type: 3}
+    - target: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
       propertyPath: m_VrCamera
       value: 
       objectReference: {fileID: 1815664868}
@@ -414,8 +413,7 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
 --- !u!114 &1684060409 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 114044421867326160, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
   m_PrefabInstance: {fileID: 1684060408}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
@@ -569,8 +567,7 @@ Camera:
   m_StereoSeparation: 0.022
 --- !u!4 &2033527394 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 4662475461949518, guid: 770ce3c2e018d6242be0bad3df133810, type: 3}
   m_PrefabInstance: {fileID: 1684060408}
   m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807

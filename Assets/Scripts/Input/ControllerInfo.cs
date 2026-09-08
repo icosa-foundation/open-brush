@@ -27,7 +27,6 @@ namespace TiltBrush
         // Used by API commands
 
         private bool m_WasActive;
-        private bool m_BecameActiveThisFrame;
         private bool m_BecameInactiveThisFrame;
 
         private float m_TimeBecameActive;
@@ -50,7 +49,6 @@ namespace TiltBrush
             {
                 // The frame it becomes active
                 m_WasActive = true;
-                m_BecameActiveThisFrame = true;
                 m_BecameInactiveThisFrame = false;
                 m_TimeBecameActive = Time.realtimeSinceStartup;
             }
@@ -58,14 +56,12 @@ namespace TiltBrush
             {
                 // Every frame while active
                 m_WasActive = true;
-                m_BecameActiveThisFrame = false;
                 m_BecameInactiveThisFrame = false;
             }
             else if (!IsTrigger() && m_WasActive)
             {
                 // The frame it becomes inactive
                 m_WasActive = false;
-                m_BecameActiveThisFrame = false;
                 m_BecameInactiveThisFrame = true;
                 m_TimeBecameInactive = Time.realtimeSinceStartup;
             }
@@ -73,7 +69,6 @@ namespace TiltBrush
             {
                 // Every frame while inactive
                 m_WasActive = false;
-                m_BecameActiveThisFrame = false;
                 m_BecameInactiveThisFrame = false;
             }
 
@@ -302,6 +297,8 @@ namespace TiltBrush
                 case SketchCommands.DuplicateSelection:
                     return GetVrInputDown(VrInput.Button04);
                 case SketchCommands.ToggleSelection:
+                case SketchCommands.ToggleReshape:
+                case SketchCommands.ToggleTintColor:
                     return GetVrInputDown(VrInput.Button04);
             }
             return false;

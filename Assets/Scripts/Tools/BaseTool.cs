@@ -48,6 +48,8 @@ namespace TiltBrush
             EmptyTool,
             CameraPathTool,
             FlyTool,
+            ReshapeTool = 5100,
+            TintColorTool = 5101,
             ManualColocationTool = 1022,
             TexturePaintTool = 5900,
             ScriptedTool = 6001,
