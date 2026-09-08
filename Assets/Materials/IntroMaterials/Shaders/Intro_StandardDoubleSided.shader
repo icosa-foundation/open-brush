@@ -20,80 +20,109 @@ Properties {
   _MainTex ("Base (RGB) TransGloss (A)", 2D) = "white" {}
   _BumpMap ("Normalmap", 2D) = "bump" {}
   _Cutoff ("Alpha cutoff", Range(0,1)) = 0.5
+  _IntroDissolve ("Intro Dissolve", Range(0,1)) = 0
 }
-    SubShader {
-    Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-    LOD 400
+
+SubShader {
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" }
+
+  Pass {
+    Tags { "LightMode"="UniversalForward" }
     Cull Off
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma target 3.0
-    #pragma surface surf StandardSpecular vertex:vert alphatest:_Cutoff addshadow
+    #pragma vertex Vert
+    #pragma fragment Frag
 
-    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
-    struct Input {
-      float2 uv_MainTex;
-      float2 uv_BumpMap;
-      float4 color : Color;
-    };
+    TEXTURE2D(_MainTex);
+    SAMPLER(sampler_MainTex);
+    TEXTURE2D(_BumpMap);
+    SAMPLER(sampler_BumpMap);
 
-    sampler2D _MainTex;
-    sampler2D _BumpMap;
-    fixed4 _Color;
+    CBUFFER_START(UnityPerMaterial)
+    half4 _Color;
+    half4 _SpecColor;
+    float4 _MainTex_ST;
+    float4 _BumpMap_ST;
+    half _Cutoff;
     half _Shininess;
     half _IntroDissolve;
+    CBUFFER_END
 
-    void vert (inout appdata_full i /* out Input o*/) {
-      // UNITY_INITIALIZE_OUTPUT(Input, o);
-      // o.tangent = v.tangent;
-      i.color = TbVertToNative(i.color);
-      // Custom curve for the intro dissolve effect
-      float ramp = saturate(smoothstep(120,-5, i.vertex.y));
-      i.color.a *= lerp(1.0,  ramp*(1.0 - _IntroDissolve), _IntroDissolve);
+    struct Attributes {
+      float4 positionOS : POSITION;
+      float3 normalOS : NORMAL;
+      float4 tangentOS : TANGENT;
+      float2 uv0 : TEXCOORD0;
+      half4 color : COLOR;
+    };
+
+    struct Varyings {
+      float4 positionCS : SV_POSITION;
+      float2 uvMain : TEXCOORD0;
+      float2 uvBump : TEXCOORD1;
+      half4 color : COLOR;
+      float3 positionWS : TEXCOORD2;
+      half3 normalWS : TEXCOORD3;
+      half3 tangentWS : TEXCOORD4;
+      half3 bitangentWS : TEXCOORD5;
+    };
+
+    Varyings Vert(Attributes IN) {
+      Varyings OUT;
+
+      VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
+      VertexNormalInputs normal = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
+      OUT.positionCS = pos.positionCS;
+      OUT.positionWS = pos.positionWS;
+      OUT.normalWS = normal.normalWS;
+      OUT.tangentWS = normal.tangentWS;
+      OUT.bitangentWS = normal.bitangentWS;
+      OUT.uvMain = TRANSFORM_TEX(IN.uv0, _MainTex);
+      OUT.uvBump = TRANSFORM_TEX(IN.uv0, _BumpMap);
+
+      half ramp = saturate(smoothstep(120.0h, -5.0h, IN.positionOS.y));
+      half fade = lerp(1.0h, ramp * (1.0h - _IntroDissolve), _IntroDissolve);
+      OUT.color = IN.color;
+      OUT.color.a *= fade;
+      return OUT;
     }
 
-    void surf (Input IN, inout SurfaceOutputStandardSpecular o) {
-      fixed4 tex = tex2D(_MainTex, IN.uv_MainTex);
-      o.Albedo = tex.rgb * _Color.rgb * IN.color.rgb;
-      o.Smoothness = _Shininess;
-      o.Specular = _SpecColor;
-      o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_BumpMap));
-      o.Alpha = tex.a * IN.color.a;
+    half4 Frag(Varyings IN, bool isFrontFace : SV_IsFrontFace) : SV_Target {
+      half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvMain);
+      half alpha = tex.a * IN.color.a;
+      clip(alpha - _Cutoff);
+
+      half3 tangentNormal = UnpackNormal(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, IN.uvBump));
+      tangentNormal.z *= isFrontFace ? 1.0h : -1.0h;
+      half3 normalWS = normalize(
+          tangentNormal.x * IN.tangentWS +
+          tangentNormal.y * IN.bitangentWS +
+          tangentNormal.z * IN.normalWS);
+
+      Light mainLight = GetMainLight(TransformWorldToShadowCoord(IN.positionWS));
+      half3 viewDir = SafeNormalize(GetWorldSpaceViewDir(IN.positionWS));
+      half3 lightDir = mainLight.direction;
+      half3 halfVec = SafeNormalize(lightDir + viewDir);
+
+      half ndotl = saturate(dot(normalWS, lightDir));
+      half ndoth = saturate(dot(normalWS, halfVec));
+      half spec = pow(ndoth, max(1.0h, _Shininess * 128.0h));
+
+      half3 lighting = SampleSH(normalWS);
+      lighting += ndotl * mainLight.color * mainLight.shadowAttenuation;
+
+      half3 rgb = tex.rgb * _Color.rgb * IN.color.rgb * lighting;
+      rgb += _SpecColor.rgb * spec * mainLight.color * mainLight.shadowAttenuation;
+      return half4(rgb, 1.0h);
     }
-      ENDCG
-    }
+    ENDHLSL
+  }
+}
 
-  // -------------------------------------------------------------------------------------------- //
-  // MOBILE VERSION - Lambert SurfaceShader, Alpha Test, No Bump.
-  // -------------------------------------------------------------------------------------------- //
-  SubShader{
-    Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
-    LOD 50
-
-    CGPROGRAM
-      #pragma surface surf Lambert vertex:vert alphatest:_Cutoff
-      #pragma target 3.0
-
-      sampler2D _MainTex;
-      fixed4 _Color;
-
-      struct Input {
-        float2 uv_MainTex;
-        float4 color : COLOR;
-      };
-
-      void vert (inout appdata_full v) {
-      }
-
-      void surf (Input IN, inout SurfaceOutput o) {
-        fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-        o.Albedo = c.rgb * IN.color.rgb;
-        o.Alpha = c.a * IN.color.a;
-      }
-
-    ENDCG
-  } // SubShader
-
-  FallBack "Transparent/Cutout/VertexLit"
+Fallback Off
 }

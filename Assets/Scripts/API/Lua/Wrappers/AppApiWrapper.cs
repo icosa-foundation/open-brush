@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System;
 using MoonSharp.Interpreter;
+using ODS;
 using UnityAsyncAwaitUtil;
 using UnityEngine;
 
@@ -190,7 +191,7 @@ namespace TiltBrush
         public static void SetFont(string fontData) => ApiManager.Instance.SetTextFont(fontData);
 
         [LuaDocsDescription("Take a color snapshot and optionally save depth and normals sidecars to your Snapshots folder")]
-        [LuaDocsExample(@"App:TakeSnapshop(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, true)")]
+        [LuaDocsExample(@"App:TakeSnapshot(Transform:New(0, 12, 3), ""mysnapshot.png"", 1024, 768, 1, true, false, true, true)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
         [LuaDocsParameter("filename", "The filename for the color snapshot and base name for optional sidecars. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         [LuaDocsParameter("width", "Image width")]
@@ -199,31 +200,162 @@ namespace TiltBrush
         [LuaDocsParameter("renderDepth", "If true, also save a depth map with the suffix _depth.png")]
         [LuaDocsParameter("removeBackground", "If true then render with a transparent background")]
         [LuaDocsParameter("renderNormals", "If true, also save a normals map with the suffix _normals.png")]
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool renderDepth = false, bool removeBackground = false, bool renderNormals = false)
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static void TakeSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling = 1f,
+            bool renderDepth = false,
+            bool removeBackground = false,
+            bool renderNormals = false,
+            DynValue includePostProcessing = null)
         {
             ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
             ApiMethods.ValidateSnapshotDimensions(
                 width, height, includesSidecars: renderDepth || renderNormals);
-            ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+            ScreenshotManager.TakeSnapshot(
+                tr,
+                filename,
+                width,
+                height,
+                superSampling,
+                removeBackground,
+                renderDepth,
+                renderNormals,
+                ResolveCapturePostProcessing(includePostProcessing));
+        }
+
+        [LuaDocsDescription("Queue an Auto GIF capture to the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeAutoGif(""autogif.gif"", true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved GIF")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeAutoGif(string filename, DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureAutoGif(
+                filename,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Queue a Time GIF capture to the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeTimeGif(""timegif.gif"", true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved GIF")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeTimeGif(string filename, DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureTimeGif(
+                filename,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Render the DropCam camera to a PNG in the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeDropCamSnapshot(""dropcam.png"", 1024, 576, true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved PNG")]
+        [LuaDocsParameter("width", "Image width")]
+        [LuaDocsParameter("height", "Image height")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeDropCamSnapshot(
+            string filename,
+            int width = 1024,
+            int height = 576,
+            DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureDropCam(
+                filename,
+                width,
+                height,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
+        }
+
+        [LuaDocsDescription("Render the save-icon/sketch-thumbnail camera to a PNG in the Snapshots folder")]
+        [LuaDocsExample(@"App:TakeSaveIconSnapshot(""saveicon.png"")")]
+        [LuaDocsParameter("filename", "The filename to use for the saved PNG")]
+        public static string TakeSaveIconSnapshot(string filename)
+        {
+            return ApiMethods.CaptureSaveIcon(filename);
+        }
+
+        [LuaDocsDescription("Queue a short video-camera frame-sequence capture to the Videos folder")]
+        [LuaDocsExample(@"App:TakeVideo(""video.mp4"", 1.0, true)")]
+        [LuaDocsParameter("filename", "The filename to use for the saved video")]
+        [LuaDocsParameter("seconds", "Capture duration in seconds")]
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static string TakeVideo(
+            string filename,
+            float seconds = 1.0f,
+            DynValue includePostProcessing = null)
+        {
+            return ApiMethods.CaptureVideo(
+                filename,
+                seconds,
+                ResolveCapturePostProcessing(includePostProcessing).ToString());
         }
 
         [LuaDocsDescription("Take a 360-degree snapshot of the scene and save it")]
-        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096)")]
+        [LuaDocsExample(@"App:Take360Snapshot(Transform:Position(0, 12, 3), ""my360snapshot.png"", 4096, true)")]
         [LuaDocsParameter("tr", "Determines the position and orientation of the camera used to take the snapshot")]
         [LuaDocsParameter("filename", "A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected")]
         [LuaDocsParameter("width", "The width of the image")]
-        public static void Take360Snapshot(TrTransform tr, string filename, int width = 4096)
+        [LuaDocsParameter("includePostProcessing", "If true then include capture post-processing. If omitted, uses App:PostProcessing state")]
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            bool includePostProcessing)
         {
+            Take360Snapshot(tr, filename, width, DynValue.NewBoolean(includePostProcessing));
+        }
+
+        public static void Take360Snapshot(
+            TrTransform tr,
+            string filename,
+            int width = 4096,
+            DynValue includePostProcessing = null)
+        {
+            bool usePostProcessing = ResolveCapturePostProcessing(includePostProcessing);
             ApiMethods.ValidateSafeFilename(filename, "snapshot filename");
             var odsDriver = App.Instance.InitOds();
+            for (Transform transform = odsDriver.OdsCamera.transform; transform != null; transform = transform.parent)
+            {
+                transform.gameObject.SetActive(true);
+            }
             App.Scene.AsScene[odsDriver.gameObject.transform] = tr;
             odsDriver.FramesToCapture = 1;
             odsDriver.OdsCamera.basename = filename;
             odsDriver.OdsCamera.outputFolder = App.SnapshotPath();
             odsDriver.OdsCamera.imageWidth = width;
+            odsDriver.OdsCamera.includePostProcessing = usePostProcessing;
+            odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
             AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+        }
+
+        private static bool ResolveCapturePostProcessing(DynValue includePostProcessing)
+        {
+            if (includePostProcessing == null ||
+                includePostProcessing.Type == DataType.Nil ||
+                includePostProcessing.Type == DataType.Void)
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (includePostProcessing.Type == DataType.Boolean)
+            {
+                return includePostProcessing.Boolean;
+            }
+
+            if (includePostProcessing.Type == DataType.String &&
+                bool.TryParse(includePostProcessing.String, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"[OB_URP_CAPTURE_API] Invalid Lua post-processing value " +
+                $"{includePostProcessing}; using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
         }
 
         private static bool _IsSubdirectory(string path, string basePath)

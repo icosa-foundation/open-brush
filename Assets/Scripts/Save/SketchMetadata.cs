@@ -12,6 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them - for this file that would
+// corrupt saved .tilt sketches.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -748,6 +764,9 @@ namespace TiltBrush
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
+        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] Opacities { get; set; }
     }
 
     [Serializable]
@@ -785,6 +804,25 @@ namespace TiltBrush
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
         public bool TwoSided { get; set; }
+    }
+
+    [Serializable]
+    public class TiltSoundClip
+    {
+        public string FilePath { get; set; } // relative to Media Library folder
+        public float AspectRatio { get; set; }
+        public bool Pinned;
+        public TrTransform Transform;
+        public bool Paused { get; set; }
+        public float Time { get; set; }
+        public float Volume { get; set; }
+        public bool Loop { get; set; } = true;
+        public float SpatialBlend { get; set; }
+        public float MinDistance { get; set; } = 1f;
+        public float MaxDistance { get; set; } = 500f;
+        // Group ID for widget. 0 for ungrouped items.
+        public uint GroupId { get; set; }
+        public int LayerId { get; set; }
     }
 
     [Serializable]
@@ -937,6 +975,9 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltText[] TextWidgets { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltSoundClip[] SoundClips { get; set; }
+
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltPortal[] Portals { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
