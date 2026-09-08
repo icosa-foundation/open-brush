@@ -15,7 +15,6 @@ on:  # yamllint disable-line rule:truthy
 
 env:
   UNITY_VERSION: "6000.6.0f1"
-  PHOTON_SDK_VERSION: "fusion-2.1.2-voice-2.63-realtime5"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -411,7 +410,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -615,7 +614,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
   signmacos:
     name: Sign the MacOS .app
