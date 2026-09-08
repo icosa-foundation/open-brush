@@ -12,6 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using System.Collections.Generic;
 using System;
 using System.Globalization;
@@ -148,6 +163,14 @@ namespace TiltBrush
                     WriteObjectsAndConnections(exporter, payload);
 
                     string[] exportedFiles = exporter.EndExport();
+
+                    var skipped = exporter.SkippedMaterialNames.ToList();
+                    if (skipped.Count > 0)
+                    {
+                        OutputWindowScript.Error(
+                            "Some strokes were not exported",
+                            $"No glTF material data for: {string.Join(", ", skipped)}");
+                    }
                     return new ExportResults
                     {
                         success = true,
@@ -159,9 +182,8 @@ namespace TiltBrush
                 {
                     OutputWindowScript.Error("glTF export failed", e.Message);
                     // TODO: anti-pattern. Let the exception bubble up so caller can log it properly
-                    // Actually, InvalidOperationException is now somewhat expected in experimental, since
-                    // the gltf exporter does not check IExportableMaterial.SupportsDetailedMaterialInfo.
-                    // But we still want the logging for standalone builds.
+                    // Materials without detailed info (eg experimental brushes) no longer land here;
+                    // ExportMeshPayload skips their geometry instead. See SkippedMaterialNames.
                     Debug.LogException(e);
                     return new ExportResults { success = false };
                 }
@@ -326,7 +348,10 @@ namespace TiltBrush
                         // Condense the two levels into one; give the top-level node the same name
                         // it would have had had it been multi-level.
                         GlTF_Node newNode = exporter.ExportMeshPayload(payload, first, groupNode);
-                        newNode.PresentationNameOverride = rootNodeName;
+                        if (newNode != null)
+                        {
+                            newNode.PresentationNameOverride = rootNodeName;
+                        }
                     }
                     else
                     {

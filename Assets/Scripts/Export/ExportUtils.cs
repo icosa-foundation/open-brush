@@ -278,20 +278,20 @@ namespace TiltBrush
         // This class uses the order of export to determine the id.
         public class DeterministicIdGenerator
         {
-            private Dictionary<int, int> m_instanceIdToId = new Dictionary<int, int>();
+            private Dictionary<UnityEngine.Object, int> m_objectToId =
+                new Dictionary<UnityEngine.Object, int>();
             private int m_nextAvailable = 1;
             public int GetIdFromInstanceId(UnityEngine.Object obj)
             {
-                int instanceId = obj.GetInstanceID();
-                if (m_instanceIdToId.ContainsKey(instanceId))
+                if (m_objectToId.ContainsKey(obj))
                 {
-                    return m_instanceIdToId[instanceId];
+                    return m_objectToId[obj];
                 }
                 else
                 {
                     var ret = m_nextAvailable;
                     m_nextAvailable += 1;
-                    m_instanceIdToId[instanceId] = ret;
+                    m_objectToId[obj] = ret;
                     return ret;
                 }
             }

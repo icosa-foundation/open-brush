@@ -358,7 +358,7 @@ namespace TiltBrush
             m_GaussianCaptureText.alignment = TextAlignmentOptions.Center;
             m_GaussianCaptureText.color = Color.white;
             m_GaussianCaptureText.fontSize = 1.0f;
-            m_GaussianCaptureText.enableWordWrapping = false;
+            m_GaussianCaptureText.textWrappingMode = TextWrappingModes.NoWrap;
             m_GaussianCaptureText.overflowMode = TextOverflowModes.Overflow;
             m_GaussianCaptureText.outlineColor = Color.black;
             m_GaussianCaptureText.outlineWidth = 0.2f;

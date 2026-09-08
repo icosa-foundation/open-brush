@@ -22,8 +22,7 @@ MonoBehaviour:
   UseFileSystemWatcher: 1
   EnableAutosave: 1
   QuickLoadMaxDistancePerFrame: 40
-  IntroSketchPrefab: {fileID: 1843608203, guid: f9e36942d6b3ed84ba2b8b6e21505c95,
-    type: 3}
+  IntroSketchPrefab: {fileID: 1843608203, guid: f9e36942d6b3ed84ba2b8b6e21505c95, type: 3}
   EnableIcosaPreload: 1
   AvoidUploadHandlerFile: 1
   EnableExportFbx: 1
@@ -32,7 +31,7 @@ MonoBehaviour:
   EnableExportUsd: 1
   EnableExportMemoryOptimization: 1
   EnableMulticamPreview: 1
-  EnabledMulticamStyles: 000000000100000002000000030000000400000005000000
+  EnabledMulticamStyles: 000000000100000002000000030000000400000005000000i
   MaxSnapshotDimension: 16000
   FrameRateToPreviewRenderGap:
     serializedVersion: 2

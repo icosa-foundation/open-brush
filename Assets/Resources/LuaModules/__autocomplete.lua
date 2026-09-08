@@ -82,7 +82,8 @@ function App:SetFont(fontData) end
 ---@param renderDepth? boolean If true, also save a depth map with the suffix _depth.png
 ---@param removeBackground? boolean If true then render with a transparent background
 ---@param renderNormals? boolean If true, also save a normals map with the suffix _normals.png
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals) end
+---@param includePostProcessing? boolean If true then include capture post-processing. If omitted, uses App:PostProcessing state
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals, includePostProcessing) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
@@ -159,6 +160,12 @@ function Brush:GetTypes(includeTags, excludeTags) end
 
 
 function Brush:JitterColor() end
+
+---@param color Color The color to set
+function Brush:SetColorOverride(color) end
+
+---@param mode ColorOverrideMode The mode to set
+function Brush:SetColorOverrideMode(mode) end
 
 ---@param size number How many frames of position/rotation to remember
 function Brush:ResizeHistory(size) end
@@ -1978,6 +1985,9 @@ function Symmetry:ClearColors() end
 ---@param color Color The color to add
 function Symmetry:AddColor(color) end
 
+---@param color Color The color to set
+function Symmetry:SetColors(color) end
+
 ---@param colors Color[] The list of colors to set
 function Symmetry:SetColors(colors) end
 
@@ -1993,6 +2003,15 @@ function Symmetry:ClearBrushes() end
 
 ---@param brushes string[] The list of brushes to set. Either the names or the GUIDs of the brushes
 function Symmetry:SetBrushes(brushes) end
+
+---@param color Color The color to set
+function Symmetry:SetColorOverrides(color) end
+
+---@param mode ColorOverrideMode The mode to set
+function Symmetry:SetColorOverrideModes(mode) end
+
+
+function Symmetry:ClearColorOverrides() end
 
 
 ---@return string[] # 
@@ -2960,11 +2979,20 @@ SymmetryWallpaperType.cmm = nil
 
 
 
+---@class ColorOverrideMode
+ColorOverrideMode = {}
+ColorOverrideMode.None = nil
+ColorOverrideMode.Replace = nil
+ColorOverrideMode.Multiply = nil
+ColorOverrideMode.Add = nil
+
+
+
 ---@class Tool
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
----@field endPoint Transform The position and orientation of the point where the trigger was released
+---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
----@field rotation Rotation The rotation from startPoint to endPoint
+---@field rotation Vector3 Legacy controller-up vector at release. Use endPoint.rotation for full release orientation.
 Tool = {}
 
 ---@class json
