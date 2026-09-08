@@ -29,11 +29,11 @@ MonoBehaviour:
     descriptor: {fileID: 11400000, guid: 2c424631fdf55254282d1aa5405ad63a, type: 2}
   m_SurfaceShaderMaterials:
   - shaderUrl: https://vr.google.com/shaders/w/gvrss/paper.json
-    material: {fileID: 2100000, guid: 8fbdd8c77c3f8b84faba601e88846f48, type: 2}
+    material: {fileID: 2100000, guid: a42e33215e7e4c9fba2c1a88d2d590d9, type: 2}
     descriptor: {fileID: 11400000, guid: 0e87b49c65463a343a448a556d7d6c3e, type: 2}
   - shaderUrl: https://vr.google.com/shaders/w/gvrss/gem.json
-    material: {fileID: 2100000, guid: 79b25d2d8ffdf4c4eb448df9609dfdc7, type: 2}
+    material: {fileID: 2100000, guid: d5fe9e3c747c4143bce1de0a9ce21fc1, type: 2}
     descriptor: {fileID: 11400000, guid: d6c87eafa4cdba042933c1b4f6da46f7, type: 2}
   - shaderUrl: https://vr.google.com/shaders/w/gvrss/glass.json
-    material: {fileID: 2100000, guid: 537db0387b31e004888533b91562f23d, type: 2}
+    material: {fileID: 2100000, guid: ea98d47c97114267b85ea1133cfb3259, type: 2}
     descriptor: {fileID: 11400000, guid: ba0e0f27d49da824aa74ab60edd90a56, type: 2}

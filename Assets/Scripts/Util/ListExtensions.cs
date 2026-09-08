@@ -20,7 +20,12 @@ using System.Runtime.InteropServices;
 namespace TiltBrush
 {
 
-#if !(NET_4_6 && UNITY_2017_1_OR_NEWER) // Causes type not to load in 2017.1 + .net 4.6
+    // A generic type may not have explicit layout: the runtime refuses to load it with
+    // "Generic class cannot have explicit layout". That applies to both the .NET Framework
+    // and .NET Standard profiles, so this is keyed on the Unity version alone rather than on
+    // NET_4_6, which is only defined for the former. The sequential fields below land on the
+    // same offsets on 64-bit, which is what Convert's pointer arithmetic relies on.
+#if !UNITY_2017_1_OR_NEWER
     [StructLayout(LayoutKind.Explicit)]
 #endif
     public struct ConvertHelper<TFrom, TTo>
@@ -48,7 +53,8 @@ namespace TiltBrush
 #endif
         }
 
-#if !(NET_4_6 && UNITY_2017_1_OR_NEWER) // Causes type not to load in 2017.1 + .net 4.6
+        // Must match the guard on the StructLayout attribute above.
+#if !UNITY_2017_1_OR_NEWER
         [FieldOffset(0)] public long before;
         [FieldOffset(8)] public TFrom input;
         [FieldOffset(16)] public TTo output;

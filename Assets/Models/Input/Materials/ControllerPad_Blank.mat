@@ -90,3 +90,4 @@ Material:
     - _SpecColor: {r: 0.1, g: 0.1, b: 0.1, a: 0}
     - _WorldSpaceFogRange: {r: 75, g: 100, b: 0, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

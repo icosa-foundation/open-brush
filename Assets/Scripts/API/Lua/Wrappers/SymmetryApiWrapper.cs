@@ -221,6 +221,16 @@ namespace TiltBrush
             PointerManager.m_Instance.SymmetryPointerColors.Add(color);
         }
 
+        [LuaDocsDescription("Sets all symmetry pointer colors to a single color")]
+        [LuaDocsParameter("color", "The color to set")]
+        [LuaDocsExample("Symmetry:SetColors(Color.red)")]
+        public static void SetColors(Color color)
+        {
+            PointerManager.m_Instance.SymmetryPointerColors = Enumerable.Repeat(
+                color, PointerManager.m_Instance.SymmetryPointerColors.Count
+            ).ToList();
+        }
+
         [LuaDocsDescription("Sets the list of symmetry pointer colors")]
         [LuaDocsParameter("colors", "The list of colors to set")]
         [LuaDocsExample("Symmetry:SetColors({Color.red, Color.green, Color.blue})")]
@@ -261,6 +271,29 @@ namespace TiltBrush
             PointerManager.m_Instance.SymmetryPointerBrushes = brushes.Select(
                 x => ApiMethods.LookupBrushDescriptor(x)
             ).Where(x => x != null).ToList();
+        }
+
+        [LuaDocsDescription("Sets the override color for all symmetry pointer brushes")]
+        [LuaDocsParameter("color", "The color to set")]
+        [LuaDocsExample("Symmetry:SetColorOverrides(Color.red)")]
+        public static void SetColorOverrides(Color color)
+        {
+            PointerManager.m_Instance.SetAllPointerColorOverrides(color);
+        }
+
+        [LuaDocsDescription("Sets the override color mode for all symmetry pointer brushes")]
+        [LuaDocsParameter("mode", "The mode to set")]
+        [LuaDocsExample("Symmetry:SetColorOverrideModes(ColorOverrideMode.Blend)")]
+        public static void SetColorOverrideModes(ColorOverrideMode mode)
+        {
+            PointerManager.m_Instance.SetAllPointerColorOverrideModes(mode);
+        }
+
+        [LuaDocsDescription("Clears the list of symmetry pointer override colors")]
+        [LuaDocsExample("Symmetry:ClearColorOverride()")]
+        public static void ClearColorOverrides()
+        {
+            PointerManager.m_Instance.ClearSymmetryPointerColorOverrides();
         }
 
         [LuaDocsDescription("Gets the list of symmetry pointer brushes as brush names")]
