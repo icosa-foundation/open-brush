@@ -185,7 +185,7 @@ namespace TiltBrush
 
         private static bool IsDiagnosticLoggingEnabled()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEBUG
             string envValue = System.Environment.GetEnvironmentVariable("OPENBRUSH_LOG_SHADER_WARMUP");
             if (envValue == "1" ||
                 string.Equals(envValue, "true", System.StringComparison.OrdinalIgnoreCase))

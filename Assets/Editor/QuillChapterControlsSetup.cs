@@ -178,7 +178,7 @@ namespace TiltBrush
             tmp.text = text;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.overflowMode = TextOverflowModes.Overflow;
 
             var rt = tmp.GetComponent<RectTransform>();

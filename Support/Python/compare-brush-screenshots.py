@@ -80,7 +80,9 @@ def compare_pair(
     old_pixels = np.asarray(Image.open(old_path).convert("RGB"))
     new_pixels = np.asarray(Image.open(new_path).convert("RGB"))
     if old_pixels.shape != new_pixels.shape:
-        raise ValueError(f"image dimensions differ: {old_pixels.shape} != {new_pixels.shape}")
+        raise ValueError(
+            f"image dimensions differ: {old_pixels.shape} != {new_pixels.shape}"
+        )
 
     full_similarity = structural_similarity(
         old_pixels,
@@ -109,14 +111,13 @@ def compare_pair(
     return float(foreground_similarity), float(full_similarity)
 
 
-def main() -> int:
-    args = parse_args()
-    old_files = {
-        path.name.casefold(): path for path in args.old_dir.glob(args.pattern)
-    }
-    new_files = {
-        path.name.casefold(): path for path in args.new_dir.glob(args.pattern)
-    }
+def compare_files(
+    old_files: dict[str, Path],
+    new_files: dict[str, Path],
+    background_threshold: int,
+    mask_radius: int,
+    crop_padding: int,
+) -> tuple[list[tuple[float, float, str]], list[str]]:
     common_names = sorted(old_files.keys() & new_files.keys())
     results: list[tuple[float, float, str]] = []
     failures: list[str] = []
@@ -128,17 +129,30 @@ def main() -> int:
             foreground_similarity, full_similarity = compare_pair(
                 old_path,
                 new_path,
-                args.background_threshold,
-                args.mask_radius,
-                args.crop_padding,
+                background_threshold,
+                mask_radius,
+                crop_padding,
             )
         except (OSError, ValueError) as error:
             failures.append(f"{old_path.name}: {error}")
             continue
         brush_name = old_path.stem.removeprefix("brush-")
-        results.append(
-            (1 - foreground_similarity, 1 - full_similarity, brush_name)
-        )
+        results.append((1 - foreground_similarity, 1 - full_similarity, brush_name))
+
+    return results, failures
+
+
+def main() -> int:
+    args = parse_args()
+    old_files = {path.name.casefold(): path for path in args.old_dir.glob(args.pattern)}
+    new_files = {path.name.casefold(): path for path in args.new_dir.glob(args.pattern)}
+    results, failures = compare_files(
+        old_files,
+        new_files,
+        args.background_threshold,
+        args.mask_radius,
+        args.crop_padding,
+    )
 
     results.sort(reverse=True)
     limit = len(results) if args.top <= 0 else min(args.top, len(results))

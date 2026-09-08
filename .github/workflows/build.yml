@@ -14,7 +14,8 @@ on:  # yamllint disable-line rule:truthy
     - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "6000.3.18f1"
+  UNITY_VERSION: "6000.6.0f1"
+  PHOTON_SDK_VERSION: "fusion-2.1.2-voice-2.63-realtime5"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -234,25 +235,25 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Oculus Quest (1), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android OpenXR
             targetPlatform: Android
@@ -260,28 +261,38 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android OpenXR Google Play
+          - name: Android AndroidXR
             targetPlatform: Android
-            vrsdk: OpenXR
+            vrsdk: AndroidXR
             cache: Android_Vulkan
-            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             androidExportType: androidAppBundle
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android Viewer
+          # The Viewer is a product variant, not a flat-only runtime. Keep a generic
+          # OpenXR APK alongside the AndroidXR AAB so both of its runtime modes are
+          # exercised without conflating the Google Play and non-Google artifacts.
+          - name: Android Viewer OpenXR
             targetPlatform: Android
             vrsdk: OpenXR
             cache: Android_Vulkan
-            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android Viewer AndroidXR
+            targetPlatform: Android
+            vrsdk: AndroidXR
+            cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             androidExportType: androidAppBundle
             extra_defines: OPEN_BRUSH_VIEWER
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Oculus Quest (1)
             targetPlatform: Android
@@ -290,7 +301,7 @@ jobs:
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME  # :(
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -299,7 +310,7 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER  # The Fusion plugin does not reliably set these Fusion symbols for iOS command-line builds.
 
     steps:
       - name: Set masking
@@ -375,7 +386,7 @@ jobs:
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
-          ref: fusion-2.0.12-voice-2.63-unity6
+          ref: fusion-2.1.2-voice-2.63-realtime5-unity6
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -393,7 +404,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -601,7 +612,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
 
   signmacos:
     name: Sign the MacOS .app
@@ -1228,7 +1239,7 @@ jobs:
             "viewer_changes_not_sent_for_review"
 
   publish_google_play:
-    name: Publish Google Play Android XR Release
+    name: Publish Google Play AndroidXR Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1237,11 +1248,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR Google Play)
+      - name: Download Build Artifacts (Android AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR Google Play
-          path: build_android_openxr_google_play
+          name: Android AndroidXR
+          path: build_android_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1249,18 +1260,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play" >&2
-            find build_android_openxr_google_play -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_androidxr" >&2
+            find build_android_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrush_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrush_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrush_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrush_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrush_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrush_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1268,7 +1279,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
-          releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrush_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -1280,7 +1291,7 @@ jobs:
           changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
-    name: Publish Google Play Viewer Release
+    name: Publish Google Play AndroidXR Viewer Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1289,11 +1300,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android Viewer)
+      - name: Download Build Artifacts (Android Viewer AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Viewer
-          path: build_android_openxr_google_play_viewer
+          name: Android Viewer AndroidXR
+          path: build_android_viewer_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1301,18 +1312,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play_viewer -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play_viewer -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_viewer_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_viewer_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play_viewer" >&2
-            find build_android_openxr_google_play_viewer -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_viewer_androidxr" >&2
+            find build_android_viewer_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrushViewer_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrushViewer_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1320,7 +1331,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrushviewer
-          releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrushViewer_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}

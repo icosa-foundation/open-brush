@@ -633,6 +633,8 @@ namespace TiltBrush.Tests
             manager.ResetPlaybackDiagnosticsForTests();
 
             var measurement = new RenderMeasurement();
+            using var batchRecorder = Unity.Profiling.ProfilerRecorder.StartNew(
+                Unity.Profiling.ProfilerCategory.Render, "Batches Count");
             long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
             var frameTimings = new FrameTiming[1];
             for (int sample = 0; sample < kRenderSampleCount; sample++)
@@ -645,7 +647,7 @@ namespace TiltBrush.Tests
                 measurement.EditorFrameMilliseconds.Add(UnityStats.frameTime * 1000.0);
                 measurement.EditorRenderMilliseconds.Add(UnityStats.renderTime * 1000.0);
                 measurement.DrawCalls.Add(UnityStats.drawCalls);
-                measurement.Batches.Add(UnityStats.batches);
+                measurement.Batches.Add((int)batchRecorder.LastValue);
                 measurement.SetPassCalls.Add(UnityStats.setPassCalls);
                 measurement.Vertices.Add(UnityStats.vertices);
                 measurement.Triangles.Add(UnityStats.triangles);

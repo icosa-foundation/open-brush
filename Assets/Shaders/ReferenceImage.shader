@@ -33,8 +33,8 @@ Shader "Custom/ReferenceImage" {
             #pragma multi_compile_instancing
             #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
             #include "UnityCG.cginc"
-            #include "Assets/Shaders/Include/Hdr.cginc"
-            #include "Assets/Shaders/Include/MobileSelection.cginc"
+            #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
+            #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
             fixed4 _Color;
             sampler2D _MainTex;

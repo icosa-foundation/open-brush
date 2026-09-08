@@ -41,7 +41,7 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Ods.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
 
       fixed4 _Color;
       float _NearFadeDistanceStart;

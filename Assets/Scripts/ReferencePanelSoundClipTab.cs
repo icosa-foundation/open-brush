@@ -99,12 +99,20 @@ namespace TiltBrush
 
         public void HandleLoopToggle(ActionToggleButton btn)
         {
-            SelectedSoundClip.Loop = btn.ToggleState;
+            SoundClip.SoundClipController soundClip = SelectedSoundClip;
+            if (soundClip != null)
+            {
+                soundClip.Loop = btn.ToggleState;
+            }
         }
 
         public void HandleSpatialBlendToggle(ActionToggleButton btn)
         {
-            SelectedSoundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+            SoundClip.SoundClipController soundClip = SelectedSoundClip;
+            if (soundClip != null)
+            {
+                soundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+            }
         }
 
         public float SelectedSoundClipMinDistance

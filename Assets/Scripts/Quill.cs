@@ -84,6 +84,10 @@ namespace TiltBrush
             bool flattenHierarchy = true, bool layersCanTransform = false,
             int chapterIndex = -1)
         {
+            // Clear any environment state cached by a previous load so a failure part-way through
+            // this one can't leave the previous project's background or skybox behind.
+            LastLoadedBackgroundColor = null;
+            LastLoaded360SkyboxName = null;
             if (loadAnimations)
             {
                 LastLoadedBackgroundColor = null;
@@ -127,7 +131,6 @@ namespace TiltBrush
                 // Store background color (Quill colors are linear; convert to gamma for Unity)
                 var sqBg = sequence.BackgroundColor;
                 LastLoadedBackgroundColor = new Color(sqBg.R, sqBg.G, sqBg.B).gamma;
-                LastLoaded360SkyboxName = null;
 
                 if (!flattenHierarchy)
                 {
@@ -241,8 +244,8 @@ namespace TiltBrush
 
                 }
 
-                if (allCollectedStrokes.Count > 0 || createdWidgets.Count > 0 ||
-                    createdLayers.Count > 0)
+                if (allCollectedStrokes.Count > 0 || createdLayers.Count > 0 ||
+                    createdWidgets.Count > 0)
                 {
                     // Single undo step for all strokes, layers, and widgets
                     var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
@@ -522,21 +525,13 @@ namespace TiltBrush
 
         private static void ApplyImageOpacity(ImageWidget image, float opacity)
         {
-            if (image == null || image.m_ImageQuad == null)
+            if (image == null)
             {
                 return;
             }
 
-            float alpha = Mathf.Clamp01(opacity);
-            var mat = image.m_ImageQuad.material;
-            if (mat == null)
-            {
-                return;
-            }
-
-            Color color = mat.color;
-            color.a *= alpha;
-            mat.color = color;
+            // Set through the widget so the value is saved with the sketch.
+            image.Opacity = opacity;
         }
 
         /// <summary>

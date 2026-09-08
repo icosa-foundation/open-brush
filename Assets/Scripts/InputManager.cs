@@ -402,7 +402,12 @@ namespace TiltBrush
 
         public void EnablePoseTracking(bool enabled)
         {
-            UnityEngine.XR.XRDevice.DisableAutoXRCameraTracking(App.VrSdk.GetVrCamera(), !enabled);
+            var vrCamera = App.VrSdk.GetVrCamera();
+            var poseDriver = vrCamera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            if (poseDriver != null)
+            {
+                poseDriver.enabled = enabled;
+            }
             if (enabled)
             {
                 App.VrSdk.RestorePoseTracking();
@@ -432,6 +437,24 @@ namespace TiltBrush
         {
             CreateControllerInfos();
             ShowControllers(false);
+        }
+
+        void OnDisable()
+        {
+            if (m_ControllerInfos == null)
+            {
+                return;
+            }
+
+            foreach (ControllerInfo controllerInfo in m_ControllerInfos)
+            {
+                if (controllerInfo is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+
+            m_ControllerInfos = null;
         }
 
         public void CreateControllerInfos()

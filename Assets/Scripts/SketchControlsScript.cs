@@ -876,12 +876,15 @@ namespace TiltBrush
             m_CameraPathCaptureRig.Init();
 
             m_SketchSurfacePanel = m_SketchSurface.GetComponent<SketchSurfacePanel>();
+
+            // Must precede PanelManager.Init: creating the panels instantiates prefabs whose
+            // Awake/OnEnable read WidgetManager state, which does not exist until Init runs.
+            m_WidgetManager = GetComponent<WidgetManager>();
+            m_WidgetManager.Init();
+
             m_PanelManager = GetComponent<PanelManager>();
             m_PanelManager.Init();
             InitGazePanels();
-
-            m_WidgetManager = GetComponent<WidgetManager>();
-            m_WidgetManager.Init();
 
             m_InputStateConfigs = new InputStateConfig[(int)InputState.Num];
             for (int i = 0; i < (int)InputState.Num; ++i)

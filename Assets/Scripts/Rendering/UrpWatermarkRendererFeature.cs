@@ -38,81 +38,14 @@ namespace TiltBrush
             renderer.EnqueuePass(m_Pass);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            m_Pass?.Dispose();
-        }
-
         private class WatermarkPass : ScriptableRenderPass
         {
-            private static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
             private WatermarkEffect m_Watermark;
-            private RTHandle m_TemporaryColorTexture;
 
             public void Setup(WatermarkEffect watermark)
             {
                 m_Watermark = watermark;
                 requiresIntermediateTexture = true;
-            }
-
-            public void Dispose()
-            {
-                m_TemporaryColorTexture?.Release();
-                m_TemporaryColorTexture = null;
-            }
-
-            [System.Obsolete]
-            public override void Execute(
-                ScriptableRenderContext context,
-                ref RenderingData renderingData)
-            {
-                if (m_Watermark == null || !m_Watermark.ShouldRender)
-                {
-                    return;
-                }
-
-                Material material = m_Watermark.Material;
-                if (material == null)
-                {
-                    return;
-                }
-
-                RenderTextureDescriptor descriptor =
-                    renderingData.cameraData.cameraTargetDescriptor;
-                descriptor.depthBufferBits = 0;
-
-                RenderingUtils.ReAllocateIfNeeded(
-                    ref m_TemporaryColorTexture,
-                    descriptor,
-                    FilterMode.Bilinear,
-                    TextureWrapMode.Clamp,
-                    name: "_OpenBrushWatermarkTemp");
-
-                m_Watermark.ConfigureMaterial(descriptor.width, descriptor.height);
-
-                RTHandle cameraColorTarget =
-                    renderingData.cameraData.renderer.cameraColorTargetHandle;
-                CommandBuffer cmd = CommandBufferPool.Get("Open Brush Watermark");
-                try
-                {
-                    Blitter.BlitCameraTexture(
-                        cmd,
-                        cameraColorTarget,
-                        m_TemporaryColorTexture);
-                    cmd.SetGlobalTexture(BlitTexture, m_TemporaryColorTexture);
-                    Blitter.BlitCameraTexture(
-                        cmd,
-                        m_TemporaryColorTexture,
-                        cameraColorTarget,
-                        material,
-                        0);
-                    context.ExecuteCommandBuffer(cmd);
-                }
-                finally
-                {
-                    CommandBufferPool.Release(cmd);
-                    m_Watermark = null;
-                }
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)

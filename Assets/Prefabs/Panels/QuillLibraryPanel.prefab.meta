@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Prefabs/Panels/QuillLibraryPanel.prefab.meta
 guid: 25ef2a4f5d9580940a252d69638f77ce
+========
+guid: bf78ede73a1b5654cb9943c8944692b4
+>>>>>>>> main:Assets/Prefabs/Panels/ReferencePanel/ReferencePanelIconVideo 1.prefab.meta
 PrefabImporter:
   externalObjects: {}
   userData: 

@@ -77,7 +77,7 @@ Shader "Custom/CustomMirrorGuide" {
       #pragma multi_compile_instancing
 
       #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-      #include "Assets/Shaders/Include/Math.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Math.cginc"
 
       CBUFFER_START(UnityPerMaterial)
       half4 _Color;

@@ -33,7 +33,7 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
 #endif
 
 #if !UNITY_2020_3_OR_NEWER

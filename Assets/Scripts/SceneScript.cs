@@ -64,7 +64,8 @@ namespace TiltBrush
         ///
         /// Safe to use during Awake()
         ///
-        public TransformExtensions.RelativeAccessor AsScene;
+        // Constructed in Awake; runtime-only helper.
+        [NonSerialized] public TransformExtensions.RelativeAccessor AsScene;
 
         [NonSerialized]
         public bool disableTiltProtection;

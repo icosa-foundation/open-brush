@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
 using GLTF.Schema;
 using Newtonsoft.Json.Linq;
 using TiltBrush;
@@ -150,8 +151,9 @@ namespace UnityGLTF.Plugins
         {
             if (_audioExtension.audio == null) return;
 
-            // Store outside the sound clip library so the catalog doesn't pick these up.
-            string importDir = Path.Combine(Application.persistentDataPath, "GltfAudio");
+            // Store outside the sound clip library so the catalog doesn't pick these up. This is a
+            // content-addressed cache: repeated imports reuse files, and the OS may purge them.
+            string importDir = Path.Combine(Application.temporaryCachePath, "GltfAudio");
             Directory.CreateDirectory(importDir);
 
             for (int i = 0; i < _audioExtension.audio.Count; i++)
@@ -178,8 +180,12 @@ namespace UnityGLTF.Plugins
                         continue;
                     }
 
-                    string filePath = GetUniquePath(importDir, $"audio_{i:D3}{ext}");
-                    File.WriteAllBytes(filePath, buffer.ToArray());
+                    byte[] contents = buffer.ToArray();
+                    string filePath = GetCachePath(importDir, contents, ext);
+                    if (!File.Exists(filePath))
+                    {
+                        File.WriteAllBytes(filePath, contents);
+                    }
                     _audioFilePaths[i] = filePath;
                 }
                 else if (!string.IsNullOrEmpty(audio.uri))
@@ -190,16 +196,19 @@ namespace UnityGLTF.Plugins
                         continue;
                     }
 
-                    string srcPath = Path.GetFullPath(Path.Combine(GltfDirectory, audio.uri));
-                    if (!File.Exists(srcPath))
+                    string srcPath = ResolveSidecarPath(audio.uri);
+                    if (srcPath == null)
                     {
-                        Debug.LogWarning($"[OBAudio] Audio sidecar file not found: {srcPath}");
+                        Debug.LogWarning($"[OBAudio] Audio sidecar file not found for uri '{audio.uri}' in {GltfDirectory}");
                         continue;
                     }
 
                     string ext = Path.GetExtension(srcPath);
-                    string destPath = GetUniquePath(importDir, $"audio_{i:D3}{ext}");
-                    File.Copy(srcPath, destPath);
+                    string destPath = GetCachePath(importDir, srcPath, ext);
+                    if (!File.Exists(destPath))
+                    {
+                        File.Copy(srcPath, destPath);
+                    }
                     _audioFilePaths[i] = destPath;
                 }
             }
@@ -220,7 +229,18 @@ namespace UnityGLTF.Plugins
                 return;
             }
 
-            var source = emitter.sources[0].Value;
+            foreach (var sourceId in emitter.sources)
+            {
+                if (sourceId != null)
+                {
+                    SetupAudioSourceOnNode(pending.NodeObject, emitter, sourceId.Value);
+                }
+            }
+        }
+
+        private void SetupAudioSourceOnNode(
+            GameObject nodeObject, KHR_AudioEmitter emitter, KHR_AudioSource source)
+        {
             if (source.audio == null)
             {
                 Debug.LogWarning($"[OBAudio] Source has no audio reference, skipping");
@@ -240,13 +260,14 @@ namespace UnityGLTF.Plugins
             bool loop = source.loop ?? true;
             bool autoPlay = source.autoPlay ?? true;
 
-            var audioSource = pending.NodeObject.AddComponent<AudioSource>();
+            var audioSource = nodeObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false; // GltfAudioSource handles playback
             audioSource.spatialBlend = isSpatial ? 1f : 0f;
             audioSource.minDistance = emitter.positional?.refDistance ?? 1f;
             audioSource.maxDistance = emitter.positional?.maxDistance ?? 500f;
 
-            var gltfAudio = pending.NodeObject.AddComponent<GltfAudioSource>();
+            var gltfAudio = nodeObject.AddComponent<GltfAudioSource>();
+            gltfAudio.SetAudioSource(audioSource);
             gltfAudio.AbsoluteFilePath = filePath;
             gltfAudio.Gain = gain;
             gltfAudio.Loop = loop;
@@ -255,6 +276,56 @@ namespace UnityGLTF.Plugins
             gltfAudio.MaxDistance = emitter.positional?.maxDistance ?? 500f;
             gltfAudio.AutoPlay = autoPlay;
         }
+
+        /// glTF uris are percent-encoded, so "My%20Track.ogg" has to be unescaped before it can be
+        /// used as a file name. Falls back to the raw uri for files whose names really do contain
+        /// escape-like sequences.
+        private string ResolveSidecarPath(string uri)
+        {
+            string decoded = uri;
+            try
+            {
+                decoded = Uri.UnescapeDataString(uri);
+            }
+            catch (UriFormatException)
+            {
+                // Leave the uri as-is and let the existence checks below decide.
+            }
+
+            foreach (string candidate in new[] { decoded, uri })
+            {
+                string path;
+                try
+                {
+                    path = Path.GetFullPath(Path.Combine(GltfDirectory, candidate));
+                }
+                catch (ArgumentException)
+                {
+                    continue;
+                }
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+            return null;
+        }
+
+        private static string GetCachePath(string directory, byte[] contents, string extension)
+        {
+            using var sha256 = SHA256.Create();
+            return Path.Combine(directory, $"{FormatHash(sha256.ComputeHash(contents))}{extension}");
+        }
+
+        private static string GetCachePath(string directory, string sourcePath, string extension)
+        {
+            using var stream = File.OpenRead(sourcePath);
+            using var sha256 = SHA256.Create();
+            return Path.Combine(directory, $"{FormatHash(sha256.ComputeHash(stream))}{extension}");
+        }
+
+        private static string FormatHash(byte[] hash) =>
+            BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
 
         private static string MimeTypeToExtension(string mimeType)
         {
@@ -267,19 +338,5 @@ namespace UnityGLTF.Plugins
             };
         }
 
-        private static string GetUniquePath(string directory, string filename)
-        {
-            string path = Path.Combine(directory, filename);
-            if (!File.Exists(path)) return path;
-
-            string name = Path.GetFileNameWithoutExtension(filename);
-            string ext = Path.GetExtension(filename);
-            for (int i = 1; i < 1000; i++)
-            {
-                path = Path.Combine(directory, $"{name}_{i}{ext}");
-                if (!File.Exists(path)) return path;
-            }
-            return Path.Combine(directory, $"{name}_{Guid.NewGuid()}{ext}");
-        }
     }
 }

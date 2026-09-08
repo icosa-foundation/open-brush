@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/Editor/Tests/TestAnimationCanvasLifecycle.cs.meta
 guid: dbe07078c327f0b4e854523a9f20ac11
+========
+guid: b3ca1f22a8ea4a708fe7f277949c33df
+>>>>>>>> main:Assets/Editor/Tests/TestGsplatMigrationConfiguration.cs.meta
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

@@ -28,7 +28,7 @@ Shader "Custom/PolyAssetThumbnail" {
             #pragma fragment frag
             #pragma multi_compile_instancing
             #include "UnityCG.cginc"
-            #include "Assets/Shaders/Include/Hdr.cginc"
+            #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
 
             fixed4 _Color;
             sampler2D _MainTex;

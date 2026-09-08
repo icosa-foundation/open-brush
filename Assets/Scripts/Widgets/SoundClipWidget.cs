@@ -49,7 +49,7 @@ namespace TiltBrush
 
         public override float? AspectRatio => 1.0f;
 
-        public TrTransform SaveTransform
+        public new TrTransform SaveTransform
         {
             get
             {
@@ -106,15 +106,18 @@ namespace TiltBrush
             // store off the sound clip state so that if the widget gets shown again it will reset to that.
             if (SoundClipController != null)
             {
+                // Reads through to m_InitialState if the controller hasn't finished loading yet,
+                // so hiding mid-load doesn't replace pending state with uninitialized defaults.
+                var state = GetAudioSaveState();
                 m_InitialState = new SoundClipState
                 {
-                    Paused = !SoundClipController.Playing,
-                    Time = SoundClipController.Time,
-                    Volume = SoundClipController.Volume,
-                    Loop = SoundClipController.Loop,
-                    SpatialBlend = SoundClipController.SpatialBlend,
-                    MinDistance = SoundClipController.MinDistance,
-                    MaxDistance = SoundClipController.MaxDistance,
+                    Paused = state.paused,
+                    Time = state.time,
+                    Volume = state.volume,
+                    Loop = state.loop,
+                    SpatialBlend = state.spatialBlend,
+                    MinDistance = state.minDistance,
+                    MaxDistance = state.maxDistance,
                 };
                 SoundClipController.Dispose();
                 SoundClipController = null;
@@ -478,10 +481,11 @@ namespace TiltBrush
 
         /// Returns audio settings for GLTF export, reading from the controller when initialized
         /// and falling back to m_InitialState or defaults otherwise.
-        public (float volume, bool loop, float spatialBlend, float minDistance, float maxDistance) GetAudioExportSettings()
+        public (bool paused, float volume, bool loop, float spatialBlend,
+            float minDistance, float maxDistance) GetAudioExportSettings()
         {
             var state = GetAudioSaveState();
-            return (state.volume, state.loop, state.spatialBlend,
+            return (state.paused, state.volume, state.loop, state.spatialBlend,
                 state.minDistance, state.maxDistance);
         }
 

@@ -50,7 +50,6 @@ namespace TiltBrush
         [SerializeField] private AppQualitySettingLevels m_QualityLevels;
         [UsedImplicitly] // on Android
         [SerializeField] private AppQualitySettingLevels m_MobileQualityLevels;
-        [SerializeField] private GpuTextRender m_DebugText;
 
         /// Used to track when quality level actually changes.
         private int m_lastQualityLevel = -1;
@@ -64,8 +63,6 @@ namespace TiltBrush
 
         private int m_NumFramesFpsTooLow;
         private int m_NumFramesFpsHighEnough;
-        private int m_NumFramesGpuTooHigh;
-        private int m_NumFramesGpuLowEnough;
 
         /// A number from 0 (mobile, lowest) to 3 (future, highest)
         public int QualityLevel
@@ -168,16 +165,6 @@ namespace TiltBrush
 
             m_FrameTimeStamps = new Queue<double>();
 
-            // Set up the OVR overlay for the dynamic quality debug readout.
-#if OCULUS_SUPPORTED
-            if (m_DebugText && m_DebugText.gameObject.activeInHierarchy)
-            {
-                OVROverlay overlay = m_DebugText.gameObject.AddComponent<OVROverlay>();
-                overlay.textures = new Texture[] { m_DebugText.RenderedTexture };
-                overlay.isDynamic = true;
-            }
-#endif // OCULUS_SUPPORTED
-
             // Push current level to camera settings.
             SetQualityLevel(QualityLevel);
         }
@@ -200,7 +187,8 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
-            // Update the counts for fps / gpu levels high or low
+            // Update the frame counts. There is no cross-platform GPU load signal,
+            // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
             int fps = m_FramesInLastSecond;
             if (fps <= AppQualityLevels.LowerQualityFpsTrigger)
             {
@@ -220,32 +208,10 @@ namespace TiltBrush
                 m_NumFramesFpsHighEnough = 0;
             }
 
-            float gpuUtilization = App.VrSdk.GetGpuUtilization() * 100f;
-            if (gpuUtilization >= AppQualityLevels.LowerQualityGpuTrigger)
-            {
-                m_NumFramesGpuTooHigh++;
-            }
-            else
-            {
-                m_NumFramesGpuTooHigh = 0;
-            }
-
-            if (gpuUtilization <= AppQualityLevels.HigherQualityGpuTrigger)
-            {
-                m_NumFramesGpuLowEnough++;
-            }
-            else
-            {
-                m_NumFramesGpuLowEnough = 0;
-            }
-
             if (SelectionQualityOverrideActive)
             {
                 m_NumFramesFpsTooLow = 0;
                 m_NumFramesFpsHighEnough = 0;
-                m_NumFramesGpuTooHigh = 0;
-                m_NumFramesGpuLowEnough = 0;
-                UpdateDynamicQualityDebugText(fps, gpuUtilization);
                 return;
             }
 
@@ -260,27 +226,16 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            if (m_NumFramesGpuTooHigh >= limit)
-            {
-                if (QualityLevel > 0)
-                {
-                    QualityLevel--;
-                }
-                m_NumFramesGpuTooHigh = 0;
-            }
-
             limit = AppQualityLevels.FramesForHigherQuality;
-            if (m_NumFramesGpuLowEnough >= limit && m_NumFramesFpsHighEnough >= limit)
+            if (m_NumFramesFpsHighEnough >= limit)
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
                 {
                     QualityLevel++;
                 }
-                m_NumFramesGpuLowEnough = 0;
                 m_NumFramesFpsHighEnough = 0;
             }
 
-            UpdateDynamicQualityDebugText(fps, gpuUtilization);
         }
 
         private static bool SelectionQualityOverrideActive
@@ -296,28 +251,6 @@ namespace TiltBrush
                     SelectionManager.m_Instance.HasSelection &&
                     !SelectionEffect.DisableSelectionEffects;
             }
-        }
-
-        private void UpdateDynamicQualityDebugText(int fps, float gpuUtilization)
-        {
-#if OCULUS_SUPPORTED
-            if (m_DebugText == null || !m_DebugText.gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            m_DebugText.SetData(0, fps);
-            m_DebugText.SetData(1, gpuUtilization);
-            m_DebugText.SetData(2, QualityLevel);
-            m_DebugText.SetData(3, m_NumFramesFpsHighEnough);
-            m_DebugText.SetData(4, AppQualityLevels.HigherQualityFpsTrigger);
-            m_DebugText.SetData(5, m_NumFramesGpuLowEnough);
-            m_DebugText.SetData(6, AppQualityLevels.HigherQualityGpuTrigger);
-            m_DebugText.SetData(7, m_NumFramesFpsTooLow);
-            m_DebugText.SetData(8, AppQualityLevels.LowerQualityFpsTrigger);
-            m_DebugText.SetData(9, m_NumFramesGpuTooHigh);
-            m_DebugText.SetData(10, AppQualityLevels.LowerQualityGpuTrigger);
-#endif // OCULUS_SUPPORTED
         }
 
         void SetQualityLevel(int value)

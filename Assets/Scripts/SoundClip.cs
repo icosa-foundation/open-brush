@@ -311,7 +311,7 @@ namespace TiltBrush
             string url = new Uri(path).AbsoluteUri;
             using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
-                uwr.SendWebRequest();
+                _ = uwr.SendWebRequest();
 
                 try
                 {
@@ -349,6 +349,18 @@ namespace TiltBrush
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
+            }
+            if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
+            {
+                if (audioClipTask.Status == TaskStatus.RanToCompletion)
+                {
+                    AudioClip abandonedClip = audioClipTask.Result;
+                    if (abandonedClip != null)
+                    {
+                        UnityEngine.Object.Destroy(abandonedClip);
+                    }
+                }
+                yield break;
             }
             if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
             {
@@ -422,10 +434,18 @@ namespace TiltBrush
                     controller.Dispose();
                 }
             }
-            if (Thumbnail != null)
+            ReleaseThumbnail();
+        }
+
+        public void ReleaseThumbnail()
+        {
+            if (Thumbnail == null)
             {
-                UnityEngine.Object.Destroy(Thumbnail);
+                return;
             }
+
+            UnityEngine.Object.Destroy(Thumbnail);
+            Thumbnail = null;
         }
 
         public override string ToString()

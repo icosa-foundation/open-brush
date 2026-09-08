@@ -31,6 +31,7 @@ Category {
       Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
+      #pragma multi_compile_instancing
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile_particles
@@ -38,9 +39,9 @@ Category {
       #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
 
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Particles.cginc"
-      #include "Assets/ThirdParty/Shaders/Noise.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Particles.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/ThirdParty/Noise.cginc"
 
       sampler2D _MainTex;
       fixed4 _TintColor;
@@ -49,6 +50,7 @@ Category {
         float4 vertex : SV_POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -80,8 +82,10 @@ Category {
 
       v2f vert (ParticleVertex_t v)
       {
+        UNITY_SETUP_INSTANCE_ID(v);
         v.color = TbVertToSrgb(v.color);
-        v2f o;
+        v2f o = (v2f)0;
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -112,6 +116,7 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         float4 c =  tex2D(_MainTex, i.texcoord);
         c *= i.color * _TintColor;
         c = SrgbToNative(c);

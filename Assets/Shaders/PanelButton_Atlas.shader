@@ -28,8 +28,8 @@ Shader "Custom/PanelButton_Atlas" {
       #pragma fragment frag
       #pragma multi_compile_instancing
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
       #include "UnityCG.cginc"
 
       sampler2D _MainTex;

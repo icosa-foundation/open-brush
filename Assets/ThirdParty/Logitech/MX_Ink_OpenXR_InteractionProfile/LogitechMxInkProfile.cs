@@ -180,7 +180,7 @@ namespace UnityEngine.XR.OpenXR.Features.Interactions
         }
 
 #if UNITY_EDITOR
-        private static bool OpenXRLoaderEnabledForSelectedBuildTarget(
+        private new static bool OpenXRLoaderEnabledForSelectedBuildTarget(
             BuildTargetGroup targetGroup)
         {
             XRManagerSettings managerSettings =

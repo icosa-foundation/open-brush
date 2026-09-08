@@ -267,7 +267,9 @@ namespace TiltBrush
         private static Dictionary<Guid, BrushDescriptor> GetBrushes()
         {
             var cat = new Dictionary<Guid, BrushDescriptor>();
-            // We don't export experimental brushes brushes in the live prod build.
+            // Both production and experimental brushes go into exportManifest.json. Experimental
+            // brushes aren't in the live prod build, but they can still appear in a sketch being
+            // exported from an experimental build, and exporters need their material info.
             TiltBrushManifest productionManifest = AssetDatabase.LoadAssetAtPath<TiltBrushManifest>(
                 "Assets/Manifest.asset");
 
@@ -616,12 +618,12 @@ namespace TiltBrush
             return exp;
         }
 
-        // Exports all non-experimental brushes along with their material parameters
+        // Exports all brushes (production and experimental) along with their material parameters
         // into a directory structure suitable for submission to
         // google3/googledata/html/external_content/tiltbrush.com/shaders/brushes
         //
         // Input:
-        //   Non-experimental brushes (from Assets/Manifest.asset)
+        //   Brushes from Assets/Manifest.asset and Assets/Manifest_Experimental.asset
         //   Their materials and shaders
         //
         // Output:

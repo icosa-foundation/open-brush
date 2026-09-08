@@ -21,8 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: BasePbrOpaqueDoubleSided
-  m_Shader: {fileID: -6465566751694194690, guid: 3ee4d5b2d39172d49a8ff37c131b37b3,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 3ee4d5b2d39172d49a8ff37c131b37b3, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

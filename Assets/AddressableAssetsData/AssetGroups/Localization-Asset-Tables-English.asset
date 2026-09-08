@@ -13,8 +13,6 @@ MonoBehaviour:
   m_Name: Localization-Asset-Tables-English
   m_EditorClassIdentifier: 
   m_GroupName: Localization-Asset-Tables-English
-  m_Data:
-    m_SerializedData: []
   m_GUID: 1d449fd1f724d4c42aff58cb69505008
   m_SerializeEntries:
   - m_GUID: 288d6c12b8e2ac844879b0b92860c3f4

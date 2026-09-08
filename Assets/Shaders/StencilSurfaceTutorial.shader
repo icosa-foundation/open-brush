@@ -26,7 +26,7 @@ Properties {
 
 CGINCLUDE
   #include "UnityCG.cginc"
-  #include "Assets/Shaders/Include/Brush.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
   #pragma multi_compile _SHAPE_CUBE _SHAPE_SPHERE _SHAPE_CAPSULE
 

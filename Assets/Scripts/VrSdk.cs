@@ -20,6 +20,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
+using UnityEngine.XR.OpenXR;
 using InputDevice = UnityEngine.XR.InputDevice;
 
 namespace TiltBrush
@@ -120,7 +121,18 @@ namespace TiltBrush
 
         public bool IsInitializingUnityXR
         {
-            get => VrControls.Brush.ControllerGeometry.Style == ControllerStyle.InitializingUnityXR;
+            get
+            {
+                if (VrControls == null ||
+                    VrControls.Brush == null ||
+                    VrControls.Brush.ControllerGeometry == null)
+                {
+                    return true;
+                }
+
+                return VrControls.Brush.ControllerGeometry.Style ==
+                    ControllerStyle.InitializingUnityXR;
+            }
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -133,7 +145,8 @@ namespace TiltBrush
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
 
-            bool disableXr = App.UserConfig.Flags.DisableXrMode ||
+            bool disableXr = App.Config.m_SdkMode != SdkMode.UnityXR ||
+                App.UserConfig.Flags.DisableXrMode ||
                 Keyboard.current[Key.D].isPressed;
 
             // Allow forcing of monoscopic mode even if launching in XR
@@ -209,29 +222,6 @@ namespace TiltBrush
 
             UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
 
-            // Let it fail on non-oculus platforms
-            //Get Oculus ID
-            var oculusAppId = App.Config.OculusSecrets?.ClientId;
-            bool packagePresent = true;
-#if UNITY_ANDROID
-            oculusAppId = App.Config.OculusMobileSecrets.ClientId;
-            // Initialize() will crash android if the required system packages are not present.
-            // This is the earliest in the chain.
-            packagePresent = AndroidUtils.IsPackageInstalled("com.oculus.platformsdkruntime");
-#endif
-            if (packagePresent)
-            {
-#if OCULUS_SUPPORTED
-                try
-                {
-                    Oculus.Platform.Core.Initialize(oculusAppId);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Failed to initialize Oculus Platform SDK. Oculus features will be unavailable. Exception: {e}");
-                }
-#endif // OCULUS_SUPPORTED
-            }
         }
 
         void Start()
@@ -308,18 +298,57 @@ namespace TiltBrush
 
         private void SetPassthroughStrategy()
         {
-            if (FBPassthrough.FeatureEnabled)
+            PassthroughMode = DeterminePassthroughStrategy();
+            Debug.Log($"[Passthrough] Strategy: {PassthroughMode}");
+        }
+
+        private static PassthroughMode DeterminePassthroughStrategy()
+        {
+#if ZAPBOX_SUPPORTED
+            // Zapbox is passthrough-only and doesn't advertise it through OpenXR, so the
+            // build target is the only signal we have.
+            return PassthroughMode.Zapbox;
+#else
+            // Everything below describes what the *runtime* actually supports, and none of it
+            // is meaningful until a loader is up. Without one - XR disabled by flag or key,
+            // headless, Linux view mode - OpenXRSettings still reports the authored feature
+            // flags, which would claim passthrough the runtime never confirmed.
+            XRLoader loader = XRGeneralSettings.Instance?.Manager?.activeLoader;
+            if (loader == null)
             {
-                PassthroughMode = PassthroughMode.FBPassthrough;
-                return;
+                return PassthroughMode.None;
             }
 
-#if ZAPBOX_SUPPORTED
-            PassthroughMode = PassthroughMode.Zapbox;
-            return;
-#endif // ZAPBOX_SUPPORTED
+            if (IsFbPassthroughAvailable())
+            {
+                return PassthroughMode.FBPassthrough;
+            }
 
-            PassthroughMode = PassthroughMode.None;
+            // Runtimes that composite the real world for us (additive or alpha-blend
+            // environment blend modes, e.g. Android XR) expose no passthrough extension;
+            // they just report a non-opaque display.
+            var display = loader.GetLoadedSubsystem<XRDisplaySubsystem>();
+            if (display != null && display.running && !display.displayOpaque)
+            {
+                return PassthroughMode.OpenXREnvionmentBlendMode;
+            }
+
+            return PassthroughMode.None;
+#endif // ZAPBOX_SUPPORTED
+        }
+
+        /// FBPassthrough.FeatureEnabled dereferences both the settings asset and the feature,
+        /// either of which is null when the active loader isn't OpenXR. The feature's own
+        /// `enabled` already folds in whether XR_FB_passthrough survived instance creation.
+        private static bool IsFbPassthroughAvailable()
+        {
+            OpenXRSettings settings = OpenXRSettings.Instance;
+            if (settings == null)
+            {
+                return false;
+            }
+            FBPassthrough feature = settings.GetFeature<FBPassthrough>();
+            return feature != null && feature.enabled;
         }
 
         // -------------------------------------------------------------------------------------------- //
@@ -371,14 +400,8 @@ namespace TiltBrush
         {
             Vector3[] points_RS = null;
 
-#if OCULUS_SUPPORTED
-                // N points, clockwise winding (but axis is undocumented), undocumented convexity
-                // In practice, it's clockwise looking along Y-
-                points_RS = OVRManager.boundary
-                    ?.GetGeometry(OVRBoundary.BoundaryType.OuterBoundary)
-                    ?.Select(v => UnityFromOculus(v))
-                    .ToArray();
-#else // OCULUS_SUPPORTED
+            // TODO: no play-area boundary source since the Meta SDK was removed.
+            // OpenXR has no vendor-neutral equivalent; points_RS stays empty.
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mikesky - Setting OpenVR Chaperone bounds. Does XR have the equivalent generic?
@@ -397,7 +420,6 @@ namespace TiltBrush
             //     //     points_RS = steamPoints.Select(v => UnityFromSteamVr(v)).ToArray();
             //     // }
             // }
-#endif // OCULUS_SUPPORTED
 
             if (points_RS == null)
             {
@@ -455,12 +477,6 @@ namespace TiltBrush
         // {
         //     return new Vector3(v.v0, v.v1, v.v2) * App.METERS_TO_UNITS;
         // }
-
-        /// Converts from Oculus axis conventions and units to Unity
-        static private Vector3 UnityFromOculus(Vector3 v)
-        {
-            return v * App.METERS_TO_UNITS;
-        }
 
         // -------------------------------------------------------------------------------------------- //
         // Controller Methods
@@ -917,37 +933,43 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Performance Methods
         // -------------------------------------------------------------------------------------------- //
+        /// Sets fixed foveated rendering strength, 0 (off) to 3 (maximum).
+        /// Driven by AppQualitySettings.FixedFoveationLevel, which only asks for
+        /// foveation at the two lowest mobile quality levels.
         public void SetFixedFoveation(int level)
         {
-#if OCULUS_SUPPORTED
             Debug.Assert(level >= 0 && level <= 3);
-            if (App.Config.IsMobileHardware && !SpoofMobileHardware.MobileHardware)
+            if (!App.Config.IsMobileHardware || SpoofMobileHardware.MobileHardware)
             {
-                OVRManager.tiledMultiResLevel = (OVRManager.TiledMultiResLevel)level;
+                return;
             }
-#endif // OCULUS_SUPPORTED
+
+            var displaySubsystem =
+                XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRDisplaySubsystem>();
+            if (displaySubsystem == null)
+            {
+                return;
+            }
+
+            // The provider maps 0..1 onto whatever discrete levels the device supports.
+            // Runtimes without a foveation extension ignore this.
+            displaySubsystem.foveatedRenderingLevel = Mathf.Clamp01(level / 3.0f);
         }
 
         /// Gets GPU utilization 0 .. 1 if supported, otherwise returns 0.
+        /// TODO: always 0 since the Meta SDK was removed. OpenXR has no vendor-neutral
+        /// utilization query; see openxr-perf-migration.md for the notification-based
+        /// replacement. Callers in QualityControls are biased while this returns 0.
         public float GetGpuUtilization()
         {
-#if OCULUS_SUPPORTED
-            if (OVRManager.gpuUtilSupported)
-            {
-                return OVRManager.gpuUtilLevel;
-            }
-#endif // OCULUS_SUPPORTED
             return 0;
         }
 
+        // TODO: not implemented since the Meta SDK was removed. The OpenXR replacement
+        // is XrPerformanceSettingsFeature.SetPerformanceLevelHint.
+        // See openxr-perf-migration.md.
         public void SetGpuClockLevel(int level)
         {
-#if OCULUS_SUPPORTED
-            if (App.Config.IsMobileHardware)
-            {
-                OVRManager.gpuLevel = level;
-            }
-#endif // OCULUS_SUPPORTED
         }
     }
 }

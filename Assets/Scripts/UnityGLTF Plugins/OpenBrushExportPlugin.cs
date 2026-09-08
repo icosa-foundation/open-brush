@@ -107,6 +107,7 @@ namespace TiltBrush
                 GltfExportStandinManager.m_Instance.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
+            m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
             GenerateCameraPathsCameras();
             m_ThumbnailCamera = App.Instance.InstantiateThumbnailCamera();
             m_ThumbnailCamera.transform.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
@@ -737,7 +738,8 @@ namespace TiltBrush
             foreach (var (node, widget) in m_SoundClipNodes)
             {
                 var soundClip = widget.SoundClip;
-                var (volume, loop, spatialBlend, minDistance, maxDistance) = widget.GetAudioExportSettings();
+                var (paused, volume, loop, spatialBlend, minDistance, maxDistance) =
+                    widget.GetAudioExportSettings();
 
                 if (!File.Exists(soundClip.AbsolutePath))
                 {
@@ -771,7 +773,7 @@ namespace TiltBrush
                     audio = new AudioDataId { Id = audioIndex, Root = gltfRoot },
                     gain = volume,
                     loop = loop,
-                    autoPlay = true,
+                    autoPlay = !paused,
                     Name = soundClip.HumanName,
                 });
 

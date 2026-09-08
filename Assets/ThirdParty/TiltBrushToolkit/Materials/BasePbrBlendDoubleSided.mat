@@ -8,8 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: BasePbrBlendDoubleSided
-  m_Shader: {fileID: -6465566751694194690, guid: 7155064e818d84a48b337a74a6c48767,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 7155064e818d84a48b337a74a6c48767, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

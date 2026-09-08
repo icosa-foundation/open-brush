@@ -373,8 +373,8 @@ namespace TiltBrush
                                 SaveCurrentView(
                                     cam,
                                     GetBrushScreenshotFileName(brush),
-                                    1024,
-                                    1024,
+                                    2048,
+                                    2048,
                                     enablePostProcessing,
                                     renderMode == BrushScreenshotRenderMode.Wireframe,
                                     screenshotDirectory,
@@ -501,7 +501,7 @@ namespace TiltBrush
             Color color)
         {
             var overrides = new List<MaterialColorOverride>();
-            var seenMaterials = new HashSet<int>();
+            var seenMaterials = new HashSet<Material>();
             foreach (var stroke in strokes)
             {
                 if (stroke == null ||
@@ -512,7 +512,7 @@ namespace TiltBrush
                 }
 
                 Material material = stroke.m_BatchSubset.m_ParentBatch.InstantiatedMaterial;
-                if (material == null || !seenMaterials.Add(material.GetInstanceID()))
+                if (material == null || !seenMaterials.Add(material))
                 {
                     continue;
                 }

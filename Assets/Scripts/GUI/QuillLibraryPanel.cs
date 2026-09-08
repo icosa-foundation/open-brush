@@ -43,6 +43,7 @@ namespace TiltBrush
         private QuillFileCatalog m_Catalog;
         private QuillFileInfo m_SelectedFile;
         private bool m_IsDetectingChapters;
+        private int m_ChapterDetectionGeneration;
 
         private List<BaseButton> m_IconButtons;
         private QuillFileButton[] m_FileButtons;
@@ -71,6 +72,9 @@ namespace TiltBrush
                 return;
             }
 
+            CancelChapterDetection();
+            m_SelectedFile = null;
+
             switch (buttonType)
             {
                 case QuillSourceButton.Type.QuillProjects:
@@ -81,8 +85,6 @@ namespace TiltBrush
                     break;
             }
 
-            // Clear selection when switching directories
-            m_SelectedFile = null;
             ResetPageIndex();
             RefreshPage();
             button.UpdateVisuals();
@@ -113,6 +115,8 @@ namespace TiltBrush
         {
             if (m_SelectedFile == file) return;
 
+            CancelChapterDetection();
+
             // Clear previous selection visual state
             if (m_SelectedFile != null)
             {
@@ -125,7 +129,7 @@ namespace TiltBrush
             if (m_SelectedFile != null)
             {
                 UpdateFileButtonSelection(m_SelectedFile, true);
-                StartCoroutine(DetectChaptersForSelectedFile());
+                StartChapterDetection(m_SelectedFile);
             }
 
             RefreshActionControls();
@@ -146,17 +150,30 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerator DetectChaptersForSelectedFile()
+        private void StartChapterDetection(QuillFileInfo file)
         {
-            if (m_SelectedFile == null) yield break;
-
+            int generation = ++m_ChapterDetectionGeneration;
             m_IsDetectingChapters = true;
             if (m_ChapterLoadingSpinner != null)
                 m_ChapterLoadingSpinner.SetActive(true);
             RefreshActionControls();
+            StartCoroutine(DetectChaptersForSelectedFile(file, generation));
+        }
+
+        private void CancelChapterDetection()
+        {
+            ++m_ChapterDetectionGeneration;
+            m_IsDetectingChapters = false;
+            if (m_ChapterLoadingSpinner != null)
+                m_ChapterLoadingSpinner.SetActive(false);
+        }
+
+        private IEnumerator DetectChaptersForSelectedFile(
+            QuillFileInfo selectedFile, int generation)
+        {
 
             // For IMM files, add a longer delay to allow UI to update first
-            if (m_SelectedFile.SourceType == QuillSourceType.Imm)
+            if (selectedFile.SourceType == QuillSourceType.Imm)
             {
                 yield return new WaitForSeconds(0.1f); // Let UI show spinner
             }
@@ -165,30 +182,38 @@ namespace TiltBrush
                 yield return null; // Just yield one frame for Quill files
             }
 
+            if (generation != m_ChapterDetectionGeneration || m_SelectedFile != selectedFile)
+            {
+                yield break;
+            }
+
             var startTime = System.DateTime.Now;
 
             try
             {
                 // This triggers lazy chapter detection
-                int chapterCount = m_SelectedFile.ChapterCount;
+                int chapterCount = selectedFile.ChapterCount;
                 var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
 
                 // Set default chapter if not already set
-                if (m_SelectedFile.SelectedChapterIndex < 0)
+                if (selectedFile.SelectedChapterIndex < 0)
                 {
-                    m_SelectedFile.SelectedChapterIndex = 0;
+                    selectedFile.SelectedChapterIndex = 0;
                 }
             }
             catch (System.Exception ex)
             {
                 var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
-                Debug.LogError($"Failed to detect chapters for {m_SelectedFile.DisplayName} after {elapsed:F0}ms: {ex}");
+                Debug.LogError($"Failed to detect chapters for {selectedFile.DisplayName} after {elapsed:F0}ms: {ex}");
             }
 
-            m_IsDetectingChapters = false;
-            if (m_ChapterLoadingSpinner != null)
-                m_ChapterLoadingSpinner.SetActive(false);
-            RefreshActionControls();
+            if (generation == m_ChapterDetectionGeneration)
+            {
+                m_IsDetectingChapters = false;
+                if (m_ChapterLoadingSpinner != null)
+                    m_ChapterLoadingSpinner.SetActive(false);
+                RefreshActionControls();
+            }
         }
 
         private void RefreshActionControls()
@@ -463,13 +488,23 @@ namespace TiltBrush
                     {
                         fileStillExists = true;
                         // Update reference to refreshed file info
+                        bool restartDetection = m_IsDetectingChapters;
+                        if (restartDetection)
+                        {
+                            CancelChapterDetection();
+                        }
                         m_SelectedFile = file;
+                        if (restartDetection)
+                        {
+                            StartChapterDetection(file);
+                        }
                         break;
                     }
                 }
 
                 if (!fileStillExists)
                 {
+                    CancelChapterDetection();
                     m_SelectedFile = null;
                 }
             }

@@ -174,6 +174,14 @@ namespace TiltBrush
             }
         }
 
+        void OnDestroy()
+        {
+            if (m_Instance == this)
+            {
+                m_Instance = null;
+            }
+        }
+
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             m_ScriptPathsToUpdate.Add(e.FullPath);
@@ -751,7 +759,7 @@ namespace TiltBrush
                     // Try to cast to multipath first
                     pathListWrapper = result.ToObject<PathListApiWrapper>();
                 }
-                catch (Exception _)
+                catch (Exception)
                 {
                     try
                     {

@@ -19,7 +19,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Newtonsoft.Json;
-using ICSharpCode.SharpZipLib.Zip;
+using Unity.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
 using TiltBrush.FrameAnimation;
 

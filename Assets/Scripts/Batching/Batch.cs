@@ -35,7 +35,8 @@ namespace TiltBrush
 
         /// Sorted by initial vert index
         /// (if this is violated, RemoveSubset() will fail)
-        public List<BatchSubset> m_Groups;
+        // Built at runtime by the batcher; never authored in a scene or prefab.
+        [NonSerialized] public List<BatchSubset> m_Groups;
 #if UNITY_EDITOR
         public bool m_EditorDebug;
         public Vector3 m_EditorDebugMeshScale;

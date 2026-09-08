@@ -30,7 +30,9 @@ namespace TiltBrush
         private int m_SampleRate = kPreferredSampleRate;
         private int m_ClipSampleCount;
         private bool m_CaptureRequested;
+#if UNITY_ANDROID
         private bool m_WaitingForPermission;
+#endif
         private float m_LastPeak;
 
         public int SampleRate { get { return m_SampleRate; } }
@@ -129,7 +131,9 @@ namespace TiltBrush
                 Microphone.End(m_DeviceName);
             }
             m_MicClip = null;
+#if UNITY_ANDROID
             m_WaitingForPermission = false;
+#endif
         }
 
         private void EnsureSampleBuffer()

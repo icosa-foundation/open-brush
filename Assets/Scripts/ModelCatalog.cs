@@ -300,7 +300,7 @@ namespace TiltBrush
             {
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
-                    ModelWidget.CreateModelsFromRelativePath(
+                    _ = ModelWidget.CreateModelsFromRelativePath(
                         relativePath,
                         null,
                         m_MissingModelsByRelativePath[relativePath],
@@ -315,7 +315,7 @@ namespace TiltBrush
                 }
                 if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
                 {
-                    ModelWidget.CreateModelsFromRelativePath(
+                    _ = ModelWidget.CreateModelsFromRelativePath(
                         relativePath,
                         null,
                         m_MissingNormalizedModelsByRelativePath[relativePath],
