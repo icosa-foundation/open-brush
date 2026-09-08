@@ -331,7 +331,7 @@ namespace TiltBrush
             }
         }
 
-        private async Task LoginViverseAsync()
+        private void LoginViverse()
         {
             if (m_ViverseAuthManager == null)
             {
@@ -468,7 +468,7 @@ namespace TiltBrush
         {
             if (m_Service == SecretsConfig.Service.Vive)
             {
-                await LoginViverseAsync();
+                LoginViverse();
                 return;
             }
 

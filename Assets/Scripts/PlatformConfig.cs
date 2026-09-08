@@ -48,6 +48,42 @@ namespace TiltBrush
 
         public int MemoryWarningVertCount;
 
+        public int GetMemoryWarningVertCount(int userOverride = 0)
+        {
+            if (userOverride > 0)
+            {
+                Debug.Log($"[MOBILE_VERTEX_LIMITS] User config override: warningVertices={userOverride}");
+                return userOverride;
+            }
+            if (userOverride < 0)
+            {
+                Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Ignoring negative user config " +
+                    $"MemoryWarningVertCount={userOverride}; using automatic device selection");
+            }
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using var build = new AndroidJavaClass("android.os.Build");
+                string manufacturer = build.GetStatic<string>("MANUFACTURER");
+                string model = build.GetStatic<string>("MODEL");
+                string device = build.GetStatic<string>("DEVICE");
+                string product = build.GetStatic<string>("PRODUCT");
+                bool isSteamFrame = SteamManager.IsSteamFrame;
+                int limit = MobileVertexLimits.GetMemoryWarningVertCount(
+                    manufacturer, model, device, product, MemoryWarningVertCount, isSteamFrame);
+                Debug.Log($"[MOBILE_VERTEX_LIMITS] manufacturer={manufacturer} model={model} " +
+                    $"device={device} product={product} steamFrame={isSteamFrame} warningVertices={limit}");
+                return limit;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Device detection failed: {ex.Message}; " +
+                    $"using warningVertices={MemoryWarningVertCount}");
+            }
+#endif
+            return MemoryWarningVertCount;
+        }
+
         // On some platforms (eg Android) the C# FileSystemWatcher API does not seem to work.
         // In that case we need to use some manual workarounds. This can be used to test those
         // workarounds even on Windows.
