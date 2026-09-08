@@ -3,7 +3,6 @@ using UnityEditor;
 using UnityEngine;
 using OpenBrush.Multiplayer;
 using System.Threading.Tasks;
-using System.ComponentModel.Composition;
 using System.Collections.Generic;
 using OpenBrush;
 
@@ -234,7 +233,7 @@ public class MultiplayerManagerInspector : Editor
         }
     }
 
-    private async void SetNickname()
+    private void SetNickname()
     {
         if (multiplayerManager != null)
         {
