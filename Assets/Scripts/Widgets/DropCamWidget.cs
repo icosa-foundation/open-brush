@@ -95,6 +95,7 @@ namespace TiltBrush
 
             // Register the drop camera with scene settings
             Camera camera = GetComponentInChildren<Camera>();
+            ConfigureSpectatorCamera(camera);
             SceneSettings.m_Instance.RegisterCamera(camera);
 
             InitSnapGhost(m_GhostMesh, transform);
@@ -129,6 +130,7 @@ namespace TiltBrush
         {
             base.Show(bShow, bPlayAudio);
 
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
             RefreshRenderers();
         }
 
@@ -136,6 +138,7 @@ namespace TiltBrush
         {
             gameObject.SetActive(bShow);
             m_CurrentState = bShow ? State.Showing : State.Hiding;
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
         }
 
         override protected void OnShow()
@@ -415,6 +418,17 @@ namespace TiltBrush
         {
             return (m_CurrentMode != Mode.SlowFollow) &&
                 (m_CurrentState == State.Showing || m_CurrentState == State.Visible);
+        }
+
+        private static void ConfigureSpectatorCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            camera.targetDisplay = 0;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(camera);
         }
     }
 } // namespace TiltBrush
