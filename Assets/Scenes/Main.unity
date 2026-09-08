@@ -181,6 +181,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 1276754371}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -11115,6 +11116,7 @@ MonoBehaviour:
   m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
   m_DefaultImages:
   - DefaultImages/OpenBrushLogo.png
+  m_ForceCopyImages: []
 --- !u!114 &652605561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11143,6 +11145,7 @@ MonoBehaviour:
   m_DefaultModels:
   - DefaultModels/Andy.glb
   - DefaultModels/Tiltasaurus.glb
+  m_ForceCopyModels: []
   m_ObjLoaderStandardMaterial: {fileID: 2100000, guid: 33cc179da6d3a704496d940766650951, type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270, type: 2}
   m_ObjLoaderPointCloudMaterial: {fileID: 2100000, guid: d1e87607973227546a7ed606b4221a8f, type: 2}
@@ -11326,6 +11329,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultVideos:
   - DefaultVideos/animated-logo.mp4
+  m_ForceCopyVideos: []
   m_DebugOutput: 0
   m_supportedVideoExtensions:
   - .mp4
@@ -11362,6 +11366,7 @@ MonoBehaviour:
   - DefaultBackgroundImages/panorama.jpg
   - DefaultBackgroundImages/stereopanorama.jpg
   - DefaultBackgroundImages/ATTRIBUTION.txt
+  m_ForceCopyImages: []
 --- !u!114 &652605574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11376,6 +11381,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultSoundClips:
   - DefaultSoundClips/underwater.wav
+  m_ForceCopySoundClips:
+  - DefaultSoundClips/qwert.mp3
   m_DebugOutput: 0
   m_supportedSoundClipExtensions:
   - .wav
@@ -11398,6 +11405,7 @@ MonoBehaviour:
   - DefaultSavedStrokes/Knot.tilt
   - DefaultSavedStrokes/Star.tilt
   - DefaultSavedStrokes/Snowflake.tilt
+  m_ForceCopySavedStrokes: []
 --- !u!114 &652605576
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11410,6 +11418,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15156cc6acae14f44863628350e2508d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_DefaultQuillFiles: []
+  m_ForceCopyQuillFiles: []
 --- !u!114 &652605577
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14808,9 +14818,17 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 652605545}
     m_Modifications:
+    - target: {fileID: 8800009, guid: 92e391d518590d14daf354590d888efe, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
+      objectReference: {fileID: 0}
     - target: {fileID: 3905978450790232543, guid: 92e391d518590d14daf354590d888efe, type: 3}
       propertyPath: m_Name
       value: View Mode Non-VR UI Canvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 6119014421440034822, guid: 92e391d518590d14daf354590d888efe, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
       objectReference: {fileID: 0}
     - target: {fileID: 7434812335299418614, guid: 92e391d518590d14daf354590d888efe, type: 3}
       propertyPath: m_Pivot.x
@@ -17025,6 +17043,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SelectDeviceTimeoutDuration: 2
   m_AbandonDeviceTimeoutDuration: 15
+  m_AttachToDeviceDataThreshold: 0.1
+  m_DetachFromDeviceDataThreshold: 0.05
+  m_NormalizationDecayWindowSecs: 5
+  m_NormalizationMaxMultiplier: 100
 --- !u!4 &1120903174
 Transform:
   m_ObjectHideFlags: 0
@@ -28834,6 +28856,10 @@ PrefabInstance:
       propertyPath: m_isAlignmentEnumConverted
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 11420356, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
+      objectReference: {fileID: 0}
     - target: {fileID: 22431242, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -32556,6 +32582,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Console
       objectReference: {fileID: 0}
+    - target: {fileID: 5518051672143949475, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
+      objectReference: {fileID: 0}
     - target: {fileID: 6901881013902071200, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -32595,6 +32625,10 @@ PrefabInstance:
     - target: {fileID: 6901881013902071200, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7665901295925148564, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
+      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
+      value: 1801810542
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -23,6 +23,7 @@ namespace TiltBrush
     {
         static public SoundClipCatalog Instance { get; private set; }
         [SerializeField] private string[] m_DefaultSoundClips;
+        [SerializeField] private string[] m_ForceCopySoundClips;
         [SerializeField] private bool m_DebugOutput;
         [SerializeField] private string[] m_supportedSoundClipExtensions;
 
@@ -49,6 +50,7 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitSoundClipLibraryPath(m_DefaultSoundClips);
+            App.InitSoundClipLibraryPath(m_ForceCopySoundClips, force: true);
             ChangeDirectory(HomeDirectory);
         }
 

@@ -67,10 +67,12 @@ namespace TiltBrush
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
         public const string kPlayerPrefSeededDefaultModels = "SeededDefaultModels";
+        public const string kPlayerPrefSeededDefaultQuillFiles = "SeededDefaultQuillFiles";
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
         public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
+        public const string kPlayerPrefSeededDefaultSoundClips = "SeededDefaultSoundClips";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -608,10 +610,12 @@ namespace TiltBrush
             {
                 PlayerPrefs.DeleteKey(kPlayerPrefHasPlayedBefore);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultQuillFiles);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSoundClips);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -2123,7 +2127,7 @@ namespace TiltBrush
         /// Creates the Model Catalog directory and copies in the provided default models.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static void InitModelLibraryPath(string[] defaultModels)
+        public static void InitModelLibraryPath(string[] defaultModels, bool force = false)
         {
             string modelsDirectory = ModelLibraryPath();
 
@@ -2135,32 +2139,34 @@ namespace TiltBrush
                 }
             }
 
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            bool shouldCopy = force || Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
 
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
+            // Normal defaults are copied only once per clean install.
+            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
             {
                 shouldCopy = false;
             }
 
-            if (shouldCopy)
+            if (shouldCopy && defaultModels != null && defaultModels.Length > 0)
             {
                 foreach (string fileName in defaultModels)
                 {
+                    if (string.IsNullOrEmpty(fileName)) { continue; }
                     string[] path = fileName.Split(
                         new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
                     string newModel = Path.Combine(modelsDirectory, path[1]);
+                    if (File.Exists(newModel)) { continue; }
                     FileUtils.WriteBytesFromResources(fileName, newModel);
                 }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1);
+                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1); }
             }
         }
 
         /// Creates the Background Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages)
+        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages, bool force = false)
         {
             string path = BackgroundImagesLibraryPath();
 
@@ -2172,30 +2178,32 @@ namespace TiltBrush
                 }
             }
 
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            bool shouldCopy = force || Directory.GetFileSystemEntries(path).Length == 0;
 
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
+            // Normal defaults are copied only once per clean install.
+            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
             {
                 shouldCopy = false;
             }
 
-            if (shouldCopy)
+            if (shouldCopy && defaultBackgroundImages != null && defaultBackgroundImages.Length > 0)
             {
                 foreach (string fileName in defaultBackgroundImages)
                 {
+                    if (string.IsNullOrEmpty(fileName)) { continue; }
                     string dest = Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", "")));
+                    if (File.Exists(dest)) { continue; }
                     FileUtils.WriteBytesFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1);
+                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1); }
             }
         }
 
         /// Creates the Reference Images directory and copies in the provided default images.
         /// Returns true if the directory already exists or if it is created successfully, false if the
         /// directory could not be created.
-        public static void InitReferenceImagePath(string[] defaultImages)
+        public static void InitReferenceImagePath(string[] defaultImages, bool force = false)
         {
             string path = ReferenceImagePath();
 
@@ -2207,28 +2215,29 @@ namespace TiltBrush
                 }
             }
 
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            bool shouldCopy = force || Directory.GetFileSystemEntries(path).Length == 0;
 
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
+            // Normal defaults are copied only once per clean install.
+            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
             {
                 shouldCopy = false;
             }
 
-
-            if (shouldCopy)
+            if (shouldCopy && defaultImages != null && defaultImages.Length > 0)
             {
                 foreach (string fileName in defaultImages)
                 {
+                    if (string.IsNullOrEmpty(fileName)) { continue; }
                     string dest = Path.Combine(path, Path.GetFileName(fileName));
+                    if (File.Exists(dest)) { continue; }
                     FileUtils.WriteTextureFromResources(fileName, dest);
                 }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1);
+                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1); }
             }
         }
 
-        public static void InitVideoLibraryPath(string[] defaultVideos)
+        public static void InitVideoLibraryPath(string[] defaultVideos, bool force = false)
         {
             string videosDirectory = VideoLibraryPath();
 
@@ -2240,27 +2249,29 @@ namespace TiltBrush
                 }
             }
 
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(videosDirectory).Length == 0;
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            bool shouldCopy = force || Directory.GetFileSystemEntries(videosDirectory).Length == 0;
 
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
+            // Normal defaults are copied only once per clean install.
+            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
             {
                 shouldCopy = false;
             }
 
-            if (shouldCopy)
+            if (shouldCopy && defaultVideos != null && defaultVideos.Length > 0)
             {
                 foreach (var video in defaultVideos)
                 {
+                    if (string.IsNullOrEmpty(video)) { continue; }
                     string destFilename = Path.GetFileName(video);
+                    if (File.Exists(Path.Combine(videosDirectory, destFilename))) { continue; }
                     FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
                 }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
+                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1); }
             }
         }
 
-        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
+        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes, bool force = false)
         {
             string savedStrokesDirectory = SavedStrokesPath();
 
@@ -2272,63 +2283,79 @@ namespace TiltBrush
                 }
             }
 
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            bool shouldCopy = force || Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
 
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
+            // Normal defaults are copied only once per clean install.
+            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
             {
                 shouldCopy = false;
             }
 
-            if (shouldCopy)
+            if (shouldCopy && defaultSavedStrokes != null && defaultSavedStrokes.Length > 0)
             {
                 foreach (var savedStroke in defaultSavedStrokes)
                 {
+                    if (string.IsNullOrEmpty(savedStroke)) { continue; }
                     string destFilename = Path.GetFileName(savedStroke);
+                    if (File.Exists(Path.Combine(savedStrokesDirectory, destFilename))) { continue; }
                     FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
                 }
             }
         }
 
-        public static void InitQuillLibraryPath()
+        public static void InitQuillMediaLibraryPath(string[] defaultQuillFiles, bool force = false)
         {
-            string quillLibraryDirectory = QuillLibraryPath();
+            string quillMediaDirectory = QuillMediaLibraryPath();
 
-            if (!Directory.Exists(quillLibraryDirectory))
+            if (!InitDirectoryAtPath(quillMediaDirectory))
             {
-                InitDirectoryAtPath(quillLibraryDirectory);
+                return;
             }
+
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            if ((!force && (Directory.GetFileSystemEntries(quillMediaDirectory).Length != 0 ||
+                PlayerPrefs.GetInt(kPlayerPrefSeededDefaultQuillFiles, 0) != 0)) ||
+                defaultQuillFiles == null || defaultQuillFiles.Length == 0)
+            {
+                return;
+            }
+
+            foreach (string fileName in defaultQuillFiles)
+            {
+                if (string.IsNullOrEmpty(fileName)) { continue; }
+                string destination = Path.Combine(quillMediaDirectory, Path.GetFileName(fileName));
+                if (File.Exists(destination)) { continue; }
+                FileUtils.WriteBytesFromResources(fileName, destination);
+            }
+            if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultQuillFiles, 1); }
         }
 
-        public static void InitQuillImmPath()
-        {
-            string quillImmDirectory = QuillImmPath();
 
-            if (!Directory.Exists(quillImmDirectory))
-            {
-                InitDirectoryAtPath(quillImmDirectory);
-            }
-        }
-
-
-
-        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
+        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips, bool force = false)
         {
             string soundClipsDirectory = SoundClipLibraryPath();
-            if (Directory.Exists(soundClipsDirectory))
-            {
-                return true;
-            }
             if (!InitDirectoryAtPath(soundClipsDirectory))
             {
                 return false;
             }
+
+            // Force copying bypasses the empty-folder and saved-flag checks.
+            if ((!force && (Directory.GetFileSystemEntries(soundClipsDirectory).Length != 0 ||
+                PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSoundClips, 0) != 0)) ||
+                defaultSoundClips == null || defaultSoundClips.Length == 0)
+            {
+                return true;
+            }
+
             foreach (var soundClip in defaultSoundClips)
             {
+                if (string.IsNullOrEmpty(soundClip)) { continue; }
                 string destFilename = Path.GetFileName(soundClip);
+                if (File.Exists(Path.Combine(soundClipsDirectory, destFilename))) { continue; }
                 FileUtils.WriteBytesFromResources(soundClip, Path.Combine(soundClipsDirectory, destFilename));
             }
+            if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultSoundClips, 1); }
 
             return true;
         }
@@ -2397,9 +2424,9 @@ namespace TiltBrush
                 System.Environment.SpecialFolder.Personal), "Quill");
         }
 
-        static public string QuillImmPath()
+        static public string QuillMediaLibraryPath()
         {
-            return Path.Combine(MediaLibraryPath(), "Imm");
+            return Path.Combine(MediaLibraryPath(), "Quill");
         }
 
         static public string AutosavePath()
