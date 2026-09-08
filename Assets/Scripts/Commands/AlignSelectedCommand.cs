@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -55,7 +56,8 @@ namespace TiltBrush
             {
                 BoundsTypes.Min => anchorValue - stroke.m_BatchSubset.m_Bounds.min[m_Axis],
                 BoundsTypes.Center => anchorValue - stroke.m_BatchSubset.m_Bounds.center[m_Axis],
-                BoundsTypes.Max => anchorValue - stroke.m_BatchSubset.m_Bounds.max[m_Axis]
+                BoundsTypes.Max => anchorValue - stroke.m_BatchSubset.m_Bounds.max[m_Axis],
+                _ => throw new ArgumentOutOfRangeException(nameof(m_AlignBoundsType))
             };
 
             return TrTransform.T(new Vector3(
@@ -73,7 +75,8 @@ namespace TiltBrush
             {
                 BoundsTypes.Min => anchorValue - widget.GetBounds_SelectionCanvasSpace().min[m_Axis],
                 BoundsTypes.Center => anchorValue - widget.LocalTransform.translation[m_Axis],
-                BoundsTypes.Max => anchorValue - widget.GetBounds_SelectionCanvasSpace().max[m_Axis]
+                BoundsTypes.Max => anchorValue - widget.GetBounds_SelectionCanvasSpace().max[m_Axis],
+                _ => throw new ArgumentOutOfRangeException(nameof(m_AlignBoundsType))
             };
 
             return TrTransform.T(new Vector3(
@@ -112,7 +115,8 @@ namespace TiltBrush
                 {
                     BoundsTypes.Min => s.m_BatchSubset.m_Bounds.min[m_Axis],
                     BoundsTypes.Center => s.m_BatchSubset.m_Bounds.center[m_Axis],
-                    BoundsTypes.Max => s.m_BatchSubset.m_Bounds.max[m_Axis]
+                    BoundsTypes.Max => s.m_BatchSubset.m_Bounds.max[m_Axis],
+                    _ => throw new ArgumentOutOfRangeException(nameof(m_AlignBoundsType))
                 }
             ));
 
@@ -123,7 +127,8 @@ namespace TiltBrush
                         {
                             BoundsTypes.Min => w.GetBounds_SelectionCanvasSpace().min[m_Axis],
                             BoundsTypes.Center => w.GetBounds_SelectionCanvasSpace().center[m_Axis],
-                            BoundsTypes.Max => w.GetBounds_SelectionCanvasSpace().max[m_Axis]
+                            BoundsTypes.Max => w.GetBounds_SelectionCanvasSpace().max[m_Axis],
+                            _ => throw new ArgumentOutOfRangeException(nameof(m_AlignBoundsType))
                         }
                 )
             );
@@ -139,7 +144,8 @@ namespace TiltBrush
             {
                 BoundsTypes.Min => positions.Min(),
                 BoundsTypes.Center => positions.Average(),
-                BoundsTypes.Max => positions.Max()
+                BoundsTypes.Max => positions.Max(),
+                _ => throw new ArgumentOutOfRangeException(nameof(m_AlignBoundsType))
             };
         }
     }
