@@ -88,8 +88,8 @@ Blocks/BlocksGem,_EMISSION
 Blocks/BlocksGem,SELECTION_ON,_EMISSION
 Blocks/BlocksGlass,_EMISSION
 Blocks/BlocksGlass,SELECTION_ON,_EMISSION
-Blocks/Basic,_EMISSION
-Blocks/Basic,SELECTION_ON,_EMISSION
+Blocks/BlocksBasic,_EMISSION
+Blocks/BlocksBasic,SELECTION_ON,_EMISSION
 Poly/PbrOpaqueDoubleSided,
 Poly/PbrOpaqueDoubleSided,SELECTION_ON
 Poly/PbrBlendDoubleSided,

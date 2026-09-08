@@ -29,6 +29,11 @@ namespace TiltBrush
 
         public override bool NeedsSave { get { return true; } }
 
+        public void UpdateEndPoints(PointerManager.ControlPoint[] newControlPoints)
+        {
+            m_EndPoints = newControlPoints;
+        }
+
         private void ApplyNewPositionsToStroke(PointerManager.ControlPoint[] points)
         {
             m_TargetStroke.m_ControlPoints = points;

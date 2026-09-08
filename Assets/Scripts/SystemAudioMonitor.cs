@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
+#if !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
 using CSCore.CoreAudioAPI;
 using CSCore.SoundIn;
 using CSCore.Streams;
@@ -92,22 +92,29 @@ namespace TiltBrush
         }
 
         [Header("Audio Source")]
-        [SerializeField] private float m_AttachToDeviceDataThreshold = 0.1f;
-        [SerializeField] private float m_DetachFromDeviceDataThreshold = 0.05f;
         [SerializeField] private float m_SelectDeviceTimeoutDuration;
         [SerializeField] private float m_AbandonDeviceTimeoutDuration;
+
+#if !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
+        // Only read by the system audio capture path below, so declare them under the
+        // same guard - otherwise every target that compiles that path out reports them
+        // as assigned but never used.
+        [SerializeField] private float m_AttachToDeviceDataThreshold = 0.1f;
+        [SerializeField] private float m_DetachFromDeviceDataThreshold = 0.05f;
 
         // This parameter controls the incoming audio renormalization rate
         [SerializeField] private float m_NormalizationDecayWindowSecs = 5.0f;
         [SerializeField] private float m_NormalizationMaxMultiplier = 100;
 
-        private State m_State;
         private float m_SourcePeak = 0;
+#endif
+
+        private State m_State;
 
         private float[] m_LChannelTempBuffer;
         private float[] m_RChannelTempBuffer;
 
-#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
+#if !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
         // Data that is only valid in State.Looking
         private Future<Queue<WasapiCapture>> m_CapturesFuture;
 
@@ -150,7 +157,7 @@ namespace TiltBrush
         void Awake()
         {
             m_State = State.Disabled;
-#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
+#if !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
             int size = VisualizerManager.m_Instance.FFTSize;
             m_HotValues = new StereoBuffer(size);
             m_OperateValues = new StereoBuffer(size);
@@ -179,7 +186,7 @@ namespace TiltBrush
             }
         }
 
-#if !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX
+#if !DISABLE_SYSTEM_AUDIO_CAPTURE && !DISABLE_AUDIO_CAPTURE && !UNITY_OSX && !UNITY_EDITOR_OSX && !UNITY_ANDROID && !UNITY_IOS
 
         public void Activate(float delaySeconds)
         {
