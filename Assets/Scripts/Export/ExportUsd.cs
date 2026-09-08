@@ -98,7 +98,7 @@ namespace TiltBrush
         public class BrushCurvesSample : USD.NET.Unity.BasisCurvesSample
         {
             // TODO: this should be part of BasisCurvesSample, not defined here.
-            public Bounds extent;
+            public new Bounds extent;
 
             /// The time at which the knot was authored.
             [USD.NET.UsdNamespace("knot")]

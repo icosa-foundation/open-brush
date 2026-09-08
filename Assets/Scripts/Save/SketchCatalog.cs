@@ -59,15 +59,14 @@ namespace TiltBrush
             }
 
             SketchSet featuredSketchSet = null;
-            if (false) // TODO this fails because of initialization order: (VrAssetService.m_Instance.m_UseLocalFeaturedSketches)
-            {
-                featuredSketchSet = new FileSketchSet(SketchSetType.Curated);
-                InitFeaturedSketchesPath();
-            }
-            else
-            {
-                featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated);
-            }
+#if false
+            // TODO this fails because of initialization order:
+            // VrAssetService.m_Instance.m_UseLocalFeaturedSketches
+            featuredSketchSet = new FileSketchSet(SketchSetType.Curated);
+            InitFeaturedSketchesPath();
+#else
+            featuredSketchSet = new IcosaSketchSet(this, SketchSetType.Curated);
+#endif
 
             m_Sets = new[]
             {

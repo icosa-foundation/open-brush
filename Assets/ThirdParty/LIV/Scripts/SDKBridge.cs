@@ -7,7 +7,9 @@ namespace LIV.SDK.Unity
 {
     public static class SDKBridge
     {
-        #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && UNITY_64
+        // UNITY_64 was deprecated; Unity 6 has no 32-bit standalone Windows target, so the
+// platform checks alone are equivalent.
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         #region Interop
 
         [DllImport("LIV_Bridge")]

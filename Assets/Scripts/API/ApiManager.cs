@@ -440,8 +440,10 @@ Success. If you are not automatically redirected, please visit <a href='{success
         private void PopulateApi()
         {
             endpoints = new Dictionary<string, ApiEndpoint>();
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(t => t.GetTypes())
+            // AppDomain.GetAssemblies() can hand back already-unloaded assemblies in
+            // Unity. Every TiltBrush type lives in this assembly - nothing outside
+            // Photon has an asmdef - so scan it directly.
+            var types = typeof(ApiManager).Assembly.GetTypes()
                 .Where(t => t.IsClass && t.Namespace == "TiltBrush");
 
             foreach (var type in types)
@@ -759,6 +761,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
+                case "query.quill.stats":
+                    return JsonConvert.SerializeObject(Quill.QuillDiagnostics.LastLoad, Formatting.Indented);
                 case "query.command":
                     if (m_CommandStatuses.ContainsKey(commandPair[1]))
                     {

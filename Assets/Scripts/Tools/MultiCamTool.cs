@@ -246,6 +246,7 @@ namespace TiltBrush
 
         private int m_RenderGap;
         private float m_CurrentGap = 1f;
+        private bool? m_CapturePostProcessingOverride;
 
         MultiCamStyle CurrentCameraStyle
         {
@@ -1205,24 +1206,24 @@ namespace TiltBrush
                     case VideoState.Capturing:
                         if (!m_EatInput && !m_ToolHidden)
                         {
-                            float fSeconds = recorder.FrameCount / (float)recorder.FPS;
+                            int frameCount = VideoRecorderUtils.ActiveCaptureFrameCount;
+                            float fps = Mathf.Max(VideoRecorderUtils.ActiveCaptureFPS, 1.0f);
+                            float fSeconds = frameCount / fps;
                             int iMinutes = (int)(fSeconds / 60.0f);
                             int iSeconds = (int)(fSeconds % 60.0f);
-                            int iFrames = (int)(recorder.FrameCount % recorder.FPS);
+                            int iFrames = (int)(frameCount % fps);
 
                             // Proper SMPTE timecode is: hour:minute:second:frame
                             // Here only minute:second:frame is shown, since we don't expect/support hours of video.
-                            m_VideoRecordTimer.text = iMinutes
-                                + ":" + iSeconds.ToString("D2")
-                                + ":" + iFrames.ToString("D2");
+                            m_VideoRecordTimer.text = $"{iMinutes}:{iSeconds:D2}:{iFrames:D2}";
 
                             // Notify the user we are recording
                             Color recordingColor;
-                            if (recorder.IsCapturing)
+                            if (VideoRecorderUtils.IsCapturing)
                             {
                                 recordingColor = Color.Lerp(m_VideoRecordingIndicatorColor1,
                                     m_VideoRecordingIndicatorColor2,
-                                    Mathf.Abs(Mathf.Sin((float)recorder.FrameCount / 3.0f)));
+                                    Mathf.Abs(Mathf.Sin((float)frameCount / 3.0f)));
                             }
                             else
                             {
@@ -1640,7 +1641,11 @@ namespace TiltBrush
                 else
                 {
                     m_VideoRecordAudioHeader.text = m_AudioLookingText;
+#if UNITY_ANDROID || UNITY_IOS
+                    m_VideoRecordAudioDesc.text = "Play audio in the app";
+#else
                     m_VideoRecordAudioDesc.text = "Play some sound or music on your computer";
+#endif
                 }
             }
             else if (m_AudioFoundCountdown > 0.0f)
@@ -1720,19 +1725,16 @@ namespace TiltBrush
 
         void StopVideoCapture(bool showInfoCard)
         {
-            VideoRecorder recorder = VideoRecorderUtils.ActiveVideoRecording;
-            StillFrameSequenceExporter stillFrameExporter = VideoRecorderUtils.ActiveStillFrameExporter;
-            if (recorder == null && stillFrameExporter == null)
+            if (!VideoRecorderUtils.IsCapturing)
             {
                 return;
             }
 
-            float currentVideoLength = recorder != null
-                ? (float)recorder.FrameCount / (float)recorder.FPS
-                : stillFrameExporter.FrameCount / stillFrameExporter.FPS;
+            float fps = Mathf.Max(VideoRecorderUtils.ActiveCaptureFPS, 1.0f);
+            float currentVideoLength = VideoRecorderUtils.ActiveCaptureFrameCount / fps;
             bool validVideoLength = currentVideoLength >= m_VideoCaptureMinDuration;
 
-            string filePath = recorder != null ? recorder.FilePath : stillFrameExporter.FilePath;
+            string filePath = VideoRecorderUtils.ActiveCaptureFilePath;
             VideoRecorderUtils.StopVideoCapture(validVideoLength);
 
             m_CurrentVideoState = validVideoLength ? VideoState.Processing : VideoState.Ready;
@@ -1862,12 +1864,19 @@ namespace TiltBrush
             //
             // State == Capturing
             //
+            if (!VideoRecorderUtils.IsCapturing)
+            {
+                m_CurrentVideoState = VideoState.Ready;
+                m_VideoRecordTimer.text = "0:00:00";
+                m_VideoRecordTimer.gameObject.SetActive(false);
+                m_VideoRecordIcon.gameObject.SetActive(false);
+                m_VideoRecordingIndicator.material.color = Color.white;
+                return;
+            }
 
             // If we're running out of disk space, stop recording.
-            StillFrameSequenceExporter stillFrameExporter =
-                VideoRecorderUtils.ActiveStillFrameExporter;
-            string capturePath = recorder != null ? recorder.FilePath : stillFrameExporter?.FilePath;
-            if (!string.IsNullOrEmpty(capturePath) && !FileUtils.HasFreeSpace(capturePath))
+            string capturePath = VideoRecorderUtils.ActiveCaptureFilePath;
+            if (string.IsNullOrEmpty(capturePath) || !FileUtils.HasFreeSpace(capturePath))
             {
                 StopVideoCapture(false);
             }
@@ -1938,7 +1947,7 @@ namespace TiltBrush
                 OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedSnapshotPath) &&
                 !AndroidStorageManager.RequireSharedFolderFor(
                     "saving snapshots",
-                    () => App.Instance.StartCoroutine(TakeScreenshotAsync(saveName, renderDepth))))
+                    () => App.Instance.StartCoroutine(TakeScreenshotAsync(saveName, style))))
             {
                 yield break;
             }
@@ -2024,6 +2033,7 @@ namespace TiltBrush
                         if (odsCamera != null)
                         {
                             odsCamera.imageWidth = snapshotWidth;
+                            odsCamera.includePostProcessing = CameraConfig.PostEffects;
                             float timeScaleRestore = Time.timeScale;
                             try
                             {
@@ -2038,7 +2048,8 @@ namespace TiltBrush
                         }
                         else
                         {
-                            rMgr.RenderToTexture(tmp);
+                            rMgr.RenderToTexture(
+                                tmp, includePostProcessing: CameraConfig.PostEffects);
                         }
                         if (style == MultiCamStyle.Depth)
                         {
@@ -2101,7 +2112,7 @@ namespace TiltBrush
                         bool publishSucceeded = false;
                         string publishError = null;
                         var generatedPaths = new List<string> { fullPath };
-                        if (renderDepth)
+                        if (style == MultiCamStyle.Depth)
                         {
                             generatedPaths.Add(
                                 Path.GetFullPath(saveName.Replace(".png", "_depth.png")));
@@ -2171,6 +2182,143 @@ namespace TiltBrush
         // TimeGif
         //
 
+        public string CaptureAutoGifForApi(string saveName, bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            if (m_AutoGifCreationState != GifCreationState.Ready ||
+                m_TimeGifCreationState != GifCreationState.Ready)
+            {
+                Debug.LogWarning($"{logPrefix} Auto GIF capture skipped because GIF capture is busy.");
+                return null;
+            }
+
+            App.Instance.StartCoroutine(CaptureAutoGifForApiCoroutine(saveName, includePostProcessing));
+            Debug.Log($"{logPrefix} Queued Auto GIF capture path={saveName} post={includePostProcessing}.");
+            return saveName;
+        }
+
+        public string CaptureTimeGifForApi(string saveName, bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            if (m_AutoGifCreationState != GifCreationState.Ready ||
+                m_TimeGifCreationState != GifCreationState.Ready)
+            {
+                Debug.LogWarning($"{logPrefix} Time GIF capture skipped because GIF capture is busy.");
+                return null;
+            }
+
+            App.Instance.StartCoroutine(CaptureTimeGifForApiCoroutine(saveName, includePostProcessing));
+            Debug.Log($"{logPrefix} Queued Time GIF capture path={saveName} post={includePostProcessing}.");
+            return saveName;
+        }
+
+        IEnumerator CaptureAutoGifForApiCoroutine(string saveName, bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+                m_CapturePostProcessingOverride = includePostProcessing;
+
+                m_AutoGifCreationState = GifCreationState.Capturing;
+                m_Captures = new List<Color32[]>(m_GifFrames);
+                yield return AutoGifStateCapturing();
+
+                if (m_Captures != null && m_Captures.Count > 0)
+                {
+                    AutoGifTransitionCapturingToBuilding(saveName);
+                    yield return WaitForApiGifTask();
+                    Debug.Log(
+                        $"{logPrefix} Auto GIF capture encoded path={saveName} " +
+                        $"frames={m_GifFrames} post={includePostProcessing}.");
+                }
+                else
+                {
+                    m_Captures = null;
+                    m_AutoGifCreationState = GifCreationState.Ready;
+                    Debug.LogError($"{logPrefix} Auto GIF capture failed: no frames captured.");
+                }
+            }
+            finally
+            {
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+                m_CapturePostProcessingOverride = previousCapturePostProcessingOverride;
+            }
+        }
+
+        IEnumerator CaptureTimeGifForApiCoroutine(string saveName, bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+                m_CapturePostProcessingOverride = includePostProcessing;
+
+                int frameCount = Mathf.Max(1, Mathf.CeilToInt(m_TimeGifFPS * m_TimeGifDuration));
+                m_TimeGifCreationState = GifCreationState.Capturing;
+                m_Captures = new List<Color32[]>(frameCount);
+                m_TimedGifSaveName = saveName;
+                m_TimeGifCaptureTimer = 0.0f;
+
+                for (int i = 0; i < frameCount; ++i)
+                {
+                    TimeGifCapture();
+                    yield return null;
+                }
+
+                if (m_Captures != null && m_Captures.Count > 0)
+                {
+                    TimeGifTransitionCapturingToBuilding();
+                    yield return WaitForApiGifTask();
+                    Debug.Log(
+                        $"{logPrefix} Time GIF capture encoded path={saveName} " +
+                        $"frames={frameCount} post={includePostProcessing}.");
+                }
+                else
+                {
+                    m_Captures = null;
+                    m_TimeGifCreationState = GifCreationState.Ready;
+                    Debug.LogError($"{logPrefix} Time GIF capture failed: no frames captured.");
+                }
+            }
+            finally
+            {
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+                m_CapturePostProcessingOverride = previousCapturePostProcessingOverride;
+            }
+        }
+
+        bool CapturePostProcessingEnabled()
+        {
+            return m_CapturePostProcessingOverride ?? CameraConfig.PostEffects;
+        }
+
+        IEnumerator WaitForApiGifTask()
+        {
+            while (m_Task != null && !m_Task.IsDone)
+            {
+                yield return null;
+            }
+
+            ReportGifTaskDone();
+        }
+
         void SetTimeBar(float fTime)
         {
             // Figure how far through our duration we are.
@@ -2212,7 +2360,7 @@ namespace TiltBrush
 
             ScreenshotManager rMgr = GetScreenshotManager(MultiCamStyle.TimeGif);
             var tempTarget = rMgr.CreateTemporaryTargetForSave(tempTex.width, tempTex.height);
-            rMgr.RenderToTexture(tempTarget);
+            rMgr.RenderToTexture(tempTarget, includePostProcessing: CapturePostProcessingEnabled());
 
             RenderTexture.active = tempTarget;
             tempTex.ReadPixels(new Rect(0, 0, tempTex.width, tempTex.height), 0, 0, false);
@@ -2297,7 +2445,7 @@ namespace TiltBrush
                 TrTransform offsetXf = GetGifTransform(t);
                 var tmp = (baseXf * offsetXf); // Work around 2018.3.x Mono parse bug
                 tmp.ToTransform(camera);
-                rMgr.RenderToTexture(tempTarget);
+                rMgr.RenderToTexture(tempTarget, includePostProcessing: CapturePostProcessingEnabled());
                 prevXf.ToLocalTransform(camera);
 
                 RenderTexture.active = tempTarget;

@@ -72,7 +72,8 @@ namespace TiltBrush
         ///
         /// Safe to use during Awake()
         ///
-        public TransformExtensions.RelativeAccessor AsCanvas;
+        // Constructed in Awake; runtime-only helper.
+        [System.NonSerialized] public TransformExtensions.RelativeAccessor AsCanvas;
 
         /// The global pose of the canvas.
         /// All pose modifications must go through this property.
