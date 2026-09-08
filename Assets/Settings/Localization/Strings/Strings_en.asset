@@ -695,15 +695,13 @@ MonoBehaviour:
   - m_Id: 7892226182717440
     m_Localized: 'This operation will put you beyond a safe memory limit.
 
-      Proceed
-      with caution.'
+      Proceed with caution.'
     m_Metadata:
       m_Items: []
   - m_Id: 7892372832362496
     m_Localized: 'You are now in the danger zone.
 
-      Further work may cause crashes
-      and lost work.'
+      Further work may cause crashes and lost work.'
     m_Metadata:
       m_Items: []
   - m_Id: 7892515468058624
@@ -820,8 +818,7 @@ MonoBehaviour:
 
 
 
-      Icosa Gallery
-      support
+      Icosa Gallery support
 
       coming soon!'
     m_Metadata:
@@ -1015,8 +1012,7 @@ MonoBehaviour:
   - m_Id: 10133179773722624
     m_Localized: 'No matches.
 
-      Like more sketches on Icosa or change your search
-      options...'
+      Like more sketches on Icosa or change your search options...'
     m_Metadata:
       m_Items: []
   - m_Id: 10133306584309760
@@ -1052,8 +1048,7 @@ MonoBehaviour:
 
 
 
-      Icosa Gallery
-      support
+      Icosa Gallery support
 
       coming soon!'
     m_Metadata:
@@ -1217,8 +1212,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18098892484452352
-    m_Localized: This sketch is beyond size limitations and cannot be loaded on this
-      platform.
+    m_Localized: This sketch is beyond size limitations and cannot be loaded on this platform.
     m_Metadata:
       m_Items: []
   - m_Id: 18101292528115712
@@ -1342,8 +1336,7 @@ MonoBehaviour:
   - m_Id: 76070420314906624
     m_Localized: 'There was an error connecting
 
-      to the Icosa server. Try again
-      later.'
+      to the Icosa server. Try again later.'
     m_Metadata:
       m_Items: []
   - m_Id: 76070518675529728
@@ -1363,8 +1356,7 @@ MonoBehaviour:
 
       will not be uploaded
 
-      with the
-      rest of your sketch.'
+      with the rest of your sketch.'
     m_Metadata:
       m_Items: []
   - m_Id: 76071162597662720
@@ -1384,8 +1376,7 @@ MonoBehaviour:
 
       will not be uploaded
 
-      with the
-      rest of your sketch.'
+      with the rest of your sketch.'
     m_Metadata:
       m_Items: []
   - m_Id: 76072352228106240
@@ -1411,8 +1402,7 @@ MonoBehaviour:
   - m_Id: 76081074568486912
     m_Localized: 'Signing in requires exiting Open Brush.
 
-      We suggest saving
-      your work
+      We suggest saving your work
 
       before proceeding.'
     m_Metadata:
@@ -1438,8 +1428,7 @@ MonoBehaviour:
 
       to free up memory.
 
-      Images
-      will not be deleted.'
+      Images will not be deleted.'
     m_Metadata:
       m_Items: []
   - m_Id: 76095425199267840
@@ -1603,8 +1592,7 @@ MonoBehaviour:
   - m_Id: 76124332547956736
     m_Localized: 'Enabling Google Drive backup keeps
 
-      your work saved to the
-      cloud.'
+      your work saved to the cloud.'
     m_Metadata:
       m_Items: []
   - m_Id: 76124651742879744
@@ -1642,8 +1630,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76126729437503488
-    m_Localized: This sketch is beyond size limitations and may cause a poor experience
-      or crash.
+    m_Localized: This sketch is beyond size limitations and may cause a poor experience or crash.
     m_Metadata:
       m_Items: []
   - m_Id: 76126873826418688
@@ -1669,8 +1656,7 @@ MonoBehaviour:
   - m_Id: 76138083292602368
     m_Localized: 'Sign in to a Google account to access
 
-      Drive and YouTube
-      support.'
+      Drive and YouTube support.'
     m_Metadata:
       m_Items: []
   - m_Id: 76138395621449728
@@ -3429,6 +3415,14 @@ MonoBehaviour:
     m_Localized: Depth
     m_Metadata:
       m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: Audio Clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: Audio Clips
+    m_Metadata:
+      m_Items: []
   - m_Id: 137988464450723840
     m_Localized: Move Selection to Current Layer
     m_Metadata:
@@ -3454,9 +3448,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 151490030713540608
-    m_Localized: 'You can create a video of your sketch by opening it on a Mac or
-      PC. Search for "Exporting video" on our docs website: https://docs.openbrush.app
-      for a step by step guide.'
+    m_Localized: 'You can create a video of your sketch by opening it on a Mac or PC. Search for "Exporting video" on our docs website: https://docs.openbrush.app for a step by step guide.'
     m_Metadata:
       m_Items: []
   - m_Id: 164911761917042688
@@ -3480,8 +3472,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 189087250755706880
-    m_Localized: To avoid error 403 on Sketchfab when publishing - change visibility
-      to public (free Sketchfab accounts can't publish private models)
+    m_Localized: To avoid error 403 on Sketchfab when publishing - change visibility to public (free Sketchfab accounts can't publish private models)
     m_Metadata:
       m_Items: []
   - m_Id: 188791089062830080
@@ -3499,8 +3490,7 @@ MonoBehaviour:
   - m_Id: 217069105871577088
     m_Localized: 'You can continue without a VR headset.
 
-      Choose a sketch below
-      to enter Viewing Mode.'
+      Choose a sketch below to enter Viewing Mode.'
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
@@ -3644,8 +3634,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: 'Mouse: Look around, W,A,S,D: forward/sideways Q,E: up/down (Hold
-      Shift to speed up)'
+    m_Localized: 'Mouse: Look around, W,A,S,D: forward/sideways Q,E: up/down (Hold Shift to speed up)'
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104
@@ -3745,8 +3734,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 380760416547594240
-    m_Localized: Take off your headset or switch to your web browser to continue
-      logging in.
+    m_Localized: Take off your headset or switch to your web browser to continue logging in.
     m_Metadata:
       m_Items: []
   - m_Id: 381885131211235328
@@ -3768,8 +3756,7 @@ MonoBehaviour:
   - m_Id: 401824908597354496
     m_Localized: 'Save some brush strokes using "Save Selected
 
-      Strokes" (on
-      the Labs Panel) and they will appear here.'
+      Strokes" (on the Labs Panel) and they will appear here.'
     m_Metadata:
       m_Items: []
   - m_Id: 422456507319803904
@@ -3811,8 +3798,39 @@ MonoBehaviour:
   - m_Id: 423748375394897920
     m_Localized: 'Sign in to a Vive account to allow
 
-      uploading to Viverse
-      Worlds.'
+      uploading to Viverse Worlds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: Quill Cube
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: Quill Cylinder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: Quill Ellipse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: Quill Ribbon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: Quill Sketch Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: Quill Library
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: No Quill Sketches found in your Quill folder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: No .imm files found in your Media Library
     m_Metadata:
       m_Items: []
   - m_Id: 475814063085543424
@@ -3846,8 +3864,7 @@ MonoBehaviour:
   - m_Id: 520669196650635264
     m_Localized: 'Visit: <b>https://icosa.gallery/device</b>
 
-      to get a login
-      code'
+      to get a login code'
     m_Metadata:
       m_Items: []
   - m_Id: 522174996334338048
@@ -3903,28 +3920,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000012
-    m_Localized: Endpoint A recorded. Place the controller tip at endpoint B and
-      press the trigger.
+    m_Localized: Endpoint A recorded. Place the controller tip at endpoint B and press the trigger.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger
-      swaps A and B; cancel retries later.
+    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; cancel retries later.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
-    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres
-      apart.
+    m_Localized: The reference is too short. Choose endpoints at least 0.1 metres apart.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000015
-    m_Localized: The reference needs more horizontal separation. Choose a longer
-      horizontal edge.
+    m_Localized: The reference needs more horizontal separation. Choose a longer horizontal edge.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000016
-    m_Localized: The controller pose is invalid. Check tracking and try endpoint
-      B again.
+    m_Localized: The controller pose is invalid. Check tracking and try endpoint B again.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000017

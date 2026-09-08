@@ -59,8 +59,8 @@ VideoPlayer:
   m_DirectAudioVolumes:
   - 1
   m_Url: 
-  m_EnabledAudioTracks: 01
-  m_DirectAudioMutes: 00
+  m_EnabledAudioTracks: 01o
+  m_DirectAudioMutes: 00o
   m_ControlledAudioTrackCount: 1
   m_PlayOnAwake: 1
   m_SkipOnDrop: 1
@@ -127,6 +127,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -186,6 +187,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -207,9 +213,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &5911168340895529424
 MonoBehaviour:
@@ -231,16 +239,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer quis
-    orci iaculis nunc ultricies posuere.
+  m_text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer quis orci iaculis nunc ultricies posuere.
 
 
-    Mauris iaculis libero quis ante dignissim
-    sodales. In porta eleifend tortor, eu posuere mi euismod pellentesque. '
+    Mauris iaculis libero quis ante dignissim sodales. In porta eleifend tortor, eu posuere mi euismod pellentesque. '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: cb60cf5a3dd8c84468b1d0a71b5d16bb, type: 2}
-  m_sharedMaterial: {fileID: 21000011947829912, guid: cb60cf5a3dd8c84468b1d0a71b5d16bb,
-    type: 2}
+  m_sharedMaterial: {fileID: 21000011947829912, guid: cb60cf5a3dd8c84468b1d0a71b5d16bb, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -275,20 +280,23 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: -30
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 00000000u
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 0
   m_isCullingEnabled: 0
@@ -363,6 +371,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -384,9 +397,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &8473270265339514660
 MonoBehaviour:
@@ -446,20 +461,23 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 0
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 00000000u
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 0
   m_isCullingEnabled: 0
@@ -595,58 +613,47 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 9184043583337590915}
     m_Modifications:
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.45
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalPosition.y
       value: -0.962
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalRotation.y
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2799828789228487152, guid: c0401631b66627d4295c5b643c67bbd6,
-        type: 3}
+    - target: {fileID: 2799828789228487152, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
       propertyPath: m_Name
       value: OpenBrowserButton
       objectReference: {fileID: 0}
@@ -657,7 +664,6 @@ PrefabInstance:
   m_SourcePrefab: {fileID: 100100000, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
 --- !u!4 &1702845811504444731 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6,
-    type: 3}
+  m_CorrespondingSourceObject: {fileID: 2798456836779791392, guid: c0401631b66627d4295c5b643c67bbd6, type: 3}
   m_PrefabInstance: {fileID: 3564498589381959963}
   m_PrefabAsset: {fileID: 0}
