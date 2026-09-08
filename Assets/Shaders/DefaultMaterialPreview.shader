@@ -23,14 +23,15 @@ Category {
   Blend SrcAlpha One
   AlphaTest Greater .01
   ColorMask RGB
-  Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
-
+  ZWrite Off
   SubShader {
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass {
 
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma multi_compile_instancing
       #pragma multi_compile_particles
 
       #include "UnityCG.cginc"
@@ -49,6 +50,8 @@ Category {
         float4 vertex : SV_POSITION;
         float2 texcoord : TEXCOORD0;
 
+        UNITY_VERTEX_INPUT_INSTANCE_ID
+
         UNITY_VERTEX_OUTPUT_STEREO
       };
 
@@ -60,6 +63,7 @@ Category {
 
         UNITY_SETUP_INSTANCE_ID(v);
         UNITY_INITIALIZE_OUTPUT(v2f, o);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.vertex = UnityObjectToClipPos(v.vertex);
@@ -69,6 +73,7 @@ Category {
 
       fixed4 frag (v2f i) : SV_Target
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         return 2 * _Color * tex2D(_MainTex, i.texcoord);
       }
       ENDCG
@@ -76,3 +81,4 @@ Category {
   }
 }
 }
+

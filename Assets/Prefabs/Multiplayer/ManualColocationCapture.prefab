@@ -49,6 +49,9 @@ GameObject:
   m_Layer: 0
   m_Name: Endpoint A
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400001
 Transform:
@@ -77,6 +80,9 @@ GameObject:
   m_Layer: 0
   m_Name: Endpoint B
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400002
 Transform:
@@ -105,6 +111,9 @@ GameObject:
   m_Layer: 0
   m_Name: Reference Line
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400003
 Transform:
@@ -133,6 +142,9 @@ GameObject:
   m_Layer: 0
   m_Name: Direction Arrow
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400004
 Transform:
@@ -161,6 +173,9 @@ GameObject:
   m_Layer: 0
   m_Name: A Label
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400005
 Transform:
@@ -189,6 +204,9 @@ GameObject:
   m_Layer: 0
   m_Name: B Label
   m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
   m_IsActive: 1
 --- !u!4 &400006
 Transform:

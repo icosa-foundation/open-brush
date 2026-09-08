@@ -693,13 +693,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7892226182717440
-    m_Localized: "Esta operaci\xF3n te pondr\xE1 m\xE1s all\xE1 del l\xEDmite seguro
-      de memoria.\nTen cuidado."
+    m_Localized: "Esta operaci\xF3n te pondr\xE1 m\xE1s all\xE1 del l\xEDmite seguro de memoria.\nTen cuidado."
     m_Metadata:
       m_Items: []
   - m_Id: 7892372832362496
-    m_Localized: "Ahora est\xE1s en la zona de peligro.\nM\xE1s trabajo podr\xEDa
-      causar desconexiones y trabajo perdido."
+    m_Localized: "Ahora est\xE1s en la zona de peligro.\nM\xE1s trabajo podr\xEDa causar desconexiones y trabajo perdido."
     m_Metadata:
       m_Items: []
   - m_Id: 7892515468058624
@@ -795,8 +793,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7934076549570560
-    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa
-      Gallery\npr\xF3ximamente!"
+    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa Gallery\npr\xF3ximamente!"
     m_Metadata:
       m_Items: []
   - m_Id: 7934199497203712
@@ -998,8 +995,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134247853236224
-    m_Localized: "Error al recuperar esquemas de Icosa Gallery\n<color=#969696>\n\xBFC\xF3mo
-      va tu Internet?</color>"
+    m_Localized: "Error al recuperar esquemas de Icosa Gallery\n<color=#969696>\n\xBFC\xF3mo va tu Internet?</color>"
     m_Metadata:
       m_Items: []
   - m_Id: 10134539248312320
@@ -1011,8 +1007,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10134789291745280
-    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa
-      Gallery\npr\xF3ximamente!"
+    m_Localized: "Poly se desconect\xF3\nel 30/06/2021\n\n\xA1Asistencia de Icosa Gallery\npr\xF3ximamente!"
     m_Metadata:
       m_Items: []
   - m_Id: 10134947404423168
@@ -1174,8 +1169,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18098892484452352
-    m_Localized: "Este esquema est\xE1 m\xE1s all\xE1 de las limitaciones de tama\xF1o
-      y no se puede cargar en esta plataforma."
+    m_Localized: "Este esquema est\xE1 m\xE1s all\xE1 de las limitaciones de tama\xF1o y no se puede cargar en esta plataforma."
     m_Metadata:
       m_Items: []
   - m_Id: 18101292528115712
@@ -1291,8 +1285,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76070420314906624
-    m_Localized: "Ha habido un error al conectar al servidor\nde Icosa. Int\xE9ntalo
-      de nuevo m\xE1s tarde."
+    m_Localized: "Ha habido un error al conectar al servidor\nde Icosa. Int\xE9ntalo de nuevo m\xE1s tarde."
     m_Metadata:
       m_Items: []
   - m_Id: 76070518675529728
@@ -1308,8 +1301,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76071039813607424
-    m_Localized: "El contenido de la biblioteca de medios\nno se subir\xE1\ncon el
-      resto de tu bosquejo."
+    m_Localized: "El contenido de la biblioteca de medios\nno se subir\xE1\ncon el resto de tu bosquejo."
     m_Metadata:
       m_Items: []
   - m_Id: 76071162597662720
@@ -1325,8 +1317,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76071619017629696
-    m_Localized: "Los v\xEDdeos de la biblioteca de medios\nno se subir\xE1n\ncon
-      el resto de tu bosquejo."
+    m_Localized: "Los v\xEDdeos de la biblioteca de medios\nno se subir\xE1n\ncon el resto de tu bosquejo."
     m_Metadata:
       m_Items: []
   - m_Id: 76072279146553344
@@ -1346,8 +1337,7 @@ MonoBehaviour:
   - m_Id: 76072667581046784
     m_Localized: 'Actualiza el pincel inclinado para compartir
 
-      los bosquejos
-      en Icosa y Sketchfab'
+      los bosquejos en Icosa y Sketchfab'
     m_Metadata:
       m_Items: []
   - m_Id: 76080842438926336
@@ -1355,8 +1345,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76081074568486912
-    m_Localized: "Iniciar sesi\xF3n requiere salir de Open Brush.\nSugerimos guardar
-      tu trabajo\nantes de continuar."
+    m_Localized: "Iniciar sesi\xF3n requiere salir de Open Brush.\nSugerimos guardar tu trabajo\nantes de continuar."
     m_Metadata:
       m_Items: []
   - m_Id: 76084187576721408
@@ -1376,8 +1365,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76094798670913536
-    m_Localized: "Esto liberar\xE1 la carga de las im\xE1genes sin usar\npara liberar
-      memoria.\nLas im\xE1genes no se eliminar\xE1n."
+    m_Localized: "Esto liberar\xE1 la carga de las im\xE1genes sin usar\npara liberar memoria.\nLas im\xE1genes no se eliminar\xE1n."
     m_Metadata:
       m_Items: []
   - m_Id: 76095425199267840
@@ -1541,8 +1529,7 @@ MonoBehaviour:
   - m_Id: 76124332547956736
     m_Localized: 'Activar la copia de seguridad de Google Drive
 
-      mantiene tu
-      trabajo guardado en la nube.'
+      mantiene tu trabajo guardado en la nube.'
     m_Metadata:
       m_Items: []
   - m_Id: 76124651742879744
@@ -1556,8 +1543,7 @@ MonoBehaviour:
   - m_Id: 76124861466468352
     m_Localized: 'Elimina objetos de Google Drive
 
-      para liberar espacio de
-      almacenamiento.'
+      para liberar espacio de almacenamiento.'
     m_Metadata:
       m_Items: []
   - m_Id: 76124975501205504
@@ -1585,8 +1571,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76126729437503488
-    m_Localized: "Ese esquema sobrepasa las limitaciones de tama\xF1o y puede causar
-      una mala experiencia o bloquearse."
+    m_Localized: "Ese esquema sobrepasa las limitaciones de tama\xF1o y puede causar una mala experiencia o bloquearse."
     m_Metadata:
       m_Items: []
   - m_Id: 76126873826418688
@@ -1606,8 +1591,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76138083292602368
-    m_Localized: "Inicia sesi\xF3n en la cuenta de Google para acceder\na Drive y
-      a la asistencia de YouTube."
+    m_Localized: "Inicia sesi\xF3n en la cuenta de Google para acceder\na Drive y a la asistencia de YouTube."
     m_Metadata:
       m_Items: []
   - m_Id: 76138395621449728
@@ -1615,8 +1599,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 76138521224077312
-    m_Localized: "Inicia sesi\xF3n en un cuenta de Sketchfab para\npermitir la subida
-      a Sketchfab."
+    m_Localized: "Inicia sesi\xF3n en un cuenta de Sketchfab para\npermitir la subida a Sketchfab."
     m_Metadata:
       m_Items: []
   - m_Id: 81555836695764992
@@ -3466,15 +3449,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 86586444966813696
-    m_Localized: "Duplica cuando la herramienta\nde selecci\xF3n se superponga a
-      la selecci\xF3n"
+    m_Localized: "Duplica cuando la herramienta\nde selecci\xF3n se superponga a la selecci\xF3n"
     m_Metadata:
       m_Items: []
   - m_Id: 86605819400708096
     m_Localized: 'Usa el agarre para tomar objetos
 
-      <color=#787878>Prueba a
-      tomar este panel'
+      <color=#787878>Prueba a tomar este panel'
     m_Metadata:
       m_Items: []
   - m_Id: 86605978197057536
@@ -3504,8 +3485,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 86607071601778688
-    m_Localized: Suelta los objetos para descartar<color=#787878>Prueba a soltar
-      este cubo
+    m_Localized: Suelta los objetos para descartar<color=#787878>Prueba a soltar este cubo
     m_Metadata:
       m_Items: []
   - m_Id: 86607314393260032
@@ -3525,8 +3505,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 86607659639005184
-    m_Localized: "Usa el disparador y luego el panel t\xE1ctil\npara restablecer
-      tu tama\xF1o"
+    m_Localized: "Usa el disparador y luego el panel t\xE1ctil\npara restablecer tu tama\xF1o"
     m_Metadata:
       m_Items: []
   - m_Id: 86607720842289152
@@ -3538,10 +3517,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
-    m_Localized: "Puedes continuar sin un casco de realidad virtual. Elige un boceto
-      abajo para entrar al Modo de Visualizaci\xF3n con los siguientes controles:\n\nRat\xF3n:
-      mirar alrededor (presiona I para invertir arriba/abajo)\nW,A,S,D: mover adelante/atr\xE1s/izquierda/derecha\nQ,E:
-      mover arriba/abajo\nMant\xE9n presionado shift para moverte m\xE1s r\xE1pido"
+    m_Localized: "Puedes continuar sin un casco de realidad virtual. Elige un boceto abajo para entrar al Modo de Visualizaci\xF3n con los siguientes controles:\n\nRat\xF3n: mirar alrededor (presiona I para invertir arriba/abajo)\nW,A,S,D: mover adelante/atr\xE1s/izquierda/derecha\nQ,E: mover arriba/abajo\nMant\xE9n presionado shift para moverte m\xE1s r\xE1pido"
     m_Metadata:
       m_Items: []
   - m_Id: 218558579745579008
@@ -3601,7 +3577,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: ""
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928

@@ -75,14 +75,17 @@ namespace TiltBrush
             m_ToolsToMonitor = new List<BaseTool>();
             m_PanelDescriptionState = DescriptionState.Closed;
             m_PanelFlairState = DescriptionState.Closed;
+
+            // Collected here rather than in Start so that ActiveTool is valid for anything
+            // running in Start: every Awake completes before the first Start, whereas the
+            // order between two Starts depends on execution order. Tool Init stays in Start
+            // because the tools themselves need the rest of the app to be up.
+            m_Tools = GetComponentsInChildren<BaseTool>(true);
+            m_ActiveToolIndex = 0;
         }
 
         void Start()
         {
-            //get all tools from our children
-            m_Tools = GetComponentsInChildren<BaseTool>(true);
-
-            m_ActiveToolIndex = 0;
             m_ToolSelectionAggregateValue = 0.0f;
 
             //init and then turn them all off
@@ -281,6 +284,7 @@ namespace TiltBrush
         {
             if (ActiveTool.m_Type != BaseTool.ToolType.RepaintTool &&
                 ActiveTool.m_Type != BaseTool.ToolType.RecolorTool &&
+                ActiveTool.m_Type != BaseTool.ToolType.TintColorTool &&
                 ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool)
             {
                 EnableDefaultTool();
