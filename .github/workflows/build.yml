@@ -1409,7 +1409,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
 
       - name: Publish Oculus Builds
@@ -1460,11 +1460,10 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          # ArborXR is not the Meta store, including when the device is a Quest.
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
