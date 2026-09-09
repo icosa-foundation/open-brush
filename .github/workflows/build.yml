@@ -681,15 +681,38 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          shopt -s nullglob
+          APP_PATHS=(StandaloneOSX/OpenBrush*.app)
+          if [[ ${#APP_PATHS[@]} -ne 1 ]]; then
+            echo "Expected exactly one OpenBrush app, found ${#APP_PATHS[@]}."
+            exit 1
+          fi
+          FILENAME=$(basename "$(readlink -f "${APP_PATHS[0]}")")
 
-          cd StandaloneOSX/
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
-              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
-          done
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
-          cd -
+          pushd StandaloneOSX/
+
+          # Sign every native binary explicitly. Unity packages can add standalone
+          # dylibs as well as bundles, and codesign --deep does not reliably replace
+          # an existing ad-hoc signature on those files (as happened with
+          # libImmStrokeReader.dylib). Sign code from the inside out, then seal its
+          # containing bundle and finally the application itself.
+          while IFS= read -r -d '' native_file; do
+              if file -b "$native_file" | grep -q 'Mach-O'; then
+                  codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$native_file"
+              fi
+          done < <(find "$FILENAME" -type f -print0)
+
+          while IFS= read -r -d '' code_bundle; do
+              codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$code_bundle"
+          done < <(find "$FILENAME/Contents" -depth -type d \( \
+            -name '*.app' -o -name '*.bundle' -o -name '*.framework' -o \
+            -name '*.plugin' -o -name '*.xpc' \) -print0)
+
+          # These exceptions are needed by the Unity player, but should not be
+          # copied onto libraries and plug-ins that do not need entitlements.
+          codesign --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$FILENAME"
+          codesign --verify --deep --strict --verbose=4 "$FILENAME"
+          popd
 
           tar -c -v -z -f OpenBrush.tgz StandaloneOSX
       - name: Upload signed app
@@ -729,8 +752,8 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
 
           cp Support/macos/background.png StandaloneOSX/
           cp Support/macos/background@2x.png StandaloneOSX/
@@ -740,12 +763,26 @@ jobs:
           npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
           popd
 
-          xcrun notarytool submit \
-          --team-id ${{ vars.APPLE_TEAM_ID }} \
-          --apple-id ${{ vars.APPLE_ID }} \
-          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
-          --wait \
-          dist/OpenBrush.dmg
+          NOTARY_RESULT="$RUNNER_TEMP/notary-result.json"
+
+          set +e
+          xcrun notarytool submit dist/OpenBrush.dmg --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} --wait --output-format json > "$NOTARY_RESULT"
+          NOTARY_EXIT=$?
+          set -e
+
+          cat "$NOTARY_RESULT"
+          SUBMISSION_ID=$(plutil -extract id raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+          NOTARY_STATUS=$(plutil -extract status raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+
+          if [[ -n "$SUBMISSION_ID" && "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization returned '$NOTARY_STATUS'; fetching Apple's diagnostic log."
+            xcrun notarytool log "$SUBMISSION_ID" --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} || true
+          fi
+
+          if [[ $NOTARY_EXIT -ne 0 || "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization failed (exit=$NOTARY_EXIT, status='$NOTARY_STATUS')."
+            exit 1
+          fi
 
           xcrun stapler staple dist/OpenBrush.dmg
 
