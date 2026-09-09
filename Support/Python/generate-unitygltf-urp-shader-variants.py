@@ -7,7 +7,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 PBR_GRAPH_GUID = "478ce3626be7a5f4ea58d6b13f05a2e4"
 UNLIT_GRAPH_GUID = "59541e6caf586ca4f96ccf48a4813a51"
 
@@ -56,7 +55,9 @@ SHADER_RE = re.compile(r"^  - first: .*guid: ([0-9a-f]+),")
 VARIANT_RE = re.compile(r"^      - keywords:\s*(.*)$")
 
 
-def variant_blocks(lines: list[str]) -> list[tuple[str | None, list[str], set[str] | None]]:
+def variant_blocks(
+    lines: list[str],
+) -> list[tuple[str | None, list[str], set[str] | None]]:
     """Split collection YAML into pass-through and shader-variant blocks."""
     blocks: list[tuple[str | None, list[str], set[str] | None]] = []
     shader_guid: str | None = None
@@ -75,7 +76,11 @@ def variant_blocks(lines: list[str]) -> list[tuple[str | None, list[str], set[st
         block = [lines[i]]
         keyword_parts = [variant_match.group(1)]
         i += 1
-        while i < len(lines) and not VARIANT_RE.match(lines[i]) and not SHADER_RE.match(lines[i]):
+        while (
+            i < len(lines)
+            and not VARIANT_RE.match(lines[i])
+            and not SHADER_RE.match(lines[i])
+        ):
             block.append(lines[i])
             stripped = lines[i].strip()
             if stripped and not stripped.startswith("passType:"):
@@ -151,7 +156,10 @@ def main() -> int:
     generated, counts = generate(source_text)
 
     if args.check:
-        if not args.output.exists() or args.output.read_text(encoding="utf-8") != generated:
+        if (
+            not args.output.exists()
+            or args.output.read_text(encoding="utf-8") != generated
+        ):
             raise SystemExit(f"{args.output} is not up to date")
     else:
         with args.output.open("w", encoding="utf-8", newline="\n") as output_file:
