@@ -4041,6 +4041,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -5846,6 +5847,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: e42054be6923dde48bdb60ab2cfaed35, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: e42054be6923dde48bdb60ab2cfaed35, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_view_button
@@ -6113,6 +6118,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 68addc3a0162fe247bcd333d21b00bd7, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 68addc3a0162fe247bcd333d21b00bd7, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_trigger
@@ -6497,6 +6506,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: c54eebc0cfa92f54997e1005af971e3f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: c54eebc0cfa92f54997e1005af971e3f, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_system_button
@@ -6564,6 +6577,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: a58d9ff25be411f4cbddedc11e46a69c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: a58d9ff25be411f4cbddedc11e46a69c, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_status
@@ -7063,6 +7080,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 3fc32b3e97c4752429ebbd1b184ec35e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 3fc32b3e97c4752429ebbd1b184ec35e, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_bumper
@@ -8071,6 +8092,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: a08904b818976dc4f81395c210222094, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: a08904b818976dc4f81395c210222094, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_grip_button
@@ -8138,6 +8163,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: f50d7c9cc3ff7484c955a8d4bbe91f30, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: f50d7c9cc3ff7484c955a8d4bbe91f30, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_body
@@ -8317,6 +8346,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 37326be7394ba284291162565406e4e9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 37326be7394ba284291162565406e4e9, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_dpad
@@ -8388,6 +8421,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: c79f705f2c845ff4babcfda8f1834925, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: c79f705f2c845ff4babcfda8f1834925, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_thumbstick
