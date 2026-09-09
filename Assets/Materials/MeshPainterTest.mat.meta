@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/MeshPainterTest.mat.meta
 guid: b0ea7c74f3843fe4a95f2fb1bde27331
-========
-guid: ecbd20d64104646489ed8aa612b0cf5c
->>>>>>>> main:Assets/Models/Input/Materials/Tools/Materials/ConeFused-ConeFused_initialShadingGroup.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000

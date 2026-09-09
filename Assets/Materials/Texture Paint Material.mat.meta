@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/Texture Paint Material.mat.meta
 guid: 9095becd78e26574a97c0157b77261f7
-========
-guid: c5b0afa292b37f247a7c04f36a8c6ac2
->>>>>>>> main:Assets/Models/Input/Materials/Tools/Materials/ConeTip-initialShadingGroup.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000
