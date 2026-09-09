@@ -56,6 +56,24 @@ namespace TiltBrush
         // Shared AsyncCoroutineHelper used to time-slice UnityGLTF imports across frames.
         // Lives on a hidden, persistent GameObject so its per-frame timeout coroutine keeps running.
         private static AsyncCoroutineHelper sm_AsyncCoroutineHelper;
+        private static Material[] sm_UnityGltfShaderReferences;
+
+        private static void EnsureUnityGltfShadersLoaded()
+        {
+            if (sm_UnityGltfShaderReferences != null)
+            {
+                return;
+            }
+
+            sm_UnityGltfShaderReferences = new[]
+            {
+                Resources.Load<Material>("UnityGLTF PBRGraph Reference"),
+                Resources.Load<Material>("UnityGLTF UnlitGraph Reference")
+            };
+
+            Debug.Log($"[UNITYGLTF_SHADER_PRELOAD] PBR material={sm_UnityGltfShaderReferences[0] != null}, PBR find={Shader.Find("UnityGLTF/PBRGraph") != null}, Unlit material={sm_UnityGltfShaderReferences[1] != null}, Unlit find={Shader.Find("UnityGLTF/UnlitGraph") != null}");
+        }
+
         private static AsyncCoroutineHelper GetAsyncCoroutineHelper()
         {
             if (sm_AsyncCoroutineHelper == null)
@@ -92,6 +110,8 @@ namespace TiltBrush
         {
             try
             {
+                EnsureUnityGltfShadersLoaded();
+
                 ImportOptions options = new ImportOptions();
                 // TODO - should we import disabled to help round-tripping?
                 options.CameraImport = CameraImportOption.None;
