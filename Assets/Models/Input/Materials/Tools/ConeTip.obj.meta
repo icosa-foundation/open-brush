@@ -2,7 +2,6 @@ fileFormatVersion: 2
 guid: 2799d0912a1b46b19122092cb62d5c32
 ModelImporter:
   serializedVersion: 24600
-<<<<<<<< HEAD:Assets/Models/Input/Materials/Tools/ConeTip.obj.meta
   internalIDToNameTable: []
   externalObjects: {}
   materials:
@@ -10,36 +9,6 @@ ModelImporter:
     materialName: 3
     materialSearch: 1
     materialLocation: 1
-========
-  internalIDToNameTable:
-  - first:
-      1: 100000
-    second: ConeTip
-  - first:
-      1: 100002
-    second: //RootNode
-  - first:
-      4: 400000
-    second: ConeTip
-  - first:
-      4: 400002
-    second: //RootNode
-  - first:
-      23: 2300000
-    second: ConeTip
-  - first:
-      33: 3300000
-    second: ConeTip
-  - first:
-      43: 4300000
-    second: ConeTip
-  externalObjects: {}
-  materials:
-    materialImportMode: 0
-    materialName: 0
-    materialSearch: 1
-    materialLocation: 0
->>>>>>>> main:Assets/Models/Input/Tools/ConeTip.obj.meta
     searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
@@ -72,11 +41,7 @@ ModelImporter:
     sortHierarchyByName: 1
     preBakeConvexCollisionMesh: 0
     preBakeTriangleCollisionMesh: 0
-<<<<<<<< HEAD:Assets/Models/Input/Materials/Tools/ConeTip.obj.meta
     importPhysicalCameras: 0
-========
-    importPhysicalCameras: 1
->>>>>>>> main:Assets/Models/Input/Tools/ConeTip.obj.meta
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
@@ -108,11 +73,7 @@ ModelImporter:
     secondaryUVMinLightmapResolution: 40
     secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
-<<<<<<<< HEAD:Assets/Models/Input/Materials/Tools/ConeTip.obj.meta
     useFileScale: 0
-========
-    useFileScale: 1
->>>>>>>> main:Assets/Models/Input/Tools/ConeTip.obj.meta
     strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
@@ -143,11 +104,7 @@ ModelImporter:
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1
-<<<<<<<< HEAD:Assets/Models/Input/Materials/Tools/ConeTip.obj.meta
   animationType: 1
-========
-  animationType: 0
->>>>>>>> main:Assets/Models/Input/Tools/ConeTip.obj.meta
   humanoidOversampling: 1
   avatarSetup: 0
   addHumanoidExtraRootOnlyWhenUsingAvatar: 0
