@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/ModelVertexColor.mat.meta
 guid: d6a564b70f9de0845bd0c573cb7e8011
-========
-guid: 2b3c4d5e6f7a80911c2d3e4f50617283
->>>>>>>> main:Assets/Materials/ScriptedToolPreviewAlignedBox.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 0

@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Prefabs/EditableModelWidget.prefab.meta
 guid: a2b9131cdba3eea4491a57c60f03034e
-========
-guid: 25ef2a4f5d9580940a252d69638f77ce
->>>>>>>> main:Assets/Prefabs/Panels/QuillLibraryPanel.prefab.meta
 PrefabImporter:
   externalObjects: {}
   userData: 

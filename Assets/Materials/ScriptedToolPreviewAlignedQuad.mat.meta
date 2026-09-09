@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/ScriptedToolPreviewAlignedQuad.mat.meta
 guid: 7a8b9c0d1e2f3ab61c2d3e4f50617283
-========
-guid: 4d5e6f7a8b9c0ab31c2d3e4f50617283
->>>>>>>> main:Assets/Materials/ScriptedToolPreviewCapsule.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 0

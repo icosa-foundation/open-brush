@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
 guid: 22ca44880b645734b993dcfa04f5ea48
-========
-guid: 41261e3d425a39d49b360bcc608d2ad1
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -32,28 +28,18 @@ TextureImporter:
   ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
   cubemapConvolution: 0
   seamlessCubemap: 0
-========
-  cubemapConvolution: 1
-  seamlessCubemap: 1
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
   textureFormat: 1
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     filterMode: 1
     aniso: 1
-========
-    filterMode: 2
-    aniso: 0
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     mipBias: 0
-    wrapU: 1
-    wrapV: 1
-    wrapW: 1
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
   nPOTScale: 1
   lightmap: 0
   compressionQuality: 50
@@ -71,11 +57,7 @@ TextureImporter:
   spriteTessellationDetail: -1
   spriteGeometrySubdivision: -1
   textureType: 0
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
   textureShape: 1
-========
-  textureShape: 2
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
   singleChannelComponent: 0
   flipbookRows: 1
   flipbookColumns: 1
@@ -93,11 +75,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     compressionQuality: 50
-========
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -136,11 +114,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     compressionQuality: 50
-========
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -153,11 +127,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     compressionQuality: 50
-========
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -170,7 +140,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-    compressionQuality: 100
+    compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
