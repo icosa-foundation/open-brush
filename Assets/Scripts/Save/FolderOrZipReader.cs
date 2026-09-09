@@ -17,7 +17,7 @@ using System.IO;
 using System.Linq;
 
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
 
 
 namespace TiltBrush
