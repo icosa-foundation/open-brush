@@ -91,17 +91,6 @@
       ]
     },
     {
-      "name": "OpenUPM",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.atteneder",
-        "com.openupm",
-        "com.sandrofigo.voxreader",
-        "org.nuget.google",
-        "org.nuget.system"
-      ]
-    },
-    {
       "name": "Meta XR",
       "url": "https://npm.developer.oculus.com",
       "scopes": [
