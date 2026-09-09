@@ -117,8 +117,8 @@ jobs:
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
-          # upload-google-play accepts a comma-separated track list. Remove
-          # whitespace before exporting it, then match the exact production token.
+
+          # upload-google-play accepts a comma-separated track list. Remove whitespace before exporting it, then match the exact production token.
           NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
           echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
           echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
@@ -127,6 +127,7 @@ jobs:
             *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
             *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
           esac
+
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
@@ -300,8 +301,7 @@ jobs:
           # The Meta store requires its original application ID, irrespective of the XR loader.
           - name: Android Meta Quest
             targetPlatform: Android
-            # Meta upload validation rejects SDK 35; keep this separate from Google Play.
-            androidTargetSdkVersion: AndroidApiLevel34
+            androidTargetSdkVersion: AndroidApiLevel34  # Meta upload validation rejects SDK 35; keep this separate from Google Play.
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -1151,8 +1151,7 @@ jobs:
       viewer_changes_not_sent_for_review: ${{ steps.review_state.outputs.viewer_changes_not_sent_for_review }}
 
     steps:
-      # google-github-actions/auth writes its temporary credentials beneath the
-      # workspace, so checkout must run first even though this job reads no files.
+      # google-github-actions/auth writes its temporary credentials beneath the workspace, so checkout must run first even though this job reads no files.
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -1209,8 +1208,7 @@ jobs:
               --data '{}' \
               "$API_ROOT/$package_name/edits/$edit_id:validate")" || curl_status=$?
 
-            # The probe edit contains no changes, but delete it explicitly so
-            # it cannot linger until Google's edit-expiry timeout.
+            # The probe edit contains no changes, but delete it explicitly so it cannot linger until Google's edit-expiry timeout.
             curl --fail-with-body --silent --show-error \
               --request DELETE \
               --header "Authorization: Bearer $ACCESS_TOKEN" \
