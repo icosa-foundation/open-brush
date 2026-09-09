@@ -145,6 +145,7 @@ static class BuildTiltBrush
         public XrSdkMode xrSdk;
     }
     static PostBuildInfo m_forPostBuild;
+    internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
