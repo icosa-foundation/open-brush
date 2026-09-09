@@ -48,8 +48,8 @@ EXPECTED_KEYWORDS = {
 }
 
 EXPECTED_OUTPUT_VARIANTS = {
-    PBR_GRAPH_GUID: 383,
-    UNLIT_GRAPH_GUID: 7,
+    PBR_GRAPH_GUID: 384,
+    UNLIT_GRAPH_GUID: 8,
 }
 
 SHADER_RE = re.compile(r"^  - first: .*guid: ([0-9a-f]+),")
@@ -88,12 +88,30 @@ def variant_blocks(lines: list[str]) -> list[tuple[str | None, list[str], set[st
 
 def generate(source_text: str) -> tuple[str, dict[str, int]]:
     lines = source_text.splitlines(keepends=True)
+    blocks = variant_blocks(lines)
     output: list[str] = []
     output_counts = {guid: 0 for guid in EXPECTED_KEYWORDS}
     seen_keywords = {guid: set() for guid in EXPECTED_KEYWORDS}
+    source_empty_variants = {
+        shader_guid
+        for shader_guid, _, keywords in blocks
+        if shader_guid in EXPECTED_KEYWORDS and keywords == set()
+    }
 
-    for shader_guid, block, keywords in variant_blocks(lines):
-        if keywords is None or shader_guid not in EXPECTED_KEYWORDS:
+    for shader_guid, block, keywords in blocks:
+        if keywords is None:
+            output.extend(block)
+            if (
+                shader_guid in EXPECTED_KEYWORDS
+                and shader_guid not in source_empty_variants
+                and len(block) == 1
+                and block[0].strip() == "variants:"
+            ):
+                output.extend(["      - keywords:\n", "        passType: 0\n"])
+                output_counts[shader_guid] += 1
+            continue
+
+        if shader_guid not in EXPECTED_KEYWORDS:
             output.extend(block)
             continue
 

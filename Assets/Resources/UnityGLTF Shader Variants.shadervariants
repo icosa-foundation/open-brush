@@ -11,6 +11,8 @@ ShaderVariantCollection:
   - first: {fileID: -6465566751694194690, guid: 478ce3626be7a5f4ea58d6b13f05a2e4, type: 3}
     second:
       variants:
+      - keywords:
+        passType: 0
       - keywords: INSTANCING_ON
         passType: 0
       - keywords: INSTANCING_ON _ALPHATEST_ON
@@ -866,6 +868,8 @@ ShaderVariantCollection:
   - first: {fileID: -6465566751694194690, guid: 59541e6caf586ca4f96ccf48a4813a51, type: 3}
     second:
       variants:
+      - keywords:
+        passType: 0
       - keywords: INSTANCING_ON
         passType: 0
       - keywords: INSTANCING_ON _ALPHATEST_ON
