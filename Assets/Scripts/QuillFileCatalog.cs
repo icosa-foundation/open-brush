@@ -69,8 +69,7 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillLibraryPath();
-            App.InitQuillImmPath();
+            App.InitQuillMediaLibraryPath();
             SetSourceDirectory(m_SourceDirectory);
         }
 
@@ -134,7 +133,8 @@ namespace TiltBrush
             m_CurrentDirectory = path;
             m_Files.Clear();
 
-            if (!Directory.Exists(m_CurrentDirectory))
+            // Quill's external project folder is only discovered, never created by Open Brush.
+            if (m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
             {
                 App.InitDirectoryAtPath(m_CurrentDirectory);
             }
@@ -213,42 +213,36 @@ namespace TiltBrush
             var files = new List<QuillFileInfo>();
             if (Directory.Exists(m_CurrentDirectory))
             {
-                if (m_SourceDirectory == SourceDirectory.Imm)
+                foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
                 {
-                    foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
+                    if (!string.IsNullOrEmpty(m_SearchText) &&
+                        Path.GetFileNameWithoutExtension(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+                    try
                     {
-                        if (!string.IsNullOrEmpty(m_SearchText) &&
-                            Path.GetFileNameWithoutExtension(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
-                            continue;
-                        try
-                        {
-                            files.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.LogWarning($"Skipping IMM file '{path}': {ex.Message}");
-                        }
+                        files.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"Skipping IMM file '{path}': {ex.Message}");
                     }
                 }
 
-                if (m_SourceDirectory == SourceDirectory.QuillProjects)
+                foreach (string path in Directory.GetDirectories(m_CurrentDirectory, "*", SearchOption.TopDirectoryOnly))
                 {
-                    foreach (string path in Directory.GetDirectories(m_CurrentDirectory, "*", SearchOption.TopDirectoryOnly))
+                    if (!string.IsNullOrEmpty(m_SearchText) &&
+                        Path.GetFileName(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+                    try
                     {
-                        if (!string.IsNullOrEmpty(m_SearchText) &&
-                            Path.GetFileName(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
-                            continue;
-                        try
+                        if (IsQuillProject(path))
                         {
-                            if (IsQuillProject(path))
-                            {
-                                files.Add(QuillFileInfo.FromQuillDirectory(new DirectoryInfo(path)));
-                            }
+                            files.Add(QuillFileInfo.FromQuillDirectory(new DirectoryInfo(path)));
                         }
-                        catch (Exception ex)
-                        {
-                            Debug.LogWarning($"Skipping Quill project '{path}': {ex.Message}");
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"Skipping Quill project '{path}': {ex.Message}");
                     }
                 }
             }
@@ -271,7 +265,7 @@ namespace TiltBrush
         private static string GetDirectoryForSource(SourceDirectory sourceDirectory)
         {
             return sourceDirectory == SourceDirectory.Imm
-                ? App.QuillImmPath()
+                ? App.QuillMediaLibraryPath()
                 : App.QuillLibraryPath();
         }
 
