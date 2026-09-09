@@ -322,7 +322,8 @@ jobs:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        # As of 09/09/26, we start with 86GB of free space and this gives us a total of 115GB. But we really don't need that much space, so this is now disabled
+        if: false
         run: |
           echo "Initial free space"
           df -h /
