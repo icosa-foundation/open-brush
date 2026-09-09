@@ -411,7 +411,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/GraphicsSettings.asset', 'Assets/Resources/UnityGLTF Shader Variants.shadervariants', 'Assets/Resources/UnityGLTFSettings.asset') }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -619,7 +619,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json', 'ProjectSettings/GraphicsSettings.asset', 'Assets/Resources/UnityGLTF Shader Variants.shadervariants', 'Assets/Resources/UnityGLTFSettings.asset') }}
 
   signmacos:
     name: Sign the MacOS .app
