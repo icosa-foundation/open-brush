@@ -33,7 +33,7 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
 #endif
 
 #if !UNITY_2020_3_OR_NEWER
@@ -2021,7 +2021,9 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
+                    m_UserPath = SteamManager.RunningUnderLepton
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
                     break;
                 case RuntimePlatform.IPhonePlayer:
@@ -2291,23 +2293,13 @@ namespace TiltBrush
             }
         }
 
-        public static void InitQuillLibraryPath()
+        public static void InitQuillMediaLibraryPath()
         {
-            string quillLibraryDirectory = QuillLibraryPath();
+            string quillMediaDirectory = QuillMediaLibraryPath();
 
-            if (!Directory.Exists(quillLibraryDirectory))
+            if (!Directory.Exists(quillMediaDirectory))
             {
-                InitDirectoryAtPath(quillLibraryDirectory);
-            }
-        }
-
-        public static void InitQuillImmPath()
-        {
-            string quillImmDirectory = QuillImmPath();
-
-            if (!Directory.Exists(quillImmDirectory))
-            {
-                InitDirectoryAtPath(quillImmDirectory);
+                InitDirectoryAtPath(quillMediaDirectory);
             }
         }
 
@@ -2397,9 +2389,9 @@ namespace TiltBrush
                 System.Environment.SpecialFolder.Personal), "Quill");
         }
 
-        static public string QuillImmPath()
+        static public string QuillMediaLibraryPath()
         {
-            return Path.Combine(MediaLibraryPath(), "Imm");
+            return Path.Combine(MediaLibraryPath(), "Quill");
         }
 
         static public string AutosavePath()

@@ -52,7 +52,6 @@ MonoBehaviour:
     - com.openupm
     - com.sandrofigo.voxreader
     - org.nuget.google
-    - org.nuget.sharpziplib
     - org.nuget.system
     m_IsDefault: 0
     m_IsUnityRegistry: 0

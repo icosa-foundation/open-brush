@@ -92,8 +92,10 @@ namespace TiltBrush
         static SaveLoadScript()
         {
 #if UNITY_2018_4_OR_NEWER
+            // Use Unity's namespaced package: Mono players also ship a legacy
+            // ICSharpCode.SharpZipLib.dll that does not contain ZipStrings.
             // 2018 doesn't include ANSICodePage any more -- or maybe it's only if we use .net 4.6?
-            ICSharpCode.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
+            Unity.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
 #else
             // There's an ancient mono bug (that Unity inherits) that prevents builds
             // from including the proper set of code pages, causing runtime errors when

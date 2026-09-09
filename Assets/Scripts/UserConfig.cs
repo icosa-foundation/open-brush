@@ -133,6 +133,9 @@ namespace TiltBrush
         [Serializable]
         public struct FlagsConfig
         {
+            // Positive values override the device's vertex warning threshold at startup.
+            // Zero (the default) uses automatic device selection.
+            public int MemoryWarningVertCount;
             public bool DisableAudio;
             public bool DisableAutosave;
             [FormerlySerializedAs("DisablePoly")] public bool DisableIcosa;
