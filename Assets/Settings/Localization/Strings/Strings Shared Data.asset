@@ -3827,6 +3827,22 @@ MonoBehaviour:
     m_Key: BUTTON_ACCOUNTS_ENTER_CODE
     m_Metadata:
       m_Items: []
+  - m_Id: 540641902376607744
+    m_Key: QUILL_PANEL_IMM_FILES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Key: QUILL_PANEL_QUILL_FILES_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Key: QUILL_PANEL_IMM_FILES_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Key: QUILL_PANEL_QUILL_FILES_DESCRIPTION_EXTRA
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
