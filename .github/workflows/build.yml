@@ -691,11 +691,7 @@ jobs:
 
           pushd StandaloneOSX/
 
-          # Sign every native binary explicitly. Unity packages can add standalone
-          # dylibs as well as bundles, and codesign --deep does not reliably replace
-          # an existing ad-hoc signature on those files (as happened with
-          # libImmStrokeReader.dylib). Sign code from the inside out, then seal its
-          # containing bundle and finally the application itself.
+          # Sign every native binary explicitly. Sign code from the inside out, then seal its containing bundle and finally the application itself.
           while IFS= read -r -d '' native_file; do
               if file -b "$native_file" | grep -q 'Mach-O'; then
                   codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$native_file"
@@ -708,8 +704,6 @@ jobs:
             -name '*.app' -o -name '*.bundle' -o -name '*.framework' -o \
             -name '*.plugin' -o -name '*.xpc' \) -print0)
 
-          # These exceptions are needed by the Unity player, but should not be
-          # copied onto libraries and plug-ins that do not need entitlements.
           codesign --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$FILENAME"
           codesign --verify --deep --strict --verbose=4 "$FILENAME"
           popd
