@@ -146,12 +146,12 @@ Transform:
   m_GameObject: {fileID: 1155247644906448}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.046, y: 0.269, z: 0.45}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4733457753444182}
-  m_Father: {fileID: 4430097445729154}
+  m_Father: {fileID: 9000000000000102}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1178608922718774
 GameObject:
@@ -273,7 +273,7 @@ Transform:
   m_GameObject: {fileID: 1217197015729746}
   serializedVersion: 2
   m_LocalRotation: {x: -0.0000000018743451, y: -0.70710677, z: -0.7071068, w: -7.10192e-10}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.22434685, y: 0.09241522, z: -0.0031722027}
   m_LocalScale: {x: 10, y: -10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -867,7 +867,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4113233617628528}
-  - {fileID: 4679880291395730}
+  - {fileID: 9000000000000102}
   - {fileID: 4946426835749238}
   - {fileID: 4003799569373938}
   - {fileID: 4591936865981150}
@@ -4041,6 +4041,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 0}
+  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -4882,6 +4883,38 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &9000000000000101
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9000000000000102}
+  m_Layer: 14
+  m_Name: PointerAttachAnchorAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9000000000000102
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000000000000101}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.21643952, y: 0, z: 0, w: 0.97629607}
+  m_LocalPosition: {x: 0.046, y: 0.269, z: 0.45}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4679880291395730}
+  m_Father: {fileID: 4430097445729154}
+  m_LocalEulerAnglesHint: {x: -25, y: 0, z: 0}
 --- !u!1 &413214937938648012
 GameObject:
   m_ObjectHideFlags: 0
@@ -5846,6 +5879,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: e42054be6923dde48bdb60ab2cfaed35, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: e42054be6923dde48bdb60ab2cfaed35, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_view_button
@@ -6113,6 +6150,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 68addc3a0162fe247bcd333d21b00bd7, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 68addc3a0162fe247bcd333d21b00bd7, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_trigger
@@ -6497,6 +6538,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: c54eebc0cfa92f54997e1005af971e3f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: c54eebc0cfa92f54997e1005af971e3f, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_system_button
@@ -6564,6 +6609,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: a58d9ff25be411f4cbddedc11e46a69c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: a58d9ff25be411f4cbddedc11e46a69c, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_status
@@ -7063,6 +7112,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 3fc32b3e97c4752429ebbd1b184ec35e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 3fc32b3e97c4752429ebbd1b184ec35e, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_bumper
@@ -8071,6 +8124,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: a08904b818976dc4f81395c210222094, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: a08904b818976dc4f81395c210222094, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_grip_button
@@ -8138,6 +8195,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7635826562936255635, guid: f50d7c9cc3ff7484c955a8d4bbe91f30, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: f50d7c9cc3ff7484c955a8d4bbe91f30, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_body
@@ -8317,6 +8378,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: 37326be7394ba284291162565406e4e9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: 37326be7394ba284291162565406e4e9, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_dpad
@@ -8388,6 +8453,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8303352928453506203, guid: c79f705f2c845ff4babcfda8f1834925, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0ad139d46665e7244be29c08975f6911, type: 2}
     - target: {fileID: 919132149155446097, guid: c79f705f2c845ff4babcfda8f1834925, type: 3}
       propertyPath: m_Name
       value: SteamFramePart_thumbstick
