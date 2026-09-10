@@ -29,6 +29,7 @@ SubShader {
     Cull Off
 
     HLSLPROGRAM
+    #pragma multi_compile_instancing
     #pragma vertex Vert
     #pragma fragment Frag
 
@@ -48,15 +49,19 @@ SubShader {
       half4 color : COLOR;
       float2 texcoord0 : TEXCOORD0;
       float3 texcoord1 : TEXCOORD1;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
       float4 positionHCS : SV_POSITION;
       half4 color : COLOR;
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
-      Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      Varyings OUT = (Varyings)0;
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
       float4 positionOS = IN.positionOS;
       float envelope = sin(IN.texcoord0.x * 3.14159) * (1.0 - _IntroDissolve);
@@ -69,6 +74,7 @@ SubShader {
     }
 
     half4 Frag(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       return half4(IN.color.rgb, 1.0h);
     }
     ENDHLSL

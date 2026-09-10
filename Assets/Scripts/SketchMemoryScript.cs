@@ -295,8 +295,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded && !m_MemoryWarningAccepted)
             {
                 int vertCount = numVerts +
-                    App.Scene.MainCanvas.BatchManager.CountAllBatchVertices() +
-                    App.Scene.SelectionCanvas.BatchManager.CountAllBatchVertices() +
+                    App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                     WidgetManager.m_Instance.WidgetsVertCount;
                 return vertCount > m_MemoryWarningVertCount;
             }
@@ -312,8 +311,7 @@ namespace TiltBrush
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
-                        App.Scene.MainCanvas.BatchManager.CountAllBatchVertices() +
-                        App.Scene.SelectionCanvas.BatchManager.CountAllBatchVertices() +
+                        App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                         WidgetManager.m_Instance.WidgetsVertCount;
                     if (m_LastCheckedVertCount > m_MemoryWarningVertCount)
                     {
@@ -364,7 +362,8 @@ namespace TiltBrush
             m_Instance = this;
             m_xfSketchInitial_RS = TrTransform.identity;
 
-            m_MemoryWarningVertCount = UserConfig.PerformanceOverrides.MemoryWarningVertCount;
+            m_MemoryWarningVertCount = App.UserConfig.Performance.MemoryWarningVertCount ??
+                App.PlatformConfig.GetMemoryWarningVertCount(App.UserConfig.Flags.MemoryWarningVertCount);
         }
 
         void Update()
