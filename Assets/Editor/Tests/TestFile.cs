@@ -1243,6 +1243,45 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafSavedStrokes_ReadAndWriteTheEstablishedMediaLibraryDirectory()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-strokes-{Guid.NewGuid():N}");
+            string establishedDirectory = Path.Combine(root, "Media Library", "Saved Strokes");
+            Directory.CreateDirectory(establishedDirectory);
+            try
+            {
+                File.WriteAllText(Path.Combine(establishedDirectory, "existing.tilt"), "existing strokes");
+                var backend = new LocalUserStorageBackend(
+                    area => Path.Combine(root, SafUserStorageBackend.GetAreaPath(area)));
+
+                StorageDirectoryResult listing = backend.List(StorageArea.SavedStrokes, "", CancellationToken.None);
+                Assert.IsTrue(listing.Success, listing.Error);
+                Assert.AreEqual("existing.tilt", listing.Documents.Single().DisplayName);
+                using (var transaction = backend.BeginWrite(
+                    StorageArea.SavedStrokes, "new.tilt", TiltFile.TILT_MIME_TYPE, CancellationToken.None))
+                {
+                    using (var writer = new StreamWriter(transaction.OpenWrite())) writer.Write("new strokes");
+                    Assert.IsTrue(transaction.Commit().Success);
+                }
+                Assert.AreEqual("new strokes", File.ReadAllText(Path.Combine(establishedDirectory, "new.tilt")));
+                Assert.IsFalse(Directory.Exists(Path.Combine(root, "Saved Strokes")));
+
+                var resolve = typeof(OpenBrushStorage).GetMethod("TryResolveStorageDestination",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                object[] args = { "Media Library/Saved Strokes/new.tilt", default(StorageArea), null };
+                Assert.IsTrue((bool)resolve.Invoke(null, args));
+                Assert.AreEqual(StorageArea.SavedStrokes, args[1]);
+                Assert.AreEqual("new.tilt", args[2]);
+            }
+            finally
+            {
+                Assert.IsTrue(Path.GetFullPath(root).StartsWith(
+                    Path.Combine(Path.GetTempPath(), "open-brush-saf-strokes-"), StringComparison.Ordinal));
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
         public void SoundDefaults_PreserveFileCreatedAfterListing()
         {
             var backend = new FakeSafBackend

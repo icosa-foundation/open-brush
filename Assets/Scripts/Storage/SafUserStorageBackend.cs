@@ -275,7 +275,7 @@ namespace TiltBrush
             switch (area)
             {
                 case StorageArea.Sketches: return "Sketches";
-                case StorageArea.SavedStrokes: return "Saved Strokes";
+                case StorageArea.SavedStrokes: return "Media Library/Saved Strokes";
                 case StorageArea.MediaLibraryImages: return "Media Library/Images";
                 case StorageArea.MediaLibraryBackgroundImages:
                     return "Media Library/BackgroundImages";
