@@ -132,9 +132,9 @@ namespace TiltBrush
         }
 
         override protected bool UpdatePositionImpl(
-            Vector3 pos, Quaternion ori, float pressure)
+            Vector3 pos, Quaternion ori, float pressure, Color32? color = null)
         {
-            bool keep = base.UpdatePositionImpl(pos, ori, pressure);
+            bool keep = base.UpdatePositionImpl(pos, ori, pressure, color);
             if (keep && m_PreviewMode)
             {
                 m_DecayTimers.Add(0);
@@ -244,13 +244,14 @@ namespace TiltBrush
                             alpha = m_rng.InRange(salt + kSaltAlpha, 0.0f, 1.0f);
                         }
 
-                        SetVert(iVertIndex, BR, vCenter - vForwardOffset + vRightOffset, cur.nSurface, m_Color,
+                        Color32 color = cur.color;
+                        SetVert(iVertIndex, BR, vCenter - vForwardOffset + vRightOffset, cur.nSurface, color,
                             alpha);
-                        SetVert(iVertIndex, BL, vCenter - vForwardOffset - vRightOffset, cur.nSurface, m_Color,
+                        SetVert(iVertIndex, BL, vCenter - vForwardOffset - vRightOffset, cur.nSurface, color,
                             alpha);
-                        SetVert(iVertIndex, FR, vCenter + vForwardOffset + vRightOffset, cur.nSurface, m_Color,
+                        SetVert(iVertIndex, FR, vCenter + vForwardOffset + vRightOffset, cur.nSurface, color,
                             alpha);
-                        SetVert(iVertIndex, FL, vCenter + vForwardOffset - vRightOffset, cur.nSurface, m_Color,
+                        SetVert(iVertIndex, FL, vCenter + vForwardOffset - vRightOffset, cur.nSurface, color,
                             alpha);
 
                         iTriIndex += kTrisInSolid * NS;

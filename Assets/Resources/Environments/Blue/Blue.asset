@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: 0ca88298-e5e8-4e94-aad8-4b4f6c80ae52
-  m_Description: ENVIRONMENT_BLUE
   m_EnvironmentDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -38,8 +37,7 @@ MonoBehaviour:
     m_EnvironmentPrefab: EnvironmentPrefabs/AmbientGrid_Blue
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_Room
     m_SkyboxCubemap: {fileID: 8900000, guid: 05c49abd569134d4bbc8b50f93eb37ee, type: 3}
-    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d,
-      type: 3}
+    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d, type: 3}
     m_ReflectionIntensity: 0.8
   m_Lights:
   - m_Color: {r: 0.9137255, g: 0.827451, b: 1.0431373, a: 1}
@@ -63,6 +61,7 @@ MonoBehaviour:
   m_WidgetHome: {x: 0, y: 0, z: 0}
   m_SkyboxColorA: {r: 0.18039216, g: 0.23529412, b: 0.4117647, a: 1}
   m_SkyboxColorB: {r: 0.35686275, g: 0.39215687, b: 0.6, a: 1}
+  isPassthrough: 0
   references:
     version: 2
     RefIds: []

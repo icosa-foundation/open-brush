@@ -14,7 +14,7 @@ on:  # yamllint disable-line rule:truthy
     - cron: "34 19 * * sat"  # Weekly, Saturday at 19:34 UTC
 
 env:
-  UNITY_VERSION: "2022.3.62f2"
+  UNITY_VERSION: "6000.6.0f1"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -117,8 +117,8 @@ jobs:
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
-          # upload-google-play accepts a comma-separated track list. Remove
-          # whitespace before exporting it, then match the exact production token.
+
+          # upload-google-play accepts a comma-separated track list. Remove whitespace before exporting it, then match the exact production token.
           NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
           echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
           echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
@@ -127,12 +127,36 @@ jobs:
             *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
             *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
           esac
+
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
           MAJOR=$(echo $VERSION | cut -d '.' -f 1)
           MINOR=$(echo $VERSION | cut -d '.' -f 2)
-          ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # PR builds use a Unix timestamp as the version code instead of the
+            # commit-count formula. The formula counts first-parent commits on main
+            # since the last tag, so it stays fixed for the entire lifetime of a PR
+            # (adding commits to the branch doesn't change it). That causes "version
+            # code already used" rejections when uploading successive test builds to
+            # Google Play.
+            #
+            # DOWNSIDE: timestamp codes (~1.78B today after suffix) are permanently
+            # higher than production codes (~20M), so any build uploaded to Play with
+            # a timestamp code must never be promoted to production — upload test
+            # builds to an internal/closed track only. Also, Unix timestamps exceed
+            # Android's hard limit of 2,100,000,000 around 2036.
+            #
+            # We divide by 10 because the build matrix appends a single-digit
+            # versionSuffix as a string (e.g. "0"), effectively multiplying by 10.
+            # Without the division, the final code would be 11 digits and exceed
+            # Android's 2,100,000,000 limit. Dividing first keeps it within range
+            # while retaining 10-second granularity — sufficient since CI builds
+            # take much longer than 10 seconds.
+            ANDROID_VERSION_CODE=$(( $(date +%s) / 10 ))
+          else
+            ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          fi
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
@@ -211,118 +235,84 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Windows Pimax, Windows Rift, Linux, MacOS, Android OpenXR, Android OpenXR Google Play, Android Viewer, Oculus Quest (1), Oculus Quest (2+), Android Pico, Android Pico (CN), iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             platformConfig: Desktop
             vrsdk: OpenXR
             cache: Windows
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: Windows Pimax
-            targetPlatform: StandaloneWindows64
-            platformConfig: Desktop
-            vrsdk: OpenXR
-            cache: Windows
-            extra_defines: PIMAX_SUPPORTED
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: Windows Rift
-            targetPlatform: StandaloneWindows64
-            platformConfig: Desktop
-            vrsdk: Oculus
-            cache: Windows
-            extra_defines: OCULUS_SUPPORTED
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             platformConfig: Desktop
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             platformConfig: Desktop
             vrsdk: Monoscopic
             cache: MacOS
-            packages_to_remove: com.meta.xr.sdk.core
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android OpenXR
             targetPlatform: Android
             platformConfig: Mobile
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
-            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android OpenXR Google Play
+          - name: Android AndroidXR
             targetPlatform: Android
-            vrsdk: OpenXR
+            androidTargetSdkVersion: AndroidApiLevel35
+            vrsdk: AndroidXR
             cache: Android_Vulkan
-            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             androidExportType: androidAppBundle
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Android Viewer
+          # The Viewer is a product variant, not a flat-only runtime. Keep a generic
+          # OpenXR APK alongside the AndroidXR AAB so both of its runtime modes are
+          # exercised without conflating the Google Play and non-Google artifacts.
+          - name: Android Viewer OpenXR
             targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
-            packages_to_remove: com.meta.xr.sdk.core com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
+            extraoptions: -btb-il2cpp
+            versionSuffix: 0
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android Viewer AndroidXR
+            targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
+            vrsdk: AndroidXR
+            cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
             androidExportType: androidAppBundle
             extra_defines: OPEN_BRUSH_VIEWER
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          - name: Oculus Quest (1)
+          # The Meta store requires its original application ID, irrespective of the XR loader.
+          - name: Android Meta Quest
             targetPlatform: Android
             platformConfig: LowEndMobile
+            androidTargetSdkVersion: AndroidApiLevel34  # Meta upload validation rejects SDK 35; keep this separate from Google Play.
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             versionSuffix: 0
-            extra_defines: USE_QUEST_PACKAGE_NAME FORCE_QUEST_SUPPORT_DEVICE FORCE_FOCUSAWARE FORCE_HEADTRACKING
-            packages_to_remove: com.meta.xr.sdk.platform com.meta.xr.sdk.utilities
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: Oculus Quest (2+)
-            targetPlatform: Android
-            platformConfig: Mobile
-            vrsdk: Oculus
-            cache: Android_Vulkan
-            extraoptions: -btb-il2cpp -btb-android-target-sdk 34
-            versionSuffix: 1
-            extra_defines: OCULUS_SUPPORTED USE_QUEST_PACKAGE_NAME
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: Android Pico
-            targetPlatform: Android
-            platformConfig: Mobile
-            vrsdk: Pico
-            cache: Android_GLES
-            extraoptions: -btb-il2cpp
-            versionSuffix: 0
-            extra_defines: PICO_SUPPORTED
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
-
-          - name: Android Pico (CN)
-            targetPlatform: Android
-            platformConfig: Mobile
-            vrsdk: Pico
-            cache: Android_GLES
-            # Pico requested Chinese build that doesn't have google/sketchfab login.
-            extraoptions: -btb-il2cpp -btb-disableAccountLogins
-            versionSuffix: 1
-            extra_defines: PICO_SUPPORTED
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2
+            extra_defines: USE_QUEST_PACKAGE_NAME
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -332,13 +322,14 @@ jobs:
             extraoptions: -btb-il2cpp
             extra_defines: ZAPBOX_SUPPORTED
             packages_to_remove: com.unity.formats.usd
-            extra_photon_defines: MP_PHOTON PHOTON_UNITY_NETWORKING PUN_2_OR_NEWER PUN_2_0_OR_NEWER PUN_2_19_OR_NEWER CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2  # The Fusion plugin does *not* set FUSION_WEAVER and FUSION2 for iOS, unlike other platforms. However, it does get set elsewhere, but only when we go through the Editor. From the command line, it doesn't get set properly, and thus the builds fail without these two defines.
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER  # The Fusion plugin does not reliably set these Fusion symbols for iOS command-line builds.
 
     steps:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        # As of 09/09/26, we start with 86GB of free space and this gives us a total of 115GB. But we really don't need that much space, so this is now disabled
+        if: false
         run: |
           echo "Initial free space"
           df -h /
@@ -402,67 +393,13 @@ jobs:
         with:
           lfs: true  # We don't use LFS, but it adds no time, and leave it here in case we do at some point later
 
-      - name: Install Pimax unity package
-        if: startsWith(matrix.name, 'Windows Pimax')
-        run: |
-          # version 0.6.3
-          # Same as above, but adapted to work for Pimax instead.
-          wget -q https://dl.appstore.pimax.com/sdk/Pimax_Platform_Unity_SDK_v0.6.3.zip -O package.zip
-          unzip package.zip
-          mkdir tmp
-          tar -C tmp -xzf PimaxPlatform_v0.6.3.unitypackage
-          find tmp -type f | xargs chmod a-x
-          for pn in tmp/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp/$d"
-            [ -f "tmp/$id/asset" ] && cp -v "tmp/$id/asset" "tmp/$p"
-            cp "tmp/$id/asset.meta" "tmp/${p}.meta"
-          done
-          cp -R tmp/Assets/Pimax Assets/
-          rm -rf tmp package.zip PimaxPlatform_v0.6.3.unitypackage Tools
-
-      - name: Install Pico unity package
-        if: matrix.vrsdk == 'Pico'
-        run: |
-          # version 2.1.1
-          mkdir Packages/com.unity.xr.picoxr
-          wget -q https://sdk.picovr.com/developer-platform/sdk/PICO%20Unity%20Integration%20SDK%20v211.zip -O package.zip
-          unzip package.zip -d Packages/com.unity.xr.picoxr
-          # Pico has a GUID conflict because they copied code from Oculus. Delete the offending .meta file from our mutable Pico SDK.
-          rm Packages/com.unity.xr.picoxr/Platform/Scripts/Models/Common.cs.meta
-
-      - name: Install TextMesh Pro package
-        run: |
-          # version 3.0.6; must be updated if the version changes
-          # This replaces the GUI's "Window -> TextMesh Pro -> Import TMP Essential Resources". I don't know why Unity makes this sort of thing so hard!
-          mkdir tmp.plugin
-          wget -q https://download.packages.unity.com/com.unity.textmeshpro/-/com.unity.textmeshpro-3.0.6.tgz -O tmp.plugin/plugin.tgz
-          tar -C tmp.plugin -xzf tmp.plugin/plugin.tgz
-          mkdir tmp.package
-          tar -C tmp.package -xzf 'tmp.plugin/package/Package Resources/TMP Essential Resources.unitypackage'
-          for pn in tmp.package/*/pathname; do
-            id=${pn%/*}
-            id=${id#*/}
-            p=$(head -1 $pn)
-            d=${p%/*}
-            mkdir -p "tmp.package/$d"
-            [ -f "tmp.package/$id/asset" ] && cp -v "tmp.package/$id/asset" "tmp.package/$p"
-            cp "tmp.package/$id/asset.meta" "tmp.package/${p}.meta"
-          done
-          mkdir -p 'Assets/TextMesh Pro'
-          cp -R 'tmp.package/Assets/TextMesh Pro' Assets/
-          rm -rf tmp.plugin tmp.package
-
       - name: Checkout private photon repository if available
         if: ${{ env.PHOTON_PAT }}
         uses: actions/checkout@v7
         with:
           token: ${{ env.PHOTON_PAT }}
           repository: icosa-mirror/photon-fusion
-          ref: Fusion_v2_Voice_2
+          ref: fusion-2.1.2-voice-2.63-realtime5-unity6
           path: photon-fusion-mirror/
 
       - name: Copy photon files
@@ -594,12 +531,11 @@ jobs:
           UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
           retry_condition: steps._this.outputs.engineExitCode == 1
-          action: game-ci/unity-builder@v4
+          action: game-ci/unity-builder@v5
           with: |
-            allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
             unityVersion: ${{ env.UNITY_VERSION }}
             targetPlatform: ${{ matrix.targetPlatform }}
-            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ needs.configuration.outputs.description}} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
+            customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
             versioning: Custom
             androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
             version: ${{ needs.configuration.outputs.version }}
@@ -608,6 +544,7 @@ jobs:
             chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
             buildMethod: BuildTiltBrush.CommandLine
             androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
+            androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
             androidKeystoreName: openbrush.keystore
             androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 || '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' }}
             androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS || 'FakeKey' }}
@@ -624,11 +561,6 @@ jobs:
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
 
-      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
-        if: startsWith(matrix.name, 'Windows Rift')
-        run: |
-          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
-
       - name: Add bundled Windows tools
         if: matrix.targetPlatform == 'StandaloneWindows64'
         run: cp Support/windows/tools/TiltThumbs-Installer.exe build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/
@@ -639,7 +571,6 @@ jobs:
           name: ${{ matrix.name }} ${{ matrix.flavors.title }}
           path: |
             build/${{ matrix.vrsdk }}
-            !build/Pico/*.symbols.zip
             !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
 
       - name: Check if packages-lock.json has changed or if it's cacheable
@@ -664,22 +595,28 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
+        env:
+          UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         run: |
-          # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
           echo "Library/ directories"
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
           docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
-          # Print the files to be deleted
-          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
-          cat todelete.txt | xargs -r rm
-          # The package cache is stored in a separate, shared, cache
-          rm -rf Library/PackageCache
+          # Keep only caches that are both safe to restore and useful to subsequent builds.
+          library_cache="$RUNNER_TEMP/unity-library-cache"
+          mkdir "$library_cache"
+          for cache_path in $UNITY_LIBRARY_CACHE_PATHS; do
+            if [ -e "Library/$cache_path" ]; then
+              mv "Library/$cache_path" "$library_cache/$cache_path"
+            fi
+          done
+          rm -rf Library
+          mv "$library_cache" Library
           echo "Final space used"
-          du -mcsh Library
+          du -mcsh Library/*
 
       - name: Save Library/ cache
         uses: actions/cache/save@v6
@@ -751,15 +688,32 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          shopt -s nullglob
+          APP_PATHS=(StandaloneOSX/OpenBrush*.app)
+          if [[ ${#APP_PATHS[@]} -ne 1 ]]; then
+            echo "Expected exactly one OpenBrush app, found ${#APP_PATHS[@]}."
+            exit 1
+          fi
+          FILENAME=$(basename "$(readlink -f "${APP_PATHS[0]}")")
 
-          cd StandaloneOSX/
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
-              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
-          done
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
-          cd -
+          pushd StandaloneOSX/
+
+          # Sign every native binary explicitly. Sign code from the inside out, then seal its containing bundle and finally the application itself.
+          while IFS= read -r -d '' native_file; do
+              if file -b "$native_file" | grep -q 'Mach-O'; then
+                  codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$native_file"
+              fi
+          done < <(find "$FILENAME" -type f -print0)
+
+          while IFS= read -r -d '' code_bundle; do
+              codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$code_bundle"
+          done < <(find "$FILENAME/Contents" -depth -type d \( \
+            -name '*.app' -o -name '*.bundle' -o -name '*.framework' -o \
+            -name '*.plugin' -o -name '*.xpc' \) -print0)
+
+          codesign --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$FILENAME"
+          codesign --verify --deep --strict --verbose=4 "$FILENAME"
+          popd
 
           tar -c -v -z -f OpenBrush.tgz StandaloneOSX
       - name: Upload signed app
@@ -799,8 +753,8 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
 
           cp Support/macos/background.png StandaloneOSX/
           cp Support/macos/background@2x.png StandaloneOSX/
@@ -810,12 +764,26 @@ jobs:
           npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
           popd
 
-          xcrun notarytool submit \
-          --team-id ${{ vars.APPLE_TEAM_ID }} \
-          --apple-id ${{ vars.APPLE_ID }} \
-          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
-          --wait \
-          dist/OpenBrush.dmg
+          NOTARY_RESULT="$RUNNER_TEMP/notary-result.json"
+
+          set +e
+          xcrun notarytool submit dist/OpenBrush.dmg --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} --wait --output-format json > "$NOTARY_RESULT"
+          NOTARY_EXIT=$?
+          set -e
+
+          cat "$NOTARY_RESULT"
+          SUBMISSION_ID=$(plutil -extract id raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+          NOTARY_STATUS=$(plutil -extract status raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+
+          if [[ -n "$SUBMISSION_ID" && "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization returned '$NOTARY_STATUS'; fetching Apple's diagnostic log."
+            xcrun notarytool log "$SUBMISSION_ID" --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} || true
+          fi
+
+          if [[ $NOTARY_EXIT -ne 0 || "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization failed (exit=$NOTARY_EXIT, status='$NOTARY_STATUS')."
+            exit 1
+          fi
 
           xcrun stapler staple dist/OpenBrush.dmg
 
@@ -884,29 +852,17 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Windows Rift)
-        uses: actions/download-artifact@v8
-        with:
-          name: Windows Rift
-          path: build_windows_rift
-
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
           name: Android OpenXR
           path: build_android_openxr
 
-      - name: Download Build Artifacts (Oculus Quest 2+)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
-
-      - name: Download Build Artifacts (Pico)
-        uses: actions/download-artifact@v8
-        with:
-          name: Android Pico
-          path: build_android_pico
+          name: Android Meta Quest
+          path: build_android_quest
 
       - name: Download Build Artifacts (Linux)
         uses: actions/download-artifact@v8
@@ -925,18 +881,14 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_OpenXR_$VERSION.apk
-          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
-          mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
           mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
-          zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
-          rm -rf OpenBrush_Rift_$VERSION
           zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
@@ -1123,13 +1075,13 @@ jobs:
       - name: Download Build Artifacts (Windows Pimax)
         uses: actions/download-artifact@v8
         with:
-          name: Windows Pimax
-          path: build_windows_pimax
+          name: Windows OpenXR
+          path: build_windows_openxr
 
       - name: Publish Pimax Builds
         run: |
           New-Item "releases" -Type Directory
-          Move-Item -Path build_windows_pimax/StandaloneWindows64/* releases/
+          Move-Item -Path build_windows_openxr/StandaloneWindows64/* releases/
           Set-Location -Path "releases"
           Compress-Archive -Path ./* -DestinationPath OpenBrush_Pimax_${Env:VERSION}.zip
           Invoke-WebRequest -Uri https://dl.appstore.pimax.com/tools/pimax-dev-util.exe -OutFile pimax-dev-util.exe
@@ -1189,11 +1141,11 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Oculus Quest 2+)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android Meta Quest
+          path: build_android_quest
 
       - name: Download Build Artifacts (Mac)
         uses: actions/download-artifact@v8
@@ -1204,7 +1156,7 @@ jobs:
       - name: Package Artifacts for release
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
 
@@ -1237,8 +1189,7 @@ jobs:
       viewer_changes_not_sent_for_review: ${{ steps.review_state.outputs.viewer_changes_not_sent_for_review }}
 
     steps:
-      # google-github-actions/auth writes its temporary credentials beneath the
-      # workspace, so checkout must run first even though this job reads no files.
+      # google-github-actions/auth writes its temporary credentials beneath the workspace, so checkout must run first even though this job reads no files.
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -1295,8 +1246,7 @@ jobs:
               --data '{}' \
               "$API_ROOT/$package_name/edits/$edit_id:validate")" || curl_status=$?
 
-            # The probe edit contains no changes, but delete it explicitly so
-            # it cannot linger until Google's edit-expiry timeout.
+            # The probe edit contains no changes, but delete it explicitly so it cannot linger until Google's edit-expiry timeout.
             curl --fail-with-body --silent --show-error \
               --request DELETE \
               --header "Authorization: Bearer $ACCESS_TOKEN" \
@@ -1332,7 +1282,7 @@ jobs:
             "viewer_changes_not_sent_for_review"
 
   publish_google_play:
-    name: Publish Google Play Android XR Release
+    name: Publish Google Play AndroidXR Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1341,11 +1291,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android OpenXR Google Play)
+      - name: Download Build Artifacts (Android AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR Google Play
-          path: build_android_openxr_google_play
+          name: Android AndroidXR
+          path: build_android_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1353,18 +1303,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play" >&2
-            find build_android_openxr_google_play -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_androidxr" >&2
+            find build_android_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrush_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrush_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrush_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrush_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrush_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrush_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1372,7 +1322,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrush
-          releaseFiles: releases/OpenBrush_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrush_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -1384,7 +1334,7 @@ jobs:
           changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.openbrush_changes_not_sent_for_review == 'true' }}
 
   publish_google_play_viewer:
-    name: Publish Google Play Viewer Release
+    name: Publish Google Play AndroidXR Viewer Release
     needs: [configuration, build, google_play_review_state]
     runs-on: ubuntu-latest
     if: |
@@ -1393,11 +1343,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android Viewer)
+      - name: Download Build Artifacts (Android Viewer AndroidXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Viewer
-          path: build_android_openxr_google_play_viewer
+          name: Android Viewer AndroidXR
+          path: build_android_viewer_androidxr
 
       - name: Prepare Google Play release
         id: google_play_release
@@ -1405,18 +1355,18 @@ jobs:
           VERSION: ${{ needs.configuration.outputs.version }}
         run: |
           mkdir releases
-          AAB="$(find build_android_openxr_google_play_viewer -name '*.aab' -print -quit)"
-          SYMBOLS="$(find build_android_openxr_google_play_viewer -name '*.symbols.zip' -print -quit)"
+          AAB="$(find build_android_viewer_androidxr -name '*.aab' -print -quit)"
+          SYMBOLS="$(find build_android_viewer_androidxr -name '*.symbols.zip' -print -quit)"
           if [ -z "$AAB" ]; then
-            echo "No Android App Bundle found in build_android_openxr_google_play_viewer" >&2
-            find build_android_openxr_google_play_viewer -maxdepth 4 -type f >&2
+            echo "No Android App Bundle found in build_android_viewer_androidxr" >&2
+            find build_android_viewer_androidxr -maxdepth 4 -type f >&2
             exit 1
           fi
 
-          cp "$AAB" "releases/OpenBrushViewer_OpenXR_$VERSION.aab"
+          cp "$AAB" "releases/OpenBrushViewer_AndroidXR_$VERSION.aab"
           if [ -n "$SYMBOLS" ]; then
-            cp "$SYMBOLS" "releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip"
-            echo "debugSymbols=releases/OpenBrushViewer_OpenXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
+            cp "$SYMBOLS" "releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip"
+            echo "debugSymbols=releases/OpenBrushViewer_AndroidXR_$VERSION.symbols.zip" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publish Google Play Build
@@ -1424,7 +1374,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: foundation.icosa.openbrushviewer
-          releaseFiles: releases/OpenBrushViewer_OpenXR_${{ needs.configuration.outputs.version }}.aab
+          releaseFiles: releases/OpenBrushViewer_AndroidXR_${{ needs.configuration.outputs.version }}.aab
           tracks: ${{ needs.configuration.outputs.googleplaytrack }}
           releaseName: ${{ needs.configuration.outputs.version }}
           status: ${{ needs.configuration.outputs.googleplaystatus }}
@@ -1435,7 +1385,7 @@ jobs:
           changesNotSentForReview: ${{ needs.configuration.outputs.googleplayhasproduction != 'true' && needs.google_play_review_state.outputs.viewer_changes_not_sent_for_review == 'true' }}
 
   publish_oculus_quest:
-    name: Publish Oculus Quest 2+ Release
+    name: Publish Android Quest Release
     needs: [configuration, build]
     runs-on: macos-26  # the ovr-platform-util tool is only available for Mac and Windows
     if: |
@@ -1444,11 +1394,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Oculus Quest 2+)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android Meta Quest
+          path: build_android_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1458,8 +1408,8 @@ jobs:
           OCULUS_QUEST_APP_SECRET: ${{ secrets.OCULUS_QUEST_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*.symbols.zip releases/symbols.zip
 
           cd releases
           unzip symbols.zip
@@ -1468,10 +1418,10 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel LIVE --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --age-group TEENS_AND_ADULTS
           else
             CHANGELOG="${RAW_CHANGELOG}"
-            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta:quest2+ --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
+            ./ovr-platform-util upload-quest-build --app-id ${OCULUS_QUEST_APP_ID} --app-secret ${OCULUS_QUEST_APP_SECRET} --apk OpenBrush_Quest_$VERSION.apk --channel Beta --debug_symbols_dir ./arm64-v8a/ --debug-symbols-pattern '*.so' --notes "${CHANGELOG}" --age-group TEENS_AND_ADULTS
           fi
 
   publish_oculus_quest_arborxr:
@@ -1494,11 +1444,11 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Oculus Quest 2+)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (2+)
-          path: build_oculus_quest
+          name: Android Meta Quest
+          path: build_android_quest
 
       - name: Publish Oculus Builds
         env:
@@ -1513,7 +1463,7 @@ jobs:
         run: |
           set -x
           mkdir releases
-          mv build_oculus_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
 
           cd releases
 
@@ -1548,11 +1498,11 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Oculus Quest 1)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Oculus Quest (1)
-          path: build_oculus_quest1
+          name: Android Meta Quest
+          path: build_android_quest
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1566,7 +1516,7 @@ jobs:
         run: |
           set -x
           mkdir releases1
-          mv build_oculus_quest1/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases1/OpenBrush_Quest1_$VERSION.apk
 
           cd releases1
 
@@ -1591,11 +1541,12 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Windows Rift)
+      - name: Download Build Artifacts (Windows OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Windows Rift
-          path: build_windows_rift
+          name: Windows OpenXR
+          path: build_windows_openxr
+
       - name: Publish Oculus Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1605,8 +1556,10 @@ jobs:
           OCULUS_RIFT_APP_SECRET: ${{ secrets.OCULUS_RIFT_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_windows_rift/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
+          mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
+          # Meta rejects the Steam DLL included in the shared Windows OpenXR artifact.
+          rm -f "OpenBrush_Rift_$VERSION/OpenBrush_Data/Plugins/x86_64/steam_api64.dll"
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
@@ -1629,16 +1582,11 @@ jobs:
       (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Download Build Artifacts (Android Pico)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Pico
-          path: build_android_pico
-      - name: Download Build Artifacts (Android Pico CN)
-        uses: actions/download-artifact@v8
-        with:
-          name: Android Pico (CN)
-          path: build_android_pico_cn
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Publish Pico Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1648,8 +1596,7 @@ jobs:
           PICO_APP_SECRET: ${{ secrets.PICO_APP_SECRET }}
         run: |
           mkdir releases
-          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
-          mv build_android_pico_cn/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_CN_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
           # pico-cli v1.0.3
@@ -1658,9 +1605,8 @@ jobs:
 
           if [ "$PRERELEASE" == "false" ]
           then
-            # The order here matters, because the Chinese build has a slightly higher version code due to the suffix of 1 vs 0
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 2 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
-            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_CN_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
+            ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 1 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
           else
             # For Pico, Beta channels can only get one build, not a separate China / non-China build
             ./pico-cli upload-build --app-id $PICO_APP_ID --app-secret $PICO_APP_SECRET --region noncn --apk OpenBrush_Pico_$VERSION.apk --channel 3 --notes-en "Version $VERSION" --device 'PICO 4,PICO 4 Ultra,PICO 4 Pro'
@@ -1686,11 +1632,11 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Android Pico)
+      - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
-          name: Android Pico
-          path: build_android_pico
+          name: Android OpenXR
+          path: build_android_openxr
       - name: Publish Pico Builds
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1704,7 +1650,7 @@ jobs:
         run: |
           set -x
           mkdir releases
-          mv build_android_pico/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
+          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Pico_$VERSION.apk
 
           cd releases
 

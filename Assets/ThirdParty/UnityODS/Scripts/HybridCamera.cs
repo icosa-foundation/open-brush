@@ -8,6 +8,7 @@ using System.IO;
 using System.Reflection;
 using Debug = UnityEngine.Debug;
 using TiltBrush;
+using UnityEngine.Rendering;
 
 namespace ODS {
 
@@ -25,7 +26,7 @@ public class HybridCamera : MonoBehaviour {
   // mobile Vulkan driver's practical render-pass limit before Unity submits the frame.
   const int MaxMobileRendersPerFrame = 16;
 #endif
-  const int MaxImageWidth = 8192;
+  public const int MaxImageWidth = 8192;
   // Unity 2022.3 does not expose SystemInfo.maxRenderTextureSize in this API surface.
   // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
   // platform bound; maxTextureSize is not itself a render-texture guarantee.
@@ -56,6 +57,7 @@ public class HybridCamera : MonoBehaviour {
 
   public string outputFolder = null;
   public string basename = null;
+  public bool includePostProcessing = true;
 
   private int frameCount = 0;
   private bool isRendering = false;
@@ -194,7 +196,8 @@ public class HybridCamera : MonoBehaviour {
     int bloomPadding = bloomPaddingMultiplier * clampedBloomRadius;
     int maxImageWidth = Math.Min(MaxImageWidth, maxRenderTextureWidth - bloomPadding);
     maxImageWidth = Math.Max(4, (maxImageWidth / 4) * 4);
-    return Math.Min(((requestedImageWidth + 3) / 4) * 4, maxImageWidth);
+    int clampedImageWidth = Math.Max(4, Math.Min(requestedImageWidth, maxImageWidth));
+    return ((clampedImageWidth + 3) / 4) * 4;
   }
 
   public IEnumerator Render(Transform node, bool saveImage = true) {
@@ -238,6 +241,9 @@ public class HybridCamera : MonoBehaviour {
     renderCamera.cullingMask = parentCamera.cullingMask;
     renderCamera.name = "Hybrid ODS Camera";
     renderCamera.fieldOfView = 90.0f;
+    bool usingScriptableRenderPipeline = GraphicsSettings.currentRenderPipeline != null;
+    UrpPostProcessingController.CameraPostProcessingState postProcessingState =
+      default(UrpPostProcessingController.CameraPostProcessingState);
 
     if ( opaqueBackground ) {
       // TBD - Specify full alpha for exported image
@@ -278,6 +284,12 @@ public class HybridCamera : MonoBehaviour {
     try {
       // Mobile captures span many frames so freeze animations and simulation for every entry point.
       Time.timeScale = 0.0f;
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        postProcessingState =
+          UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+            renderCamera, includePostProcessing);
+      }
+
       yield return StartCoroutine(
         odsRenderer.Render(renderCamera, node, stitched, interPupillaryDistance * scale, CollapseIpd,
                            maxRendersPerFrame)
@@ -285,6 +297,9 @@ public class HybridCamera : MonoBehaviour {
     }
     finally {
       Time.timeScale = timeScaleRestore;
+      if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+      }
     }
     isRendering = false;
 #if UNITY_ANDROID || UNITY_IOS
@@ -310,19 +325,21 @@ public class HybridCamera : MonoBehaviour {
     RenderTexture.active = oldActiveTexture;
 
     bool useBloomedImage = false;
-    MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
-    foreach (MonoBehaviour b in behaviours) {
-      MethodInfo m = b.GetType().GetMethod("OnRenderImage");
-      if (m != null && m.IsPublic && b.enabled) {
-        //Apply the bloom and composite.
-        if (vr180) {
-          SbsBloomAndComposite(stitched, finalImage, b, m);
+    if (includePostProcessing && !usingScriptableRenderPipeline) {
+      MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
+      foreach (MonoBehaviour b in behaviours) {
+        MethodInfo m = b.GetType().GetMethod("OnRenderImage");
+        if (m != null && m.IsPublic && b.enabled) {
+          //Apply the bloom and composite.
+          if (vr180) {
+            SbsBloomAndComposite(stitched, finalImage, b, m);
+          }
+          else {
+            StackedBloomAndComposite(stitched, finalImage, b, m);
+          }
+          useBloomedImage = true;
+          break;
         }
-        else {
-          StackedBloomAndComposite(stitched, finalImage, b, m);
-        }
-        useBloomedImage = true;
-        break;
       }
     }
 
