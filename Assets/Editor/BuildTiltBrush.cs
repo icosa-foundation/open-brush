@@ -1093,12 +1093,7 @@ static class BuildTiltBrush
             if (!String.IsNullOrEmpty(Description))
             {
                 new_name += $"-({Description.Replace("#", "")})";
-                // Android CI artifacts are also used for store release-channel testing. Keep
-                // their registered identity even on PR builds; the label still identifies the PR.
-                if (target != BuildTarget.Android)
-                {
-                    new_identifier += $"-{Description.Replace("_", "").Replace("#", "").Replace("-", "")}";
-                }
+                new_identifier += $"-{Description.Replace("_", "").Replace("#", "").Replace("-", "")}";
             }
             if (m_IsAndroidOrIos)
             {
