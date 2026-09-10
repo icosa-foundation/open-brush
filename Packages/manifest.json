@@ -1,11 +1,11 @@
 {
   "dependencies": {
-    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#a6f96d79f13779d63124e9b3f1ad6dc074fad8ad",
+    "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#f92eaa2356abf0d1228c6f5fe0144dad803fc1a9",
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
     "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
     "com.netpyoung.webp": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
-    "com.rlabrecque.steamworks.net": "https://github.com/icosa-mirror/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#c791803ec16191a1f771b591438151d5f46e865e",
+    "com.rlabrecque.steamworks.net": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
     "com.sandrofigo.voxreader": "5.0.6",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
@@ -13,7 +13,7 @@
     "com.unity.cloud.ktx": "3.6.3",
     "com.unity.editorcoroutines": "6.6.0",
     "com.unity.formats.usd": "https://github.com/icosa-mirror/com.unity.formats.usd.git#unity6.5-compatibility",
-    "com.unity.ide.rider": "3.0.40",
+    "com.unity.ide.rider": "3.1.0",
     "com.unity.ide.visualstudio": "2.0.28",
     "com.unity.inputsystem": "1.20.0",
     "com.unity.localization": "1.5.13",
