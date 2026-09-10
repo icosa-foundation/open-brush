@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
 guid: 4e4a387ed7712e24583e4d4288ae6457
-========
-guid: 22ca44880b645734b993dcfa04f5ea48
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -69,15 +65,9 @@ TextureImporter:
   compressionQualitySet: 0
   textureFormatSet: 0
   ignorePngGamma: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
   applyGammaDecoding: 1
   swizzle: 50462976
   cookieLightType: 1
-========
-  applyGammaDecoding: 0
-  swizzle: 50462976
-  cookieLightType: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
@@ -91,11 +81,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   - serializedVersion: 4
     buildTarget: Standalone
     maxTextureSize: 2048
@@ -108,11 +94,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   - serializedVersion: 4
     buildTarget: Android
     maxTextureSize: 2048
@@ -125,11 +107,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   - serializedVersion: 4
     buildTarget: iOS
     maxTextureSize: 2048
@@ -142,11 +120,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   - serializedVersion: 4
     buildTarget: VisionOS
     maxTextureSize: 2048
@@ -159,11 +133,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   - serializedVersion: 4
     buildTarget: WebGL
     maxTextureSize: 2048
@@ -176,11 +146,7 @@ TextureImporter:
     overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
-<<<<<<<< HEAD:Assets/Textures/Button_SignIn_Sketchfab.png.meta
     forceMaximumCompressionQuality_BC6H_BC7: 1
-========
-    forceMaximumCompressionQuality_BC6H_BC7: 0
->>>>>>>> main:Assets/Textures/Trademarked/QuillLogo.png.meta
   spriteSheet:
     serializedVersion: 2
     sprites: []

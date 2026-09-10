@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/CompositionLayers/UserSettings/Resources.meta
 guid: c175a6796aeb23e48a63306b91f44455
-========
-guid: ca1afaf18f3b7aa4eb96fedc0f3efbdb
->>>>>>>> main:Assets/CompositionLayers/UserSettings.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

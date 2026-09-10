@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
 guid: 22ca44880b645734b993dcfa04f5ea48
-========
-guid: 2eb883923c5e034499417b30761f7ce9
->>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -25,11 +21,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
   isReadable: 0
-========
-  isReadable: 1
->>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -79,7 +71,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 128
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -118,11 +110,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: iOS
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     maxTextureSize: 2048
-========
-    maxTextureSize: 128
->>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -135,11 +123,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: VisionOS
-<<<<<<<< HEAD:Assets/Textures/Trademarked/QuillLogo.png.meta
     maxTextureSize: 2048
-========
-    maxTextureSize: 128
->>>>>>>> main:Assets/Resources/Icons/reshape.png.meta
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -152,7 +136,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: WebGL
-    maxTextureSize: 128
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
