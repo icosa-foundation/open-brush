@@ -2025,7 +2025,9 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
+                    m_UserPath = SteamManager.RunningUnderLepton
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
                     break;
                 case RuntimePlatform.IPhonePlayer:

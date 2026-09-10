@@ -15,7 +15,6 @@ on:  # yamllint disable-line rule:truthy
 
 env:
   UNITY_VERSION: "6000.6.0f1"
-  PHOTON_SDK_VERSION: "fusion-2.1.2-voice-2.63-realtime5"
   PHOTON_PAT: ${{ secrets.PHOTON_PAT }}  # This needs to be here, since you can't use a ${{ secrets }} within an if: condition
 jobs:
   configuration:
@@ -118,8 +117,8 @@ jobs:
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
-          # upload-google-play accepts a comma-separated track list. Remove
-          # whitespace before exporting it, then match the exact production token.
+
+          # upload-google-play accepts a comma-separated track list. Remove whitespace before exporting it, then match the exact production token.
           NORMALIZED_GOOGLE_PLAY_TRACKS="$(printf '%s' "$GOOGLE_PLAY_TRACKS" | tr -d '[:space:]')"
           echo "googleplaytrack=$NORMALIZED_GOOGLE_PLAY_TRACKS" >> $GITHUB_OUTPUT
           echo "googleplaystatus=$GOOGLE_PLAY_STATUS" >> $GITHUB_OUTPUT
@@ -128,6 +127,7 @@ jobs:
             *,production,*) echo "googleplayhasproduction=true" >> $GITHUB_OUTPUT ;;
             *) echo "googleplayhasproduction=false" >> $GITHUB_OUTPUT ;;
           esac
+
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
@@ -301,8 +301,7 @@ jobs:
           # The Meta store requires its original application ID, irrespective of the XR loader.
           - name: Android Meta Quest
             targetPlatform: Android
-            # Meta upload validation rejects SDK 35; keep this separate from Google Play.
-            androidTargetSdkVersion: AndroidApiLevel34
+            androidTargetSdkVersion: AndroidApiLevel34  # Meta upload validation rejects SDK 35; keep this separate from Google Play.
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
@@ -323,7 +322,8 @@ jobs:
       - name: Set masking
         run: echo "::add-mask::DoNotStealThis1"
       - name: Free extra space
-        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        # As of 09/09/26, we start with 86GB of free space and this gives us a total of 115GB. But we really don't need that much space, so this is now disabled
+        if: false
         run: |
           echo "Initial free space"
           df -h /
@@ -411,7 +411,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -525,9 +525,8 @@ jobs:
           UNITY_LICENSE: ${{ fromJSON('["<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><TimeStamp Value=\"chxldhvc0zh5Vw==\"/>\n    <License id=\"Terms\">\n        <MachineBindings>\n            <Binding Key=\"1\" Value=\"C372866C-B44C-5E48-806F-7583B55F04FB\"/>\n            <Binding Key=\"2\" Value=\"C02F32Y5ML85\"/>\n        </MachineBindings>\n        <MachineID Value=\"LcL/yxIaeUG12OSX31mKDtxcVx8=\"/>\n        <SerialHash Value=\"e25c63636985259e763d40cc9253cdfe6a862ceb\"/>\n        <Features>\n            <Feature Value=\"33\"/>\n            <Feature Value=\"1\"/>\n            <Feature Value=\"12\"/>\n            <Feature Value=\"2\"/>\n            <Feature Value=\"24\"/>\n            <Feature Value=\"3\"/>\n            <Feature Value=\"36\"/>\n            <Feature Value=\"17\"/>\n            <Feature Value=\"19\"/>\n            <Feature Value=\"62\"/>\n        </Features>\n        <DeveloperData Value=\"AQAAAEY0LUtFWUItMzYyOC0zWEI3LVBZVVEtTUI5VQ==\"/>\n        <SerialMasked Value=\"F4-KEYB-3628-3XB7-PYUQ-XXXX\"/>\n        <StartDate Value=\"2023-11-21T00:00:00\"/>\n        <UpdateDate Value=\"2023-11-22T06:03:23\"/>\n        <InitialActivationDate Value=\"2023-11-21T06:03:21\"/>\n        <LicenseVersion Value=\"6.x\"/>\n        <ClientProvidedVersion Value=\"2017.2.0\"/>\n        <AlwaysOnline Value=\"false\"/>\n        <Entitlements>\n            <Entitlement Ns=\"unity_editor\" Tag=\"UnityPersonal\" Type=\"EDITOR\" ValidTo=\"9999-12-31T00:00:00\"/>\n            <Entitlement Ns=\"unity_editor\" Tag=\"DarkSkin\" Type=\"EDITOR_FEATURE\" ValidTo=\"9999-12-31T00:00:00\"/>\n        </Entitlements>\n    </License><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#Terms\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>9DZF11miRAzx7TIuCxih78B6CXU=</DigestValue></Reference></SignedInfo><SignatureValue>weRQubqMNN61lSZtm/e7S+UDzTPNQjM5aQl/c4aKLH/b2khefpgLfdWneoxdnNopA6+rW6kBqxWt\nhMLdHY+oAOfDsfmMQRTnmQG0Y3G3xh6gjGP1RAIHoLDfFHf+0LQ3FakA2WehcFWPSYeVDrdxm3HW\nqMmdKWooD9i+J4s4rQFTDx9+/G6yjc5KGTyGxIz3c5kxTEkV2qsFPXsauomY9Z8YPKy+cZK7g+Ol\npO+LhtzetgTIlIN/qG8eByjlp6nOuVGdDOIrhNJW+vllNyx0qNWPREadVrhFViI4UXegMFRl5gJc\nrgcrlr/fD+NorDVLfcu7D863QXkkuriILUIq2Q==</SignatureValue></Signature></root>", null]')[secrets.UNITY_SERIAL != null] }}
         with:
           retry_condition: steps._this.outputs.engineExitCode == 1
-          action: game-ci/unity-builder@v4
+          action: game-ci/unity-builder@v5
           with: |
-            allowDirtyBuild: true  # Because of the OVR Update, the build tree might be dirty
             unityVersion: ${{ env.UNITY_VERSION }}
             targetPlatform: ${{ matrix.targetPlatform }}
             customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out /github/workspace/build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
@@ -555,11 +554,6 @@ jobs:
           tar -c -v -z -f OpenBrush.tgz -C build/${{ matrix.vrsdk }} ${{ matrix.targetPlatform}}
           rm -rf build/${{ matrix.vrsdk }}/*
           mv OpenBrush.tgz build/${{ matrix.vrsdk }}/
-
-      - name: Prepare for packaging (remove unneeded Steam DLL, Windows Rift only)
-        if: startsWith(matrix.name, 'Windows Rift')
-        run: |
-          rm -f build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/OpenBrush_Data/Plugins/x86_64/steam_api64.dll
 
       - name: Add bundled Windows tools
         if: matrix.targetPlatform == 'StandaloneWindows64'
@@ -590,6 +584,7 @@ jobs:
         if: false && github.ref == 'refs/heads/main' && steps.check_packagecache.outputs.changes == 0 && steps.cache_packagecache.outputs.cache-hit != 'true' && ! matrix.packages_to_remove  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+          UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
         with:
           path: Library/PackageCache
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
@@ -597,20 +592,24 @@ jobs:
       - name: Clean Library before caching
         if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
         run: |
-          # Remove the large files from the Library directory that we know we'll rebuild. As our il2cpp caches are huge and barely fit in the Github quota, it's better not to save an unneeded 1GB of space (or so). If a new Unity version is taken, this may need to be updated
           # Debugging
           echo "Library/ directories"
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
           docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
-          # Print the files to be deleted
-          find Library/Bee/ -name 'symbols.zip' -or -name 'libil2cpp*.so' -or -name 'launcher-release.apk' | tee todelete.txt
-          cat todelete.txt | xargs -r rm
-          # The package cache is stored in a separate, shared, cache
-          rm -rf Library/PackageCache
+          # Keep only caches that are both safe to restore and useful to subsequent builds.
+          library_cache="$RUNNER_TEMP/unity-library-cache"
+          mkdir "$library_cache"
+          for cache_path in $UNITY_LIBRARY_CACHE_PATHS; do
+            if [ -e "Library/$cache_path" ]; then
+              mv "Library/$cache_path" "$library_cache/$cache_path"
+            fi
+          done
+          rm -rf Library
+          mv "$library_cache" Library
           echo "Final space used"
-          du -mcsh Library
+          du -mcsh Library/*
 
       - name: Save Library/ cache
         uses: actions/cache/save@v6
@@ -620,7 +619,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ env.PHOTON_SDK_VERSION }}
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
   signmacos:
     name: Sign the MacOS .app
@@ -682,15 +681,32 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
+          shopt -s nullglob
+          APP_PATHS=(StandaloneOSX/OpenBrush*.app)
+          if [[ ${#APP_PATHS[@]} -ne 1 ]]; then
+            echo "Expected exactly one OpenBrush app, found ${#APP_PATHS[@]}."
+            exit 1
+          fi
+          FILENAME=$(basename "$(readlink -f "${APP_PATHS[0]}")")
 
-          cd StandaloneOSX/
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME/Contents/Support/ThirdParty/ffmpeg/bin/ffmpeg
-          for bundle in $FILENAME/Contents/Plugins/*.bundle; do
-              codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $bundle
-          done
-          codesign --deep --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" $FILENAME
-          cd -
+          pushd StandaloneOSX/
+
+          # Sign every native binary explicitly. Sign code from the inside out, then seal its containing bundle and finally the application itself.
+          while IFS= read -r -d '' native_file; do
+              if file -b "$native_file" | grep -q 'Mach-O'; then
+                  codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$native_file"
+              fi
+          done < <(find "$FILENAME" -type f -print0)
+
+          while IFS= read -r -d '' code_bundle; do
+              codesign --force --verify --verbose --timestamp --options runtime --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$code_bundle"
+          done < <(find "$FILENAME/Contents" -depth -type d \( \
+            -name '*.app' -o -name '*.bundle' -o -name '*.framework' -o \
+            -name '*.plugin' -o -name '*.xpc' \) -print0)
+
+          codesign --force --verify --verbose --timestamp --options runtime --entitlements ../Support/macos/OpenBrush.entitlements --sign "Developer ID Application: Icosa Gallery Ltd (${{ vars.APPLE_TEAM_ID }})" "$FILENAME"
+          codesign --verify --deep --strict --verbose=4 "$FILENAME"
+          popd
 
           tar -c -v -z -f OpenBrush.tgz StandaloneOSX
       - name: Upload signed app
@@ -730,8 +746,8 @@ jobs:
         run: |
           tar xvfz build_macos/*tgz
 
-          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
           mkdir dist
+          export FILENAME=$(basename $(readlink -f StandaloneOSX/OpenBrush*.app))
 
           cp Support/macos/background.png StandaloneOSX/
           cp Support/macos/background@2x.png StandaloneOSX/
@@ -741,12 +757,26 @@ jobs:
           npx appdmg openbrush-dmg.json ../dist/OpenBrush.dmg
           popd
 
-          xcrun notarytool submit \
-          --team-id ${{ vars.APPLE_TEAM_ID }} \
-          --apple-id ${{ vars.APPLE_ID }} \
-          --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} \
-          --wait \
-          dist/OpenBrush.dmg
+          NOTARY_RESULT="$RUNNER_TEMP/notary-result.json"
+
+          set +e
+          xcrun notarytool submit dist/OpenBrush.dmg --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} --wait --output-format json > "$NOTARY_RESULT"
+          NOTARY_EXIT=$?
+          set -e
+
+          cat "$NOTARY_RESULT"
+          SUBMISSION_ID=$(plutil -extract id raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+          NOTARY_STATUS=$(plutil -extract status raw -o - "$NOTARY_RESULT" 2>/dev/null || true)
+
+          if [[ -n "$SUBMISSION_ID" && "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization returned '$NOTARY_STATUS'; fetching Apple's diagnostic log."
+            xcrun notarytool log "$SUBMISSION_ID" --team-id ${{ vars.APPLE_TEAM_ID }} --apple-id ${{ vars.APPLE_ID }} --password ${{ secrets.APPLE_APPLICATION_SPECIFIC_PASSWORD }} || true
+          fi
+
+          if [[ $NOTARY_EXIT -ne 0 || "$NOTARY_STATUS" != "Accepted" ]]; then
+            echo "Notarization failed (exit=$NOTARY_EXIT, status='$NOTARY_STATUS')."
+            exit 1
+          fi
 
           xcrun stapler staple dist/OpenBrush.dmg
 
@@ -822,7 +852,7 @@ jobs:
           path: build_android_openxr
 
       - name: Download Build Artifacts (Android Quest)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: Android Meta Quest
           path: build_android_quest
@@ -1104,11 +1134,11 @@ jobs:
           name: Windows OpenXR
           path: build_windows_openxr
 
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
-          path: build_android_openxr
+          name: Android Meta Quest
+          path: build_android_quest
 
       - name: Download Build Artifacts (Mac)
         uses: actions/download-artifact@v8
@@ -1119,7 +1149,7 @@ jobs:
       - name: Package Artifacts for release
         run: |
           mkdir releases
-          mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
 
@@ -1132,7 +1162,7 @@ jobs:
         uses: yeslayla/butler-publish-itchio-action@master
         env:
           CHANNEL: android-quest-${{ env.ITCH_SUBCHANNEL_NAME }}
-          PACKAGE: releases/OpenBrush_Android_${{ needs.configuration.outputs.version }}.apk
+          PACKAGE: releases/OpenBrush_Quest_${{ needs.configuration.outputs.version }}.apk
       - name: Publish Mac
         uses: yeslayla/butler-publish-itchio-action@master
         env:
@@ -1152,8 +1182,7 @@ jobs:
       viewer_changes_not_sent_for_review: ${{ steps.review_state.outputs.viewer_changes_not_sent_for_review }}
 
     steps:
-      # google-github-actions/auth writes its temporary credentials beneath the
-      # workspace, so checkout must run first even though this job reads no files.
+      # google-github-actions/auth writes its temporary credentials beneath the workspace, so checkout must run first even though this job reads no files.
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -1210,8 +1239,7 @@ jobs:
               --data '{}' \
               "$API_ROOT/$package_name/edits/$edit_id:validate")" || curl_status=$?
 
-            # The probe edit contains no changes, but delete it explicitly so
-            # it cannot linger until Google's edit-expiry timeout.
+            # The probe edit contains no changes, but delete it explicitly so it cannot linger until Google's edit-expiry timeout.
             curl --fail-with-body --silent --show-error \
               --request DELETE \
               --header "Authorization: Bearer $ACCESS_TOKEN" \
@@ -1412,7 +1440,7 @@ jobs:
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
 
       - name: Publish Oculus Builds
@@ -1463,11 +1491,10 @@ jobs:
         run: |
           uv tool install abxrcli --with 'setuptools<82.0.0'
 
-      - name: Download Build Artifacts (Android OpenXR)
+      - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
-          # ArborXR is not the Meta store, including when the device is a Quest.
-          name: Android OpenXR
+          name: Android Meta Quest
           path: build_android_quest
       - name: Publish Oculus Builds
         env:
@@ -1524,6 +1551,8 @@ jobs:
           mkdir releases
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Rift_$VERSION/
           cd releases
+          # Meta rejects the Steam DLL included in the shared Windows OpenXR artifact.
+          rm -f "OpenBrush_Rift_$VERSION/OpenBrush_Data/Plugins/x86_64/steam_api64.dll"
           zip -r OpenBrush_Rift_$VERSION.zip OpenBrush_Rift_$VERSION/
           curl -L 'https://www.oculus.com/download_app/?id=1462426033810370' -o ovr-platform-util
           chmod 755 ovr-platform-util
