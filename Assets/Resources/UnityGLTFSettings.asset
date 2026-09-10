@@ -320,7 +320,7 @@ MonoBehaviour:
   packageVersion: 2.17.8
   shaderStrippingSettings:
     stripPassesFromAllShaders: 0
-    stripPasses: 6
+    stripPasses: 7
   ImportPlugins:
   - {fileID: 6228052705860985836}
   - {fileID: 5944692436833662843}
