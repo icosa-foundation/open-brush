@@ -331,6 +331,12 @@ namespace TiltBrush
             if (result.Success)
             {
                 RequestRefresh();
+                if (m_Area == StorageArea.Sketches)
+                {
+                    // A same-device Drive backup becomes visible once the local sketch is gone.
+                    SketchCatalog.m_Instance?.GetSet(SketchSetType.Drive)?
+                        .NotifySketchChanged(fileInfo.StorageId);
+                }
             }
             else
             {
