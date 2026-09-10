@@ -205,10 +205,13 @@ namespace TiltBrush
         }
 
         public ReferenceVideo(
-            string filePath, string catalogIdentity, Func<string> materialize)
+            string filePath, string catalogIdentity, Func<string> materialize,
+            string persistentPath = null)
             : this(filePath)
         {
             CatalogIdentity = catalogIdentity;
+            PersistentPath = persistentPath ?? PersistentPath;
+            HumanName = System.IO.Path.GetFileName(PersistentPath);
             m_Materialize = materialize;
         }
 

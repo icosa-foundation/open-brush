@@ -738,7 +738,8 @@ namespace TiltBrush
                         documentId, requireSeekable: false, CancellationToken.None),
                     () => backend.Materialize(
                         documentId, MaterializationScope.File, CancellationToken.None),
-                    document.Size));
+                    document.Size,
+                    $"./{Path.Combine(relativeDirectory, document.DisplayName).Replace("\\", "/")}"));
             }
 
             foreach (ReferenceImage removed in oldImages.Values)
@@ -815,7 +816,15 @@ namespace TiltBrush
             if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
 
             // TODO change to a dictionary to avoid O(n) lookup
-            var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
+            var refImage = m_Images.FirstOrDefault(x =>
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework
+                    ? Path.GetFullPath(Path.Combine(HomeDirectory, x.RelativePath)) == fullPath
+                    : x.FileFullPath == fullPath);
+            if (refImage == null &&
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                return null;
+            }
             if (refImage == null)
             {
                 refImage = new ReferenceImage(fullPath);

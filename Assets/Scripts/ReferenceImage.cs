@@ -56,6 +56,7 @@ namespace TiltBrush
         private string m_Path;
         private readonly Func<Stream> m_OpenRead;
         private readonly Func<string> m_Materialize;
+        private readonly string m_PersistentPath;
         private readonly long? m_KnownFileSize;
         private readonly string m_CacheIdentity;
         private SVGParser.SceneInfo _SvgSceneInfo;
@@ -147,7 +148,7 @@ namespace TiltBrush
         public string FilePath { get { return m_Path; } }
 
         // Path relative to Catalog's HomeDirectory with forward slashes.
-        public string RelativePath =>
+        public string RelativePath => m_PersistentPath ??
             $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
 
         public ReferenceImage(string path)
@@ -161,9 +162,11 @@ namespace TiltBrush
             string catalogIdentity,
             Func<Stream> openRead,
             Func<string> materialize,
-            long? knownFileSize)
+            long? knownFileSize,
+            string persistentPath = null)
         {
             m_Path = displayPath;
+            m_PersistentPath = persistentPath;
             CatalogIdentity = catalogIdentity;
             m_CacheIdentity = catalogIdentity;
             m_OpenRead = openRead;

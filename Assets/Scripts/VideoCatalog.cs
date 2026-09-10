@@ -437,7 +437,8 @@ namespace TiltBrush
                     path,
                     identity,
                     () => backend.Materialize(
-                        documentId, MaterializationScope.File, CancellationToken.None));
+                        documentId, MaterializationScope.File, CancellationToken.None),
+                    document.RelativeDisplayPath);
                 nextVideos.Add(video);
                 newVideos.Add(video);
             }
@@ -486,7 +487,13 @@ namespace TiltBrush
                 }
                 else
                 {
-                    files.Add(document);
+                    files.Add(new StorageDocument(
+                        document.DocumentId, document.ParentDocumentId, document.DisplayName,
+                        document.MimeType, document.IsDirectory, document.Size,
+                        document.LastModified, document.ProviderFlags,
+                        string.IsNullOrEmpty(relativeDirectory)
+                            ? document.DisplayName
+                            : $"{relativeDirectory}/{document.DisplayName}"));
                 }
             }
             return files;
