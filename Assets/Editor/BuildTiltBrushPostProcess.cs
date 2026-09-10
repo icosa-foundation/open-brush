@@ -44,7 +44,17 @@ public class BuildTiltBrushPostProcess
 
             ConfigureGameActivityLauncher(doc);
 
+#if USE_QUEST_PACKAGE_NAME
+            const bool metaStore = true;
+#else
+            const bool metaStore = false;
+#endif
+            AndroidStoreManifest.Configure(doc, metaStore,
+                BuildTiltBrush.CurrentBuildXrSdk == TiltBrush.XrSdkMode.AndroidXR);
+
             doc.Save(file);
+            UnityEngine.Debug.Log($"[OB-STORE-MANIFEST] Applied Android manifest settings: " +
+                $"MetaStore={metaStore}, XR={BuildTiltBrush.CurrentBuildXrSdk}.");
         }
         catch (System.Exception e)
         {
@@ -65,7 +75,7 @@ public class BuildTiltBrushPostProcess
     ///
     /// Change only the generated Gradle manifest. This avoids modifying and reimporting a shared
     /// project asset during a build, and leaves every build that selects PlayerActivity untouched.
-    /// Unity's XR manifest processor will merge its Android XR properties into this activity later.
+    /// XR library manifests are merged into the final application by Gradle.
     /// </remarks>
     private static void ConfigureGameActivityLauncher(XmlDocument doc)
     {
