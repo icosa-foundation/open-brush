@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -345,6 +345,10 @@ namespace TiltBrush
         internal static void _PublishSnapshotFilesToSharedStorage(
             string filename, bool renderDepth, bool renderNormals)
         {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
             if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
                 !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
                 !filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
@@ -354,30 +358,42 @@ namespace TiltBrush
 
             string imagePath = GetSafePathInDirectory(
                 App.SnapshotPath(), filename, "snapshot filename");
-            _PublishExistingApiGeneratedFileToSharedStorage(imagePath);
-
-            string captureBasePath = Path.Combine(
-                Path.GetDirectoryName(imagePath),
-                Path.GetFileNameWithoutExtension(imagePath));
+            var paths = new List<string> { imagePath };
             if (renderDepth)
             {
-                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.png");
-                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth16.png");
-                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.exr");
-                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_depth.json");
+                paths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(imagePath));
             }
             if (renderNormals)
             {
-                _PublishExistingApiGeneratedFileToSharedStorage($"{captureBasePath}_normals.png");
+                string captureBasePath = Path.Combine(
+                    Path.GetDirectoryName(imagePath), Path.GetFileNameWithoutExtension(imagePath));
+                paths.Add($"{captureBasePath}_normals.png");
             }
-        }
+            paths = paths.Where(File.Exists).ToList();
+            if (paths.Count == 0) return;
 
-        private static void _PublishExistingApiGeneratedFileToSharedStorage(string localPath)
-        {
-            if (File.Exists(localPath))
+            void Publish()
             {
-                _PublishApiGeneratedFileToSharedStorage(localPath);
+                OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
+                    paths, "snapshot", (success, error) =>
+                    {
+                        if (!success)
+                        {
+                            ControllerConsoleScript.m_Instance?.AddNewLine(
+                                $"[SAF_SNAPSHOT_BUNDLE] Failed to publish API snapshot: {error}");
+                        }
+                    });
             }
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                Publish();
+                return;
+            }
+            // One picker continuation owns the color image and every generated sidecar.
+            AndroidStorageManager.RequireSharedFolderFor("snapshot", Publish,
+                () => ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "[SAF_SNAPSHOT_BUNDLE] API snapshot remains staged locally because folder selection was canceled."));
         }
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
