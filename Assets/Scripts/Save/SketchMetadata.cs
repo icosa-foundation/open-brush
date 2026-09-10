@@ -753,6 +753,7 @@ namespace TiltBrush
         public bool Dirty { get; set; }
     }
 
+    [Serializable]
     public class TiltSoundClip
     {
         public string FilePath { get; set; } // relative to Media Library folder
@@ -923,6 +924,7 @@ namespace TiltBrush
         public TiltText[] TextWidgets { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public RuntimeVoxState[] RuntimeVoxIndex { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltSoundClip[] SoundClips { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
