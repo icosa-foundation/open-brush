@@ -101,13 +101,6 @@
       ]
     },
     {
-      "name": "Meta XR",
-      "url": "https://npm.developer.oculus.com",
-      "scopes": [
-        "com.meta.xr.sdk"
-      ]
-    },
-    {
       "name": "Keijiro",
       "url": "https://registry.npmjs.com",
       "scopes": [
