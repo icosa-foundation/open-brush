@@ -99,13 +99,6 @@
         "org.nuget.google",
         "org.nuget.system"
       ]
-    },
-    {
-      "name": "Meta XR",
-      "url": "https://npm.developer.oculus.com",
-      "scopes": [
-        "com.meta.xr.sdk"
-      ]
     }
   ]
 }
