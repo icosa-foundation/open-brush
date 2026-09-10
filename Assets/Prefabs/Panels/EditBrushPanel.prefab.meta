@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Prefabs/Panels/EditBrushPanel.prefab.meta
 guid: c745e82c911f0df4d8abea9c33e3ae6f
-========
-guid: 25ef2a4f5d9580940a252d69638f77ce
->>>>>>>> main:Assets/Prefabs/Panels/QuillLibraryPanel.prefab.meta
 PrefabImporter:
   externalObjects: {}
   userData: 

@@ -193,6 +193,7 @@ namespace TiltBrush
                 widget.transform.localScale = Vector3.one;
                 widget.SetAudioProperties(gltfAudio.Gain, gltfAudio.Loop, gltfAudio.SpatialBlend,
                     gltfAudio.MinDistance, gltfAudio.MaxDistance);
+                widget.m_InitialState.Paused = !gltfAudio.AutoPlay;
                 widget.SetSoundClip(soundClip);
                 widget.Show(bShow: true, bPlayAudio: false);
                 widget.transform.position = gltfAudio.transform.position;

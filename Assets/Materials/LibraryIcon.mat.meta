@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/LibraryIcon.mat.meta
 guid: c00a9124cb8f22c4a82f32064974ea6f
-========
-guid: 2b3c4d5e6f7a80911c2d3e4f50617283
->>>>>>>> main:Assets/Materials/ScriptedToolPreviewAlignedBox.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 0

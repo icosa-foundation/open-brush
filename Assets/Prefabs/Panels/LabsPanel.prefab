@@ -5689,23 +5689,3 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!1 &6295169059849678530
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6291905350315219778}
-  - component: {fileID: 6280936243828533384}
-  - component: {fileID: 6273185573184273286}
-  - component: {fileID: 6321239972332227614}
-  - component: {fileID: 6253917691903006574}
-  m_Layer: 16
-  m_Name: PanelButton_Drafting
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
