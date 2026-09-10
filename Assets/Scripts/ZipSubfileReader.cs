@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using ICSharpCode.SharpZipLib.Zip;
+using Unity.SharpZipLib.Zip;
 using System.IO;
 
 namespace TiltBrush
