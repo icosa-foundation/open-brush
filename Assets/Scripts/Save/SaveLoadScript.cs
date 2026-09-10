@@ -651,10 +651,10 @@ namespace TiltBrush
             StorageArea area = selectedOnly
                 ? StorageArea.SavedStrokes
                 : StorageArea.Sketches;
-            string displayName = GetSafDestinationDisplayName(
-                backend, area, fileInfo);
             try
             {
+                string displayName = GetSafDestinationDisplayName(
+                    backend, area, fileInfo);
                 using (IStorageWriteTransaction transaction = backend.BeginWrite(
                     area,
                     displayName,
