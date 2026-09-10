@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Materials/Skybox Preview.mat.meta
 guid: 00ddccd780fd8784e94f870a1a3b9e25
-========
-guid: ecbd20d64104646489ed8aa612b0cf5c
->>>>>>>> main:Assets/Models/Input/Materials/Tools/Materials/ConeFused-ConeFused_initialShadingGroup.mat.meta
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000
