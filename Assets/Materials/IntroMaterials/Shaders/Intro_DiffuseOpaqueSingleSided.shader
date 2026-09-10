@@ -27,6 +27,7 @@ SubShader {
 
     HLSLPROGRAM
     #pragma target 3.0
+    #pragma multi_compile_instancing
     #pragma vertex Vert
     #pragma fragment Frag
 
@@ -43,6 +44,7 @@ SubShader {
       float3 normalOS : NORMAL;
       float2 uv : TEXCOORD0;
       half4 color : COLOR;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
@@ -51,10 +53,13 @@ SubShader {
       float introReveal : TEXCOORD0;
       float3 normalWS : TEXCOORD1;
       float3 positionWS : TEXCOORD2;
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
-      Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      Varyings OUT = (Varyings)0;
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
       VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
       VertexNormalInputs normal = GetVertexNormalInputs(IN.normalOS);
@@ -67,6 +72,7 @@ SubShader {
     }
 
     half4 Frag(Varyings IN) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       clip(IN.introReveal - _IntroDissolve);
 
       half3 normalWS = normalize(IN.normalWS);
