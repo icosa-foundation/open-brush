@@ -47,7 +47,6 @@ namespace TiltBrush
 
         [SerializeField] private Texture2D m_ErrorImage;
         [SerializeField] protected string[] m_DefaultImages;
-        [SerializeField] protected string[] m_ForceCopyImages;
 
         public bool IsScanning => m_RunningImageCacheCoroutine;
 
@@ -70,7 +69,6 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitReferenceImagePath(m_DefaultImages);
-            App.InitReferenceImagePath(m_ForceCopyImages, force: true);
             ImageCache.DeleteObsoleteCaches();
             ChangeDirectory(HomeDirectory);
         }

@@ -11116,7 +11116,6 @@ MonoBehaviour:
   m_ErrorImage: {fileID: 2800000, guid: 0c91e975bed1cd948a150b672f3fec48, type: 3}
   m_DefaultImages:
   - DefaultImages/OpenBrushLogo.png
-  m_ForceCopyImages: []
 --- !u!114 &652605561
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11145,7 +11144,6 @@ MonoBehaviour:
   m_DefaultModels:
   - DefaultModels/Andy.glb
   - DefaultModels/Tiltasaurus.glb
-  m_ForceCopyModels:
   - DefaultModels/openbrush.sog
   m_ObjLoaderStandardMaterial: {fileID: 2100000, guid: 33cc179da6d3a704496d940766650951, type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270, type: 2}
@@ -11330,7 +11328,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultVideos:
   - DefaultVideos/animated-logo.mp4
-  m_ForceCopyVideos: []
   m_DebugOutput: 0
   m_supportedVideoExtensions:
   - .mp4
@@ -11367,7 +11364,6 @@ MonoBehaviour:
   - DefaultBackgroundImages/panorama.jpg
   - DefaultBackgroundImages/stereopanorama.jpg
   - DefaultBackgroundImages/ATTRIBUTION.txt
-  m_ForceCopyImages: []
 --- !u!114 &652605574
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11382,7 +11378,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultSoundClips:
   - DefaultSoundClips/underwater.wav
-  m_ForceCopySoundClips:
   - DefaultSoundClips/qwert.mp3
   m_DebugOutput: 0
   m_supportedSoundClipExtensions:
@@ -11406,7 +11401,6 @@ MonoBehaviour:
   - DefaultSavedStrokes/Knot.tilt
   - DefaultSavedStrokes/Star.tilt
   - DefaultSavedStrokes/Snowflake.tilt
-  m_ForceCopySavedStrokes: []
 --- !u!114 &652605576
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11421,7 +11415,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultQuillFiles:
   - DefaultQuillFiles/biker_by_nick_ladd.imm
-  m_ForceCopyQuillFiles: []
 --- !u!114 &652605577
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -26,7 +26,6 @@ namespace TiltBrush
         static public ModelCatalog m_Instance;
 
         [SerializeField] private string[] m_DefaultModels;
-        [SerializeField] private string[] m_ForceCopyModels;
 
         public event Action CatalogChanged;
         public Material m_ObjLoaderStandardMaterial;
@@ -93,7 +92,6 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitModelLibraryPath(m_DefaultModels);
-            App.InitModelLibraryPath(m_ForceCopyModels, force: true);
             m_ModelsByRelativePath = new Dictionary<string, Model>();
             m_MissingNormalizedModelsByRelativePath = new Dictionary<string, TrTransform[]>();
             m_MissingModelsByRelativePath = new Dictionary<string, TrTransform[]>();

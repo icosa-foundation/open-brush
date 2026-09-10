@@ -23,7 +23,6 @@ namespace TiltBrush
     {
         static public VideoCatalog Instance { get; private set; }
         [SerializeField] private string[] m_DefaultVideos;
-        [SerializeField] private string[] m_ForceCopyVideos;
         [SerializeField] private bool m_DebugOutput;
         [SerializeField] private string[] m_supportedVideoExtensions;
 
@@ -47,7 +46,6 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitVideoLibraryPath(m_DefaultVideos);
-            App.InitVideoLibraryPath(m_ForceCopyVideos, force: true);
             ChangeDirectory(HomeDirectory);
         }
 

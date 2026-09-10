@@ -23,7 +23,6 @@ namespace TiltBrush
     {
         static public SavedStrokesCatalog Instance { get; private set; }
         [SerializeField] private string[] m_DefaultSavedStrokes;
-        [SerializeField] private string[] m_ForceCopySavedStrokes;
         private FileWatcher m_FileWatcher;
         private string m_CurrentSavedStrokesDirectory;
         public string CurrentSavedStrokesDirectory => m_CurrentSavedStrokesDirectory;
@@ -45,7 +44,6 @@ namespace TiltBrush
         {
             App.InitMediaLibraryPath();
             App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
-            App.InitSavedStrokesLibraryPath(m_ForceCopySavedStrokes, force: true);
             ChangeDirectory(HomeDirectory);
         }
 

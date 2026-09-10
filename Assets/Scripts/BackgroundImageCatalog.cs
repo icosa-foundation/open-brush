@@ -31,7 +31,6 @@ namespace TiltBrush
 
             App.InitMediaLibraryPath();
             App.InitBackgroundImagesPath(m_DefaultImages);
-            App.InitBackgroundImagesPath(m_ForceCopyImages, force: true);
             ChangeDirectory(HomeDirectory);
         }
 

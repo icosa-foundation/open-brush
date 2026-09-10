@@ -610,12 +610,19 @@ namespace TiltBrush
             {
                 PlayerPrefs.DeleteKey(kPlayerPrefHasPlayedBefore);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultModels);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultQuillFiles);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultQuillFiles);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultReferenceImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultSavedStrokes);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSoundClips);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultSoundClips);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -2126,239 +2133,81 @@ namespace TiltBrush
             return true;
         }
 
-        /// Creates the Model Catalog directory and copies in the provided default models.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
-        public static void InitModelLibraryPath(string[] defaultModels, bool force = false)
+        // Frozen migration baseline from tag v2.31, Assets/Scenes/Main.unity.
+        // Do not add later defaults here: upgrading users must receive those files.
+        public static void InitModelLibraryPath(string[] defaultModels)
         {
-            string modelsDirectory = ModelLibraryPath();
-
-            if (!Directory.Exists(modelsDirectory))
-            {
-                if (!InitDirectoryAtPath(modelsDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            bool shouldCopy = force || Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
-
-            // Normal defaults are copied only once per clean install.
-            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy && defaultModels != null && defaultModels.Length > 0)
-            {
-                foreach (string fileName in defaultModels)
-                {
-                    if (string.IsNullOrEmpty(fileName)) { continue; }
-                    string[] path = fileName.Split(
-                        new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
-                    string newModel = Path.Combine(modelsDirectory, path[1]);
-                    if (File.Exists(newModel)) { continue; }
-                    FileUtils.WriteBytesFromResources(fileName, newModel);
-                }
-                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1); }
-            }
+            SeedDefaultMedia(ModelLibraryPath(), defaultModels, kPlayerPrefSeededDefaultModels,
+                new[] { "DefaultModels/Andy.glb", "DefaultModels/Tiltasaurus.glb" });
         }
 
-        /// Creates the Background Images directory and copies in the provided default images.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
-        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages, bool force = false)
+        public static void InitBackgroundImagesPath(string[] defaultBackgroundImages)
         {
-            string path = BackgroundImagesLibraryPath();
-
-            if (!Directory.Exists(path))
-            {
-                if (!FileUtils.InitializeDirectoryWithUserError(path))
-                {
-                    return;
-                }
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            bool shouldCopy = force || Directory.GetFileSystemEntries(path).Length == 0;
-
-            // Normal defaults are copied only once per clean install.
-            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy && defaultBackgroundImages != null && defaultBackgroundImages.Length > 0)
-            {
-                foreach (string fileName in defaultBackgroundImages)
-                {
-                    if (string.IsNullOrEmpty(fileName)) { continue; }
-                    string dest = Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", "")));
-                    if (File.Exists(dest)) { continue; }
-                    FileUtils.WriteBytesFromResources(fileName, dest);
-                }
-                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1); }
-            }
+            SeedDefaultMedia(BackgroundImagesLibraryPath(), defaultBackgroundImages,
+                kPlayerPrefSeededDefaultBackgroundImages,
+                new[] { "DefaultBackgroundImages/panorama.jpg",
+                    "DefaultBackgroundImages/stereopanorama.jpg",
+                    "DefaultBackgroundImages/ATTRIBUTION.txt" }, stripBytes: true);
         }
 
-        /// Creates the Reference Images directory and copies in the provided default images.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
-        public static void InitReferenceImagePath(string[] defaultImages, bool force = false)
+        public static void InitReferenceImagePath(string[] defaultImages)
         {
-            string path = ReferenceImagePath();
-
-            if (!Directory.Exists(path))
-            {
-                if (!FileUtils.InitializeDirectoryWithUserError(path))
-                {
-                    return;
-                }
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            bool shouldCopy = force || Directory.GetFileSystemEntries(path).Length == 0;
-
-            // Normal defaults are copied only once per clean install.
-            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy && defaultImages != null && defaultImages.Length > 0)
-            {
-                foreach (string fileName in defaultImages)
-                {
-                    if (string.IsNullOrEmpty(fileName)) { continue; }
-                    string dest = Path.Combine(path, Path.GetFileName(fileName));
-                    if (File.Exists(dest)) { continue; }
-                    FileUtils.WriteTextureFromResources(fileName, dest);
-                }
-                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1); }
-            }
+            SeedDefaultMedia(ReferenceImagePath(), defaultImages,
+                kPlayerPrefSeededDefaultReferenceImages,
+                new[] { "DefaultImages/OpenBrushLogo.png" }, texture: true);
         }
 
-        public static void InitVideoLibraryPath(string[] defaultVideos, bool force = false)
+        public static void InitVideoLibraryPath(string[] defaultVideos)
         {
-            string videosDirectory = VideoLibraryPath();
-
-            if (!Directory.Exists(videosDirectory))
-            {
-                if (!InitDirectoryAtPath(videosDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            bool shouldCopy = force || Directory.GetFileSystemEntries(videosDirectory).Length == 0;
-
-            // Normal defaults are copied only once per clean install.
-            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy && defaultVideos != null && defaultVideos.Length > 0)
-            {
-                foreach (var video in defaultVideos)
-                {
-                    if (string.IsNullOrEmpty(video)) { continue; }
-                    string destFilename = Path.GetFileName(video);
-                    if (File.Exists(Path.Combine(videosDirectory, destFilename))) { continue; }
-                    FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
-                }
-                if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1); }
-            }
+            SeedDefaultMedia(VideoLibraryPath(), defaultVideos, kPlayerPrefSeededDefaultVideos,
+                new[] { "DefaultVideos/animated-logo.mp4" });
         }
 
-        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes, bool force = false)
+        public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
         {
-            string savedStrokesDirectory = SavedStrokesPath();
-
-            if (!Directory.Exists(savedStrokesDirectory))
-            {
-                if (!InitDirectoryAtPath(savedStrokesDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            bool shouldCopy = force || Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
-
-            // Normal defaults are copied only once per clean install.
-            if (!force && PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy && defaultSavedStrokes != null && defaultSavedStrokes.Length > 0)
-            {
-                foreach (var savedStroke in defaultSavedStrokes)
-                {
-                    if (string.IsNullOrEmpty(savedStroke)) { continue; }
-                    string destFilename = Path.GetFileName(savedStroke);
-                    if (File.Exists(Path.Combine(savedStrokesDirectory, destFilename))) { continue; }
-                    FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
-                }
-            }
+            SeedDefaultMedia(SavedStrokesPath(), defaultSavedStrokes,
+                kPlayerPrefSeededDefaultSavedStrokes,
+                new[] { "DefaultSavedStrokes/Cell.tilt", "DefaultSavedStrokes/Knot.tilt",
+                    "DefaultSavedStrokes/Star.tilt", "DefaultSavedStrokes/Snowflake.tilt" });
         }
 
-        public static void InitQuillMediaLibraryPath(string[] defaultQuillFiles, bool force = false)
+        // v2.31 did not ship sound clip or Quill defaults.
+        public static void InitQuillMediaLibraryPath(string[] defaultQuillFiles)
         {
-            string quillMediaDirectory = QuillMediaLibraryPath();
-
-            if (!InitDirectoryAtPath(quillMediaDirectory))
-            {
-                return;
-            }
-
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            if ((!force && (Directory.GetFileSystemEntries(quillMediaDirectory).Length != 0 ||
-                PlayerPrefs.GetInt(kPlayerPrefSeededDefaultQuillFiles, 0) != 0)) ||
-                defaultQuillFiles == null || defaultQuillFiles.Length == 0)
-            {
-                return;
-            }
-
-            foreach (string fileName in defaultQuillFiles)
-            {
-                if (string.IsNullOrEmpty(fileName)) { continue; }
-                string destination = Path.Combine(quillMediaDirectory, Path.GetFileName(fileName));
-                if (File.Exists(destination)) { continue; }
-                FileUtils.WriteBytesFromResources(fileName, destination);
-            }
-            if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultQuillFiles, 1); }
+            SeedDefaultMedia(QuillMediaLibraryPath(), defaultQuillFiles,
+                kPlayerPrefSeededDefaultQuillFiles);
         }
 
-
-        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips, bool force = false)
+        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
         {
-            string soundClipsDirectory = SoundClipLibraryPath();
-            if (!InitDirectoryAtPath(soundClipsDirectory))
-            {
-                return false;
-            }
+            return SeedDefaultMedia(SoundClipLibraryPath(), defaultSoundClips,
+                kPlayerPrefSeededDefaultSoundClips);
+        }
 
-            // Force copying bypasses the empty-folder and saved-flag checks.
-            if ((!force && (Directory.GetFileSystemEntries(soundClipsDirectory).Length != 0 ||
-                PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSoundClips, 0) != 0)) ||
-                defaultSoundClips == null || defaultSoundClips.Length == 0)
-            {
-                return true;
-            }
-
-            foreach (var soundClip in defaultSoundClips)
-            {
-                if (string.IsNullOrEmpty(soundClip)) { continue; }
-                string destFilename = Path.GetFileName(soundClip);
-                if (File.Exists(Path.Combine(soundClipsDirectory, destFilename))) { continue; }
-                FileUtils.WriteBytesFromResources(soundClip, Path.Combine(soundClipsDirectory, destFilename));
-            }
-            if (!force) { PlayerPrefs.SetInt(kPlayerPrefSeededDefaultSoundClips, 1); }
-
+        private static bool SeedDefaultMedia(string directory, string[] defaults, string legacyKey,
+            string[] legacyDefaults = null, bool texture = false, bool stripBytes = false)
+        {
+            if (!InitDirectoryAtPath(directory)) { return false; }
+            DefaultMediaSeeder.Seed(directory, defaults, legacyDefaults, legacyKey,
+                m_Instance.HasPlayedBefore, resourcePath =>
+                {
+                    if (texture)
+                    {
+                        var image = Resources.Load<Texture2D>(
+                            resourcePath.Substring(0, resourcePath.IndexOf('.')));
+                        if (image == null)
+                        {
+                            throw new InvalidOperationException($"Missing default image: {resourcePath}");
+                        }
+                        return image.EncodeToPNG();
+                    }
+                    var asset = Resources.Load<TextAsset>(resourcePath);
+                    if (asset == null)
+                    {
+                        throw new InvalidOperationException($"Missing default media: {resourcePath}");
+                    }
+                    return asset.bytes;
+                }, stripBytes);
             return true;
         }
 
