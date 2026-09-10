@@ -2028,7 +2028,9 @@ namespace TiltBrush
                     // Canonical user-visible files are written through Android SAF.
                     m_UserPath = OpenBrushStorage.LocalUserPathRoot;
 #else
-                    m_UserPath = "/sdcard/";
+                    m_UserPath = SteamManager.RunningUnderLepton
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
 #endif
                     break;
@@ -2299,23 +2301,13 @@ namespace TiltBrush
             }
         }
 
-        public static void InitQuillLibraryPath()
+        public static void InitQuillMediaLibraryPath()
         {
-            string quillLibraryDirectory = QuillLibraryPath();
+            string quillMediaDirectory = QuillMediaLibraryPath();
 
-            if (!Directory.Exists(quillLibraryDirectory))
+            if (!Directory.Exists(quillMediaDirectory))
             {
-                InitDirectoryAtPath(quillLibraryDirectory);
-            }
-        }
-
-        public static void InitQuillImmPath()
-        {
-            string quillImmDirectory = QuillImmPath();
-
-            if (!Directory.Exists(quillImmDirectory))
-            {
-                InitDirectoryAtPath(quillImmDirectory);
+                InitDirectoryAtPath(quillMediaDirectory);
             }
         }
 
@@ -2409,9 +2401,9 @@ namespace TiltBrush
                 System.Environment.SpecialFolder.Personal), "Quill");
         }
 
-        static public string QuillImmPath()
+        static public string QuillMediaLibraryPath()
         {
-            return Path.Combine(MediaLibraryPath(), "Imm");
+            return Path.Combine(MediaLibraryPath(), "Quill");
         }
 
         static public string AutosavePath()
