@@ -548,7 +548,7 @@
       "dependencies": {
         "com.unity.xr.openxr": "1.18.0"
       },
-      "hash": "6c79eae8fcc4a6a3efe54bbf80bb55079d0b0cb6"
+      "hash": "8746c95c90d2c21aedc90b6a2153446bf0040212"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
