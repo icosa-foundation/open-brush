@@ -716,7 +716,8 @@ namespace TiltBrush
                 asset = GsplatRuntimeLoader.LoadFile(
                     path,
                     Gsplat.CompressionMode.Spark,
-                    sourceCoordinates);
+                    sourceCoordinates,
+                    filter: App.UserConfig.Splats.CreateImportFilter());
 #if UNITY_EDITOR || DEBUG
                 Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
                     $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
@@ -732,6 +733,7 @@ namespace TiltBrush
                 gsplatRenderer.AsyncUpload = true;
                 gsplatRenderer.RenderBeforeUploadComplete = false;
                 gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+                App.UserConfig.Splats.ApplyTo(gsplatRenderer, GsplatSettings.Instance);
 
                 var collider = rendererObject.AddComponent<BoxCollider>();
                 collider.center = asset.Bounds.center;
