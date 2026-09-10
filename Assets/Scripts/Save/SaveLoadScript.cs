@@ -637,7 +637,7 @@ namespace TiltBrush
             {
                 NotifySaveFinished(fileInfo, error, newFile);
             }
-            if (!directSafWrite)
+            if (!directSafWrite || error == null)
             {
                 App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
             }
