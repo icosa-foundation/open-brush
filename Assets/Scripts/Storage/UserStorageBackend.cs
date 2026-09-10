@@ -769,6 +769,7 @@ namespace TiltBrush
             {
                 case ".tilt": return TiltFile.TILT_MIME_TYPE;
                 case ".png": return "image/png";
+                case ".gif": return "image/gif";
                 case ".jpg":
                 case ".jpeg": return "image/jpeg";
                 case ".mp4": return "video/mp4";

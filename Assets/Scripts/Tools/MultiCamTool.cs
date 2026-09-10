@@ -230,6 +230,7 @@ namespace TiltBrush
         // Only valid during "Building"
         private float m_ProgressRingSize;
         private GifEncodeTask m_Task;
+        private bool m_GifPublicationPending;
 
         private bool m_SwipeBlinkRequested;
         private bool m_SwipeBlinkShowing;
@@ -610,25 +611,45 @@ namespace TiltBrush
 
         void ReportGifTaskDone()
         {
-            if (m_Task != null)
+            if (m_Task == null)
             {
-                string err = m_Task.Error;
-                if (err != null)
-                {
-                    OutputWindowScript.Error("Failed to save gif", err);
-                }
-                else
-                {
-                    OutputWindowScript.ReportFileSaved("Gif Written!", m_Task.GifName);
-                }
-                m_Task = null;
+                return;
+            }
+            string path = m_Task.GifName;
+            string error = m_Task.Error;
+            m_Task = null;
+
+            if (error != null || !OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                FinishGifSave(path, error);
+                return;
             }
 
+            // The encoder writes to private staging on SAF builds. Keep GIF capture busy
+            // until publication completes, and let the publisher own staging-file cleanup.
+            m_GifPublicationPending = true;
+            OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
+                path, "GIF capture", (success, publishError) => FinishGifSave(
+                    path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
+        }
+
+        private void FinishGifSave(string path, string error)
+        {
+            m_GifPublicationPending = false;
             m_TimeGifCreationState = GifCreationState.Ready;
             m_AutoGifCreationState = GifCreationState.Ready;
 
             m_TimeGifCaptureTimer = 0.0f;
             SetTimeBar(m_TimeGifCaptureTimer);
+
+            if (error != null)
+            {
+                OutputWindowScript.Error("Failed to save gif", error);
+            }
+            else
+            {
+                OutputWindowScript.ReportFileSaved("Gif Written!", path);
+            }
         }
 
         void UpdateMultiCamTransform()
@@ -2317,6 +2338,10 @@ namespace TiltBrush
             }
 
             ReportGifTaskDone();
+            while (m_GifPublicationPending)
+            {
+                yield return null;
+            }
         }
 
         void SetTimeBar(float fTime)
