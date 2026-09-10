@@ -43,9 +43,11 @@ namespace TiltBrush
 
             private Type type;
             private string path;
+            // A SAF cache path is only for loading; identity and metadata use path.
+            private string materializedPath;
             private string id; // Only valid when the type is IcosaAssetId.
 
-            public static Location File(string relativePath)
+            public static Location File(string relativePath, string materializedPath = null)
             {
                 int lastIndex = relativePath.LastIndexOf('#');
                 string path, fragment;
@@ -64,6 +66,7 @@ namespace TiltBrush
                 {
                     type = Type.LocalFile,
                     path = path,
+                    materializedPath = materializedPath,
                 };
             }
 
@@ -90,6 +93,10 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            if (materializedPath != null)
+                            {
+                                return materializedPath.Replace("\\", "/");
+                            }
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
                             if (System.IO.File.Exists(blocksPath))
                             {
@@ -724,7 +731,8 @@ namespace TiltBrush
                 asset = GsplatRuntimeLoader.LoadFile(
                     path,
                     Gsplat.CompressionMode.Spark,
-                    sourceCoordinates);
+                    sourceCoordinates,
+                    filter: App.UserConfig.Splats.CreateImportFilter());
 #if UNITY_EDITOR || DEBUG
                 Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
                     $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
@@ -740,6 +748,7 @@ namespace TiltBrush
                 gsplatRenderer.AsyncUpload = true;
                 gsplatRenderer.RenderBeforeUploadComplete = false;
                 gsplatRenderer.GammaToLinear = QualitySettings.activeColorSpace == ColorSpace.Linear;
+                App.UserConfig.Splats.ApplyTo(gsplatRenderer, GsplatSettings.Instance);
 
                 var collider = rendererObject.AddComponent<BoxCollider>();
                 collider.center = asset.Bounds.center;
@@ -1086,15 +1095,11 @@ namespace TiltBrush
                     try
                     {
                         string materializedPath = await Task.Run(m_Materialize);
-                        if (!string.Equals(
-                                materializedPath,
-                                m_Location.AbsolutePath,
-                                StringComparison.OrdinalIgnoreCase))
+                        if (string.IsNullOrEmpty(materializedPath))
                         {
-                            throw new IOException(
-                                $"Materialized model path did not match its catalog path: " +
-                                $"{RelativePath}");
+                            throw new IOException($"Could not materialize model: {RelativePath}");
                         }
+                        m_Location = Location.File(RelativePath, materializedPath);
                     }
                     catch (Exception e)
                     {
