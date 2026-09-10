@@ -77,62 +77,19 @@ public class BuildTiltBrushPostProcess
                 application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
             }
 
-
-#if FORCE_QUEST_SUPPORT_DEVICE
-            UnityEngine.Debug.Log("Add quest as a supported devices");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application",
-                "meta-data",
-                "com.oculus.supportedDevices",
-                true,
-                true,
-                "value", "quest"
-            );
-#endif
-
-#if FORCE_FOCUSAWARE
-            UnityEngine.Debug.Log("Add com.oculus.vr.focusaware");
-            AddOrRemoveTag(doc,
-                androidNamespaceURI,
-                "/manifest/application/activity",
-                "meta-data",
-                "com.oculus.vr.focusaware",
-                true,
-                true,
-                "value", "true"
-            );
-#endif
-
-#if ENABLE_CONTEXTUAL_BOUNDARYLESS_APP
-            UnityEngine.Debug.Log("Add com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "com.oculus.feature.CONTEXTUAL_BOUNDARYLESS_APP",
-                    true,
-                    true,
-                    "required", "true"
-            );
-#endif
-
-#if FORCE_HEADTRACKING
-            UnityEngine.Debug.Log("Add android.hardware.vr.headtracking");
-            AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-feature",
-                    "android.hardware.vr.headtracking",
-                    true,
-                    true,
-                    "version", "1",
-                    "required", "true"
-            );
-#endif
             ConfigureGameActivityLauncher(doc);
 
+#if USE_QUEST_PACKAGE_NAME
+            const bool metaStore = true;
+#else
+            const bool metaStore = false;
+#endif
+            AndroidStoreManifest.Configure(doc, metaStore,
+                BuildTiltBrush.CurrentBuildXrSdk == TiltBrush.XrSdkMode.AndroidXR);
+
             doc.Save(file);
+            UnityEngine.Debug.Log($"[OB-STORE-MANIFEST] Applied Android manifest settings: " +
+                $"MetaStore={metaStore}, XR={BuildTiltBrush.CurrentBuildXrSdk}.");
         }
         catch (System.Exception e)
         {
@@ -172,7 +129,7 @@ public class BuildTiltBrushPostProcess
     ///
     /// Change only the generated Gradle manifest. This avoids modifying and reimporting a shared
     /// project asset during a build, and leaves every build that selects PlayerActivity untouched.
-    /// Unity's XR manifest processor will merge its Android XR properties into this activity later.
+    /// XR library manifests are merged into the final application by Gradle.
     /// </remarks>
     private static void ConfigureGameActivityLauncher(XmlDocument doc)
     {
