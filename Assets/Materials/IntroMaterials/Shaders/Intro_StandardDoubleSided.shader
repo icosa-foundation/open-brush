@@ -32,6 +32,7 @@ SubShader {
 
     HLSLPROGRAM
     #pragma target 3.0
+    #pragma multi_compile_instancing
     #pragma vertex Vert
     #pragma fragment Frag
 
@@ -59,6 +60,7 @@ SubShader {
       float4 tangentOS : TANGENT;
       float2 uv0 : TEXCOORD0;
       half4 color : COLOR;
+      UNITY_VERTEX_INPUT_INSTANCE_ID
     };
 
     struct Varyings {
@@ -70,10 +72,13 @@ SubShader {
       half3 normalWS : TEXCOORD3;
       half3 tangentWS : TEXCOORD4;
       half3 bitangentWS : TEXCOORD5;
+      UNITY_VERTEX_OUTPUT_STEREO
     };
 
     Varyings Vert(Attributes IN) {
-      Varyings OUT;
+      UNITY_SETUP_INSTANCE_ID(IN);
+      Varyings OUT = (Varyings)0;
+      UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
       VertexPositionInputs pos = GetVertexPositionInputs(IN.positionOS.xyz);
       VertexNormalInputs normal = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
@@ -93,6 +98,7 @@ SubShader {
     }
 
     half4 Frag(Varyings IN, bool isFrontFace : SV_IsFrontFace) : SV_Target {
+      UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
       half4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uvMain);
       half alpha = tex.a * IN.color.a;
       clip(alpha - _Cutoff);
