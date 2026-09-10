@@ -291,6 +291,60 @@ namespace TiltBrush
             }
         }
 
+        [TestCase("shared")]
+        [TestCase("missing")]
+        [TestCase("provider-failure")]
+        [TestCase("root-changed")]
+        public void SharedConfig_PreservesFilesAndFallsBackSafely(string scenario)
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-config-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            string localPath = Path.Combine(root, "Open Brush.cfg");
+            const string localText = "{\"local\":true}";
+            const string sharedText = "{\"custom\":true}";
+            try
+            {
+                File.WriteAllText(localPath, localText);
+                var backend = new FakeSafBackend();
+                StorageDocumentId sharedId = default;
+                if (scenario != "missing")
+                {
+                    sharedId = backend.Add("Open Brush.cfg", System.Text.Encoding.UTF8.GetBytes(sharedText));
+                }
+                if (scenario == "provider-failure")
+                {
+                    backend.ListFailureCode = StorageResultCode.ProviderUnavailable;
+                }
+                if (scenario == "root-changed")
+                {
+                    backend.RootAfterFirstRead = "different-root";
+                }
+                int errors = 0;
+                string result = SharedUserConfig.ReadText(backend, localPath, _ => ++errors);
+                Assert.AreEqual(scenario == "shared" ? sharedText : localText, result);
+                Assert.AreEqual(scenario == "provider-failure" || scenario == "root-changed" ? 1 : 0, errors);
+                Assert.AreEqual(localText, File.ReadAllText(localPath));
+                Assert.AreEqual(0, backend.CommitCount);
+                if (sharedId.IsValid)
+                {
+                    using (var reader = new StreamReader(backend.OpenRead(sharedId, false, CancellationToken.None)))
+                    {
+                        Assert.AreEqual(sharedText, reader.ReadToEnd());
+                    }
+                }
+                File.Delete(localPath);
+                if (scenario == "missing")
+                {
+                    Assert.IsNull(SharedUserConfig.ReadText(backend, localPath, null));
+                }
+            }
+            finally
+            {
+                if (File.Exists(localPath)) File.Delete(localPath);
+                Directory.Delete(root);
+            }
+        }
+
         // Test SketchBinaryReader.Skip() on non-seekable stream
         [Test]
         public void TestSkip([Values(0u, 1u, 4u, 18u)] uint amount,

@@ -305,6 +305,7 @@ namespace TiltBrush
         // platform configs disable file watching, so a resume-time refresh matches Quest behavior.
         private IEnumerator RefreshRuntimeContent()
         {
+            App.Instance.RefreshUserConfig();
             yield return SeedRuntimeContent();
             foreach (StorageArea area in new[]
             {

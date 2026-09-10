@@ -42,6 +42,7 @@ namespace TiltBrush
         Plugins,
         Fonts,
         MediaLibrarySoundClips,
+        UserRoot,
     }
 
     public enum StorageResultCode
@@ -565,6 +566,7 @@ namespace TiltBrush
         {
             switch (area)
             {
+                case StorageArea.UserRoot: return App.UserPath();
                 case StorageArea.Sketches: return App.UserSketchPath();
                 case StorageArea.SavedStrokes: return App.SavedStrokesPath();
                 case StorageArea.MediaLibraryImages: return App.ReferenceImagePath();

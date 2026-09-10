@@ -1885,15 +1885,15 @@ namespace TiltBrush
             try
             {
                 string sConfigPath = App.ConfigPath();
-                if (!File.Exists(sConfigPath))
-                {
-                    return;
-                }
-
                 string text;
                 try
                 {
-                    text = File.ReadAllText(sConfigPath, System.Text.Encoding.UTF8);
+                    text = SharedUserConfig.ReadText(UserStorage.Backend, sConfigPath,
+                        e => Debug.LogWarning($"[SAF_USER_CONFIG] Using local configuration: {e.Message}"));
+                    if (text == null)
+                    {
+                        return;
+                    }
                 }
                 catch (Exception e)
                 {
