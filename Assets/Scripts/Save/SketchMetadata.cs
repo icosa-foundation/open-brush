@@ -1107,6 +1107,7 @@ namespace TiltBrush
 
     }
 
+    [Serializable]
     public class TiltSoundClip
     {
         public string FilePath { get; set; } // relative to Media Library folder

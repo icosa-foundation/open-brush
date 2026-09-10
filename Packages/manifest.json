@@ -91,13 +91,6 @@
       ]
     },
     {
-      "name": "Meta XR",
-      "url": "https://npm.developer.oculus.com",
-      "scopes": [
-        "com.meta.xr.sdk"
-      ]
-    },
-    {
       "name": "OpenUPM",
       "url": "https://package.openupm.com",
       "scopes": [
