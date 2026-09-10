@@ -281,6 +281,7 @@ namespace TiltBrush
                     return "Media Library/BackgroundImages";
                 case StorageArea.MediaLibraryModels: return "Media Library/Models";
                 case StorageArea.MediaLibraryVideos: return "Media Library/Videos";
+                case StorageArea.MediaLibrarySoundClips: return "Media Library/Sound Clips";
                 case StorageArea.Snapshots: return "Snapshots";
                 case StorageArea.Videos: return "Videos";
                 case StorageArea.VrVideos: return "VRVideos";
@@ -681,6 +682,7 @@ namespace TiltBrush
                     return App.BackgroundImagesLibraryPath();
                 case StorageArea.MediaLibraryModels: return App.ModelLibraryPath();
                 case StorageArea.MediaLibraryVideos: return App.VideoLibraryPath();
+                case StorageArea.MediaLibrarySoundClips: return App.SoundClipLibraryPath();
                 default:
                     return Path.Combine(
                         Application.persistentDataPath,

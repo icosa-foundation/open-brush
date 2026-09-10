@@ -517,6 +517,11 @@ namespace TiltBrush
                     VideoCatalog.Instance.ChangeDirectory(
                         VideoCatalog.Instance.HomeDirectory);
                 }
+                if (SoundClipCatalog.Instance != null)
+                {
+                    SoundClipCatalog.Instance.ChangeDirectory(
+                        SoundClipCatalog.Instance.HomeDirectory);
+                }
             }
             else
             {
@@ -524,6 +529,7 @@ namespace TiltBrush
                 BackgroundImageCatalog.m_Instance?.ForceCatalogScan();
                 ModelCatalog.m_Instance?.ForceCatalogScan();
                 VideoCatalog.Instance?.ForceCatalogScan();
+                SoundClipCatalog.Instance?.ForceCatalogScan();
             }
         }
 

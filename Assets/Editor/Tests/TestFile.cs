@@ -1243,6 +1243,30 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SoundDefaults_PreserveFileCreatedAfterListing()
+        {
+            var backend = new FakeSafBackend
+            {
+                CreateBeforeNextWriteData = System.Text.Encoding.UTF8.GetBytes("user audio"),
+            };
+            var defaults = new Dictionary<string, byte[]>
+            {
+                ["default.wav"] = new byte[] { 1, 2 },
+            };
+
+            StorageTreeResult result = SoundClipCatalog.QuerySafSoundClips(
+                backend, "", new[] { ".wav" }, defaults);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(0, backend.CommitCount);
+            using (var reader = new StreamReader(backend.OpenRead(
+                result.Entries.Single().DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user audio", reader.ReadToEnd());
+            }
+        }
+
+        [Test]
         public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
         {
             string root = Path.Combine(

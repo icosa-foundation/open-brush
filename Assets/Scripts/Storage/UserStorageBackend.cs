@@ -41,6 +41,7 @@ namespace TiltBrush
         Scripts,
         Plugins,
         Fonts,
+        MediaLibrarySoundClips,
     }
 
     public enum StorageResultCode
@@ -571,6 +572,7 @@ namespace TiltBrush
                     return App.BackgroundImagesLibraryPath();
                 case StorageArea.MediaLibraryModels: return App.ModelLibraryPath();
                 case StorageArea.MediaLibraryVideos: return App.VideoLibraryPath();
+                case StorageArea.MediaLibrarySoundClips: return App.SoundClipLibraryPath();
                 case StorageArea.Snapshots: return App.SnapshotPath();
                 case StorageArea.Videos: return App.VideosPath();
                 case StorageArea.VrVideos: return App.VrVideosPath();
@@ -770,6 +772,11 @@ namespace TiltBrush
                 case ".jpg":
                 case ".jpeg": return "image/jpeg";
                 case ".mp4": return "video/mp4";
+                case ".wav": return "audio/wav";
+                case ".mp3": return "audio/mpeg";
+                case ".ogg": return "audio/ogg";
+                case ".aif":
+                case ".aiff": return "audio/aiff";
                 case ".json": return "application/json";
                 case ".txt": return "text/plain";
                 case ".html":
