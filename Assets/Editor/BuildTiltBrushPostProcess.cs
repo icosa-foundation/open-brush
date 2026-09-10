@@ -75,7 +75,7 @@ public class BuildTiltBrushPostProcess
     ///
     /// Change only the generated Gradle manifest. This avoids modifying and reimporting a shared
     /// project asset during a build, and leaves every build that selects PlayerActivity untouched.
-    /// Unity's XR manifest processor will merge its Android XR properties into this activity later.
+    /// XR library manifests are merged into the final application by Gradle.
     /// </remarks>
     private static void ConfigureGameActivityLauncher(XmlDocument doc)
     {

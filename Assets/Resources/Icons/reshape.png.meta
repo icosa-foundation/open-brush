@@ -1,9 +1,5 @@
 fileFormatVersion: 2
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
 guid: 2eb883923c5e034499417b30761f7ce9
-========
-guid: 41261e3d425a39d49b360bcc608d2ad1
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -25,39 +21,25 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
   isReadable: 1
-========
-  isReadable: 0
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
   ignoreMipmapLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
   cubemapConvolution: 0
   seamlessCubemap: 0
-========
-  cubemapConvolution: 1
-  seamlessCubemap: 1
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
   textureFormat: 1
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
     filterMode: 1
     aniso: 1
-========
-    filterMode: 2
-    aniso: 0
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     mipBias: 0
-    wrapU: 1
-    wrapV: 1
-    wrapW: 1
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
   nPOTScale: 1
   lightmap: 0
   compressionQuality: 50
@@ -75,11 +57,7 @@ TextureImporter:
   spriteTessellationDetail: -1
   spriteGeometrySubdivision: -1
   textureType: 0
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
   textureShape: 1
-========
-  textureShape: 2
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
   singleChannelComponent: 0
   flipbookRows: 1
   flipbookColumns: 1
@@ -97,11 +75,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
     compressionQuality: 50
-========
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -136,19 +110,11 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: iOS
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
     maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
     compressionQuality: 50
-========
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -157,19 +123,11 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: VisionOS
-<<<<<<<< HEAD:Assets/Resources/Icons/reshape.png.meta
     maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
     compressionQuality: 50
-========
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 100
->>>>>>>> main:Assets/Scenes/Loading/ReflectionProbe-0.exr.meta
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
@@ -182,7 +140,7 @@ TextureImporter:
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
-    compressionQuality: 100
+    compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
     overridden: 0
