@@ -181,7 +181,6 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_HintText: {fileID: 1276754371}
-  m_LegacyHintText: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -14813,17 +14812,9 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 652605545}
     m_Modifications:
-    - target: {fileID: 8800009, guid: 92e391d518590d14daf354590d888efe, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 3905978450790232543, guid: 92e391d518590d14daf354590d888efe, type: 3}
       propertyPath: m_Name
       value: View Mode Non-VR UI Canvas
-      objectReference: {fileID: 0}
-    - target: {fileID: 6119014421440034822, guid: 92e391d518590d14daf354590d888efe, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
       objectReference: {fileID: 0}
     - target: {fileID: 7434812335299418614, guid: 92e391d518590d14daf354590d888efe, type: 3}
       propertyPath: m_Pivot.x
@@ -17038,10 +17029,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_SelectDeviceTimeoutDuration: 2
   m_AbandonDeviceTimeoutDuration: 15
-  m_AttachToDeviceDataThreshold: 0.1
-  m_DetachFromDeviceDataThreshold: 0.05
-  m_NormalizationDecayWindowSecs: 5
-  m_NormalizationMaxMultiplier: 100
 --- !u!4 &1120903174
 Transform:
   m_ObjectHideFlags: 0
@@ -28851,10 +28838,6 @@ PrefabInstance:
       propertyPath: m_isAlignmentEnumConverted
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 11420356, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 22431242, guid: 3491f4f01ba6cac47b1633f36d7c6c84, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -32577,10 +32560,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Console
       objectReference: {fileID: 0}
-    - target: {fileID: 5518051672143949475, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
-      objectReference: {fileID: 0}
     - target: {fileID: 6901881013902071200, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -32620,10 +32599,6 @@ PrefabInstance:
     - target: {fileID: 6901881013902071200, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7665901295925148564, guid: 473c56bc457b1004bbee7cdddff8f4cf, type: 3}
-      propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
-      value: 1801810542
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
