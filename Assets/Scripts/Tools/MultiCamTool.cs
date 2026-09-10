@@ -2299,7 +2299,7 @@ namespace TiltBrush
                 for (int i = 0; i < frameCount; ++i)
                 {
                     TimeGifCapture();
-                    yield return null;
+                    yield return new WaitForSeconds(m_TimeGifCaptureInterval);
                 }
 
                 if (m_Captures != null && m_Captures.Count > 0)
