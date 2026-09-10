@@ -2135,8 +2135,7 @@ namespace TiltBrush
                         var generatedPaths = new List<string> { fullPath };
                         if (style == MultiCamStyle.Depth)
                         {
-                            generatedPaths.Add(
-                                Path.GetFullPath(saveName.Replace(".png", "_depth.png")));
+                            generatedPaths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(fullPath));
                         }
                         OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
                             generatedPaths,

@@ -1243,6 +1243,39 @@ namespace TiltBrush
         }
 
         [Test]
+        public void DepthCapturePublication_CoversEveryWrittenSidecar()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-depth-files-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                string imagePath = Path.Combine(root, "snapshot.v2.PNG");
+                var depth = new ScreenshotManager.DepthCaptureFiles
+                {
+                    normalizedDepthPng = new byte[] { 1 },
+                    linearDepth16Png = new byte[] { 2 },
+                    linearDepthExr = new byte[] { 3 },
+                    metadataJson = new byte[] { 4 },
+                };
+                ScreenshotManager.SaveDepthCaptureFiles(imagePath, depth);
+                string[] publishedPaths = ScreenshotManager.GetDepthCaptureFilePaths(imagePath);
+
+                Assert.AreEqual(4, publishedPaths.Length);
+                CollectionAssert.AreEquivalent(Directory.GetFiles(root), publishedPaths);
+                CollectionAssert.AreEqual(depth.normalizedDepthPng, File.ReadAllBytes(publishedPaths[0]));
+                CollectionAssert.AreEqual(depth.linearDepth16Png, File.ReadAllBytes(publishedPaths[1]));
+                CollectionAssert.AreEqual(depth.linearDepthExr, File.ReadAllBytes(publishedPaths[2]));
+                CollectionAssert.AreEqual(depth.metadataJson, File.ReadAllBytes(publishedPaths[3]));
+            }
+            finally
+            {
+                Assert.IsTrue(Path.GetFullPath(root).StartsWith(
+                    Path.Combine(Path.GetTempPath(), "open-brush-depth-files-"), StringComparison.Ordinal));
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
         public void SafSavedStrokes_ReadAndWriteTheEstablishedMediaLibraryDirectory()
         {
             string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-strokes-{Guid.NewGuid():N}");
