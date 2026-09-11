@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -339,6 +339,41 @@ namespace TiltBrush
         {
             var scenePose = App.Scene.Pose;
             StrokeCropping.CropStrokesToSphere(scenePose * center, scenePose.scale * radius);
+        }
+
+        [ApiEndpoint("strokes.crop.box", "Crops all strokes to a box defined by center, size and optional Euler rotation",
+            "0,0,0,10,10,10")]
+        public static void CropStrokesToBox(Vector3 center, Vector3 size, Vector3 rotation = default)
+        {
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToBox(scenePose * center, scenePose.scale * size,
+                scenePose.rotation * Quaternion.Euler(rotation));
+        }
+
+        [ApiEndpoint("strokes.crop.capsule", "Crops all strokes to a capsule defined by center, radius, height and optional Euler rotation. The capsule's axis is Y before rotation",
+            "0,0,0,5,10")]
+        public static void CropStrokesToCapsule(Vector3 center, float radius, float height, Vector3 rotation = default)
+        {
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToCapsule(scenePose * center, scenePose.scale * radius,
+                scenePose.scale * height, scenePose.rotation * Quaternion.Euler(rotation));
+        }
+
+        [ApiEndpoint("strokes.crop.ellipsoid", "Crops all strokes to an ellipsoid defined by center, full size and optional Euler rotation",
+            "0,0,0,10,20,10")]
+        public static void CropStrokesToEllipsoid(Vector3 center, Vector3 size, Vector3 rotation = default)
+        {
+            var pose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToEllipsoid(pose * center, pose.scale * size,
+                pose.rotation * Quaternion.Euler(rotation));
+        }
+
+        [ApiEndpoint("strokes.crop.plane", "Crops all strokes to the side of a plane its normal points toward, defined by a point and normal",
+            "0,10,0,0,1,0")]
+        public static void CropStrokesToPlane(Vector3 point, Vector3 normal)
+        {
+            var pose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToPlane(pose * point, pose.rotation * normal);
         }
     }
 }

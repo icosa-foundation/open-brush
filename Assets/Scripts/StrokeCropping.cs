@@ -1,4 +1,4 @@
-﻿// Copyright 2025 The Open Brush Authors
+// Copyright 2025 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,18 +19,65 @@ namespace TiltBrush
 {
     public class StrokeCropping
     {
-        public static void CropStrokesToSphere(Vector3 center_ws, float radius_ws)
+        public static List<Stroke> CropStrokesToSphere(Vector3 center_ws, float radius_ws,
+            IEnumerable<Stroke> strokes = null)
         {
             if (radius_ws <= 0)
             {
-                return;
+                return (strokes ?? SketchMemoryScript.AllStrokes()).ToList();
             }
 
-            var strokesInsideSphere = new HashSet<Stroke>();
+            return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Sphere,
+                TrTransform.T(center_ws), Vector3.one * radius_ws), strokes);
+        }
 
-            // Process all strokes on all canvases
-            var allStrokes = SketchMemoryScript.AllStrokes()
+        public static List<Stroke> CropStrokesToBox(Vector3 center_ws, Vector3 size_ws,
+            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+        {
+            if (size_ws.x <= 0 || size_ws.y <= 0 || size_ws.z <= 0)
+                throw new System.ArgumentOutOfRangeException(nameof(size_ws));
+            return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Box,
+                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes);
+        }
+
+        public static List<Stroke> CropStrokesToCapsule(Vector3 center_ws, float radius_ws,
+            float height_ws, Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+        {
+            if (radius_ws <= 0) throw new System.ArgumentOutOfRangeException(nameof(radius_ws));
+            if (height_ws <= 0) throw new System.ArgumentOutOfRangeException(nameof(height_ws));
+            if (height_ws < 2 * radius_ws)
+                throw new System.ArgumentException("Capsule height must be at least twice its radius");
+            return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Capsule,
+                TrTransform.TR(center_ws, rotation_ws), new Vector3(radius_ws, height_ws * 0.5f, radius_ws)), strokes);
+        }
+
+        public static List<Stroke> CropStrokesToEllipsoid(Vector3 center_ws, Vector3 size_ws,
+            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+        {
+            if (size_ws.x <= 0 || size_ws.y <= 0 || size_ws.z <= 0)
+                throw new System.ArgumentOutOfRangeException(nameof(size_ws));
+            return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Ellipsoid,
+                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes);
+        }
+
+        public static List<Stroke> CropStrokesToPlane(Vector3 point_ws, Vector3 normal_ws,
+            IEnumerable<Stroke> strokes = null)
+        {
+            if (!(normal_ws.sqrMagnitude > 0) || float.IsInfinity(normal_ws.sqrMagnitude))
+                throw new System.ArgumentException("Plane normal must be finite and nonzero");
+            return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Plane,
+                TrTransform.TR(point_ws, Quaternion.FromToRotation(Vector3.up, normal_ws)), Vector3.one), strokes);
+        }
+
+        private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes)
+        {
+            var retainedStrokes = new HashSet<Stroke>();
+            var result = new List<Stroke>();
+
+            // Snapshot the requested strokes so splitting cannot add work or affect other lists.
+            var allStrokes = (strokes ?? SketchMemoryScript.AllStrokes())
                 .Where(stroke => stroke != null && stroke.IsGeometryEnabled)
+                .Distinct()
                 .ToArray();
             foreach (var stroke in allStrokes)
             {
@@ -42,10 +89,10 @@ namespace TiltBrush
 
                 var canvasPose = canvas.Pose;
                 // Canvas.Pose already includes the scene pose: convert world to canvas once.
-                Vector3 sphereCenterCs = canvasPose.inverse * center_ws;
-                float sphereRadiusCs = radius_ws / canvasPose.scale;
+                Vector3 sphereCenterCs = canvasPose.inverse * volume.Pose.translation;
+                float sphereRadiusCs = volume.BoundingRadius / canvasPose.scale;
 
-                // Fast bounds test: check if stroke's bounding box intersects the sphere
+                // Fast bounds test against a sphere enclosing the crop volume.
                 // This avoids expensive clipping for strokes that are clearly outside
                 if (stroke.m_BatchSubset != null)
                 {
@@ -56,21 +103,23 @@ namespace TiltBrush
                     }
                 }
 
-                var clippedSegments = ClipStrokeToSphere(stroke.m_ControlPoints, sphereCenterCs, sphereRadiusCs);
+                var clippedSegments = ClipStrokeToVolume(stroke.m_ControlPoints, volume,
+                    volume.Pose.inverse * canvasPose);
                 if (clippedSegments.Count == 0)
                 {
-                    // Stroke is completely outside the sphere - will be deleted
+                    // Stroke is completely outside the volume - will be deleted.
                     continue;
                 }
 
                 if (clippedSegments.Count == 1)
                 {
                     ApplySegmentToStroke(stroke, clippedSegments[0]);
-                    strokesInsideSphere.Add(stroke);
+                    retainedStrokes.Add(stroke);
+                    result.Add(stroke);
                     continue;
                 }
 
-                // Stroke crosses sphere boundary multiple times - split into multiple strokes
+                // Stroke crosses the volume boundary multiple times - split into multiple strokes.
                 bool wasSelected = DeregisterSelectedStroke(stroke);
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
                 stroke.DestroyStroke();
@@ -87,7 +136,8 @@ namespace TiltBrush
                     };
                     SketchMemoryScript.m_Instance.MemoryListAdd(newStroke);
                     newStroke.Recreate(null, newStroke.Canvas);
-                    strokesInsideSphere.Add(newStroke);
+                    retainedStrokes.Add(newStroke);
+                    result.Add(newStroke);
                     newStrokes?.Add(newStroke);
                 }
 
@@ -97,14 +147,12 @@ namespace TiltBrush
                 }
             }
 
-            // Now delete all strokes that aren't in strokesInsideSphere
-            var allStrokesAfterClipping = SketchMemoryScript.AllStrokes()
-                .Where(stroke => stroke != null && stroke.IsGeometryEnabled)
-                .ToArray();
+            // Now delete all strokes that aren't in retainedStrokes
+            var allStrokesAfterClipping = allStrokes.Where(stroke => stroke.IsGeometryEnabled).ToArray();
             for (int i = 0; i < allStrokesAfterClipping.Length; i++)
             {
                 var stroke = allStrokesAfterClipping[i];
-                if (strokesInsideSphere.Contains(stroke))
+                if (retainedStrokes.Contains(stroke))
                 {
                     continue;
                 }
@@ -113,6 +161,7 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
                 stroke.DestroyStroke();
             }
+            return result;
         }
 
         private static bool DeregisterSelectedStroke(Stroke stroke)
@@ -150,8 +199,8 @@ namespace TiltBrush
             stroke.Recreate(null, stroke.Canvas);
         }
 
-        private static List<PointerManager.ControlPoint[]> ClipStrokeToSphere(
-            PointerManager.ControlPoint[] controlPoints, Vector3 sphereCenter, float sphereRadius)
+        internal static List<PointerManager.ControlPoint[]> ClipStrokeToVolume(
+            PointerManager.ControlPoint[] controlPoints, StrokeCropVolume volume, TrTransform canvasToVolume)
         {
             var result = new List<PointerManager.ControlPoint[]>();
             if (controlPoints.Length == 0)
@@ -159,9 +208,8 @@ namespace TiltBrush
                 return result;
             }
 
-            float radiusSq = sphereRadius * sphereRadius;
             // We keep any stroke portion whose control points are inside the crop volume.
-            bool Inside(Vector3 p) => (p - sphereCenter).sqrMagnitude <= radiusSq;
+            bool Inside(Vector3 p) => volume.Contains(canvasToVolume * p);
 
             if (controlPoints.Length == 1)
             {
@@ -187,7 +235,8 @@ namespace TiltBrush
                 }
 
                 float enter, exit;
-                bool intersects = SegmentSphereIntersectionParams(a.m_Pos, b.m_Pos, sphereCenter, sphereRadius, out enter, out exit);
+                bool intersects = volume.ClipSegment(canvasToVolume * a.m_Pos,
+                    canvasToVolume * b.m_Pos, out enter, out exit);
                 if (intersects)
                 {
                     float start = Mathf.Clamp01(Mathf.Min(enter, exit));
@@ -247,30 +296,6 @@ namespace TiltBrush
                 m_TimestampMs = (uint)(a.m_TimestampMs +
                     ((double)b.m_TimestampMs - a.m_TimestampMs) * t)
             };
-        }
-
-        private static bool SegmentSphereIntersectionParams(
-            Vector3 a, Vector3 b, Vector3 center, float radius, out float enter, out float exit)
-        {
-            Vector3 d = b - a;
-            Vector3 f = a - center;
-
-            float aCoeff = Vector3.Dot(d, d);
-            float bCoeff = 2f * Vector3.Dot(f, d);
-            float cCoeff = Vector3.Dot(f, f) - radius * radius;
-
-            float discriminant = bCoeff * bCoeff - 4f * aCoeff * cCoeff;
-            if (discriminant < 0f || Mathf.Approximately(aCoeff, 0f))
-            {
-                enter = exit = 0f;
-                return false;
-            }
-
-            float sqrtDisc = Mathf.Sqrt(discriminant);
-            enter = (-bCoeff - sqrtDisc) / (2f * aCoeff);
-            exit = (-bCoeff + sqrtDisc) / (2f * aCoeff);
-
-            return (enter <= 1f && exit >= 0f);
         }
 
     }
