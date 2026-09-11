@@ -44,7 +44,8 @@ namespace TiltBrush
 
             public bool AddOrUpdateVoxel(Vector3Int position, byte paletteIndex)
             {
-                if (!IsInBounds(position) || paletteIndex == 0)
+                if (!IsInBounds(position) || paletteIndex == 0 ||
+                    (m_voxels.TryGetValue(position, out byte previous) && previous == paletteIndex))
                 {
                     return false;
                 }
@@ -105,7 +106,7 @@ namespace TiltBrush
                 }
             }
 
-            private bool IsInBounds(Vector3Int position)
+            public bool IsInBounds(Vector3Int position)
             {
                 return position.x >= 0 && position.x < Size.x &&
                        position.y >= 0 && position.y < Size.y &&
@@ -153,13 +154,60 @@ namespace TiltBrush
         public bool ReplacePaletteEntry(int oneBasedIndex, Color32 color)
         {
             int zeroBased = oneBasedIndex - 1;
-            if (zeroBased < 0 || zeroBased >= Palette.Length)
+            if (oneBasedIndex < 1 || oneBasedIndex > byte.MaxValue)
             {
                 return false;
             }
 
             Palette[zeroBased] = color;
             return true;
+        }
+
+        // Reuse exact colors first. Only scan voxel usage when allocating a new color,
+        // which normally happens when the user changes their brush color, not per frame.
+        // Never overwrite a palette entry referenced by any model in the document.
+        public byte GetOrAddPaletteColor(Color32 color)
+        {
+            int nearestIndex = 1;
+            int nearestDistance = int.MaxValue;
+            for (int index = 1; index <= byte.MaxValue; index++)
+            {
+                Color32 candidate = Palette[index - 1];
+                int r = candidate.r - color.r;
+                int g = candidate.g - color.g;
+                int b = candidate.b - color.b;
+                int a = candidate.a - color.a;
+                int distance = r * r + g * g + b * b + a * a;
+                if (distance == 0)
+                {
+                    return (byte)index;
+                }
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestIndex = index;
+                }
+            }
+
+            var used = new bool[byte.MaxValue + 1];
+            foreach (RuntimeModel model in m_models)
+            {
+                foreach (byte index in model.Voxels.Values)
+                {
+                    used[index] = true;
+                }
+            }
+            for (int index = 1; index <= byte.MaxValue; index++)
+            {
+                if (!used[index])
+                {
+                    Palette[index - 1] = color;
+                    return (byte)index;
+                }
+            }
+
+            // A VOX document can represent only 255 occupied colors.
+            return (byte)nearestIndex;
         }
 
         public static RuntimeVoxDocument FromVoxFile(IVoxFile voxFile)
