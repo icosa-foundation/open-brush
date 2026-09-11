@@ -63,7 +63,7 @@ namespace TiltBrush
         {
             m_Document = document;
             _Model = model;
-            m_DocumentWrapper = documentWrapper;
+            m_DocumentWrapper = documentWrapper ?? new VoxDocumentApiWrapper(document);
         }
 
         [LuaDocsDescription("The model name")]
@@ -80,6 +80,57 @@ namespace TiltBrush
 
         [LuaDocsDescription("Z size of the model in voxels")]
         public int sizeZ => _Model.Size.z;
+
+        [LuaDocsDescription("The document containing this model")]
+        public VoxDocumentApiWrapper document => m_DocumentWrapper;
+
+        [LuaDocsDescription("The middle voxel coordinate, used as the anchor by PlaceAt")]
+        public Vector3 centerVoxel => new Vector3(_Model.Size.x / 2, _Model.Size.y / 2, _Model.Size.z / 2);
+
+        [LuaDocsDescription("The size of one voxel in canvas units")]
+        public float voxelSize => m_DocumentWrapper.GetSceneTransform().scale;
+
+        [LuaDocsDescription("Places this model's middle voxel at a canvas position with the given voxel size")]
+        [LuaDocsExample("model:PlaceAt(Brush.position, 0.1)")]
+        public void PlaceAt(Vector3 canvasPosition, float voxelSize = 1f)
+        {
+            TrTransform transform = m_DocumentWrapper.GetSceneTransform();
+            transform.scale = voxelSize;
+            transform.translation = canvasPosition - transform.rotation *
+                (_Model.TransformOffset + VoxMeshBuilder.ModelRotation * centerVoxel) * voxelSize;
+            m_DocumentWrapper.SetTransform(transform);
+        }
+
+        [LuaDocsDescription("Returns the nearest voxel coordinate for a canvas position; it can be outside the model bounds")]
+        public Vector3 CanvasToVoxel(Vector3 canvasPosition)
+            => Vector3Int.RoundToInt(m_DocumentWrapper.GetModelTransform(_Model).inverse * canvasPosition);
+
+        [LuaDocsDescription("Returns the canvas position of a voxel's center")]
+        public Vector3 VoxelToCanvas(Vector3 voxelPosition)
+            => m_DocumentWrapper.GetModelTransform(_Model) * voxelPosition;
+
+        [LuaDocsDescription("Paints the voxel at a canvas position using an RGB color. Allocates an unused palette entry, or uses the nearest color if all 255 entries are occupied. Returns false outside the model or if unchanged.")]
+        [LuaDocsExample("model:PaintAt(Brush.position, Brush.colorRgb)")]
+        public bool PaintAt(Vector3 canvasPosition, Color color)
+        {
+            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+            if (!_Model.IsInBounds(cell))
+            {
+                return false;
+            }
+            return SetVoxel(cell.x, cell.y, cell.z, m_Document.GetOrAddPaletteColor(color));
+        }
+
+        [LuaDocsDescription("Erases the voxel at a canvas position. Returns false if the cell is empty or outside the model.")]
+        public bool EraseAt(Vector3 canvasPosition)
+        {
+            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+            return RemoveVoxel(cell.x, cell.y, cell.z);
+        }
+
+        [LuaDocsDescription("Erases an occupied voxel at a canvas position, or paints an empty one with the given RGB color")]
+        public bool ToggleAt(Vector3 canvasPosition, Color color)
+            => EraseAt(canvasPosition) || PaintAt(canvasPosition, color);
 
         [LuaDocsDescription("Sets or adds one voxel")]
         [LuaDocsExample("model:SetVoxel(1,2,3,5)")]
@@ -189,11 +240,12 @@ namespace TiltBrush
     public class VoxDocumentApiWrapper
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
-        [MoonSharpHidden] private GameObject m_SceneRoot;
+        [MoonSharpHidden] private GameObject SceneRoot => ApiMethods.VoxGetDocumentRoot(_Document);
+        [MoonSharpHidden] private bool m_VisualsDirty = true;
         [MoonSharpHidden] private bool m_AutoVisuals;
         [MoonSharpHidden] private bool m_LastSpawnOptimized = true;
         [MoonSharpHidden] private bool m_LastSpawnCollider = true;
-        [MoonSharpHidden] private Vector3 m_SpawnPosition = Vector3.zero;
+        [MoonSharpHidden] private TrTransform m_SpawnTransform = TrTransform.identity;
 
         public VoxDocumentApiWrapper(RuntimeVoxDocument document)
         {
@@ -256,125 +308,128 @@ namespace TiltBrush
         {
             m_LastSpawnOptimized = optimized;
             m_LastSpawnCollider = generateCollider;
-            EnsureSceneRoot();
-            RebuildSceneChildren();
+            TrTransform placement = GetSceneTransform();
+            ApiMethods.VoxShowDocument(_Document, optimized, generateCollider);
+            SetTransform(placement);
+            m_VisualsDirty = false;
         }
 
-        [LuaDocsDescription("Spawns this document at a specific world position")]
+        [LuaDocsDescription("Spawns this document at a specific canvas position")]
         [LuaDocsExample("doc:SpawnAt(0, 0, 0, true, true)")]
         public void SpawnAt(float x, float y, float z, bool optimized = true, bool generateCollider = true)
         {
             m_LastSpawnOptimized = optimized;
             m_LastSpawnCollider = generateCollider;
-            m_SpawnPosition = new Vector3(x, y, z);
-            EnsureSceneRoot();
-            RebuildSceneChildren();
+            var transform = m_SpawnTransform;
+            transform.translation = new Vector3(x, y, z);
+            SetTransform(transform);
+            Spawn(optimized, generateCollider);
         }
 
-        [LuaDocsDescription("Enables or disables automatic visual rebuild after edits")]
+        [LuaDocsDescription("Sets the spawned document's position, rotation and scale in canvas space")]
+        [LuaDocsExample("doc:SetTransform(Transform:New(Vector3:New(0,1,0), 0.1))")]
+        public void SetTransform(TrTransform transform)
+        {
+            if (transform.scale <= 0 || float.IsNaN(transform.scale) || float.IsInfinity(transform.scale))
+            {
+                throw new ArgumentOutOfRangeException(nameof(transform), "VOX scene scale must be positive and finite.");
+            }
+
+            m_SpawnTransform = transform;
+            GameObject root = SceneRoot;
+            if (root != null)
+            {
+                if (root.transform.localPosition == transform.translation &&
+                    root.transform.localRotation == transform.rotation &&
+                    root.transform.localScale == Vector3.one * transform.scale)
+                {
+                    return;
+                }
+                root.transform.localPosition = transform.translation;
+                root.transform.localRotation = transform.rotation;
+                root.transform.localScale = Vector3.one * transform.scale;
+                ApiMethods.VoxNotifySceneChanged();
+            }
+        }
+
+        [LuaDocsDescription("Configures automatic visual updates and mesh options. Repeated unchanged calls do not rebuild geometry. When disabled, call Refresh to show pending edits.")]
         [LuaDocsExample("doc:SetAutoVisuals(true, true, true)")]
         public void SetAutoVisuals(bool enabled = true, bool optimized = true, bool generateCollider = true)
         {
+            m_VisualsDirty |= m_LastSpawnOptimized != optimized || m_LastSpawnCollider != generateCollider;
             m_AutoVisuals = enabled;
             m_LastSpawnOptimized = optimized;
             m_LastSpawnCollider = generateCollider;
             if (enabled)
             {
-                Spawn(optimized, generateCollider);
+                Refresh();
+            }
+        }
+
+        [LuaDocsDescription("Shows pending edits, or spawns this document if it is not visible. Does nothing if the visuals are already current.")]
+        public void Refresh()
+        {
+            if (m_VisualsDirty || SceneRoot == null)
+            {
+                Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
             }
         }
 
         [LuaDocsDescription("Clears this document's spawned scene object, if present")]
         public void ClearScene()
         {
-            if (m_SceneRoot != null)
-            {
-                VoxMeshBuilder.DestroyRuntimeSceneObject(m_SceneRoot);
-                m_SceneRoot = null;
-            }
+            m_SpawnTransform = GetSceneTransform();
+            ApiMethods.VoxHideDocument(_Document);
         }
 
         [MoonSharpHidden]
         internal void OnDocumentMutated()
         {
+            m_VisualsDirty = true;
+            ApiMethods.VoxMarkSourceDirty(_Document);
             if (m_AutoVisuals)
             {
-                Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
+                Refresh();
             }
         }
 
-        private void EnsureSceneRoot()
+        [MoonSharpHidden]
+        internal TrTransform GetSceneTransform()
         {
-            if (m_SceneRoot != null)
-            {
-                return;
-            }
-
-            m_SceneRoot = new GameObject("VoxRuntime_Lua");
-            m_SceneRoot.transform.SetParent(App.Scene.ActiveCanvas.transform, false);
-            m_SceneRoot.transform.localPosition = m_SpawnPosition;
-            m_SceneRoot.transform.localRotation = Quaternion.identity;
-            m_SceneRoot.transform.localScale = Vector3.one;
-            ApiMethods.VoxRegisterSpawnedRoot(m_SceneRoot);
-            WidgetManager.m_Instance.WidgetsDormant = false;
-            SketchControlsScript.m_Instance.EatGazeObjectInput();
+            GameObject root = SceneRoot;
+            return root != null ? TrTransform.FromLocalTransform(root.transform) : m_SpawnTransform;
         }
 
-        private void RebuildSceneChildren()
-        {
-            if (m_SceneRoot == null)
-            {
-                return;
-            }
+        [MoonSharpHidden]
+        internal TrTransform GetModelTransform(RuntimeVoxDocument.RuntimeModel model)
+            => GetSceneTransform() * TrTransform.TR(model.TransformOffset, VoxMeshBuilder.ModelRotation);
 
-            for (int i = m_SceneRoot.transform.childCount - 1; i >= 0; i--)
-            {
-                VoxMeshBuilder.DestroyRuntimeSceneObject(m_SceneRoot.transform.GetChild(i).gameObject);
-            }
-
-            var builder = new VoxMeshBuilder();
-
-            for (int i = 0; i < _Document.Models.Count; i++)
-            {
-                RuntimeVoxDocument.RuntimeModel model = _Document.Models[i];
-                if (model.Voxels.Count == 0)
-                {
-                    continue;
-                }
-
-                var modelObject = new GameObject($"Model_{i}_{model.Name}");
-                modelObject.transform.SetParent(m_SceneRoot.transform, false);
-                modelObject.transform.localPosition = model.TransformOffset;
-                modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-
-                Mesh mesh = m_LastSpawnOptimized
-                    ? builder.GenerateOptimizedMesh(model, _Document.Palette)
-                    : builder.GenerateSeparateCubesMesh(model, _Document.Palette);
-                if (mesh == null)
-                {
-                    continue;
-                }
-
-                var mf = modelObject.AddComponent<MeshFilter>();
-                mf.mesh = mesh;
-
-                var mr = modelObject.AddComponent<MeshRenderer>();
-                mr.material = ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial;
-
-                if (m_LastSpawnCollider)
-                {
-                    var collider = modelObject.AddComponent<BoxCollider>();
-                    collider.size = mesh.bounds.size;
-                    collider.center = mesh.bounds.center;
-                }
-            }
-        }
     }
 
     [LuaDocsDescription("Runtime VOX document API")]
     [MoonSharpUserData]
     public class VoxApiWrapper
     {
+        [LuaDocsDescription("Finds a visible model with an occupied voxel at a canvas position, including models restored from a sketch. Returns nil if none is found.")]
+        [LuaDocsExample("local model = Vox:FindModelAt(Brush.position)")]
+        public static VoxModelApiWrapper FindModelAt(Vector3 canvasPosition)
+        {
+            foreach (RuntimeVoxDocument document in ApiMethods.VoxGetVisibleDocuments().Reverse())
+            {
+                var wrapper = new VoxDocumentApiWrapper(document);
+                for (int i = document.Models.Count - 1; i >= 0; i--)
+                {
+                    VoxModelApiWrapper model = wrapper.models[i];
+                    Vector3Int cell = Vector3Int.RoundToInt(model.CanvasToVoxel(canvasPosition));
+                    if (model._Model.TryGetPaletteIndex(cell, out _))
+                    {
+                        return model;
+                    }
+                }
+            }
+            return null;
+        }
+
         [LuaDocsDescription("Creates a new runtime VOX document with one default model")]
         [LuaDocsExample("local doc = Vox:New(16,16,16)")]
         public static VoxDocumentApiWrapper New(int sizeX, int sizeY, int sizeZ)

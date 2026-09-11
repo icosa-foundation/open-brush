@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -51,10 +52,21 @@ namespace TiltBrush
         private static readonly List<RuntimeVoxDocument> s_voxDocuments = new List<RuntimeVoxDocument>();
         private static readonly Dictionary<RuntimeVoxDocument, VoxSceneState> s_voxSceneByDocument = new Dictionary<RuntimeVoxDocument, VoxSceneState>();
         private static readonly Dictionary<RuntimeVoxDocument, VoxDocumentSourceState> s_voxSourceByDocument = new Dictionary<RuntimeVoxDocument, VoxDocumentSourceState>();
-        private static readonly List<GameObject> s_spawnedVoxRoots = new List<GameObject>();
         private static int s_activeVoxDocumentIndex = -1;
         private static int s_activeVoxModelIndex = 0;
         private static bool s_autoVisuals = true;
+        public static bool VoxHasUnsavedChanges { get; private set; }
+        public static bool VoxHasVisibleObjects => s_voxSceneByDocument.Any(pair =>
+            pair.Value.Root != null && pair.Value.Root.activeInHierarchy &&
+            pair.Key.Models.Any(model => model.Voxels.Count > 0));
+
+        internal static void VoxMarkSaved() => VoxHasUnsavedChanges = false;
+
+        internal static void VoxNotifySceneChanged()
+        {
+            VoxHasUnsavedChanges = true;
+            SaveLoadScript.m_Instance?.SketchChanged();
+        }
 
         [ApiEndpoint(
             "vox.new",
@@ -408,6 +420,10 @@ namespace TiltBrush
         )]
         public static void VoxSpawnClear()
         {
+            if (s_voxSceneByDocument.Values.Any(state => state.Root != null))
+            {
+                VoxNotifySceneChanged();
+            }
             foreach (VoxSceneState state in s_voxSceneByDocument.Values)
             {
                 if (state.Root != null)
@@ -417,22 +433,38 @@ namespace TiltBrush
             }
             s_voxSceneByDocument.Clear();
 
-            foreach (GameObject root in s_spawnedVoxRoots)
-            {
-                if (root != null)
-                {
-                    VoxMeshBuilder.DestroyRuntimeSceneObject(root);
-                }
-            }
-
-            s_spawnedVoxRoots.Clear();
         }
 
-        public static void VoxRegisterSpawnedRoot(GameObject root)
+        internal static GameObject VoxGetDocumentRoot(RuntimeVoxDocument document)
         {
-            if (root != null)
+            return s_voxSceneByDocument.TryGetValue(document, out VoxSceneState state) ? state.Root : null;
+        }
+
+        internal static IEnumerable<RuntimeVoxDocument> VoxGetVisibleDocuments()
+            => s_voxDocuments.Where(document => VoxGetDocumentRoot(document) != null);
+
+        internal static void VoxShowDocument(RuntimeVoxDocument document, bool optimized, bool generateCollider)
+        {
+            if (!s_voxDocuments.Contains(document))
             {
-                s_spawnedVoxRoots.Add(root);
+                s_voxDocuments.Add(document);
+                GetSourceState(document);
+            }
+            RebuildSceneForDocument(document, spawnNearBrush: false,
+                optimizedOverride: optimized, colliderOverride: generateCollider);
+        }
+
+        internal static void VoxHideDocument(RuntimeVoxDocument document) => DestroyDocumentScene(document);
+
+        internal static void VoxMarkSourceDirty(RuntimeVoxDocument document)
+        {
+            if (s_voxSourceByDocument.TryGetValue(document, out VoxDocumentSourceState source))
+            {
+                source.Dirty = true;
+            }
+            if (VoxGetDocumentRoot(document) != null)
+            {
+                VoxNotifySceneChanged();
             }
         }
 
@@ -444,19 +476,23 @@ namespace TiltBrush
             s_activeVoxDocumentIndex = -1;
             s_activeVoxModelIndex = 0;
             s_autoVisuals = true;
+            VoxMarkSaved();
         }
 
         public static RuntimeVoxSavePayload[] VoxGetSavePayloads()
         {
-            if (s_voxDocuments.Count == 0)
+            // Only scene content belongs in a sketch. Hidden/scratch documents stay in memory,
+            // but must not reappear after a clear-and-save cycle.
+            var visibleDocuments = VoxGetVisibleDocuments().ToList();
+            if (visibleDocuments.Count == 0)
             {
                 return null;
             }
 
-            var payloads = new RuntimeVoxSavePayload[s_voxDocuments.Count];
-            for (int i = 0; i < s_voxDocuments.Count; i++)
+            var payloads = new RuntimeVoxSavePayload[visibleDocuments.Count];
+            for (int i = 0; i < visibleDocuments.Count; i++)
             {
-                RuntimeVoxDocument document = s_voxDocuments[i];
+                RuntimeVoxDocument document = visibleDocuments[i];
                 s_voxSceneByDocument.TryGetValue(document, out VoxSceneState sceneState);
                 VoxDocumentSourceState source = GetSourceState(document);
                 bool embed = ShouldEmbedOnSave(source);
@@ -549,6 +585,7 @@ namespace TiltBrush
                 s_activeVoxDocumentIndex = 0;
                 s_activeVoxModelIndex = 0;
             }
+            VoxMarkSaved();
         }
 
         [ApiEndpoint(
@@ -776,7 +813,7 @@ namespace TiltBrush
                 var modelObject = new GameObject($"Model_{i}_{model.Name}");
                 modelObject.transform.SetParent(root.transform, false);
                 modelObject.transform.localPosition = model.TransformOffset;
-                modelObject.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+                modelObject.transform.localRotation = VoxMeshBuilder.ModelRotation;
 
                 Mesh mesh = state.Optimized
                     ? builder.GenerateOptimizedMesh(model, document.Palette)
@@ -807,6 +844,7 @@ namespace TiltBrush
 
             state.Root = root;
             s_voxSceneByDocument[document] = state;
+            VoxNotifySceneChanged();
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
         }
@@ -821,6 +859,7 @@ namespace TiltBrush
             if (state.Root != null)
             {
                 VoxMeshBuilder.DestroyRuntimeSceneObject(state.Root);
+                VoxNotifySceneChanged();
             }
 
             s_voxSceneByDocument.Remove(document);
@@ -838,6 +877,7 @@ namespace TiltBrush
         {
             VoxDocumentSourceState source = GetSourceState(document);
             source.Dirty = true;
+            VoxMarkSourceDirty(document);
             if (source.SourceKind == VoxSourceKindMediaLibraryFile && string.IsNullOrEmpty(source.SourcePath))
             {
                 source.SourceKind = VoxSourceKindGenerated;
