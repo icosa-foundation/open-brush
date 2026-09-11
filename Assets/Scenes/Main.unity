@@ -11377,7 +11377,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultSoundClips:
   - DefaultSoundClips/underwater.wav
-  - DefaultSoundClips/qwert.mp3
+  - DefaultSoundClips/qwert.ogg
   m_DebugOutput: 0
   m_supportedSoundClipExtensions:
   - .wav
