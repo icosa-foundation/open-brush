@@ -90,7 +90,7 @@ function applyCellEdit(x, y, z)
         end
     end
 
-    model:Set(x, y, z, findNearestPaletteIndex(Brush.color))
+    model:Set(x, y, z, findNearestPaletteIndex(Brush.colorRgb))
 end
 
 function brushToVoxel(pos)
@@ -178,9 +178,9 @@ function findNearestPaletteIndex(color)
     
     for i = 1, 255 do
         local p = paletteColors[i]
-        local dr = color.r - p.r
-        local dg = color.g - p.g
-        local db = color.b - p.b
+        local dr = color.r * 255 - p.r
+        local dg = color.g * 255 - p.g
+        local db = color.b * 255 - p.b
         local dist = dr * dr + dg * dg + db * db
         
         if dist < minDist then
