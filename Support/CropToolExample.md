@@ -17,7 +17,7 @@ The drag distance is `r`:
 | Ellipsoid | Full dimensions `(2r, 4r, 2r)`, oriented with the controller at release. |
 | Plane | Passes through the press point; keeps the side toward the release point. Disable “Keep inside” to keep the other side. |
 
-Sphere, box and capsule have built-in previews. Ellipsoid and plane do not show a preview in this example. The plane cuts an infinite half-space, not a thin slice.
+All five shapes have previews. The ellipsoid preview has the same 2:1 vertical stretch as the crop. A finite quad indicates the plane through the press point, perpendicular to the drag direction; the crop extends infinitely beyond that quad and keeps one half-space, not a thin slice.
 
 Cropping clips stroke control paths and rebuilds the brushes. Brush width or generated geometry can extend beyond the boundary.
 

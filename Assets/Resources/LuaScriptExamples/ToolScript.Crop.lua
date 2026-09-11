@@ -10,10 +10,11 @@ Parameters = {
 }
 
 function Main()
-    -- The built-in preview cannot show a stretched sphere or an infinite plane.
-    -- Disable it for those shapes rather than show a different crop boundary.
-    local previews = {Sphere="sphere", Box="cube", Capsule="capsule"}
-    Settings.previewType = previews[Parameters.shape] or "none"
+    local previews = {
+        Sphere="sphere", Box="cube", Capsule="capsule",
+        Ellipsoid="ellipsoid", Plane="plane"
+    }
+    Settings.previewType = previews[Parameters.shape]
 
     if not Brush.triggerReleasedThisFrame then return end
 
