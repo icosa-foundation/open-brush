@@ -365,7 +365,7 @@ namespace TiltBrush
 
                         pos[u] = iu;
                         pos[v] = iv;
-                        AddQuad(meshData, pos, axis, width, height, currentColor,
+                        AddQuad(meshData, pos + grid.Offset, axis, width, height, currentColor,
                             faceTowardsPositive[iu, iv]);
 
                         for (int ku = 0; ku < width; ku++)
@@ -518,6 +518,7 @@ namespace TiltBrush
             private readonly Vector3Int m_size;
 
             public Vector3Int Size => m_size;
+            public Vector3Int Offset { get; }
 
             public RuntimeVoxelGrid(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
             {
@@ -546,7 +547,7 @@ namespace TiltBrush
                     return;
                 }
 
-                Vector3Int offset = new Vector3Int(minX, minY, minZ);
+                Offset = new Vector3Int(minX, minY, minZ);
                 m_size = new Vector3Int(
                     maxX - minX + 1,
                     maxY - minY + 1,
@@ -555,7 +556,7 @@ namespace TiltBrush
 
                 foreach (RuntimeVoxDocument.RuntimeVoxel voxel in model.EnumerateVoxels(palette))
                 {
-                    Vector3Int normalized = voxel.Position - offset;
+                    Vector3Int normalized = voxel.Position - Offset;
                     m_voxels[normalized] = voxel.Color;
                 }
             }

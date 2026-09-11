@@ -74,6 +74,47 @@ namespace TiltBrush
             Assert.AreEqual(72, cubes.triangles.Length);
         }
 
+        [TestCase(10, 0, 0)]
+        [TestCase(0, 7, 0)]
+        [TestCase(0, 0, 5)]
+        [TestCase(10, 7, 5)]
+        public void VoxMeshBuilder_OptimizedMeshPreservesVoxelTranslation(int x, int y, int z)
+        {
+            var document = new RuntimeVoxDocument();
+            var shift = new Vector3Int(x, y, z);
+            var size = new Vector3Int(16, 16, 16);
+            var original = document.CreateModel("original", size);
+            var shifted = document.CreateModel("shifted", size);
+            foreach (var position in new[] { Vector3Int.zero, Vector3Int.right })
+            {
+                Assert.IsTrue(original.AddOrUpdateVoxel(position, 1));
+                Assert.IsTrue(shifted.AddOrUpdateVoxel(position + shift, 1));
+            }
+
+            var builder = new VoxMeshBuilder();
+            Mesh originalMesh = builder.GenerateOptimizedMesh(original, document.Palette);
+            Mesh shiftedMesh = builder.GenerateOptimizedMesh(shifted, document.Palette);
+            try
+            {
+                Assert.AreEqual(originalMesh.bounds.min + (Vector3)shift, shiftedMesh.bounds.min);
+                Assert.AreEqual(originalMesh.bounds.max + (Vector3)shift, shiftedMesh.bounds.max);
+                Assert.AreEqual(originalMesh.bounds.size, shiftedMesh.bounds.size);
+                CollectionAssert.AreEqual(originalMesh.triangles, shiftedMesh.triangles);
+                Vector3[] originalVertices = originalMesh.vertices;
+                Vector3[] shiftedVertices = shiftedMesh.vertices;
+                Assert.AreEqual(originalVertices.Length, shiftedVertices.Length);
+                for (int i = 0; i < originalVertices.Length; i++)
+                {
+                    Assert.AreEqual(originalVertices[i] + (Vector3)shift, shiftedVertices[i]);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(originalMesh);
+                Object.DestroyImmediate(shiftedMesh);
+            }
+        }
+
         [Test]
         public void RuntimeVoxDocument_RoundTripsThroughVoxBytes()
         {
