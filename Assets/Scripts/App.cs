@@ -2171,7 +2171,7 @@ namespace TiltBrush
                     "DefaultSavedStrokes/Star.tilt", "DefaultSavedStrokes/Snowflake.tilt" });
         }
 
-        // v2.31 did not ship sound clip or Quill defaults.
+        // v2.31 did not ship Quill defaults.
         public static void InitQuillMediaLibraryPath(string[] defaultQuillFiles)
         {
             SeedDefaultMedia(QuillMediaLibraryPath(), defaultQuillFiles,
@@ -2180,8 +2180,10 @@ namespace TiltBrush
 
         public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
         {
+            // The pre-migration build shipped underwater.wav; preserve user deletions.
             return SeedDefaultMedia(SoundClipLibraryPath(), defaultSoundClips,
-                kPlayerPrefSeededDefaultSoundClips);
+                kPlayerPrefSeededDefaultSoundClips,
+                new[] { "DefaultSoundClips/underwater.wav" });
         }
 
         private static bool SeedDefaultMedia(string directory, string[] defaults, string legacyKey,
