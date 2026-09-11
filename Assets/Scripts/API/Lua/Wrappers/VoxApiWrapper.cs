@@ -121,6 +121,18 @@ namespace TiltBrush
             return SetVoxel(cell.x, cell.y, cell.z, m_Document.GetOrAddPaletteColor(color));
         }
 
+        [LuaDocsDescription("Changes the color of an existing voxel at a canvas position. Returns false if the cell is empty or unchanged; never creates a voxel.")]
+        [LuaDocsExample("model:RecolorAt(Brush.position, Brush.colorRgb)")]
+        public bool RecolorAt(Vector3 canvasPosition, Color color)
+        {
+            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+            if (!_Model.TryGetPaletteIndex(cell, out _))
+            {
+                return false;
+            }
+            return SetVoxel(cell.x, cell.y, cell.z, m_Document.GetOrAddPaletteColor(color));
+        }
+
         [LuaDocsDescription("Erases the voxel at a canvas position. Returns false if the cell is empty or outside the model.")]
         public bool EraseAt(Vector3 canvasPosition)
         {

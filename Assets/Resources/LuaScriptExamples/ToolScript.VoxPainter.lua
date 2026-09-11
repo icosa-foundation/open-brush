@@ -6,7 +6,7 @@ Settings = {
 Parameters = {
     modelSize={label="Model Size", type="int", min=16, max=255, default=128},
     gridSize={label="Voxel Size", type="float", min=0.02, max=1.0, default=0.1},
-    mode={label="Mode", type="list", items={"Add", "Erase", "Toggle"}, default="Add"},
+    mode={label="Mode", type="list", items={"Add", "Erase", "Paint"}, default="Add"},
     autoVisuals={label="Update While Drawing", type="toggle", default=true},
     optimizedMesh={label="Optimized Mesh", type="toggle", default=true},
     collider={label="Collider", type="toggle", default=false},
@@ -31,7 +31,7 @@ function Main()
     if model == nil then
         model = Vox:FindModelAt(position)
         if model == nil then
-            if Parameters.mode == "Erase" then return end
+            if Parameters.mode ~= "Add" then return end
             doc = Vox:New(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
             model = doc.models[0]
             origin = position
@@ -51,8 +51,8 @@ function Main()
 
     if Parameters.mode == "Erase" then
         model:EraseAt(position)
-    elseif Parameters.mode == "Toggle" then
-        model:ToggleAt(position, Brush.colorRgb)
+    elseif Parameters.mode == "Paint" then
+        model:RecolorAt(position, Brush.colorRgb)
     else
         model:PaintAt(position, Brush.colorRgb)
     end
