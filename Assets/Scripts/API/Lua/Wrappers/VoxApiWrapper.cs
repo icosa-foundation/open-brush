@@ -289,7 +289,7 @@ namespace TiltBrush
         {
             if (m_SceneRoot != null)
             {
-                UnityEngine.Object.Destroy(m_SceneRoot);
+                VoxMeshBuilder.DestroyRuntimeSceneObject(m_SceneRoot);
                 m_SceneRoot = null;
             }
         }
