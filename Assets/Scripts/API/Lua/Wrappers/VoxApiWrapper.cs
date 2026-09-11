@@ -329,7 +329,7 @@ namespace TiltBrush
 
             for (int i = m_SceneRoot.transform.childCount - 1; i >= 0; i--)
             {
-                UnityEngine.Object.Destroy(m_SceneRoot.transform.GetChild(i).gameObject);
+                VoxMeshBuilder.DestroyRuntimeSceneObject(m_SceneRoot.transform.GetChild(i).gameObject);
             }
 
             var builder = new VoxMeshBuilder();
