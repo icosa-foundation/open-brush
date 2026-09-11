@@ -496,7 +496,10 @@ namespace TiltBrush
             if (oldGroup != SketchGroupTag.None)
             {
                 // Remove this stroke from the dictionary entry for the old group.
-                m_GroupToStrokes[oldGroup].Remove(stroke);
+                if (m_GroupToStrokes.TryGetValue(oldGroup, out var oldGroupStrokes))
+                {
+                    oldGroupStrokes.Remove(stroke);
+                }
             }
         }
 
