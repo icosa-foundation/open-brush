@@ -24,6 +24,9 @@ namespace TiltBrush
 {
     public class VoxMeshBuilder
     {
+        // VOX uses Z-up; runtime scene objects use Unity's Y-up coordinates.
+        public static readonly Quaternion ModelRotation = Quaternion.Euler(-90f, 0f, 0f);
+
         // Only use for runtime VOX objects, which own their procedurally generated meshes.
         internal static void DestroyRuntimeSceneObject(GameObject root)
         {
@@ -388,7 +391,8 @@ namespace TiltBrush
 
                         pos[u] = iu;
                         pos[v] = iv;
-                        AddQuad(meshData, pos + grid.Offset, axis, width, height, currentColor,
+                        AddQuad(meshData, (Vector3)(pos + grid.Offset) - Vector3.one * 0.5f,
+                            axis, width, height, currentColor,
                             faceTowardsPositive[iu, iv]);
 
                         for (int ku = 0; ku < width; ku++)
@@ -410,7 +414,7 @@ namespace TiltBrush
 
         private void AddQuad(
             MeshData meshData,
-            Vector3Int pos,
+            Vector3 pos,
             int axis,
             int width,
             int height,
@@ -422,7 +426,7 @@ namespace TiltBrush
             int u = (axis + 1) % 3;
             int v = (axis + 2) % 3;
 
-            Vector3 origin = new Vector3(pos.x, pos.y, pos.z);
+            Vector3 origin = pos;
 
             Vector3 du = Vector3.zero;
             du[u] = width;
