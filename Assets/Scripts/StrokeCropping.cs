@@ -26,9 +26,6 @@ namespace TiltBrush
                 return;
             }
 
-            Vector3 center = App.Scene.Pose.inverse * center_ws;
-            float radius = App.Scene.Pose.inverse.scale * radius_ws;
-
             var strokesInsideSphere = new HashSet<Stroke>();
 
             // Process all strokes on all canvases
@@ -44,8 +41,9 @@ namespace TiltBrush
                 }
 
                 var canvasPose = canvas.Pose;
-                Vector3 sphereCenterCs = canvasPose.inverse * center;
-                float sphereRadiusCs = radius / canvasPose.scale;
+                // Canvas.Pose already includes the scene pose: convert world to canvas once.
+                Vector3 sphereCenterCs = canvasPose.inverse * center_ws;
+                float sphereRadiusCs = radius_ws / canvasPose.scale;
 
                 // Fast bounds test: check if stroke's bounding box intersects the sphere
                 // This avoids expensive clipping for strokes that are clearly outside

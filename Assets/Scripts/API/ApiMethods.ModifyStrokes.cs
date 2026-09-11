@@ -337,7 +337,8 @@ namespace TiltBrush
         )]
         public static void CropStrokesToSphere(Vector3 center, float radius)
         {
-            StrokeCropping.CropStrokesToSphere(center, radius);
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToSphere(scenePose * center, scenePose.scale * radius);
         }
     }
 }
