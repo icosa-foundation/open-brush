@@ -205,6 +205,7 @@ namespace TiltBrush
             MergeBrushStrokes = 10000,
             RepaintOptions = 11500,
             OpenNumericInputPopup = 12000,
+            OpenTextInputPopup = 12001,
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
@@ -5358,6 +5359,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
+                case GlobalCommands.OpenTextInputPopup: break;
                 case GlobalCommands.WhatIsNew:
                 case GlobalCommands.LoginToIcosa:
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
