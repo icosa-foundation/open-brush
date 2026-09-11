@@ -37,18 +37,12 @@ namespace TiltBrush
         public override void ChangeDirectory(string newPath)
         {
             m_CurrentBackgroundImagesDirectory = newPath;
-            if (Directory.Exists(m_CurrentBackgroundImagesDirectory))
-            {
-                m_FileWatcher = new FileWatcher(m_CurrentBackgroundImagesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
+            SetUpFileWatchers(m_CurrentBackgroundImagesDirectory);
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
         }
+
+        public override List<string> AllRoots() => App.GetAllBackgroundImageRoots();
 
         public override string HomeDirectory => App.BackgroundImagesLibraryPath();
         public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == HomeDirectory;
