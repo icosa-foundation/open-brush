@@ -6,7 +6,7 @@ Settings = {
 
 Parameters = {
     shape = {label="Shape", type="list", items={"Sphere", "Box", "Capsule", "Plane"}, default="Sphere"},
-    keepInside = {label="Reverse Inside/Outside", type="toggle", default=true}
+    keepInside = {label="Reverse Outside/Inside", type="toggle", default=true}
 }
 
 function Main()
