@@ -57,6 +57,7 @@ namespace TiltBrush
                     {
                         SketchMemoryScript.m_Instance.MemoryListAdd(replacement);
                         replacement.Recreate(null, replacement.m_IntendedCanvas);
+                        SelectionManager.m_Instance?.OnStrokeAddedToGroup(replacement);
                     }
                     m_Created = true;
                 }
@@ -121,6 +122,7 @@ namespace TiltBrush
         {
             foreach (var stroke in m_Replacements.Values.SelectMany(value => value))
             {
+                SelectionManager.m_Instance?.OnStrokeRemovedFromGroup(stroke, stroke.Group);
                 if (stroke.m_NodeByTime.List != null) SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
                 if (stroke.m_Type != Stroke.Type.NotCreated) stroke.DestroyStroke();
             }
