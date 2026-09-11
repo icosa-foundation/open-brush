@@ -5508,6 +5508,7 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            ApiMethods.VoxResetRuntimeState();
             bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
