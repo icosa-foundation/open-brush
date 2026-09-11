@@ -78,7 +78,8 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0"
+    "com.unity.modules.wind": "1.0.0",
+    "jp.keijiro.klak.ndi": "2.1.0"
   },
   "scopedRegistries": [
     {
@@ -97,6 +98,13 @@
         "com.sandrofigo.voxreader",
         "org.nuget.google",
         "org.nuget.system"
+      ]
+    },
+    {
+      "name": "Keijiro",
+      "url": "https://registry.npmjs.com",
+      "scopes": [
+        "jp.keijiro"
       ]
     }
   ]
