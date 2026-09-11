@@ -160,6 +160,34 @@ namespace TiltBrush
             Assert.AreEqual(1, reloaded.Models[1].Voxels.Count);
         }
 
+        [TestCase(1.8f, -2.8f, 3.2f, 2, -3, 3)]
+        [TestCase(-1.2f, 2.2f, -3.8f, -1, 2, -4)]
+        [TestCase(1.5f, -2.5f, 3.5f, 2, -2, 4)]
+        [TestCase(2f, -3f, 4f, 2, -3, 4)]
+        public void RuntimeVoxDocument_ExportRoundsTransformOffsets(
+            float x, float y, float z, int expectedX, int expectedY, int expectedZ)
+        {
+            for (int modelCount = 1; modelCount <= 2; modelCount++)
+            {
+                var source = new RuntimeVoxDocument();
+                var model = source.CreateModel("translated", new Vector3Int(8, 8, 8));
+                model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+                model.TransformOffset = new Vector3(x, y, z);
+                if (modelCount == 2)
+                {
+                    source.CreateModel("other", new Vector3Int(8, 8, 8))
+                        .AddOrUpdateVoxel(Vector3Int.zero, 1);
+                }
+
+                RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(source.ToVoxBytes());
+
+                Assert.AreEqual(modelCount, reloaded.Models.Count);
+                Assert.AreEqual(new Vector3(expectedX, expectedY, expectedZ),
+                    reloaded.Models[0].TransformOffset, $"Model count: {modelCount}");
+                Assert.AreEqual(new Vector3(x, y, z), model.TransformOffset);
+            }
+        }
+
         [Test]
         public void RuntimeVoxDocument_LoadsFromStreamAndReadOnlyMemory()
         {

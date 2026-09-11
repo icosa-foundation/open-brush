@@ -51,7 +51,7 @@ namespace TiltBrush
                 contentChunks.Add(BuildXyziChunk(model));
             }
 
-            if (document.Models.Count > 1)
+            if (document.Models.Count > 1 || document.Models.Any(model => model.TransformOffset != Vector3.zero))
             {
                 contentChunks.AddRange(BuildSceneGraphChunks(document.Models));
             }
@@ -180,10 +180,8 @@ namespace TiltBrush
                     attributes: new Dictionary<string, string>(),
                     childNodeId: shapeNodeId,
                     layerId: -1,
-                    translation: new Vector3Int(
-                        (int)model.TransformOffset.x,
-                        (int)model.TransformOffset.y,
-                        (int)model.TransformOffset.z),
+                    // VOX translations are integers; round to the nearest voxel on export.
+                    translation: Vector3Int.RoundToInt(model.TransformOffset),
                     name: model.Name);
 
                 yield return BuildShapeNodeChunk(shapeNodeId, i);
