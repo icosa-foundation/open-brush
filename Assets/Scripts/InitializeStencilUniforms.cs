@@ -28,6 +28,7 @@ namespace TiltBrush
         // Update uniforms here as this is the least intrusive place to do so
         private void OnDrawGizmos()
         {
+            if (Application.isPlaying) { return; }
             Shader.SetGlobalFloat(ModifyStencilGridSizeCommand.GlobalGridSizeMultiplierHash, 1f);
             Shader.SetGlobalFloat(ModifyStencilGridLineWidthCommand.GlobalGridLineWidthMultiplierHash, 1f);
             Shader.SetGlobalFloat(ModifyStencilFrameWidthCommand.GlobalFrameWidthMultiplierHash, 1f);

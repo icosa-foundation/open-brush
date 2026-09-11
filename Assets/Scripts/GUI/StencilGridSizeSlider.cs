@@ -22,9 +22,13 @@ namespace TiltBrush
         [SerializeField] private float m_MinGridSize = 0.25f;
         [SerializeField] private float m_MaxGridSize = 3f;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            Shader.SetGlobalFloat(ModifyStencilGridSizeCommand.GlobalGridSizeMultiplierHash, 1f);
+        }
         void OnEnable()
         {
-            Shader.SetGlobalFloat(ModifyStencilGridSizeCommand.GlobalGridSizeMultiplierHash, 1f);
             OnStencilGridSizeChanged();
         }
 

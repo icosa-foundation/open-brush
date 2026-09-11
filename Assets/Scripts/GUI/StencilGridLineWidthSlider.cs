@@ -23,9 +23,13 @@ namespace TiltBrush
         [SerializeField] private float m_MinGridWidth = 0.25f;
         [SerializeField] private float m_MaxGridWidth = 3f;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            Shader.SetGlobalFloat(ModifyStencilGridLineWidthCommand.GlobalGridLineWidthMultiplierHash, 1f);
+        }
         void OnEnable()
         {
-            Shader.SetGlobalFloat(ModifyStencilGridLineWidthCommand.GlobalGridLineWidthMultiplierHash, 1f);
             OnStencilGridWidthChanged();
         }
 
