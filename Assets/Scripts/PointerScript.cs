@@ -899,6 +899,7 @@ namespace TiltBrush
         public void CreateNewLine(CanvasScript canvas, TrTransform xf_CS,
                                   ParametricStrokeCreator creator, BrushDescriptor overrideDesc = null)
         {
+            m_ControlPointColors = null;
             // If straightedge is enabled, we may have a minimum size requirement.
             // Initialize parametric stroke creator for our type of straightedge.
             // Maybe change the brush to a proxy brush.

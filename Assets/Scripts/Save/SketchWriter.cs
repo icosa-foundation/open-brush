@@ -74,7 +74,8 @@ namespace TiltBrush
             Group = 1 << 2, // uint32, a value of 0 corresponds to SketchGroupTag.None so in that case,
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
-            Layer = 1 << 4, // uint32;
+            Track = 1 << 4, // uint32 - previously known as Layer;
+            Frame = 1 << 5, // uint32;
             ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
@@ -88,7 +89,8 @@ namespace TiltBrush
 
         public struct AdjustedMemoryBrushStroke
         {
-            public uint layerIndex;
+            public uint trackIndex;
+            public uint frameIndex;
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
         }
@@ -137,12 +139,16 @@ namespace TiltBrush
             //     |0  |1Cx|2Cx|  =>  |0  |
             //     |0 x|1Cx|2C |  =>  |2  |
             bool resetGroupContinue = false;
-            var canvases = App.Scene.LayerCanvases.ToArray();
-            var canvasToIndexMap = new Dictionary<CanvasScript, uint>();
-            for (uint index = 0; index < canvases.Length; index++)
+            var canvasToIndexMap = new Dictionary<CanvasScript, Tuple<uint, uint>>();
+            foreach ((CanvasScript canvas, int frame, int track) in
+                App.Scene.animationUI_manager.GetAnimationDrawingSaveLocations())
             {
-                var canvas = canvases[index];
-                canvasToIndexMap[canvas] = index;
+                if (!canvasToIndexMap.ContainsKey(canvas))
+                {
+                    // Held spans repeat a drawing across frames. Persist it at the span start.
+                    canvasToIndexMap.Add(
+                        canvas, new Tuple<uint, uint>((uint)frame, (uint)track));
+                }
             }
             foreach (var stroke in strokes)
             {
@@ -154,31 +160,39 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
+                if (stroke.IsGeometryEnabled)
                 {
-                    if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                    if (stroke.Canvas == App.Scene.SelectionCanvas)
                     {
-                        snapshot.layerIndex = canvasToIndexMap[stroke.m_PreviousCanvas];
+                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
+                        {
+                            snapshot.frameIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item1;
+                            snapshot.trackIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item2;
+                        }
+                        else
+                        {
+                            // Previous canvas has been deleted?
+                            snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
+                            snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
+                        }
+                        yield return snapshot;
+                    }
+                    else if (canvasToIndexMap.ContainsKey(stroke.Canvas))
+                    {
+                        // Don't use the method in SceneScript as they count deleted layers
+                        snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
+                        snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
+
+                        yield return snapshot;
                     }
                     else
                     {
-                        // Previous canvas has been deleted?
-                        snapshot.layerIndex = canvasToIndexMap[App.Scene.ActiveCanvas];
+                        // This shouldn't happen
+                        Debug.Log($"Saving layerless stroke {stroke.m_BrushGuid} on the main canvas");
+                        snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
+                        snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
+                        yield return snapshot;
                     }
-                    yield return snapshot;
-                }
-                else if (stroke.IsGeometryEnabled && canvasToIndexMap.ContainsKey(stroke.Canvas))
-                {
-                    // Don't use the method in SceneScript as they count deleted layers
-                    snapshot.layerIndex = canvasToIndexMap[stroke.Canvas];
-                    yield return snapshot;
-                }
-                else if (stroke.IsGeometryEnabled && !canvasToIndexMap.ContainsKey(stroke.Canvas))
-                {
-                    // This shouldn't happen
-                    Debug.Log($"Skipping layerless stroke {stroke.m_BrushGuid}");
-                    snapshot.layerIndex = canvasToIndexMap[App.Scene.MainCanvas];
-                    yield return snapshot;
                 }
                 else
                 {
@@ -231,7 +245,8 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
-                strokeExtensionMask |= StrokeExtension.Layer;
+                strokeExtensionMask |= StrokeExtension.Track;
+                strokeExtensionMask |= StrokeExtension.Frame;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -253,9 +268,13 @@ namespace TiltBrush
                 {
                     writer.Int32(stroke.m_Seed);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                if ((uint)(strokeExtensionMask & StrokeExtension.Track) != 0)
                 {
-                    writer.UInt32(copy.layerIndex);
+                    writer.UInt32(copy.trackIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
+                {
+                    writer.UInt32(copy.frameIndex);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -361,7 +380,8 @@ namespace TiltBrush
                 StrokeExtension strokeExtensionMask = StrokeExtension.Flags | StrokeExtension.Seed;
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
-                strokeExtensionMask |= StrokeExtension.Layer;
+                strokeExtensionMask |= StrokeExtension.Track;
+                strokeExtensionMask |= StrokeExtension.Frame;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -383,9 +403,13 @@ namespace TiltBrush
                 {
                     writer.Int32(stroke.m_Seed);
                 }
-                if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
+                if ((uint)(strokeExtensionMask & StrokeExtension.Track) != 0)
                 {
-                    writer.UInt32(copy.layerIndex);
+                    writer.UInt32(copy.trackIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.Frame) != 0)
+                {
+                    writer.UInt32(copy.frameIndex);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -607,6 +631,11 @@ namespace TiltBrush
                 // Iterate through set bits of mask starting from LSB via bit tricks:
                 //    isolate lowest set bit: x & ~(x-1)
                 //    clear lowest set bit: x & (x-1)
+
+                UInt32 thisTrack = 0;
+                UInt32 thisFrame = 0;
+                int MaxTrack = 0, MaxFrame = 0;
+
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
@@ -628,14 +657,20 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
-                        case StrokeExtension.Layer:
+                        case StrokeExtension.Track:
                             UInt32 layerIndex = reader.UInt32();
                             if (targetLayer != -1)
                             {
                                 layerIndex = (uint)targetLayer;
                             }
-                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
-                            stroke.m_IntendedCanvas = canvas;
+                            thisTrack = layerIndex;
+                            break;
+                        case StrokeExtension.Frame:
+                            thisFrame = reader.UInt32();
+                            if (targetLayer != -1)
+                            {
+                                thisFrame = 0;
+                            }
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
@@ -692,6 +727,8 @@ namespace TiltBrush
                             }
                     }
                 }
+                stroke.m_IntendedCanvas = App.Scene.animationUI_manager.GetOrCreateContentCanvas(
+                    (int)thisTrack, (int)thisFrame);
 
                 // control points
                 int nControlPoints = reader.Int32();
@@ -817,6 +854,8 @@ namespace TiltBrush
                 }
 
                 // Process stroke extension fields...
+                UInt32 trackIndex = 0;
+                UInt32 frameIndex = 0;
                 for (var fields = strokeExtensionMask; fields != 0; fields &= (fields - 1))
                 {
                     uint bit = (fields & ~(fields - 1));
@@ -837,14 +876,19 @@ namespace TiltBrush
                                 stroke.Group = App.GroupManager.GetGroupFromId(groupId);
                                 break;
                             }
-                        case StrokeExtension.Layer:
-                            UInt32 layerIndex = reader.UInt32();
+                        case StrokeExtension.Track:
+                            trackIndex = reader.UInt32();
                             if (squashLayers)
                             {
-                                layerIndex = 0;
+                                trackIndex = 0;
                             }
-                            var canvas = App.Scene.GetOrCreateLayer((int)layerIndex);
-                            stroke.m_IntendedCanvas = canvas;
+                            break;
+                        case StrokeExtension.Frame:
+                            frameIndex = reader.UInt32();
+                            if (squashLayers)
+                            {
+                                frameIndex = 0;
+                            }
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
@@ -901,6 +945,8 @@ namespace TiltBrush
                             }
                     }
                 }
+                var canvas = App.Scene.GetOrCreateLayer((int)trackIndex, (int)frameIndex);
+                stroke.m_IntendedCanvas = canvas;
 
                 // Process control points...
                 int nControlPoints = reader.Int32();

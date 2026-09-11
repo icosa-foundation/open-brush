@@ -746,6 +746,10 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
+                    App.Scene.animationUI_manager.StartTimeline();
+                    // This was a conflict between the animation branch and the plugin branch
+                    // Is it needed?
+                    //Coords.CanvasLocalPose = TrTransform.identity;
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
@@ -759,6 +763,8 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
+                        App.Scene.animationUI_manager.StartTimeline();
+
                         for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
                             var layer = jsonData.Layers[i];
@@ -780,6 +786,24 @@ namespace TiltBrush
                             canvas.LocalPose = layer.Transform;
                         }
                     }
+
+                    if (jsonData.AnimationTracks != null)
+                    {
+                        bool hasSparseMetadata =
+                            jsonData.AnimationTracks.Version >= AnimationMetadata.CurrentVersion &&
+                            jsonData.AnimationTracks.Tracks.All(track => track.Spans != null);
+                        var spanDurations = jsonData.AnimationTracks.Tracks
+                            .Select(track => (IReadOnlyList<int>)(hasSparseMetadata
+                                ? track.Spans.Select(span => span.Duration).ToList()
+                                : track.frameLengths ?? new List<int>()))
+                            .ToList();
+                        var trackVisibility = jsonData.AnimationTracks.Tracks
+                            .Select(track => track.Visible)
+                            .ToList();
+                        App.Scene.animationUI_manager.ConfigureAnimationTracks(
+                            spanDurations, trackVisibility,
+                            hasSparseMetadata ? "sparseTimelineLoad" : "legacyTimelineLoad");
+                    }
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
@@ -800,7 +824,6 @@ namespace TiltBrush
                         return false;
                     }
                 }
-
 
                 // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
@@ -876,6 +899,10 @@ namespace TiltBrush
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
+                    if (jsonData.AnimationPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.AnimationPaths);
+                    }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
                         gdInfo.SourceId = jsonData.SourceId;
@@ -887,6 +914,11 @@ namespace TiltBrush
                                 OverlayType.LoadMedia,
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
+                    }
+                    if (App.Scene.animationUI_manager != null)
+                    {
+                        App.Scene.animationUI_manager.ResetTimeline();
+                        App.Scene.animationUI_manager.SelectTimelineFrame(0, 0);
                     }
                     m_LastSceneFile = fileInfo;
                 }
@@ -907,7 +939,7 @@ namespace TiltBrush
         }
 
         private void HandleDeserializationError(object sender,
-                                                Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+            Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
         {
             var currentError = errorArgs.ErrorContext.Error.Message;
             Debug.LogWarning(currentError);
