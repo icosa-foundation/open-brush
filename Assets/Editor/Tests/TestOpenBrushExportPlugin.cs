@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 
@@ -66,6 +67,24 @@ namespace TiltBrush
             CollectionAssert.AreEqual(new[] { 1f, 3f, 1f }, timestamps);
         }
 
+        [Test]
+        public void TestFacetedVertexSplitRemapsBatchSubsetRanges()
+        {
+            var first = new BatchSubset { m_StartVertIndex = 0, m_VertLength = 4 };
+            var second = new BatchSubset { m_StartVertIndex = 4, m_VertLength = 3 };
+
+            List<BatchSubset> remapped = RemapBatchSubsets(
+                new[] { first, second },
+                new[] { 0, 1, 2, 0, 2, 3, 4, 5, 6 });
+
+            Assert.AreEqual(0, remapped[0].m_StartVertIndex);
+            Assert.AreEqual(6, remapped[0].m_VertLength);
+            Assert.AreEqual(6, remapped[1].m_StartVertIndex);
+            Assert.AreEqual(3, remapped[1].m_VertLength);
+            Assert.AreEqual(0, first.m_StartVertIndex);
+            Assert.AreEqual(4, first.m_VertLength);
+        }
+
         private static byte[] CreateTimestampData(Stroke stroke, int vertexCount)
         {
             MethodInfo method = typeof(OpenBrushExportPluginConfig).GetMethod(
@@ -76,6 +95,17 @@ namespace TiltBrush
                 null);
             Assert.IsNotNull(method);
             return (byte[])method.Invoke(null, new object[] { stroke, vertexCount });
+        }
+
+        private static List<BatchSubset> RemapBatchSubsets(
+            IEnumerable<BatchSubset> subsets, int[] sourceVertexIndices)
+        {
+            MethodInfo method = typeof(OpenBrushExportPluginConfig).GetMethod(
+                "RemapBatchSubsets",
+                BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method);
+            return (List<BatchSubset>)method.Invoke(
+                null, new object[] { subsets, sourceVertexIndices });
         }
     }
 }
