@@ -20,7 +20,7 @@ namespace TiltBrush
     public class StrokeCropping
     {
         public static List<Stroke> CropStrokesToSphere(Vector3 center_ws, float radius_ws,
-            IEnumerable<Stroke> strokes = null)
+            IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
             if (radius_ws <= 0)
             {
@@ -28,260 +28,177 @@ namespace TiltBrush
             }
 
             return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Sphere,
-                TrTransform.T(center_ws), Vector3.one * radius_ws), strokes);
+                TrTransform.T(center_ws), Vector3.one * radius_ws), strokes, keepInside);
         }
 
         public static List<Stroke> CropStrokesToBox(Vector3 center_ws, Vector3 size_ws,
-            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
             if (size_ws.x <= 0 || size_ws.y <= 0 || size_ws.z <= 0)
                 throw new System.ArgumentOutOfRangeException(nameof(size_ws));
             return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Box,
-                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes);
+                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes, keepInside);
         }
 
         public static List<Stroke> CropStrokesToCapsule(Vector3 center_ws, float radius_ws,
-            float height_ws, Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+            float height_ws, Quaternion rotation_ws, IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
             if (radius_ws <= 0) throw new System.ArgumentOutOfRangeException(nameof(radius_ws));
             if (height_ws <= 0) throw new System.ArgumentOutOfRangeException(nameof(height_ws));
             if (height_ws < 2 * radius_ws)
                 throw new System.ArgumentException("Capsule height must be at least twice its radius");
             return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Capsule,
-                TrTransform.TR(center_ws, rotation_ws), new Vector3(radius_ws, height_ws * 0.5f, radius_ws)), strokes);
+                TrTransform.TR(center_ws, rotation_ws), new Vector3(radius_ws, height_ws * 0.5f, radius_ws)), strokes, keepInside);
         }
 
         public static List<Stroke> CropStrokesToEllipsoid(Vector3 center_ws, Vector3 size_ws,
-            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null)
+            Quaternion rotation_ws, IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
             if (size_ws.x <= 0 || size_ws.y <= 0 || size_ws.z <= 0)
                 throw new System.ArgumentOutOfRangeException(nameof(size_ws));
             return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Ellipsoid,
-                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes);
+                TrTransform.TR(center_ws, rotation_ws), size_ws * 0.5f), strokes, keepInside);
         }
 
         public static List<Stroke> CropStrokesToPlane(Vector3 point_ws, Vector3 normal_ws,
-            IEnumerable<Stroke> strokes = null)
+            IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
             if (!(normal_ws.sqrMagnitude > 0) || float.IsInfinity(normal_ws.sqrMagnitude))
                 throw new System.ArgumentException("Plane normal must be finite and nonzero");
             return CropStrokes(new StrokeCropVolume(StrokeCropVolume.Shape.Plane,
-                TrTransform.TR(point_ws, Quaternion.FromToRotation(Vector3.up, normal_ws)), Vector3.one), strokes);
+                TrTransform.TR(point_ws, Quaternion.FromToRotation(Vector3.up, normal_ws)), Vector3.one), strokes, keepInside);
         }
 
-        private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes)
+        private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes, bool keepInside)
         {
-            var retainedStrokes = new HashSet<Stroke>();
+            var originals = (strokes ?? SketchMemoryScript.AllStrokes())
+                .Where(stroke => stroke != null && stroke.IsGeometryEnabled).Distinct().ToArray();
+            var replacements = new Dictionary<Stroke, List<Stroke>>();
             var result = new List<Stroke>();
-
-            // Snapshot the requested strokes so splitting cannot add work or affect other lists.
-            var allStrokes = (strokes ?? SketchMemoryScript.AllStrokes())
-                .Where(stroke => stroke != null && stroke.IsGeometryEnabled)
-                .Distinct()
-                .ToArray();
-            foreach (var stroke in allStrokes)
+            foreach (var stroke in originals)
             {
                 var canvas = stroke.Canvas;
                 if (canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length == 0)
                 {
+                    result.Add(stroke);
                     continue;
                 }
-
-                var canvasPose = canvas.Pose;
-                // Canvas.Pose already includes the scene pose: convert world to canvas once.
-                Vector3 sphereCenterCs = canvasPose.inverse * volume.Pose.translation;
-                float sphereRadiusCs = volume.BoundingRadius / canvasPose.scale;
-
-                // Fast bounds test against a sphere enclosing the crop volume.
-                // This avoids expensive clipping for strokes that are clearly outside
-                if (stroke.m_BatchSubset != null)
+                var toVolume = volume.Pose.inverse * canvas.Pose;
+                if (keepInside && stroke.m_ControlPoints.All(cp => volume.Contains(toVolume * cp.m_Pos)))
                 {
-                    Bounds bounds = stroke.m_BatchSubset.m_Bounds;
-                    if (!BoundsIntersectsSphere(bounds, sphereCenterCs, sphereRadiusCs))
-                    {
-                        continue;
-                    }
-                }
-
-                var clippedSegments = ClipStrokeToVolume(stroke.m_ControlPoints, volume,
-                    volume.Pose.inverse * canvasPose);
-                if (clippedSegments.Count == 0)
-                {
-                    // Stroke is completely outside the volume - will be deleted.
-                    continue;
-                }
-
-                if (clippedSegments.Count == 1)
-                {
-                    ApplySegmentToStroke(stroke, clippedSegments[0]);
-                    retainedStrokes.Add(stroke);
+                    // A convex volume contains every segment if it contains every endpoint.
                     result.Add(stroke);
                     continue;
                 }
 
-                // Stroke crosses the volume boundary multiple times - split into multiple strokes.
-                bool wasSelected = DeregisterSelectedStroke(stroke);
-                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
-                stroke.DestroyStroke();
-
-                var newStrokes = wasSelected ? new List<Stroke>() : null;
-                for (int i = 0; i < clippedSegments.Count; i++)
+                var sourceIndices = new List<float[]>();
+                var segments = ClipStrokeToVolume(stroke.m_ControlPoints, volume, toVolume, sourceIndices, keepInside);
+                if (segments.Count == 1 && segments[0].SequenceEqual(stroke.m_ControlPoints))
                 {
-                    var newStroke = new Stroke(stroke)
-                    {
-                        m_ControlPoints = clippedSegments[i],
-                        m_ControlPointsToDrop = Enumerable.Repeat(false, clippedSegments[i].Length).ToArray(),
-                        m_IntendedCanvas = canvas,
-                        m_Type = Stroke.Type.NotCreated
-                    };
-                    SketchMemoryScript.m_Instance.MemoryListAdd(newStroke);
-                    newStroke.Recreate(null, newStroke.Canvas);
-                    retainedStrokes.Add(newStroke);
-                    result.Add(newStroke);
-                    newStrokes?.Add(newStroke);
-                }
-
-                if (wasSelected)
-                {
-                    SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(newStrokes);
-                }
-            }
-
-            // Now delete all strokes that aren't in retainedStrokes
-            var allStrokesAfterClipping = allStrokes.Where(stroke => stroke.IsGeometryEnabled).ToArray();
-            for (int i = 0; i < allStrokesAfterClipping.Length; i++)
-            {
-                var stroke = allStrokesAfterClipping[i];
-                if (retainedStrokes.Contains(stroke))
-                {
+                    result.Add(stroke);
                     continue;
                 }
-
-                DeregisterSelectedStroke(stroke);
-                SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
-                stroke.DestroyStroke();
+                var clipped = new List<Stroke>();
+                for (int i = 0; i < segments.Count; i++)
+                {
+                    var replacement = new Stroke(stroke)
+                    {
+                        m_ControlPoints = segments[i],
+                        m_ControlPointsToDrop = new bool[segments[i].Length],
+                        m_IntendedCanvas = canvas,
+                        m_PreviousCanvas = stroke.m_PreviousCanvas,
+                        m_Type = Stroke.Type.NotCreated
+                    };
+                    if (stroke.m_OverrideColors != null)
+                    {
+                        // Bake the visible colors at each new boundary point; keep originals untouched for Undo.
+                        replacement.m_OverrideColors = sourceIndices[i].Select(index =>
+                        {
+                            int a = Mathf.FloorToInt(index);
+                            int b = Mathf.Min(a + 1, stroke.m_ControlPoints.Length - 1);
+                            return (Color32?)(Color32)Color.Lerp(stroke.GetColor(a), stroke.GetColor(b), index - a);
+                        }).ToList();
+                        replacement.m_ColorOverrideMode = ColorOverrideMode.Replace;
+                    }
+                    clipped.Add(replacement);
+                }
+                replacements.Add(stroke, clipped);
+                result.AddRange(clipped);
             }
-            return result;
-        }
+            if (replacements.Count == 0) return strokes as List<Stroke> ?? result;
 
-        private static bool DeregisterSelectedStroke(Stroke stroke)
-        {
-            var selectionManager = SelectionManager.m_Instance;
-            if (selectionManager == null || !selectionManager.IsStrokeSelected(stroke))
-            {
-                return false;
-            }
-
-            selectionManager.DeregisterStrokesInSelectionCanvas(new[] { stroke });
-            return true;
-        }
-
-        private static bool BoundsIntersectsSphere(Bounds bounds, Vector3 sphereCenter, float sphereRadius)
-        {
-            // Find the closest point on the AABB to the sphere center
-            Vector3 closestPoint = new Vector3(
-                Mathf.Clamp(sphereCenter.x, bounds.min.x, bounds.max.x),
-                Mathf.Clamp(sphereCenter.y, bounds.min.y, bounds.max.y),
-                Mathf.Clamp(sphereCenter.z, bounds.min.z, bounds.max.z)
-            );
-
-            // Check if the closest point is within the sphere
-            float distanceSq = (closestPoint - sphereCenter).sqrMagnitude;
-            return distanceSq <= sphereRadius * sphereRadius;
-        }
-
-        private static void ApplySegmentToStroke(Stroke stroke, PointerManager.ControlPoint[] controlPoints)
-        {
-            stroke.m_ControlPoints = controlPoints;
-            stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, controlPoints.Length).ToArray();
-            stroke.InvalidateCopy();
-            stroke.Uncreate();
-            stroke.Recreate(null, stroke.Canvas);
+            var parent = ApiManager.Instance != null ? ApiManager.Instance.ActiveUndo : null;
+            var liveList = strokes as List<Stroke> ?? result;
+            var command = new CropStrokesCommand(originals, replacements, result, liveList, parent);
+            if (parent == null) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+            else command.Redo(); // Apply now; the tool/API undo group records its children on completion.
+            return liveList;
         }
 
         internal static List<PointerManager.ControlPoint[]> ClipStrokeToVolume(
-            PointerManager.ControlPoint[] controlPoints, StrokeCropVolume volume, TrTransform canvasToVolume)
+            PointerManager.ControlPoint[] controlPoints, StrokeCropVolume volume, TrTransform canvasToVolume,
+            List<float[]> sourceIndices = null, bool keepInside = true)
         {
             var result = new List<PointerManager.ControlPoint[]>();
-            if (controlPoints.Length == 0)
-            {
-                return result;
-            }
-
-            // We keep any stroke portion whose control points are inside the crop volume.
-            bool Inside(Vector3 p) => volume.Contains(canvasToVolume * p);
-
             if (controlPoints.Length == 1)
             {
-                if (Inside(controlPoints[0].m_Pos))
+                if (volume.Contains(canvasToVolume * controlPoints[0].m_Pos) == keepInside)
                 {
                     result.Add(controlPoints);
+                    sourceIndices?.Add(new[] { 0f });
                 }
                 return result;
             }
-
             List<PointerManager.ControlPoint> current = null;
-
+            List<float> indices = null;
+            void Flush()
+            {
+                if (current != null && current.Count > 1)
+                {
+                    result.Add(current.ToArray());
+                    sourceIndices?.Add(indices.ToArray());
+                }
+                current = null;
+                indices = null;
+            }
             for (int i = 0; i < controlPoints.Length - 1; i++)
             {
                 var a = controlPoints[i];
                 var b = controlPoints[i + 1];
-                bool insideA = Inside(a.m_Pos);
-                bool insideB = Inside(b.m_Pos);
-
-                if (insideA && current == null)
+                void Append(float start, float end)
                 {
-                    current = new List<PointerManager.ControlPoint> { a };
-                }
-
-                float enter, exit;
-                bool intersects = volume.ClipSegment(canvasToVolume * a.m_Pos,
-                    canvasToVolume * b.m_Pos, out enter, out exit);
-                if (intersects)
-                {
-                    float start = Mathf.Clamp01(Mathf.Min(enter, exit));
-                    float end = Mathf.Clamp01(Mathf.Max(enter, exit));
-
-                    if (!insideA && !insideB && start != end)
+                    if (start == end) return;
+                    if (start > 0) Flush();
+                    if (current == null)
                     {
-                        var newSegment = new List<PointerManager.ControlPoint>
-                        {
-                            InterpolateControlPoint(a, b, start),
-                            InterpolateControlPoint(a, b, end)
+                        current = new List<PointerManager.ControlPoint> {
+                            start == 0 ? a : InterpolateControlPoint(a, b, start)
                         };
-                        result.Add(newSegment.ToArray());
+                        indices = new List<float> { i + start };
                     }
-                    else if (insideA && !insideB)
-                    {
-                        current ??= new List<PointerManager.ControlPoint>();
-                        current.Add(InterpolateControlPoint(a, b, end));
-                        if (current.Count > 1)
-                        {
-                            result.Add(current.ToArray());
-                        }
-                        current = null;
-                    }
-                    else if (!insideA && insideB)
-                    {
-                        current = new List<PointerManager.ControlPoint>
-                        {
-                            InterpolateControlPoint(a, b, start)
-                        };
-                    }
+                    current.Add(end == 1 ? b : InterpolateControlPoint(a, b, end));
+                    indices.Add(i + end);
+                    if (end < 1) Flush();
                 }
-
-                if (insideB)
+                bool intersects = volume.ClipSegment(canvasToVolume * a.m_Pos, canvasToVolume * b.m_Pos,
+                    out float enter, out float exit) && enter < exit;
+                if (keepInside)
                 {
-                    current ??= new List<PointerManager.ControlPoint>();
-                    current.Add(b);
+                    if (intersects) Append(enter, exit);
+                    else Flush();
+                }
+                else if (!intersects)
+                {
+                    Append(0, 1);
+                }
+                else
+                {
+                    Append(0, enter);
+                    Flush(); // The removed interior separates the two outside portions.
+                    Append(exit, 1);
                 }
             }
-
-            if (current != null && current.Count > 1)
-            {
-                result.Add(current.ToArray());
-            }
-
+            Flush();
             return result;
         }
 

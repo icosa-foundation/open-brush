@@ -62,10 +62,11 @@ namespace TiltBrush
         [LuaDocsParameter("center", "The center of the sphere")]
         [LuaDocsParameter("radius", "The radius of the sphere")]
         [LuaDocsExample("Sketch.strokes:CropSphere(Vector3:New(0, 10, 0), 7.5)")]
-        public void CropSphere(Vector3 center, float radius)
+        [LuaDocsParameter("keepInside", "True keeps the inside; false keeps the outside (default true)")]
+        public void CropSphere(Vector3 center, float radius, bool keepInside = true)
         {
             var pose = App.Scene.Pose;
-            _Strokes = StrokeCropping.CropStrokesToSphere(pose * center, pose.scale * radius, _Strokes);
+            _Strokes = StrokeCropping.CropStrokesToSphere(pose * center, pose.scale * radius, _Strokes, keepInside);
         }
 
         [LuaDocsDescription("Crops these strokes to a box and updates this list with the remaining strokes")]
@@ -73,11 +74,12 @@ namespace TiltBrush
         [LuaDocsParameter("size", "The full width, height and depth")]
         [LuaDocsParameter("rotation", "Optional Euler rotation in degrees")]
         [LuaDocsExample("Sketch.strokes:CropBox(Vector3.zero, Vector3:New(10, 10, 10))")]
-        public void CropBox(Vector3 center, Vector3 size, Vector3 rotation = default)
+        [LuaDocsParameter("keepInside", "True keeps the inside; false keeps the outside (default true)")]
+        public void CropBox(Vector3 center, Vector3 size, Vector3 rotation = default, bool keepInside = true)
         {
             var pose = App.Scene.Pose;
             _Strokes = StrokeCropping.CropStrokesToBox(pose * center, pose.scale * size,
-                pose.rotation * Quaternion.Euler(rotation), _Strokes);
+                pose.rotation * Quaternion.Euler(rotation), _Strokes, keepInside);
         }
 
         [LuaDocsDescription("Crops these strokes to a capsule and updates this list with the remaining strokes. Its axis is Y before rotation")]
@@ -86,11 +88,12 @@ namespace TiltBrush
         [LuaDocsParameter("height", "The full height of the capsule")]
         [LuaDocsParameter("rotation", "Optional Euler rotation in degrees")]
         [LuaDocsExample("Sketch.strokes:CropCapsule(Vector3.zero, 5, 10)")]
-        public void CropCapsule(Vector3 center, float radius, float height, Vector3 rotation = default)
+        [LuaDocsParameter("keepInside", "True keeps the inside; false keeps the outside (default true)")]
+        public void CropCapsule(Vector3 center, float radius, float height, Vector3 rotation = default, bool keepInside = true)
         {
             var pose = App.Scene.Pose;
             _Strokes = StrokeCropping.CropStrokesToCapsule(pose * center, pose.scale * radius,
-                pose.scale * height, pose.rotation * Quaternion.Euler(rotation), _Strokes);
+                pose.scale * height, pose.rotation * Quaternion.Euler(rotation), _Strokes, keepInside);
         }
 
         [LuaDocsDescription("Crops these strokes to an ellipsoid and updates this list with the remaining strokes")]
@@ -98,21 +101,23 @@ namespace TiltBrush
         [LuaDocsParameter("size", "The full width, height and depth")]
         [LuaDocsParameter("rotation", "Optional Euler rotation in degrees")]
         [LuaDocsExample("Sketch.strokes:CropEllipsoid(Vector3.zero, Vector3:New(10, 20, 10))")]
-        public void CropEllipsoid(Vector3 center, Vector3 size, Vector3 rotation = default)
+        [LuaDocsParameter("keepInside", "True keeps the inside; false keeps the outside (default true)")]
+        public void CropEllipsoid(Vector3 center, Vector3 size, Vector3 rotation = default, bool keepInside = true)
         {
             var pose = App.Scene.Pose;
             _Strokes = StrokeCropping.CropStrokesToEllipsoid(pose * center, pose.scale * size,
-                pose.rotation * Quaternion.Euler(rotation), _Strokes);
+                pose.rotation * Quaternion.Euler(rotation), _Strokes, keepInside);
         }
 
         [LuaDocsDescription("Keeps the side of a plane its normal points toward and updates this list with the remaining strokes")]
         [LuaDocsParameter("point", "A point on the plane")]
         [LuaDocsParameter("normal", "The direction of the side to keep; reverse it to keep the other side")]
         [LuaDocsExample("Sketch.strokes:CropPlane(Vector3:New(0, 10, 0), Vector3.up)")]
-        public void CropPlane(Vector3 point, Vector3 normal)
+        [LuaDocsParameter("keepInside", "True keeps the inside; false keeps the outside (default true)")]
+        public void CropPlane(Vector3 point, Vector3 normal, bool keepInside = true)
         {
             var pose = App.Scene.Pose;
-            _Strokes = StrokeCropping.CropStrokesToPlane(pose * point, pose.rotation * normal, _Strokes);
+            _Strokes = StrokeCropping.CropStrokesToPlane(pose * point, pose.rotation * normal, _Strokes, keepInside);
         }
 
         [LuaDocsDescription("Hides the section of the stroke that is outside the specified range")]

@@ -1,12 +1,12 @@
 Settings = {
-    description = "Crop existing strokes: press at the center, drag to set the radius or half-size, then release. Plane keeps the side toward the release point. Cropping cannot currently be undone.",
+    description = "Crop existing strokes: press at the center, drag to set the radius or half-size, then release. Plane keeps the side toward the release point. Undo restores the crop.",
     space = "canvas",
     previewType = "sphere"
 }
 
 Parameters = {
     shape = {label="Shape", type="list", items={"Sphere", "Box", "Capsule", "Ellipsoid", "Plane"}, default="Sphere"},
-    reversePlane = {label="Keep other side of plane", type="toggle", default=false}
+    keepInside = {label="Keep inside (off keeps outside)", type="toggle", default=true}
 }
 
 function Main()
@@ -39,17 +39,16 @@ function Main()
     local angles = Vector3:New(rotation.x, rotation.y, rotation.z)
 
     if Parameters.shape == "Sphere" then
-        strokes:CropSphere(center, radius)
+        strokes:CropSphere(center, radius, Parameters.keepInside)
     elseif Parameters.shape == "Box" then
-        strokes:CropBox(center, Vector3:New(radius * 2, radius * 2, radius * 2), angles)
+        strokes:CropBox(center, Vector3:New(radius * 2, radius * 2, radius * 2), angles, Parameters.keepInside)
     elseif Parameters.shape == "Capsule" then
         -- Full height includes the two rounded ends.
-        strokes:CropCapsule(center, radius, radius * 4, angles)
+        strokes:CropCapsule(center, radius, radius * 4, angles, Parameters.keepInside)
     elseif Parameters.shape == "Ellipsoid" then
-        strokes:CropEllipsoid(center, Vector3:New(radius * 2, radius * 4, radius * 2), angles)
+        strokes:CropEllipsoid(center, Vector3:New(radius * 2, radius * 4, radius * 2), angles, Parameters.keepInside)
     elseif Parameters.shape == "Plane" then
         local normal = drag / radius
-        if Parameters.reversePlane then normal = -normal end
-        strokes:CropPlane(center, normal)
+        strokes:CropPlane(center, normal, Parameters.keepInside)
     end
 end

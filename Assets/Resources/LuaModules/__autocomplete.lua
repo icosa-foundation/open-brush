@@ -1898,31 +1898,36 @@ function StrokeList:Delete() end
 ---Crops these strokes to a sphere and updates this list with the remaining strokes
 ---@param center Vector3 The center of the sphere
 ---@param radius number The radius of the sphere
-function StrokeList:CropSphere(center, radius) end
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropSphere(center, radius, keepInside) end
 
 ---Crops these strokes to a box and updates this list with the remaining strokes
 ---@param center Vector3 The center of the box
 ---@param size Vector3 The full width, height and depth
 ---@param rotation? Vector3 Euler rotation in degrees
-function StrokeList:CropBox(center, size, rotation) end
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropBox(center, size, rotation, keepInside) end
 
 ---Crops these strokes to a capsule and updates this list with the remaining strokes
 ---@param center Vector3 The center of the capsule
 ---@param radius number The radius of the capsule
 ---@param height number The full height of the capsule
 ---@param rotation? Vector3 Euler rotation in degrees (axis is Y before rotation)
-function StrokeList:CropCapsule(center, radius, height, rotation) end
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropCapsule(center, radius, height, rotation, keepInside) end
 
 ---Crops these strokes to an ellipsoid and updates this list with the remaining strokes
 ---@param center Vector3 The center of the ellipsoid
 ---@param size Vector3 The full width, height and depth
 ---@param rotation? Vector3 Euler rotation in degrees
-function StrokeList:CropEllipsoid(center, size, rotation) end
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropEllipsoid(center, size, rotation, keepInside) end
 
 ---Keeps the side of a plane its normal points toward and updates this list with the remaining strokes
 ---@param point Vector3 A point on the plane
 ---@param normal Vector3 Direction of the side to keep
-function StrokeList:CropPlane(point, normal) end
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropPlane(point, normal, keepInside) end
 
 ---@param clipStart number The amount of the stroke to hide from the start (0-1)
 ---@param clipEnd number The amount of the stroke to hide from the end (0-1)
