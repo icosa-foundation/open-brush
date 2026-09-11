@@ -190,125 +190,154 @@ URL=" + kExportDocumentationUrl;
                 if (IsExportEnabled("newglb")) { progress.SetWork("newglb"); }
             }
 
-            string filename;
-
-            if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
-                (filename = MakeExportPath(parent, basename, "json")) != null)
-            {
-                using (var unused = new AutoTimer("raw export"))
-                {
-                    OverlayManager.m_Instance.UpdateProgress(0.1f);
-                    ExportRaw.Export(filename);
-
-                    // Also write the metadata that would normally go in the .tilt file
-                    SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
-                }
-                progress.CompleteWork("json");
-            }
-
-#if FBX_SUPPORTED
-            if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
-                (filename = MakeExportPath(parent, basename, "fbx")) != null)
-            {
-                using (var unused = new AutoTimer("fbx export"))
-                {
-                    OverlayManager.m_Instance.UpdateProgress(0.3f);
-                    ExportFbx.Export(filename,
-                        App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
-                        App.UserConfig.Export.ExportFbxVersion);
-                    OverlayManager.m_Instance.UpdateProgress(0.5f);
-                }
-                progress.CompleteWork("fbx");
-            }
-
-            if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx &&
-                (filename = MakeExportPath(parent, basename, "obj")) != null)
-            {
-                // This has never been tested with the new fbx export style and may not work
-                ExportFbx.Export(filename, ExportFbx.kObj);
-                progress.CompleteWork("obj");
-            }
-#endif
-
-#if USD_SUPPORTED
-            if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
-                (filename = MakeExportPath(parent, basename, "usd")) != null)
-            {
-                using (var unused = new AutoTimer("usd export"))
-                {
-                    ExportUsd.ExportPayload(filename);
-                }
-                progress.CompleteWork("usd");
-            }
-#endif
-
-            if (IsExportEnabled("latk") &&
-                (filename = MakeExportPath(parent, basename, "latk")) != null)
-            {
-                using (var unused = new AutoTimer("latk export"))
-                {
-                    ExportLatk.Export(filename);
-                }
-                progress.CompleteWork("latk");
-            }
-
-            if (IsExportEnabled("wrl") &&
-                (filename = MakeExportPath(parent, basename, "wrl")) != null)
-            {
-                ExportVrml.Export(filename);
-                progress.CompleteWork("wrl");
-            }
-
-            if (IsExportEnabled("stl") &&
-                (filename = MakeExportPath(parent, basename, "stl")) != null)
+            // Isolate the entire format operation, including path creation and cleanup.
+            void RunExport(string format, Action export)
             {
                 try
                 {
-                    ExportStl.Export(filename);
+                    export();
                 }
-                catch (ArgumentOutOfRangeException e)
+                catch (Exception e)
                 {
-                    OutputWindowScript.Error("STL export failed", e.Message);
+                    Debug.LogError($"[ExportFormatIsolation] {format} export failed: {e}");
+                    OutputWindowScript.Error($"{format} export failed", e.Message);
                 }
-                progress.CompleteWork("stl");
+                finally
+                {
+                    progress.CompleteWork(format);
+                }
             }
 
-            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
+            string filename;
+
+            RunExport("json", () =>
             {
-                // Legacy GLTF export
-                string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
-                int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
-                filename = MakeExportPath(parent, basename, extension);
-                if (filename != null)
+                if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
+                    (filename = MakeExportPath(parent, basename, "json")) != null)
+                {
+                    using (var unused = new AutoTimer("raw export"))
+                    {
+                        OverlayManager.m_Instance.UpdateProgress(0.1f);
+                        ExportRaw.Export(filename);
+
+                        // Also write the metadata that would normally go in the .tilt file
+                        SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
+                    }
+                }
+            });
+
+#if FBX_SUPPORTED
+            RunExport("fbx", () =>
+            {
+                if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
+                    (filename = MakeExportPath(parent, basename, "fbx")) != null)
+                {
+                    using (var unused = new AutoTimer("fbx export"))
+                    {
+                        OverlayManager.m_Instance.UpdateProgress(0.3f);
+                        ExportFbx.Export(filename,
+                            App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
+                            App.UserConfig.Export.ExportFbxVersion);
+                        OverlayManager.m_Instance.UpdateProgress(0.5f);
+                    }
+                }
+            });
+
+            RunExport("obj", () =>
+            {
+                if (IsExportEnabled("obj") && App.PlatformConfig.EnableExportFbx &&
+                    (filename = MakeExportPath(parent, basename, "obj")) != null)
+                {
+                    // This has never been tested with the new fbx export style and may not work
+                    ExportFbx.Export(filename, ExportFbx.kObj);
+                }
+            });
+#endif
+
+#if USD_SUPPORTED
+            RunExport("usd", () =>
+            {
+                if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
+                    (filename = MakeExportPath(parent, basename, "usd")) != null)
+                {
+                    using (var unused = new AutoTimer("usd export"))
+                    {
+                        ExportUsd.ExportPayload(filename);
+                    }
+                }
+            });
+#endif
+
+            RunExport("latk", () =>
+            {
+                if (IsExportEnabled("latk") &&
+                    (filename = MakeExportPath(parent, basename, "latk")) != null)
+                {
+                    using (var unused = new AutoTimer("latk export"))
+                    {
+                        ExportLatk.Export(filename);
+                    }
+                }
+            });
+
+            RunExport("wrl", () =>
+            {
+                if (IsExportEnabled("wrl") &&
+                    (filename = MakeExportPath(parent, basename, "wrl")) != null)
+                {
+                    ExportVrml.Export(filename);
+                }
+            });
+
+            RunExport("stl", () =>
+            {
+                if (IsExportEnabled("stl") &&
+                    (filename = MakeExportPath(parent, basename, "stl")) != null)
+                {
+                    ExportStl.Export(filename);
+                }
+            });
+
+            RunExport("glb", () =>
+            {
+                if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
+                {
+                    // Legacy GLTF export
+                    string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
+                    int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
+                    filename = MakeExportPath(parent, basename, extension);
+                    if (filename != null)
+                    {
+                        using (var unused = new AutoTimer("glb export"))
+                        {
+                            OverlayManager.m_Instance.UpdateProgress(0.6f);
+
+                            // TBT doesn't need (or want) brush textures in the output because it replaces all
+                            // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
+                            // http textures so if uploaded, this glb will have missing textures.
+                            var exporter = new ExportGlTF();
+                            exporter.ExportBrushStrokes(
+                                filename, AxisConvention.kGltf2, binary: true, doExtras: true,
+                                includeLocalMediaContent: true,
+                                gltfVersion: gltfVersion,
+                                selfContained: true
+                            );
+                        }
+                    }
+                }
+            });
+
+            RunExport("newglb", () =>
+            {
+                if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
                 {
                     using (var unused = new AutoTimer("glb export"))
                     {
-                        OverlayManager.m_Instance.UpdateProgress(0.6f);
-
-                        // TBT doesn't need (or want) brush textures in the output because it replaces all
-                        // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
-                        // http textures so if uploaded, this glb will have missing textures.
-                        var exporter = new ExportGlTF();
-                        exporter.ExportBrushStrokes(
-                            filename, AxisConvention.kGltf2, binary: true, doExtras: true,
-                            includeLocalMediaContent: true,
-                            gltfVersion: gltfVersion,
-                            selfContained: true
-                        );
+                        OverlayManager.m_Instance.UpdateProgress(0.7f);
+                        ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
                     }
                 }
-                progress.CompleteWork("glb");
-            }
-
-            if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
-            {
-                using (var unused = new AutoTimer("glb export"))
-                {
-                    OverlayManager.m_Instance.UpdateProgress(0.7f);
-                    ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
-                }
-                progress.CompleteWork("newglb");
-            }
+            });
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, basename +
