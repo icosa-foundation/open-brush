@@ -201,20 +201,6 @@ namespace TiltBrush
                         case "sphere":
                             Graphics.DrawMesh(previewSphere, transform_GS, previewMat, 0);
                             break;
-                        case "ellipsoid":
-                            // Same full dimensions as the crop example: (2r, 4r, 2r).
-                            Graphics.DrawMesh(previewSphere,
-                                transform_GS * Matrix4x4.Scale(new Vector3(1, 2, 1)), previewMat, 0);
-                            break;
-                        case "plane":
-                            // A finite quad indicates the plane through the press point.
-                            // Drag direction is its normal, matching CropPlane in the example.
-                            var planeTransform = Matrix4x4.TRS(
-                                SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS),
-                                Quaternion.FromToRotation(Vector3.forward, drawnVector_GS.normalized),
-                                Vector3.one * (drawnVector_GS.magnitude * 2));
-                            Graphics.DrawMesh(previewQuad, planeTransform, previewMat, 0);
-                            break;
                         case "quad":
                             var mat = transform_GS;
                             switch (previewAxisVal.String?.ToLower())
