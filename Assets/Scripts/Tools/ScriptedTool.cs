@@ -141,7 +141,8 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
 
-                SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}", m_FirstPositionClicked_CS);
+                SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
+                    GetSnappedToolPoint(m_FirstPositionClicked_CS));
                 ApiManager.Instance.StartUndo();
             }
 
@@ -232,10 +233,13 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    var drawnVector_CS = rAttachPoint_CS.translation - m_FirstPositionClicked_CS.translation;
+                    var snappedStart_CS = GetSnappedToolPoint(m_FirstPositionClicked_CS);
+                    var snappedEnd_CS = GetSnappedToolPoint(rAttachPoint_CS);
+                    var drawnVector_CS = snappedEnd_CS.translation - snappedStart_CS.translation;
                     // Tool.rotation is a legacy controller-up vector. Use endPoint.rotation
                     // when a script needs the same full orientation as the preview.
-                    SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", rAttachPoint_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}", snappedStart_CS);
+                    SetApiProperty($"Tool.{LuaNames.ToolScriptEndPoint}", snappedEnd_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptVector}", drawnVector_CS);
                     SetApiProperty($"Tool.{LuaNames.ToolScriptRotation}", upVector);
                     shouldEndUndo = true;
@@ -244,6 +248,18 @@ namespace TiltBrush
 
             LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
             if (shouldEndUndo) ApiManager.Instance.EndUndo();
+        }
+
+        private static TrTransform GetSnappedToolPoint(TrTransform point_CS)
+        {
+            point_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(point_CS.translation);
+            var canvasPose = App.Scene.ActiveCanvas.Pose;
+            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
+                canvasPose.rotation * point_CS.rotation;
+            var rotation_GS = App.Scene.Pose.rotation *
+                SelectionManager.m_Instance.QuantizeAngle(rotation_SC);
+            point_CS.rotation = Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
+            return point_CS;
         }
 
         private void SetApiProperty(string key, object value)
