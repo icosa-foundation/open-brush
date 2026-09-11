@@ -137,9 +137,9 @@ namespace TiltBrush
         }
 
         /// Will show a position marker. Uses the local transform space, if provided.
-        public static void ShowPosition(Vector3 position, Transform parent = null)
+        public static void ShowPosition(Vector3 position, float scale, Transform parent = null)
         {
-            m_Instance.CreateObject(VisType.Position, parent, position, Quaternion.identity, Vector3.one);
+            m_Instance.CreateObject(VisType.Position, parent, position, Quaternion.identity, Vector3.one * scale);
         }
 
         /// Show a vector with a given starting position. Uses the local transform space, if provided.

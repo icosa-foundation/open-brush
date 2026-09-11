@@ -894,6 +894,13 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.subsystems": "1.0.0"
       }
+    },
+    "com.esprogram.inkpainter": {
+      "version": "https://github.com/icosa-mirror/InkPainter.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "e70329945d2e76d5d6368d8b2c527b66defa3c06"
     }
   }
 }
