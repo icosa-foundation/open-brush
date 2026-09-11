@@ -25,7 +25,6 @@ namespace TiltBrush
 
         void OnEnable()
         {
-            Shader.SetGlobalFloat(ModifyStencilFrameWidthCommand.GlobalFrameWidthMultiplierHash, 1f);
             OnStencilFrameWidthChanged();
         }
 
