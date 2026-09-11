@@ -41,7 +41,7 @@ namespace TiltBrush
         public override void SetButtonSelected(bool bSelected)
         {
             base.SetButtonSelected(bSelected);
-            m_Highlight.SetActive(bSelected);
+            m_Highlight.SetActive(true);
             var color = bSelected ? m_ColorSelected : m_ColorDeselected;
             m_Highlight.GetComponent<MeshRenderer>().material.color = color;
         }
