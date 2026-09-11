@@ -802,7 +802,7 @@ namespace TiltBrush
 
             if (previousRoot != null)
             {
-                UnityEngine.Object.Destroy(previousRoot);
+                VoxMeshBuilder.DestroyRuntimeSceneObject(previousRoot);
             }
 
             state.Root = root;
@@ -820,7 +820,7 @@ namespace TiltBrush
 
             if (state.Root != null)
             {
-                UnityEngine.Object.Destroy(state.Root);
+                VoxMeshBuilder.DestroyRuntimeSceneObject(state.Root);
             }
 
             s_voxSceneByDocument.Remove(document);

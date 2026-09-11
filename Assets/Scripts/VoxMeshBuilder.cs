@@ -24,6 +24,29 @@ namespace TiltBrush
 {
     public class VoxMeshBuilder
     {
+        // Only use for runtime VOX objects, which own their procedurally generated meshes.
+        internal static void DestroyRuntimeSceneObject(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var meshes = new HashSet<Mesh>();
+            foreach (MeshFilter filter in root.GetComponentsInChildren<MeshFilter>(true))
+            {
+                Mesh mesh = filter.sharedMesh;
+                // Clear references so repeated cleanup before deferred destruction is harmless.
+                filter.sharedMesh = null;
+                if (mesh != null && meshes.Add(mesh))
+                {
+                    UnityEngine.Object.Destroy(mesh);
+                }
+            }
+
+            UnityEngine.Object.Destroy(root);
+        }
+
         public Mesh GenerateOptimizedMesh(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
         {
             RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette);
