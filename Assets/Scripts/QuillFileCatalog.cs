@@ -30,6 +30,8 @@ namespace TiltBrush
 
         public static QuillFileCatalog Instance { get; private set; }
 
+        [SerializeField] private string[] m_DefaultQuillFiles;
+
         private SourceDirectory m_SourceDirectory = SourceDirectory.QuillProjects;
 
         private FileWatcher m_FileWatcher;
@@ -69,7 +71,7 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillMediaLibraryPath();
+            App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
             SetSourceDirectory(m_SourceDirectory);
         }
 
