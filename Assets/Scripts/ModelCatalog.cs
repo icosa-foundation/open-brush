@@ -367,11 +367,7 @@ namespace TiltBrush
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
                 m_SafSeedAttemptedRootIdentity !=
-                    UserStorage.Backend.RootIdentity &&
-                PlayerPrefs.GetInt(
-                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                        kSafSeedPreference),
-                    0) == 0)
+                    UserStorage.Backend.RootIdentity)
             {
                 StartCoroutine(SeedSafDefaults());
             }
@@ -420,11 +416,38 @@ namespace TiltBrush
                 yield break;
             }
 
-            if (listing.Code == StorageResultCode.NotFound ||
-                listing.Documents.Count == 0)
+            string handledKey = OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                $"{kSafSeedPreference}.HandledFilesV1", seedRootIdentity);
+            var handled = DefaultMediaSeeder.GetHandledFiles(
+                PlayerPrefs.HasKey(handledKey) ? PlayerPrefs.GetString(handledKey) : null,
+                App.Instance.HasPlayedBefore ||
+                 PlayerPrefs.GetInt(OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                     kSafSeedPreference, seedRootIdentity), 0) != 0 ||
+                 (listing.Success && listing.Documents.Count > 0),
+                new[] { "DefaultModels/Andy.glb", "DefaultModels/Tiltasaurus.glb" });
+            // Persist migration before writes, including when all legacy defaults were deleted.
+            PlayerPrefs.SetString(handledKey, string.Join("\n", handled.OrderBy(value => value)));
+            PlayerPrefs.Save();
             {
                 foreach (string resourcePath in m_DefaultModels)
                 {
+                    if (seedRootIdentity != backend.RootIdentity)
+                    {
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                    if (string.IsNullOrEmpty(resourcePath)) { continue; }
+                    string normalizedResource = resourcePath.Replace('\\', '/');
+                    if (handled.Contains(normalizedResource)) { continue; }
+                    string displayName = Path.GetFileName(normalizedResource);
+                    if (listing.Success && listing.Documents.Any(document =>
+                        document.DisplayName.Equals(displayName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        handled.Add(normalizedResource);
+                        PlayerPrefs.SetString(handledKey, string.Join("\n", handled.OrderBy(value => value)));
+                        PlayerPrefs.Save();
+                        continue;
+                    }
                     TextAsset resource = Resources.Load<TextAsset>(resourcePath);
                     if (resource == null)
                     {
@@ -434,7 +457,6 @@ namespace TiltBrush
                     }
                     byte[] bytes = resource.bytes;
                     Resources.UnloadAsset(resource);
-                    string displayName = Path.GetFileName(resourcePath);
                     var writeFuture = new Future<StorageMutationResult>(
                         () => WriteSafDefaultModel(
                             backend, displayName, bytes),
@@ -469,6 +491,14 @@ namespace TiltBrush
                         m_SeedingSafDefaults = false;
                         yield break;
                     }
+                    if (seedRootIdentity != backend.RootIdentity)
+                    {
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                    handled.Add(normalizedResource);
+                    PlayerPrefs.SetString(handledKey, string.Join("\n", handled.OrderBy(value => value)));
+                    PlayerPrefs.Save();
                 }
             }
 
