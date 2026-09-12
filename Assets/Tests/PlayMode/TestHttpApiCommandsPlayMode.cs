@@ -529,8 +529,10 @@ namespace TiltBrush
         public IEnumerator Cmd_UserTurnY()
         {
             yield return EnsureReady();
+            var initialRotation = GetSceneRotation();
             yield return SendCommand("user.turn.y", "45");
-            AssertQuaternionApprox(Quaternion.Euler(0, -45, 0), GetSceneRotation());
+            AssertQuaternionApprox(
+                initialRotation * Quaternion.AngleAxis(-45, Vector3.up), GetSceneRotation());
         }
 
         [UnityTest]
