@@ -35,6 +35,18 @@ namespace TiltBrush
                 bytes[2] == 0x31 && bytes[3] == 0x01;
         }
 
+        public static bool IsHdrTexture(Texture2D texture)
+        {
+            if (texture == null)
+            {
+                return false;
+            }
+
+            return texture.format == TextureFormat.RGB9e5Float ||
+                texture.format == TextureFormat.RGBAHalf ||
+                texture.format == TextureFormat.RGBAFloat;
+        }
+
         public static Texture2D Load(
             byte[] bytes, string path, bool makeNoLongerReadable = true)
         {

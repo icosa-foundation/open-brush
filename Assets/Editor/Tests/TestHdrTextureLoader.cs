@@ -44,6 +44,24 @@ namespace TiltBrush
             Assert.IsFalse(HdrTextureLoader.IsExrData(null));
         }
 
+        [TestCase(TextureFormat.RGB9e5Float, true)]
+        [TestCase(TextureFormat.RGBAHalf, true)]
+        [TestCase(TextureFormat.RGBAFloat, true)]
+        [TestCase(TextureFormat.RGB24, false)]
+        [TestCase(TextureFormat.RGBA32, false)]
+        public void DetectsHdrTextureFormats(TextureFormat format, bool expected)
+        {
+            var texture = new Texture2D(1, 1, format, false);
+            try
+            {
+                Assert.AreEqual(expected, HdrTextureLoader.IsHdrTexture(texture));
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+            }
+        }
+
         [Test]
         public void LoadsUnityEncodedExrAsPackedHdrTexture()
         {

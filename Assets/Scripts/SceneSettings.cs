@@ -235,7 +235,7 @@ namespace TiltBrush
                 }
 
                 float aspectRatio = (float)tex.width / tex.height;
-                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(path, aspectRatio);
+                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(tex, aspectRatio);
                 m_CustomSkyboxMaterial.mainTexture = tex;
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
@@ -259,7 +259,7 @@ namespace TiltBrush
             else
             {
                 float aspectRatio = (float)tex.width / tex.height;
-                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(filepath, aspectRatio);
+                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(tex, aspectRatio);
                 m_CustomSkyboxMaterial.mainTexture = tex;
                 m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
@@ -267,9 +267,9 @@ namespace TiltBrush
             }
         }
 
-        private static Material CreateCustomSkyboxMaterial(string path, float aspectRatio)
+        private static Material CreateCustomSkyboxMaterial(Texture2D texture, float aspectRatio)
         {
-            if (!HdrTextureLoader.IsSupportedFile(path))
+            if (!HdrTextureLoader.IsHdrTexture(texture))
             {
                 string resource = aspectRatio > 1.5f
                     ? "Environments/CustomSkybox"
