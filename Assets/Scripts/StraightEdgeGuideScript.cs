@@ -48,8 +48,11 @@ namespace TiltBrush
 
         // Spatial hash for efficient snap point queries
         // One hash per canvas, stored in canvas-space coordinates
-        private readonly Dictionary<CanvasScript, Dictionary<Vector3Int, List<(Stroke stroke, int pointIndex)>>> m_HashPerCanvas =
-            new Dictionary<CanvasScript, Dictionary<Vector3Int, List<(Stroke, int)>>>();
+        private readonly Dictionary<CanvasScript, Dictionary<Vector3Int, HashSet<(Stroke stroke, int pointIndex)>>> m_HashPerCanvas =
+            new Dictionary<CanvasScript, Dictionary<Vector3Int, HashSet<(Stroke, int)>>>();
+        private readonly Dictionary<Stroke, (CanvasScript canvas, Vector3Int originCell,
+            Vector3Int targetCell)> m_HashLocationByStroke =
+            new Dictionary<Stroke, (CanvasScript, Vector3Int, Vector3Int)>();
 
         // Whether to snap only to active canvas or all canvases
         [SerializeField] private bool m_SnapToActiveCanvasOnly = true;
@@ -327,7 +330,7 @@ namespace TiltBrush
             return found;
         }
 
-        private bool QueryCanvasHash(CanvasScript canvas, Dictionary<Vector3Int, List<(Stroke, int)>> hash,
+        private bool QueryCanvasHash(CanvasScript canvas, Dictionary<Vector3Int, HashSet<(Stroke, int)>> hash,
                                       Vector3 queryPos_CS, Vector3 position_WS, out Vector3 snapped_WS)
         {
             snapped_WS = position_WS;
@@ -395,7 +398,16 @@ namespace TiltBrush
         /// </summary>
         public void AddStrokeToHash(Stroke stroke)
         {
-            if (stroke?.Canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+            if (stroke == null)
+            {
+                return;
+            }
+
+            // Registration is idempotent and also handles callers that re-register after a canvas
+            // or endpoint change without first removing the old entry.
+            RemoveStrokeFromHash(stroke);
+
+            if (stroke.Canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
             {
                 return;
             }
@@ -403,7 +415,7 @@ namespace TiltBrush
             var canvas = stroke.Canvas;
             if (!m_HashPerCanvas.TryGetValue(canvas, out var hash))
             {
-                hash = new Dictionary<Vector3Int, List<(Stroke, int)>>();
+                hash = new Dictionary<Vector3Int, HashSet<(Stroke, int)>>();
                 m_HashPerCanvas[canvas] = hash;
             }
 
@@ -416,7 +428,7 @@ namespace TiltBrush
             Vector3Int originCell = SpatialHashPosition(origin_CS, cellSize);
             if (!hash.TryGetValue(originCell, out var originList))
             {
-                originList = new List<(Stroke, int)>();
+                originList = new HashSet<(Stroke, int)>();
                 hash[originCell] = originList;
             }
             originList.Add((stroke, 0));
@@ -425,10 +437,12 @@ namespace TiltBrush
             Vector3Int targetCell = SpatialHashPosition(target_CS, cellSize);
             if (!hash.TryGetValue(targetCell, out var targetList))
             {
-                targetList = new List<(Stroke, int)>();
+                targetList = new HashSet<(Stroke, int)>();
                 hash[targetCell] = targetList;
             }
             targetList.Add((stroke, 1));
+
+            m_HashLocationByStroke[stroke] = (canvas, originCell, targetCell);
         }
 
         /// <summary>
@@ -437,47 +451,40 @@ namespace TiltBrush
         /// </summary>
         public void RemoveStrokeFromHash(Stroke stroke)
         {
-            if (stroke?.Canvas == null || !m_HashPerCanvas.TryGetValue(stroke.Canvas, out var hash))
+            if (stroke == null ||
+                !m_HashLocationByStroke.TryGetValue(stroke, out var location))
             {
                 return;
             }
 
-            if (stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+            m_HashLocationByStroke.Remove(stroke);
+            if (!m_HashPerCanvas.TryGetValue(location.canvas, out var hash))
             {
                 return;
             }
 
-            // Get endpoints in canvas space
-            Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
-            Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
-            float cellSize = m_EndpointSnapDistance;
-
-            // Remove origin (pointIndex 0)
-            Vector3Int originCell = SpatialHashPosition(origin_CS, cellSize);
-            if (hash.TryGetValue(originCell, out var originList))
+            if (hash.TryGetValue(location.originCell, out var originList))
             {
                 originList.Remove((stroke, 0));
                 if (originList.Count == 0)
                 {
-                    hash.Remove(originCell);
+                    hash.Remove(location.originCell);
                 }
             }
 
-            // Remove target (pointIndex 1)
-            Vector3Int targetCell = SpatialHashPosition(target_CS, cellSize);
-            if (hash.TryGetValue(targetCell, out var targetList))
+            if (hash.TryGetValue(location.targetCell, out var targetList))
             {
                 targetList.Remove((stroke, 1));
                 if (targetList.Count == 0)
                 {
-                    hash.Remove(targetCell);
+                    hash.Remove(location.targetCell);
                 }
             }
 
             // Clean up empty canvas hash
             if (hash.Count == 0)
             {
-                m_HashPerCanvas.Remove(stroke.Canvas);
+                m_HashPerCanvas.Remove(location.canvas);
             }
         }
 
@@ -499,6 +506,7 @@ namespace TiltBrush
         public void RebuildAllCanvasHashes()
         {
             m_HashPerCanvas.Clear();
+            m_HashLocationByStroke.Clear();
 
             if (SketchMemoryScript.m_Instance == null)
             {
