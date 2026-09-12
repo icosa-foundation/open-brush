@@ -71,6 +71,29 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void ConvertsGpanoTopOffsetToBottomOrigin()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg, croppedAreaTopPixels: 0);
+
+                RawImage decoded = VrJpegUtils.LoadVrJpegFromBytes(
+                    vrJpeg, "generated.vr.jpg", fillPoles: false, maxWidth: 8);
+
+                Color32 bottomPole = decoded.ColorData[0];
+                Color32 capturedRow = decoded.ColorData[2 * decoded.ColorWidth + 2];
+                Assert.Less(bottomPole.r + bottomPole.g + bottomPole.b, 10);
+                Assert.Greater(capturedRow.r + capturedRow.g + capturedRow.b, 40);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
         private static Texture2D CreateSourceTexture()
         {
             var texture = new Texture2D(4, 2, TextureFormat.RGBA32, false);
@@ -84,14 +107,16 @@ namespace TiltBrush
             return texture;
         }
 
-        private static byte[] CreateVrJpeg(byte[] leftEyeJpeg, byte[] rightEyeJpeg)
+        private static byte[] CreateVrJpeg(
+            byte[] leftEyeJpeg, byte[] rightEyeJpeg, int croppedAreaTopPixels = 1)
         {
-            string standardXmp = @"
+            string standardXmp = $@"
                 <x:xmpmeta xmlns:x=""adobe:ns:meta/""><rdf:RDF
                 xmlns:rdf=""http://www.w3.org/1999/02/22-rdf-syntax-ns#""><rdf:Description
                 xmlns:GPano=""http://ns.google.com/photos/1.0/panorama/""
                 xmlns:GImage=""http://ns.google.com/photos/1.0/image/""
-                GPano:CroppedAreaLeftPixels=""2"" GPano:CroppedAreaTopPixels=""1""
+                GPano:CroppedAreaLeftPixels=""2""
+                GPano:CroppedAreaTopPixels=""{croppedAreaTopPixels}""
                 GPano:CroppedAreaImageWidthPixels=""4""
                 GPano:CroppedAreaImageHeightPixels=""2""
                 GPano:FullPanoWidthPixels=""8"" GPano:FullPanoHeightPixels=""4""

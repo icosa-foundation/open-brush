@@ -256,9 +256,10 @@ namespace TiltBrush
             // Calculate crop rectangle (scaled to output size)
             float scale = (float)outputWidth / metadata.FullPanoWidthPixels;
             int cropLeft = Mathf.FloorToInt(metadata.CroppedAreaLeftPixels * scale);
-            int cropTop = Mathf.FloorToInt(metadata.CroppedAreaTopPixels * scale);
+            int cropTopFromTop = Mathf.FloorToInt(metadata.CroppedAreaTopPixels * scale);
             int cropWidth = Mathf.CeilToInt(metadata.CroppedAreaImageWidthPixels * scale);
             int cropHeight = Mathf.CeilToInt(metadata.CroppedAreaImageHeightPixels * scale);
+            int cropBottom = outputHeight - cropTopFromTop - cropHeight;
 
             // Initialize to black
             for (int i = 0; i < outputData.Length; i++)
@@ -278,7 +279,7 @@ namespace TiltBrush
                     if (srcY >= sourceImage.ColorHeight) srcY = sourceImage.ColorHeight - 1;
 
                     int dstX = cropLeft + x;
-                    int dstY = cropTop + y;
+                    int dstY = cropBottom + y;
 
                     if (dstX >= 0 && dstX < outputWidth && dstY >= 0 && dstY < outputHeight)
                     {
@@ -297,7 +298,7 @@ namespace TiltBrush
             if (fillPoles)
             {
                 VrJpegPoleFiller.FillPoles(outputData, outputWidth, outputHeight,
-                                          cropTop, cropTop + cropHeight);
+                                          cropBottom, cropBottom + cropHeight);
             }
 
             return new RawImage
