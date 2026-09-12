@@ -649,6 +649,42 @@ namespace TiltBrush
             }
         }
 
+        [TestCase("WritingTemporary", false)]
+        [TestCase("CreatingTemporary", false)]
+        [TestCase("RollbackRequired", false)]
+        [TestCase("TemporaryComplete", true)]
+        [TestCase("OriginalBackedUp", true)]
+        public void SafTransactionRecovery_RequiresCompletedGenericTemporary(string state, bool recover)
+        {
+            string rootId = $"test-root-{Guid.NewGuid():N}";
+            string transactionId = Guid.NewGuid().ToString("N");
+            string temporaryName = $".ob-{transactionId}.tmp";
+            var backend = new FakeSafBackend { RootIdentity = rootId };
+            backend.Add(temporaryName, new byte[] { 1, 2, 3 });
+            var record = new SafTransactionRecord
+            {
+                TransactionId = transactionId, RootId = rootId, Kind = "file-replacement",
+                Area = StorageArea.Scripts.ToString(), RelativePath = "script.lua",
+                TargetDisplayName = "script.lua", TemporaryDisplayName = temporaryName,
+                State = state, CreatedUtc = DateTime.UtcNow.ToString("o"),
+            };
+            string recoveryRoot = Directory.GetParent(
+                SafTransactionJournal.GetJournalDirectory(rootId)).FullName;
+            try
+            {
+                SafTransactionJournal.Persist(record);
+                SafRecoveryReport report = SafTransactionRecovery.RecoverAll(
+                    backend, CancellationToken.None, rootId);
+                Assert.AreEqual(recover ? 1 : 0, report.Recovered);
+                Assert.AreEqual(!recover, backend.Contains(temporaryName));
+                Assert.AreEqual(recover, backend.Contains("script.lua"));
+            }
+            finally
+            {
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
         [Test]
         public void SafTransactionRecovery_RestoresValidatedBackup()
         {

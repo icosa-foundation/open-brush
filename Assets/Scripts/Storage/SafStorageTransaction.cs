@@ -49,6 +49,7 @@ namespace TiltBrush
         public string TargetDocumentId;
         public string TemporaryDisplayName;
         public string TemporaryDocumentId;
+        public bool TemporaryWriteCompleted;
         public string BackupDisplayName;
         public string BackupDocumentId;
         public string InvalidDisplayName;
@@ -400,6 +401,7 @@ namespace TiltBrush
                     }
                 }
 
+                m_Record.TemporaryWriteCompleted = true;
                 Transition(SafTransactionState.TemporaryComplete);
                 if (TargetDocumentId.IsValid)
                 {
@@ -618,7 +620,9 @@ namespace TiltBrush
             Fail(
                 m_NamespaceMutationStarted
                     ? SafTransactionState.RollbackRequired
-                    : SafTransactionState.TemporaryComplete,
+                    : m_Record.TemporaryWriteCompleted
+                        ? SafTransactionState.TemporaryComplete
+                        : SafTransactionState.WritingTemporary,
                 error);
             m_Finished = m_NamespaceMutationStarted;
             if (m_Finished)

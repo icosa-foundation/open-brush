@@ -119,7 +119,16 @@ namespace TiltBrush
                     report, cancellationToken);
             }
 
-            if (IsValidDocument(backend, temporary, record.Kind, cancellationToken))
+            // Readability cannot establish that a generic payload finished writing.
+            // Archive payloads can instead prove completeness through their validation.
+            bool temporaryComplete = record.TemporaryWriteCompleted ||
+                record.State == SafTransactionState.TemporaryComplete.ToString() ||
+                record.State == SafTransactionState.OriginalBackedUp.ToString() ||
+                record.State == SafTransactionState.ReplacementInstalled.ToString() ||
+                record.State == SafTransactionState.BackupCleanupPending.ToString() ||
+                record.Kind == "tilt-replacement" || record.Kind == "sketch-replacement";
+            if (temporaryComplete &&
+                IsValidDocument(backend, temporary, record.Kind, cancellationToken))
             {
                 return RestoreDocument(
                     backend, record, canonical, temporary, backup, invalid, invalidName,
