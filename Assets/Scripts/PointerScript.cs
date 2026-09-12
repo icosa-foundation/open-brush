@@ -79,6 +79,7 @@ namespace TiltBrush
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
         private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
         private float m_ToolScriptPreviewBaseScale = 1f;
+        private Color? m_ToolScriptPreviewColor;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -771,7 +772,10 @@ namespace TiltBrush
         {
             if (m_PreviewLine)
             {
-                m_PreviewLine.SetPreviewProperties(m_CurrentColor, m_CurrentBrushSize);
+                Color previewColor = m_ToolScriptStrokeCreator != null
+                    ? m_ToolScriptPreviewColor ?? m_CurrentColor
+                    : m_CurrentColor;
+                m_PreviewLine.SetPreviewProperties(previewColor, m_CurrentBrushSize);
             }
             if (m_PreviewLight)
             {
@@ -940,7 +944,8 @@ namespace TiltBrush
         }
 
         public void SetToolScriptPreview(
-            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale)
+            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
+            Color? previewColor)
         {
             if (controlPoints == null || controlPoints.Count < 2)
             {
@@ -956,11 +961,14 @@ namespace TiltBrush
             {
                 m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
             }
+            m_ToolScriptPreviewColor = previewColor;
+            ResetPreviewProperties();
         }
 
         public void ClearToolScriptPreview()
         {
             m_ToolScriptStrokeCreator = null;
+            m_ToolScriptPreviewColor = null;
             if (m_PreviewLine != null)
             {
                 DisablePreviewLine();
