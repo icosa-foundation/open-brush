@@ -175,14 +175,15 @@ namespace TiltBrush
                 ScriptCoordSpace space,
                 TrTransform baseTransformCs,
                 List<List<TrTransform>> canvasTransforms,
-                List<PointerManager.ControlPoint> previewControlPoints,
+                List<List<PointerManager.ControlPoint>> previewControlPointPaths,
                 float previewStrokeScale)
             {
                 PathList = pathList;
                 Space = space;
                 BaseTransformCs = baseTransformCs;
                 CanvasTransforms = canvasTransforms;
-                PreviewControlPoints = previewControlPoints ?? new List<PointerManager.ControlPoint>();
+                PreviewControlPointPaths = previewControlPointPaths ??
+                    new List<List<PointerManager.ControlPoint>>();
                 PreviewStrokeScale = previewStrokeScale;
             }
 
@@ -190,7 +191,7 @@ namespace TiltBrush
             public ScriptCoordSpace Space { get; }
             public TrTransform BaseTransformCs { get; }
             public List<List<TrTransform>> CanvasTransforms { get; }
-            public List<PointerManager.ControlPoint> PreviewControlPoints { get; }
+            public List<List<PointerManager.ControlPoint>> PreviewControlPointPaths { get; }
             public float PreviewStrokeScale { get; }
         }
 
@@ -1429,14 +1430,18 @@ namespace TiltBrush
                         tr_CS.rotation, 90f, useEnabledAxes: false);
             }
 
-            List<PointerManager.ControlPoint> previewControlPoints = new();
+            List<List<PointerManager.ControlPoint>> previewControlPointPaths = new();
             var rawPaths = pathWrapper.AsMultiTrList();
-            var firstPath = rawPaths?.FirstOrDefault(path => path != null && path.Count > 0);
-            if (firstPath != null)
+            foreach (var rawPath in rawPaths ?? Enumerable.Empty<List<TrTransform>>())
             {
+                if (rawPath == null || rawPath.Count < 2)
+                {
+                    continue;
+                }
+
                 // DrawNestedTrList treats the last transform as a terminal point and does
                 // not emit it as a control point, so the preview must do the same.
-                IEnumerable<TrTransform> previewPath = firstPath.Take(firstPath.Count - 1);
+                IEnumerable<TrTransform> previewPath = rawPath.Take(rawPath.Count - 1);
                 if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
                 {
                     previewPath = previewPath.Select(tr =>
@@ -1446,14 +1451,15 @@ namespace TiltBrush
                         return transformed;
                     });
                 }
-                previewControlPoints = ConvertTransformsToControlPoints(previewPath);
+                previewControlPointPaths.Add(ConvertTransformsToControlPoints(previewPath));
             }
 
-            SetLatestToolScriptControlPoints(previewControlPoints, ScriptCoordSpace.Canvas);
+            SetLatestToolScriptControlPoints(
+                previewControlPointPaths.SelectMany(path => path), ScriptCoordSpace.Canvas);
 
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
-                previewControlPoints, previewStrokeScale);
+                previewControlPointPaths, previewStrokeScale);
         }
 
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)

@@ -287,10 +287,12 @@ namespace TiltBrush
                     m_LastToolScriptResult = executionResult;
                 }
 
-                if (executionResult?.PreviewControlPoints != null && executionResult.PreviewControlPoints.Count > 1)
+                if (executionResult?.PreviewControlPointPaths != null &&
+                    executionResult.PreviewControlPointPaths.Any(path => path.Count > 1))
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
-                        executionResult.PreviewControlPoints, executionResult.PreviewStrokeScale);
+                        executionResult.PreviewControlPointPaths,
+                        executionResult.PreviewStrokeScale);
                 }
                 else
                 {
