@@ -227,6 +227,13 @@ namespace TiltBrush
         private static RawImage ConvertToEquirectangular(RawImage sourceImage, VrJpegMetadata metadata,
                                                         bool fillPoles, int maxWidth)
         {
+            if (metadata.FullPanoWidthPixels <= 0 || metadata.FullPanoHeightPixels <= 0 ||
+                metadata.CroppedAreaImageWidthPixels <= 0 ||
+                metadata.CroppedAreaImageHeightPixels <= 0)
+            {
+                throw new ImageLoadError("VR JPEG contains invalid panorama dimensions");
+            }
+
             // Calculate output dimensions
             int outputWidth = metadata.FullPanoWidthPixels;
             int outputHeight = metadata.FullPanoHeightPixels;

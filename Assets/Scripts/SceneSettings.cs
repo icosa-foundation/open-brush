@@ -235,7 +235,10 @@ namespace TiltBrush
                     {
                         try
                         {
-                            RawImage rawImage = ImageUtils.FromImageData(fileData, filename);
+                            RawImage rawImage = ImageUtils.FromImageData(
+                                fileData, filename,
+                                App.PlatformConfig.ReferenceImagesMaxDimension,
+                                App.PlatformConfig.ReferenceImagesResizeDimension);
                             tex = new Texture2D(
                                 rawImage.ColorWidth, rawImage.ColorHeight,
                                 TextureFormat.RGBA32, true);
