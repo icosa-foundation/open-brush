@@ -28,6 +28,19 @@ namespace TiltBrush
             public Color[] Pixels;
         }
 
+        private sealed class RadianceHeader
+        {
+            public char ScanlineAxis;
+            public char ScanlineSign;
+            public int ScanlineCount;
+            public char PixelAxis;
+            public char PixelSign;
+            public int PixelCount;
+            public int Width;
+            public int Height;
+            public int DataOffset;
+        }
+
         public static bool IsSupportedFile(string path)
         {
             return ReferenceImageFormat.IsHighDynamicRangeFile(path);
@@ -126,17 +139,10 @@ namespace TiltBrush
             string extension = Path.GetExtension(path);
             if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
             {
-                using (var stream = new MemoryStream(bytes))
-                {
-                    var header = new RGBEHeader();
-                    if (header.ReadHeader(stream) != RGBEReturnCode.RGBE_RETURN_SUCCESS)
-                    {
-                        throw new InvalidDataException("Invalid Radiance HDR header");
-                    }
-                    width = header.width;
-                    height = header.height;
-                    return;
-                }
+                RadianceHeader header = ParseRadianceHeader(bytes);
+                width = header.Width;
+                height = header.Height;
+                return;
             }
             if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
             {
@@ -194,35 +200,124 @@ namespace TiltBrush
 
         private static DecodedImage DecodeRadiance(byte[] bytes)
         {
+            RadianceHeader header = ParseRadianceHeader(bytes);
             using (var stream = new MemoryStream(bytes))
             {
-                var header = new RGBEHeader();
-                if (header.ReadHeader(stream) != RGBEReturnCode.RGBE_RETURN_SUCCESS)
-                {
-                    throw new InvalidDataException("Invalid Radiance HDR header");
-                }
-
-                int pixelCount = checked(header.width * header.height);
+                stream.Position = header.DataOffset;
+                int pixelCount = checked(header.Width * header.Height);
                 var pixels = new Color[pixelCount];
                 using (var reader = new BinaryReader(stream, System.Text.Encoding.Default, true))
                 {
-                    if (header.width >= 8 && header.width <= 0x7fff &&
-                        IsRleScanline(reader, header.width))
+                    if (header.PixelCount >= 8 && header.PixelCount <= 0x7fff &&
+                        IsRleScanline(reader, header.PixelCount))
                     {
-                        ReadRlePixels(reader, header.width, header.height, pixels);
+                        ReadRlePixels(reader, header, pixels);
                     }
                     else
                     {
-                        ReadFlatPixels(reader, header.width, header.height, pixels);
+                        ReadFlatPixels(reader, header, pixels);
                     }
                 }
                 return new DecodedImage
                 {
-                    Width = header.width,
-                    Height = header.height,
+                    Width = header.Width,
+                    Height = header.Height,
                     Pixels = pixels
                 };
             }
+        }
+
+        private static RadianceHeader ParseRadianceHeader(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new InvalidDataException("Radiance HDR data is empty");
+            }
+
+            int position = 0;
+            string firstLine = ReadAsciiLine(bytes, ref position);
+            if (!firstLine.StartsWith("#?", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("Invalid Radiance HDR signature");
+            }
+
+            bool hasFormat = false;
+            while (position < bytes.Length)
+            {
+                string line = ReadAsciiLine(bytes, ref position).Trim();
+                if (line.StartsWith("FORMAT=", StringComparison.Ordinal))
+                {
+                    hasFormat = true;
+                    continue;
+                }
+
+                string[] tokens = line.Split(
+                    new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (tokens.Length != 4 || !TryParseRadianceAxis(tokens[0], out char firstSign,
+                        out char firstAxis) ||
+                    !int.TryParse(tokens[1], out int firstCount) ||
+                    !TryParseRadianceAxis(tokens[2], out char secondSign,
+                        out char secondAxis) ||
+                    !int.TryParse(tokens[3], out int secondCount))
+                {
+                    continue;
+                }
+                if (!hasFormat || firstAxis == secondAxis || firstCount <= 0 || secondCount <= 0)
+                {
+                    throw new InvalidDataException("Invalid Radiance HDR resolution");
+                }
+
+                return new RadianceHeader
+                {
+                    ScanlineAxis = firstAxis,
+                    ScanlineSign = firstSign,
+                    ScanlineCount = firstCount,
+                    PixelAxis = secondAxis,
+                    PixelSign = secondSign,
+                    PixelCount = secondCount,
+                    Width = firstAxis == 'X' ? firstCount : secondCount,
+                    Height = firstAxis == 'Y' ? firstCount : secondCount,
+                    DataOffset = position
+                };
+            }
+            throw new InvalidDataException("Radiance HDR resolution is missing");
+        }
+
+        private static string ReadAsciiLine(byte[] bytes, ref int position)
+        {
+            int start = position;
+            while (position < bytes.Length && bytes[position] != '\n')
+            {
+                position++;
+            }
+            int end = position;
+            if (position < bytes.Length)
+            {
+                position++;
+            }
+            if (end > start && bytes[end - 1] == '\r')
+            {
+                end--;
+            }
+            return System.Text.Encoding.ASCII.GetString(bytes, start, end - start);
+        }
+
+        private static bool TryParseRadianceAxis(string token, out char sign, out char axis)
+        {
+            sign = '\0';
+            axis = '\0';
+            if (token.Length != 2 || (token[0] != '+' && token[0] != '-'))
+            {
+                return false;
+            }
+            char parsedAxis = char.ToUpperInvariant(token[1]);
+            if (parsedAxis != 'X' && parsedAxis != 'Y')
+            {
+                return false;
+            }
+            sign = token[0];
+            axis = parsedAxis;
+            return true;
         }
 
         private static void GetExrDimensions(byte[] bytes, out int width, out int height)
@@ -306,54 +401,54 @@ namespace TiltBrush
         }
 
         private static void ReadFlatPixels(
-            BinaryReader reader, int width, int height, Color[] pixels)
+            BinaryReader reader, RadianceHeader header, Color[] pixels)
         {
-            for (int sourceY = 0; sourceY < height; sourceY++)
+            for (int scanline = 0; scanline < header.ScanlineCount; scanline++)
             {
-                int destinationRow = (height - 1 - sourceY) * width;
-                for (int x = 0; x < width; x++)
+                for (int pixel = 0; pixel < header.PixelCount; pixel++)
                 {
-                    pixels[destinationRow + x] = ReadRgbeColor(reader);
+                    StoreRadiancePixel(
+                        header, scanline, pixel, ReadRgbeColor(reader), pixels);
                 }
             }
         }
 
         private static void ReadRlePixels(
-            BinaryReader reader, int width, int height, Color[] pixels)
+            BinaryReader reader, RadianceHeader header, Color[] pixels)
         {
-            var scanline = new byte[checked(width * 4)];
-            for (int sourceY = 0; sourceY < height; sourceY++)
+            var scanlineBytes = new byte[checked(header.PixelCount * 4)];
+            for (int scanline = 0; scanline < header.ScanlineCount; scanline++)
             {
                 byte[] marker = reader.ReadBytes(4);
                 if (marker.Length != 4 || marker[0] != 2 || marker[1] != 2 ||
-                    ((marker[2] << 8) | marker[3]) != width)
+                    ((marker[2] << 8) | marker[3]) != header.PixelCount)
                 {
                     throw new InvalidDataException("Invalid Radiance HDR scanline");
                 }
 
                 for (int channel = 0; channel < 4; channel++)
                 {
-                    int channelOffset = channel * width;
+                    int channelOffset = channel * header.PixelCount;
                     int x = 0;
-                    while (x < width)
+                    while (x < header.PixelCount)
                     {
                         int count = reader.ReadByte();
                         if (count > 128)
                         {
                             count -= 128;
                             int value = reader.ReadByte();
-                            if (count == 0 || x + count > width)
+                            if (count == 0 || x + count > header.PixelCount)
                             {
                                 throw new InvalidDataException("Invalid Radiance HDR encoded run");
                             }
                             for (int i = 0; i < count; i++)
                             {
-                                scanline[channelOffset + x++] = (byte)value;
+                                scanlineBytes[channelOffset + x++] = (byte)value;
                             }
                         }
                         else
                         {
-                            if (count == 0 || x + count > width)
+                            if (count == 0 || x + count > header.PixelCount)
                             {
                                 throw new InvalidDataException("Invalid Radiance HDR literal run");
                             }
@@ -362,20 +457,42 @@ namespace TiltBrush
                             {
                                 throw new EndOfStreamException();
                             }
-                            Buffer.BlockCopy(values, 0, scanline, channelOffset + x, count);
+                            Buffer.BlockCopy(
+                                values, 0, scanlineBytes, channelOffset + x, count);
                             x += count;
                         }
                     }
                 }
 
-                int destinationRow = (height - 1 - sourceY) * width;
-                for (int x = 0; x < width; x++)
+                for (int pixel = 0; pixel < header.PixelCount; pixel++)
                 {
-                    pixels[destinationRow + x] = RgbeToColor(
-                        scanline[x], scanline[width + x],
-                        scanline[2 * width + x], scanline[3 * width + x]);
+                    StoreRadiancePixel(
+                        header, scanline, pixel,
+                        RgbeToColor(
+                            scanlineBytes[pixel],
+                            scanlineBytes[header.PixelCount + pixel],
+                            scanlineBytes[2 * header.PixelCount + pixel],
+                            scanlineBytes[3 * header.PixelCount + pixel]),
+                        pixels);
                 }
             }
+        }
+
+        private static void StoreRadiancePixel(
+            RadianceHeader header, int scanline, int pixel, Color color, Color[] pixels)
+        {
+            int firstCoordinate = RadianceCoordinate(
+                header.ScanlineSign, scanline, header.ScanlineCount);
+            int secondCoordinate = RadianceCoordinate(
+                header.PixelSign, pixel, header.PixelCount);
+            int x = header.ScanlineAxis == 'X' ? firstCoordinate : secondCoordinate;
+            int y = header.ScanlineAxis == 'Y' ? firstCoordinate : secondCoordinate;
+            pixels[y * header.Width + x] = color;
+        }
+
+        private static int RadianceCoordinate(char sign, int index, int count)
+        {
+            return sign == '+' ? index : count - 1 - index;
         }
 
         private static Color ReadRgbeColor(BinaryReader reader)

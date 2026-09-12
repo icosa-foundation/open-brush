@@ -275,5 +275,32 @@ namespace TiltBrush
             Assert.AreEqual(11, width);
             Assert.AreEqual(7, height);
         }
+
+        [Test]
+        public void HonorsRadianceAxisOrderAndDirection()
+        {
+            byte[] header = Encoding.ASCII.GetBytes(
+                "#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-X 2 +Y 2\n");
+            byte[] sourcePixels =
+            {
+                255, 0, 0, 128,
+                0, 255, 0, 128,
+                0, 0, 255, 128,
+                255, 255, 255, 128
+            };
+            var bytes = new byte[header.Length + sourcePixels.Length];
+            System.Buffer.BlockCopy(header, 0, bytes, 0, header.Length);
+            System.Buffer.BlockCopy(
+                sourcePixels, 0, bytes, header.Length, sourcePixels.Length);
+
+            var decoded = HdrTextureLoader.Decode(bytes, "oriented.hdr");
+
+            Assert.AreEqual(2, decoded.Width);
+            Assert.AreEqual(2, decoded.Height);
+            Assert.AreEqual(Color.blue, decoded.Pixels[0]);
+            Assert.AreEqual(Color.red, decoded.Pixels[1]);
+            Assert.AreEqual(Color.white, decoded.Pixels[2]);
+            Assert.AreEqual(Color.green, decoded.Pixels[3]);
+        }
     }
 }
