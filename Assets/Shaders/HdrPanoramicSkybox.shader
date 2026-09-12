@@ -78,19 +78,6 @@ Shader "Custom/HDR Panoramic Skybox"
                     1.0 - latitude / UNITY_PI);
             }
 
-            // The texture remains HDR. Only the displayed skybox is mapped into the output range.
-            float3 ToneMap(float3 color)
-            {
-                const float a = 2.51;
-                const float b = 0.03;
-                const float c = 2.43;
-                const float d = 0.59;
-                const float e = 0.14;
-                // Normalize the curve's a/c asymptote to 1 so finite highlights approach white
-                // without crossing it and requiring a hard clamp.
-                return ((color * (a * color + b)) / (color * (c * color + d) + e)) * (c / a);
-            }
-
             v2f vert(appdata input)
             {
                 v2f output;
@@ -116,7 +103,7 @@ Shader "Custom/HDR Panoramic Skybox"
                 float3 color = tex2D(_MainTex, uv).rgb;
                 color *= _Tint.rgb * unity_ColorSpaceDouble.rgb;
                 color *= _Exposure;
-                return half4(ToneMap(max(color, 0.0)), 1.0);
+                return half4(max(color, 0.0), 1.0);
             }
             ENDCG
         }
