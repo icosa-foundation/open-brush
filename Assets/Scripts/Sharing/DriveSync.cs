@@ -1879,21 +1879,28 @@ namespace TiltBrush
             return path;
         }
 
-        public async Task CancelTransferAsync(string filename)
+        internal static bool MatchesTransferDocument(SyncItem item, string storageId,
+            string rootIdentity, StorageBackendKind backendKind)
+        {
+            return item.DocumentId.IsValid && !string.IsNullOrEmpty(storageId) &&
+                string.Equals(item.StorageRootIdentity, rootIdentity, StringComparison.Ordinal) &&
+                string.Equals(item.DocumentId.Value, storageId,
+                    backendKind == StorageBackendKind.StorageAccessFramework
+                        ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+        }
+
+        public async Task CancelTransferAsync(string storageId)
         {
             if (!Initialized)
             {
                 return;
             }
-            string name = Path.GetFileName(filename);
-            var transfer = m_Transfers.Keys.FirstOrDefault(x =>
-                x.Item.Name == name &&
-                x.Item.DocumentId.IsValid &&
-                string.Equals(
-                    x.Item.DocumentId.Value, filename, StringComparison.OrdinalIgnoreCase));
-            if (transfer != null)
+            IUserStorageBackend backend = UserStorage.Backend;
+            var transfers = m_Transfers.Keys.Where(x => MatchesTransferDocument(
+                x.Item, storageId, backend.RootIdentity, backend.Kind)).ToArray();
+            foreach (var transfer in transfers) { transfer.TaskAndCts.Cancel(); }
+            foreach (var transfer in transfers)
             {
-                transfer.TaskAndCts.Cancel();
                 try
                 {
                     await transfer.Task;

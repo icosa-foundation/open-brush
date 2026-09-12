@@ -520,9 +520,10 @@ namespace TiltBrush
             bool directSafWrite = false)
         {
             // Cancel any pending transfers of this file.
-            Task cancelTask = string.IsNullOrEmpty(fileInfo.FullPath)
+            string transferId = fileInfo.StorageId ?? fileInfo.FullPath;
+            Task cancelTask = string.IsNullOrEmpty(transferId)
                 ? Task.CompletedTask
-                : App.DriveSync.CancelTransferAsync(fileInfo.FullPath);
+                : App.DriveSync.CancelTransferAsync(transferId);
 
             bool newFile = !fileInfo.Exists;
 

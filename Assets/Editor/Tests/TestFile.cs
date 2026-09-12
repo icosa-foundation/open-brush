@@ -1615,6 +1615,23 @@ namespace TiltBrush
             }
         }
 
+        [TestCase("opaque/document:ABC", "root-a", StorageBackendKind.StorageAccessFramework, true)]
+        [TestCase("opaque/document:abc", "root-a", StorageBackendKind.StorageAccessFramework, false)]
+        [TestCase("opaque/document:ABC", "root-b", StorageBackendKind.StorageAccessFramework, false)]
+        [TestCase("different-document", "root-a", StorageBackendKind.StorageAccessFramework, false)]
+        [TestCase("opaque/document:abc", "root-a", StorageBackendKind.Local, true)]
+        public void SafReviewTransfer_MatchesDocumentIdentityAndRoot(
+            string storageId, string root, StorageBackendKind kind, bool expected)
+        {
+            var item = new DriveSync.SyncItem
+            {
+                Name = "Sketch.tilt",
+                DocumentId = new StorageDocumentId("opaque/document:ABC"),
+                StorageRootIdentity = "root-a",
+            };
+            Assert.AreEqual(expected, DriveSync.MatchesTransferDocument(item, storageId, root, kind));
+        }
+
         [Test]
         public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
         {
