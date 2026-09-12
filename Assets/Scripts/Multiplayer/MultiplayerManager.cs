@@ -266,7 +266,11 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
-            m_IsRoomVoiceEnabled = !RoomData.voiceDisabled;
+            // A joining client does not know an existing room's authoritative voice policy
+            // until the owner sends it after capability negotiation. Fail closed in the
+            // meantime so the local microphone is never published using the joiner's defaults.
+            m_IsRoomVoiceEnabled = CalculateInitialRoomVoiceEnabled(
+                isUserRoomOwner, !RoomData.voiceDisabled);
             m_IsVoiceEnabled = m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled;
 
             if (State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED)
@@ -1428,6 +1432,12 @@ namespace OpenBrush.Multiplayer
             double localSketchTime, uint sourceSketchTimeMs)
         {
             return Math.Max(localSketchTime, sourceSketchTimeMs / 1000.0);
+        }
+
+        internal static bool CalculateInitialRoomVoiceEnabled(
+            bool isRoomOwner, bool requestedRoomVoiceEnabled)
+        {
+            return isRoomOwner && requestedRoomVoiceEnabled;
         }
 
         public void ApplySketchTimeSync(uint sourceSketchTimeMs)

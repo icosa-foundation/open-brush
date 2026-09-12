@@ -40,6 +40,19 @@ namespace TiltBrush
                 0.000001);
         }
 
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        [TestCase(false, false, false)]
+        public void TestCalculateInitialRoomVoiceEnabled(
+            bool isRoomOwner, bool requestedRoomVoiceEnabled, bool expectedEnabled)
+        {
+            Assert.AreEqual(
+                expectedEnabled,
+                MultiplayerManager.CalculateInitialRoomVoiceEnabled(
+                    isRoomOwner, requestedRoomVoiceEnabled));
+        }
+
         [TestCase(30, 0, 30)]
         [TestCase(30, 5, 25)]
         [TestCase(30, 30, 0)]
