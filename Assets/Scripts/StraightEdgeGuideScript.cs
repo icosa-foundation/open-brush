@@ -42,6 +42,7 @@ namespace TiltBrush
         private Vector3 m_TargetPos_CS;
         private float m_SnapEnabledTimeStamp;
         private bool m_SnapActive;
+        private bool m_EndpointSnapActive;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
         // Straight-edge line strokes created during this sketch session, oldest first. Keeping the
@@ -272,12 +273,13 @@ namespace TiltBrush
         }
 
         // Pass pointer position in room space
-        public void UpdateTarget(Vector3 vPointer)
+        public bool UpdateTarget(Vector3 vPointer)
         {
             // Everything is done in room coordinates, so the _RS suffixes are omitted
             TrTransform xfWorldFromCanvas = Coords.CanvasPose;
             Vector3 vTarget = vPointer;
             Vector3 vOrigin = xfWorldFromCanvas * m_vOrigin_CS;
+            bool endpointSnapped = false;
 
             // Optionally snap target pos.
             // TODO: Make this work with non-line shapes.
@@ -294,6 +296,7 @@ namespace TiltBrush
                 if ((snappedTarget - vOrigin).sqrMagnitude > 1e-6f)
                 {
                     vTarget = snappedTarget;
+                    endpointSnapped = true;
                 }
             }
 
@@ -303,6 +306,17 @@ namespace TiltBrush
             }
 
             m_TargetPos_CS = xfWorldFromCanvas.inverse * vTarget;
+            return endpointSnapped;
+        }
+
+        public void UpdateEndpointSnapHaptics(bool endpointSnapActive)
+        {
+            if (endpointSnapActive && !m_EndpointSnapActive)
+            {
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
+            }
+
+            m_EndpointSnapActive = endpointSnapActive;
         }
 
 
