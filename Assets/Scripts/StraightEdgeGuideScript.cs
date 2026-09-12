@@ -339,47 +339,87 @@ namespace TiltBrush
             bool found = false;
             Vector3 closest_WS = Vector3.zero;
 
-            // Query 3x3x3 neighborhood in canvas space
-            float cellSize = m_EndpointSnapDistance;
-            Vector3Int centerCell = SpatialHashPosition(queryPos_CS, cellSize);
-
-            for (int dx = -1; dx <= 1; dx++)
+            float canvasScale = Mathf.Abs(canvas.Pose.scale);
+            if (canvasScale < 1e-6f)
             {
-                for (int dy = -1; dy <= 1; dy++)
+                return false;
+            }
+
+            // Hash cells are in canvas space while the snap radius is defined in world space.
+            float cellSize = m_EndpointSnapDistance;
+            float maxDistance_CS = m_EndpointSnapDistance / canvasScale;
+            Vector3 extent_CS = Vector3.one * maxDistance_CS;
+            Vector3Int minCell = SpatialHashPosition(queryPos_CS - extent_CS, cellSize);
+            Vector3Int maxCell = SpatialHashPosition(queryPos_CS + extent_CS, cellSize);
+
+            long cellCount = (long)(maxCell.x - minCell.x + 1) *
+                (maxCell.y - minCell.y + 1) * (maxCell.z - minCell.z + 1);
+
+            // At very small canvas scales the world-space radius can cover many canvas-space
+            // cells. Walking the populated cells is cheaper than visiting a large empty volume.
+            if (cellCount > hash.Count)
+            {
+                foreach (var entries in hash.Values)
                 {
-                    for (int dz = -1; dz <= 1; dz++)
+                    found |= UpdateClosestEndpoint(
+                        canvas, entries, position_WS, ref closestDistSqr, ref closest_WS);
+                }
+            }
+            else
+            {
+                for (int x = minCell.x; x <= maxCell.x; ++x)
+                {
+                    for (int y = minCell.y; y <= maxCell.y; ++y)
                     {
-                        Vector3Int cell = centerCell + new Vector3Int(dx, dy, dz);
-                        if (hash.TryGetValue(cell, out var entries))
+                        for (int z = minCell.z; z <= maxCell.z; ++z)
                         {
-                            foreach (var (stroke, pointIndex) in entries)
+                            var cell = new Vector3Int(x, y, z);
+                            if (hash.TryGetValue(cell, out var entries))
                             {
-                                if (stroke?.m_ControlPoints == null || !stroke.IsGeometryEnabled)
-                                {
-                                    continue;
-                                }
-
-                                // Get snap point from control points (already in canvas space)
-                                int cpIndex = pointIndex == 0 ? 0 : stroke.m_ControlPoints.Length - 1;
-                                Vector3 snapPoint_CS = stroke.m_ControlPoints[cpIndex].m_Pos;
-
-                                // Transform to world space for distance check
-                                Vector3 snapPoint_WS = canvas.Pose * snapPoint_CS;
-                                float distSqr = (snapPoint_WS - position_WS).sqrMagnitude;
-
-                                if (distSqr < closestDistSqr)
-                                {
-                                    closestDistSqr = distSqr;
-                                    closest_WS = snapPoint_WS;
-                                    found = true;
-                                }
+                                found |= UpdateClosestEndpoint(
+                                    canvas, entries, position_WS,
+                                    ref closestDistSqr, ref closest_WS);
                             }
                         }
                     }
                 }
             }
 
-            if (found) snapped_WS = closest_WS;
+            if (found)
+            {
+                snapped_WS = closest_WS;
+            }
+            return found;
+        }
+
+        private static bool UpdateClosestEndpoint(
+            CanvasScript canvas,
+            HashSet<(Stroke stroke, int pointIndex)> entries,
+            Vector3 position_WS,
+            ref float closestDistSqr,
+            ref Vector3 closest_WS)
+        {
+            bool found = false;
+            foreach (var (stroke, pointIndex) in entries)
+            {
+                if (stroke?.m_ControlPoints == null || !stroke.IsGeometryEnabled)
+                {
+                    continue;
+                }
+
+                int cpIndex = pointIndex == 0 ? 0 : stroke.m_ControlPoints.Length - 1;
+                Vector3 snapPoint_CS = stroke.m_ControlPoints[cpIndex].m_Pos;
+                Vector3 snapPoint_WS = canvas.Pose * snapPoint_CS;
+                float distSqr = (snapPoint_WS - position_WS).sqrMagnitude;
+
+                if (distSqr < closestDistSqr)
+                {
+                    closestDistSqr = distSqr;
+                    closest_WS = snapPoint_WS;
+                    found = true;
+                }
+            }
+
             return found;
         }
 
