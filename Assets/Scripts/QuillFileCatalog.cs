@@ -75,7 +75,10 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            }
             SetSourceDirectory(m_SourceDirectory);
         }
 
@@ -213,6 +216,79 @@ namespace TiltBrush
             m_DirectoryScanRequired = true;
         }
 
+        internal static IEnumerator<object> SeedSafDefaults(
+            IUserStorageBackend backend, string[] defaults, Func<string, byte[]> loadResource)
+        {
+            if (!backend.IsReady) { yield break; }
+            string root = backend.RootIdentity;
+            string key = OpenBrushStorage.GetSafRootScopedPreferenceKey("QuillDefaults.HandledFilesV1", root);
+            var handled = DefaultMediaSeeder.GetHandledFiles(PlayerPrefs.GetString(key, ""), false, null);
+            foreach (string resourcePath in defaults ?? Array.Empty<string>())
+            {
+                if (string.IsNullOrEmpty(resourcePath)) { continue; }
+                string normalized = resourcePath.Replace('\\', '/');
+                if (handled.Contains(normalized)) { continue; }
+                if (root != backend.RootIdentity || !backend.IsReady) { yield break; }
+                byte[] bytes = loadResource(resourcePath);
+                if (bytes == null)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Missing default resource: {resourcePath}");
+                    continue;
+                }
+                var write = new Future<SafPublicationResult>(() =>
+                {
+                    if (root != backend.RootIdentity)
+                    {
+                        return new SafPublicationResult(StorageResultCode.NotReady, "Selected folder changed.");
+                    }
+                    string name = Path.GetFileName(normalized);
+                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill, "", CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        return new SafPublicationResult(listing.Code, listing.Error);
+                    }
+                    if (listing.Success && listing.Documents.Any(document =>
+                        document.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return new SafPublicationResult(StorageResultCode.Success);
+                    }
+                    if (root != backend.RootIdentity)
+                    {
+                        return new SafPublicationResult(StorageResultCode.NotReady, "Selected folder changed.");
+                    }
+                    using IStorageWriteTransaction transaction = backend.BeginWrite(
+                        StorageArea.MediaLibraryQuill, name, "application/octet-stream", CancellationToken.None);
+                    using (Stream output = transaction.OpenWrite()) { output.Write(bytes, 0, bytes.Length); }
+                    StorageMutationResult commit = transaction.Commit();
+                    return new SafPublicationResult(commit.Code, commit.Error);
+                }, cleanupFunction: null, longRunning: true);
+                SafPublicationResult result;
+                while (true)
+                {
+                    bool finished;
+                    try { finished = write.TryGetResult(out result); }
+                    catch (FutureFailed e)
+                    {
+                        write.Close();
+                        Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {e.Message}");
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                write.Close();
+                if (!result.Success)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {result.Error}");
+                    yield break;
+                }
+                if (root != backend.RootIdentity) { yield break; }
+                handled.Add(normalized);
+                PlayerPrefs.SetString(key, string.Join("\n", handled.OrderBy(value => value)));
+                PlayerPrefs.Save();
+            }
+        }
+
         private IEnumerator<object> ScanDirectory()
         {
             if (m_IsScanningDirectory)
@@ -225,6 +301,14 @@ namespace TiltBrush
             var files = new List<QuillFileInfo>();
             if (UsesSaf)
             {
+                yield return SeedSafDefaults(UserStorage.Backend, m_DefaultQuillFiles, resourcePath =>
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null) { return null; }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    return bytes;
+                });
                 IUserStorageBackend backend = UserStorage.Backend;
                 string rootIdentity = backend.RootIdentity;
                 string directory = m_CurrentDirectory;

@@ -945,6 +945,76 @@ namespace TiltBrush
             }
         }
 
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator SafQuillDefaults_TrackFilesAndRootsAndPreserveDeletions()
+        {
+            var backend = new FakeSafBackend();
+            string firstRoot = backend.RootIdentity;
+            string secondRoot = $"fake-root-{Guid.NewGuid():N}";
+            string[] defaults = { "Defaults/example.imm" };
+            byte[] bytes = { 1, 2, 3 };
+            try
+            {
+                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => bytes);
+                Assert.IsTrue(backend.Contains("example.imm"));
+                StorageDocument original = backend.List(StorageArea.MediaLibraryQuill, "", CancellationToken.None)
+                    .Documents.Single();
+                using (Stream input = backend.OpenRead(original.DocumentId, false, CancellationToken.None))
+                {
+                    Assert.AreEqual(1, input.ReadByte());
+                }
+                Assert.IsTrue(backend.Delete(original.DocumentId, CancellationToken.None).Success);
+                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults,
+                    _ => throw new InvalidOperationException("Handled defaults must not be loaded again."));
+                Assert.IsFalse(backend.Contains("example.imm"));
+
+                yield return QuillFileCatalog.SeedSafDefaults(backend,
+                    new[] { defaults[0], "Defaults/later.imm" }, _ => bytes);
+                Assert.IsTrue(backend.Contains("later.imm"));
+                Assert.IsFalse(backend.Contains("example.imm"));
+
+                backend.RootIdentity = secondRoot;
+                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => bytes);
+                Assert.IsTrue(backend.Contains("example.imm"));
+            }
+            finally
+            {
+                foreach (string root in new[] { firstRoot, secondRoot })
+                {
+                    PlayerPrefs.DeleteKey(OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                        "QuillDefaults.HandledFilesV1", root));
+                }
+                PlayerPrefs.Save();
+            }
+        }
+
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator SafQuillDefaults_PreserveExistingFilesAndRetryFailedWrites()
+        {
+            var backend = new FakeSafBackend { FailCommitNumber = 1 };
+            StorageDocumentId existing = backend.Add("existing.imm", new byte[] { 9 });
+            string[] defaults = { "Defaults/existing.imm", "Defaults/new.imm" };
+            try
+            {
+                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => new byte[] { 1 });
+                Assert.IsFalse(backend.Contains("new.imm"));
+                using (Stream input = backend.OpenRead(existing, false, CancellationToken.None))
+                {
+                    Assert.AreEqual(9, input.ReadByte());
+                }
+                backend.FailCommitNumber = 0;
+                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => new byte[] { 1 });
+                Assert.IsTrue(backend.Contains("new.imm"));
+                Assert.AreEqual(1, backend.CommitCount);
+            }
+            finally
+            {
+                PlayerPrefs.DeleteKey(OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    "QuillDefaults.HandledFilesV1", backend.RootIdentity));
+                PlayerPrefs.Save();
+            }
+        }
+
         [TestCase("unchanged")]
         [TestCase("edited")]
         [TestCase("deleted")]
