@@ -232,12 +232,11 @@ namespace TiltBrush
             string url,
             string relativeDestinationFolder,
             bool allowRedirects,
-            string requiredContentTypePrefix = null,
-            Action<string> onPublished = null)
+            string requiredContentTypePrefix = null)
         {
             return _DownloadMediaFileFromUrl(
                 new Uri(url), relativeDestinationFolder, allowRedirects,
-                requiredContentTypePrefix, onPublished);
+                requiredContentTypePrefix);
         }
 
         private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
@@ -249,15 +248,13 @@ namespace TiltBrush
             Uri url,
             string relativeDestinationFolder,
             bool allowRedirects,
-            string requiredContentTypePrefix = null,
-            Action<string> onPublished = null)
+            string requiredContentTypePrefix = null)
         {
             string absoluteDestinationPath = GetSafeRelativePathInDirectory(
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
-                onPublished: onPublished);
+                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
         }
 
         private static string _DownloadMediaFileFromUrlToDirectory(
@@ -265,9 +262,16 @@ namespace TiltBrush
             string absoluteDestinationPath,
             bool allowRedirects,
             string requiredContentTypePrefix = null,
-            bool publish = true,
-            Action<string> onPublished = null)
+            bool publish = true)
         {
+            string requestedDirectory = absoluteDestinationPath;
+            bool preserveDestination = publish && OpenBrushStorage.IsGooglePlayStorageMode;
+            if (preserveDestination)
+            {
+                // Assign the logical path before returning a widget, even without a selected tree.
+                // Publication must never rename this path after it is used by a sketch or Lua.
+                absoluteDestinationPath = Path.Combine(absoluteDestinationPath, $"import-{Guid.NewGuid():N}");
+            }
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
             request.Method = "HEAD";
@@ -340,11 +344,9 @@ namespace TiltBrush
                 }
                 if (publish)
                 {
-                    _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath, onPublished);
-                    // SAF publication may wait for folder selection and choose a different name.
-                    if (OpenBrushStorage.IsGooglePlayStorageMode && onPublished != null) { return null; }
+                    _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath, preserveDestination);
                 }
-                return uniqueFilename;
+                return Path.GetRelativePath(requestedDirectory, fullDestinationPath);
             }
             return null;
         }
@@ -428,7 +430,7 @@ namespace TiltBrush
         }
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(
-            string localPath, Action<string> onPublished = null)
+            string localPath, bool preserveDestination = false)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
@@ -440,8 +442,7 @@ namespace TiltBrush
                 relativePath,
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete,
-                    onPublished == null ? null : publishedPath => onPublished(Path.GetFileName(publishedPath))));
+                    path, relativePath, label, complete, preserveDestination: preserveDestination));
         }
 
         private static void _PublishApiPathToSharedStorage(

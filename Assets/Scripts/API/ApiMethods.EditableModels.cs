@@ -54,8 +54,7 @@ namespace TiltBrush
             string fullLocalPath = GetSafeRelativePathInDirectory(
                 App.ModelLibraryPath(), modelDirectory, "model import directory");
             string filename = _DownloadMediaFileFromUrlToDirectory(
-                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf",
-                onPublished: publishedFilename => ImportModel(Path.Combine(modelDirectory, publishedFilename)));
+                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf");
             if (filename == null) { return; }
             if (ext == "gltf")
             {
@@ -83,7 +82,7 @@ namespace TiltBrush
                     client.Headers.Add("user-agent", ApiManager.WebRequestUserAgent);
                     client.DownloadFile(newUri, dependencyPath);
                 }
-                _PublishApiMediaLibraryPathToSharedStorage(fullLocalPath);
+                _PublishApiMediaLibraryPathToSharedStorage(fullLocalPath, preserveDestination: true);
             }
             ImportModel(Path.Combine(modelDirectory, filename));
         }

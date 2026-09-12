@@ -304,7 +304,7 @@ namespace TiltBrush
 
         public static void PublishImportedMediaToSharedStorageAsync(
             string localPath, string sharedPath, string label, Action<bool, string> onComplete,
-            Action<string> onPublished = null)
+            Action<string> onPublished = null, bool preserveDestination = false)
         {
             if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
@@ -314,7 +314,7 @@ namespace TiltBrush
             string publishedLocalPath = null;
             AndroidStorageManager.StartStorageOperation(label,
                 () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
-                    onPublished != null, out publishedLocalPath),
+                    onPublished != null, out publishedLocalPath, preserveDestination),
                 (success, error) =>
                 {
                     onComplete?.Invoke(success, error);
@@ -324,7 +324,7 @@ namespace TiltBrush
 
         internal static SafPublicationResult PublishImportedMedia(
             IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
-            bool prepareLocalImport, out string publishedLocalPath)
+            bool prepareLocalImport, out string publishedLocalPath, bool preserveDestination = false)
         {
             publishedLocalPath = null;
             // Serialize API name selection and publication, including delayed picker continuations.
@@ -335,6 +335,11 @@ namespace TiltBrush
                     candidate => !string.Equals(candidate, Path.GetFileName(localPath),
                         StringComparison.OrdinalIgnoreCase) &&
                         File.Exists(Path.Combine(localDirectory, candidate)));
+                if (preserveDestination && !string.Equals(destination, relativePath, StringComparison.Ordinal))
+                {
+                    return new SafPublicationResult(StorageResultCode.Failed,
+                        $"The reserved import destination already exists: {relativePath}. Staged content was preserved.");
+                }
                 SafPublicationResult result = SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
                     transactionOwnsPayload: false, CancellationToken.None);
                 if (result.Success && prepareLocalImport)

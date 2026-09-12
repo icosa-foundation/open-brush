@@ -750,6 +750,41 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafReviewImport_NeverRenamesAnAlreadyReturnedWidgetPath(bool collision)
+        {
+            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-import-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "image.png");
+            File.WriteAllBytes(stagedPath, new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            StorageDocumentId original = default;
+            if (collision) { original = backend.Add("image.png", new byte[] { 1 }); }
+            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(backend,
+                    StorageArea.MediaLibraryImages, "image.png", stagedPath,
+                    prepareLocalImport: false, out _, preserveDestination: true);
+                Assert.AreEqual(!collision, result.Success);
+                Assert.IsFalse(backend.Contains("image (1).png"));
+                Assert.IsTrue(File.Exists(stagedPath));
+                Assert.AreEqual(collision ? 0 : 1, backend.CommitCount);
+                if (collision)
+                {
+                    using Stream input = backend.OpenRead(original, false, CancellationToken.None);
+                    Assert.AreEqual(1, input.ReadByte());
+                }
+                else { CollectionAssert.Contains(backend.CommittedNames, "image.png"); }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
         [Test]
         public void SafTransactionRecovery_RestoresValidatedBackup()
         {
