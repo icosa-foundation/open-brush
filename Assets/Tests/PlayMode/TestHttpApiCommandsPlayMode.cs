@@ -605,7 +605,13 @@ namespace TiltBrush
 
             AssertVector3Approx(userPosition, InverseTransformScenePoint(head.position));
             var targetDirection = (TransformScenePoint(targetPosition) - head.position).normalized;
-            Assert.Greater(Vector3.Dot(head.forward, targetDirection), 0.99f);
+            var expectedDirection = head.forward;
+            if (IsVr())
+            {
+                expectedDirection.y = 0;
+                expectedDirection.Normalize();
+            }
+            Assert.Greater(Vector3.Dot(expectedDirection, targetDirection), 0.99f);
         }
 
         [UnityTest]
