@@ -772,12 +772,28 @@ namespace TiltBrush
             "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)",
             "1,2,3"
         )]
-        public static void UserLookAt(Vector3 direction)
+        public static void UserLookAt(Vector3 position)
         {
             TrTransform lookPose = App.Scene.Pose;
-            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
-            App.Scene.Pose = lookPose;
+            Vector3 userPosition = -lookPose.translation;
+            Vector3 direction = position - userPosition;
+            bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
+            if (isVr)
+            {
+                direction.y = 0;
+            }
+            lookPose.rotation = Quaternion.LookRotation(direction, Vector3.up);
+
+            bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
+            try
+            {
+                App.Scene.disableTiltProtection = !isVr;
+                App.Scene.Pose = lookPose;
+            }
+            finally
+            {
+                App.Scene.disableTiltProtection = tiltProtectionDisabled;
+            }
         }
 
         [ApiEndpoint(
