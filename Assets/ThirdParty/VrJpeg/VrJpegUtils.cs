@@ -65,7 +65,8 @@ namespace TiltBrush
                                                    EyeLayout layout = EyeLayout.OverUnder,
                                                    bool fillPoles = true, int maxWidth = 8192)
         {
-            var result = LoadVrJpegWithAudio(data, filename, layout, fillPoles, maxWidth);
+            var result = LoadVrJpegWithAudio(
+                data, filename, layout, fillPoles, maxWidth, extractAudio: false);
             return result.StereoImage;
         }
 
