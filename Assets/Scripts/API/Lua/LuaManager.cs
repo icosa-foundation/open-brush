@@ -1434,7 +1434,9 @@ namespace TiltBrush
 
             List<PointerManager.ControlPoint> previewControlPoints = new();
             var rawPaths = pathWrapper.AsMultiTrList();
-            int firstPathIndex = rawPaths?.FindIndex(path => path != null && path.Count > 0) ?? -1;
+            // "stroke" deliberately previews one path. The future "strokes" mode owns
+            // all-path preview behavior, so select only the first path that can render.
+            int firstPathIndex = FindFirstDrawableToolScriptPathIndex(rawPaths);
             var firstPath = firstPathIndex >= 0 ? rawPaths[firstPathIndex] : null;
             Color? previewColor = pathWrapper._Colors != null &&
                 firstPathIndex >= 0 && firstPathIndex < pathWrapper._Colors.Count
@@ -1462,6 +1464,26 @@ namespace TiltBrush
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
                 previewControlPoints, previewStrokeScale, previewColor);
+        }
+
+        internal static int FindFirstDrawableToolScriptPathIndex(
+            IReadOnlyList<List<TrTransform>> paths)
+        {
+            if (paths == null)
+            {
+                return -1;
+            }
+
+            // DrawNestedTrList reserves the final source transform as a terminal point.
+            // Three transforms are therefore required to produce two drawable control points.
+            for (int i = 0; i < paths.Count; ++i)
+            {
+                if (paths[i]?.Count >= 3)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)

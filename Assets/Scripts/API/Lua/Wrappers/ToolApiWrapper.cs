@@ -6,7 +6,8 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class ToolApiWrapper
     {
-        [LuaDocsDescription("Latest control points produced by the active Tool Script preview")]
+        [LuaDocsDescription(
+            "Control points for the single path selected by the active Tool Script stroke preview")]
         public static ControlPointListApiWrapper latestControlPoints
         {
             get
