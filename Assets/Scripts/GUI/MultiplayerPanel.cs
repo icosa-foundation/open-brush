@@ -51,6 +51,8 @@ namespace TiltBrush
         private bool updateDisplay = false;
         private bool m_ManualColocationEventsSubscribed;
         private GameObject m_ManualColocationButtonTemplate;
+        [SerializeField] private GameObject m_RealtimeDrawingControl;
+        [SerializeField] private ActionToggleButton m_RealtimeDrawingButton;
 
         private const string kManualColocationButtonAlign =
             "MP_MANUAL_COLOCATION_ALIGN";
@@ -126,6 +128,20 @@ namespace TiltBrush
             }
         }
 
+        public bool RealtimeDrawingEnabled
+        {
+            get
+            {
+                MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+                if (multiplayer != null &&
+                    multiplayer.State == ConnectionState.IN_ROOM)
+                {
+                    return multiplayer.IsLiveStrokeStreamingEnabled;
+                }
+                return data.liveStrokeStreaming;
+            }
+        }
+
         private RoomCreateData data;
 
         private List<Func<Tuple<bool, string>>> alertChecks;
@@ -139,7 +155,8 @@ namespace TiltBrush
                 @private = false,
                 maxPlayers = 4,
                 silentRoom = false,
-                viewOnlyRoom = false
+                viewOnlyRoom = false,
+                liveStrokeStreaming = false
             };
 
             alertChecks = new List<Func<Tuple<bool, string>>>
@@ -154,6 +171,8 @@ namespace TiltBrush
             {
                 MultiplayerManager.m_Instance.StateUpdated += OnStateUpdated;
                 MultiplayerManager.m_Instance.RoomOwnershipUpdated += OnRoomOwnershipUpdated;
+                MultiplayerManager.m_Instance.LiveStrokeStreamingUpdated +=
+                    OnLiveStrokeStreamingUpdated;
             }
 
             LocalizationSettings.SelectedLocaleChanged += OnLanguageChanged;
@@ -166,6 +185,8 @@ namespace TiltBrush
             {
                 MultiplayerManager.m_Instance.StateUpdated -= OnStateUpdated;
                 MultiplayerManager.m_Instance.RoomOwnershipUpdated -= OnRoomOwnershipUpdated;
+                MultiplayerManager.m_Instance.LiveStrokeStreamingUpdated -=
+                    OnLiveStrokeStreamingUpdated;
             }
             UnsubscribeManualColocationEvents();
             LocalizationSettings.SelectedLocaleChanged -= OnLanguageChanged;
@@ -235,6 +256,7 @@ namespace TiltBrush
 
             if (updateDisplay) UpdateDisplay();
             RefreshManualColocationDisplay();
+            RefreshRealtimeDrawingControl();
         }
 
         protected override void OnDisablePanel()
@@ -334,6 +356,7 @@ namespace TiltBrush
             }
             DisplayRoomSettingsButton(newState);
             RefreshManualColocationDisplay();
+            RefreshRealtimeDrawingControl();
             UpdateDisplay();
         }
 
@@ -407,6 +430,12 @@ namespace TiltBrush
                 MultiplayerManager.m_Instance.IsUserRoomOwner();
             m_RoomSettingsButton.SetActive(showRoomSettingsButton);
             RefreshManualColocationDisplay();
+            RefreshRealtimeDrawingControl();
+        }
+
+        private void OnLiveStrokeStreamingUpdated(bool enabled)
+        {
+            RefreshRealtimeDrawingControl();
         }
 
         private Tuple<bool, string> CheckAdvancedModeActive()
@@ -527,6 +556,64 @@ namespace TiltBrush
                         colocation.BeginAlignmentWorkflow();
                     }
                     break;
+            }
+        }
+
+        public async void SetRealtimeDrawingEnabled(ActionToggleButton button)
+        {
+            bool enabled = button.ToggleState;
+            MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+            if (multiplayer == null ||
+                multiplayer.State != ConnectionState.IN_ROOM)
+            {
+                data.liveStrokeStreaming = enabled;
+                RefreshRealtimeDrawingControl();
+                return;
+            }
+
+            if (!multiplayer.IsUserRoomOwner())
+            {
+                RefreshRealtimeDrawingControl();
+                return;
+            }
+
+            data.liveStrokeStreaming = enabled;
+            try
+            {
+                if (!await multiplayer.SetLiveStrokeStreamingEnabled(enabled))
+                {
+                    Debug.LogError(
+                        $"[LiveStrokeStreamingUi] Failed to set live stroke streaming " +
+                        $"to {enabled}.");
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    $"[LiveStrokeStreamingUi] Unexpected error while setting live stroke " +
+                    $"streaming to {enabled}: {exception}");
+            }
+            finally
+            {
+                RefreshRealtimeDrawingControl();
+            }
+        }
+
+        private void RefreshRealtimeDrawingControl()
+        {
+            if (m_RealtimeDrawingControl == null)
+            {
+                return;
+            }
+
+            MultiplayerManager multiplayer = MultiplayerManager.m_Instance;
+            bool show = multiplayer == null ||
+                multiplayer.State != ConnectionState.IN_ROOM ||
+                multiplayer.IsUserRoomOwner();
+            m_RealtimeDrawingControl.SetActive(show);
+            if (show && m_RealtimeDrawingButton != null)
+            {
+                m_RealtimeDrawingButton.ToggleState = RealtimeDrawingEnabled;
             }
         }
 

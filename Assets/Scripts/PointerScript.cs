@@ -229,6 +229,7 @@ namespace TiltBrush
         public int ChildIndex { get; set; }
 
         public BaseBrushScript CurrentBrushScript { get { return m_CurrentLine; } }
+        public bool LastControlPointIsKeeper => m_LastControlPointIsKeeper;
 
         public void AllowPreviewLight(bool bAllow)
         {
@@ -882,6 +883,8 @@ namespace TiltBrush
             m_LastControlPointIsKeeper = isKeeper;
 
             if (!m_CurrentLine) return;
+            OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
+                .NotifyLocalLiveStrokeChanged(this);
             if (m_ControlPointColors == null &&
                 CurrentColorOverrideMode == ColorOverrideMode.None) return;
 
@@ -924,6 +927,8 @@ namespace TiltBrush
             m_CurrentLine = BaseBrushScript.Create(
                 canvas.transform, xf_CS,
                 desc, m_CurrentColor, jitteredBrushSize);
+            OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
+                .TryBeginLocalLiveStroke(this, canvas, creator);
         }
 
         /// Like BeginLineFromMemory + EndLineFromMemory
@@ -1029,6 +1034,11 @@ namespace TiltBrush
 
             if (bDiscard)
             {
+                if (rMemoryObjectForPlayback == null)
+                {
+                    OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
+                        .CancelLocalLiveStroke(this);
+                }
                 m_CurrentLine.DestroyMesh();
                 Destroy(m_CurrentLine.gameObject);
             }
@@ -1121,6 +1131,11 @@ namespace TiltBrush
             }
 
             m_CurrentLine = null;
+            if (rMemoryObjectForPlayback == null)
+            {
+                OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
+                    .FinishLocalLiveStroke(this);
+            }
             // Restore brush size if our parametric creator had to modify it.
             if (m_CurrentCreator != null)
             {
