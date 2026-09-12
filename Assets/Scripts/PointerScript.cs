@@ -707,10 +707,12 @@ namespace TiltBrush
                 // yet, but we can assume that the line transform == the canvas transform,
                 // since the line is parented to the canvas with an identity local transform.
                 // See also the TODO in GetTransformForLine; fixing that will resolve this wart.
-                Transform notReallyTheLineTransformButCloseEnough = App.Instance.m_CanvasTransform;
-                TrTransform xf_LS = GetTransformForLine(notReallyTheLineTransformButCloseEnough);
+                Transform previewCanvas = m_ToolScriptStrokeCreator != null
+                    ? App.Scene.ActiveCanvas.transform
+                    : App.Instance.m_CanvasTransform;
+                TrTransform xf_LS = GetTransformForLine(previewCanvas);
                 BaseBrushScript line = BaseBrushScript.Create(
-                    App.Instance.m_CanvasTransform,
+                    previewCanvas,
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
