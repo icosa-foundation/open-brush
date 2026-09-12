@@ -813,7 +813,7 @@ namespace TiltBrush
         {
             // Protect against path traversal below HomeDirectory
             string fullPath = Path.GetFullPath(Path.Combine(HomeDirectory, relativePath));
-            if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
+            if (!TryGetRelativeDirectory(HomeDirectory, fullPath, out string logicalPath)) return null;
 
             // TODO change to a dictionary to avoid O(n) lookup
             var refImage = m_Images.FirstOrDefault(x =>
@@ -823,7 +823,9 @@ namespace TiltBrush
             if (refImage == null &&
                 UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
-                return null;
+                // Saved sketches can refer to folders that the reference panel has never opened.
+                // Do not add these images to the panel's current-directory listing.
+                return ResolveSafImage(UserStorage.Backend, StorageAreaKind, logicalPath);
             }
             if (refImage == null)
             {
@@ -831,6 +833,26 @@ namespace TiltBrush
                 m_Images.Add(refImage);
             }
             return refImage;
+        }
+
+        internal static ReferenceImage ResolveSafImage(
+            IUserStorageBackend backend, StorageArea area, string relativePath)
+        {
+            try
+            {
+                var source = new OpenBrushStorage.MediaSource(backend, area, relativePath);
+                string logicalPath = string.Join("/", relativePath.Replace('\\', '/').Split('/')
+                    .Where(part => part.Length > 0 && part != "."));
+                return new ReferenceImage(
+                    source.LocalPath, source.Identity, source.OpenRead,
+                    () => source.Materialize(MaterializationScope.File), source.Document.Size,
+                    $"./{logicalPath}");
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                      e is ArgumentException)
+            {
+                return null;
+            }
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

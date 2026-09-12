@@ -745,6 +745,31 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
+        [TestCase("subdir/image.png")]
+        [TestCase("import-123/image.png")]
+        public void SafSavedImage_ResolvesOutsideTheActiveDirectory(string relativePath)
+        {
+            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/image.png" };
+            backend.Add("image.png", new byte[] { 7 });
+            ReferenceImage image = ReferenceImageCatalog.ResolveSafImage(
+                backend, StorageArea.MediaLibraryImages, relativePath);
+            Assert.IsNotNull(image);
+            Assert.AreEqual($"./{relativePath}", image.RelativePath);
+            Assert.AreEqual(Path.GetDirectoryName(relativePath), backend.LastListedDirectory);
+            Assert.AreEqual(StorageArea.MediaLibraryImages, backend.LastListedArea);
+            Assert.AreEqual(0, backend.ReadCount, "Resolving a saved image must not eagerly read its pixels.");
+        }
+
+        [TestCase("subdir/missing.png")]
+        [TestCase("../image.png")]
+        public void SafSavedImage_MissingOrInvalidPathsRemainMissing(string relativePath)
+        {
+            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/image.png" };
+            backend.Add("image.png", new byte[] { 7 });
+            Assert.IsNull(ReferenceImageCatalog.ResolveSafImage(
+                backend, StorageArea.MediaLibraryImages, relativePath));
+        }
+
         [Test]
         public void SafImports_AvoidSharedAndLocalNames()
         {
