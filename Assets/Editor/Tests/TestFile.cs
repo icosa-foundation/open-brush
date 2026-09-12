@@ -686,6 +686,21 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafCaptureReservation_AccountsForSharedBundlesAndPendingCaptures()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Sketch_00.png", new byte[] { 1 });
+            backend.Add("Sketch_01_depth.exr", new byte[] { 1 });
+            backend.Add("Sketch_02_frames", new byte[] { 1 });
+            string Reserve() => OpenBrushStorage.ReserveCaptureName(backend, StorageArea.Snapshots,
+                "", "Sketch_{0:00}.png", name => name == "Sketch_03.png");
+            Assert.AreEqual("Sketch_04.png", Reserve());
+            Assert.AreEqual("Sketch_05.png", Reserve()); // No staging payload is needed to retain a reservation.
+            backend.RootIdentity = $"other-root-{Guid.NewGuid():N}";
+            Assert.AreEqual("Sketch_04.png", Reserve());
+        }
+
+        [Test]
         public void SafImports_AvoidSharedAndLocalNames()
         {
             var backend = new FakeSafBackend();

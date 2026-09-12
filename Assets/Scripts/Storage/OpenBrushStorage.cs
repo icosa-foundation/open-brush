@@ -90,6 +90,46 @@ namespace TiltBrush
             return $"{baseKey}.{SafTransactionJournal.GetRootNamespaceId(identity)}";
         }
 
+        private static readonly Dictionary<string, HashSet<string>> sm_CaptureReservations =
+            new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+        internal static string ReserveCaptureName(IUserStorageBackend backend, StorageArea area,
+            string directory, string format, Func<string, bool> localExists)
+        {
+            lock (sm_CaptureReservations)
+            {
+                string key = $"{backend.RootIdentity}\n{area}\n{directory}";
+                if (!sm_CaptureReservations.TryGetValue(key, out var names))
+                {
+                    names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    sm_CaptureReservations.Add(key, names);
+                }
+                if (backend.IsReady)
+                {
+                    StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        throw new IOException($"Could not reserve capture name: {listing.Error}");
+                    }
+                    foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
+                }
+                for (int index = 0; ; ++index)
+                {
+                    string candidate = string.Format(format, index);
+                    string stem = Path.GetFileNameWithoutExtension(candidate);
+                    bool used = localExists(candidate);
+                    foreach (string name in names)
+                    {
+                        if (Path.GetFileNameWithoutExtension(name).Equals(stem, StringComparison.OrdinalIgnoreCase) ||
+                            name.StartsWith($"{stem}_", StringComparison.OrdinalIgnoreCase)) { used = true; break; }
+                    }
+                    if (used) { continue; }
+                    names.Add(candidate);
+                    return candidate;
+                }
+            }
+        }
+
         public static bool TryGetSharedGeneratedFileRelativePath(
             string localPath, out string relativePath)
         {

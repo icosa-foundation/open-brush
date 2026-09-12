@@ -630,6 +630,12 @@ namespace TiltBrush
             m_GifPublicationPending = true;
             void Publish()
             {
+                string reservedPath = RevalidateCaptureName(path, MultiCamStyle.AutoGif);
+                if (reservedPath != path)
+                {
+                    File.Move(path, reservedPath);
+                    path = reservedPath;
+                }
                 OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
                     path, "GIF capture", (success, publishError) => FinishGifSave(
                         path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
@@ -1315,6 +1321,36 @@ namespace TiltBrush
             UpdateCameraVisualTransforms();
         }
 
+        private static readonly Dictionary<string, (string Format, string Root)> sm_AutoCaptureNames =
+            new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
+
+        private static string ReserveCaptureName(string format, MultiCamStyle style)
+        {
+            var backend = UserStorage.Backend;
+            OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(format, out string sharedPath);
+            if (!OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area, out string relative))
+            {
+                throw new IOException("Unsupported capture destination.");
+            }
+            string directory = Path.GetDirectoryName(format);
+            string name = OpenBrushStorage.ReserveCaptureName(backend, area,
+                Path.GetDirectoryName(relative)?.Replace('\\', '/') ?? "", Path.GetFileName(format),
+                candidate => IsFilenameInUse(Path.Combine(directory, candidate), style));
+            string path = Path.Combine(directory, name);
+            sm_AutoCaptureNames[path] = (format, backend.IsReady ? backend.RootIdentity : null);
+            return path;
+        }
+
+        private static string RevalidateCaptureName(string path, MultiCamStyle style)
+        {
+            if (OpenBrushStorage.IsGooglePlayStorageMode && sm_AutoCaptureNames.TryGetValue(path, out var reservation) &&
+                reservation.Root != UserStorage.Backend.RootIdentity)
+            {
+                return ReserveCaptureName(reservation.Format, style);
+            }
+            return path;
+        }
+
         static public string GetSaveName(MultiCamStyle style)
         {
             string ext = "";
@@ -1364,6 +1400,8 @@ namespace TiltBrush
             {
                 basename = Path.Combine(m_SnapshotDirectory, basename);
             }
+
+            if (OpenBrushStorage.IsGooglePlayStorageMode) { return ReserveCaptureName(basename, style); }
 
             string fullpath;
             int lower = 0;
@@ -1731,6 +1769,7 @@ namespace TiltBrush
                 return;
             }
 
+            filePath = RevalidateCaptureName(filePath, MultiCamStyle.Video);
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.UsdPathSerializer,
@@ -1981,6 +2020,7 @@ namespace TiltBrush
                 yield break;
             }
 
+            saveName = RevalidateCaptureName(saveName, style);
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
             // thread, but it'll require a 3rd party library to do the rgb32->png encode.
