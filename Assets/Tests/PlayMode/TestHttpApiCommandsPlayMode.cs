@@ -169,6 +169,22 @@ namespace TiltBrush
             yield return SendCommand("spectator.mode", "stationary");
         }
 
+        private static IEnumerator WaitForSpectatorVisible(float timeoutSeconds)
+        {
+            float start = Time.realtimeSinceStartup;
+            var dropCamType = GetTypeOrFail("TiltBrush.DropCamWidget");
+            var dropCam = GetDropCam().GetComponent(dropCamType);
+            Assert.NotNull(dropCam, "DropCamWidget component not found");
+            while (!(bool)GetInstanceProperty(dropCam, "isVisible"))
+            {
+                if (Time.realtimeSinceStartup - start > timeoutSeconds)
+                {
+                    Assert.Fail("Timed out waiting for the spectator camera to become visible.");
+                }
+                yield return null;
+            }
+        }
+
         private static IEnumerator WaitForServerReady(float timeoutSeconds)
         {
             float start = Time.realtimeSinceStartup;
@@ -707,6 +723,7 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("spectator.on");
+            yield return WaitForSpectatorVisible(2f);
             yield return SendCommand("spectator.mode", "wobble");
             var dropCam = GetDropCam();
             var wobblePos = dropCam.transform.position;
@@ -719,6 +736,7 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("spectator.on");
+            yield return WaitForSpectatorVisible(2f);
             yield return SendCommand("spectator.mode", "circular");
             var dropCam = GetDropCam();
             var circularPos = dropCam.transform.position;
