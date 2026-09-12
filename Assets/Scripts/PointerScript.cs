@@ -77,6 +77,10 @@ namespace TiltBrush
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
+        private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
+        private bool m_ToolScriptPreviewDirty;
+        private float m_ToolScriptPreviewBaseScale = 1f;
+        private Color? m_ToolScriptPreviewColor;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -513,32 +517,44 @@ namespace TiltBrush
             }
             else if (m_PreviewLineEnabled && m_CurrentBrush != null)
             {
-                // Preview mode: Create a preview line if we need one but don't have one
-                if (m_AllowPreviewLine && m_PreviewLine == null)
+                if (m_ToolScriptStrokeCreator != null)
                 {
-                    m_AllowPreviewLineTimer -= Time.deltaTime;
-                    if (m_AllowPreviewLineTimer <= 0.0f)
+                    if (m_PreviewLine == null)
                     {
                         CreatePreviewLine();
                     }
+
+                    if (m_PreviewLine != null && m_ToolScriptPreviewDirty)
+                    {
+                        UpdateToolScriptPreviewLine();
+                        m_ToolScriptPreviewDirty = false;
+                    }
                 }
-
-                if (m_PreviewLine != null)
+                else
                 {
-                    // For most brushes, we control the rebuilding of the preview brush,
-                    // since we have the necessary timing information and the brush doesn't.
-                    if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                    if (m_AllowPreviewLine && m_PreviewLine == null)
                     {
-                        RebuildPreviewLine();
-                    }
-                    else
-                    {
-                        m_PreviewLine.DecayBrush();
-                        m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        m_AllowPreviewLineTimer -= Time.deltaTime;
+                        if (m_AllowPreviewLineTimer <= 0.0f)
+                        {
+                            CreatePreviewLine();
+                        }
                     }
 
-                    // Always update preview brush after each frame
-                    m_PreviewLine.ApplyChangesToVisuals();
+                    if (m_PreviewLine != null)
+                    {
+                        if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                        {
+                            RebuildPreviewLine();
+                        }
+                        else
+                        {
+                            m_PreviewLine.DecayBrush();
+                            m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        }
+
+                        m_PreviewLine.ApplyChangesToVisuals();
+                    }
                 }
             }
 
@@ -693,10 +709,12 @@ namespace TiltBrush
                 // yet, but we can assume that the line transform == the canvas transform,
                 // since the line is parented to the canvas with an identity local transform.
                 // See also the TODO in GetTransformForLine; fixing that will resolve this wart.
-                Transform notReallyTheLineTransformButCloseEnough = App.Instance.m_CanvasTransform;
-                TrTransform xf_LS = GetTransformForLine(notReallyTheLineTransformButCloseEnough);
+                Transform previewCanvas = m_ToolScriptStrokeCreator != null
+                    ? App.Scene.ActiveCanvas.transform
+                    : App.Instance.m_CanvasTransform;
+                TrTransform xf_LS = GetTransformForLine(previewCanvas);
                 BaseBrushScript line = BaseBrushScript.Create(
-                    App.Instance.m_CanvasTransform,
+                    previewCanvas,
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
@@ -704,6 +722,8 @@ namespace TiltBrush
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
+                m_ToolScriptPreviewBaseScale = line.StrokeScale;
+                m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -722,11 +742,58 @@ namespace TiltBrush
             }
         }
 
+        private void UpdateToolScriptPreviewLine()
+        {
+            if (m_PreviewLine == null)
+            {
+                return;
+            }
+
+            var controlPoints = m_ToolScriptStrokeCreator?.ControlPoints;
+            if (controlPoints == null || controlPoints.Count < 2)
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            // Decay-based preview brushes retain their existing knots and geometry when reset.
+            // Tool previews replay the complete scripted path each frame, so start those brushes
+            // from a fresh instance rather than appending another copy of the path.
+            if (!m_PreviewLine.AlwaysRebuildPreviewBrush())
+            {
+                DisablePreviewLine();
+                CreatePreviewLine();
+                if (m_PreviewLine == null)
+                {
+                    return;
+                }
+            }
+
+            float scale = m_ToolScriptPreviewBaseScale * m_ToolScriptStrokeCreator.StrokeScale;
+            var first = controlPoints[0];
+            m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
+            for (int i = 0; i < controlPoints.Count; ++i)
+            {
+                if (m_PreviewLine.IsOutOfVerts())
+                {
+                    break;
+                }
+
+                var cp = controlPoints[i];
+                m_PreviewLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+            }
+
+            m_PreviewLine.ApplyChangesToVisuals();
+        }
+
         void ResetPreviewProperties()
         {
             if (m_PreviewLine)
             {
-                m_PreviewLine.SetPreviewProperties(m_CurrentColor, m_CurrentBrushSize);
+                Color previewColor = m_ToolScriptStrokeCreator != null
+                    ? m_ToolScriptPreviewColor ?? m_CurrentColor
+                    : m_CurrentColor;
+                m_PreviewLine.SetPreviewProperties(previewColor, m_CurrentBrushSize);
             }
             if (m_PreviewLight)
             {
@@ -892,6 +959,40 @@ namespace TiltBrush
             }
             m_ControlPointColors[m_ControlPoints.Count - 1] =
                 CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
+        }
+
+        public void SetToolScriptPreview(
+            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
+            Color? previewColor)
+        {
+            if (controlPoints == null || controlPoints.Count < 2)
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            if (m_ToolScriptStrokeCreator == null)
+            {
+                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
+            }
+            else
+            {
+                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
+            }
+            m_ToolScriptPreviewColor = previewColor;
+            m_ToolScriptPreviewDirty = true;
+            ResetPreviewProperties();
+        }
+
+        public void ClearToolScriptPreview()
+        {
+            m_ToolScriptStrokeCreator = null;
+            m_ToolScriptPreviewColor = null;
+            m_ToolScriptPreviewDirty = false;
+            if (m_PreviewLine != null)
+            {
+                DisablePreviewLine();
+            }
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.

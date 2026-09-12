@@ -1,6 +1,6 @@
 Settings = {
     description="Draws a conical spiral",
-    previewType="cube"
+    previewType="stroke"
 }
 
 Parameters = {
@@ -9,7 +9,7 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         points = Path:New();
         totalSteps = Parameters.turns * Parameters.steps
         for i = 0, 1, 1/totalSteps do

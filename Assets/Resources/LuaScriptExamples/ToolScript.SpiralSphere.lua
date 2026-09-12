@@ -1,6 +1,6 @@
 Settings = {
     description="Draws a spherical spiral",
-    previewType="sphere"
+    previewType="stroke"
 }
 
 Parameters = {
@@ -9,7 +9,7 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         points = Path:New()
         for i = 0, Parameters.steps do
             z = 2.0 * i / Parameters.steps - 1

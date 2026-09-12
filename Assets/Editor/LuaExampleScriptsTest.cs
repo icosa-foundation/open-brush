@@ -180,7 +180,11 @@ namespace TiltBrush
                 script,
                 $"Tool.{LuaNames.ToolScriptEndPoint}",
                 TrTransform.TR(endPoint, endRotation));
-            LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.TR(endPoint, endRotation));
+            var executionResult = LuaManager.Instance.DoToolScript(LuaNames.Main, TrTransform.T(startPoint), TrTransform.TR(endPoint, endRotation));
+            if (executionResult != null)
+            {
+                LuaManager.Instance.DrawToolScriptResult(executionResult);
+            }
         }
     }
 

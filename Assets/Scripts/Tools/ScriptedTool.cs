@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -53,8 +54,8 @@ namespace TiltBrush
 
         public List<PreviewMaterialEntry> previewMaterials;
 
-        private int currentSnap;
-        private float angleSnappingAngle;
+        private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
+        private float m_NextStrokePreviewTime;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
@@ -90,6 +91,8 @@ namespace TiltBrush
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.ToolScript);
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                m_LastToolScriptResult = null;
             }
 
             // Make sure our UI reticle isn't active.
@@ -134,15 +137,31 @@ namespace TiltBrush
                 m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
             }
 
+            bool quickSnapPressed = SelectionManager.m_Instance.IsQuickSnapPressed(
+                InputManager.ControllerName.Brush);
+            bool snapPanelSettingsActive =
+                SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+            var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
+            bool strokePreviewRequested = string.Equals(
+                previewTypeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
                 // Initial click. Store the transform
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
+                m_LastToolScriptResult = null;
+                m_NextStrokePreviewTime = 0f;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
-                    GetSnappedToolPoint(m_FirstPositionClicked_CS));
+                    GetSnappedToolPoint(m_FirstPositionClicked_CS, quickSnapPressed));
                 ApiManager.Instance.StartUndo();
             }
 
@@ -151,26 +170,36 @@ namespace TiltBrush
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
 
-                var drawnVector_CS = SelectionManager.m_Instance.SnapToGrid_CS(rAttachPoint_CS.translation) -
-                    SelectionManager.m_Instance.SnapToGrid_CS(m_FirstPositionClicked_CS.translation);
-                var drawnVector_GS = SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS) -
-                    SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS);
+                Vector3 startPosition_GS = gridSnapEnabled
+                    ? SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS)
+                    : m_FirstPositionClicked_GS;
+                Vector3 endPosition_GS = gridSnapEnabled
+                    ? SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS)
+                    : rAttachPoint_GS;
+                var drawnVector_GS = endPosition_GS - startPosition_GS;
 
                 Quaternion controllerRot = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation;
-                if (drawnVector_GS.sqrMagnitude > 0)
+                if (!strokePreviewRequested && drawnVector_GS.sqrMagnitude > 0)
                 {
                     // Orientation tracks the controller directly; drag magnitude is the only thing
                     // that determines the preview's scale. The drag direction is intentionally
                     // unused so no LookRotation/FromToRotation singularity can occur.
                     Quaternion rotation_CS = Quaternion.Inverse(App.Scene.Pose.rotation) * controllerRot;
+                    Quaternion snappedRotation_CS = rotation_CS;
+                    if (angleSnapEnabled)
+                    {
+                        snappedRotation_CS = SelectionManager.m_Instance.CurrentSnapAngleIndex != 0
+                            ? SelectionManager.m_Instance.QuantizeAngle(rotation_CS)
+                            : SelectionManager.m_Instance.QuantizeAngle(
+                                rotation_CS, 90f, useEnabledAxes: false);
+                    }
                     upVector = controllerRot * Vector3.up;
 
                     Matrix4x4 transform_GS = TrTransform.TRS(
-                        SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS),
-                        App.Scene.Pose.rotation * SelectionManager.m_Instance.QuantizeAngle(rotation_CS),
+                        startPosition_GS,
+                        App.Scene.Pose.rotation * snappedRotation_CS,
                         drawnVector_GS.magnitude * 2
                     ).ToMatrix4x4();
 
@@ -233,8 +262,9 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    var snappedStart_CS = GetSnappedToolPoint(m_FirstPositionClicked_CS);
-                    var snappedEnd_CS = GetSnappedToolPoint(rAttachPoint_CS);
+                    var snappedStart_CS = GetSnappedToolPoint(
+                        m_FirstPositionClicked_CS, quickSnapPressed);
+                    var snappedEnd_CS = GetSnappedToolPoint(rAttachPoint_CS, quickSnapPressed);
                     var drawnVector_CS = snappedEnd_CS.translation - snappedStart_CS.translation;
                     // Tool.rotation is a legacy controller-up vector. Use endPoint.rotation
                     // when a script needs the same full orientation as the preview.
@@ -246,20 +276,129 @@ namespace TiltBrush
                 }
             }
 
-            LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
-            if (shouldEndUndo) ApiManager.Instance.EndUndo();
+            bool isPreviewExecution = strokePreviewRequested && m_WasClicked;
+            float previewInterval = GetStrokePreviewInterval();
+            bool scriptExecuted = ShouldExecuteToolScript(
+                isPreviewExecution, previewInterval, Time.realtimeSinceStartup,
+                m_NextStrokePreviewTime);
+            LuaManager.ToolScriptExecutionResult executionResult = null;
+            if (scriptExecuted)
+            {
+                SetApiProperty($"Tool.{LuaNames.ToolScriptIsPreview}", isPreviewExecution);
+                executionResult = LuaManager.Instance.DoToolScript(
+                    LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
+                if (isPreviewExecution && previewInterval > 0f)
+                {
+                    m_NextStrokePreviewTime = Time.realtimeSinceStartup + previewInterval;
+                }
+            }
+
+            if (strokePreviewRequested)
+            {
+                if (scriptExecuted && executionResult != null)
+                {
+                    m_LastToolScriptResult = executionResult;
+                }
+
+                if (scriptExecuted && executionResult?.PreviewControlPoints != null &&
+                    executionResult.PreviewControlPoints.Count > 1)
+                {
+                    PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
+                        executionResult.PreviewControlPoints, executionResult.PreviewStrokeScale,
+                        executionResult.PreviewColor);
+                }
+                else if (scriptExecuted)
+                {
+                    PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                }
+            }
+            else
+            {
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                if (executionResult != null)
+                {
+                    LuaManager.Instance.DrawToolScriptResult(executionResult);
+                }
+            }
+
+            if (shouldEndUndo)
+            {
+                if (strokePreviewRequested && m_LastToolScriptResult != null)
+                {
+                    LuaManager.Instance.DrawToolScriptResult(m_LastToolScriptResult);
+                }
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                ApiManager.Instance.EndUndo();
+            }
+            else if (scriptExecuted && executionResult == null && strokePreviewRequested)
+            {
+                // Ensure we don't leave stale preview geometry when the script stops emitting paths.
+                PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+            }
         }
 
-        private static TrTransform GetSnappedToolPoint(TrTransform point_CS)
+        private static float GetStrokePreviewInterval()
         {
-            point_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(point_CS.translation);
-            var canvasPose = App.Scene.ActiveCanvas.Pose;
-            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
-                canvasPose.rotation * point_CS.rotation;
-            var rotation_GS = App.Scene.Pose.rotation *
-                SelectionManager.m_Instance.QuantizeAngle(rotation_SC);
-            point_CS.rotation = Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
+            var intervalSetting = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewInterval);
+            if (intervalSetting?.Type != MoonSharp.Interpreter.DataType.Number)
+            {
+                return 0f;
+            }
+
+            float interval = (float)intervalSetting.Number;
+            return float.IsNaN(interval) || float.IsInfinity(interval)
+                ? 0f
+                : Mathf.Max(0f, interval);
+        }
+
+        internal static bool ShouldExecuteToolScript(
+            bool isPreviewExecution, float previewInterval,
+            float currentTime, float nextPreviewTime)
+        {
+            return !isPreviewExecution || previewInterval <= 0f || currentTime >= nextPreviewTime;
+        }
+
+        private static TrTransform GetSnappedToolPoint(
+            TrTransform point_CS, bool quickSnapPressed)
+        {
+            var selectionManager = SelectionManager.m_Instance;
+            bool snapPanelSettingsActive = selectionManager.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (selectionManager.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                selectionManager.CurrentSnapGridIndex != 0;
+
+            if (gridSnapEnabled)
+            {
+                point_CS.translation = selectionManager.SnapToGrid_CS(point_CS.translation);
+            }
+
+            if (!angleSnapEnabled)
+            {
+                return point_CS;
+            }
+
+            point_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
+                ? selectionManager.QuantizeAngle_CS(point_CS.rotation)
+                : selectionManager.QuantizeAngle_CS(
+                    point_CS.rotation, 90f, useEnabledAxes: false);
             return point_CS;
+        }
+
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller != InputManager.ControllerName.Brush)
+            {
+                return;
+            }
+
+            var selectionManager = SelectionManager.m_Instance;
+            bool quickSnapPressed = selectionManager.IsQuickSnapPressed(controller);
+            bool snappingEnabled = quickSnapPressed !=
+                selectionManager.AngleOrPositionSnapEnabled();
+            InputManager.Brush.Geometry.TogglePadSnapHint(snappingEnabled, enabled: true);
         }
 
         private void SetApiProperty(string key, object value)
