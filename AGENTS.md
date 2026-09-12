@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+- **Temporary design documents:** Never commit or push temporary design, planning, or future-work documents. Keep them untracked and local unless the user explicitly asks for project documentation to be versioned.
+
 - **HTTP API testing:** The Open Brush HTTP API is available only while the Open Brush application is running or the Unity Editor is in Play mode. Check this before testing HTTP commands.
 
 - For every brush with noticeable visual differences from the old Unity version, excluding surface shaders, copy the old Unity shader and make only the minor changes required to support URP.
