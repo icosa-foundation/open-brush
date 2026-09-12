@@ -628,9 +628,17 @@ namespace TiltBrush
             // The encoder writes to private staging on SAF builds. Keep GIF capture busy
             // until publication completes, and let the publisher own staging-file cleanup.
             m_GifPublicationPending = true;
-            OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
-                path, "GIF capture", (success, publishError) => FinishGifSave(
-                    path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
+            void Publish()
+            {
+                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
+                    path, "GIF capture", (success, publishError) => FinishGifSave(
+                        path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
+            }
+            if (AndroidStorageManager.RequireSharedFolderFor("GIF capture", Publish,
+                () => FinishGifSave(path, "Folder selection canceled. GIF remains staged locally.")))
+            {
+                Publish();
+            }
         }
 
         private void FinishGifSave(string path, string error)
