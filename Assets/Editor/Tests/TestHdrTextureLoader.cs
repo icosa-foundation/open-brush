@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -148,6 +149,50 @@ namespace TiltBrush
                     Object.DestroyImmediate(decoded);
                 }
             }
+        }
+
+        [Test]
+        public void DecodesExrWithoutCreatingTexture()
+        {
+            Texture2D source = new Texture2D(1, 1, TextureFormat.RGBAFloat, false, true);
+            try
+            {
+                source.SetPixel(0, 0, new Color(0.25f, 1.0f, 4.0f, 0.375f));
+                source.Apply();
+
+                var decoded = HdrTextureLoader.Decode(
+                    source.EncodeToEXR(Texture2D.EXRFlags.OutputAsFloat), "generated.exr");
+
+                Assert.AreEqual(1, decoded.Width);
+                Assert.AreEqual(1, decoded.Height);
+                Assert.AreEqual(4.0f, decoded.Pixels[0].b, 0.0001f);
+                Assert.AreEqual(0.375f, decoded.Pixels[0].a, 0.0001f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
+        public void DecodesRadianceWithoutCreatingTexture()
+        {
+            byte[] header = Encoding.ASCII.GetBytes(
+                "#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y 1 +X 1\n");
+            var bytes = new byte[header.Length + 4];
+            System.Buffer.BlockCopy(header, 0, bytes, 0, header.Length);
+            bytes[header.Length + 0] = 64;
+            bytes[header.Length + 1] = 128;
+            bytes[header.Length + 2] = 255;
+            bytes[header.Length + 3] = 128;
+
+            var decoded = HdrTextureLoader.Decode(bytes, "generated.hdr");
+
+            Assert.AreEqual(1, decoded.Width);
+            Assert.AreEqual(1, decoded.Height);
+            Assert.AreEqual(64.0f / 255.0f, decoded.Pixels[0].r, 0.0001f);
+            Assert.AreEqual(128.0f / 255.0f, decoded.Pixels[0].g, 0.0001f);
+            Assert.AreEqual(1.0f, decoded.Pixels[0].b, 0.0001f);
         }
     }
 }

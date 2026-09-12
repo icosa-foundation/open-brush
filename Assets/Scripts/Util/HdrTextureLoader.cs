@@ -21,6 +21,13 @@ namespace TiltBrush
 {
     public static class HdrTextureLoader
     {
+        public sealed class DecodedImage
+        {
+            public int Width;
+            public int Height;
+            public Color[] Pixels;
+        }
+
         public static bool IsSupportedFile(string path)
         {
             string extension = Path.GetExtension(path);
@@ -77,6 +84,171 @@ namespace TiltBrush
                     bytes, makeNoLongerReadable: makeNoLongerReadable);
             }
             throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
+        }
+
+        // Performs CPU-only decoding and is safe to call from an image-loading worker thread.
+        public static DecodedImage Decode(byte[] bytes, string path)
+        {
+            string extension = Path.GetExtension(path);
+            if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
+            {
+                TinyExr.ImageResult result = TinyExr.Load(bytes);
+                return new DecodedImage
+                {
+                    Width = result.width,
+                    Height = result.height,
+                    Pixels = result.colors
+                };
+            }
+            if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
+            {
+                return DecodeRadiance(bytes);
+            }
+            throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
+        }
+
+        public static Texture2D CreateTexture(DecodedImage image)
+        {
+            var texture = new Texture2D(
+                image.Width, image.Height, TextureFormat.RGBAFloat, false, true);
+            texture.SetPixels(image.Pixels);
+            texture.Apply(false, false);
+            return texture;
+        }
+
+        private static DecodedImage DecodeRadiance(byte[] bytes)
+        {
+            using (var stream = new MemoryStream(bytes))
+            {
+                var header = new RGBEHeader();
+                if (header.ReadHeader(stream) != RGBEReturnCode.RGBE_RETURN_SUCCESS)
+                {
+                    throw new InvalidDataException("Invalid Radiance HDR header");
+                }
+
+                int pixelCount = checked(header.width * header.height);
+                var pixels = new Color[pixelCount];
+                using (var reader = new BinaryReader(stream, System.Text.Encoding.Default, true))
+                {
+                    if (header.width >= 8 && header.width <= 0x7fff &&
+                        IsRleScanline(reader, header.width))
+                    {
+                        ReadRlePixels(reader, header.width, header.height, pixels);
+                    }
+                    else
+                    {
+                        ReadFlatPixels(reader, header.width, header.height, pixels);
+                    }
+                }
+                return new DecodedImage
+                {
+                    Width = header.width,
+                    Height = header.height,
+                    Pixels = pixels
+                };
+            }
+        }
+
+        private static bool IsRleScanline(BinaryReader reader, int width)
+        {
+            long position = reader.BaseStream.Position;
+            byte[] marker = reader.ReadBytes(4);
+            reader.BaseStream.Position = position;
+            return marker.Length == 4 && marker[0] == 2 && marker[1] == 2 &&
+                (marker[2] & 0x80) == 0 && ((marker[2] << 8) | marker[3]) == width;
+        }
+
+        private static void ReadFlatPixels(
+            BinaryReader reader, int width, int height, Color[] pixels)
+        {
+            for (int sourceY = 0; sourceY < height; sourceY++)
+            {
+                int destinationRow = (height - 1 - sourceY) * width;
+                for (int x = 0; x < width; x++)
+                {
+                    pixels[destinationRow + x] = ReadRgbeColor(reader);
+                }
+            }
+        }
+
+        private static void ReadRlePixels(
+            BinaryReader reader, int width, int height, Color[] pixels)
+        {
+            var scanline = new byte[checked(width * 4)];
+            for (int sourceY = 0; sourceY < height; sourceY++)
+            {
+                byte[] marker = reader.ReadBytes(4);
+                if (marker.Length != 4 || marker[0] != 2 || marker[1] != 2 ||
+                    ((marker[2] << 8) | marker[3]) != width)
+                {
+                    throw new InvalidDataException("Invalid Radiance HDR scanline");
+                }
+
+                for (int channel = 0; channel < 4; channel++)
+                {
+                    int channelOffset = channel * width;
+                    int x = 0;
+                    while (x < width)
+                    {
+                        int count = reader.ReadByte();
+                        if (count > 128)
+                        {
+                            count -= 128;
+                            int value = reader.ReadByte();
+                            if (count == 0 || x + count > width)
+                            {
+                                throw new InvalidDataException("Invalid Radiance HDR encoded run");
+                            }
+                            for (int i = 0; i < count; i++)
+                            {
+                                scanline[channelOffset + x++] = (byte)value;
+                            }
+                        }
+                        else
+                        {
+                            if (count == 0 || x + count > width)
+                            {
+                                throw new InvalidDataException("Invalid Radiance HDR literal run");
+                            }
+                            byte[] values = reader.ReadBytes(count);
+                            if (values.Length != count)
+                            {
+                                throw new EndOfStreamException();
+                            }
+                            Buffer.BlockCopy(values, 0, scanline, channelOffset + x, count);
+                            x += count;
+                        }
+                    }
+                }
+
+                int destinationRow = (height - 1 - sourceY) * width;
+                for (int x = 0; x < width; x++)
+                {
+                    pixels[destinationRow + x] = RgbeToColor(
+                        scanline[x], scanline[width + x],
+                        scanline[2 * width + x], scanline[3 * width + x]);
+                }
+            }
+        }
+
+        private static Color ReadRgbeColor(BinaryReader reader)
+        {
+            byte[] rgbe = reader.ReadBytes(4);
+            if (rgbe.Length != 4)
+            {
+                throw new EndOfStreamException();
+            }
+            return RgbeToColor(rgbe[0], rgbe[1], rgbe[2], rgbe[3]);
+        }
+
+        private static Color RgbeToColor(byte r, byte g, byte b, byte exponent)
+        {
+            if (exponent == 0)
+            {
+                return new Color(0, 0, 0, 1);
+            }
+            float scale = (float)(Math.Pow(2.0, exponent - 128.0) / 255.0);
+            return new Color(r * scale, g * scale, b * scale, 1);
         }
     }
 }
