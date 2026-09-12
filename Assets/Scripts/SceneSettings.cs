@@ -231,8 +231,32 @@ namespace TiltBrush
                 }
                 else
                 {
-                    tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-                    tex.LoadImage(fileData);
+                    if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
+                    {
+                        try
+                        {
+                            RawImage rawImage = ImageUtils.FromImageData(fileData, filename);
+                            tex = new Texture2D(
+                                rawImage.ColorWidth, rawImage.ColorHeight,
+                                TextureFormat.RGBA32, true);
+                            tex.SetPixels32(rawImage.ColorData);
+                            tex.Apply();
+                        }
+                        catch (ImageLoadError e)
+                        {
+                            Debug.LogWarning(
+                                $"VR JPEG decode failed for {filename}; loading it as a flat JPEG: {e.Message}");
+                        }
+                    }
+                    if (tex == null)
+                    {
+                        tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                        if (!tex.LoadImage(fileData))
+                        {
+                            Debug.LogError($"Failed to load skybox image: {path}");
+                            return;
+                        }
+                    }
                 }
 
                 float aspectRatio = (float)tex.width / tex.height;
