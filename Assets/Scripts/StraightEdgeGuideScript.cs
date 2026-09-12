@@ -25,7 +25,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D[] m_ShapeTextures;
         [SerializeField] private float m_MeterYOffset = 0.75f;
         [SerializeField] private float m_EndpointSnapDistance = 0.05f;
-        [SerializeField] private int m_EndpointHistoryLength = 8;
+        [SerializeField] private int m_EndpointHistoryLength = 16;
 
         public enum Shape
         {
