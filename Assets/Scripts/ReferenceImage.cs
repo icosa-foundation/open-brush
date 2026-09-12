@@ -376,34 +376,54 @@ namespace TiltBrush
             if (HdrTextureLoader.IsSupportedFile(FilePath))
             {
                 // TODO Move into the async code path?
-                var fileData = File.ReadAllBytes(FilePath);
-                Texture2D tex = HdrTextureLoader.Load(
-                    fileData, FilePath, makeNoLongerReadable: false);
-
-                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                Texture2D tex = null;
+                Texture2D resizedTex = null;
+                try
                 {
-                    m_State = ImageState.ErrorImageTooLarge;
-                    Object.Destroy(tex);
+                    var fileData = File.ReadAllBytes(FilePath);
+                    tex = HdrTextureLoader.Load(
+                        fileData, FilePath, makeNoLongerReadable: false,
+                        preserveAlpha: true);
+
+                    if (!ValidateDimensions(
+                        tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                        return true;
+                    }
+
+                    m_ImageAspect = (float)tex.width / tex.height;
+
+                    int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                    Texture2D imageCacheTexture = tex;
+                    if (tex.width > resizeLimit || tex.height > resizeLimit)
+                    {
+                        resizedTex = ResampleTexture(
+                            tex, resizeLimit, TextureFormat.RGBAHalf,
+                            RenderTextureFormat.ARGBHalf, linear: true);
+                        imageCacheTexture = resizedTex;
+                    }
+                    ImageCache.SaveImageCache(imageCacheTexture, FilePath);
+
+                    m_Icon = ResampleTexture(
+                        tex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
+                        TextureFormat.RGBA32, RenderTextureFormat.ARGB32, linear: true);
+                    m_Icon.wrapMode = TextureWrapMode.Clamp;
+                    ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                    m_State = ImageState.Ready;
                     return true;
                 }
-
-                ImageCache.SaveImageCache(tex, FilePath);
-                m_ImageAspect = (float)tex.width / tex.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
-                if (tex.width > resizeLimit || tex.height > resizeLimit)
+                finally
                 {
-                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
-                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
-                    m_Icon = resizedTex;
-                    Object.Destroy(resizedTex);
+                    if (resizedTex != null)
+                    {
+                        Object.Destroy(resizedTex);
+                    }
+                    if (tex != null)
+                    {
+                        Object.Destroy(tex);
+                    }
                 }
-                else
-                {
-                    m_Icon = tex;
-                }
-                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
-                m_State = ImageState.Ready;
-                return true;
             }
 
             if (m_coroutine == null)
@@ -483,6 +503,45 @@ namespace TiltBrush
                 outTex.SetPixels32(data, inMip - mip);
             }
             outTex.Apply(false);
+        }
+
+        static Texture2D ResampleTexture(
+            Texture2D inTex, int maxDimension, TextureFormat textureFormat,
+            RenderTextureFormat renderTextureFormat, bool linear)
+        {
+            maxDimension = Mathf.Max(maxDimension, 1);
+            float scale = Mathf.Min(
+                1.0f, maxDimension / (float)Mathf.Max(inTex.width, inTex.height));
+            int width = Mathf.Max(1, Mathf.RoundToInt(inTex.width * scale));
+            int height = Mathf.Max(1, Mathf.RoundToInt(inTex.height * scale));
+
+            RenderTexture renderTexture = RenderTexture.GetTemporary(
+                width, height, 0, renderTextureFormat, RenderTextureReadWrite.Linear);
+            RenderTexture previousRenderTexture = RenderTexture.active;
+            Texture2D texture = null;
+            try
+            {
+                Graphics.Blit(inTex, renderTexture);
+                RenderTexture.active = renderTexture;
+
+                texture = new Texture2D(width, height, textureFormat, true, linear);
+                texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                texture.Apply(true, false);
+                return texture;
+            }
+            catch
+            {
+                if (texture != null)
+                {
+                    Object.Destroy(texture);
+                }
+                throw;
+            }
+            finally
+            {
+                RenderTexture.active = previousRenderTexture;
+                RenderTexture.ReleaseTemporary(renderTexture);
+            }
         }
 
         // Returns a string suitable for passing to Unity.WWW.
