@@ -229,7 +229,6 @@ namespace TiltBrush
             }
 
             m_TokenDataStore = new PlayerPrefsDataStore(m_TokenStorePrefix);
-            // m_AdditionalDesktopOAuthScopes is currently not used
             var scopes = App.Config.IsMobileHardware
                 ? m_OAuthScopes
                 : m_OAuthScopes.Concat(m_AdditionalDesktopOAuthScopes).ToArray();

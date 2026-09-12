@@ -88,7 +88,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 3
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
@@ -103,7 +103,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 5
     m_FixedFoveationLevel: 0
-  - m_Bloom: 3
+  - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 2
