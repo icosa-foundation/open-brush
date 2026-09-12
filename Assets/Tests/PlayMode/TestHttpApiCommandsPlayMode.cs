@@ -762,13 +762,27 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("spectator.on");
+            yield return WaitForSpectatorVisible(2f);
             yield return SendCommand("spectator.mode", "slowFollow");
             var dropCam = GetDropCam();
             var xrRig = GameObject.Find("Viewpoint/XRRig");
             Assert.NotNull(xrRig, "XRRig not found");
+            var viewpointType = GetTypeOrFail("TiltBrush.ViewpointScript");
+            var head = (Transform)GetStaticProperty(viewpointType, "Head");
+            var initialRigPosition = xrRig.transform.position;
             xrRig.transform.position += new Vector3(1, 0, 0);
-            yield return WaitFrames(2);
-            Assert.Less(Vector3.Distance(dropCam.transform.position, xrRig.transform.position), 0.5f);
+
+            float start = Time.realtimeSinceStartup;
+            while (Vector3.Distance(dropCam.transform.position, head.position) >= 0.5f &&
+                Time.realtimeSinceStartup - start <= 5f)
+            {
+                yield return null;
+            }
+            bool converged = Vector3.Distance(dropCam.transform.position, head.position) < 0.5f;
+
+            xrRig.transform.position = initialRigPosition;
+            yield return SendCommand("spectator.mode", "stationary");
+            Assert.IsTrue(converged, "Spectator camera did not converge on the head position.");
         }
 
         [UnityTest]
