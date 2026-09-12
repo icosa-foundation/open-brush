@@ -354,7 +354,10 @@ namespace TiltBrush
                         {
                             foreach (var (stroke, pointIndex) in entries)
                             {
-                                if (stroke?.m_ControlPoints == null) continue;
+                                if (stroke?.m_ControlPoints == null || !stroke.IsGeometryEnabled)
+                                {
+                                    continue;
+                                }
 
                                 // Get snap point from control points (already in canvas space)
                                 int cpIndex = pointIndex == 0 ? 0 : stroke.m_ControlPoints.Length - 1;

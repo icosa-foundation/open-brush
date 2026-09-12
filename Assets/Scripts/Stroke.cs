@@ -47,10 +47,6 @@ namespace TiltBrush
         /// Valid only when type == BatchedBrushStroke.
         [NonSerialized] public BatchSubset m_BatchSubset;
 
-        /// Tracks whether this stroke is currently hidden from view.
-        /// Used to determine snap hash membership.
-        private bool m_IsHidden = false;
-
         /// used by SketchMemoryScript.m_Instance.m_MemoryList (ordered by time)
         [NonSerialized] public LinkedListNode<Stroke> m_NodeByTime;
         /// used by one of the lists in ScenePlayback (ordered by time)
@@ -116,9 +112,6 @@ namespace TiltBrush
             }
         }
 
-        /// True if this stroke is currently hidden (via Hide(true)).
-        public bool IsHidden => m_IsHidden;
-
         /// True if this stroke should be in the snap hash.
         /// A stroke should be in the hash if it:
         /// - Has the CreatedWithStraightEdge flag
@@ -126,8 +119,7 @@ namespace TiltBrush
         /// - Is not hidden
         private bool ShouldBeInSnapHash =>
             (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0
-            && m_Type != Type.NotCreated
-            && !m_IsHidden;
+            && IsGeometryEnabled;
 
         /// True if this stroke should be displayed on playback (i.e. not an erased or undone stroke).
         /// TODO: the setter is never used -- is that a bug, or should we remove the field?
@@ -544,9 +536,6 @@ namespace TiltBrush
 
         public void Hide(bool hide, bool adjustMeter = true)
         {
-            // Update hidden state
-            m_IsHidden = hide;
-
             switch (m_Type)
             {
                 case Type.BrushStroke:
