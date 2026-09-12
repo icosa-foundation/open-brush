@@ -47,6 +47,7 @@ namespace TiltBrush
         // Straight-edge line strokes created during this sketch session, oldest first. Keeping the
         // stroke rather than copied endpoints lets snapping follow visibility, canvas, and transforms.
         private readonly List<Stroke> m_LineHistory = new List<Stroke>();
+        private readonly HashSet<Stroke> m_LineHistorySet = new HashSet<Stroke>();
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
@@ -114,14 +115,26 @@ namespace TiltBrush
                 return;
             }
 
+            RegisterCommandStrokes(command);
+        }
+
+        private void RegisterCommandStrokes(BaseCommand command)
+        {
             if (command is BrushStrokeCommand brushCommand)
             {
                 Stroke stroke = brushCommand.m_Stroke;
                 if (stroke != null && stroke.m_ControlPoints != null &&
-                    stroke.m_ControlPoints.Length >= 2 && !m_LineHistory.Contains(stroke))
+                    stroke.m_ControlPoints.Length >= 2 && m_LineHistorySet.Add(stroke))
                 {
                     m_LineHistory.Add(stroke);
                 }
+            }
+
+            // A continued stroke can be merged into an existing root command. Walk the command tree
+            // and rely on m_LineHistorySet to retain only newly encountered stroke segments.
+            foreach (BaseCommand child in command.Children)
+            {
+                RegisterCommandStrokes(child);
             }
         }
 
@@ -346,6 +359,7 @@ namespace TiltBrush
         public void ClearEndpointHistory()
         {
             m_LineHistory.Clear();
+            m_LineHistorySet.Clear();
         }
     }
 } // namespace TiltBrush
