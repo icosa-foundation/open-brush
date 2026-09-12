@@ -583,11 +583,13 @@ namespace TiltBrush
         public IEnumerator Cmd_UserDirection()
         {
             yield return EnsureReady();
+            var initialRotation = GetSceneRotation();
+            yield return SendCommand("user.direction", "45,45,0");
             if (IsVr())
             {
-                Assert.Ignore("user.direction is monoscopic-only");
+                AssertQuaternionApprox(initialRotation, GetSceneRotation());
+                yield break;
             }
-            yield return SendCommand("user.direction", "45,45,0");
             AssertQuaternionApprox(
                 Quaternion.Inverse(Quaternion.Euler(45, 45, 0)), GetSceneRotation());
         }

@@ -741,6 +741,10 @@ namespace TiltBrush
         )]
         public static void UserDirection(Vector3 direction)
         {
+            if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None)
+            {
+                return;
+            }
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = Quaternion.Inverse(qNewRotation);
