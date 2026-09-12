@@ -36,7 +36,7 @@ namespace TiltBrush
     public static class ImageCache
     {
         private const string kImageCacheNamespace = "Images";
-        private const int kCacheVersion = 2;
+        private const int kCacheVersion = 3;
         private const string kSignatureFile = "Signature.bin";
         private const string kIconFile = "Icon.bin";
         private const string kImageFile = "Image.bin";
