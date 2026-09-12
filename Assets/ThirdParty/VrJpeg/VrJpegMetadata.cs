@@ -360,48 +360,9 @@ namespace TiltBrush
 
         private static bool IsVrJpeg(Stream stream)
         {
-            BinaryReader reader = new BinaryReader(stream);
-
-            // Check JPEG header
-            if (reader.ReadByte() != 0xFF || reader.ReadByte() != 0xD8)
-            {
-                return false;
-            }
-
-            // Look for XMP with GPano namespace
-            while (stream.Position < Math.Min(stream.Length - 2, 65536)) // Only check first 64KB
-            {
-                byte marker = reader.ReadByte();
-                if (marker != JPEG_MARKER_START)
-                {
-                    continue;
-                }
-
-                byte markerType = reader.ReadByte();
-                if (markerType == 0xD9) // EOI
-                {
-                    break;
-                }
-
-                ushort segmentLength = ReadUInt16BigEndian(reader);
-                long segmentStart = stream.Position;
-
-                if (markerType == JPEG_MARKER_APP1 && segmentLength > XMP_HEADER.Length)
-                {
-                    byte[] segmentBytes = reader.ReadBytes(segmentLength - 2);
-                    string segment = Encoding.UTF8.GetString(segmentBytes);
-
-                    if (segment.StartsWith(XMP_HEADER, StringComparison.Ordinal) &&
-                        segment.Contains("GPano:"))
-                    {
-                        return true;
-                    }
-                }
-
-                stream.Position = segmentStart + segmentLength - 2;
-            }
-
-            return false;
+            VrJpegMetadata metadata = ReadFromStream(stream);
+            return metadata.RightEyeImageData != null && metadata.RightEyeImageData.Length > 0 &&
+                metadata.FullPanoWidthPixels > 0 && metadata.FullPanoHeightPixels > 0;
         }
     }
 }

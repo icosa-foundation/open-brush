@@ -50,6 +50,27 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void TreatsMonoscopicGpanoAsOrdinaryJpeg()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] gpanoJpeg = CreateVrJpeg(jpeg, null);
+
+                RawImage decoded = ImageUtils.FromImageData(gpanoJpeg, "generated.jpg");
+
+                Assert.IsFalse(VrJpegMetadata.IsVrJpeg(gpanoJpeg));
+                Assert.AreEqual(4, decoded.ColorWidth);
+                Assert.AreEqual(2, decoded.ColorHeight);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
         private static Texture2D CreateSourceTexture()
         {
             var texture = new Texture2D(4, 2, TextureFormat.RGBA32, false);
@@ -75,34 +96,40 @@ namespace TiltBrush
                 GPano:CroppedAreaImageHeightPixels=""2""
                 GPano:FullPanoWidthPixels=""8"" GPano:FullPanoHeightPixels=""4""
                 GImage:Mime=""image/jpeg""/></rdf:RDF></x:xmpmeta>";
-            string extendedXmp = $@"
-                <x:xmpmeta xmlns:x=""adobe:ns:meta/""><rdf:RDF
-                xmlns:rdf=""http://www.w3.org/1999/02/22-rdf-syntax-ns#""><rdf:Description
-                xmlns:GImage=""http://ns.google.com/photos/1.0/image/""><GImage:Data>
-                {Convert.ToBase64String(rightEyeJpeg)}
-                </GImage:Data></rdf:Description></rdf:RDF></x:xmpmeta>";
-
             byte[] standardSegment = CreateApp1Segment(
                 Encoding.UTF8.GetBytes($"{kXmpHeader}{standardXmp}"));
-            byte[] extendedXml = Encoding.UTF8.GetBytes(extendedXmp);
-            using (var extendedPayload = new MemoryStream())
+            byte[] extendedSegment = null;
+            if (rightEyeJpeg != null)
             {
-                WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpHeader));
-                WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpGuid));
-                WriteBigEndian(extendedPayload, (uint)extendedXml.Length);
-                WriteBigEndian(extendedPayload, 0);
-                WriteBytes(extendedPayload, extendedXml);
-                byte[] extendedSegment = CreateApp1Segment(extendedPayload.ToArray());
-
-                using (var output = new MemoryStream())
+                string extendedXmp = $@"
+                    <x:xmpmeta xmlns:x=""adobe:ns:meta/""><rdf:RDF
+                    xmlns:rdf=""http://www.w3.org/1999/02/22-rdf-syntax-ns#""><rdf:Description
+                    xmlns:GImage=""http://ns.google.com/photos/1.0/image/""><GImage:Data>
+                    {Convert.ToBase64String(rightEyeJpeg)}
+                    </GImage:Data></rdf:Description></rdf:RDF></x:xmpmeta>";
+                byte[] extendedXml = Encoding.UTF8.GetBytes(extendedXmp);
+                using (var extendedPayload = new MemoryStream())
                 {
-                    output.WriteByte(0xff);
-                    output.WriteByte(0xd8);
-                    WriteBytes(output, standardSegment);
-                    WriteBytes(output, extendedSegment);
-                    output.Write(leftEyeJpeg, 2, leftEyeJpeg.Length - 2);
-                    return output.ToArray();
+                    WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpHeader));
+                    WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpGuid));
+                    WriteBigEndian(extendedPayload, (uint)extendedXml.Length);
+                    WriteBigEndian(extendedPayload, 0);
+                    WriteBytes(extendedPayload, extendedXml);
+                    extendedSegment = CreateApp1Segment(extendedPayload.ToArray());
                 }
+            }
+
+            using (var output = new MemoryStream())
+            {
+                output.WriteByte(0xff);
+                output.WriteByte(0xd8);
+                WriteBytes(output, standardSegment);
+                if (extendedSegment != null)
+                {
+                    WriteBytes(output, extendedSegment);
+                }
+                output.Write(leftEyeJpeg, 2, leftEyeJpeg.Length - 2);
+                return output.ToArray();
             }
         }
 
