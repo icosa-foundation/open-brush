@@ -970,13 +970,13 @@ namespace TiltBrush
         [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
         public static void BrushLookUp()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
         public static void BrushLookDown()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]
