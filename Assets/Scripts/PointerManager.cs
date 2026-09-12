@@ -1302,7 +1302,12 @@ namespace TiltBrush
                     flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 }
 
-                pointer.DetachLine(false, null, flags, isFinalStroke);
+                Stroke stroke = pointer.DetachLine(false, null, flags, isFinalStroke);
+                if (m_StraightEdgeEnabled &&
+                    m_StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
+                {
+                    m_StraightEdgeGuide.RegisterLineStroke(stroke);
+                }
             }
         }
 

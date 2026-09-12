@@ -91,51 +91,12 @@ namespace TiltBrush
             ClearEndpointHistory();
         }
 
-        void Start()
+        public void RegisterLineStroke(Stroke stroke)
         {
-            // Subscribe to command events for endpoint tracking
-            // Using Start() instead of Awake() ensures SketchMemoryScript.m_Instance exists
-            if (SketchMemoryScript.m_Instance != null)
+            if (stroke != null && stroke.m_ControlPoints != null &&
+                stroke.m_ControlPoints.Length >= 2 && m_LineHistorySet.Add(stroke))
             {
-                SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
-            }
-        }
-
-        void OnDestroy()
-        {
-            if (SketchMemoryScript.m_Instance != null)
-            {
-                SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
-            }
-        }
-
-        private void OnCommandPerformed(BaseCommand command)
-        {
-            if (!PointerManager.m_Instance.StraightEdgeModeEnabled || m_CurrentShape != Shape.Line)
-            {
-                return;
-            }
-
-            RegisterCommandStrokes(command);
-        }
-
-        private void RegisterCommandStrokes(BaseCommand command)
-        {
-            if (command is BrushStrokeCommand brushCommand)
-            {
-                Stroke stroke = brushCommand.m_Stroke;
-                if (stroke != null && stroke.m_ControlPoints != null &&
-                    stroke.m_ControlPoints.Length >= 2 && m_LineHistorySet.Add(stroke))
-                {
-                    m_LineHistory.Add(stroke);
-                }
-            }
-
-            // A continued stroke can be merged into an existing root command. Walk the command tree
-            // and rely on m_LineHistorySet to retain only newly encountered stroke segments.
-            foreach (BaseCommand child in command.Children)
-            {
-                RegisterCommandStrokes(child);
+                m_LineHistory.Add(stroke);
             }
         }
 
