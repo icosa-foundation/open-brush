@@ -322,12 +322,7 @@ namespace TiltBrush
             public int? MaxSnapshotDimension;            // 16000 / 4096
 
 
-            public bool? QuestDynamicFoveation;
-            public bool? QuestDynamicResolution;
-            public int? OverrideQuestGPULevel;
             public int? OverrideQuestFoveationLevel;
-
-            public int? OverrideQualityLevel;
 
             public bool? AnisotropicFiltering;         // true / false
             public bool? BillboardsFaceCameraPosition; // true / false
@@ -336,9 +331,6 @@ namespace TiltBrush
             public float? ShadowDistance;              // 30 / 15
             public float? LodBias;                     // 1 / 0.3
             public int? SkinWeights;                   // 2 / 1
-
-
-            public int? OverrideBloomMode;
         }
 
         public PerformanceConfig Performance;
@@ -360,11 +352,7 @@ namespace TiltBrush
             public static bool EnableExportMemoryOptimization => o.EnableExportMemoryOptimization ?? App.PlatformConfig.EnableExportMemoryOptimization;
             public static bool EnableMulticamPreview => o.EnableMulticamPreview ?? App.PlatformConfig.EnableMulticamPreview;
             public static int MaxSnapshotDimension => o.MaxSnapshotDimension ?? App.PlatformConfig.MaxSnapshotDimension;
-            public static bool? QuestDynamicFoveation => o.QuestDynamicFoveation;
-            public static bool? QuestDynamicResolution => o.QuestDynamicResolution;
-            public static int? OverrideQuestGPULevel => o.OverrideQuestGPULevel;
             public static int? OverrideQuestFoveationLevel => o.OverrideQuestFoveationLevel;
-            public static int? OverrideQualityLevel => o.OverrideQualityLevel;
             public static bool? AnisotropicFiltering => o.AnisotropicFiltering;
             public static bool? BillboardsFaceCameraPosition => o.BillboardsFaceCameraPosition;
             public static int? ShadowMode => o.ShadowMode;
@@ -372,7 +360,6 @@ namespace TiltBrush
             public static float? ShadowDistance => o.ShadowDistance;
             public static float? LodBias => o.LodBias;
             public static int? SkinWeights => o.SkinWeights;
-            public static int? OverrideBloomMode => o.OverrideBloomMode;
         }
 
         public void ApplyPerformanceLimits()

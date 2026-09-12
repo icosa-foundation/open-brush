@@ -144,21 +144,6 @@ namespace TiltBrush
                 newLevel = configQuality;
             }
 
-            int? overrideQuality = UserConfig.PerformanceOverrides.OverrideQualityLevel;
-            if (overrideQuality.HasValue)
-            {
-                if (overrideQuality >= 0 && overrideQuality < AppQualityLevels.Length)
-                {
-                    newLevel = overrideQuality.Value;
-                }
-                else
-                {
-                    Debug.LogError(
-                        $"[PerformanceOverrides] Quality level {overrideQuality} is outside the valid " +
-                        $"range 0-{AppQualityLevels.Length - 1}.");
-                }
-            }
-
             // Apply the quality level.
             QualityLevel = newLevel;
             SimplificationLevel = 0.0f;
@@ -281,22 +266,7 @@ namespace TiltBrush
                 settings = settingLevels[value];
             }
 
-            BloomMode bloomMode = settings.Bloom;
-            int? overrideBloomMode = UserConfig.PerformanceOverrides.OverrideBloomMode;
-            if (overrideBloomMode.HasValue)
-            {
-                if (Enum.IsDefined(typeof(BloomMode), overrideBloomMode.Value))
-                {
-                    bloomMode = (BloomMode)overrideBloomMode.Value;
-                }
-                else
-                {
-                    Debug.LogError(
-                        $"[PerformanceOverrides] Bloom mode {overrideBloomMode} is not valid.");
-                }
-            }
-
-            SetBloomMode(bloomMode);
+            SetBloomMode(settings.Bloom);
             EnableHDR(settings.Hdr);
             EnableFxaa(settings.Fxaa);
             Shader.globalMaximumLOD = settings.MaxLod;
@@ -336,19 +306,7 @@ namespace TiltBrush
                 m_lastQualityLevel = value;
             }
 
-            if (UserConfig.PerformanceOverrides.QuestDynamicFoveation.HasValue)
-            {
-                App.VrSdk.SetDynamicFoveation(
-                    UserConfig.PerformanceOverrides.QuestDynamicFoveation.Value);
-            }
-            if (UserConfig.PerformanceOverrides.QuestDynamicResolution.HasValue)
-            {
-                App.VrSdk.SetDynamicResolution(
-                    UserConfig.PerformanceOverrides.QuestDynamicResolution.Value);
-            }
-
-            App.VrSdk.SetGpuClockLevel(
-                UserConfig.PerformanceOverrides.OverrideQuestGPULevel ?? settings.GpuLevel);
+            App.VrSdk.SetGpuClockLevel(settings.GpuLevel);
             App.VrSdk.SetFixedFoveation(
                 UserConfig.PerformanceOverrides.OverrideQuestFoveationLevel ??
                 settings.FixedFoveationLevel);
