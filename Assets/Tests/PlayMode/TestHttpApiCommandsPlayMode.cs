@@ -163,6 +163,12 @@ namespace TiltBrush
             }
         }
 
+        private static IEnumerator PrepareStationarySpectator()
+        {
+            yield return SendCommand("spectator.on");
+            yield return SendCommand("spectator.mode", "stationary");
+        }
+
         private static IEnumerator WaitForServerReady(float timeoutSeconds)
         {
             float start = Time.realtimeSinceStartup;
@@ -613,7 +619,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorMoveTo()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.move.to", "5,5,5");
             AssertVector3Approx(new Vector3(5, 5, 5), GetDropCam().transform.position);
         }
@@ -622,7 +628,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorMoveBy()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.move.to", "5,5,5");
             yield return SendCommand("spectator.move.by", "1,0,-2");
             AssertVector3Approx(new Vector3(6, 5, 3), GetDropCam().transform.position);
@@ -632,7 +638,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorDirection()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.direction", "45,45,0");
             AssertQuaternionApprox(Quaternion.Euler(45, 45, 0), GetDropCam().transform.rotation);
         }
@@ -641,7 +647,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorTurnY()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.direction", "0,0,0");
             yield return SendCommand("spectator.turn.y", "30");
             AssertQuaternionApprox(Quaternion.AngleAxis(30, Vector3.up), GetDropCam().transform.rotation);
@@ -651,7 +657,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorTurnX()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.direction", "0,0,0");
             yield return SendCommand("spectator.turn.x", "15");
             AssertQuaternionApprox(Quaternion.AngleAxis(15, Vector3.left), GetDropCam().transform.rotation);
@@ -661,7 +667,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorTurnZ()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.direction", "0,0,0");
             yield return SendCommand("spectator.turn.z", "10");
             AssertQuaternionApprox(Quaternion.AngleAxis(10, Vector3.forward), GetDropCam().transform.rotation);
@@ -671,7 +677,7 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorLookAt()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.on");
+            yield return PrepareStationarySpectator();
             yield return SendCommand("spectator.look.at", "0,0,0");
             yield return WaitFrames(2);
             var dropCam = GetDropCam();
