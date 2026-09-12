@@ -232,6 +232,39 @@ namespace TiltBrush
         }
 
         [Test]
+        public void ResizesDecodedExrBeforeCreatingTexture()
+        {
+            Texture2D source = new Texture2D(4, 2, TextureFormat.RGBAFloat, false, true);
+            Texture2D decodedTexture = null;
+            try
+            {
+                source.SetPixels(new[]
+                {
+                    Color.red, Color.red, Color.green, Color.green,
+                    Color.blue, Color.blue, Color.white, Color.white
+                });
+                source.Apply();
+                byte[] bytes = source.EncodeToEXR(Texture2D.EXRFlags.OutputAsFloat);
+
+                var decoded = HdrTextureLoader.Decode(
+                    bytes, "generated.exr", maxDimension: 4, decodeDimension: 2);
+                decodedTexture = HdrTextureLoader.CreateTexture(decoded);
+
+                Assert.AreEqual(2, decoded.Width);
+                Assert.AreEqual(1, decoded.Height);
+                Assert.AreEqual(TextureFormat.RGBAHalf, decodedTexture.format);
+            }
+            finally
+            {
+                Object.DestroyImmediate(source);
+                if (decodedTexture != null)
+                {
+                    Object.DestroyImmediate(decodedTexture);
+                }
+            }
+        }
+
+        [Test]
         public void ReadsRadianceDimensionsBeforeDecode()
         {
             byte[] bytes = Encoding.ASCII.GetBytes(

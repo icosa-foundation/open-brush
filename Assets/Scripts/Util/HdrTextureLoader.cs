@@ -85,7 +85,8 @@ namespace TiltBrush
         }
 
         // Performs CPU-only decoding and is safe to call from an image-loading worker thread.
-        public static DecodedImage Decode(byte[] bytes, string path, int maxDimension = -1)
+        public static DecodedImage Decode(
+            byte[] bytes, string path, int maxDimension = -1, int decodeDimension = -1)
         {
             GetDimensions(bytes, path, out int width, out int height);
             if (maxDimension > 0 &&
@@ -97,21 +98,27 @@ namespace TiltBrush
             }
 
             string extension = Path.GetExtension(path);
+            DecodedImage image;
             if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
             {
                 TinyExr.ImageResult result = TinyExr.Load(bytes);
-                return new DecodedImage
+                image = new DecodedImage
                 {
                     Width = result.width,
                     Height = result.height,
                     Pixels = result.colors
                 };
             }
-            if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
             {
-                return DecodeRadiance(bytes);
+                image = DecodeRadiance(bytes);
             }
-            throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
+            else
+            {
+                throw new ArgumentException(
+                    $"Unsupported HDR image extension: {extension}", nameof(path));
+            }
+            return ResizeDecodedImage(image, decodeDimension);
         }
 
         public static void GetDimensions(byte[] bytes, string path, out int width, out int height)
@@ -142,10 +149,47 @@ namespace TiltBrush
         public static Texture2D CreateTexture(DecodedImage image)
         {
             var texture = new Texture2D(
-                image.Width, image.Height, TextureFormat.RGBAFloat, false, true);
+                image.Width, image.Height, TextureFormat.RGBAHalf, false, true);
             texture.SetPixels(image.Pixels);
             texture.Apply(false, false);
             return texture;
+        }
+
+        private static DecodedImage ResizeDecodedImage(DecodedImage source, int maxDimension)
+        {
+            if (maxDimension <= 0 ||
+                (source.Width <= maxDimension && source.Height <= maxDimension))
+            {
+                return source;
+            }
+
+            double scale = Math.Min(
+                1.0, maxDimension / (double)Math.Max(source.Width, source.Height));
+            int width = Math.Max(1, (int)Math.Round(source.Width * scale));
+            int height = Math.Max(1, (int)Math.Round(source.Height * scale));
+            var pixels = new Color[checked(width * height)];
+            for (int y = 0; y < height; y++)
+            {
+                double sourceY = ((y + 0.5) * source.Height / height) - 0.5;
+                int y0 = Math.Max(0, (int)Math.Floor(sourceY));
+                int y1 = Math.Min(source.Height - 1, y0 + 1);
+                float yFraction = (float)Math.Max(0, sourceY - y0);
+                for (int x = 0; x < width; x++)
+                {
+                    double sourceX = ((x + 0.5) * source.Width / width) - 0.5;
+                    int x0 = Math.Max(0, (int)Math.Floor(sourceX));
+                    int x1 = Math.Min(source.Width - 1, x0 + 1);
+                    float xFraction = (float)Math.Max(0, sourceX - x0);
+                    Color top = Color.Lerp(
+                        source.Pixels[y0 * source.Width + x0],
+                        source.Pixels[y0 * source.Width + x1], xFraction);
+                    Color bottom = Color.Lerp(
+                        source.Pixels[y1 * source.Width + x0],
+                        source.Pixels[y1 * source.Width + x1], xFraction);
+                    pixels[y * width + x] = Color.Lerp(top, bottom, yFraction);
+                }
+            }
+            return new DecodedImage { Width = width, Height = height, Pixels = pixels };
         }
 
         private static DecodedImage DecodeRadiance(byte[] bytes)

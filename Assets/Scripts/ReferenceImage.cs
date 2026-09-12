@@ -197,9 +197,10 @@ namespace TiltBrush
             Texture2D loadedTexture = null;
             Texture2D resizedTexture = null;
             int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
-                    File.ReadAllBytes(path), path, maxDimension),
+                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
                 longRunning: true);
             HdrTextureLoader.DecodedImage decoded = null;
             Exception decodeError = null;
@@ -226,7 +227,7 @@ namespace TiltBrush
                     throw decodeError;
                 }
                 loadedTexture = HdrTextureLoader.CreateTexture(decoded);
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int resizeLimit = resizeDimension;
                 if (loadedTexture.width > resizeLimit || loadedTexture.height > resizeLimit)
                 {
                     resizedTexture = ResampleTexture(
@@ -486,9 +487,11 @@ namespace TiltBrush
             try
             {
                 int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+                int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
                     () => HdrTextureLoader.Decode(
-                        File.ReadAllBytes(FilePath), FilePath, maxDimension),
+                        File.ReadAllBytes(FilePath), FilePath,
+                        maxDimension, resizeDimension),
                     longRunning: true);
                 HdrTextureLoader.DecodedImage decoded = null;
                 Exception decodeError = null;
