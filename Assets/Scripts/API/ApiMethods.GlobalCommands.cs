@@ -294,8 +294,8 @@ namespace TiltBrush
         [ApiEndpoint("spectator.toggle", "Toggles the spectator camera")]
         public static void ToggleSpectator()
         {
-            var rEnum = SketchControlsScript.GlobalCommands.DropCam;
-            SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
+            var spectator = SketchControlsScript.m_Instance.GetDropCampWidget();
+            spectator.Show(!spectator.gameObject.activeSelf);
         }
 
         [ApiEndpoint("spectator.on", "Turns the spectator camera on")]
