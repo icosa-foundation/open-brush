@@ -640,13 +640,46 @@ namespace TiltBrush
 
         void Update()
         {
+            bool endpointSnapActive = false;
             if (m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
             {
                 m_StraightEdgeGuide.SnapEnabled =
                     InputManager.Brush.GetCommand(InputManager.SketchCommands.MenuContextClick) &&
                     SketchControlsScript.m_Instance.ShouldRespondToPadInput(InputManager.ControllerName.Num);
-                m_StraightEdgeGuide.UpdateTarget(MainPointer.transform.position);
+
+                // Snap endpoint while actively drawing
+                Vector3 pointerPosition = MainPointer.transform.position;
+                bool endpointSnapped = false;
+                if (StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
+                    m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedEndpoint))
+                {
+                    // Get the origin to avoid snapping to it (which would create degenerate strokes)
+                    Vector3 origin = Coords.CanvasPose * m_StraightEdgeGuide.GetOriginPos();
+                    if ((snappedEndpoint - origin).sqrMagnitude > 1e-6f)
+                    {
+                        SetMainPointerPosition(snappedEndpoint);
+                        pointerPosition = snappedEndpoint;
+                        endpointSnapped = true;
+                    }
+                }
+
+                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition, endpointSnapped);
             }
+
+            // Preview endpoint snapping when not actively drawing
+            if (m_StraightEdgeEnabled &&
+                m_CurrentLineCreationState == LineCreationState.WaitingForInput &&
+                StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
+            {
+                Vector3 pointerPosition = m_MainPointerData.m_Script.transform.position;
+                if (m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedPosition))
+                {
+                    SetMainPointerPosition(snappedPosition);
+                    endpointSnapActive = true;
+                }
+            }
+
+            m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
 
             if (SymmetryModeEnabled)
             {
@@ -1271,7 +1304,12 @@ namespace TiltBrush
                     flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
                 }
 
-                pointer.DetachLine(false, null, flags, isFinalStroke);
+                Stroke stroke = pointer.DetachLine(false, null, flags, isFinalStroke);
+                if (m_StraightEdgeEnabled &&
+                    m_StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
+                {
+                    m_StraightEdgeGuide.RegisterLineStroke(stroke);
+                }
             }
         }
 
@@ -2155,7 +2193,15 @@ namespace TiltBrush
                 // discarded and redrawn upon completion.
                 m_StraightEdgeProxyActive = MainPointer.CurrentBrush.NeedsStraightEdgeProxy;
                 // Turn on the straight edge and hold on to our start position
-                m_StraightEdgeGuide.ShowGuide(MainPointer.transform.position);
+                Vector3 pointerPosition = m_MainPointerData.m_Script.transform.position;
+                if (StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
+                    m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedOrigin))
+                {
+                    SetMainPointerPosition(snappedOrigin);
+                    pointerPosition = m_MainPointerData.m_Script.transform.position;
+                }
+
+                m_StraightEdgeGuide.ShowGuide(pointerPosition);
                 for (int i = 0; i < m_NumActivePointers; ++i)
                 {
                     m_Pointers[i].m_StraightEdgeXf_CS = Coords.AsCanvas[m_Pointers[i].m_Script.transform];
