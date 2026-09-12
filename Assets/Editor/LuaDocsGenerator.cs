@@ -55,6 +55,7 @@ namespace TiltBrush
             // Manually add some entries that aren't added the standard way
             var transformProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform" };
             var vector3Prop = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Vector3" };
+            var booleanProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.Boolean };
             var toolApiDocClass = new LuaDocsClass
             {
                 Name = "Tool",
@@ -68,6 +69,7 @@ namespace TiltBrush
                     new() {Name=LuaNames.ToolScriptEndPoint, PropertyType = transformProp, Description = "The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation."},
                     new() {Name=LuaNames.ToolScriptVector, PropertyType = vector3Prop, Description = "The vector from startPoint to endPoint"},
                     new() {Name=LuaNames.ToolScriptRotation, PropertyType = vector3Prop, Description = "Legacy controller-up vector at release. Use endPoint.rotation for full release orientation."},
+                    new() {Name=LuaNames.ToolScriptIsPreview, PropertyType = booleanProp, Description = "True while a stroke-preview Tool Script is generating a live preview; false when generating the final path on release."},
                 }
             };
             LuaDocsRegistration.ApiDocClasses.Add(toolApiDocClass);

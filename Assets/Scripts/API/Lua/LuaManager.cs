@@ -87,6 +87,7 @@ namespace TiltBrush
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
         public static string ToolPreviewMode => "previewMode";
+        public static string ToolPreviewInterval => "previewInterval";
 
         // Injected Toolscript properties
 
@@ -94,6 +95,7 @@ namespace TiltBrush
         public static string ToolScriptEndPoint => "endPoint";
         public static string ToolScriptVector => "vector";
         public static string ToolScriptRotation => "rotation";
+        public static string ToolScriptIsPreview => "isPreview";
     }
 
     public struct ScriptWidgetConfig

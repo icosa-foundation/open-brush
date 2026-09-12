@@ -46,5 +46,32 @@ namespace TiltBrush
             Assert.AreEqual(-1, LuaManager.FindFirstDrawableToolScriptPathIndex(paths));
             Assert.AreEqual(-1, LuaManager.FindFirstDrawableToolScriptPathIndex(null));
         }
+
+        [Test]
+        public void ToolScriptFinalExecutionIsNeverThrottled()
+        {
+            Assert.IsTrue(ScriptedTool.ShouldExecuteToolScript(
+                isPreviewExecution: false, previewInterval: 1f,
+                currentTime: 0f, nextPreviewTime: 1f));
+        }
+
+        [Test]
+        public void ToolScriptPreviewWithoutIntervalIsNeverThrottled()
+        {
+            Assert.IsTrue(ScriptedTool.ShouldExecuteToolScript(
+                isPreviewExecution: true, previewInterval: 0f,
+                currentTime: 0f, nextPreviewTime: 1f));
+        }
+
+        [Test]
+        public void ToolScriptPreviewWaitsUntilItsNextUpdate()
+        {
+            Assert.IsFalse(ScriptedTool.ShouldExecuteToolScript(
+                isPreviewExecution: true, previewInterval: 0.1f,
+                currentTime: 0.99f, nextPreviewTime: 1f));
+            Assert.IsTrue(ScriptedTool.ShouldExecuteToolScript(
+                isPreviewExecution: true, previewInterval: 0.1f,
+                currentTime: 1f, nextPreviewTime: 1f));
+        }
     }
 }

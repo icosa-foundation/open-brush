@@ -55,6 +55,7 @@ namespace TiltBrush
         public List<PreviewMaterialEntry> previewMaterials;
 
         private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
+        private float m_NextStrokePreviewTime;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
@@ -153,6 +154,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
                 m_LastToolScriptResult = null;
+                m_NextStrokePreviewTime = 0f;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
                     GetSnappedToolPoint(m_FirstPositionClicked_CS, quickSnapPressed));
@@ -273,27 +275,42 @@ namespace TiltBrush
                 }
             }
 
-            var executionResult = LuaManager.Instance.DoToolScript(
-                LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
             var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(
                 LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
             bool strokePreviewRequested = string.Equals(
                 previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+            bool isPreviewExecution = strokePreviewRequested && m_WasClicked;
+            float previewInterval = GetStrokePreviewInterval();
+            bool scriptExecuted = ShouldExecuteToolScript(
+                isPreviewExecution, previewInterval, Time.realtimeSinceStartup,
+                m_NextStrokePreviewTime);
+            LuaManager.ToolScriptExecutionResult executionResult = null;
+            if (scriptExecuted)
+            {
+                SetApiProperty($"Tool.{LuaNames.ToolScriptIsPreview}", isPreviewExecution);
+                executionResult = LuaManager.Instance.DoToolScript(
+                    LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
+                if (isPreviewExecution && previewInterval > 0f)
+                {
+                    m_NextStrokePreviewTime = Time.realtimeSinceStartup + previewInterval;
+                }
+            }
 
             if (strokePreviewRequested)
             {
-                if (executionResult != null)
+                if (scriptExecuted && executionResult != null)
                 {
                     m_LastToolScriptResult = executionResult;
                 }
 
-                if (executionResult?.PreviewControlPoints != null && executionResult.PreviewControlPoints.Count > 1)
+                if (scriptExecuted && executionResult?.PreviewControlPoints != null &&
+                    executionResult.PreviewControlPoints.Count > 1)
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
                         executionResult.PreviewControlPoints, executionResult.PreviewStrokeScale,
                         executionResult.PreviewColor);
                 }
-                else
+                else if (scriptExecuted)
                 {
                     PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 }
@@ -316,11 +333,33 @@ namespace TiltBrush
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 ApiManager.Instance.EndUndo();
             }
-            else if (executionResult == null && strokePreviewRequested)
+            else if (scriptExecuted && executionResult == null && strokePreviewRequested)
             {
                 // Ensure we don't leave stale preview geometry when the script stops emitting paths.
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
             }
+        }
+
+        private static float GetStrokePreviewInterval()
+        {
+            var intervalSetting = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewInterval);
+            if (intervalSetting?.Type != MoonSharp.Interpreter.DataType.Number)
+            {
+                return 0f;
+            }
+
+            float interval = (float)intervalSetting.Number;
+            return float.IsNaN(interval) || float.IsInfinity(interval)
+                ? 0f
+                : Mathf.Max(0f, interval);
+        }
+
+        internal static bool ShouldExecuteToolScript(
+            bool isPreviewExecution, float previewInterval,
+            float currentTime, float nextPreviewTime)
+        {
+            return !isPreviewExecution || previewInterval <= 0f || currentTime >= nextPreviewTime;
         }
 
         private static TrTransform GetSnappedToolPoint(
