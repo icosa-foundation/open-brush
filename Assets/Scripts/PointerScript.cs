@@ -883,6 +883,8 @@ namespace TiltBrush
             m_LastControlPointIsKeeper = isKeeper;
 
             if (!m_CurrentLine) return;
+            OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
+                .NotifyLocalLiveStrokeChanged(this);
             if (m_ControlPointColors == null &&
                 CurrentColorOverrideMode == ColorOverrideMode.None) return;
 
@@ -893,8 +895,6 @@ namespace TiltBrush
             }
             m_ControlPointColors[m_ControlPoints.Count - 1] =
                 CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
-            OpenBrush.Multiplayer.MultiplayerManager.m_Instance?
-                .NotifyLocalLiveStrokeChanged(this);
         }
 
         /// Pass a Canvas parent, and a transform in that canvas's space.
