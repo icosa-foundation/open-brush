@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -40,6 +41,9 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
         private string m_SearchText = "";
+        private string m_SafRootIdentity;
+        private bool UsesSaf => m_SourceDirectory == SourceDirectory.Imm &&
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
@@ -87,6 +91,12 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (UsesSaf && m_SafRootIdentity != UserStorage.Backend.RootIdentity)
+            {
+                m_SafRootIdentity = UserStorage.Backend.RootIdentity;
+                m_Files.Clear();
+                m_DirectoryScanRequired = true;
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
@@ -136,7 +146,7 @@ namespace TiltBrush
             m_Files.Clear();
 
             // Quill's external project folder is only discovered, never created by Open Brush.
-            if (m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
+            if (!UsesSaf && m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
             {
                 App.InitDirectoryAtPath(m_CurrentDirectory);
             }
@@ -169,7 +179,7 @@ namespace TiltBrush
         {
             StopWatchingCurrentDirectory();
 
-            if (!Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf || !Directory.Exists(m_CurrentDirectory))
             {
                 return;
             }
@@ -213,7 +223,56 @@ namespace TiltBrush
             m_IsScanningDirectory = true;
 
             var files = new List<QuillFileInfo>();
-            if (Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf)
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                string rootIdentity = backend.RootIdentity;
+                string directory = m_CurrentDirectory;
+                string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory);
+                var query = new Future<List<QuillFileInfo>>(() =>
+                {
+                    var result = new List<QuillFileInfo>();
+                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill,
+                        relativeDirectory == "." ? "" : relativeDirectory.Replace('\\', '/'),
+                        CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        throw new IOException(listing.Error);
+                    }
+                    if (!listing.Success) { return result; }
+                    foreach (StorageDocument document in listing.Documents)
+                    {
+                        if (document.IsDirectory || !Path.GetExtension(document.DisplayName)
+                                .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
+                        string path = backend.Materialize(document.DocumentId,
+                            MaterializationScope.File, CancellationToken.None);
+                        result.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
+                    }
+                    return result;
+                }, cleanupFunction: null, longRunning: true);
+                while (true)
+                {
+                    bool finished;
+                    try { finished = query.TryGetResult(out files); }
+                    catch (FutureFailed e)
+                    {
+                        Debug.LogWarning($"[SAF_REVIEW_IMM] Could not scan IMM library: {e.Message}");
+                        m_IsScanningDirectory = false;
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                if (rootIdentity != backend.RootIdentity || directory != m_CurrentDirectory || !UsesSaf)
+                {
+                    m_IsScanningDirectory = false;
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
+                files = files.Where(file => string.IsNullOrEmpty(m_SearchText) ||
+                    file.DisplayName.IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            }
+            else if (Directory.Exists(m_CurrentDirectory))
             {
                 foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
                 {

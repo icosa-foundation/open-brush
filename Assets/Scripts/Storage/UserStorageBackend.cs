@@ -43,6 +43,7 @@ namespace TiltBrush
         Fonts,
         MediaLibrarySoundClips,
         UserRoot,
+        MediaLibraryQuill,
     }
 
     public enum StorageResultCode
@@ -575,6 +576,7 @@ namespace TiltBrush
                 case StorageArea.MediaLibraryModels: return App.ModelLibraryPath();
                 case StorageArea.MediaLibraryVideos: return App.VideoLibraryPath();
                 case StorageArea.MediaLibrarySoundClips: return App.SoundClipLibraryPath();
+                case StorageArea.MediaLibraryQuill: return App.QuillMediaLibraryPath();
                 case StorageArea.Snapshots: return App.SnapshotPath();
                 case StorageArea.Videos: return App.VideosPath();
                 case StorageArea.VrVideos: return App.VrVideosPath();

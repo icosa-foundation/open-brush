@@ -531,7 +531,7 @@ namespace TiltBrush
             return result.Success;
         }
 
-        private static bool TryResolveStorageDestination(
+        internal static bool TryResolveStorageDestination(
             string sharedRelativePath,
             out StorageArea area,
             out string areaRelativePath)
@@ -544,6 +544,7 @@ namespace TiltBrush
                 ("Media Library/Models", StorageArea.MediaLibraryModels),
                 ("Media Library/Videos", StorageArea.MediaLibraryVideos),
                 ("Media Library/Sound Clips", StorageArea.MediaLibrarySoundClips),
+                ("Media Library/Quill", StorageArea.MediaLibraryQuill),
                 ("Media Library/Saved Strokes", StorageArea.SavedStrokes),
                 ("Sketches", StorageArea.Sketches),
                 ("Snapshots", StorageArea.Snapshots),
