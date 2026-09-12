@@ -1,6 +1,7 @@
 Settings = {
     description="Like a superellipse but capable of drawing concave shapes as well",
-    previewType="quad"
+    previewType="quad",
+    previewMode="stroke"
 }
 
 Parameters = {
@@ -12,7 +13,7 @@ Parameters = {
 
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
     points = Path:New()
         for i = 0.0, Math.pi * 2, 0.01 do
             angle = Parameters.sym * i / 4.0

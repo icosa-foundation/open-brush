@@ -1,6 +1,7 @@
 Settings = {
     description = "Generates a spirograph pattern.",
-    previewType = "quad"
+    previewType = "quad",
+    previewMode = "stroke"
 }
 
 Parameters = {
@@ -13,7 +14,7 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local path = Path:New()
         local R = Parameters.outerRadius -- Fixed outer circle radius
         local r = Parameters.innerRadius -- Rolling circle radius

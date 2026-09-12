@@ -1,6 +1,7 @@
 Settings = {
     description = "Draws a (p, q) torus knot with analytic ribbon-friendly orientation (tangent + torus radial)",
-    previewType = "sphere"
+    previewType = "sphere",
+    previewMode = "stroke"
 }
 
 Parameters = {
@@ -11,7 +12,7 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local p = Parameters.p
         local q = Parameters.q
         local R = 1.0
