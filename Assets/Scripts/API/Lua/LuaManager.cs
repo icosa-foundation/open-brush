@@ -176,6 +176,7 @@ namespace TiltBrush
                 TrTransform baseTransformCs,
                 List<List<TrTransform>> canvasTransforms,
                 List<List<PointerManager.ControlPoint>> previewControlPointPaths,
+                List<Color?> previewColors,
                 float previewStrokeScale)
             {
                 PathList = pathList;
@@ -184,6 +185,7 @@ namespace TiltBrush
                 CanvasTransforms = canvasTransforms;
                 PreviewControlPointPaths = previewControlPointPaths ??
                     new List<List<PointerManager.ControlPoint>>();
+                PreviewColors = previewColors ?? new List<Color?>();
                 PreviewStrokeScale = previewStrokeScale;
             }
 
@@ -192,6 +194,7 @@ namespace TiltBrush
             public TrTransform BaseTransformCs { get; }
             public List<List<TrTransform>> CanvasTransforms { get; }
             public List<List<PointerManager.ControlPoint>> PreviewControlPointPaths { get; }
+            public List<Color?> PreviewColors { get; }
             public float PreviewStrokeScale { get; }
         }
 
@@ -1431,9 +1434,11 @@ namespace TiltBrush
             }
 
             List<List<PointerManager.ControlPoint>> previewControlPointPaths = new();
+            List<Color?> previewColors = new();
             var rawPaths = pathWrapper.AsMultiTrList();
-            foreach (var rawPath in rawPaths ?? Enumerable.Empty<List<TrTransform>>())
+            for (int pathIndex = 0; pathIndex < (rawPaths?.Count ?? 0); ++pathIndex)
             {
+                var rawPath = rawPaths[pathIndex];
                 if (rawPath == null || rawPath.Count < 2)
                 {
                     continue;
@@ -1452,6 +1457,9 @@ namespace TiltBrush
                     });
                 }
                 previewControlPointPaths.Add(ConvertTransformsToControlPoints(previewPath));
+                previewColors.Add(pathWrapper._Colors != null && pathIndex < pathWrapper._Colors.Count
+                    ? pathWrapper._Colors[pathIndex]
+                    : null);
             }
 
             SetLatestToolScriptControlPoints(
@@ -1459,7 +1467,7 @@ namespace TiltBrush
 
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
-                previewControlPointPaths, previewStrokeScale);
+                previewControlPointPaths, previewColors, previewStrokeScale);
         }
 
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)

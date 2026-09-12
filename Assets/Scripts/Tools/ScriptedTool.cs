@@ -292,7 +292,7 @@ namespace TiltBrush
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
                         executionResult.PreviewControlPointPaths,
-                        executionResult.PreviewStrokeScale);
+                        executionResult.PreviewColors, executionResult.PreviewStrokeScale);
                 }
                 else
                 {
