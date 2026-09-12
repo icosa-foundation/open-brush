@@ -773,8 +773,13 @@ namespace TiltBrush
             TrTransform lookPose = App.Scene.Pose;
             Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Vector3 direction = position - userPosition;
+            if (direction.sqrMagnitude < 1e-6f)
+            {
+                return;
+            }
             bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
             Quaternion headRotation = ViewpointScript.Head.rotation;
+            Vector3 up = Vector3.up;
             if (isVr)
             {
                 direction.y = 0;
@@ -786,8 +791,12 @@ namespace TiltBrush
                 headDirection.y = 0;
                 headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
             }
+            else if (Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
+            {
+                up = Vector3.forward;
+            }
             lookPose.rotation = headRotation *
-                Quaternion.Inverse(Quaternion.LookRotation(direction, Vector3.up));
+                Quaternion.Inverse(Quaternion.LookRotation(direction, up));
             lookPose.translation = ViewpointScript.Head.position -
                 lookPose.rotation * (lookPose.scale * userPosition);
 
