@@ -202,6 +202,21 @@ namespace TiltBrush
             }
         }
 
+        private static IEnumerator WaitForSpectatorDisplacement(
+            Vector3 initialPosition, string mode, float timeoutSeconds)
+        {
+            var dropCam = GetDropCam();
+            float start = Time.realtimeSinceStartup;
+            while (Vector3.Distance(initialPosition, dropCam.transform.position) <= kEpsilon)
+            {
+                if (Time.realtimeSinceStartup - start > timeoutSeconds)
+                {
+                    Assert.Fail($"Timed out waiting for {mode} mode movement.");
+                }
+                yield return null;
+            }
+        }
+
         private static IEnumerator WaitForServerReady(float timeoutSeconds)
         {
             float start = Time.realtimeSinceStartup;
@@ -743,15 +758,7 @@ namespace TiltBrush
             yield return SendCommand("spectator.mode", "wobble");
             var dropCam = GetDropCam();
             var movingPos = dropCam.transform.position;
-            float start = Time.realtimeSinceStartup;
-            while (Vector3.Distance(movingPos, dropCam.transform.position) <= 0.01f)
-            {
-                if (Time.realtimeSinceStartup - start > 2f)
-                {
-                    Assert.Fail("Timed out waiting for wobble mode movement.");
-                }
-                yield return null;
-            }
+            yield return WaitForSpectatorDisplacement(movingPos, "wobble", 2f);
 
             yield return SendCommand("spectator.mode", "stationary");
             var stationaryPos = dropCam.transform.position;
@@ -768,8 +775,7 @@ namespace TiltBrush
             yield return SendCommand("spectator.mode", "wobble");
             var dropCam = GetDropCam();
             var wobblePos = dropCam.transform.position;
-            yield return WaitFrames(2);
-            Assert.Greater(Vector3.Distance(wobblePos, dropCam.transform.position), 0.01f);
+            yield return WaitForSpectatorDisplacement(wobblePos, "wobble", 2f);
         }
 
         [UnityTest]
@@ -781,8 +787,7 @@ namespace TiltBrush
             yield return SendCommand("spectator.mode", "circular");
             var dropCam = GetDropCam();
             var circularPos = dropCam.transform.position;
-            yield return WaitFrames(2);
-            Assert.Greater(Vector3.Distance(circularPos, dropCam.transform.position), 0.01f);
+            yield return WaitForSpectatorDisplacement(circularPos, "circular", 2f);
         }
 
         [UnityTest]
