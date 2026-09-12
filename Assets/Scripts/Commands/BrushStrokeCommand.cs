@@ -69,24 +69,9 @@ namespace TiltBrush
             switch (m_Stroke.m_Type)
             {
                 case Stroke.Type.BrushStroke:
-                    {
-                        GameObject gameObj = m_Stroke.m_Object;
-                        if (gameObj)
-                        {
-                            BaseBrushScript rBrushScript = gameObj.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(false);
-                            }
-                        }
-                        break;
-                    }
                 case Stroke.Type.BatchedBrushStroke:
-                    {
-                        var batch = m_Stroke.m_BatchSubset.m_ParentBatch;
-                        batch.EnableSubset(m_Stroke.m_BatchSubset);
-                        break;
-                    }
+                    m_Stroke.Hide(false);
+                    break;
                 case Stroke.Type.NotCreated:
                     Debug.LogError("Unexpected: redo NotCreated stroke");
                     m_Stroke.Recreate();
@@ -104,31 +89,7 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);
-            switch (m_Stroke.m_Type)
-            {
-                case Stroke.Type.BrushStroke:
-                    {
-                        GameObject gameObj = m_Stroke.m_Object;
-                        if (gameObj)
-                        {
-                            BaseBrushScript rBrushScript = gameObj.GetComponent<BaseBrushScript>();
-                            if (rBrushScript)
-                            {
-                                rBrushScript.HideBrush(true);
-                            }
-                        }
-                        break;
-                    }
-                case Stroke.Type.BatchedBrushStroke:
-                    {
-                        var batch = m_Stroke.m_BatchSubset.m_ParentBatch;
-                        batch.DisableSubset(m_Stroke.m_BatchSubset);
-                        break;
-                    }
-                case Stroke.Type.NotCreated:
-                    Debug.LogError("Unexpected: undo NotCreated stroke");
-                    break;
-            }
+            m_Stroke.Hide(true);
 
             if (m_Widget != null)
             {
