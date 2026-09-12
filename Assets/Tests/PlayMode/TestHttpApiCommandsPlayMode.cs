@@ -711,8 +711,21 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("spectator.on");
-            yield return SendCommand("spectator.mode", "stationary");
+            yield return WaitForSpectatorVisible(2f);
+            yield return SendCommand("spectator.mode", "wobble");
             var dropCam = GetDropCam();
+            var movingPos = dropCam.transform.position;
+            float start = Time.realtimeSinceStartup;
+            while (Vector3.Distance(movingPos, dropCam.transform.position) <= 0.01f)
+            {
+                if (Time.realtimeSinceStartup - start > 2f)
+                {
+                    Assert.Fail("Timed out waiting for wobble mode movement.");
+                }
+                yield return null;
+            }
+
+            yield return SendCommand("spectator.mode", "stationary");
             var stationaryPos = dropCam.transform.position;
             yield return WaitFrames(2);
             AssertVector3Approx(stationaryPos, dropCam.transform.position);
