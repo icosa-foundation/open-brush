@@ -10240,7 +10240,6 @@ MonoBehaviour:
   - {fileID: 2800000, guid: ff5316b1de05b694397fd3576833045a, type: 3}
   m_MeterYOffset: 0.75
   m_EndpointSnapDistance: 0.2
-  m_EndpointHistoryLength: 256
   m_SnapToActiveCanvasOnly: 1
 --- !u!4 &635119618 stripped
 Transform:
