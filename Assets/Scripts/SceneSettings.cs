@@ -289,13 +289,13 @@ namespace TiltBrush
                 string resource = aspectRatio > 1.5f
                     ? "Environments/CustomSkybox"
                     : "Environments/CustomStereoSkybox";
-                Material template = Resources.Load<Material>(resource);
-                if (template == null)
+                Material templateMaterial = Resources.Load<Material>(resource);
+                if (templateMaterial == null)
                 {
                     throw new InvalidOperationException(
                         $"Could not load skybox material resource: {resource}");
                 }
-                return new Material(template);
+                return new Material(templateMaterial);
             }
 
             Material template = Resources.Load<Material>(kHdrPanoramicSkyboxMaterialResource);
