@@ -384,6 +384,10 @@ namespace TiltBrush
                     tex = HdrTextureLoader.Load(
                         fileData, FilePath, makeNoLongerReadable: false,
                         preserveAlpha: true);
+                    if (tex == null)
+                    {
+                        throw new InvalidDataException($"Decoder returned no texture for {FileName}");
+                    }
 
                     if (!ValidateDimensions(
                         tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
@@ -411,6 +415,17 @@ namespace TiltBrush
                     m_Icon.wrapMode = TextureWrapMode.Clamp;
                     ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
                     m_State = ImageState.Ready;
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    if (m_Icon != null)
+                    {
+                        Object.Destroy(m_Icon);
+                        m_Icon = null;
+                    }
+                    m_State = ImageState.Error;
+                    Debug.LogWarning($"[HdrReferenceImageLoad:{FileName}] {e}");
                     return true;
                 }
                 finally
