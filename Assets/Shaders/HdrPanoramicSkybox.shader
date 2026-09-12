@@ -74,7 +74,7 @@ Shader "Custom/HDR Panoramic Skybox"
                 float latitude = acos(direction.y);
                 float longitude = atan2(direction.z, direction.x);
                 return float2(
-                    longitude * (0.5 / UNITY_PI) + 0.5,
+                    0.5 - longitude * (0.5 / UNITY_PI),
                     1.0 - latitude / UNITY_PI);
             }
 
