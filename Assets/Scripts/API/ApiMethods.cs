@@ -957,7 +957,14 @@ namespace TiltBrush
         public static void BrushLookAt(Vector3 position)
         {
             Vector3 direction = position - ApiManager.Instance.BrushPosition;
-            ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
+            if (direction.sqrMagnitude < 1e-6f)
+            {
+                return;
+            }
+            Vector3 up = Vector3.Cross(direction, Vector3.up).sqrMagnitude < 1e-6f
+                ? Vector3.forward
+                : Vector3.up;
+            ApiManager.Instance.BrushRotation.SetLookRotation(direction, up);
         }
 
         [ApiEndpoint(

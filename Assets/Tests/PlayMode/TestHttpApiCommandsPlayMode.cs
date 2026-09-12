@@ -477,6 +477,12 @@ namespace TiltBrush
             yield return SendCommand("brush.move.to", "1,1,1");
             yield return SendCommand("brush.look.at", "2,1,1");
             Assert.Greater(Vector3.Dot(GetBrushRotation() * Vector3.forward, Vector3.right), 0.99f);
+            yield return SendCommand("brush.look.at", "1,2,1");
+            Assert.Greater(Vector3.Dot(GetBrushRotation() * Vector3.forward, Vector3.up), 0.99f);
+
+            Quaternion verticalRotation = GetBrushRotation();
+            yield return SendCommand("brush.look.at", "1,1,1");
+            AssertQuaternionApprox(verticalRotation, GetBrushRotation());
         }
 
         [UnityTest]
