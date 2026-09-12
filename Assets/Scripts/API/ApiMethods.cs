@@ -748,16 +748,8 @@ namespace TiltBrush
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
-            bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
-            try
-            {
-                App.Scene.disableTiltProtection = true;
-                App.Scene.Pose = lookPose;
-            }
-            finally
-            {
-                App.Scene.disableTiltProtection = tiltProtectionDisabled;
-            }
+            App.Scene.disableTiltProtection = true;
+            App.Scene.Pose = lookPose;
         }
 
         [ApiEndpoint(
@@ -795,16 +787,11 @@ namespace TiltBrush
             lookPose.translation = ViewpointScript.Head.position -
                 lookPose.rotation * (lookPose.scale * userPosition);
 
-            bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
-            try
+            if (!isVr)
             {
-                App.Scene.disableTiltProtection = !isVr;
-                App.Scene.Pose = lookPose;
+                App.Scene.disableTiltProtection = true;
             }
-            finally
-            {
-                App.Scene.disableTiltProtection = tiltProtectionDisabled;
-            }
+            App.Scene.Pose = lookPose;
         }
 
         [ApiEndpoint(

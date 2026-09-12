@@ -593,6 +593,10 @@ namespace TiltBrush
             AssertQuaternionApprox(
                 Quaternion.Euler(45, 45, 0),
                 Quaternion.Inverse(GetSceneRotation()) * GetHead().rotation);
+            yield return SendCommand("user.move.by", "0,0,0");
+            AssertQuaternionApprox(
+                Quaternion.Euler(45, 45, 0),
+                Quaternion.Inverse(GetSceneRotation()) * GetHead().rotation);
         }
 
         [UnityTest]
