@@ -368,6 +368,12 @@ namespace TiltBrush
             if (result.Success)
             {
                 RequestRefresh();
+                if (m_Area == StorageArea.Sketches)
+                {
+                    // The Drive backup under the old name is no longer hidden by a local sketch.
+                    SketchCatalog.m_Instance?.GetSet(SketchSetType.Drive)?
+                        .NotifySketchChanged(fileInfo.StorageId);
+                }
             }
             else
             {
