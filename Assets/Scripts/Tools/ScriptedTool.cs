@@ -275,16 +275,18 @@ namespace TiltBrush
 
             var executionResult = LuaManager.Instance.DoToolScript(
                 LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
-            if (executionResult != null)
-            {
-                m_LastToolScriptResult = executionResult;
-            }
-
-            var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
-            bool strokePreviewRequested = string.Equals(previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+            var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
+            bool strokePreviewRequested = string.Equals(
+                previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
             if (strokePreviewRequested)
             {
+                if (executionResult != null)
+                {
+                    m_LastToolScriptResult = executionResult;
+                }
+
                 if (executionResult?.PreviewControlPoints != null && executionResult.PreviewControlPoints.Count > 1)
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
@@ -298,11 +300,15 @@ namespace TiltBrush
             else
             {
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                if (executionResult != null)
+                {
+                    LuaManager.Instance.DrawToolScriptResult(executionResult);
+                }
             }
 
             if (shouldEndUndo)
             {
-                if (m_LastToolScriptResult != null)
+                if (strokePreviewRequested && m_LastToolScriptResult != null)
                 {
                     LuaManager.Instance.DrawToolScriptResult(m_LastToolScriptResult);
                 }
