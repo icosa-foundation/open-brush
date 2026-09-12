@@ -309,7 +309,8 @@ namespace TiltBrush
 
                 CanvasScript canvas = stroke.Canvas;
                 if (!stroke.IsGeometryEnabled || canvas == null || canvas != App.Scene.ActiveCanvas ||
-                    stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+                    !App.Scene.IsLayerVisible(canvas) || stroke.m_ControlPoints == null ||
+                    stroke.m_ControlPoints.Length < 2)
                 {
                     continue;
                 }
