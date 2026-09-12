@@ -36,6 +36,7 @@ namespace TiltBrush
     public static class ImageCache
     {
         private const string kImageCacheNamespace = "Images";
+        private const int kCacheVersion = 2;
         private const string kSignatureFile = "Signature.bin";
         private const string kIconFile = "Icon.bin";
         private const string kImageFile = "Image.bin";
@@ -187,8 +188,10 @@ namespace TiltBrush
                     var fileInfo = new FileInfo(filePath);
                     // Originating file path should always be the first element of the cache signature.
                     binaryWriter.Write(filePath);
+                    binaryWriter.Write(kCacheVersion);
                     binaryWriter.Write(fileInfo.Length);
                     binaryWriter.Write(fileInfo.CreationTime.Ticks);
+                    binaryWriter.Write(fileInfo.LastWriteTimeUtc.Ticks);
                     return memoryStream.ToArray();
                 }
             }
