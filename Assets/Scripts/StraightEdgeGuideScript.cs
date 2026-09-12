@@ -320,9 +320,21 @@ namespace TiltBrush
                  --i)
             {
                 Stroke stroke = m_LineHistory[i];
-                CanvasScript canvas = stroke?.Canvas;
-                if (stroke == null || !stroke.IsGeometryEnabled || canvas == null ||
-                    canvas != App.Scene.ActiveCanvas ||
+
+                // A stroke removed from memory can no longer be redone. Prune it lazily so the
+                // history does not retain disposed strokes indefinitely.
+                if (stroke == null || stroke.m_NodeByTime == null || stroke.m_NodeByTime.List == null)
+                {
+                    m_LineHistory.RemoveAt(i);
+                    if (stroke != null)
+                    {
+                        m_LineHistorySet.Remove(stroke);
+                    }
+                    continue;
+                }
+
+                CanvasScript canvas = stroke.Canvas;
+                if (!stroke.IsGeometryEnabled || canvas == null || canvas != App.Scene.ActiveCanvas ||
                     stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
                 {
                     continue;
