@@ -79,7 +79,6 @@ namespace TiltBrush
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
         private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
         private bool m_ToolScriptPreviewDirty;
-        private float m_ToolScriptPreviewBaseScale = 1f;
         private Color? m_ToolScriptPreviewColor;
 
         private float m_AudioVolumeDesired;
@@ -722,7 +721,6 @@ namespace TiltBrush
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
-                m_ToolScriptPreviewBaseScale = line.StrokeScale;
                 m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
                 ResetPreviewProperties();
 
@@ -769,7 +767,10 @@ namespace TiltBrush
                 }
             }
 
-            float scale = m_ToolScriptPreviewBaseScale * m_ToolScriptStrokeCreator.StrokeScale;
+            // StrokeScale is the exact scale that DrawToolScriptResult stores on the committed
+            // stroke. It already includes any pointer-to-canvas conversion, so applying the
+            // preview line's initial scale as well would scale twice when the scene is not 1.0.
+            float scale = m_ToolScriptStrokeCreator.StrokeScale;
             var first = controlPoints[0];
             m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
             for (int i = 0; i < controlPoints.Count; ++i)
@@ -973,6 +974,10 @@ namespace TiltBrush
 
             if (m_ToolScriptStrokeCreator == null)
             {
+                // An ordinary pointer preview is parented to the preview canvas and its stroke
+                // scale is initialized for that space. Tool Script control points are in the
+                // active canvas, so recreate the line there before drawing the scripted path.
+                DisablePreviewLine();
                 m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
             }
             else
