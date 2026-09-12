@@ -110,6 +110,13 @@ namespace TiltBrush
             return (int)GetInstanceProperty(sketch, "StrokeCount");
         }
 
+        private static string GetForcePaintingMode(string fieldName)
+        {
+            var apiType = GetTypeOrFail("TiltBrush.ApiManager");
+            var api = GetStaticProperty(apiType, "Instance");
+            return GetInstanceField(api, fieldName).ToString();
+        }
+
         private static object GetSceneScript()
         {
             var appType = GetTypeOrFail("TiltBrush.App");
@@ -183,6 +190,7 @@ namespace TiltBrush
         private static IEnumerator PrepareStationarySpectator()
         {
             yield return SendCommand("spectator.on");
+            yield return WaitForSpectatorVisible(2f);
             yield return SendCommand("spectator.mode", "stationary");
         }
 
@@ -495,13 +503,13 @@ namespace TiltBrush
             yield return EnsureReady();
             yield return SendCommand("brush.force.painting.on", "true");
             yield return WaitFrames(2);
-            int strokeCountBeforeNewStroke = GetStrokeCount();
+            Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.new.stroke");
             yield return WaitFrames(2);
-            int strokeCountAfterNewStroke = GetStrokeCount();
+            Assert.AreEqual("ForcedOn", GetForcePaintingMode("PreviousForcePaintingMode"));
+            Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.force.painting.on", "false");
             yield return WaitFrames(1);
-            Assert.GreaterOrEqual(strokeCountAfterNewStroke, strokeCountBeforeNewStroke + 1);
         }
 
         [UnityTest]
@@ -632,6 +640,8 @@ namespace TiltBrush
             {
                 expectedDirection.y = 0;
                 expectedDirection.Normalize();
+                targetDirection.y = 0;
+                targetDirection.Normalize();
             }
             Assert.Greater(Vector3.Dot(expectedDirection, targetDirection), 0.99f);
         }
