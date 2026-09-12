@@ -918,8 +918,9 @@ namespace TiltBrush
             "Changes the brush direction to look at the specified point",
             "1,2,3"
         )]
-        public static void BrushLookAt(Vector3 direction)
+        public static void BrushLookAt(Vector3 position)
         {
+            Vector3 direction = position - ApiManager.Instance.BrushPosition;
             ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
         }
 
