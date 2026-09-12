@@ -647,6 +647,26 @@ namespace TiltBrush
         }
 
         [UnityTest]
+        public IEnumerator Cmd_UserLookAtVerticalInVr()
+        {
+            yield return EnsureReady();
+            if (!IsVr())
+            {
+                Assert.Ignore("Vertical user look-at is a VR-specific behavior.");
+            }
+
+            var userPosition = InverseTransformScenePoint(GetHead().position);
+            var targetPosition = userPosition + Vector3.up;
+            string parameters = FormattableString.Invariant(
+                $"{targetPosition.x:R},{targetPosition.y:R},{targetPosition.z:R}");
+            var sceneRotation = GetSceneRotation();
+
+            yield return SendCommand("user.look.at", parameters);
+
+            AssertQuaternionApprox(sceneRotation, GetSceneRotation());
+        }
+
+        [UnityTest]
         public IEnumerator Cmd_SceneScaleTo()
         {
             yield return EnsureReady();
