@@ -789,6 +789,12 @@ namespace TiltBrush
                 }
                 Vector3 headDirection = ViewpointScript.Head.forward;
                 headDirection.y = 0;
+                if (headDirection.sqrMagnitude < 1e-6f)
+                {
+                    Vector3 headRight = ViewpointScript.Head.right;
+                    headRight.y = 0;
+                    headDirection = Vector3.Cross(headRight, Vector3.up);
+                }
                 headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
             }
             else if (Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)

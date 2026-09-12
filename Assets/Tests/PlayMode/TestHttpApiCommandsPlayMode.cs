@@ -58,6 +58,15 @@ namespace TiltBrush
             return prop.GetValue(instance);
         }
 
+        private static void SetInstanceProperty(object instance, string name, object value)
+        {
+            var prop = instance.GetType().GetProperty(
+                name,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(prop, $"Property not found: {instance.GetType().FullName}.{name}");
+            prop.SetValue(instance, value);
+        }
+
         private static object GetInstanceField(object instance, string name)
         {
             var field = instance.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -686,13 +695,38 @@ namespace TiltBrush
 
             var userPosition = InverseTransformScenePoint(GetHead().position);
             var targetPosition = userPosition + Vector3.up;
-            string parameters = FormattableString.Invariant(
-                $"{targetPosition.x:R},{targetPosition.y:R},{targetPosition.z:R}");
             var sceneRotation = GetSceneRotation();
+            var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+            var userLookAt = apiMethods.GetMethod(
+                "UserLookAt",
+                BindingFlags.Public | BindingFlags.Static);
+            Assert.NotNull(userLookAt, "ApiMethods.UserLookAt not found");
 
-            yield return SendCommand("user.look.at", parameters);
+            userLookAt.Invoke(null, new object[] { targetPosition });
 
             AssertQuaternionApprox(sceneRotation, GetSceneRotation());
+
+            var scenePose = GetScenePose();
+            var head = GetHead();
+            Quaternion headRotation = head.rotation;
+            try
+            {
+                head.rotation = Quaternion.LookRotation(Vector3.up, Vector3.forward);
+                Vector3 headBearing = Vector3.Cross(head.right, Vector3.up).normalized;
+                userPosition = InverseTransformScenePoint(head.position);
+                targetPosition = userPosition + Vector3.right;
+
+                userLookAt.Invoke(null, new object[] { targetPosition });
+
+                Vector3 targetDirection = TransformScenePoint(targetPosition) - head.position;
+                targetDirection.y = 0;
+                Assert.Greater(Vector3.Dot(headBearing, targetDirection.normalized), 0.99f);
+            }
+            finally
+            {
+                SetInstanceProperty(GetSceneScript(), "Pose", scenePose);
+                head.rotation = headRotation;
+            }
         }
 
         [UnityTest]
