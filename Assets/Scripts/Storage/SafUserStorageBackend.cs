@@ -558,16 +558,13 @@ namespace TiltBrush
                 {
                     foreach (string line in File.ReadLines(dependencyPath))
                     {
-                        string[] parts = line.Trim().Split(
-                            new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length >= 2 &&
-                            (parts[0].StartsWith("map_", StringComparison.OrdinalIgnoreCase) ||
-                             parts[0].Equals("bump", StringComparison.OrdinalIgnoreCase)))
+                        string texturePath = GetMaterialTexturePath(line);
+                        if (!string.IsNullOrEmpty(texturePath))
                         {
                             AddLocalDependency(
                                 dependencies,
                                 GetLogicalDirectory(dependency),
-                                parts[parts.Length - 1]);
+                                texturePath);
                         }
                     }
                 }
@@ -587,6 +584,48 @@ namespace TiltBrush
                         cancellationToken);
                 }
             }
+        }
+
+        internal static string GetMaterialTexturePath(string line)
+        {
+            var tokens = System.Text.RegularExpressions.Regex.Matches(line, @"\S+");
+            if (tokens.Count < 2 ||
+                !(tokens[0].Value.StartsWith("map_", StringComparison.OrdinalIgnoreCase) ||
+                  tokens[0].Value.Equals("bump", StringComparison.OrdinalIgnoreCase)))
+            {
+                return null;
+            }
+            int index = 1;
+            while (index < tokens.Count && tokens[index].Value.StartsWith("-", StringComparison.Ordinal))
+            {
+                string option = tokens[index++].Value.ToLowerInvariant();
+                if (option == "-o" || option == "-s" || option == "-t")
+                {
+                    int count = 0;
+                    while (index < tokens.Count && count < 3 && double.TryParse(tokens[index].Value,
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out _))
+                    {
+                        index++;
+                        count++;
+                    }
+                    if (count == 0) { return null; }
+                }
+                else
+                {
+                    int count;
+                    switch (option)
+                    {
+                        case "-mm": count = 2; break;
+                        case "-blendu": case "-blendv": case "-boost": case "-texres":
+                        case "-clamp": case "-bm": case "-imfchan": case "-type":
+                        case "-cc": case "-colorspace": count = 1; break;
+                        default: return null;
+                    }
+                    index += count;
+                }
+            }
+            return index < tokens.Count ? line.Substring(tokens[index].Index).Trim().Trim('"') : null;
         }
 
         private DocumentLocation FindByRelativePath(
