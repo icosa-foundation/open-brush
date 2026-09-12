@@ -1427,8 +1427,8 @@ namespace TiltBrush
             if (angleSnapEnabled)
             {
                 tr_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
-                    ? selectionManager.QuantizeAngle(tr_CS.rotation)
-                    : selectionManager.QuantizeAngle(
+                    ? selectionManager.QuantizeAngle_CS(tr_CS.rotation)
+                    : selectionManager.QuantizeAngle_CS(
                         tr_CS.rotation, 90f, useEnabledAxes: false);
             }
 

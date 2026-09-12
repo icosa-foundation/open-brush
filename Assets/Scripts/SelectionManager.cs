@@ -1344,6 +1344,22 @@ namespace TiltBrush
             return Quaternion.Euler(euler);
         }
 
+        public Quaternion QuantizeAngle_CS(Quaternion rotation_CS)
+        {
+            return QuantizeAngle_CS(rotation_CS, SnappingAngle, useEnabledAxes: true);
+        }
+
+        public Quaternion QuantizeAngle_CS(
+            Quaternion rotation_CS, float snapAngle, bool useEnabledAxes)
+        {
+            var canvasPose = App.Scene.ActiveCanvas.Pose;
+            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
+                canvasPose.rotation * rotation_CS;
+            var snappedRotation_SC = QuantizeAngle(rotation_SC, snapAngle, useEnabledAxes);
+            var rotation_GS = App.Scene.Pose.rotation * snappedRotation_SC;
+            return Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
+        }
+
         public float ScalarSnap(float val)
         {
             if (SnappingGridSize == 0) return val;

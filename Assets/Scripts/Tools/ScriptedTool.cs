@@ -344,14 +344,10 @@ namespace TiltBrush
                 return point_CS;
             }
 
-            var canvasPose = App.Scene.ActiveCanvas.Pose;
-            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
-                canvasPose.rotation * point_CS.rotation;
-            var snappedRotation_SC = selectionManager.CurrentSnapAngleIndex != 0
-                ? selectionManager.QuantizeAngle(rotation_SC)
-                : selectionManager.QuantizeAngle(rotation_SC, 90f, useEnabledAxes: false);
-            var rotation_GS = App.Scene.Pose.rotation * snappedRotation_SC;
-            point_CS.rotation = Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
+            point_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
+                ? selectionManager.QuantizeAngle_CS(point_CS.rotation)
+                : selectionManager.QuantizeAngle_CS(
+                    point_CS.rotation, 90f, useEnabledAxes: false);
             return point_CS;
         }
 
