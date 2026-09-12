@@ -94,7 +94,7 @@ namespace TiltBrush
             if (UsesSaf && m_SafRootIdentity != UserStorage.Backend.RootIdentity)
             {
                 m_SafRootIdentity = UserStorage.Backend.RootIdentity;
-                m_Files.Clear();
+                ChangeDirectory(HomeDirectory);
                 m_DirectoryScanRequired = true;
             }
             if (m_DirectoryScanRequired)
