@@ -3971,6 +3971,10 @@ MonoBehaviour:
     m_Localized: Quill files saved in Quill
     m_Metadata:
       m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: Strokes
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

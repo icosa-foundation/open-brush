@@ -3827,6 +3827,10 @@ MonoBehaviour:
     m_Key: QUILL_PANEL_QUILL_FILES_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 542228906948255744
+    m_Key: SNAP_SETTINGS_PANEL_STROKES
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
