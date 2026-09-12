@@ -956,9 +956,6 @@ namespace TiltBrush
             {
                 m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
             }
-
-            m_AllowPreviewLine = true;
-            m_AllowPreviewLineTimer = 0f;
         }
 
         public void ClearToolScriptPreview()
