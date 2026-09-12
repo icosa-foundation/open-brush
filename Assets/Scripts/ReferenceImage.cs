@@ -521,33 +521,47 @@ namespace TiltBrush
                     yield break;
                 }
 
-                texture = HdrTextureLoader.CreateTexture(decoded);
-                if (!ValidateDimensions(
-                    texture.width, texture.height,
-                    App.PlatformConfig.ReferenceImagesMaxDimension))
+                try
                 {
-                    m_State = ImageState.ErrorImageTooLarge;
-                    yield break;
-                }
+                    texture = HdrTextureLoader.CreateTexture(decoded);
+                    if (!ValidateDimensions(
+                        texture.width, texture.height,
+                        App.PlatformConfig.ReferenceImagesMaxDimension))
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                    }
+                    else
+                    {
+                        m_ImageAspect = (float)texture.width / texture.height;
+                        int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                        Texture2D imageCacheTexture = texture;
+                        if (texture.width > resizeLimit || texture.height > resizeLimit)
+                        {
+                            resizedTexture = ResampleTexture(
+                                texture, resizeLimit, TextureFormat.RGBAHalf,
+                                RenderTextureFormat.ARGBHalf, linear: true);
+                            imageCacheTexture = resizedTexture;
+                        }
+                        ImageCache.SaveImageCache(imageCacheTexture, FilePath);
 
-                m_ImageAspect = (float)texture.width / texture.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
-                Texture2D imageCacheTexture = texture;
-                if (texture.width > resizeLimit || texture.height > resizeLimit)
+                        m_Icon = ResampleTexture(
+                            texture, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
+                            TextureFormat.RGBA32, RenderTextureFormat.ARGB32, linear: true);
+                        m_Icon.wrapMode = TextureWrapMode.Clamp;
+                        ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                        m_State = ImageState.Ready;
+                    }
+                }
+                catch (Exception e)
                 {
-                    resizedTexture = ResampleTexture(
-                        texture, resizeLimit, TextureFormat.RGBAHalf,
-                        RenderTextureFormat.ARGBHalf, linear: true);
-                    imageCacheTexture = resizedTexture;
+                    if (m_Icon != null)
+                    {
+                        Object.Destroy(m_Icon);
+                        m_Icon = null;
+                    }
+                    m_State = ImageState.Error;
+                    Debug.LogWarning($"[HdrReferenceImageLoad:{FileName}] {e}");
                 }
-                ImageCache.SaveImageCache(imageCacheTexture, FilePath);
-
-                m_Icon = ResampleTexture(
-                    texture, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
-                    TextureFormat.RGBA32, RenderTextureFormat.ARGB32, linear: true);
-                m_Icon.wrapMode = TextureWrapMode.Clamp;
-                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
-                m_State = ImageState.Ready;
             }
             finally
             {
