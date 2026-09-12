@@ -54,9 +54,6 @@ namespace TiltBrush
 
         public List<PreviewMaterialEntry> previewMaterials;
 
-        private int currentSnap;
-        private float angleSnappingAngle;
-
         private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
@@ -139,6 +136,16 @@ namespace TiltBrush
                 m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
             }
 
+            bool quickSnapPressed = SelectionManager.m_Instance.IsQuickSnapPressed(
+                InputManager.ControllerName.Brush);
+            bool snapPanelSettingsActive =
+                SelectionManager.m_Instance.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_WasClicked = true;
@@ -148,7 +155,7 @@ namespace TiltBrush
                 m_LastToolScriptResult = null;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
-                    GetSnappedToolPoint(m_FirstPositionClicked_CS));
+                    GetSnappedToolPoint(m_FirstPositionClicked_CS, quickSnapPressed));
                 ApiManager.Instance.StartUndo();
             }
 
@@ -162,10 +169,13 @@ namespace TiltBrush
                 var previewModeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
                 bool useStrokePreview = string.Equals(previewModeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
-                var drawnVector_CS = SelectionManager.m_Instance.SnapToGrid_CS(rAttachPoint_CS.translation) -
-                    SelectionManager.m_Instance.SnapToGrid_CS(m_FirstPositionClicked_CS.translation);
-                var drawnVector_GS = SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS) -
-                    SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS);
+                Vector3 startPosition_GS = gridSnapEnabled
+                    ? SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS)
+                    : m_FirstPositionClicked_GS;
+                Vector3 endPosition_GS = gridSnapEnabled
+                    ? SelectionManager.m_Instance.SnapToGrid_GS(rAttachPoint_GS)
+                    : rAttachPoint_GS;
+                var drawnVector_GS = endPosition_GS - startPosition_GS;
 
                 Quaternion controllerRot = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation;
                 if (!useStrokePreview && drawnVector_GS.sqrMagnitude > 0)
@@ -174,11 +184,19 @@ namespace TiltBrush
                     // that determines the preview's scale. The drag direction is intentionally
                     // unused so no LookRotation/FromToRotation singularity can occur.
                     Quaternion rotation_CS = Quaternion.Inverse(App.Scene.Pose.rotation) * controllerRot;
+                    Quaternion snappedRotation_CS = rotation_CS;
+                    if (angleSnapEnabled)
+                    {
+                        snappedRotation_CS = SelectionManager.m_Instance.CurrentSnapAngleIndex != 0
+                            ? SelectionManager.m_Instance.QuantizeAngle(rotation_CS)
+                            : SelectionManager.m_Instance.QuantizeAngle(
+                                rotation_CS, 90f, useEnabledAxes: false);
+                    }
                     upVector = controllerRot * Vector3.up;
 
                     Matrix4x4 transform_GS = TrTransform.TRS(
-                        SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS),
-                        App.Scene.Pose.rotation * SelectionManager.m_Instance.QuantizeAngle(rotation_CS),
+                        startPosition_GS,
+                        App.Scene.Pose.rotation * snappedRotation_CS,
                         drawnVector_GS.magnitude * 2
                     ).ToMatrix4x4();
 
@@ -241,8 +259,9 @@ namespace TiltBrush
                 if (m_WasClicked)
                 {
                     m_WasClicked = false;
-                    var snappedStart_CS = GetSnappedToolPoint(m_FirstPositionClicked_CS);
-                    var snappedEnd_CS = GetSnappedToolPoint(rAttachPoint_CS);
+                    var snappedStart_CS = GetSnappedToolPoint(
+                        m_FirstPositionClicked_CS, quickSnapPressed);
+                    var snappedEnd_CS = GetSnappedToolPoint(rAttachPoint_CS, quickSnapPressed);
                     var drawnVector_CS = snappedEnd_CS.translation - snappedStart_CS.translation;
                     // Tool.rotation is a legacy controller-up vector. Use endPoint.rotation
                     // when a script needs the same full orientation as the preview.
@@ -254,7 +273,8 @@ namespace TiltBrush
                 }
             }
 
-            var executionResult = LuaManager.Instance.DoToolScript(LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS);
+            var executionResult = LuaManager.Instance.DoToolScript(
+                LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
             if (executionResult != null)
             {
                 m_LastToolScriptResult = executionResult;
@@ -296,16 +316,50 @@ namespace TiltBrush
             }
         }
 
-        private static TrTransform GetSnappedToolPoint(TrTransform point_CS)
+        private static TrTransform GetSnappedToolPoint(
+            TrTransform point_CS, bool quickSnapPressed)
         {
-            point_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(point_CS.translation);
+            var selectionManager = SelectionManager.m_Instance;
+            bool snapPanelSettingsActive = selectionManager.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (selectionManager.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                selectionManager.CurrentSnapGridIndex != 0;
+
+            if (gridSnapEnabled)
+            {
+                point_CS.translation = selectionManager.SnapToGrid_CS(point_CS.translation);
+            }
+
+            if (!angleSnapEnabled)
+            {
+                return point_CS;
+            }
+
             var canvasPose = App.Scene.ActiveCanvas.Pose;
             var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
                 canvasPose.rotation * point_CS.rotation;
-            var rotation_GS = App.Scene.Pose.rotation *
-                SelectionManager.m_Instance.QuantizeAngle(rotation_SC);
+            var snappedRotation_SC = selectionManager.CurrentSnapAngleIndex != 0
+                ? selectionManager.QuantizeAngle(rotation_SC)
+                : selectionManager.QuantizeAngle(rotation_SC, 90f, useEnabledAxes: false);
+            var rotation_GS = App.Scene.Pose.rotation * snappedRotation_SC;
             point_CS.rotation = Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
             return point_CS;
+        }
+
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller != InputManager.ControllerName.Brush)
+            {
+                return;
+            }
+
+            var selectionManager = SelectionManager.m_Instance;
+            bool quickSnapPressed = selectionManager.IsQuickSnapPressed(controller);
+            bool snappingEnabled = quickSnapPressed !=
+                selectionManager.AngleOrPositionSnapEnabled();
+            InputManager.Brush.Geometry.TogglePadSnapHint(snappingEnabled, enabled: true);
         }
 
         private void SetApiProperty(string key, object value)

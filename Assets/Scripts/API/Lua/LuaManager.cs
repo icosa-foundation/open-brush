@@ -1364,7 +1364,9 @@ namespace TiltBrush
             public string[] allowedResponseFileTypes;
         }
 
-        public ToolScriptExecutionResult DoToolScript(string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS)
+        public ToolScriptExecutionResult DoToolScript(
+            string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS,
+            bool quickSnapPressed = false)
         {
             var pathWrapper = CallActiveToolScript(fnName);
             if (pathWrapper == null)
@@ -1373,9 +1375,19 @@ namespace TiltBrush
                 return null;
             }
 
-            var drawnVector_CS = secondTr_CS.translation - firstTr_CS.translation;
-            firstTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(firstTr_CS.translation);
-            secondTr_CS.translation = SelectionManager.m_Instance.SnapToGrid_CS(secondTr_CS.translation);
+            var selectionManager = SelectionManager.m_Instance;
+            bool snapPanelSettingsActive = selectionManager.AngleOrPositionSnapEnabled();
+            bool snappingOverriddenOff = quickSnapPressed && snapPanelSettingsActive;
+            bool angleSnapEnabled = !snappingOverriddenOff &&
+                (selectionManager.CurrentSnapAngleIndex != 0 || quickSnapPressed);
+            bool gridSnapEnabled = !snappingOverriddenOff &&
+                selectionManager.CurrentSnapGridIndex != 0;
+
+            if (gridSnapEnabled)
+            {
+                firstTr_CS.translation = selectionManager.SnapToGrid_CS(firstTr_CS.translation);
+                secondTr_CS.translation = selectionManager.SnapToGrid_CS(secondTr_CS.translation);
+            }
             var quantizedVector_CS = secondTr_CS.translation - firstTr_CS.translation;
 
             var tr_CS = new TrTransform();
@@ -1409,7 +1421,13 @@ namespace TiltBrush
                     break;
             }
 
-            tr_CS.rotation = SelectionManager.m_Instance.QuantizeAngle(tr_CS.rotation);
+            if (angleSnapEnabled)
+            {
+                tr_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
+                    ? selectionManager.QuantizeAngle(tr_CS.rotation)
+                    : selectionManager.QuantizeAngle(
+                        tr_CS.rotation, 90f, useEnabledAxes: false);
+            }
 
             List<PointerManager.ControlPoint> previewControlPoints = new();
             var rawPaths = pathWrapper.AsMultiTrList();
