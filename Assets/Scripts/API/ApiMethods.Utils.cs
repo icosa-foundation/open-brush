@@ -261,7 +261,8 @@ namespace TiltBrush
             Uri url,
             string absoluteDestinationPath,
             bool allowRedirects,
-            string requiredContentTypePrefix = null)
+            string requiredContentTypePrefix = null,
+            bool publish = true)
         {
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
@@ -333,7 +334,7 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
-                _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath);
+                if (publish) { _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath); }
                 return uniqueFilename;
             }
             return null;

@@ -4,6 +4,19 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [Test]
+        public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
+        {
+            var gltf = Newtonsoft.Json.Linq.JObject.Parse(@"{
+                'buffers': [{'uri':'geometry.bin'}],
+                'images': [{'uri':'textures/My Texture.png'}, {'uri':'geometry.bin'},
+                           {'uri':'data:image/png;base64,AA=='}, {'bufferView':0}]
+            }");
+            CollectionAssert.AreEquivalent(new[] { "geometry.bin", "textures/My Texture.png" },
+                ApiMethods.GetGltfExternalFiles(gltf));
+            Assert.IsEmpty(ApiMethods.GetGltfExternalFiles(new Newtonsoft.Json.Linq.JObject()));
+        }
+
         [TestCase("map_Kd My Texture.png", "My Texture.png")]
         [TestCase("map_Kd -s 1 1 1 -o -1 0 My Texture.png", "My Texture.png")]
         [TestCase("bump -bm 0.5 Textures/My  Texture.png", "Textures/My  Texture.png")]
