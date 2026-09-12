@@ -1,6 +1,7 @@
 Settings = {
     description = "Draws a (p, q) torus knot with analytic ribbon-friendly orientation (tangent + torus radial)",
-    previewType = "stroke"
+    previewType = "stroke",
+    previewInterval = 0.1
 }
 
 Parameters = {
@@ -17,6 +18,9 @@ function Main()
         local R = 1.0
         local r = Parameters.ratio
         local total = Parameters.points
+        if Tool.isPreview then
+            total = Math:Min(total, 200)
+        end
 
         local path = Path:New()
 

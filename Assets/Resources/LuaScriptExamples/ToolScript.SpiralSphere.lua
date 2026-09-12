@@ -1,6 +1,7 @@
 Settings = {
     description="Draws a spherical spiral",
-    previewType="stroke"
+    previewType="stroke",
+    previewInterval=0.1
 }
 
 Parameters = {
@@ -11,10 +12,14 @@ Parameters = {
 function Main()
     if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         points = Path:New()
-        for i = 0, Parameters.steps do
-            z = 2.0 * i / Parameters.steps - 1
+        local totalSteps = Parameters.steps
+        if Tool.isPreview then
+            totalSteps = Math:Min(totalSteps, 200)
+        end
+        for i = 0, totalSteps do
+            z = 2.0 * i / totalSteps - 1
             radius = Math:Sqrt(1 - z * z)
-            angle = (Math.pi * 2 * Parameters.turns * i) / Parameters.steps
+            angle = (Math.pi * 2 * Parameters.turns * i) / totalSteps
             x = radius * Math:Sin(angle)
             y = radius * Math:Cos(angle)
             points:Insert(Transform:Position(x, y, z))
