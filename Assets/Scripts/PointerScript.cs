@@ -78,6 +78,7 @@ namespace TiltBrush
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
         private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
+        private bool m_ToolScriptPreviewDirty;
         private float m_ToolScriptPreviewBaseScale = 1f;
         private Color? m_ToolScriptPreviewColor;
 
@@ -523,9 +524,10 @@ namespace TiltBrush
                         CreatePreviewLine();
                     }
 
-                    if (m_PreviewLine != null)
+                    if (m_PreviewLine != null && m_ToolScriptPreviewDirty)
                     {
                         UpdateToolScriptPreviewLine();
+                        m_ToolScriptPreviewDirty = false;
                     }
                 }
                 else
@@ -721,6 +723,7 @@ namespace TiltBrush
 
                 m_PreviewLine = line;
                 m_ToolScriptPreviewBaseScale = line.StrokeScale;
+                m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -977,6 +980,7 @@ namespace TiltBrush
                 m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
             }
             m_ToolScriptPreviewColor = previewColor;
+            m_ToolScriptPreviewDirty = true;
             ResetPreviewProperties();
         }
 
@@ -984,6 +988,7 @@ namespace TiltBrush
         {
             m_ToolScriptStrokeCreator = null;
             m_ToolScriptPreviewColor = null;
+            m_ToolScriptPreviewDirty = false;
             if (m_PreviewLine != null)
             {
                 DisablePreviewLine();
