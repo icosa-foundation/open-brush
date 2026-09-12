@@ -121,5 +121,33 @@ namespace TiltBrush
                 }
             }
         }
+
+        [Test]
+        public void CanPreserveExrAlpha()
+        {
+            Texture2D source = new Texture2D(1, 1, TextureFormat.RGBAFloat, false, true);
+            Texture2D decoded = null;
+            try
+            {
+                source.SetPixel(0, 0, new Color(0.25f, 1.0f, 4.0f, 0.375f));
+                source.Apply();
+                byte[] bytes = source.EncodeToEXR(Texture2D.EXRFlags.OutputAsFloat);
+
+                decoded = HdrTextureLoader.Load(
+                    bytes, "generated.exr", makeNoLongerReadable: false,
+                    preserveAlpha: true);
+
+                Assert.AreEqual(TextureFormat.RGBAFloat, decoded.format);
+                Assert.AreEqual(0.375f, decoded.GetPixel(0, 0).a, 0.0001f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(source);
+                if (decoded != null)
+                {
+                    Object.DestroyImmediate(decoded);
+                }
+            }
+        }
     }
 }

@@ -48,15 +48,31 @@ namespace TiltBrush
         }
 
         public static Texture2D Load(
-            byte[] bytes, string path, bool makeNoLongerReadable = true)
+            byte[] bytes, string path, bool makeNoLongerReadable = true,
+            bool preserveAlpha = false)
         {
             string extension = Path.GetExtension(path);
             if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
             {
-                return new RadianceHDRTexture(bytes).texture;
+                Texture2D texture = new RadianceHDRTexture(bytes).texture;
+                if (texture != null && makeNoLongerReadable)
+                {
+                    texture.Apply(false, true);
+                }
+                return texture;
             }
             if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
             {
+                if (preserveAlpha)
+                {
+                    Texture2D texture = TinyExr.LoadTexture2D(
+                        bytes, linear: true, mipChain: false);
+                    if (makeNoLongerReadable)
+                    {
+                        texture.Apply(false, true);
+                    }
+                    return texture;
+                }
                 return TinyExr.LoadRgb9e5Texture2D(
                     bytes, makeNoLongerReadable: makeNoLongerReadable);
             }
