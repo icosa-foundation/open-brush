@@ -205,20 +205,32 @@ namespace TiltBrush
                 var scene = GetStaticProperty(appType, "Scene");
                 var pointer = GetStaticField(pointerType, "m_Instance");
                 var widget = GetStaticField(widgetType, "m_Instance");
+                var currentState = GetStaticProperty(appType, "CurrentState");
+                object currentBrush = null;
+                if (pointer != null)
+                {
+                    var mainPointer = GetInstanceProperty(pointer, "MainPointer");
+                    if (mainPointer != null)
+                    {
+                        currentBrush = GetInstanceProperty(mainPointer, "CurrentBrush");
+                    }
+                }
 
                 if (api != null &&
                     sketch != null &&
                     controls != null &&
                     scene != null &&
                     pointer != null &&
-                    widget != null)
+                    widget != null &&
+                    string.Equals(currentState?.ToString(), "Standard", StringComparison.Ordinal) &&
+                    currentBrush != null)
                 {
                     yield break;
                 }
 
                 if (Time.realtimeSinceStartup - start > timeoutSeconds)
                 {
-                    Assert.Fail("Timed out waiting for runtime singletons. Ensure the Main scene is running.");
+                    Assert.Fail("Timed out waiting for the application and active brush to become ready.");
                 }
                 yield return null;
             }
