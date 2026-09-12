@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 
@@ -88,6 +89,27 @@ namespace TiltBrush
         {
             string identity = rootIdentity ?? UserStorage.Backend.RootIdentity;
             return $"{baseKey}.{SafTransactionJournal.GetRootNamespaceId(identity)}";
+        }
+
+        internal static StorageDocument ResolveMediaDocument(
+            IUserStorageBackend backend, StorageArea area, string relativePath)
+        {
+            string normalized = (relativePath ?? "").Replace('\\', '/');
+            if (Path.IsPathRooted(normalized) || normalized.Split('/').Any(part => part == "..") ||
+                normalized.Contains(":"))
+            {
+                throw new ArgumentException($"Invalid media path: {relativePath}");
+            }
+            normalized = string.Join("/", normalized.Split('/').Where(part => part != "." && part.Length != 0));
+            if (normalized.Length == 0) { throw new ArgumentException("A media filename is required."); }
+            string root = backend.RootIdentity;
+            StorageDirectoryResult listing = backend.List(area,
+                Path.GetDirectoryName(normalized)?.Replace('\\', '/') ?? "", CancellationToken.None);
+            if (!listing.Success) { throw new IOException($"Could not resolve {relativePath}: {listing.Error}"); }
+            StorageDocument document = listing.Documents.SingleOrDefault(item => !item.IsDirectory &&
+                item.DisplayName.Equals(Path.GetFileName(normalized), StringComparison.OrdinalIgnoreCase));
+            if (root != backend.RootIdentity) { throw new IOException("Selected media folder changed."); }
+            return document ?? throw new FileNotFoundException($"Media file not found: {relativePath}");
         }
 
         private static readonly Dictionary<string, HashSet<string>> sm_CaptureReservations =

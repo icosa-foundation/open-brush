@@ -214,13 +214,23 @@ namespace TiltBrush
 
         public void LoadCustomSkybox(string filename)
         {
-            m_CustomSkyboxTextureName = filename;
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
-            if (File.Exists(path))
+            byte[] fileData;
+            try
             {
-                var fileData = File.ReadAllBytes(path);
+                fileData = ReadSkyboxBytes(UserStorage.Backend,
+                    Path.GetRelativePath(App.BackgroundImagesLibraryPath(), path), path);
+            }
+            catch (IOException e)
+            {
+                Debug.LogError($"[SAF_REVIEW_SKYBOX] Could not load skybox {filename}: {e.Message}");
+                UnityEngine.Object.Destroy(tex);
+                return;
+            }
+            m_CustomSkyboxTextureName = Path.GetRelativePath(App.BackgroundImagesLibraryPath(), path).Replace('\\', '/');
+            {
 
                 if (path.EndsWith(".hdr"))
                 {
@@ -246,10 +256,20 @@ namespace TiltBrush
                 RenderSettings.skybox = m_CustomSkyboxMaterial;
                 RenderSettings.ambientMode = AmbientMode.Skybox;
             }
-            else
+        }
+
+        internal static byte[] ReadSkyboxBytes(IUserStorageBackend backend, string relativePath, string localPath)
+        {
+            if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                Debug.LogError($"Could not find skybox image: {path}");
+                return File.ReadAllBytes(localPath);
             }
+            StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
+                backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
+            using Stream source = backend.OpenRead(document.DocumentId, false, System.Threading.CancellationToken.None);
+            using var bytes = new MemoryStream();
+            source.CopyTo(bytes);
+            return bytes.ToArray();
         }
 
         // note: this takes in the full file path, instead of just the name

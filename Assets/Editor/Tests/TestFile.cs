@@ -701,6 +701,19 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("sky.png", new byte[] { 4, 5, 6 });
+            string missingCache = Path.Combine(Path.GetTempPath(), $"missing-skybox-{Guid.NewGuid():N}.png");
+            CollectionAssert.AreEqual(new byte[] { 4, 5, 6 },
+                SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache));
+            Assert.IsFalse(File.Exists(missingCache));
+            Assert.Throws<ArgumentException>(() =>
+                OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
+        }
+
+        [Test]
         public void SafImports_AvoidSharedAndLocalNames()
         {
             var backend = new FakeSafBackend();
