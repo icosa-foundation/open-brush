@@ -38,6 +38,32 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestLinearTextureToBytesRoundtrip()
+        {
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+            Texture2D reconstructedTexture = null;
+            try
+            {
+                texture.SetPixels(new[] { Color.red, Color.green, Color.blue, Color.white });
+                texture.Apply();
+
+                reconstructedTexture = ImageCache.TextureFromBytes(
+                    ImageCache.BytesFromTexture(texture));
+
+                CompareTextures(texture, reconstructedTexture);
+                Assert.IsFalse(reconstructedTexture.isDataSRGB);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+                if (reconstructedTexture != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(reconstructedTexture);
+                }
+            }
+        }
+
+        [Test]
         public void TestCachingRoundtrip()
         {
             // Get the texture.
@@ -101,6 +127,7 @@ namespace TiltBrush
             Assert.AreEqual(textureA.width, textureB.width);
             Assert.AreEqual(textureA.height, textureB.height);
             Assert.AreEqual(textureA.format, textureB.format);
+            Assert.AreEqual(textureA.isDataSRGB, textureB.isDataSRGB);
 
             byte[] textureDataA = textureA.GetRawTextureData();
             byte[] textureDataB = textureB.GetRawTextureData();
