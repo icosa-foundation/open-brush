@@ -38,6 +38,8 @@ namespace TiltBrush
         }
         private LoadMusicState m_CurrentLoadMusicState;
         private int m_LoadMusicIndex;
+        private int m_MusicLoadVersion;
+        private string m_MusicRootIdentity;
         private WWW m_LoadMusicWWW;
 
         public float m_SmoothLerp = .2f;
@@ -106,6 +108,7 @@ namespace TiltBrush
             }
             else
             {
+                ++m_MusicLoadVersion;
                 //turn off audio and the mic
                 m_AudioSource.Stop();
                 EnableMic(false);
@@ -117,6 +120,11 @@ namespace TiltBrush
         {
             if (m_Active)
             {
+                if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                    UserStorage.Backend.IsReady && m_MusicRootIdentity != UserStorage.Backend.RootIdentity)
+                {
+                    LoadNextSong();
+                }
                 //get fft and wave form data from unity/fmod
                 m_AudioSource.GetOutputData(m_WaveFormFloats, 0);
                 m_AudioSource.GetSpectrumData(m_SpectrumFloats, 0, FFTWindow.BlackmanHarris);
@@ -245,10 +253,12 @@ namespace TiltBrush
 
         void LoadNextSong()
         {
+            int version = ++m_MusicLoadVersion;
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
+                m_MusicRootIdentity = UserStorage.Backend.RootIdentity;
                 m_CurrentLoadMusicState = LoadMusicState.WaitingForStorage;
-                StartCoroutine(LoadNextSafSong());
+                StartCoroutine(LoadNextSafSong(version));
                 return;
             }
             string sMusicDirectory = Path.Combine(App.UserPath(), "Music");
@@ -278,7 +288,7 @@ namespace TiltBrush
             EnableMic(true);
         }
 
-        private IEnumerator LoadNextSafSong()
+        private IEnumerator LoadNextSafSong(int version)
         {
             IUserStorageBackend backend = UserStorage.Backend;
             string rootIdentity = backend.RootIdentity;
@@ -307,6 +317,7 @@ namespace TiltBrush
                 if (finished) { break; }
                 yield return null;
             }
+            if (version != m_MusicLoadVersion) { yield break; }
             if (rootIdentity != backend.RootIdentity)
             {
                 LoadNextSong();
