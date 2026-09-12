@@ -931,6 +931,8 @@ namespace TiltBrush
 
         public void ClearMemory()
         {
+            StraightEdgeGuideScript.m_Instance?.ClearAllCanvasHashes();
+
             if (m_ScenePlayback != null)
             {
                 // Ensure scene playback completes so that geometry is in state expected by rest of system.

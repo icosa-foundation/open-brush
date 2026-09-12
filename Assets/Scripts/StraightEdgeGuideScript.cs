@@ -548,8 +548,7 @@ namespace TiltBrush
         /// </summary>
         public void RebuildAllCanvasHashes()
         {
-            m_HashPerCanvas.Clear();
-            m_HashLocationByStroke.Clear();
+            ClearAllCanvasHashes();
 
             if (SketchMemoryScript.m_Instance == null)
             {
@@ -569,6 +568,12 @@ namespace TiltBrush
                 }
                 currentNode = currentNode.Next;
             }
+        }
+
+        public void ClearAllCanvasHashes()
+        {
+            m_HashPerCanvas.Clear();
+            m_HashLocationByStroke.Clear();
         }
 
     }
