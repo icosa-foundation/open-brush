@@ -91,6 +91,40 @@ namespace TiltBrush
             return $"{baseKey}.{SafTransactionJournal.GetRootNamespaceId(identity)}";
         }
 
+        internal sealed class MediaSource
+        {
+            private readonly IUserStorageBackend m_Backend;
+            private readonly string m_Root;
+            public StorageDocument Document { get; }
+            public string Identity => $"{m_Root}:{Document.DocumentId.Value}";
+            public string LocalPath => m_Backend.GetMaterializationPath(Document.DocumentId);
+
+            public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
+            {
+                m_Backend = backend;
+                m_Root = backend.RootIdentity;
+                Document = ResolveMediaDocument(backend, area, relativePath);
+                CheckRoot();
+            }
+
+            private void CheckRoot()
+            {
+                if (m_Root != m_Backend.RootIdentity) { throw new IOException("Selected media folder changed."); }
+            }
+
+            public Stream OpenRead()
+            {
+                CheckRoot();
+                return m_Backend.OpenRead(Document.DocumentId, false, CancellationToken.None);
+            }
+
+            public string Materialize(MaterializationScope scope)
+            {
+                CheckRoot();
+                return m_Backend.Materialize(Document.DocumentId, scope, CancellationToken.None);
+            }
+        }
+
         internal static StorageDocument ResolveMediaDocument(
             IUserStorageBackend backend, StorageArea area, string relativePath)
         {

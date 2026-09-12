@@ -1011,7 +1011,7 @@ namespace TiltBrush
         {
             location = GetSafeRelativePathInDirectory(
                 App.ReferenceImagePath(), location, "reference image path");
-            var image = new ReferenceImage(location);
+            var image = ResolveApiImage(location);
             image.SynchronousLoad();
             return image;
         }
@@ -1073,6 +1073,7 @@ namespace TiltBrush
             }
             location = GetSafeRelativePathInDirectory(
                 App.VideoLibraryPath(), location, "video path");
+            ReferenceVideo video = ResolveApiVideo(location);
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -1086,7 +1087,6 @@ namespace TiltBrush
                 // Now enable preservation to prevent async overrides
                 videoWidget.SetPreserveCustomSize(true);
 
-                var video = new ReferenceVideo(location);
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
                 cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());

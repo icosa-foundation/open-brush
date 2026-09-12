@@ -175,7 +175,7 @@ namespace TiltBrush
             {
                 subtree = location.Substring(relativePath.Length + 1);
             }
-            var model = new Model(relativePath);
+            var model = ResolveApiModel(relativePath);
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);

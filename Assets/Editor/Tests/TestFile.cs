@@ -58,6 +58,10 @@ namespace TiltBrush
             public StorageResultCode? ListFailureCode { get; set; }
             public byte[] CreateBeforeNextWriteData { get; set; }
             public int ReadCount { get; private set; }
+            public string MaterializationPath { get; set; }
+            public MaterializationScope? LastMaterializationScope { get; private set; }
+            public string LastListedDirectory { get; private set; }
+            public StorageArea LastListedArea { get; private set; }
             public List<string> CommittedNames { get; } = new List<string>();
 
             private sealed class WriteTransaction : IStorageWriteTransaction
@@ -178,6 +182,8 @@ namespace TiltBrush
             public StorageDirectoryResult List(
                 StorageArea area, string relativeDirectory, CancellationToken cancellationToken)
             {
+                LastListedDirectory = relativeDirectory;
+                LastListedArea = area;
                 if (ListFailureCode.HasValue)
                 {
                     return StorageDirectoryResult.Failed(
@@ -270,11 +276,17 @@ namespace TiltBrush
                 MaterializationScope scope,
                 CancellationToken cancellationToken)
             {
+                if (MaterializationPath != null)
+                {
+                    LastMaterializationScope = scope;
+                    return MaterializationPath;
+                }
                 throw new NotSupportedException();
             }
 
             public string GetMaterializationPath(StorageDocumentId documentId)
             {
+                if (MaterializationPath != null) { return MaterializationPath; }
                 throw new NotSupportedException();
             }
         }
@@ -711,6 +723,26 @@ namespace TiltBrush
             Assert.IsFalse(File.Exists(missingCache));
             Assert.Throws<ArgumentException>(() =>
                 OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
+        }
+
+        [TestCase(StorageArea.MediaLibraryImages, MaterializationScope.File)]
+        [TestCase(StorageArea.MediaLibraryVideos, MaterializationScope.File)]
+        [TestCase(StorageArea.MediaLibraryModels, MaterializationScope.DependencyTree)]
+        public void SafFilenameImport_ResolvesUnscannedDirectoriesAndGuardsRootChanges(
+            StorageArea area, MaterializationScope scope)
+        {
+            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/asset.bin" };
+            StorageDocumentId id = backend.Add("asset.bin", new byte[] { 7 });
+            var source = new OpenBrushStorage.MediaSource(backend, area, "Nested/asset.bin");
+            Assert.AreEqual("Nested", backend.LastListedDirectory);
+            Assert.AreEqual(area, backend.LastListedArea);
+            Assert.AreEqual(id, source.Document.DocumentId);
+            using (Stream input = source.OpenRead()) { Assert.AreEqual(7, input.ReadByte()); }
+            Assert.AreEqual(backend.MaterializationPath, source.Materialize(scope));
+            Assert.AreEqual(scope, backend.LastMaterializationScope);
+            backend.RootIdentity = "different-root";
+            Assert.Throws<IOException>(() => source.OpenRead());
+            Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
         [Test]
