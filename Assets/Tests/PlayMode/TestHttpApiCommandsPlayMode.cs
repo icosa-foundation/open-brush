@@ -210,6 +210,32 @@ namespace TiltBrush
             }
         }
 
+        private static IEnumerator HideSpectatorNormally(float timeoutSeconds)
+        {
+            var dropCamType = GetTypeOrFail("TiltBrush.DropCamWidget");
+            var dropCamObject = GetDropCam();
+            var dropCam = dropCamObject.GetComponent(dropCamType);
+            Assert.NotNull(dropCam, "DropCamWidget component not found");
+            var show = dropCamType.GetMethod(
+                "Show",
+                BindingFlags.Public | BindingFlags.Instance,
+                null,
+                new[] { typeof(bool), typeof(bool) },
+                null);
+            Assert.NotNull(show, "DropCamWidget.Show(bool, bool) not found");
+            show.Invoke(dropCam, new object[] { false, false });
+
+            float start = Time.realtimeSinceStartup;
+            while (dropCamObject.activeSelf)
+            {
+                if (Time.realtimeSinceStartup - start > timeoutSeconds)
+                {
+                    Assert.Fail("Timed out waiting for the spectator camera to hide.");
+                }
+                yield return null;
+            }
+        }
+
         private static IEnumerator WaitForSpectatorDisplacement(
             Vector3 initialPosition, string mode, float timeoutSeconds)
         {
@@ -707,9 +733,14 @@ namespace TiltBrush
         public IEnumerator Cmd_SpectatorToggle()
         {
             yield return EnsureReady();
-            yield return SendCommand("spectator.off");
+            yield return SendCommand("spectator.on");
+            yield return SendCommand("spectator.mode", "stationary");
+            yield return HideSpectatorNormally(2f);
             yield return SendCommand("spectator.toggle");
-            Assert.IsTrue(GetDropCam().activeSelf);
+            yield return WaitForSpectatorVisible(2f);
+            Assert.IsTrue(Array.Exists(
+                GetDropCam().GetComponentsInChildren<Renderer>(includeInactive: true),
+                renderer => renderer.enabled));
         }
 
         [UnityTest]

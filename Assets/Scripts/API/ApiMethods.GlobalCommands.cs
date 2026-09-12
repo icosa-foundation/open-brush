@@ -295,7 +295,7 @@ namespace TiltBrush
         public static void ToggleSpectator()
         {
             var spectator = SketchControlsScript.m_Instance.GetDropCampWidget();
-            spectator.ShowInstantly(!spectator.gameObject.activeSelf);
+            spectator.Show(!spectator.gameObject.activeSelf);
         }
 
         [ApiEndpoint("spectator.on", "Turns the spectator camera on")]
