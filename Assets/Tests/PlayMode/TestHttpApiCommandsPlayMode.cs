@@ -136,6 +136,23 @@ namespace TiltBrush
             return GetStructField<float>(GetScenePose(), "scale");
         }
 
+        private static Transform GetHead()
+        {
+            var viewpointType = GetTypeOrFail("TiltBrush.ViewpointScript");
+            return (Transform)GetStaticProperty(viewpointType, "Head");
+        }
+
+        private static Vector3 TransformScenePoint(Vector3 position)
+        {
+            return GetSceneTranslation() + GetSceneRotation() * (GetSceneScale() * position);
+        }
+
+        private static Vector3 InverseTransformScenePoint(Vector3 position)
+        {
+            return Quaternion.Inverse(GetSceneRotation()) *
+                ((position - GetSceneTranslation()) / GetSceneScale());
+        }
+
         private static Vector3 GetPointerPosition()
         {
             var pointerType = GetTypeOrFail("TiltBrush.PointerManager");
@@ -579,18 +596,15 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("user.move.to", "1,1,1");
+            var head = GetHead();
+            var userPosition = InverseTransformScenePoint(head.position);
+            var targetPosition = new Vector3(2, 1, 1);
+
             yield return SendCommand("user.look.at", "2,1,1");
-            var userPos = -GetSceneTranslation();
-            var lookDir = (new Vector3(2, 1, 1) - userPos).normalized;
-            if (IsVr())
-            {
-                var flat = new Vector3(lookDir.x, 0, lookDir.z).normalized;
-                Assert.Greater(Vector3.Dot(GetSceneRotation() * Vector3.forward, flat), 0.99f);
-            }
-            else
-            {
-                Assert.Greater(Vector3.Dot(GetSceneRotation() * Vector3.forward, lookDir), 0.99f);
-            }
+
+            AssertVector3Approx(userPosition, InverseTransformScenePoint(head.position));
+            var targetDirection = (TransformScenePoint(targetPosition) - head.position).normalized;
+            Assert.Greater(Vector3.Dot(head.forward, targetDirection), 0.99f);
         }
 
         [UnityTest]
@@ -767,8 +781,7 @@ namespace TiltBrush
             var dropCam = GetDropCam();
             var xrRig = GameObject.Find("Viewpoint/XRRig");
             Assert.NotNull(xrRig, "XRRig not found");
-            var viewpointType = GetTypeOrFail("TiltBrush.ViewpointScript");
-            var head = (Transform)GetStaticProperty(viewpointType, "Head");
+            var head = GetHead();
             var initialRigPosition = xrRig.transform.position;
             xrRig.transform.position += new Vector3(1, 0, 0);
 

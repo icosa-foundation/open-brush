@@ -775,14 +775,16 @@ namespace TiltBrush
         public static void UserLookAt(Vector3 position)
         {
             TrTransform lookPose = App.Scene.Pose;
-            Vector3 userPosition = -lookPose.translation;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Vector3 direction = position - userPosition;
             bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
             if (isVr)
             {
                 direction.y = 0;
             }
-            lookPose.rotation = Quaternion.LookRotation(direction, Vector3.up);
+            lookPose.rotation = Quaternion.Inverse(Quaternion.LookRotation(direction, Vector3.up));
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
 
             bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
             try
