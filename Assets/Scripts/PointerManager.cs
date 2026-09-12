@@ -649,6 +649,7 @@ namespace TiltBrush
 
                 // Snap endpoint while actively drawing
                 Vector3 pointerPosition = MainPointer.transform.position;
+                bool endpointSnapped = false;
                 if (StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
                     m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedEndpoint))
                 {
@@ -658,10 +659,11 @@ namespace TiltBrush
                     {
                         SetMainPointerPosition(snappedEndpoint);
                         pointerPosition = snappedEndpoint;
+                        endpointSnapped = true;
                     }
                 }
 
-                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition);
+                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition, endpointSnapped);
             }
 
             // Preview endpoint snapping when not actively drawing

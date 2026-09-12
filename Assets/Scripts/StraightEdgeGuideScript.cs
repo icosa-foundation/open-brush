@@ -234,23 +234,22 @@ namespace TiltBrush
         }
 
         // Pass pointer position in room space
-        public bool UpdateTarget(Vector3 vPointer)
+        public bool UpdateTarget(Vector3 vPointer, bool endpointSnapped = false)
         {
             // Everything is done in room coordinates, so the _RS suffixes are omitted
             TrTransform xfWorldFromCanvas = Coords.CanvasPose;
             Vector3 vTarget = vPointer;
             Vector3 vOrigin = xfWorldFromCanvas * m_vOrigin_CS;
-            bool endpointSnapped = false;
 
             // Optionally snap target pos.
             // TODO: Make this work with non-line shapes.
             m_SnapActive = SnapEnabled;
-            if (m_SnapActive && m_CurrentShape == Shape.Line)
+            if (!endpointSnapped && m_SnapActive && m_CurrentShape == Shape.Line)
             {
                 vTarget = vOrigin + ApplySnap(vTarget - vOrigin);
             }
 
-            if (m_CurrentShape == Shape.Line &&
+            if (!endpointSnapped && m_CurrentShape == Shape.Line &&
                 TryGetEndpointSnap(vTarget, out Vector3 snappedTarget))
             {
                 // Avoid snapping to the origin which can create degenerate strokes.
