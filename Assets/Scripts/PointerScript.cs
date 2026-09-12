@@ -751,6 +751,19 @@ namespace TiltBrush
                 return;
             }
 
+            // Decay-based preview brushes retain their existing knots and geometry when reset.
+            // Tool previews replay the complete scripted path each frame, so start those brushes
+            // from a fresh instance rather than appending another copy of the path.
+            if (!m_PreviewLine.AlwaysRebuildPreviewBrush())
+            {
+                DisablePreviewLine();
+                CreatePreviewLine();
+                if (m_PreviewLine == null)
+                {
+                    return;
+                }
+            }
+
             float scale = m_ToolScriptPreviewBaseScale * m_ToolScriptStrokeCreator.StrokeScale;
             var first = controlPoints[0];
             m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
