@@ -55,6 +55,7 @@ namespace TiltBrush
         public List<PreviewMaterialEntry> previewMaterials;
 
         private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
+        private float m_NextStrokePreviewTime;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
         public override void Init()
@@ -145,6 +146,12 @@ namespace TiltBrush
                 (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0 || quickSnapPressed);
             bool gridSnapEnabled = !snappingOverriddenOff &&
                 SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+            var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
+            bool strokePreviewRequested = string.Equals(
+                previewTypeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(
+                    previewTypeVal?.String, "strokes", StringComparison.OrdinalIgnoreCase);
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -153,6 +160,7 @@ namespace TiltBrush
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
                 m_LastToolScriptResult = null;
+                m_NextStrokePreviewTime = 0f;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
                     GetSnappedToolPoint(m_FirstPositionClicked_CS, quickSnapPressed));
@@ -164,10 +172,7 @@ namespace TiltBrush
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
-                var previewModeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
-                bool useStrokePreview = string.Equals(previewModeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
                 Vector3 startPosition_GS = gridSnapEnabled
                     ? SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS)
@@ -178,7 +183,7 @@ namespace TiltBrush
                 var drawnVector_GS = endPosition_GS - startPosition_GS;
 
                 Quaternion controllerRot = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation;
-                if (!useStrokePreview && drawnVector_GS.sqrMagnitude > 0)
+                if (!strokePreviewRequested && drawnVector_GS.sqrMagnitude > 0)
                 {
                     // Orientation tracks the controller directly; drag magnitude is the only thing
                     // that determines the preview's scale. The drag direction is intentionally
@@ -273,28 +278,38 @@ namespace TiltBrush
                 }
             }
 
-            var executionResult = LuaManager.Instance.DoToolScript(
-                LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
-            var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(
-                LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
-            bool strokePreviewRequested = string.Equals(
-                previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+            bool isPreviewExecution = strokePreviewRequested && m_WasClicked;
+            float previewInterval = GetStrokePreviewInterval();
+            bool scriptExecuted = ShouldExecuteToolScript(
+                isPreviewExecution, previewInterval, Time.realtimeSinceStartup,
+                m_NextStrokePreviewTime);
+            LuaManager.ToolScriptExecutionResult executionResult = null;
+            if (scriptExecuted)
+            {
+                SetApiProperty($"Tool.{LuaNames.ToolScriptIsPreview}", isPreviewExecution);
+                executionResult = LuaManager.Instance.DoToolScript(
+                    LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
+                if (isPreviewExecution && previewInterval > 0f)
+                {
+                    m_NextStrokePreviewTime = Time.realtimeSinceStartup + previewInterval;
+                }
+            }
 
             if (strokePreviewRequested)
             {
-                if (executionResult != null)
+                if (scriptExecuted && executionResult != null)
                 {
                     m_LastToolScriptResult = executionResult;
                 }
 
-                if (executionResult?.PreviewControlPointPaths != null &&
+                if (scriptExecuted && executionResult?.PreviewControlPointPaths != null &&
                     executionResult.PreviewControlPointPaths.Any(path => path.Count > 1))
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
                         executionResult.PreviewControlPointPaths,
                         executionResult.PreviewColors, executionResult.PreviewStrokeScale);
                 }
-                else
+                else if (scriptExecuted)
                 {
                     PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 }
@@ -317,11 +332,33 @@ namespace TiltBrush
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 ApiManager.Instance.EndUndo();
             }
-            else if (executionResult == null && strokePreviewRequested)
+            else if (scriptExecuted && executionResult == null && strokePreviewRequested)
             {
                 // Ensure we don't leave stale preview geometry when the script stops emitting paths.
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
             }
+        }
+
+        private static float GetStrokePreviewInterval()
+        {
+            var intervalSetting = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewInterval);
+            if (intervalSetting?.Type != MoonSharp.Interpreter.DataType.Number)
+            {
+                return 0f;
+            }
+
+            float interval = (float)intervalSetting.Number;
+            return float.IsNaN(interval) || float.IsInfinity(interval)
+                ? 0f
+                : Mathf.Max(0f, interval);
+        }
+
+        internal static bool ShouldExecuteToolScript(
+            bool isPreviewExecution, float previewInterval,
+            float currentTime, float nextPreviewTime)
+        {
+            return !isPreviewExecution || previewInterval <= 0f || currentTime >= nextPreviewTime;
         }
 
         private static TrTransform GetSnappedToolPoint(
@@ -345,14 +382,10 @@ namespace TiltBrush
                 return point_CS;
             }
 
-            var canvasPose = App.Scene.ActiveCanvas.Pose;
-            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
-                canvasPose.rotation * point_CS.rotation;
-            var snappedRotation_SC = selectionManager.CurrentSnapAngleIndex != 0
-                ? selectionManager.QuantizeAngle(rotation_SC)
-                : selectionManager.QuantizeAngle(rotation_SC, 90f, useEnabledAxes: false);
-            var rotation_GS = App.Scene.Pose.rotation * snappedRotation_SC;
-            point_CS.rotation = Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
+            point_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
+                ? selectionManager.QuantizeAngle_CS(point_CS.rotation)
+                : selectionManager.QuantizeAngle_CS(
+                    point_CS.rotation, 90f, useEnabledAxes: false);
             return point_CS;
         }
 

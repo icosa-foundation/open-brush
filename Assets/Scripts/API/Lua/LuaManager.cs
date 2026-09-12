@@ -86,7 +86,7 @@ namespace TiltBrush
         public static string IsExampleScriptBool => "_IsExampleScript";
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
-        public static string ToolPreviewMode => "previewMode";
+        public static string ToolPreviewInterval => "previewInterval";
 
         // Injected Toolscript properties
 
@@ -94,6 +94,7 @@ namespace TiltBrush
         public static string ToolScriptEndPoint => "endPoint";
         public static string ToolScriptVector => "vector";
         public static string ToolScriptRotation => "rotation";
+        public static string ToolScriptIsPreview => "isPreview";
     }
 
     public struct ScriptWidgetConfig
@@ -1428,18 +1429,34 @@ namespace TiltBrush
             if (angleSnapEnabled)
             {
                 tr_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
-                    ? selectionManager.QuantizeAngle(tr_CS.rotation)
-                    : selectionManager.QuantizeAngle(
+                    ? selectionManager.QuantizeAngle_CS(tr_CS.rotation)
+                    : selectionManager.QuantizeAngle_CS(
                         tr_CS.rotation, 90f, useEnabledAxes: false);
             }
 
             List<List<PointerManager.ControlPoint>> previewControlPointPaths = new();
             List<Color?> previewColors = new();
             var rawPaths = pathWrapper.AsMultiTrList();
-            for (int pathIndex = 0; pathIndex < (rawPaths?.Count ?? 0); ++pathIndex)
+            var previewType = GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewType)?.String;
+            IEnumerable<int> previewPathIndices;
+            if (string.Equals(previewType, "strokes", StringComparison.OrdinalIgnoreCase))
+            {
+                previewPathIndices = Enumerable.Range(0, rawPaths?.Count ?? 0);
+            }
+            else
+            {
+                // "stroke" deliberately previews only the first path that can render.
+                int firstPathIndex = FindFirstDrawableToolScriptPathIndex(rawPaths);
+                previewPathIndices = firstPathIndex >= 0
+                    ? new[] { firstPathIndex }
+                    : Enumerable.Empty<int>();
+            }
+
+            foreach (int pathIndex in previewPathIndices)
             {
                 var rawPath = rawPaths[pathIndex];
-                if (rawPath == null || rawPath.Count < 2)
+                if (rawPath == null || rawPath.Count < 3)
                 {
                     continue;
                 }
@@ -1463,11 +1480,31 @@ namespace TiltBrush
             }
 
             SetLatestToolScriptControlPoints(
-                previewControlPointPaths.SelectMany(path => path), ScriptCoordSpace.Canvas);
+                previewControlPointPaths.FirstOrDefault(), ScriptCoordSpace.Canvas);
 
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
                 previewControlPointPaths, previewColors, previewStrokeScale);
+        }
+
+        internal static int FindFirstDrawableToolScriptPathIndex(
+            IReadOnlyList<List<TrTransform>> paths)
+        {
+            if (paths == null)
+            {
+                return -1;
+            }
+
+            // DrawNestedTrList reserves the final source transform as a terminal point.
+            // Three transforms are therefore required to produce two drawable control points.
+            for (int i = 0; i < paths.Count; ++i)
+            {
+                if (paths[i]?.Count >= 3)
+                {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)
@@ -1548,10 +1585,6 @@ namespace TiltBrush
                 }
 
                 float pressure = tr.scale;
-                if (Mathf.Approximately(pressure, 0f))
-                {
-                    pressure = 1f;
-                }
 
                 controlPoints.Add(new PointerManager.ControlPoint
                 {

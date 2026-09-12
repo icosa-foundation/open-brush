@@ -1,6 +1,7 @@
 Settings = {
     description = "Generates a spirograph pattern.",
-    previewType = "quad"
+    previewType = "stroke",
+    previewInterval = 0.1
 }
 
 Parameters = {
@@ -13,12 +14,15 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
+    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local path = Path:New()
         local R = Parameters.outerRadius -- Fixed outer circle radius
         local r = Parameters.innerRadius -- Rolling circle radius
         local d = Parameters.penOffset -- Pen offset
-        local totalPoints = Parameters.points -- Number of points
+        local totalPoints = Parameters.points
+        if Tool.isPreview then
+            totalPoints = Math:Min(totalPoints, 200)
+        end
 
         -- Ensure parameters are valid
         if r >= R then

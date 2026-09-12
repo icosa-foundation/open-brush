@@ -1,7 +1,6 @@
 Settings = {
     description="Draws a circle",
-    previewType="quad",
-    previewMode="stroke"
+    previewType="stroke"
 }
 
 local function buildCircle()

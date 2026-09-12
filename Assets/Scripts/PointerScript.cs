@@ -81,6 +81,7 @@ namespace TiltBrush
         private readonly List<BaseBrushScript> m_ToolScriptPreviewLines = new();
         private readonly List<float> m_ToolScriptPreviewBaseScales = new();
         private readonly List<Color?> m_ToolScriptPreviewColors = new();
+        private bool m_ToolScriptPreviewDirty;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -519,7 +520,11 @@ namespace TiltBrush
             {
                 if (m_ToolScriptStrokeCreators.Count > 0)
                 {
-                    UpdateToolScriptPreviewLines();
+                    if (m_ToolScriptPreviewDirty)
+                    {
+                        UpdateToolScriptPreviewLines();
+                        m_ToolScriptPreviewDirty = false;
+                    }
                 }
                 else
                 {
@@ -736,7 +741,7 @@ namespace TiltBrush
                 return null;
             }
 
-            Transform canvasTransform = App.Instance.m_CanvasTransform;
+            Transform canvasTransform = App.Scene.ActiveCanvas.transform;
             TrTransform xf_LS = GetTransformForLine(canvasTransform);
             BaseBrushScript line = BaseBrushScript.Create(
                 canvasTransform, xf_LS, m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
@@ -762,9 +767,28 @@ namespace TiltBrush
 
             for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
             {
+                var line = m_ToolScriptPreviewLines[i];
+                bool recreateLine = line == null ||
+                    line.transform.parent != App.Scene.ActiveCanvas.transform ||
+                    !line.AlwaysRebuildPreviewBrush();
+                if (recreateLine)
+                {
+                    if (line != null)
+                    {
+                        line.DestroyMesh();
+                        Destroy(line.gameObject);
+                    }
+                    line = CreateToolScriptPreviewLine(m_ToolScriptPreviewColors[i]);
+                    if (line == null)
+                    {
+                        continue;
+                    }
+                    m_ToolScriptPreviewLines[i] = line;
+                    m_ToolScriptPreviewBaseScales[i] = line.StrokeScale;
+                }
+
                 UpdateToolScriptPreviewLine(
-                    m_ToolScriptPreviewLines[i], m_ToolScriptStrokeCreators[i],
-                    m_ToolScriptPreviewBaseScales[i]);
+                    line, m_ToolScriptStrokeCreators[i], m_ToolScriptPreviewBaseScales[i]);
             }
         }
 
@@ -1011,7 +1035,6 @@ namespace TiltBrush
                     m_ToolScriptPreviewColors.Add(previewEntries[i].Color);
                 }
             }
-
             if (m_ToolScriptStrokeCreators.Count > previewEntries.Count)
             {
                 m_ToolScriptStrokeCreators.RemoveRange(
@@ -1022,6 +1045,7 @@ namespace TiltBrush
                     m_ToolScriptPreviewColors.Count - previewEntries.Count);
             }
             RemoveToolScriptPreviewLines(previewEntries.Count);
+            m_ToolScriptPreviewDirty = true;
             ResetPreviewProperties();
         }
 
@@ -1029,6 +1053,7 @@ namespace TiltBrush
         {
             m_ToolScriptStrokeCreators.Clear();
             m_ToolScriptPreviewColors.Clear();
+            m_ToolScriptPreviewDirty = false;
             RemoveToolScriptPreviewLines(0);
         }
 
