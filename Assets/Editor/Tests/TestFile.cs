@@ -746,6 +746,51 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafModelMaterialization_PrunesOnlyObsoleteFilesInItsGroup(bool cancelled)
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-model-test-{Guid.NewGuid():N}");
+            string group = Path.Combine(root, "model-group");
+            string nested = Path.Combine(group, "textures");
+            Directory.CreateDirectory(nested);
+            string model = Path.Combine(group, "model.gltf");
+            string texture = Path.Combine(nested, "current.png");
+            string stale = Path.Combine(nested, "removed.png");
+            string staleMaterial = Path.Combine(group, "old.mtl");
+            string otherGroup = Path.Combine(root, "other-model-group");
+            Directory.CreateDirectory(otherGroup);
+            string otherModel = Path.Combine(otherGroup, "model.gltf");
+            try
+            {
+                foreach (string path in new[] { model, texture, stale, staleMaterial, otherModel })
+                {
+                    File.WriteAllText(path, "fixture");
+                }
+                var current = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { model, texture };
+                if (cancelled)
+                {
+                    Assert.Throws<OperationCanceledException>(() =>
+                        SafUserStorageBackend.RemoveObsoleteMaterializedFiles(
+                            group, current, new CancellationToken(true)));
+                }
+                else
+                {
+                    SafUserStorageBackend.RemoveObsoleteMaterializedFiles(
+                        group, current, CancellationToken.None);
+                }
+                Assert.AreEqual(cancelled, File.Exists(stale));
+                Assert.AreEqual(cancelled, File.Exists(staleMaterial));
+                Assert.AreEqual("fixture", File.ReadAllText(model));
+                Assert.AreEqual("fixture", File.ReadAllText(texture));
+                Assert.AreEqual("fixture", File.ReadAllText(otherModel));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         [Test]
         public void SafMediaIdentity_ChangesWithMetadataButNotRepeatedLookups()
         {

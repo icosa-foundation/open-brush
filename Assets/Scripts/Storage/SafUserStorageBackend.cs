@@ -33,6 +33,7 @@ namespace TiltBrush
         }
 
         private readonly object m_LocationGate = new object();
+        private readonly object m_MaterializationGate = new object();
         private readonly Dictionary<StorageDocumentId, DocumentLocation> m_Locations =
             new Dictionary<StorageDocumentId, DocumentLocation>();
         private string m_MappedRootId;
@@ -233,7 +234,20 @@ namespace TiltBrush
             MaterializationScope scope,
             CancellationToken cancellationToken)
         {
+            // A second load must not prune a group while the first is still copying it.
+            lock (m_MaterializationGate)
+            {
+                return MaterializeLocked(documentId, scope, cancellationToken);
+            }
+        }
+
+        private string MaterializeLocked(
+            StorageDocumentId documentId,
+            MaterializationScope scope,
+            CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
+            string rootIdentity = RootIdentity;
             DocumentLocation location = GetLocation(documentId);
             if (location == null)
             {
@@ -242,19 +256,29 @@ namespace TiltBrush
             }
 
             StorageDocumentId materializationGroupId = location.Document.DocumentId;
+            string groupRoot = GetMaterializationGroupRoot(location.Area, materializationGroupId);
+            bool reconcileModel = scope == MaterializationScope.DependencyTree &&
+                location.Area == StorageArea.MediaLibraryModels;
+            var materializedFiles = reconcileModel
+                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase) : null;
             string path = MaterializeFile(
-                location, materializationGroupId, cancellationToken);
-            if (scope == MaterializationScope.DependencyTree &&
-                location.Area == StorageArea.MediaLibraryModels)
+                location, materializationGroupId, cancellationToken, materializedFiles);
+            if (reconcileModel)
             {
                 MaterializeModelDependencies(
                     location,
                     path,
                     materializationGroupId,
-                    cancellationToken);
+                    cancellationToken,
+                    materializedFiles);
+                if (rootIdentity != RootIdentity)
+                {
+                    throw new IOException("Selected media folder changed during materialization.");
+                }
+                RemoveObsoleteMaterializedFiles(
+                    groupRoot, materializedFiles, cancellationToken);
             }
-            EvictMaterializationCache(
-                GetMaterializationGroupRoot(location.Area, materializationGroupId));
+            EvictMaterializationCache(groupRoot);
             return path;
         }
 
@@ -362,7 +386,8 @@ namespace TiltBrush
         private string MaterializeFile(
             DocumentLocation location,
             StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            ISet<string> materializedFiles = null)
         {
             if (location.Document.IsDirectory)
             {
@@ -370,7 +395,8 @@ namespace TiltBrush
                     location.Area,
                     location.RelativePath,
                     materializationGroupId,
-                    cancellationToken);
+                    cancellationToken,
+                    materializedFiles);
                 return GetMaterializationPath(location, materializationGroupId);
             }
 
@@ -409,6 +435,7 @@ namespace TiltBrush
                 File.SetLastWriteTime(destination, location.Document.LastModified.Value);
             }
             File.SetLastAccessTimeUtc(destination, DateTime.UtcNow);
+            materializedFiles?.Add(destination);
             return destination;
         }
 
@@ -416,7 +443,8 @@ namespace TiltBrush
             StorageArea area,
             string relativeDirectory,
             StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            ISet<string> materializedFiles)
         {
             DocumentLocation directoryLocation = FindLocationByPath(area, relativeDirectory);
             if (directoryLocation != null)
@@ -440,12 +468,13 @@ namespace TiltBrush
                         area,
                         child.RelativePath,
                         materializationGroupId,
-                        cancellationToken);
+                        cancellationToken,
+                        materializedFiles);
                 }
                 else
                 {
                     MaterializeFile(
-                        child, materializationGroupId, cancellationToken);
+                        child, materializationGroupId, cancellationToken, materializedFiles);
                 }
             }
         }
@@ -479,7 +508,8 @@ namespace TiltBrush
             DocumentLocation model,
             string localModelPath,
             StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            ISet<string> materializedFiles)
         {
             if (model.Document.IsDirectory)
             {
@@ -534,9 +564,8 @@ namespace TiltBrush
                 e is IOException ||
                 e is Newtonsoft.Json.JsonException)
             {
-                Debug.LogWarning(
-                    $"SAF_STORAGE Could not inspect model dependencies for " +
-                    $"{model.RelativePath}: {e.Message}");
+                throw new IOException(
+                    $"Could not inspect model dependencies for {model.RelativePath}.", e);
             }
 
             foreach (string dependency in dependencies.ToArray())
@@ -552,7 +581,8 @@ namespace TiltBrush
                 string dependencyPath = MaterializeFile(
                     dependencyLocation,
                     materializationGroupId,
-                    cancellationToken);
+                    cancellationToken,
+                    materializedFiles);
                 if (Path.GetExtension(dependencyPath).Equals(
                         ".mtl", StringComparison.OrdinalIgnoreCase))
                 {
@@ -581,8 +611,24 @@ namespace TiltBrush
                     MaterializeFile(
                         dependencyLocation,
                         materializationGroupId,
-                        cancellationToken);
+                        cancellationToken,
+                        materializedFiles);
                 }
+            }
+        }
+
+        internal static void RemoveObsoleteMaterializedFiles(
+            string groupRoot, ISet<string> materializedFiles, CancellationToken cancellationToken)
+        {
+            // Only reconcile after the current tree has copied successfully. Missing provider
+            // dependencies must not be supplied by leftovers from an earlier model revision.
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!Directory.Exists(groupRoot)) { return; }
+            foreach (string file in Directory.EnumerateFiles(
+                         Path.GetFullPath(groupRoot), "*", SearchOption.AllDirectories))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!materializedFiles.Contains(file)) { File.Delete(file); }
             }
         }
 
@@ -639,7 +685,7 @@ namespace TiltBrush
             StorageDirectoryResult listing = List(area, directory, cancellationToken);
             if (!listing.Success)
             {
-                return null;
+                throw new IOException(listing.Error);
             }
             StorageDocument document = listing.Documents.FirstOrDefault(candidate =>
                 string.Equals(candidate.DisplayName, name, StringComparison.OrdinalIgnoreCase));
