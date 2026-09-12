@@ -672,11 +672,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     using (var reader = new StreamReader(body, request.ContentEncoding))
                     {
-                        var formdata = Uri.UnescapeDataString(reader.ReadToEnd());
-                        var formdataCommands = formdata.Replace("+", " ")
-                            .Split('&')
-                            .Where(s => s.Trim().Length > 0)
-                            .ToList();
+                        var formdataCommands = ParseFormCommands(reader.ReadToEnd());
 
                         // TODO also accept JSON
                         commandStrings.AddRange(formdataCommands);
@@ -699,6 +695,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
 
             return String.Join("\n", responses);
+        }
+
+        internal static List<string> ParseFormCommands(string formdata)
+        {
+            return formdata.Split('&')
+                .Select(command => Uri.UnescapeDataString(command.Replace("+", " ")))
+                .Where(command => command.Trim().Length > 0)
+                .ToList();
         }
 
         private string HandleApiQuery(string commandString)

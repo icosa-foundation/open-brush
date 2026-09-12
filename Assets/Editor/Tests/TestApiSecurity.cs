@@ -460,6 +460,21 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestPostFormCommandsAreSplitBeforeDecoding()
+        {
+            var commands = ApiManager.ParseFormCommands(
+                "listenfor.strokes.poll=team%26one&test.value=space+and%2Bplus");
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "listenfor.strokes.poll=team&one",
+                    "test.value=space and+plus"
+                },
+                commands);
+        }
+
+        [Test]
         public void TestPollingListenersCanBeUnregistered()
         {
             var listeners = new ApiManager.PollingListenerRegistry();
