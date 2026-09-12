@@ -1434,10 +1434,12 @@ namespace TiltBrush
             var firstPath = rawPaths?.FirstOrDefault(path => path != null && path.Count > 0);
             if (firstPath != null)
             {
-                IEnumerable<TrTransform> previewPath = firstPath;
+                // DrawNestedTrList treats the last transform as a terminal point and does
+                // not emit it as a control point, so the preview must do the same.
+                IEnumerable<TrTransform> previewPath = firstPath.Take(firstPath.Count - 1);
                 if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
                 {
-                    previewPath = firstPath.Select(tr =>
+                    previewPath = previewPath.Select(tr =>
                     {
                         var transformed = tr_CS * tr;
                         transformed.scale = tr.scale;
