@@ -46,7 +46,8 @@ namespace TiltBrush
         public int count => _ControlPoints.Count;
 
         [LuaDocsDescription("Access a control point by index")]
-        public ControlPointApiWrapper this[int index] => new(_ControlPoints[index]);
+        public ControlPointApiWrapper this[int index] =>
+            new(Utils.WrappedIndexerGet(() => _ControlPoints[index]));
 
         [LuaDocsDescription("Enumerate the control points")]
         public IEnumerable<ControlPointApiWrapper> items => _ControlPoints.Select(cp => new ControlPointApiWrapper(cp));
