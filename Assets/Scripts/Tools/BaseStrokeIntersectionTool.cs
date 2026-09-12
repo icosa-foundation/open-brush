@@ -367,10 +367,9 @@ namespace TiltBrush
                         {
                             // Drawing canvases share a Unity layer and batch IDs are global.
                             // Validate ownership when consuming the asynchronous result.
-                            if (subset.Canvas != m_CurrentCanvas ||
-                                !subset.Canvas.gameObject.activeInHierarchy) continue;
-
-                            if (HandleIntersectionWithBatchedStroke(subset))
+                            if (subset.Canvas == m_CurrentCanvas &&
+                                subset.Canvas.gameObject.activeInHierarchy &&
+                                HandleIntersectionWithBatchedStroke(subset))
                             {
                                 hitCount++;
                             }
