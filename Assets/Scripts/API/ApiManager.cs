@@ -1044,22 +1044,27 @@ Success. If you are not automatically redirected, please visit <a href='{success
         public void HandleStrokeListeners(IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
         {
             if (!HasOutgoingListeners && !HasPollingListeners) return;
+            EnqueueOutgoingCommands(FormatStrokeListenerCommands(controlPoints, guid, color, size));
+        }
+
+        internal static List<KeyValuePair<string, string>> FormatStrokeListenerCommands(
+            IEnumerable<PointerManager.ControlPoint> controlPoints, Guid guid, Color color, float size)
+        {
             var pointsAsStrings = new List<string>();
             foreach (var cp in controlPoints)
             {
                 var pos = cp.m_Pos;
                 var rot = cp.m_Orient.eulerAngles;
-                pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+                pointsAsStrings.Add(FormattableString.Invariant(
+                    $"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]"));
             }
-            EnqueueOutgoingCommands(
-                new List<KeyValuePair<string, string>>
-                {
-                    new ("brush.type", guid.ToString()),
-                    new ("brush.size.set", size.ToString()),
-                    new ("color.set.rgb", $"{color.r},{color.g},{color.b}"),
-                    new ("draw.stroke", string.Join(",", pointsAsStrings))
-                }
-            );
+            return new List<KeyValuePair<string, string>>
+            {
+                new ("brush.type", guid.ToString()),
+                new ("brush.size.set", FormattableString.Invariant($"{size}")),
+                new ("color.set.rgb", FormattableString.Invariant($"{color.r},{color.g},{color.b}")),
+                new ("draw.stroke", string.Join(",", pointsAsStrings))
+            };
         }
 
         internal sealed class PollingListenerRegistry
