@@ -445,10 +445,15 @@ namespace TiltBrush
         public IEnumerator Cmd_BrushNewStroke()
         {
             yield return EnsureReady();
-            int strokeCount = GetStrokeCount();
+            yield return SendCommand("brush.force.painting.on", "true");
+            yield return WaitFrames(2);
+            int strokeCountBeforeNewStroke = GetStrokeCount();
             yield return SendCommand("brush.new.stroke");
-            yield return SendCommand("brush.draw", "1");
-            Assert.GreaterOrEqual(GetStrokeCount(), strokeCount + 1);
+            yield return WaitFrames(2);
+            int strokeCountAfterNewStroke = GetStrokeCount();
+            yield return SendCommand("brush.force.painting.on", "false");
+            yield return WaitFrames(1);
+            Assert.GreaterOrEqual(strokeCountAfterNewStroke, strokeCountBeforeNewStroke + 1);
         }
 
         [UnityTest]
