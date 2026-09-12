@@ -278,6 +278,52 @@ namespace TiltBrush
                 onComplete);
         }
 
+        internal static string GetUniqueImportPath(IUserStorageBackend backend, StorageArea area,
+            string relativePath, Func<string, bool> localExists = null)
+        {
+            string directory = (Path.GetDirectoryName(relativePath) ?? "").Replace('\\', '/');
+            StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException($"Could not check imported media destination: {listing.Error}");
+            }
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (listing.Success)
+            {
+                foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
+            }
+            string filename = Path.GetFileName(relativePath);
+            string candidate = filename;
+            int version = 0;
+            while (names.Contains(candidate) || (localExists?.Invoke(candidate) ?? false))
+            {
+                candidate = $"{Path.GetFileNameWithoutExtension(filename)} ({++version}){Path.GetExtension(filename)}";
+            }
+            return string.IsNullOrEmpty(directory) ? candidate : $"{directory}/{candidate}";
+        }
+
+        public static void PublishImportedMediaToSharedStorageAsync(
+            string localPath, string label, Action<bool, string> onComplete)
+        {
+            if (!TryGetSharedMediaLibraryRelativePath(localPath, out string sharedPath) ||
+                !TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
+            {
+                onComplete?.Invoke(false, "Unsupported media import destination.");
+                return;
+            }
+            AndroidStorageManager.StartStorageOperation(label, () =>
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                // Serialize API name selection and publication, including delayed picker continuations.
+                using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+                {
+                    string destination = GetUniqueImportPath(backend, area, relativePath);
+                    return SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None);
+                }
+            }, onComplete);
+        }
+
         public static bool PublishVideoCaptureToSharedStorage(
             string localVideoPath, out string error)
         {

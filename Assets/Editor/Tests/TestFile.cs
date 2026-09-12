@@ -686,6 +686,18 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafImports_AvoidSharedAndLocalNames()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Picture.png", new byte[] { 1 });
+            backend.Add("Picture (1).png", new byte[] { 2 });
+            Assert.AreEqual("Picture (3).png", OpenBrushStorage.GetUniqueImportPath(
+                backend, StorageArea.MediaLibraryImages, "Picture.png",
+                name => name == "Picture (2).png"));
+            Assert.IsTrue(backend.Contains("Picture.png"));
+        }
+
+        [Test]
         public void SafTransactionRecovery_RestoresValidatedBackup()
         {
             string rootId = $"test-root-{Guid.NewGuid():N}";

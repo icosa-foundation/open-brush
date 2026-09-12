@@ -293,6 +293,17 @@ namespace TiltBrush
                 fullDestinationPath = GetSafePathInDirectory(
                     absoluteDestinationPath, uniqueFilename, "download filename");
             }
+            if (OpenBrushStorage.IsGooglePlayStorageMode && UserStorage.Backend.IsReady &&
+                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(fullDestinationPath, out string sharedPath) &&
+                OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area,
+                    out string areaRelativePath))
+            {
+                uniqueFilename = Path.GetFileName(OpenBrushStorage.GetUniqueImportPath(
+                    UserStorage.Backend, area, areaRelativePath,
+                    candidate => File.Exists(Path.Combine(absoluteDestinationPath, candidate))));
+                fullDestinationPath = GetSafePathInDirectory(
+                    absoluteDestinationPath, uniqueFilename, "download filename");
+            }
 
             // TODO - make this smarter
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
@@ -407,7 +418,7 @@ namespace TiltBrush
                 localPath,
                 relativePath,
                 "media file",
-                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync);
+                OpenBrushStorage.PublishImportedMediaToSharedStorageAsync);
         }
 
         private static void _PublishApiPathToSharedStorage(
