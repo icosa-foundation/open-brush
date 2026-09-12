@@ -25,17 +25,6 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
-        private static readonly HashSet<string> kSupportedReferenceImageExtensions =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ".jpg",
-                ".jpeg",
-                ".png",
-                ".hdr",
-                ".exr",
-                ".svg"
-            };
-
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
@@ -1668,7 +1657,7 @@ namespace TiltBrush
             {
                 filename += imageExtension;
             }
-            else if (!kSupportedReferenceImageExtensions.Contains(extension))
+            else if (!ReferenceImageFormat.IsSupportedExtension(extension))
             {
                 throw new ArgumentException($"Unsupported image filename extension: {extension}");
             }

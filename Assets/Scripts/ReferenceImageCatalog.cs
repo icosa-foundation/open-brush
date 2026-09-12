@@ -451,8 +451,7 @@ namespace TiltBrush
 
         protected virtual bool ValidExtension(string ext)
         {
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg" ||
-                ext == ".hdr" || ext == ".exr";
+            return ReferenceImageFormat.IsSupportedExtension(ext);
         }
 
         public ReferenceImage RelativePathToImage(string relativePath)

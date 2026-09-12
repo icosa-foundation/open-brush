@@ -20,21 +20,32 @@ namespace TiltBrush
 {
     internal class TestHdrTextureLoader
     {
-        [TestCase("background.hdr")]
-        [TestCase("background.exr")]
-        [TestCase("BACKGROUND.EXR")]
+        [TestCase("reference.hdr")]
+        [TestCase("reference.exr")]
+        [TestCase("REFERENCE.EXR")]
         public void SupportsHdrImageExtensions(string path)
         {
             Assert.IsTrue(HdrTextureLoader.IsSupportedFile(path));
         }
 
-        [TestCase("background.png")]
-        [TestCase("background.exr.png")]
+        [TestCase("reference.png")]
+        [TestCase("reference.exr.png")]
         [TestCase("")]
         [TestCase(null)]
         public void RejectsOtherImageExtensions(string path)
         {
             Assert.IsFalse(HdrTextureLoader.IsSupportedFile(path));
+        }
+
+        [TestCase(".jpg")]
+        [TestCase(".jpeg")]
+        [TestCase(".png")]
+        [TestCase(".svg")]
+        [TestCase(".hdr")]
+        [TestCase(".EXR")]
+        public void CatalogRecognizesSupportedReferenceFormats(string extension)
+        {
+            Assert.IsTrue(ReferenceImageFormat.IsSupportedExtension(extension));
         }
 
         [Test]

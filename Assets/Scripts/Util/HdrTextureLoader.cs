@@ -30,9 +30,7 @@ namespace TiltBrush
 
         public static bool IsSupportedFile(string path)
         {
-            string extension = Path.GetExtension(path);
-            return string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase);
+            return ReferenceImageFormat.IsHighDynamicRangeFile(path);
         }
 
         public static bool IsExrData(byte[] bytes)
