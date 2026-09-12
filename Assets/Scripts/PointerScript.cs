@@ -77,9 +77,10 @@ namespace TiltBrush
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
-        private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
-        private float m_ToolScriptPreviewBaseScale = 1f;
-        private Color? m_ToolScriptPreviewColor;
+        private readonly List<ToolScriptStrokeCreator> m_ToolScriptStrokeCreators = new();
+        private readonly List<BaseBrushScript> m_ToolScriptPreviewLines = new();
+        private readonly List<float> m_ToolScriptPreviewBaseScales = new();
+        private readonly List<Color?> m_ToolScriptPreviewColors = new();
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -516,17 +517,9 @@ namespace TiltBrush
             }
             else if (m_PreviewLineEnabled && m_CurrentBrush != null)
             {
-                if (m_ToolScriptStrokeCreator != null)
+                if (m_ToolScriptStrokeCreators.Count > 0)
                 {
-                    if (m_PreviewLine == null)
-                    {
-                        CreatePreviewLine();
-                    }
-
-                    if (m_PreviewLine != null)
-                    {
-                        UpdateToolScriptPreviewLine();
-                    }
+                    UpdateToolScriptPreviewLines();
                 }
                 else
                 {
@@ -718,7 +711,6 @@ namespace TiltBrush
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
-                m_ToolScriptPreviewBaseScale = line.StrokeScale;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -737,45 +729,81 @@ namespace TiltBrush
             }
         }
 
-        private void UpdateToolScriptPreviewLine()
+        private BaseBrushScript CreateToolScriptPreviewLine(Color? previewColor)
         {
-            if (m_PreviewLine == null)
+            if (m_CurrentBrush.m_BrushPrefab == null)
             {
-                return;
+                return null;
             }
 
-            var controlPoints = m_ToolScriptStrokeCreator?.ControlPoints;
-            if (controlPoints == null || controlPoints.Count < 2)
+            Transform canvasTransform = App.Instance.m_CanvasTransform;
+            TrTransform xf_LS = GetTransformForLine(canvasTransform);
+            BaseBrushScript line = BaseBrushScript.Create(
+                canvasTransform, xf_LS, m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
+            line.gameObject.name = $"Tool Script Preview {m_CurrentBrush.Description}";
+            line.SetPreviewMode();
+            line.SetPreviewProperties(previewColor ?? m_CurrentColor, m_CurrentBrushSize);
+            return line;
+        }
+
+        private void UpdateToolScriptPreviewLines()
+        {
+            while (m_ToolScriptPreviewLines.Count < m_ToolScriptStrokeCreators.Count)
             {
-                ClearToolScriptPreview();
-                return;
+                int previewIndex = m_ToolScriptPreviewLines.Count;
+                var line = CreateToolScriptPreviewLine(m_ToolScriptPreviewColors[previewIndex]);
+                if (line == null)
+                {
+                    break;
+                }
+                m_ToolScriptPreviewLines.Add(line);
+                m_ToolScriptPreviewBaseScales.Add(line.StrokeScale);
             }
 
-            float scale = m_ToolScriptPreviewBaseScale * m_ToolScriptStrokeCreator.StrokeScale;
+            for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
+            {
+                UpdateToolScriptPreviewLine(
+                    m_ToolScriptPreviewLines[i], m_ToolScriptStrokeCreators[i],
+                    m_ToolScriptPreviewBaseScales[i]);
+            }
+        }
+
+        private static void UpdateToolScriptPreviewLine(
+            BaseBrushScript line, ToolScriptStrokeCreator strokeCreator, float baseScale)
+        {
+            var controlPoints = strokeCreator.ControlPoints;
+            float scale = baseScale * strokeCreator.StrokeScale;
             var first = controlPoints[0];
-            m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
+            line.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
             for (int i = 0; i < controlPoints.Count; ++i)
             {
-                if (m_PreviewLine.IsOutOfVerts())
+                if (line.IsOutOfVerts())
                 {
                     break;
                 }
 
                 var cp = controlPoints[i];
-                m_PreviewLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                line.UpdatePosition_LS(
+                    TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
             }
 
-            m_PreviewLine.ApplyChangesToVisuals();
+            line.ApplyChangesToVisuals();
         }
 
         void ResetPreviewProperties()
         {
             if (m_PreviewLine)
             {
-                Color previewColor = m_ToolScriptStrokeCreator != null
-                    ? m_ToolScriptPreviewColor ?? m_CurrentColor
-                    : m_CurrentColor;
-                m_PreviewLine.SetPreviewProperties(previewColor, m_CurrentBrushSize);
+                m_PreviewLine.SetPreviewProperties(m_CurrentColor, m_CurrentBrushSize);
+            }
+            for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
+            {
+                var line = m_ToolScriptPreviewLines[i];
+                if (line != null)
+                {
+                    line.SetPreviewProperties(
+                        m_ToolScriptPreviewColors[i] ?? m_CurrentColor, m_CurrentBrushSize);
+                }
             }
             if (m_PreviewLight)
             {
@@ -944,34 +972,78 @@ namespace TiltBrush
         }
 
         public void SetToolScriptPreview(
-            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
-            Color? previewColor)
+            IReadOnlyList<List<PointerManager.ControlPoint>> controlPointPaths,
+            IReadOnlyList<Color?> previewColors, float strokeScale)
         {
-            if (controlPoints == null || controlPoints.Count < 2)
+            var previewEntries = controlPointPaths?
+                .Select((path, index) => new
+                {
+                    Path = path,
+                    Color = previewColors != null && index < previewColors.Count
+                        ? previewColors[index]
+                        : null
+                })
+                .Where(entry => entry.Path != null && entry.Path.Count > 1)
+                .ToList();
+            if (previewEntries == null || previewEntries.Count == 0)
             {
                 ClearToolScriptPreview();
                 return;
             }
 
-            if (m_ToolScriptStrokeCreator == null)
+            if (m_ToolScriptStrokeCreators.Count == 0)
             {
-                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
+                DisablePreviewLine();
             }
-            else
+
+            for (int i = 0; i < previewEntries.Count; ++i)
             {
-                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
+                if (i < m_ToolScriptStrokeCreators.Count)
+                {
+                    m_ToolScriptStrokeCreators[i].SetControlPoints(
+                        previewEntries[i].Path, strokeScale);
+                    m_ToolScriptPreviewColors[i] = previewEntries[i].Color;
+                }
+                else
+                {
+                    m_ToolScriptStrokeCreators.Add(
+                        new ToolScriptStrokeCreator(previewEntries[i].Path, strokeScale));
+                    m_ToolScriptPreviewColors.Add(previewEntries[i].Color);
+                }
             }
-            m_ToolScriptPreviewColor = previewColor;
+
+            if (m_ToolScriptStrokeCreators.Count > previewEntries.Count)
+            {
+                m_ToolScriptStrokeCreators.RemoveRange(
+                    previewEntries.Count,
+                    m_ToolScriptStrokeCreators.Count - previewEntries.Count);
+                m_ToolScriptPreviewColors.RemoveRange(
+                    previewEntries.Count,
+                    m_ToolScriptPreviewColors.Count - previewEntries.Count);
+            }
+            RemoveToolScriptPreviewLines(previewEntries.Count);
             ResetPreviewProperties();
         }
 
         public void ClearToolScriptPreview()
         {
-            m_ToolScriptStrokeCreator = null;
-            m_ToolScriptPreviewColor = null;
-            if (m_PreviewLine != null)
+            m_ToolScriptStrokeCreators.Clear();
+            m_ToolScriptPreviewColors.Clear();
+            RemoveToolScriptPreviewLines(0);
+        }
+
+        private void RemoveToolScriptPreviewLines(int remainingCount)
+        {
+            for (int i = m_ToolScriptPreviewLines.Count - 1; i >= remainingCount; --i)
             {
-                DisablePreviewLine();
+                var line = m_ToolScriptPreviewLines[i];
+                if (line != null)
+                {
+                    line.DestroyMesh();
+                    Destroy(line.gameObject);
+                }
+                m_ToolScriptPreviewLines.RemoveAt(i);
+                m_ToolScriptPreviewBaseScales.RemoveAt(i);
             }
         }
 
