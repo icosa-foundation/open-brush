@@ -477,6 +477,10 @@ namespace TiltBrush
                     {
                         return model.AssetId; // blows up if type is not PolyAssetId
                     }
+                    else if (model.GetLocation().GetLocationType() == Model.Location.Type.Generated)
+                    {
+                        return "[Generated]";
+                    }
                     else
                     {
                         string path = Path.GetFileNameWithoutExtension(model.RelativePath);

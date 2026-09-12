@@ -78,7 +78,9 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
-    "com.unity.modules.wind": "1.0.0"
+    "com.unity.modules.wind": "1.0.0",
+    "foundation.icosa.openblocks.file-format": "https://github.com/icosa-foundation/open-blocks.git?path=/Packages/foundation.icosa.openblocks.file-format#packages/foundation.icosa.openblocks.file-format",
+    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#upm"
   },
   "scopedRegistries": [
     {
@@ -93,8 +95,11 @@
       "url": "https://package.openupm.com",
       "scopes": [
         "com.atteneder",
+        "com.ixxy.polyhydra.core",
         "com.openupm",
+        "com.nition.unity-octree",
         "com.sandrofigo.voxreader",
+        "com.syomus.proceduraltoolkit",
         "org.nuget.google",
         "org.nuget.system"
       ]

@@ -103,6 +103,7 @@ namespace TiltBrush
         static public WidgetManager m_Instance;
 
         [SerializeField] ModelWidget m_ModelWidgetPrefab;
+        [SerializeField] EditableModelWidget m_EditableModelWidgetPrefab;
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
@@ -152,6 +153,7 @@ namespace TiltBrush
         // Widgets will be in the most specific list.
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
+        private List<TypedWidgetData<EditableModelWidget>> m_EditableModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<PortalWidgetBase>> m_PortalWidgets;
         private List<TypedWidgetData<GaussianCaptureWidgetBase>> m_GaussianCaptureWidgets;
@@ -169,6 +171,7 @@ namespace TiltBrush
         public event Action RefreshPinAndUnpinAction;
 
         private TiltModels75[] m_loadingTiltModels75;
+        private TiltEditableModels[] m_loadingEditableTiltModels;
         private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
@@ -322,6 +325,7 @@ namespace TiltBrush
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
+            m_EditableModelWidgets = new List<TypedWidgetData<EditableModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_PortalWidgets = new List<TypedWidgetData<PortalWidgetBase>>();
             m_GaussianCaptureWidgets = new List<TypedWidgetData<GaussianCaptureWidgetBase>>();
@@ -366,6 +370,7 @@ namespace TiltBrush
         }
 
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
+        public EditableModelWidget EditableModelWidgetPrefab { get { return m_EditableModelWidgetPrefab; } }
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
@@ -452,6 +457,13 @@ namespace TiltBrush
                     yield return m_ModelWidgets[i];
                 }
             }
+            for (int i = 0; i < m_EditableModelWidgets.Count; ++i)
+            {
+                if (m_EditableModelWidgets[i].m_WidgetObject.activeSelf)
+                {
+                    yield return m_EditableModelWidgets[i];
+                }
+            }
             for (int i = 0; i < m_LightWidgets.Count; ++i)
             {
                 if (IsWidgetObjectActive(m_LightWidgets[i]))
@@ -522,7 +534,9 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets)
+                return ret
+                    .Concat(m_EditableModelWidgets)
+                    .Concat(m_ImageWidgets)
                     .Concat(m_VideoWidgets)
                     .Concat(m_TextWidgets)
                     .Concat(m_SoundClipWidgets)
@@ -726,6 +740,7 @@ namespace TiltBrush
         public bool HasSelectableWidgets()
         {
             return m_ModelWidgets.Count > 0 ||
+                m_EditableModelWidgets.Count > 0 ||
                 m_ImageWidgets.Count > 0 ||
                 m_TextWidgets.Count > 0 ||
                 m_VideoWidgets.Count > 0 ||
@@ -873,6 +888,10 @@ namespace TiltBrush
         public void SetModelDataFromTilt(TiltModels75[] value)
         {
             m_loadingTiltModels75 = value;
+        }
+        public void SetDataFromTilt(IEnumerable<TiltEditableModels> value)
+        {
+            m_loadingEditableTiltModels = value.ToArray();
         }
 
         // Used only at .tilt-loading time
@@ -1151,7 +1170,7 @@ namespace TiltBrush
                 }
 
                 // If we found a good stencil, return the surface collision transform.
-                if (m_ActiveStencil != null)
+                if (m_ActiveStencil != null && m_StencilContactInfos[iPrimaryIndex].normal.sqrMagnitude >= 0f)
                 {
                     m_ActiveStencil.SetInUse(true);
                     pos = m_StencilContactInfos[iPrimaryIndex].pos;
@@ -1191,6 +1210,16 @@ namespace TiltBrush
             get
             {
                 return m_ModelWidgets
+                    .Select(w => w == null ? null : w.WidgetScript)
+                    .Where(w => w != null);
+            }
+        }
+
+        public IEnumerable<EditableModelWidget> EditableModelWidgets
+        {
+            get
+            {
+                return m_EditableModelWidgets
                     .Select(w => w == null ? null : w.WidgetScript)
                     .Where(w => w != null);
             }
@@ -1300,6 +1329,7 @@ namespace TiltBrush
             GetUnselectedActiveWidgetsInList(m_ImageWidgets);
             GetUnselectedActiveWidgetsInList(m_TextWidgets);
             GetUnselectedActiveWidgetsInList(m_VideoWidgets);
+            GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
             GetUnselectedActiveWidgetsInList(m_SoundClipWidgets);
             if (!m_StencilsDisabled)
             {
@@ -1333,6 +1363,7 @@ namespace TiltBrush
                 m_CanBeUnpinnedWidgets.Clear();
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
+                RefreshPinUnpinWidgetList(m_EditableModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_PortalWidgets);
                 RefreshPinUnpinWidgetList(m_GaussianCaptureWidgets);
@@ -1403,7 +1434,11 @@ namespace TiltBrush
                 throw new InvalidOperationException($"Object {rWidget.name} is not a GrabWidget");
             }
 
-            if (generic is ModelWidget mw)
+            if (generic is EditableModelWidget emw)
+            {
+                m_EditableModelWidgets.Add(new TypedWidgetData<EditableModelWidget>(emw));
+            }
+            else if (generic is ModelWidget mw)
             {
                 m_ModelWidgets.Add(new TypedWidgetData<ModelWidget>(mw));
             }
@@ -1486,6 +1521,7 @@ namespace TiltBrush
             }
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_EditableModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
             if (RemoveFrom(m_GaussianCaptureWidgets, rWidget)) { return; }
@@ -1698,6 +1734,7 @@ namespace TiltBrush
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
+            DestroyWidgetList(m_EditableModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);
             DestroyWidgetList(m_GaussianCaptureWidgets);
@@ -1780,6 +1817,56 @@ namespace TiltBrush
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
+            }
+
+
+            if (m_loadingEditableTiltModels != null)
+            {
+                OverlayManager.m_Instance.RefuseProgressBarChanges(true);
+
+                if (App.Config.kModelWidgetsWaitForLoad)
+                {
+                    var assetIds = m_loadingEditableTiltModels
+                        .Select(tm => tm.AssetId).Where(aid => aid != null).ToArray();
+                    // Kick off a bunch of loads...
+                    foreach (var assetId in assetIds)
+                    {
+                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                            != IcosaAssetCatalog.AssetLoadState.Loaded)
+                        {
+                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                        }
+                    }
+                    // ... and wait for them to complete
+                    // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
+                    bool IsLoading(string assetId)
+                    {
+                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                            state == IcosaAssetCatalog.AssetLoadState.Loading);
+                    }
+                    while (assetIds.Any(IsLoading))
+                    {
+                        yield return null;
+                    }
+                }
+
+                for (int i = 0; i < m_loadingEditableTiltModels.Length; i++)
+                {
+                    Task createTask = EditableModelWidget.CreateEditableModelFromSaveData(
+                        m_loadingEditableTiltModels[i]);
+                    using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
+                    {
+                        while (createCoroutine.MoveNext())
+                        {
+                            yield return null;
+                        }
+                    }
+                    OverlayManager.m_Instance.UpdateProgress(
+                        (float)(i + 1) / m_loadingEditableTiltModels.Length, true);
+                }
+                OverlayManager.m_Instance.RefuseProgressBarChanges(false);
+                m_loadingEditableTiltModels = null;
             }
 
             ModelCatalog.m_Instance.PrintMissingModelWarnings();
@@ -1897,6 +1984,8 @@ namespace TiltBrush
             m_GaussianCaptureWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<EditableModelWidget>> ActiveEditableModelWidgets =>
+            m_EditableModelWidgets.Where(w => w.WidgetScript.gameObject.activeSelf).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>
             m_VideoWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<SoundClipWidget>> ActiveSoundClipWidgets =>

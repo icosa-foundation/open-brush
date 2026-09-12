@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using OpenBrush.Multiplayer;
 using System;
 using UnityEngine;
@@ -151,7 +152,6 @@ namespace TiltBrush
                         break;
                 }
             }
-
 
             if (m_BimanualTape)
             {

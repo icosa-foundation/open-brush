@@ -32,6 +32,16 @@
       },
       "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
     },
+    "com.ixxy.polyhydra.core": {
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.syomus.proceduraltoolkit": "0.2.3",
+        "com.nition.unity-octree": "0.0.1-preview"
+      },
+      "hash": "c8b05a0a3b1513e42121cad60012c672708d3eae"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
@@ -46,6 +56,13 @@
       "dependencies": {},
       "hash": "9818db6327e09d399bf4fb84da4ed19f03b565b4"
     },
+    "com.nition.unity-octree": {
+      "version": "0.0.1-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.rlabrecque.steamworks.net": {
       "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
       "depth": 0,
@@ -58,6 +75,15 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.syomus.proceduraltoolkit": {
+      "version": "0.2.3",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
       "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {
@@ -549,6 +575,13 @@
         "com.unity.xr.openxr": "1.18.0"
       },
       "hash": "8746c95c90d2c21aedc90b6a2153446bf0040212"
+    },
+    "foundation.icosa.openblocks.file-format": {
+      "version": "https://github.com/icosa-foundation/open-blocks.git?path=/Packages/foundation.icosa.openblocks.file-format#packages/foundation.icosa.openblocks.file-format",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "45644671e553a84724a439f5c0ab74ffefbccb6b"
     },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",

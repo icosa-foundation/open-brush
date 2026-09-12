@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -21,6 +23,11 @@ namespace TiltBrush
     {
 
         public Mesh m_DefaultMesh;
+        [SerializeField, Range(0f, 180f)]
+        private float m_FaceTransitionAngle = 30f;
+
+        private PolyMeshSurfaceProjector m_SurfaceProjector;
+        private int m_ActiveFaceIndex = -1;
 
         public override Vector3 Extents
         {
@@ -45,6 +52,7 @@ namespace TiltBrush
         {
             m_Type = StencilType.Custom;
             base.Awake();
+            EditableModelManager.SetCustomStencil(this, PreviewPolyhedron.m_Instance.m_PolyMesh);
         }
 
         public void SetCustomStencil(Mesh mesh = null)
@@ -52,6 +60,17 @@ namespace TiltBrush
             var collider = GetComponentInChildren<MeshCollider>();
             collider.sharedMesh = mesh ?? m_DefaultMesh;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
+            m_SurfaceProjector = null;
+            m_ActiveFaceIndex = -1;
+        }
+
+        public void SetCustomStencil(PolyMesh poly, Mesh surfaceMesh, Mesh colliderMesh)
+        {
+            var collider = GetComponentInChildren<MeshCollider>();
+            collider.sharedMesh = colliderMesh;
+            collider.GetComponentInChildren<MeshFilter>().mesh = surfaceMesh;
+            m_SurfaceProjector = new PolyMeshSurfaceProjector(poly);
+            m_ActiveFaceIndex = -1;
         }
 
         public void SetColliderScale(float scale)
@@ -63,12 +82,50 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
             var collider = GetComponentInChildren<MeshCollider>();
+            if (m_SurfaceProjector != null && m_SurfaceProjector.FaceCount > 0)
+            {
+                Vector3 localPos = collider.transform.InverseTransformPoint(pos);
+                int closestFaceIndex = m_SurfaceProjector.FindClosestFace(
+                    localPos, out Vector3 closestLocalPos);
+
+                if (closestFaceIndex >= 0)
+                {
+                    if (m_ActiveFaceIndex < 0 ||
+                        m_SurfaceProjector.CanTransition(
+                            m_ActiveFaceIndex, closestFaceIndex, m_FaceTransitionAngle))
+                    {
+                        m_ActiveFaceIndex = closestFaceIndex;
+                    }
+                    else
+                    {
+                        closestLocalPos = m_SurfaceProjector.ClosestPointOnFace(
+                            m_ActiveFaceIndex, localPos);
+                    }
+
+                    surfacePos = collider.transform.TransformPoint(closestLocalPos);
+                    surfaceNorm = collider.transform.TransformDirection(
+                        m_SurfaceProjector.GetFaceNormal(m_ActiveFaceIndex)).normalized;
+                    return;
+                }
+            }
+
             surfacePos = collider.ClosestPoint(pos);
             surfaceNorm = Vector3.zero;
-            RaycastHit hit;
-            if (Physics.Raycast(pos, surfacePos - pos, out hit))
+            Vector3 toSurface = surfacePos - pos;
+            if (toSurface.sqrMagnitude > 0f && collider.Raycast(
+                    new Ray(pos, toSurface.normalized), out RaycastHit hit,
+                    toSurface.magnitude + 0.001f))
             {
                 surfaceNorm = hit.normal;
+            }
+        }
+
+        override public void SetInUse(bool bInUse)
+        {
+            base.SetInUse(bInUse);
+            if (!bInUse)
+            {
+                m_ActiveFaceIndex = -1;
             }
         }
 
@@ -135,4 +192,5 @@ namespace TiltBrush
             return base.GetBounds_SelectionCanvasSpace();
         }
     }
+
 } // namespace TiltBrush
