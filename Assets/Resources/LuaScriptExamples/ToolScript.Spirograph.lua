@@ -1,7 +1,8 @@
 Settings = {
     description = "Generates a spirograph pattern.",
     previewType = "quad",
-    previewMode = "stroke"
+    previewMode = "stroke",
+    previewInterval = 0.1
 }
 
 Parameters = {
@@ -19,7 +20,10 @@ function Main()
         local R = Parameters.outerRadius -- Fixed outer circle radius
         local r = Parameters.innerRadius -- Rolling circle radius
         local d = Parameters.penOffset -- Pen offset
-        local totalPoints = Parameters.points -- Number of points
+        local totalPoints = Parameters.points
+        if Tool.isPreview then
+            totalPoints = Math:Min(totalPoints, 200)
+        end
 
         -- Ensure parameters are valid
         if r >= R then
