@@ -1,6 +1,5 @@
 ﻿Settings = {
-    previewType="quad",
-    previewMode="stroke"
+    previewType="stroke"
 }
 
 Parameters = {

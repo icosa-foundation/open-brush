@@ -86,7 +86,6 @@ namespace TiltBrush
         public static string IsExampleScriptBool => "_IsExampleScript";
         public static string ToolPreviewType => "previewType";
         public static string ToolPreviewAxis => "previewAxis";
-        public static string ToolPreviewMode => "previewMode";
         public static string ToolPreviewInterval => "previewInterval";
 
         // Injected Toolscript properties

@@ -146,6 +146,10 @@ namespace TiltBrush
                 (SelectionManager.m_Instance.CurrentSnapAngleIndex != 0 || quickSnapPressed);
             bool gridSnapEnabled = !snappingOverriddenOff &&
                 SelectionManager.m_Instance.CurrentSnapGridIndex != 0;
+            var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
+            bool strokePreviewRequested = string.Equals(
+                previewTypeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -166,10 +170,7 @@ namespace TiltBrush
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
-                var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
-                var previewModeVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
-                bool useStrokePreview = string.Equals(previewModeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
 
                 Vector3 startPosition_GS = gridSnapEnabled
                     ? SelectionManager.m_Instance.SnapToGrid_GS(m_FirstPositionClicked_GS)
@@ -180,7 +181,7 @@ namespace TiltBrush
                 var drawnVector_GS = endPosition_GS - startPosition_GS;
 
                 Quaternion controllerRot = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation;
-                if (!useStrokePreview && drawnVector_GS.sqrMagnitude > 0)
+                if (!strokePreviewRequested && drawnVector_GS.sqrMagnitude > 0)
                 {
                     // Orientation tracks the controller directly; drag magnitude is the only thing
                     // that determines the preview's scale. The drag direction is intentionally
@@ -275,10 +276,6 @@ namespace TiltBrush
                 }
             }
 
-            var previewModeSetting = LuaManager.Instance.GetSettingForActiveScript(
-                LuaApiCategory.ToolScript, LuaNames.ToolPreviewMode);
-            bool strokePreviewRequested = string.Equals(
-                previewModeSetting?.String, "stroke", StringComparison.OrdinalIgnoreCase);
             bool isPreviewExecution = strokePreviewRequested && m_WasClicked;
             float previewInterval = GetStrokePreviewInterval();
             bool scriptExecuted = ShouldExecuteToolScript(

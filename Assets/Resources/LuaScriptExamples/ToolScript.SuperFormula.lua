@@ -1,7 +1,6 @@
 Settings = {
     description="Like a superellipse but capable of drawing concave shapes as well",
-    previewType="quad",
-    previewMode="stroke"
+    previewType="stroke"
 }
 
 Parameters = {

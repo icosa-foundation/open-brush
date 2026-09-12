@@ -1,7 +1,6 @@
 Settings = {
     description="Draws a conical spiral",
-    previewType="cube",
-    previewMode="stroke"
+    previewType="stroke"
 }
 
 Parameters = {

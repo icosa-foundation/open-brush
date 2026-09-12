@@ -1,7 +1,6 @@
 Settings = {
     description = "Draws a (p, q) torus knot with analytic ribbon-friendly orientation (tangent + torus radial)",
-    previewType = "sphere",
-    previewMode = "stroke"
+    previewType = "stroke"
 }
 
 Parameters = {

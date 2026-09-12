@@ -1,7 +1,6 @@
 Settings = {
     description = "Generates a spirograph pattern.",
-    previewType = "quad",
-    previewMode = "stroke",
+    previewType = "stroke",
     previewInterval = 0.1
 }
 

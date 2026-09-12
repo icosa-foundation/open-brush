@@ -1,7 +1,6 @@
 Settings = {
     description="Draws a spherical spiral",
-    previewType="sphere",
-    previewMode="stroke"
+    previewType="stroke"
 }
 
 Parameters = {
