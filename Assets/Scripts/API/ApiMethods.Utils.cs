@@ -349,6 +349,16 @@ namespace TiltBrush
             return null;
         }
 
+        internal static void _PublishApiVideoCaptureToSharedStorage(string localPath)
+        {
+            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(localPath, relativePath, "video capture",
+                OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync);
+        }
+
         internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
         {
             if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(

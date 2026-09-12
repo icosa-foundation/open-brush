@@ -487,6 +487,12 @@ namespace TiltBrush
                 if (OwnsActiveCapture())
                 {
                     VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                    while ((ownedVideoRecording != null && ownedVideoRecording.IsSaving) ||
+                           (ownedStillFrameExporter != null && ownedStillFrameExporter.IsSaving))
+                    {
+                        yield return null;
+                    }
+                    _PublishApiVideoCaptureToSharedStorage(fullPath);
                 }
                 ownedVideoRecording = null;
                 ownedStillFrameExporter = null;
