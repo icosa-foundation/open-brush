@@ -16,7 +16,7 @@ namespace TiltBrush
                 Debug.LogError("Enter Play Mode and try again.");
                 return;
             }
-            string path = $"{App.UserPath()}/Full Open Brush.cfg";
+            string path = Path.Combine(App.UserPath(), "Full Open Brush.cfg");
             string json = JsonConvert.SerializeObject(App.UserConfig, Formatting.Indented);
             File.WriteAllText(path, json);
             Debug.Log($"User data written to {path}");

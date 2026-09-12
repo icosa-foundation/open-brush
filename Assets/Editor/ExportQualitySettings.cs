@@ -4,65 +4,76 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-public class ExportQualitySettings
+namespace TiltBrush
 {
-    [MenuItem("Open Brush/Export Quality Settings to CSV")]
-    private static void ExportQualitySettingsToCSV()
+    public class ExportQualitySettings
     {
-        StringBuilder csvContent = new StringBuilder();
-        string filePath = Path.Combine(Application.dataPath, "QualitySettings.csv");
-
-        // Add CSV headers
-        csvContent.AppendLine("Name,pixelLightCount,antiAliasing,realtimeReflectionProbes,resolutionScalingFixedDPIFactor,vSyncCount,anisotropicFiltering,masterTextureLimit,streamingMipmapsActive,streamingMipmapsMemoryBudget,streamingMipmapsRenderersPerFrame,streamingMipmapsMaxLevelReduction,streamingMipmapsMaxFileIORequests,streamingMipmapsAddAllCameras,softParticles,particleRaycastBudget,billboardsFaceCameraPosition,shadowmaskMode,shadows,shadowResolution,shadowProjection,shadowDistance,shadowNearPlaneOffset,shadowCascades,skinWeights,asyncUploadTimeSlice,asyncUploadBufferSize,asyncUploadPersistentBuffer,lodBias,maximumLODLevel");
-
-        for (int i = 0; i < QualitySettings.names.Length; i++)
+        [MenuItem("Open Brush/Export Quality Settings to CSV")]
+        private static void ExportQualitySettingsToCSV()
         {
-            QualitySettings.SetQualityLevel(i, applyExpensiveChanges: true);
-            string line = string.Format(CultureInfo.InvariantCulture,
-                "\"{0}\",{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26},{27},{28},{29}",
-                QualitySettings.names[i],
-                QualitySettings.pixelLightCount,
-                QualitySettings.antiAliasing,
-                QualitySettings.realtimeReflectionProbes,
-                QualitySettings.resolutionScalingFixedDPIFactor,
-                QualitySettings.vSyncCount,
+            StringBuilder csvContent = new StringBuilder();
+            string filePath = Path.Combine(Application.dataPath, "QualitySettings.csv");
 
-                QualitySettings.anisotropicFiltering,
-                QualitySettings.masterTextureLimit,
-                QualitySettings.streamingMipmapsActive,
-                QualitySettings.streamingMipmapsMemoryBudget,
-                QualitySettings.streamingMipmapsRenderersPerFrame,
-                QualitySettings.streamingMipmapsMaxLevelReduction,
-                QualitySettings.streamingMipmapsMaxFileIORequests,
-                QualitySettings.streamingMipmapsAddAllCameras,
+            // Add CSV headers
+            csvContent.AppendLine("Name,pixelLightCount,antiAliasing,realtimeReflectionProbes,resolutionScalingFixedDPIFactor,vSyncCount,anisotropicFiltering,masterTextureLimit,streamingMipmapsActive,streamingMipmapsMemoryBudget,streamingMipmapsRenderersPerFrame,streamingMipmapsMaxLevelReduction,streamingMipmapsMaxFileIORequests,streamingMipmapsAddAllCameras,softParticles,particleRaycastBudget,billboardsFaceCameraPosition,shadowmaskMode,shadows,shadowResolution,shadowProjection,shadowDistance,shadowNearPlaneOffset,shadowCascades,skinWeights,asyncUploadTimeSlice,asyncUploadBufferSize,asyncUploadPersistentBuffer,lodBias,maximumLODLevel");
 
-                QualitySettings.softParticles,
-                QualitySettings.particleRaycastBudget,
+            int previousQualityLevel = QualitySettings.GetQualityLevel();
+            try
+            {
+                for (int i = 0; i < QualitySettings.names.Length; i++)
+                {
+                    QualitySettings.SetQualityLevel(i, applyExpensiveChanges: true);
+                    string line = string.Format(CultureInfo.InvariantCulture,
+                        "\"{0}\",{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20},{21},{22},{23},{24},{25},{26},{27},{28},{29}",
+                        QualitySettings.names[i],
+                        QualitySettings.pixelLightCount,
+                        QualitySettings.antiAliasing,
+                        QualitySettings.realtimeReflectionProbes,
+                        QualitySettings.resolutionScalingFixedDPIFactor,
+                        QualitySettings.vSyncCount,
 
-                QualitySettings.billboardsFaceCameraPosition,
+                        QualitySettings.anisotropicFiltering,
+                        QualitySettings.masterTextureLimit,
+                        QualitySettings.streamingMipmapsActive,
+                        QualitySettings.streamingMipmapsMemoryBudget,
+                        QualitySettings.streamingMipmapsRenderersPerFrame,
+                        QualitySettings.streamingMipmapsMaxLevelReduction,
+                        QualitySettings.streamingMipmapsMaxFileIORequests,
+                        QualitySettings.streamingMipmapsAddAllCameras,
 
-                QualitySettings.shadowmaskMode,
-                QualitySettings.shadows,
-                QualitySettings.shadowResolution,
-                QualitySettings.shadowProjection,
-                QualitySettings.shadowDistance,
-                QualitySettings.shadowNearPlaneOffset,
-                QualitySettings.shadowCascades,
+                        QualitySettings.softParticles,
+                        QualitySettings.particleRaycastBudget,
 
-                QualitySettings.skinWeights,
+                        QualitySettings.billboardsFaceCameraPosition,
 
-                QualitySettings.asyncUploadTimeSlice,
-                QualitySettings.asyncUploadBufferSize,
-                QualitySettings.asyncUploadPersistentBuffer,
+                        QualitySettings.shadowmaskMode,
+                        QualitySettings.shadows,
+                        QualitySettings.shadowResolution,
+                        QualitySettings.shadowProjection,
+                        QualitySettings.shadowDistance,
+                        QualitySettings.shadowNearPlaneOffset,
+                        QualitySettings.shadowCascades,
 
-                QualitySettings.lodBias,
-                QualitySettings.maximumLODLevel
-            );
+                        QualitySettings.skinWeights,
 
-            csvContent.AppendLine(line);
+                        QualitySettings.asyncUploadTimeSlice,
+                        QualitySettings.asyncUploadBufferSize,
+                        QualitySettings.asyncUploadPersistentBuffer,
+
+                        QualitySettings.lodBias,
+                        QualitySettings.maximumLODLevel
+                    );
+
+                    csvContent.AppendLine(line);
+                }
+            }
+            finally
+            {
+                QualitySettings.SetQualityLevel(previousQualityLevel, applyExpensiveChanges: true);
+            }
+
+            File.WriteAllText(filePath, csvContent.ToString());
+            Debug.Log($"Quality settings dumped to {filePath}");
         }
-
-        File.WriteAllText(filePath, csvContent.ToString());
-        Debug.Log("Quality settings dumped to " + filePath);
     }
 }
