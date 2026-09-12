@@ -25,6 +25,8 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private const float kMinLookDistance_RS = 0.001f;
+
         private static readonly HashSet<string> kSupportedReferenceImageExtensions =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -773,7 +775,8 @@ namespace TiltBrush
             TrTransform lookPose = App.Scene.Pose;
             Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Vector3 direction = position - userPosition;
-            if (direction.sqrMagnitude < 1e-6f)
+            if ((direction * lookPose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
             {
                 return;
             }
@@ -783,7 +786,8 @@ namespace TiltBrush
             if (isVr)
             {
                 direction.y = 0;
-                if (direction.sqrMagnitude < 1e-6f)
+                if ((direction * lookPose.scale).sqrMagnitude <
+                    kMinLookDistance_RS * kMinLookDistance_RS)
                 {
                     return;
                 }
@@ -801,6 +805,7 @@ namespace TiltBrush
             {
                 up = Vector3.forward;
             }
+            direction.Normalize();
             lookPose.rotation = headRotation *
                 Quaternion.Inverse(Quaternion.LookRotation(direction, up));
             lookPose.translation = ViewpointScript.Head.position -

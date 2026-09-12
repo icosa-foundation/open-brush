@@ -81,6 +81,15 @@ namespace TiltBrush
             return (T)field.GetValue(boxedStruct);
         }
 
+        private static void SetStructField(object boxedStruct, string name, object value)
+        {
+            var field = boxedStruct.GetType().GetField(
+                name,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(field, $"Struct field not found: {boxedStruct.GetType().FullName}.{name}");
+            field.SetValue(boxedStruct, value);
+        }
+
         private static bool IsVr()
         {
             var appType = GetTypeOrFail("TiltBrush.App");
@@ -682,6 +691,38 @@ namespace TiltBrush
                 targetDirection.Normalize();
             }
             Assert.Greater(Vector3.Dot(expectedDirection, targetDirection), 0.99f);
+
+            object scenePose = GetScenePose();
+            try
+            {
+                object scaledPose = GetScenePose();
+                SetStructField(scaledPose, "scale", 10000f);
+                SetInstanceProperty(GetSceneScript(), "Pose", scaledPose);
+
+                userPosition = InverseTransformScenePoint(head.position);
+                targetPosition = userPosition + Vector3.forward * 0.0005f;
+                var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+                var userLookAt = apiMethods.GetMethod(
+                    "UserLookAt",
+                    BindingFlags.Public | BindingFlags.Static);
+                Assert.NotNull(userLookAt, "ApiMethods.UserLookAt not found");
+                userLookAt.Invoke(null, new object[] { targetPosition });
+
+                targetDirection = TransformScenePoint(targetPosition) - head.position;
+                expectedDirection = head.forward;
+                if (IsVr())
+                {
+                    expectedDirection.y = 0;
+                    targetDirection.y = 0;
+                }
+                Assert.Greater(
+                    Vector3.Dot(expectedDirection.normalized, targetDirection.normalized),
+                    0.99f);
+            }
+            finally
+            {
+                SetInstanceProperty(GetSceneScript(), "Pose", scenePose);
+            }
         }
 
         [UnityTest]
