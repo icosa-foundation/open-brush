@@ -53,6 +53,27 @@ namespace TiltBrush
                     isRoomOwner, requestedRoomVoiceEnabled));
         }
 
+        [TestCase(1.25, 1250)]
+        [TestCase(-1.25, -1250)]
+        public void TestConvertSketchTimeToMilliseconds(
+            double sketchTimeSeconds, long expectedMilliseconds)
+        {
+            Assert.AreEqual(
+                expectedMilliseconds,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(sketchTimeSeconds));
+        }
+
+        [Test]
+        public void TestConvertSketchTimeToMillisecondsClampsLargeValues()
+        {
+            Assert.AreEqual(
+                long.MaxValue,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(float.MaxValue));
+            Assert.AreEqual(
+                long.MinValue,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(-float.MaxValue));
+        }
+
         [TestCase(30, 0, 30)]
         [TestCase(30, 5, 25)]
         [TestCase(30, 30, 0)]

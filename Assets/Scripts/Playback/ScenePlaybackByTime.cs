@@ -155,7 +155,8 @@ namespace TiltBrush
 
         protected override bool IsControlPointReady(PointerManager.ControlPoint controlPoint)
         {
-            long currentTimeMs = (long)(App.Instance.CurrentSketchTime * 1000);
+            long currentTimeMs = ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(
+                App.Instance.CurrentSketchTime);
             return m_timeline.GetControlPointTimeMs(
                 m_stroke, controlPoint.m_TimestampMs) <= currentTimeMs;
         }
@@ -196,6 +197,20 @@ namespace TiltBrush
         public int MaxPointerUnderrun { get { return m_maxPointerUnderrun; } }
         public int MemoryObjectsDrawn { get { return 0; } } // unimplemented
 
+        internal static long ConvertSketchTimeToMilliseconds(double sketchTimeSeconds)
+        {
+            double milliseconds = sketchTimeSeconds * 1000.0;
+            if (milliseconds >= long.MaxValue)
+            {
+                return long.MaxValue;
+            }
+            if (milliseconds <= long.MinValue)
+            {
+                return long.MinValue;
+            }
+            return (long)milliseconds;
+        }
+
         // Input strokes must be ordered by head timestamp
         public ScenePlaybackByTimeLayered(
             IEnumerable<Stroke> strokes,
@@ -222,7 +237,7 @@ namespace TiltBrush
         {
             long currentTimeMs = m_quickLoadRemaining
                 ? long.MaxValue
-                : (long)(App.Instance.CurrentSketchTime * 1000);
+                : ConvertSketchTimeToMilliseconds(App.Instance.CurrentSketchTime);
 
             // Handle a jump back in time by resetting corresponding in-flight or completed strokes
             // to the undrawn state.
