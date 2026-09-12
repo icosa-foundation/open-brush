@@ -56,6 +56,7 @@ namespace TiltBrush
             public string RootAfterFirstCommit { get; set; }
             public string RootAfterFirstRead { get; set; }
             public StorageResultCode? ListFailureCode { get; set; }
+            public DateTime DocumentLastModified { get; set; } = DateTime.UtcNow;
             public byte[] CreateBeforeNextWriteData { get; set; }
             public int ReadCount { get; private set; }
             public string MaterializationPath { get; set; }
@@ -199,7 +200,7 @@ namespace TiltBrush
                         TiltFile.TILT_MIME_TYPE,
                         false,
                         entry.Data.Length,
-                        DateTime.Now,
+                        DocumentLastModified,
                         0,
                         entry.Name));
                 }
@@ -743,6 +744,24 @@ namespace TiltBrush
             backend.RootIdentity = "different-root";
             Assert.Throws<IOException>(() => source.OpenRead());
             Assert.Throws<IOException>(() => source.Materialize(scope));
+        }
+
+        [Test]
+        public void SafMediaIdentity_ChangesWithMetadataButNotRepeatedLookups()
+        {
+            var backend = new FakeSafBackend();
+            StorageDocumentId id = backend.Add("image.png", new byte[] { 1 });
+            string Identity() => new OpenBrushStorage.MediaSource(
+                backend, StorageArea.MediaLibraryImages, "image.png").Identity;
+            string original = Identity();
+            Assert.AreEqual(original, Identity());
+            Assert.AreEqual(id, backend.Replace("image.png", new byte[] { 1, 2 }));
+            string resized = Identity();
+            Assert.AreNotEqual(original, resized);
+            Assert.AreEqual(id, backend.Replace("image.png", new byte[] { 3, 4 }));
+            backend.DocumentLastModified = backend.DocumentLastModified.AddSeconds(1);
+            Assert.AreNotEqual(resized, Identity());
+            Assert.AreEqual(Identity(), Identity());
         }
 
         [TestCase("subdir/image.png")]

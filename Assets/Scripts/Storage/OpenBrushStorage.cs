@@ -96,7 +96,8 @@ namespace TiltBrush
             private readonly IUserStorageBackend m_Backend;
             private readonly string m_Root;
             public StorageDocument Document { get; }
-            public string Identity => $"{m_Root}:{Document.DocumentId.Value}";
+            public string Identity =>
+                $"{m_Root}:{Document.DocumentId.Value}|{Document.LastModified:o}|{Document.Size}";
             public string LocalPath => m_Backend.GetMaterializationPath(Document.DocumentId);
 
             public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
