@@ -175,13 +175,15 @@ namespace TiltBrush
                 ScriptCoordSpace space,
                 TrTransform baseTransformCs,
                 List<List<TrTransform>> canvasTransforms,
-                List<PointerManager.ControlPoint> previewControlPoints)
+                List<PointerManager.ControlPoint> previewControlPoints,
+                float previewStrokeScale)
             {
                 PathList = pathList;
                 Space = space;
                 BaseTransformCs = baseTransformCs;
                 CanvasTransforms = canvasTransforms;
                 PreviewControlPoints = previewControlPoints ?? new List<PointerManager.ControlPoint>();
+                PreviewStrokeScale = previewStrokeScale;
             }
 
             public PathListApiWrapper PathList { get; }
@@ -189,6 +191,7 @@ namespace TiltBrush
             public TrTransform BaseTransformCs { get; }
             public List<List<TrTransform>> CanvasTransforms { get; }
             public List<PointerManager.ControlPoint> PreviewControlPoints { get; }
+            public float PreviewStrokeScale { get; }
         }
 
         public IReadOnlyList<PointerManager.ControlPoint> GetLatestToolScriptControlPoints()
@@ -1376,6 +1379,7 @@ namespace TiltBrush
             var quantizedVector_CS = secondTr_CS.translation - firstTr_CS.translation;
 
             var tr_CS = new TrTransform();
+            float previewStrokeScale = 1f;
             List<List<TrTransform>> previewTransforms = new();
 
             switch (pathWrapper._Space)
@@ -1386,6 +1390,7 @@ namespace TiltBrush
                         tr_CS.translation = firstTr_CS.translation;
                         tr_CS.rotation = secondTr_CS.rotation;
                         tr_CS.scale = quantizedVector_CS.magnitude;
+                        previewStrokeScale = tr_CS.scale;
                         previewTransforms = pathWrapper.AsMultiTrList()
                             .Select(trList => trList.Select(tr => tr_CS * tr).ToList())
                             .ToList();
@@ -1414,14 +1419,21 @@ namespace TiltBrush
                 IEnumerable<TrTransform> previewPath = firstPath;
                 if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
                 {
-                    previewPath = firstPath.Select(tr => tr_CS * tr);
+                    previewPath = firstPath.Select(tr =>
+                    {
+                        var transformed = tr_CS * tr;
+                        transformed.scale = tr.scale;
+                        return transformed;
+                    });
                 }
                 previewControlPoints = ConvertTransformsToControlPoints(previewPath);
             }
 
             SetLatestToolScriptControlPoints(previewControlPoints, ScriptCoordSpace.Canvas);
 
-            return new ToolScriptExecutionResult(pathWrapper, pathWrapper._Space, tr_CS, previewTransforms, previewControlPoints);
+            return new ToolScriptExecutionResult(
+                pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
+                previewControlPoints, previewStrokeScale);
         }
 
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)

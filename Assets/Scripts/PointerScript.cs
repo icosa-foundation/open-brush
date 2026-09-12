@@ -78,6 +78,7 @@ namespace TiltBrush
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
         private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
+        private float m_ToolScriptPreviewBaseScale = 1f;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -716,6 +717,7 @@ namespace TiltBrush
                 line.SetPreviewMode();
 
                 m_PreviewLine = line;
+                m_ToolScriptPreviewBaseScale = line.StrokeScale;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -748,7 +750,7 @@ namespace TiltBrush
                 return;
             }
 
-            float scale = m_PreviewLine.StrokeScale;
+            float scale = m_ToolScriptPreviewBaseScale * m_ToolScriptStrokeCreator.StrokeScale;
             var first = controlPoints[0];
             m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
             for (int i = 0; i < controlPoints.Count; ++i)
@@ -937,7 +939,8 @@ namespace TiltBrush
                 CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
         }
 
-        public void SetToolScriptPreview(IReadOnlyList<PointerManager.ControlPoint> controlPoints)
+        public void SetToolScriptPreview(
+            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale)
         {
             if (controlPoints == null || controlPoints.Count < 2)
             {
@@ -947,11 +950,11 @@ namespace TiltBrush
 
             if (m_ToolScriptStrokeCreator == null)
             {
-                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints);
+                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
             }
             else
             {
-                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints);
+                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
             }
 
             m_AllowPreviewLine = true;

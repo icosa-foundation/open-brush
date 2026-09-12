@@ -26,15 +26,17 @@ namespace TiltBrush
         private readonly List<ControlPoint> m_ControlPoints = new();
 
         public IReadOnlyList<ControlPoint> ControlPoints => m_ControlPoints;
+        public float StrokeScale { get; private set; }
 
-        public ToolScriptStrokeCreator(IEnumerable<ControlPoint> controlPoints)
+        public ToolScriptStrokeCreator(IEnumerable<ControlPoint> controlPoints, float strokeScale)
             : base(TrTransform.identity)
         {
-            SetControlPoints(controlPoints);
+            SetControlPoints(controlPoints, strokeScale);
         }
 
-        public void SetControlPoints(IEnumerable<ControlPoint> controlPoints)
+        public void SetControlPoints(IEnumerable<ControlPoint> controlPoints, float strokeScale)
         {
+            StrokeScale = strokeScale;
             m_ControlPoints.Clear();
             if (controlPoints == null)
             {
