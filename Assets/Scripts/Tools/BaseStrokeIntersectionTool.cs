@@ -365,6 +365,11 @@ namespace TiltBrush
                         BatchSubset subset = m_GpuOldResultList[i].subset;
                         if (subset.m_ParentBatch != null)
                         {
+                            // Drawing canvases share a Unity layer and batch IDs are global.
+                            // Validate ownership when consuming the asynchronous result.
+                            if (subset.Canvas != m_CurrentCanvas ||
+                                !subset.Canvas.gameObject.activeInHierarchy) continue;
+
                             if (HandleIntersectionWithBatchedStroke(subset))
                             {
                                 hitCount++;
@@ -402,6 +407,8 @@ namespace TiltBrush
 
         private bool WidgetMatchesCurrentCanvas(GrabWidget widget)
         {
+            if (!widget.gameObject.activeInHierarchy) return false;
+
             var parent = widget.transform.parent;
             if (parent == null)
             {
