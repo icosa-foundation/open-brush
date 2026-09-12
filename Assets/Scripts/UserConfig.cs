@@ -327,6 +327,81 @@ namespace TiltBrush
             public float? ShadowDistance;
             public float? LodBias;
             public int? SkinWeights;
+
+            public void Validate()
+            {
+                ValidatePositive(ref HullBrushMaxVertInputs, nameof(HullBrushMaxVertInputs));
+                ValidatePositive(ref HullBrushMaxKnots, nameof(HullBrushMaxKnots));
+                ValidatePositive(ref ReferenceImagesMaxFileSize, nameof(ReferenceImagesMaxFileSize));
+                ValidatePositive(ref ReferenceImagesMaxDimension, nameof(ReferenceImagesMaxDimension));
+                ValidatePositive(
+                    ref ReferenceImagesResizeDimension, nameof(ReferenceImagesResizeDimension));
+                ValidatePositive(
+                    ref QuickLoadMaxDistancePerFrame, nameof(QuickLoadMaxDistancePerFrame));
+                ValidatePositive(ref MaxSnapshotDimension, nameof(MaxSnapshotDimension));
+                ValidateRange(
+                    ref OverrideQuestFoveationLevel, 0, 3, nameof(OverrideQuestFoveationLevel));
+                ValidateEnum<ShadowQuality>(ref ShadowMode, nameof(ShadowMode));
+                ValidateEnum<ShadowResolution>(ref ShadowResolution, nameof(ShadowResolution));
+                ValidateNonNegative(ref ShadowDistance, nameof(ShadowDistance));
+                ValidatePositive(ref LodBias, nameof(LodBias));
+                ValidateEnum<SkinWeights>(ref SkinWeights, nameof(SkinWeights));
+            }
+
+            private static void ValidatePositive(ref int? value, string settingName)
+            {
+                if (value.HasValue &&
+                    (value.Value <= 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidatePositive(ref float? value, string settingName)
+            {
+                if (value.HasValue && value.Value <= 0)
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateNonNegative(ref float? value, string settingName)
+            {
+                if (value.HasValue &&
+                    (value.Value < 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateRange(
+                ref int? value, int minimum, int maximum, string settingName)
+            {
+                if (value.HasValue && (value.Value < minimum || value.Value > maximum))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateEnum<T>(ref int? value, string settingName)
+                where T : struct
+            {
+                if (value.HasValue && !Enum.IsDefined(typeof(T), value.Value))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void LogInvalidValue(string settingName, object value)
+            {
+                Debug.LogWarning(
+                    $"[PerformanceOverrides] Ignoring invalid {settingName} value {value}.");
+            }
         }
 
         public PerformanceConfig Performance;
@@ -359,6 +434,10 @@ namespace TiltBrush
 
         public void ApplyPerformanceLimits()
         {
+            PerformanceConfig performance = Performance;
+            performance.Validate();
+            Performance = performance;
+
             FlagsConfig flags = Flags;
             flags.ClampSnapshotDimensions(PerformanceOverrides.MaxSnapshotDimension);
             Flags = flags;
