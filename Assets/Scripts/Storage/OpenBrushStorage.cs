@@ -545,6 +545,7 @@ namespace TiltBrush
                 ("Media Library/Videos", StorageArea.MediaLibraryVideos),
                 ("Media Library/Sound Clips", StorageArea.MediaLibrarySoundClips),
                 ("Media Library/Quill", StorageArea.MediaLibraryQuill),
+                ("Music", StorageArea.Music),
                 ("Media Library/Saved Strokes", StorageArea.SavedStrokes),
                 ("Sketches", StorageArea.Sketches),
                 ("Snapshots", StorageArea.Snapshots),

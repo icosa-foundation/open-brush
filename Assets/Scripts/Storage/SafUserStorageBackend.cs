@@ -284,6 +284,7 @@ namespace TiltBrush
                 case StorageArea.MediaLibraryVideos: return "Media Library/Videos";
                 case StorageArea.MediaLibrarySoundClips: return "Media Library/Sound Clips";
                 case StorageArea.MediaLibraryQuill: return "Media Library/Quill";
+                case StorageArea.Music: return "Music";
                 case StorageArea.Snapshots: return "Snapshots";
                 case StorageArea.Videos: return "Videos";
                 case StorageArea.VrVideos: return "VRVideos";
