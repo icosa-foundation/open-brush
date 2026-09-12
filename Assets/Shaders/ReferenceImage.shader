@@ -88,9 +88,9 @@ Shader "Custom/ReferenceImage" {
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target {
+            float4 frag (v2f i) : SV_Target {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-                fixed4 c = tex2D(_MainTex, i.uv) * _Color;
+                float4 c = tex2D(_MainTex, i.uv) * _Color;
 
                 if (c.a < _Cutoff) discard;
 
@@ -112,4 +112,3 @@ Shader "Custom/ReferenceImage" {
         }
     }
 }
-

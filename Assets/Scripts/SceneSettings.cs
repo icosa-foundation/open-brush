@@ -16,7 +16,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using OpenBrush.Multiplayer;
-using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -25,6 +24,9 @@ namespace TiltBrush
 
     public class SceneSettings : MonoBehaviour
     {
+        private const string kHdrPanoramicSkyboxMaterialResource =
+            "Environments/HdrPanoramicSkybox";
+
         // A using() object that requests instant scene switches
         public class RequestInstantSceneSwitch : IDisposable
         {
@@ -120,6 +122,7 @@ namespace TiltBrush
         private int m_RequestInstantSceneSwitch;
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
+        private Texture2D m_CustomSkyboxTexture;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -215,36 +218,52 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            Texture2D tex = null;
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
                 var fileData = File.ReadAllBytes(path);
 
-                if (path.EndsWith(".hdr"))
+                if (HdrTextureLoader.IsSupportedFile(path))
                 {
-                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                    tex = hdr.texture;
+                    tex = HdrTextureLoader.Load(fileData, path);
                 }
                 else
                 {
-                    tex.LoadImage(fileData);
+                    if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
+                    {
+                        try
+                        {
+                            RawImage rawImage = ImageUtils.FromImageData(
+                                fileData, filename,
+                                App.PlatformConfig.ReferenceImagesMaxDimension,
+                                App.PlatformConfig.ReferenceImagesResizeDimension);
+                            tex = new Texture2D(
+                                rawImage.ColorWidth, rawImage.ColorHeight,
+                                TextureFormat.RGBA32, true);
+                            tex.SetPixels32(rawImage.ColorData);
+                            tex.Apply();
+                        }
+                        catch (ImageLoadError e)
+                        {
+                            Debug.LogWarning(
+                                $"VR JPEG decode failed for {filename}; loading it as a flat JPEG: {e.Message}");
+                        }
+                    }
+                    if (tex == null)
+                    {
+                        tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                        if (!tex.LoadImage(fileData))
+                        {
+                            Debug.LogError($"Failed to load skybox image: {path}");
+                            return;
+                        }
+                    }
                 }
 
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
-                }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                float aspectRatio = (float)tex.width / tex.height;
+                SetCustomSkybox(tex, aspectRatio);
             }
             else
             {
@@ -263,19 +282,70 @@ namespace TiltBrush
             }
             else
             {
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
+                float aspectRatio = (float)tex.width / tex.height;
+                SetCustomSkybox(tex, aspectRatio);
+            }
+        }
+
+        private void SetCustomSkybox(Texture2D texture, float aspectRatio)
+        {
+            Material previousMaterial = m_CustomSkyboxMaterial;
+            Texture2D previousTexture = m_CustomSkyboxTexture;
+
+            m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(texture, aspectRatio);
+            m_CustomSkyboxTexture = texture;
+            m_CustomSkyboxMaterial.mainTexture = texture;
+            m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+            RenderSettings.skybox = m_CustomSkyboxMaterial;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+
+            if (previousMaterial != null)
+            {
+                Destroy(previousMaterial);
+            }
+            if (previousTexture != null && previousTexture != texture)
+            {
+                Destroy(previousTexture);
+            }
+        }
+
+        private static Material CreateCustomSkyboxMaterial(Texture2D texture, float aspectRatio)
+        {
+            if (!HdrTextureLoader.IsHdrTexture(texture))
+            {
+                string resource = aspectRatio > 1.5f
+                    ? "Environments/CustomSkybox"
+                    : "Environments/CustomStereoSkybox";
+                Material templateMaterial = Resources.Load<Material>(resource);
+                if (templateMaterial == null)
                 {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                    throw new InvalidOperationException(
+                        $"Could not load skybox material resource: {resource}");
                 }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                return new Material(templateMaterial);
+            }
+
+            Material template = Resources.Load<Material>(kHdrPanoramicSkyboxMaterialResource);
+            if (template == null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not load skybox material resource: {kHdrPanoramicSkyboxMaterialResource}");
+            }
+
+            var material = new Material(template);
+            material.SetFloat("_Layout", aspectRatio > 1.5f ? 0 : 2);
+            return material;
+        }
+
+        private void OnDestroy()
+        {
+            if (m_CustomSkyboxMaterial != null)
+            {
+                Destroy(m_CustomSkyboxMaterial);
+            }
+            if (m_CustomSkyboxTexture != null)
+            {
+                Destroy(m_CustomSkyboxTexture);
             }
         }
 

@@ -179,11 +179,86 @@ namespace TiltBrush
                     {
                         // Otherwise, this will generate a cache.
                         m_FullSize = Object.Instantiate(Icon);
-                        var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
+                        IEnumerable loader = HdrTextureLoader.IsSupportedFile(FilePath)
+                            ? LoadHdrImage(FilePath)
+                            : LoadImage(FilePath, m_FullSize, runForeground);
+                        var co = loader.GetEnumerator();
                         App.Instance.StartCoroutine(co);
                     }
                 }
             }
+        }
+
+        // Reloads an HDR reference if its full-size cache is missing. Unlike LoadImage(), this
+        // preserves HDR color values and EXR alpha rather than passing through Color32.
+        IEnumerable LoadHdrImage(string path)
+        {
+            m_FullSizeReferences++;
+            Texture2D loadedTexture = null;
+            Texture2D resizedTexture = null;
+            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+            var reader = new Future<HdrTextureLoader.DecodedImage>(
+                () => HdrTextureLoader.Decode(
+                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                longRunning: true);
+            HdrTextureLoader.DecodedImage decoded = null;
+            Exception decodeError = null;
+            while (decoded == null && decodeError == null)
+            {
+                try
+                {
+                    reader.TryGetResult(out decoded);
+                }
+                catch (Exception e)
+                {
+                    decodeError = e;
+                }
+                if (decoded == null && decodeError == null)
+                {
+                    yield return null;
+                }
+            }
+
+            try
+            {
+                if (decodeError != null)
+                {
+                    throw decodeError;
+                }
+                loadedTexture = HdrTextureLoader.CreateTexture(decoded);
+                int resizeLimit = resizeDimension;
+                if (loadedTexture.width > resizeLimit || loadedTexture.height > resizeLimit)
+                {
+                    resizedTexture = ResampleTexture(
+                        loadedTexture, resizeLimit, TextureFormat.RGBAHalf,
+                        RenderTextureFormat.ARGBHalf, linear: true);
+                }
+
+                Texture2D replacement = resizedTexture != null ? resizedTexture : loadedTexture;
+                Object.Destroy(m_FullSize);
+                m_FullSize = replacement;
+                ImageCache.SaveImageCache(m_FullSize, path);
+                loadedTexture = null;
+                resizedTexture = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[HdrReferenceImageFullsize:{FileName}] {e}");
+            }
+            finally
+            {
+                if (resizedTexture != null)
+                {
+                    Object.Destroy(resizedTexture);
+                }
+                if (loadedTexture != null)
+                {
+                    Object.Destroy(loadedTexture);
+                }
+                ReleaseImageFullsize();
+            }
+            yield break;
         }
 
         /// Should be called when the texture from a reference image is no longer required.
@@ -373,43 +448,13 @@ namespace TiltBrush
                 return true;
             }
 
-            if (FilePath.EndsWith(".hdr"))
-            {
-                // TODO Move into the async code path?
-                var fileData = File.ReadAllBytes(FilePath);
-                RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-                tex = hdr.texture;
-
-                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
-                {
-                    m_State = ImageState.ErrorImageTooLarge;
-                    Object.Destroy(tex);
-                    return true;
-                }
-
-                ImageCache.SaveImageCache(tex, FilePath);
-                m_ImageAspect = (float)tex.width / tex.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
-                if (tex.width > resizeLimit || tex.height > resizeLimit)
-                {
-                    Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
-                    DownsizeTexture(tex, ref resizedTex, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
-                    m_Icon = resizedTex;
-                    Object.Destroy(resizedTex);
-                }
-                else
-                {
-                    m_Icon = tex;
-                }
-                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
-                m_State = ImageState.Ready;
-                return true;
-            }
-
             if (m_coroutine == null)
             {
-                if (allowMainThread)
+                if (HdrTextureLoader.IsSupportedFile(FilePath))
+                {
+                    m_coroutine = RequestLoadHdrCoroutine();
+                }
+                else if (allowMainThread)
                 {
                     m_coroutine = RequestLoadCoroutineMainThread();
                 }
@@ -433,6 +478,105 @@ namespace TiltBrush
             }
 
             return finished;
+        }
+
+        IEnumerator<Timeslice> RequestLoadHdrCoroutine()
+        {
+            Texture2D texture = null;
+            Texture2D resizedTexture = null;
+            try
+            {
+                int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+                int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+                var reader = new Future<HdrTextureLoader.DecodedImage>(
+                    () => HdrTextureLoader.Decode(
+                        File.ReadAllBytes(FilePath), FilePath,
+                        maxDimension, resizeDimension),
+                    longRunning: true);
+                HdrTextureLoader.DecodedImage decoded = null;
+                Exception decodeError = null;
+                while (decoded == null && decodeError == null)
+                {
+                    try
+                    {
+                        reader.TryGetResult(out decoded);
+                    }
+                    catch (Exception e)
+                    {
+                        decodeError = e;
+                    }
+                    if (decoded == null && decodeError == null)
+                    {
+                        yield return null;
+                    }
+                }
+                if (decodeError != null)
+                {
+                    Exception cause = decodeError is FutureFailed
+                        ? decodeError.InnerException
+                        : decodeError;
+                    var imageLoadError = cause as ImageLoadError;
+                    m_State = imageLoadError?.imageLoadErrorCode ==
+                        ImageLoadError.ImageLoadErrorCode.ImageTooLargeError
+                        ? ImageState.ErrorImageTooLarge
+                        : ImageState.Error;
+                    Debug.LogWarning($"[HdrReferenceImageLoad:{FileName}] {decodeError}");
+                    yield break;
+                }
+
+                try
+                {
+                    texture = HdrTextureLoader.CreateTexture(decoded);
+                    if (!ValidateDimensions(
+                        texture.width, texture.height,
+                        App.PlatformConfig.ReferenceImagesMaxDimension))
+                    {
+                        m_State = ImageState.ErrorImageTooLarge;
+                    }
+                    else
+                    {
+                        m_ImageAspect = (float)texture.width / texture.height;
+                        int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                        Texture2D imageCacheTexture = texture;
+                        if (texture.width > resizeLimit || texture.height > resizeLimit)
+                        {
+                            resizedTexture = ResampleTexture(
+                                texture, resizeLimit, TextureFormat.RGBAHalf,
+                                RenderTextureFormat.ARGBHalf, linear: true);
+                            imageCacheTexture = resizedTexture;
+                        }
+                        ImageCache.SaveImageCache(imageCacheTexture, FilePath);
+
+                        m_Icon = ResampleTexture(
+                            texture, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
+                            TextureFormat.RGBA32, RenderTextureFormat.ARGB32, linear: true);
+                        m_Icon.wrapMode = TextureWrapMode.Clamp;
+                        ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                        m_State = ImageState.Ready;
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (m_Icon != null)
+                    {
+                        Object.Destroy(m_Icon);
+                        m_Icon = null;
+                    }
+                    m_State = ImageState.Error;
+                    Debug.LogWarning($"[HdrReferenceImageLoad:{FileName}] {e}");
+                }
+            }
+            finally
+            {
+                if (resizedTexture != null)
+                {
+                    Object.Destroy(resizedTexture);
+                }
+                if (texture != null)
+                {
+                    Object.Destroy(texture);
+                }
+            }
         }
 
         /// Unloads the icon and sets the reference image to be in a 'not ready' state.
@@ -484,6 +628,45 @@ namespace TiltBrush
                 outTex.SetPixels32(data, inMip - mip);
             }
             outTex.Apply(false);
+        }
+
+        static Texture2D ResampleTexture(
+            Texture2D inTex, int maxDimension, TextureFormat textureFormat,
+            RenderTextureFormat renderTextureFormat, bool linear)
+        {
+            maxDimension = Mathf.Max(maxDimension, 1);
+            float scale = Mathf.Min(
+                1.0f, maxDimension / (float)Mathf.Max(inTex.width, inTex.height));
+            int width = Mathf.Max(1, Mathf.RoundToInt(inTex.width * scale));
+            int height = Mathf.Max(1, Mathf.RoundToInt(inTex.height * scale));
+
+            RenderTexture renderTexture = RenderTexture.GetTemporary(
+                width, height, 0, renderTextureFormat, RenderTextureReadWrite.Linear);
+            RenderTexture previousRenderTexture = RenderTexture.active;
+            Texture2D texture = null;
+            try
+            {
+                Graphics.Blit(inTex, renderTexture);
+                RenderTexture.active = renderTexture;
+
+                texture = new Texture2D(width, height, textureFormat, true, linear);
+                texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                texture.Apply(true, false);
+                return texture;
+            }
+            catch
+            {
+                if (texture != null)
+                {
+                    Object.Destroy(texture);
+                }
+                throw;
+            }
+            finally
+            {
+                RenderTexture.active = previousRenderTexture;
+                RenderTexture.ReleaseTemporary(renderTexture);
+            }
         }
 
         // Returns a string suitable for passing to Unity.WWW.

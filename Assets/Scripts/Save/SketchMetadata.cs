@@ -637,7 +637,7 @@ namespace TiltBrush
     [Serializable]
     public class TiltImages75b
     {
-        /// Absolute path to image; any path ending in .png or .jpg will work though.
+        /// Absolute path to any supported reference-image file.
         public string FilePath { get; set; }
         public TrTransform Transform { get; set; }
         /// width / height
@@ -677,7 +677,7 @@ namespace TiltBrush
     [Serializable]
     public class TiltImages75
     {
-        /// *.png or *.jpg, should have no path
+        /// Name of a supported reference-image file; should have no path.
         public string FileName { get; set; }
         /// FileName plus path relative to images directory
         public string FilePath { get; set; }

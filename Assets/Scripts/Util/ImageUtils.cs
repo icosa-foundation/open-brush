@@ -61,7 +61,8 @@ namespace TiltBrush
         /// Raises TiltBrush.ImageTooLargeError if abortSize > 0 and the image width or height
         /// are larger than abortSize.
         static public RawImage FromImageData(
-            byte[] data, string filename, int abortDimension = -1)
+            byte[] data, string filename, int abortDimension = -1,
+            int decodeDimension = -1)
         {
             if (abortDimension > 0)
             {
@@ -70,6 +71,11 @@ namespace TiltBrush
 
             if (IsJpeg(data))
             {
+                // Check if it's a VR JPEG (Google Cardboard Camera format)
+                if (VrJpegMetadata.IsVrJpeg(data))
+                {
+                    return FromVrJpeg(data, filename, abortDimension, decodeDimension);
+                }
                 return FromJpeg(data, filename);
             }
             else if (IsPng(data))
@@ -168,6 +174,30 @@ namespace TiltBrush
                 }
             }
             return false;
+        }
+
+        /// Raises TiltBrush.ImageDecodeError if the data is not a valid VR JPEG
+        static public RawImage FromVrJpeg(
+            byte[] jpegData, string filename, int abortDimension, int decodeDimension)
+        {
+            try
+            {
+                int maxWidth = 8192;
+                if (abortDimension > 0)
+                {
+                    maxWidth = Mathf.Min(maxWidth, abortDimension);
+                }
+                if (decodeDimension > 0)
+                {
+                    maxWidth = Mathf.Min(maxWidth, decodeDimension);
+                }
+                return VrJpegUtils.LoadVrJpegFromBytes(jpegData, filename,
+                    VrJpegUtils.EyeLayout.OverUnder, fillPoles: true, maxWidth: maxWidth);
+            }
+            catch (Exception e)
+            {
+                throw new ImageLoadError(e, "VR JPEG decode error");
+            }
         }
 
         /// Raises TiltBrush.ImageDecodeError if the data is not a valid jpeg
