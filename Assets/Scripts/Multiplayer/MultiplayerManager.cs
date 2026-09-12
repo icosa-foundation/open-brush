@@ -1442,8 +1442,14 @@ namespace OpenBrush.Multiplayer
 
         public void ApplySketchTimeSync(uint sourceSketchTimeMs)
         {
-            App.Instance.CurrentSketchTime = CalculateSynchronizedSketchTime(
-                App.Instance.CurrentSketchTime, sourceSketchTimeMs);
+            double currentSketchTime = App.Instance.CurrentSketchTime;
+            double synchronizedSketchTime = CalculateSynchronizedSketchTime(
+                currentSketchTime, sourceSketchTimeMs);
+            if (synchronizedSketchTime > currentSketchTime)
+            {
+                SketchMemoryScript.m_Instance.EndCurrentStrokeTimeSession();
+            }
+            App.Instance.CurrentSketchTime = synchronizedSketchTime;
         }
 
         public async Task<bool> CheckCommandReception(BaseCommand command, int id)
