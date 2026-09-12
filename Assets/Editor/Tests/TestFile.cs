@@ -945,6 +945,58 @@ namespace TiltBrush
             }
         }
 
+        [TestCase("unchanged")]
+        [TestCase("edited")]
+        [TestCase("deleted")]
+        public void SafPublicationRecovery_PreservesCompletedFiles(string change)
+        {
+            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-recovery-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string first = Path.Combine(stagingRoot, "first.txt");
+            string second = Path.Combine(stagingRoot, "second.txt");
+            File.WriteAllText(first, "original");
+            File.WriteAllText(second, "second");
+            var backend = new FakeSafBackend { FailCommitNumber = 2 };
+            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                Assert.IsFalse(SafStagedOutputPublisher.PublishBundle(backend, StorageArea.Exports,
+                    new[] { new SafStagedPath(first, "first.txt"), new SafStagedPath(second, "second.txt") },
+                    transactionOwnsPayload: false, CancellationToken.None).Success);
+                backend.FailCommitNumber = 0;
+                StorageDocument original = backend.List(StorageArea.Exports, "", CancellationToken.None)
+                    .Documents.Single(document => document.DisplayName == "first.txt");
+                if (change == "edited")
+                {
+                    using IStorageWriteTransaction edit = backend.BeginWrite(
+                        StorageArea.Exports, "first.txt", "text/plain", CancellationToken.None);
+                    using (var writer = new StreamWriter(edit.OpenWrite())) { writer.Write("user edit"); }
+                    Assert.IsTrue(edit.Commit().Success);
+                }
+                else if (change == "deleted")
+                {
+                    Assert.IsTrue(backend.Delete(original.DocumentId, CancellationToken.None).Success);
+                }
+                int commitsBeforeRecovery = backend.CommitCount;
+                SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(backend, CancellationToken.None);
+                Assert.AreEqual(change == "unchanged" ? 1 : 0, report.Recovered);
+                Assert.AreEqual(change == "unchanged" ? 0 : 1, report.Pending);
+                Assert.AreEqual(commitsBeforeRecovery + (change == "unchanged" ? 1 : 0), backend.CommitCount);
+                Assert.AreEqual(change == "unchanged", backend.Contains("second.txt"));
+                if (change == "deleted") { Assert.IsFalse(backend.Contains("first.txt")); }
+                else
+                {
+                    using var reader = new StreamReader(backend.OpenRead(original.DocumentId, false, CancellationToken.None));
+                    Assert.AreEqual(change == "edited" ? "user edit" : "original", reader.ReadToEnd());
+                }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
         [Test]
         public void SafStagedOutputPublisher_RetainsOwnedPayloadAfterFailure()
         {

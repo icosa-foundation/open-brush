@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
@@ -306,6 +307,21 @@ namespace TiltBrush
                         string destination = item.IsDirectory
                             ? CombineProviderPath(item.DestinationRelativePath, relativeFile)
                             : item.DestinationRelativePath;
+                        if (completed.Contains(completedKey))
+                        {
+                            SafPublicationResult verification = VerifyCompletedFile(
+                                backend, ParseArea(record.Area), destination, sourcePath, cancellationToken);
+                            if (!verification.Success)
+                            {
+                                return Fail(record, verification.Code, verification.Error);
+                            }
+                            if (record.RootId != backend.RootIdentity)
+                            {
+                                return Fail(record, StorageResultCode.NotReady,
+                                    "The selected Open Brush folder changed during publication.");
+                            }
+                            continue;
+                        }
                         SafPublicationResult result = PublishFile(
                             backend,
                             ParseArea(record.Area),
@@ -348,6 +364,34 @@ namespace TiltBrush
             {
                 return Fail(record, StorageResultCode.Failed, e.Message);
             }
+        }
+
+        private static SafPublicationResult VerifyCompletedFile(
+            IUserStorageBackend backend, StorageArea area, string destination, string sourcePath,
+            CancellationToken cancellationToken)
+        {
+            string directory = Path.GetDirectoryName(destination)?.Replace('\\', '/') ?? "";
+            string filename = Path.GetFileName(destination);
+            StorageDirectoryResult listing = backend.List(area, directory, cancellationToken);
+            if (!listing.Success)
+            {
+                return new SafPublicationResult(listing.Code, listing.Error);
+            }
+            StorageDocument[] matches = listing.Documents.Where(document =>
+                !document.IsDirectory && document.DisplayName.Equals(filename,
+                    StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (matches.Length == 1)
+            {
+                using Stream shared = backend.OpenRead(matches[0].DocumentId, false, cancellationToken);
+                using Stream staged = File.OpenRead(sourcePath);
+                using SHA256 hash = SHA256.Create();
+                if (hash.ComputeHash(shared).SequenceEqual(hash.ComputeHash(staged)))
+                {
+                    return new SafPublicationResult(StorageResultCode.Success);
+                }
+            }
+            return new SafPublicationResult(StorageResultCode.Failed,
+                $"Completed publication file is missing or changed: {destination}. Shared content was preserved.");
         }
 
         private static SafPublicationResult PublishFile(
