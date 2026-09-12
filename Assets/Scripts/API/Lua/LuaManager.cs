@@ -189,14 +189,6 @@ namespace TiltBrush
             }
         }
 
-        void OnDestroy()
-        {
-            if (m_Instance == this)
-            {
-                m_Instance = null;
-            }
-        }
-
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
             m_ScriptPathsToUpdate.Add(e.FullPath);
