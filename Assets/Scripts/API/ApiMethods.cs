@@ -236,6 +236,7 @@ namespace TiltBrush
                         bSaveAsPng: true);
                 }
 
+                _PublishApiGeneratedFileToSharedStorage(fullPath);
                 Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
                 return fullPath;
             }
@@ -285,6 +286,7 @@ namespace TiltBrush
 
                 RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
 
+                _PublishApiGeneratedFileToSharedStorage(fullPath);
                 Debug.Log(
                     $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
                     $"post={usePostProcessing}.");
