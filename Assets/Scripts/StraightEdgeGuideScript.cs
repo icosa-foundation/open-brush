@@ -43,6 +43,7 @@ namespace TiltBrush
         private float m_SnapEnabledTimeStamp;
         private bool m_SnapActive;
         private bool m_EndpointSnapActive;
+        private bool m_EndpointSnappingEnabled = false;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
         // Straight-edge line strokes created during this sketch session, oldest first. Keeping the
@@ -52,6 +53,11 @@ namespace TiltBrush
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
+        public bool EndpointSnappingEnabled
+        {
+            get { return m_EndpointSnappingEnabled; }
+            set { m_EndpointSnappingEnabled = value; }
+        }
 
         // Returns origin pos in Canvas space
         public Vector3 GetOriginPos() { return m_vOrigin_CS; }
@@ -282,6 +288,12 @@ namespace TiltBrush
 
         public bool TryGetEndpointSnap(Vector3 position_WS, out Vector3 snapped_WS)
         {
+            if (!m_EndpointSnappingEnabled)
+            {
+                snapped_WS = position_WS;
+                return false;
+            }
+
             // Snap distance must be in world space to be consistent regardless of canvas scale/rotation
             float maxDistanceSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
             float closestDistanceSqr = maxDistanceSqr;
