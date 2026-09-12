@@ -744,7 +744,16 @@ namespace TiltBrush
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = qNewRotation;
-            App.Scene.Pose = lookPose;
+            bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
+            try
+            {
+                App.Scene.disableTiltProtection = true;
+                App.Scene.Pose = lookPose;
+            }
+            finally
+            {
+                App.Scene.disableTiltProtection = tiltProtectionDisabled;
+            }
         }
 
         [ApiEndpoint(
