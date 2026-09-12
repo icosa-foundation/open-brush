@@ -333,11 +333,11 @@ namespace TiltBrush
             // layer-mask check below mirrors the original Camera.cullingMask semantics.
             foreach (var canvas in App.Scene.AllCanvases)
             {
-                if (canvas == null) continue;
+                if (canvas == null || !canvas.gameObject.activeInHierarchy) continue;
                 foreach (var batch in canvas.BatchManager.AllBatches())
                 {
                     var r = batch.GetComponent<MeshRenderer>();
-                    if (r == null) continue;
+                    if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
                     if (((1 << r.gameObject.layer) & renderCullingMask) == 0) continue;
                     DrawRendererSubmeshes(r);
                 }
