@@ -312,7 +312,6 @@ namespace TiltBrush
             public int? ReferenceImagesMaxFileSize;
             public int? ReferenceImagesMaxDimension;
             public int? ReferenceImagesResizeDimension;
-            public int? MemoryWarningVertCount;
             public bool? UseFileSystemWatcher;
             public bool? EnableAutosave;
             public float? QuickLoadMaxDistancePerFrame;
@@ -341,7 +340,6 @@ namespace TiltBrush
             public static int ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
             public static int ReferenceImagesMaxDimension => o.ReferenceImagesMaxDimension ?? App.PlatformConfig.ReferenceImagesMaxDimension;
             public static int ReferenceImagesResizeDimension => o.ReferenceImagesResizeDimension ?? App.PlatformConfig.ReferenceImagesResizeDimension;
-            public static int MemoryWarningVertCount => o.MemoryWarningVertCount ?? App.PlatformConfig.MemoryWarningVertCount;
             public static bool UseFileSystemWatcher => o.UseFileSystemWatcher ?? App.PlatformConfig.UseFileSystemWatcher;
             public static bool EnableAutosave => o.EnableAutosave ?? App.PlatformConfig.EnableAutosave;
             public static float QuickLoadMaxDistancePerFrame => o.QuickLoadMaxDistancePerFrame ?? App.PlatformConfig.QuickLoadMaxDistancePerFrame;
