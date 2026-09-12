@@ -306,38 +306,35 @@ namespace TiltBrush
         [Serializable]
         public struct PerformanceConfig
         {
-            // Comments show defaults for Mobile / PC
-            public int? HullBrushMaxVertInputs;          // 2500 / 400
-            public int? HullBrushMaxKnots;               // 6000 / 900
-            public int? ReferenceImagesMaxFileSize;      // 2147483647 / 10485760
-            public int? ReferenceImagesMaxDimension;     // 2147483647 / 4352
-            public int? ReferenceImagesResizeDimension;  // 2147483647 / 1024
-            public int? MemoryWarningVertCount;          // 2147483647 / 1000000
-            public bool? UseFileSystemWatcher;           // true / false
-            public bool? EnableAutosave;                 // true / false
-            public float? QuickLoadMaxDistancePerFrame;  // 40 / 4
-            public bool? AvoidUploadHandlerFile;         // true / false
-            public bool? EnableExportMemoryOptimization; // true / true
-            public bool? EnableMulticamPreview;          // true / true
-            public int? MaxSnapshotDimension;            // 16000 / 4096
-
-
+            // Null values retain the active PlatformConfig or quality-level setting.
+            public int? HullBrushMaxVertInputs;
+            public int? HullBrushMaxKnots;
+            public int? ReferenceImagesMaxFileSize;
+            public int? ReferenceImagesMaxDimension;
+            public int? ReferenceImagesResizeDimension;
+            public int? MemoryWarningVertCount;
+            public bool? UseFileSystemWatcher;
+            public bool? EnableAutosave;
+            public float? QuickLoadMaxDistancePerFrame;
+            public bool? AvoidUploadHandlerFile;
+            public bool? EnableExportMemoryOptimization;
+            public bool? EnableMulticamPreview;
+            public int? MaxSnapshotDimension;
             public int? OverrideQuestFoveationLevel;
-
-            public bool? AnisotropicFiltering;         // true / false
-            public bool? BillboardsFaceCameraPosition; // true / false
-            public int? ShadowMode;                    // HardOnly / Disable
-            public int? ShadowResolution;              // High / Low
-            public float? ShadowDistance;              // 30 / 15
-            public float? LodBias;                     // 1 / 0.3
-            public int? SkinWeights;                   // 2 / 1
+            public bool? AnisotropicFiltering;
+            public bool? BillboardsFaceCameraPosition;
+            public int? ShadowMode;
+            public int? ShadowResolution;
+            public float? ShadowDistance;
+            public float? LodBias;
+            public int? SkinWeights;
         }
 
         public PerformanceConfig Performance;
 
         public static class PerformanceOverrides
         {
-            // User overrides
+            // Read the struct on each access so RefreshUserConfig takes effect immediately.
             private static PerformanceConfig o => App.UserConfig.Performance;
             public static int HullBrushMaxVertInputs => o.HullBrushMaxVertInputs ?? App.PlatformConfig.HullBrushMaxVertInputs;
             public static int HullBrushMaxKnots => o.HullBrushMaxKnots ?? App.PlatformConfig.HullBrushMaxKnots;
