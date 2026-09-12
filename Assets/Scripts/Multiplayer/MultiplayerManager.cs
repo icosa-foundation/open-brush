@@ -760,6 +760,15 @@ namespace OpenBrush.Multiplayer
 
         private void ApplyLiveStrokeRoomStateLocally(bool enabled)
         {
+            if (!enabled)
+            {
+                CancelAllOutgoingLiveStrokes();
+                foreach (int playerId in m_LiveStrokeCapablePlayers.ToList())
+                {
+                    m_Manager?.RemoveLiveStrokePreviewsForPlayer(playerId);
+                }
+            }
+
             IsLiveStrokeStreamingEnabled = enabled;
             IsLiveStrokeRoomStateReady = true;
             CurrentRoomData.liveStrokeStreaming = enabled;
@@ -1006,6 +1015,12 @@ namespace OpenBrush.Multiplayer
 
         private void UpdateOutgoingLiveStrokes()
         {
+            if (!IsLiveStrokeRoomStateReady || !IsLiveStrokeStreamingEnabled)
+            {
+                CancelAllOutgoingLiveStrokes();
+                return;
+            }
+
             if (m_OutgoingLiveStrokes.Count == 0)
             {
                 return;
@@ -1276,6 +1291,14 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokes.Remove(stream.Pointer);
             m_OutgoingLiveStrokesBySeed.Remove(stream.Seed);
             m_OutgoingLiveStrokesById.Remove(stream.StreamId);
+        }
+
+        private void CancelAllOutgoingLiveStrokes()
+        {
+            foreach (PointerScript pointer in m_OutgoingLiveStrokes.Keys.ToList())
+            {
+                CancelLocalLiveStroke(pointer);
+            }
         }
 
         private void ExpireRetainedLiveStrokeCommands()
