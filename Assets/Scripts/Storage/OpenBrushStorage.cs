@@ -303,10 +303,9 @@ namespace TiltBrush
         }
 
         public static void PublishImportedMediaToSharedStorageAsync(
-            string localPath, string label, Action<bool, string> onComplete)
+            string localPath, string sharedPath, string label, Action<bool, string> onComplete)
         {
-            if (!TryGetSharedMediaLibraryRelativePath(localPath, out string sharedPath) ||
-                !TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
+            if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
                 onComplete?.Invoke(false, "Unsupported media import destination.");
                 return;

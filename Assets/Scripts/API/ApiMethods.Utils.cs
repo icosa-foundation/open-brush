@@ -419,7 +419,8 @@ namespace TiltBrush
                 localPath,
                 relativePath,
                 "media file",
-                OpenBrushStorage.PublishImportedMediaToSharedStorageAsync);
+                (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
+                    path, relativePath, label, complete));
         }
 
         private static void _PublishApiPathToSharedStorage(
