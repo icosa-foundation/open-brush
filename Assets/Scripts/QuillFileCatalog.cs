@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -40,6 +41,9 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
         private string m_SearchText = "";
+        private string m_SafRootIdentity;
+        private bool UsesSaf => m_SourceDirectory == SourceDirectory.Imm &&
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
@@ -71,7 +75,10 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            }
             SetSourceDirectory(m_SourceDirectory);
         }
 
@@ -87,6 +94,12 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (UsesSaf && m_SafRootIdentity != UserStorage.Backend.RootIdentity)
+            {
+                m_SafRootIdentity = UserStorage.Backend.RootIdentity;
+                ChangeDirectory(HomeDirectory);
+                m_DirectoryScanRequired = true;
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
@@ -136,7 +149,7 @@ namespace TiltBrush
             m_Files.Clear();
 
             // Quill's external project folder is only discovered, never created by Open Brush.
-            if (m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
+            if (!UsesSaf && m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
             {
                 App.InitDirectoryAtPath(m_CurrentDirectory);
             }
@@ -169,7 +182,7 @@ namespace TiltBrush
         {
             StopWatchingCurrentDirectory();
 
-            if (!Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf || !Directory.Exists(m_CurrentDirectory))
             {
                 return;
             }
@@ -203,6 +216,79 @@ namespace TiltBrush
             m_DirectoryScanRequired = true;
         }
 
+        internal static IEnumerator<object> SeedSafDefaults(
+            IUserStorageBackend backend, string[] defaults, Func<string, byte[]> loadResource)
+        {
+            if (!backend.IsReady) { yield break; }
+            string root = backend.RootIdentity;
+            string key = OpenBrushStorage.GetSafRootScopedPreferenceKey("QuillDefaults.HandledFilesV1", root);
+            var handled = DefaultMediaSeeder.GetHandledFiles(PlayerPrefs.GetString(key, ""), false, null);
+            foreach (string resourcePath in defaults ?? Array.Empty<string>())
+            {
+                if (string.IsNullOrEmpty(resourcePath)) { continue; }
+                string normalized = resourcePath.Replace('\\', '/');
+                if (handled.Contains(normalized)) { continue; }
+                if (root != backend.RootIdentity || !backend.IsReady) { yield break; }
+                byte[] bytes = loadResource(resourcePath);
+                if (bytes == null)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Missing default resource: {resourcePath}");
+                    continue;
+                }
+                var write = new Future<SafPublicationResult>(() =>
+                {
+                    if (root != backend.RootIdentity)
+                    {
+                        return new SafPublicationResult(StorageResultCode.NotReady, "Selected folder changed.");
+                    }
+                    string name = Path.GetFileName(normalized);
+                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill, "", CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        return new SafPublicationResult(listing.Code, listing.Error);
+                    }
+                    if (listing.Success && listing.Documents.Any(document =>
+                        document.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return new SafPublicationResult(StorageResultCode.Success);
+                    }
+                    if (root != backend.RootIdentity)
+                    {
+                        return new SafPublicationResult(StorageResultCode.NotReady, "Selected folder changed.");
+                    }
+                    using IStorageWriteTransaction transaction = backend.BeginWrite(
+                        StorageArea.MediaLibraryQuill, name, "application/octet-stream", CancellationToken.None);
+                    using (Stream output = transaction.OpenWrite()) { output.Write(bytes, 0, bytes.Length); }
+                    StorageMutationResult commit = transaction.Commit();
+                    return new SafPublicationResult(commit.Code, commit.Error);
+                }, cleanupFunction: null, longRunning: true);
+                SafPublicationResult result;
+                while (true)
+                {
+                    bool finished;
+                    try { finished = write.TryGetResult(out result); }
+                    catch (FutureFailed e)
+                    {
+                        write.Close();
+                        Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {e.Message}");
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                write.Close();
+                if (!result.Success)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {result.Error}");
+                    yield break;
+                }
+                if (root != backend.RootIdentity) { yield break; }
+                handled.Add(normalized);
+                PlayerPrefs.SetString(key, string.Join("\n", handled.OrderBy(value => value)));
+                PlayerPrefs.Save();
+            }
+        }
+
         private IEnumerator<object> ScanDirectory()
         {
             if (m_IsScanningDirectory)
@@ -213,7 +299,64 @@ namespace TiltBrush
             m_IsScanningDirectory = true;
 
             var files = new List<QuillFileInfo>();
-            if (Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf)
+            {
+                yield return SeedSafDefaults(UserStorage.Backend, m_DefaultQuillFiles, resourcePath =>
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null) { return null; }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    return bytes;
+                });
+                IUserStorageBackend backend = UserStorage.Backend;
+                string rootIdentity = backend.RootIdentity;
+                string directory = m_CurrentDirectory;
+                string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory);
+                var query = new Future<List<QuillFileInfo>>(() =>
+                {
+                    var result = new List<QuillFileInfo>();
+                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill,
+                        relativeDirectory == "." ? "" : relativeDirectory.Replace('\\', '/'),
+                        CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        throw new IOException(listing.Error);
+                    }
+                    if (!listing.Success) { return result; }
+                    foreach (StorageDocument document in listing.Documents)
+                    {
+                        if (document.IsDirectory || !Path.GetExtension(document.DisplayName)
+                                .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
+                        string path = backend.Materialize(document.DocumentId,
+                            MaterializationScope.File, CancellationToken.None);
+                        result.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
+                    }
+                    return result;
+                }, cleanupFunction: null, longRunning: true);
+                while (true)
+                {
+                    bool finished;
+                    try { finished = query.TryGetResult(out files); }
+                    catch (FutureFailed e)
+                    {
+                        Debug.LogWarning($"[SAF_REVIEW_IMM] Could not scan IMM library: {e.Message}");
+                        m_IsScanningDirectory = false;
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                if (rootIdentity != backend.RootIdentity || directory != m_CurrentDirectory || !UsesSaf)
+                {
+                    m_IsScanningDirectory = false;
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
+                files = files.Where(file => string.IsNullOrEmpty(m_SearchText) ||
+                    file.DisplayName.IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            }
+            else if (Directory.Exists(m_CurrentDirectory))
             {
                 foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
                 {

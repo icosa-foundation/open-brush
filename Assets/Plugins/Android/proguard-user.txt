@@ -1,0 +1,4 @@
+# Called from Unity C# via AndroidJavaClass string lookups.
+# R8 cannot see these JNI entry points statically.
+-keep class foundation.icosa.openbrush.storage.** { *; }
+-keep class foundation.icosa.openbrush.storage.**$* { *; }

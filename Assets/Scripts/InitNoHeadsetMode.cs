@@ -577,7 +577,7 @@ namespace TiltBrush
                 builder.Append(entries[i].SketchIndex);
                 builder.Append(':');
                 builder.Append(entries[i].SceneFileInfo != null
-                    ? entries[i].SceneFileInfo.FullPath
+                    ? entries[i].SceneFileInfo.StorageId
                     : entries[i].DisplayName);
             }
             return builder.ToString();

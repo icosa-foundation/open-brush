@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using System;
 using MoonSharp.Interpreter;
 using ODS;
@@ -225,6 +226,7 @@ namespace TiltBrush
                 renderDepth,
                 renderNormals,
                 ResolveCapturePostProcessing(includePostProcessing));
+            ApiMethods._PublishSnapshotFilesToSharedStorage(filename, renderDepth, renderNormals);
         }
 
         [LuaDocsDescription("Queue an Auto GIF capture to the Snapshots folder")]
@@ -329,7 +331,14 @@ namespace TiltBrush
             odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
-            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndPublish(odsDriver, filename));
+        }
+
+        private static IEnumerator Render360SnapshotAndPublish(OdsDriver odsDriver, string filename)
+        {
+            yield return odsDriver.OdsCamera.Render(odsDriver.transform);
+            string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
+            ApiMethods._PublishApiGeneratedFileToSharedStorage(path);
         }
 
         private static bool ResolveCapturePostProcessing(DynValue includePostProcessing)

@@ -12,6 +12,19 @@ namespace TiltBrush
         private static readonly string[] kLegacy = { "Defaults/old.bin" };
         private static readonly string[] kCurrent = { "Defaults/old.bin", "Defaults/new.bin" };
 
+        [Test]
+        public void SafMigration_HandlesOnlyLegacyResourcesAndPreservesDeletionState()
+        {
+            var migrated = DefaultMediaSeeder.GetHandledFiles(null, true, kLegacy);
+            Assert.IsTrue(migrated.Contains(kLegacy[0]));
+            Assert.IsFalse(migrated.Contains(kCurrent[1]));
+            migrated.Add(kCurrent[1]);
+            var reopened = DefaultMediaSeeder.GetHandledFiles(string.Join("\n", migrated), true, kLegacy);
+            CollectionAssert.AreEquivalent(kCurrent, reopened);
+            Assert.IsEmpty(DefaultMediaSeeder.GetHandledFiles(null, false, kLegacy));
+            Assert.IsEmpty(DefaultMediaSeeder.GetHandledFiles("", true, kLegacy));
+        }
+
         [SetUp]
         public void SetUp()
         {

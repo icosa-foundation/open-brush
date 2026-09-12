@@ -42,25 +42,36 @@ namespace TiltBrush
         private const string kAspectRatioFile = "AspectRatio.bin";
 
         // Save a cache of the icon texture which came from filePath.
-        public static void SaveIconCache(Texture2D iconTexture, string filePath, float aspectRatio)
+        public static void SaveIconCache(
+            Texture2D iconTexture,
+            string filePath,
+            float aspectRatio,
+            string sourceIdentity = null)
         {
-            SaveTextureCache(kIconFile, iconTexture, filePath, aspectRatio);
+            SaveTextureCache(
+                kIconFile, iconTexture, filePath, aspectRatio, sourceIdentity);
         }
 
-        public static Texture2D LoadIconCache(string filePath, out float aspectRatio)
+        public static Texture2D LoadIconCache(
+            string filePath, out float aspectRatio, string sourceIdentity = null)
         {
-            return LoadTextureCache(kIconFile, filePath, out aspectRatio);
+            return LoadTextureCache(
+                kIconFile, filePath, out aspectRatio, sourceIdentity);
         }
 
-        public static void SaveImageCache(Texture2D imageTexture, string filePath)
+        public static void SaveImageCache(
+            Texture2D imageTexture, string filePath, string sourceIdentity = null)
         {
-            SaveTextureCache(kImageFile, imageTexture, filePath);
+            SaveTextureCache(
+                kImageFile, imageTexture, filePath, sourceIdentity: sourceIdentity);
         }
 
-        public static Texture2D LoadImageCache(string filePath)
+        public static Texture2D LoadImageCache(
+            string filePath, string sourceIdentity = null)
         {
             float unused;
-            return LoadTextureCache(kImageFile, filePath, out unused);
+            return LoadTextureCache(
+                kImageFile, filePath, out unused, sourceIdentity);
         }
 
         public static byte[] BytesFromTexture(Texture2D texture)
@@ -153,7 +164,12 @@ namespace TiltBrush
                             try
                             {
                                 var originatingFileOfCache = binaryReader.ReadString();
-                                if (originatingFileOfCache == null || !File.Exists(originatingFileOfCache))
+                                bool virtualSource = originatingFileOfCache != null &&
+                                    originatingFileOfCache.StartsWith(
+                                        "virtual:", StringComparison.Ordinal);
+                                if (!virtualSource &&
+                                    (originatingFileOfCache == null ||
+                                     !File.Exists(originatingFileOfCache)))
                                 {
                                     // Cache has a valid signature but references a non-existing file.
                                     deleteThisCache = true;
@@ -178,24 +194,37 @@ namespace TiltBrush
             }
         }
 
-        private static byte[] GetCacheSignature(string filePath)
+        private static byte[] GetCacheSignature(
+            string filePath, string sourceIdentity = null)
         {
             using (var memoryStream = new MemoryStream())
             {
                 using (var binaryWriter = new BinaryWriter(memoryStream))
                 {
-                    var fileInfo = new FileInfo(filePath);
                     // Originating file path should always be the first element of the cache signature.
-                    binaryWriter.Write(filePath);
-                    binaryWriter.Write(fileInfo.Length);
-                    binaryWriter.Write(fileInfo.CreationTime.Ticks);
+                    if (sourceIdentity == null)
+                    {
+                        var fileInfo = new FileInfo(filePath);
+                        binaryWriter.Write(filePath);
+                        binaryWriter.Write(fileInfo.Length);
+                        binaryWriter.Write(fileInfo.CreationTime.Ticks);
+                    }
+                    else
+                    {
+                        binaryWriter.Write(
+                            $"virtual:{FileUtils.GetHash(sourceIdentity)}");
+                    }
                     return memoryStream.ToArray();
                 }
             }
         }
 
         private static void SaveTextureCache(
-            string cacheFileName, Texture2D texture, string filePath, float aspectRatio = -1)
+            string cacheFileName,
+            Texture2D texture,
+            string filePath,
+            float aspectRatio = -1,
+            string sourceIdentity = null)
         {
             if (texture == null)
             {
@@ -211,7 +240,8 @@ namespace TiltBrush
 
             // Save off file signature.
             string signatureFileName = Path.Combine(cacheDirectory, kSignatureFile);
-            File.WriteAllBytes(signatureFileName, GetCacheSignature(filePath));
+            File.WriteAllBytes(
+                signatureFileName, GetCacheSignature(filePath, sourceIdentity));
 
             // Save off the aspect ratio if one was passed in.
             if (aspectRatio != -1)
@@ -227,7 +257,10 @@ namespace TiltBrush
 
         // Tries to load an image cache, returns null on failure.
         private static Texture2D LoadTextureCache(
-            string cacheFileName, string filePath, out float aspectRatio)
+            string cacheFileName,
+            string filePath,
+            out float aspectRatio,
+            string sourceIdentity = null)
         {
             aspectRatio = 1.0f;
             string cacheDirectory = CacheDirectory(filePath);
@@ -238,7 +271,8 @@ namespace TiltBrush
 
             // Check the file signature.
             byte[] cachedSignature = File.ReadAllBytes(Path.Combine(cacheDirectory, kSignatureFile));
-            byte[] signatureFromSource = GetCacheSignature(filePath);
+            byte[] signatureFromSource = GetCacheSignature(
+                filePath, sourceIdentity);
             if (cachedSignature.Length != signatureFromSource.Length)
             {
                 return null;

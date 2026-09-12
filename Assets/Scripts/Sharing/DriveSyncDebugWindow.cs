@@ -62,7 +62,9 @@ namespace TiltBrush
                 GUILayout.Label("Transfers:");
                 foreach (var transfer in ds.m_Transfers.Keys)
                 {
-                    GUILayout.Label($"{transfer.Item.AbsoluteLocalPath}\\{transfer.Item.Name}");
+                    string relativePath = CombineLogicalPath(
+                        transfer.Item.RelativeDirectory, transfer.Item.Name);
+                    GUILayout.Label($"{transfer.Item.Area}/{relativePath}");
                 }
                 EditorGUILayout.LabelField("Remaining to transfer:", $"{ds.m_ToTransfer.Count}");
                 EditorGUILayout.LabelField("m_TotalBytesToTransfer:", $"{ds.m_TotalBytesToTransfer}");

@@ -18,8 +18,22 @@ namespace TiltBrush
 
         public void ForceLoadThumbnail()
         {
-            var catalog = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes) as FileSketchSet;
-            Thumbnail = catalog.ForceLoadThumbnail(CatalogIndex);
+            var catalog = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+            if (catalog is FileSketchSet fileSketchSet)
+            {
+                Thumbnail = fileSketchSet.ForceLoadThumbnail(CatalogIndex);
+                return;
+            }
+
+            byte[] data = FileSketchSet.ReadThumbnail(FileInfo);
+            if (data == null || data.Length == 0)
+            {
+                return;
+            }
+            var thumbnail = new Texture2D(128, 128, TextureFormat.RGB24, true);
+            thumbnail.LoadImage(data);
+            thumbnail.Apply();
+            Thumbnail = thumbnail;
         }
     }
 }

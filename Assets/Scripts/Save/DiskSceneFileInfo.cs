@@ -101,6 +101,7 @@ namespace TiltBrush
         /// Full path to a .tilt directory, a .tilt file, or a .tilt
         /// directory contained in Assets/Resources
         public string FullPath { get { return m_fullpath; } }
+        public string StorageId { get { return m_fullpath; } }
 
         /// true iff the SceneFileInfo references an existing file.
         public bool Exists

@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -261,8 +261,17 @@ namespace TiltBrush
             Uri url,
             string absoluteDestinationPath,
             bool allowRedirects,
-            string requiredContentTypePrefix = null)
+            string requiredContentTypePrefix = null,
+            bool publish = true)
         {
+            string requestedDirectory = absoluteDestinationPath;
+            bool preserveDestination = publish && OpenBrushStorage.IsGooglePlayStorageMode;
+            if (preserveDestination)
+            {
+                // Assign the logical path before returning a widget, even without a selected tree.
+                // Publication must never rename this path after it is used by a sketch or Lua.
+                absoluteDestinationPath = Path.Combine(absoluteDestinationPath, $"import-{Guid.NewGuid():N}");
+            }
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
             request.Method = "HEAD";
@@ -290,6 +299,17 @@ namespace TiltBrush
                 fileVersion++;
                 string baseFilename = Path.GetFileNameWithoutExtension(filename);
                 uniqueFilename = $"{baseFilename} ({fileVersion}){Path.GetExtension(filename)}";
+                fullDestinationPath = GetSafePathInDirectory(
+                    absoluteDestinationPath, uniqueFilename, "download filename");
+            }
+            if (OpenBrushStorage.IsGooglePlayStorageMode && UserStorage.Backend.IsReady &&
+                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(fullDestinationPath, out string sharedPath) &&
+                OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area,
+                    out string areaRelativePath))
+            {
+                uniqueFilename = Path.GetFileName(OpenBrushStorage.GetUniqueImportPath(
+                    UserStorage.Backend, area, areaRelativePath,
+                    candidate => File.Exists(Path.Combine(absoluteDestinationPath, candidate))));
                 fullDestinationPath = GetSafePathInDirectory(
                     absoluteDestinationPath, uniqueFilename, "download filename");
             }
@@ -322,9 +342,184 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
-                return uniqueFilename;
+                if (publish)
+                {
+                    _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath, preserveDestination);
+                }
+                return Path.GetRelativePath(requestedDirectory, fullDestinationPath);
             }
             return null;
+        }
+
+        internal static ReferenceImage ResolveApiImage(string fullPath)
+        {
+            var backend = UserStorage.Backend;
+            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new ReferenceImage(fullPath);
+            }
+            string relative = Path.GetRelativePath(App.ReferenceImagePath(), fullPath).Replace('\\', '/');
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryImages, relative);
+            return new ReferenceImage(source.LocalPath, source.Identity, source.OpenRead,
+                () => source.Materialize(MaterializationScope.File), source.Document.Size, $"./{relative}");
+        }
+
+        internal static ReferenceVideo ResolveApiVideo(string fullPath)
+        {
+            var backend = UserStorage.Backend;
+            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new ReferenceVideo(fullPath);
+            }
+            string relative = Path.GetRelativePath(App.VideoLibraryPath(), fullPath).Replace('\\', '/');
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryVideos, relative);
+            return new ReferenceVideo(source.LocalPath, source.Identity,
+                () => source.Materialize(MaterializationScope.File), relative);
+        }
+
+        internal static Model ResolveApiModel(string relativePath)
+        {
+            var backend = UserStorage.Backend;
+            string fullPath = GetSafeRelativePathInDirectory(App.ModelLibraryPath(), relativePath, "model path");
+            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new Model(relativePath);
+            }
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryModels, relativePath);
+            return new Model(relativePath, source.Identity, () => source.Materialize(MaterializationScope.DependencyTree));
+        }
+
+        internal static void _PublishApiVideoCaptureToSharedStorage(string localPath)
+        {
+            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(localPath, relativePath, "video capture",
+                OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync);
+        }
+
+        internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
+        {
+            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(
+                localPath,
+                relativePath,
+                "generated file",
+                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
+        }
+
+        internal static void _PublishSnapshotFilesToSharedStorage(
+            string filename, bool renderDepth, bool renderNormals)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
+            if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
+                !filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                filename += ".jpg";
+            }
+
+            string imagePath = GetSafePathInDirectory(
+                App.SnapshotPath(), filename, "snapshot filename");
+            var paths = new List<string> { imagePath };
+            if (renderDepth)
+            {
+                paths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(imagePath));
+            }
+            if (renderNormals)
+            {
+                string captureBasePath = Path.Combine(
+                    Path.GetDirectoryName(imagePath), Path.GetFileNameWithoutExtension(imagePath));
+                paths.Add($"{captureBasePath}_normals.png");
+            }
+            paths = paths.Where(File.Exists).ToList();
+            if (paths.Count == 0) return;
+
+            void Publish()
+            {
+                OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
+                    paths, "snapshot", (success, error) =>
+                    {
+                        if (!success)
+                        {
+                            ControllerConsoleScript.m_Instance?.AddNewLine(
+                                $"[SAF_SNAPSHOT_BUNDLE] Failed to publish API snapshot: {error}");
+                        }
+                    });
+            }
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                Publish();
+                return;
+            }
+            // One picker continuation owns the color image and every generated sidecar.
+            AndroidStorageManager.RequireSharedFolderFor("snapshot", Publish,
+                () => ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "[SAF_SNAPSHOT_BUNDLE] API snapshot remains staged locally because folder selection was canceled."));
+        }
+
+        internal static void _PublishApiMediaLibraryPathToSharedStorage(
+            string localPath, bool preserveDestination = false)
+        {
+            if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
+                    localPath, out string relativePath))
+            {
+                return;
+            }
+            _PublishApiPathToSharedStorage(
+                localPath,
+                relativePath,
+                "media file",
+                (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
+                    path, relativePath, label, complete, preserveDestination: preserveDestination));
+        }
+
+        private static void _PublishApiPathToSharedStorage(
+            string localPath,
+            string relativePath,
+            string label,
+            Action<string, string, Action<bool, string>> publish)
+        {
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return;
+            }
+
+            void Publish()
+            {
+                publish(localPath, label, (success, error) =>
+                {
+                    if (!success)
+                    {
+                        string message = string.IsNullOrEmpty(error)
+                            ? $"Failed to copy API {label} to shared storage."
+                            : $"Failed to copy API {label} to shared storage: {error}";
+                        ControllerConsoleScript.m_Instance?.AddNewLine(message);
+                    }
+                });
+            }
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                Publish();
+                return;
+            }
+
+            AndroidStorageManager.RequireSharedFolderFor(
+                label,
+                Publish,
+                () => ControllerConsoleScript.m_Instance?.AddNewLine(
+                    $"SAF_OUTPUT API {label} remains staged locally because folder " +
+                    "selection was canceled."));
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)

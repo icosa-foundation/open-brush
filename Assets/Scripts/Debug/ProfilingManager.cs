@@ -225,8 +225,10 @@ namespace TiltBrush
 
             var profileName = ActiveProfileName;
             var humanName = SaveLoadScript.m_Instance.GetLastFileHumanName();
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(
-                SaveLoadScript.m_Instance.SceneFile.FullPath);
+            SceneFileInfo sceneFile = SaveLoadScript.m_Instance.SceneFile;
+            var fileName = sceneFile is SafSceneFileInfo
+                ? sceneFile.HumanName
+                : System.IO.Path.GetFileNameWithoutExtension(sceneFile.FullPath);
 
             StringBuilder message = new StringBuilder();
             string file = string.IsNullOrEmpty(profileName)

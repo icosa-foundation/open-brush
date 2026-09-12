@@ -489,7 +489,10 @@ namespace TiltBrush
             sample.assetId = SaveLoadScript.m_Instance.SceneFile.AssetId;
             sample.sourceAssetId =
                 SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile);
-            sample.sketchFilePath = SaveLoadScript.m_Instance.SceneFile.FullPath;
+            SceneFileInfo sceneFile = SaveLoadScript.m_Instance.SceneFile;
+            sample.sketchFilePath = sceneFile is SafSceneFileInfo
+                ? sceneFile.HumanName
+                : sceneFile.FullPath;
 
             // Normalize string path.
             if (!string.IsNullOrEmpty(sample.sketchFilePath))

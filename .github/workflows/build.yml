@@ -269,7 +269,7 @@ jobs:
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: AndroidXR
             cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
+            extraoptions: -btb-il2cpp -btb-google-play
             versionSuffix: 0
             androidExportType: androidAppBundle
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
@@ -282,7 +282,7 @@ jobs:
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
+            extraoptions: -btb-il2cpp -btb-google-play
             versionSuffix: 0
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
@@ -292,7 +292,7 @@ jobs:
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: AndroidXR
             cache: Android_Vulkan
-            extraoptions: -btb-il2cpp
+            extraoptions: -btb-il2cpp -btb-google-play
             versionSuffix: 0
             androidExportType: androidAppBundle
             extra_defines: OPEN_BRUSH_VIEWER

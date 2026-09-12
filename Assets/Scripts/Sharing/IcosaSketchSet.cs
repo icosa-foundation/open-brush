@@ -204,6 +204,8 @@ namespace TiltBrush
 
         public void NotifySketchChanged(string fullpath) { }
 
+        public void NotifySketchDeleted(string fullpath) { }
+
 
         public void RequestForcedRefresh()
         {
@@ -1283,6 +1285,8 @@ namespace TiltBrush
         {
             get { return m_localTiltFile; }
         }
+
+        public string StorageId => m_AssetId;
 
         public bool Exists => Valid;
 

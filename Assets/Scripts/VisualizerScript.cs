@@ -13,6 +13,9 @@
 // limitations under the License.
 using System.IO;
 using System;
+using System.Collections;
+using System.Linq;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Audio;
 using Reaktion;
@@ -30,10 +33,13 @@ namespace TiltBrush
             WaitingForWWW,
             WaitingForAudio,
             WaitingForStart,
+            WaitingForStorage,
             MicMode
         }
         private LoadMusicState m_CurrentLoadMusicState;
         private int m_LoadMusicIndex;
+        private int m_MusicLoadVersion;
+        private string m_MusicRootIdentity;
         private WWW m_LoadMusicWWW;
 
         public float m_SmoothLerp = .2f;
@@ -102,6 +108,7 @@ namespace TiltBrush
             }
             else
             {
+                ++m_MusicLoadVersion;
                 //turn off audio and the mic
                 m_AudioSource.Stop();
                 EnableMic(false);
@@ -113,6 +120,11 @@ namespace TiltBrush
         {
             if (m_Active)
             {
+                if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                    UserStorage.Backend.IsReady && m_MusicRootIdentity != UserStorage.Backend.RootIdentity)
+                {
+                    LoadNextSong();
+                }
                 //get fft and wave form data from unity/fmod
                 m_AudioSource.GetOutputData(m_WaveFormFloats, 0);
                 m_AudioSource.GetSpectrumData(m_SpectrumFloats, 0, FFTWindow.BlackmanHarris);
@@ -241,6 +253,14 @@ namespace TiltBrush
 
         void LoadNextSong()
         {
+            int version = ++m_MusicLoadVersion;
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                m_MusicRootIdentity = UserStorage.Backend.RootIdentity;
+                m_CurrentLoadMusicState = LoadMusicState.WaitingForStorage;
+                StartCoroutine(LoadNextSafSong(version));
+                return;
+            }
             string sMusicDirectory = Path.Combine(App.UserPath(), "Music");
 
             if (Directory.Exists(sMusicDirectory))
@@ -266,6 +286,54 @@ namespace TiltBrush
             // No clips found-- enable the mic
             m_CurrentLoadMusicState = LoadMusicState.MicMode;
             EnableMic(true);
+        }
+
+        private IEnumerator LoadNextSafSong(int version)
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string rootIdentity = backend.RootIdentity;
+            int musicIndex = m_LoadMusicIndex++;
+            var query = new Future<string>(() =>
+            {
+                StorageDirectoryResult listing = backend.List(StorageArea.Music, "", CancellationToken.None);
+                if (listing.Code == StorageResultCode.NotFound) { return null; }
+                if (!listing.Success) { throw new IOException(listing.Error); }
+                var songs = listing.Documents.Where(document => !document.IsDirectory)
+                    .OrderBy(document => document.DisplayName, StringComparer.OrdinalIgnoreCase).ToArray();
+                return songs.Length == 0 ? null : backend.Materialize(
+                    songs[musicIndex % songs.Length].DocumentId, MaterializationScope.File,
+                    CancellationToken.None);
+            }, cleanupFunction: null, longRunning: true);
+            string path = null;
+            while (true)
+            {
+                bool finished;
+                try { finished = query.TryGetResult(out path); }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_MUSIC] Could not load music: {e.Message}");
+                    break;
+                }
+                if (finished) { break; }
+                yield return null;
+            }
+            if (version != m_MusicLoadVersion) { yield break; }
+            if (rootIdentity != backend.RootIdentity)
+            {
+                LoadNextSong();
+                yield break;
+            }
+            if (!string.IsNullOrEmpty(path))
+            {
+                EnableMic(false);
+                m_LoadMusicWWW = new WWW(new Uri(path).AbsoluteUri);
+                m_CurrentLoadMusicState = LoadMusicState.WaitingForWWW;
+            }
+            else
+            {
+                m_CurrentLoadMusicState = LoadMusicState.MicMode;
+                EnableMic(true);
+            }
         }
     }
 } // namespace TiltBrush

@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 using TMPro;
 
@@ -37,7 +38,8 @@ namespace TiltBrush
         [SerializeField] private GameObject m_AddMediaButton;
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
-        private string[] m_CurrentSubdirectories;
+        private string[] m_CurrentSubdirectories = System.Array.Empty<string>();
+        private int m_DirectoryQueryVersion;
         private bool m_FolderNavButtonsNeedUpdate;
 
         public string[] CurrentSubdirectories => m_CurrentSubdirectories;
@@ -267,7 +269,20 @@ namespace TiltBrush
             if (m_DirectoryChooserPopupButton != null)
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
-                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+                int queryVersion = ++m_DirectoryQueryVersion;
+                if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                    OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(currentDir, out string sharedPath) &&
+                    OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area,
+                        out string relativeDirectory))
+                {
+                    m_CurrentSubdirectories = System.Array.Empty<string>();
+                    StartCoroutine(QuerySafSubdirectories(currentDir, area, relativeDirectory, queryVersion));
+                }
+                else
+                {
+                    m_CurrentSubdirectories = Directory.Exists(currentDir)
+                        ? Directory.GetDirectories(currentDir) : System.Array.Empty<string>();
+                }
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
                 {
@@ -352,6 +367,51 @@ namespace TiltBrush
                     m_CurrentSubdirectories.Length == 0
                 );
             }
+        }
+
+        private IEnumerator<object> QuerySafSubdirectories(
+            string currentDirectory, StorageArea area, string relativeDirectory, int version)
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string rootIdentity = backend.RootIdentity;
+            var query = new Future<StorageDirectoryResult>(
+                () => backend.List(area, relativeDirectory, CancellationToken.None),
+                cleanupFunction: null, longRunning: true);
+            StorageDirectoryResult listing;
+            while (true)
+            {
+                bool finished;
+                try { finished = query.TryGetResult(out listing); }
+                catch (FutureFailed e)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_NAV] Could not list folders: {e.Message}");
+                    yield break;
+                }
+                if (finished) { break; }
+                yield return null;
+            }
+            if (version != m_DirectoryQueryVersion || rootIdentity != backend.RootIdentity)
+            {
+                yield break;
+            }
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                Debug.LogWarning($"[SAF_REVIEW_NAV] Could not list folders: {listing.Error}");
+                yield break;
+            }
+            var directories = listing.Success ? listing.Documents
+                .Where(document => document.IsDirectory)
+                .Select(document => Path.Combine(currentDirectory, document.DisplayName)).ToList()
+                : new List<string>();
+            string blocksPath = App.BlocksModelLibraryPath();
+            if (area == StorageArea.MediaLibraryModels && string.IsNullOrEmpty(relativeDirectory) &&
+                !string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
+            {
+                directories.Add(blocksPath);
+            }
+            m_CurrentSubdirectories = directories.OrderBy(path => path).ToArray();
+            m_FolderNavButtonsNeedUpdate = true;
+            UpdateInfoText();
         }
 
         void OnCatalogChanged()

@@ -1271,9 +1271,8 @@ namespace TiltBrush
             {
                 if (sceneFileInfo.Exists)
                 {
-                    // ??? Let's try to provoke an exception to propagate to the caller
-                    using (var dummy = File.OpenRead(sceneFileInfo.FullPath)) { }
-                    throw new Exception($"Unknown error opening metadata {sceneFileInfo.FullPath}");
+                    throw new Exception(
+                        $"Unknown error opening metadata for {sceneFileInfo.HumanName}");
                 }
                 else
                 {

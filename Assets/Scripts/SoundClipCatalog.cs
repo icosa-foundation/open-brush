@@ -15,12 +15,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class SoundClipCatalog : MonoBehaviour, IReferenceItemCatalog
     {
+        private const string kSafSeedPreference = "SeededDefaultSoundClips";
         static public SoundClipCatalog Instance { get; private set; }
         [SerializeField] private string[] m_DefaultSoundClips;
         [SerializeField] private bool m_DebugOutput;
@@ -48,7 +51,14 @@ namespace TiltBrush
         private void Init()
         {
             App.InitMediaLibraryPath();
-            App.InitSoundClipLibraryPath(m_DefaultSoundClips);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitDirectoryAtPath(HomeDirectory);
+            }
+            else
+            {
+                App.InitSoundClipLibraryPath(m_DefaultSoundClips);
+            }
             ChangeDirectory(HomeDirectory);
         }
 
@@ -105,6 +115,11 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            if (m_ScanningDirectory &&
+                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                m_DirectoryScanRequired = true;
+            }
             if (!m_ScanningDirectory)
             {
                 StartCatalogScan();
@@ -128,6 +143,13 @@ namespace TiltBrush
             m_DirectoryScanRequired = false;
             m_ScanningDirectory = true;
             int generation = ++m_ScanGeneration;
+
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                StartCoroutine(ScanSafReferenceDirectory(
+                    m_CurrentSoundClipDirectory, m_SoundClips, generation));
+                return;
+            }
 
             // We do a switcheroo on the changed list here so that there isn't a conflict with it
             // if a filewatch callback happens.
@@ -200,6 +222,176 @@ namespace TiltBrush
             }
         }
 
+        private IEnumerator<object> ScanSafReferenceDirectory(
+            string directory, List<SoundClip> soundClips, int generation)
+        {
+            IUserStorageBackend backend = UserStorage.Backend;
+            string rootIdentity = backend.RootIdentity;
+            try
+            {
+                if (!backend.IsReady)
+                {
+                    yield break;
+                }
+                string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory)
+                    .Replace('\\', '/');
+                if (relativeDirectory == ".") relativeDirectory = "";
+                if (relativeDirectory == ".." || relativeDirectory.StartsWith("../") ||
+                    Path.IsPathRooted(relativeDirectory))
+                {
+                    Debug.LogError($"[SAF_SOUND] Directory is outside the sound library: {directory}");
+                    yield break;
+                }
+
+                string seedKey = OpenBrushStorage.GetSafRootScopedPreferenceKey(
+                    kSafSeedPreference, rootIdentity);
+                Dictionary<string, byte[]> defaults = null;
+                if (PlayerPrefs.GetInt(seedKey, 0) == 0)
+                {
+                    defaults = new Dictionary<string, byte[]>();
+                    foreach (string resourcePath in m_DefaultSoundClips ?? Array.Empty<string>())
+                    {
+                        TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                        if (resource == null)
+                        {
+                            Debug.LogWarning($"[SAF_SOUND] Missing default sound: {resourcePath}");
+                            continue;
+                        }
+                        defaults[Path.GetFileName(resourcePath)] = resource.bytes;
+                        Resources.UnloadAsset(resource);
+                    }
+                }
+                Task<StorageTreeResult> query = Task.Run(() => QuerySafSoundClips(
+                    backend, relativeDirectory, m_supportedSoundClipExtensions, defaults));
+                while (!query.IsCompleted)
+                {
+                    yield return null;
+                }
+                if (generation != m_ScanGeneration || rootIdentity != backend.RootIdentity)
+                {
+                    yield break;
+                }
+                if (query.IsFaulted || query.IsCanceled)
+                {
+                    Debug.LogWarning($"[SAF_SOUND] Query failed; retaining the catalog: " +
+                        $"{query.Exception?.GetBaseException().Message}");
+                    yield break;
+                }
+                StorageTreeResult result = query.Result;
+                if (!result.Success && result.Code != StorageResultCode.NotFound)
+                {
+                    Debug.LogWarning($"[SAF_SOUND] Query failed; retaining the catalog: {result.Error}");
+                    yield break;
+                }
+                if (defaults != null)
+                {
+                    PlayerPrefs.SetInt(seedKey, 1);
+                    PlayerPrefs.Save();
+                }
+
+                var previous = soundClips.ToDictionary(clip => clip.CatalogIdentity);
+                var next = new List<SoundClip>();
+                var added = new List<SoundClip>();
+                foreach (StorageDocument document in result.Entries)
+                {
+                    string identity = GetSafCatalogIdentity(backend, document);
+                    if (!previous.TryGetValue(identity, out SoundClip clip))
+                    {
+                        clip = CreateSafSoundClip(backend, document);
+                    }
+                    if (!clip.IsInitialized) added.Add(clip);
+                    previous.Remove(identity);
+                    next.Add(clip);
+                }
+                foreach (SoundClip retired in previous.Values) retired.ReleaseThumbnail();
+                soundClips.Clear();
+                soundClips.AddRange(next);
+                CatalogChanged?.Invoke();
+                foreach (SoundClip clip in added)
+                {
+                    yield return clip.Initialize();
+                    if (generation != m_ScanGeneration || rootIdentity != backend.RootIdentity)
+                    {
+                        clip.ReleaseThumbnail();
+                        yield break;
+                    }
+                }
+                CatalogChanged?.Invoke();
+            }
+            finally
+            {
+                // A replacement scan owns this flag after a folder change.
+                if (generation == m_ScanGeneration) m_ScanningDirectory = false;
+            }
+        }
+
+        internal static StorageTreeResult QuerySafSoundClips(
+            IUserStorageBackend backend, string relativeDirectory, string[] extensions,
+            IReadOnlyDictionary<string, byte[]> defaults)
+        {
+            string rootIdentity = backend.RootIdentity;
+            if (defaults != null)
+            {
+                StorageDirectoryResult existing = backend.List(
+                    StorageArea.MediaLibrarySoundClips, "", CancellationToken.None);
+                if (!existing.Success && existing.Code != StorageResultCode.NotFound)
+                {
+                    return StorageTreeResult.Failed(existing.Code, existing.Error);
+                }
+                // Match the local library: seed a new/empty library, not an existing user's library.
+                if (existing.Documents.Count == 0)
+                {
+                    foreach (var seed in defaults)
+                    {
+                        if (rootIdentity != backend.RootIdentity)
+                        {
+                            return StorageTreeResult.Failed(
+                                StorageResultCode.Cancelled, "The shared folder changed.");
+                        }
+                        using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                            StorageArea.MediaLibrarySoundClips, seed.Key,
+                            StorageMimeTypes.ForPath(seed.Key), CancellationToken.None))
+                        {
+                            // A provider file may have appeared since the initial listing.
+                            if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                                transaction.TargetDocumentId.IsValid)
+                            {
+                                continue;
+                            }
+                            using (Stream output = transaction.OpenWrite())
+                            {
+                                output.Write(seed.Value, 0, seed.Value.Length);
+                            }
+                            StorageMutationResult write = transaction.Commit();
+                            if (!write.Success) return StorageTreeResult.Failed(write.Code, write.Error);
+                        }
+                    }
+                }
+            }
+            return backend.EnumerateTree(StorageArea.MediaLibrarySoundClips, relativeDirectory,
+                new StorageTreeQuery(includeExtensions: extensions), CancellationToken.None);
+        }
+
+        private static string GetSafCatalogIdentity(IUserStorageBackend backend, StorageDocument document)
+        {
+            return $"{backend.RootIdentity}|{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+        }
+
+        internal static SoundClip CreateSafSoundClip(IUserStorageBackend backend, StorageDocument document)
+        {
+            string rootIdentity = backend.RootIdentity;
+            return new SoundClip(backend.GetMaterializationPath(document.DocumentId),
+                document.RelativeDisplayPath, GetSafCatalogIdentity(backend, document), () =>
+                {
+                    if (rootIdentity != backend.RootIdentity)
+                    {
+                        throw new IOException("The shared sound library changed.");
+                    }
+                    return backend.Materialize(document.DocumentId,
+                        MaterializationScope.File, CancellationToken.None);
+                });
+        }
+
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.
         public SoundClip GetSoundClipByPersistentPath(string path)
         {
@@ -238,11 +430,28 @@ namespace TiltBrush
 
                 if (!absolutePath.StartsWith(libraryPathWithSeparator, pathComparison) ||
                     !m_supportedSoundClipExtensions.Contains(
-                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase) ||
-                    !File.Exists(absolutePath))
+                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase))
                 {
                     return null;
                 }
+
+                if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+                {
+                    string relativePath = Path.GetRelativePath(libraryPath, absolutePath).Replace('\\', '/');
+                    StorageTreeResult listing = UserStorage.Backend.EnumerateTree(
+                        StorageArea.MediaLibrarySoundClips,
+                        Path.GetDirectoryName(relativePath)?.Replace('\\', '/') ?? "",
+                        new StorageTreeQuery(recursive: false,
+                            includeExtensions: m_supportedSoundClipExtensions),
+                        CancellationToken.None);
+                    StorageDocument document = listing.Success
+                        ? listing.Entries.FirstOrDefault(item => !item.IsDirectory &&
+                            item.DisplayName == Path.GetFileName(relativePath))
+                        : null;
+                    if (document != null) return CreateSafSoundClip(UserStorage.Backend, document);
+                    // Preserve access to locally extracted audio in the working library.
+                }
+                if (!File.Exists(absolutePath)) return null;
 
                 return new SoundClip(absolutePath);
             }
@@ -281,7 +490,8 @@ namespace TiltBrush
 
             StartCatalogScan();
 
-            if (Directory.Exists(m_CurrentSoundClipDirectory))
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                Directory.Exists(m_CurrentSoundClipDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSoundClipDirectory);
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;

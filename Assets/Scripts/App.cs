@@ -763,7 +763,9 @@ namespace TiltBrush
                 }
             }
 
-            if (Config.m_AutosaveRestoreEnabled && AutosaveRestoreFileExists)
+            if (Config.m_AutosaveRestoreEnabled &&
+                AutosaveRestoreFileExists &&
+                !OpenBrushStorage.IsGooglePlayStorageMode)
             {
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)
@@ -1894,15 +1896,15 @@ namespace TiltBrush
             try
             {
                 string sConfigPath = App.ConfigPath();
-                if (!File.Exists(sConfigPath))
-                {
-                    return;
-                }
-
                 string text;
                 try
                 {
-                    text = File.ReadAllText(sConfigPath, System.Text.Encoding.UTF8);
+                    text = SharedUserConfig.ReadText(UserStorage.Backend, sConfigPath,
+                        e => Debug.LogWarning($"[SAF_USER_CONFIG] Using local configuration: {e.Message}"));
+                    if (text == null)
+                    {
+                        return;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -2032,10 +2034,16 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
+#if OPEN_BRUSH_GOOGLE_PLAY
+                    // Google Play builds use app-private storage only as a working cache.
+                    // Canonical user-visible files are written through Android SAF.
+                    m_UserPath = OpenBrushStorage.LocalUserPathRoot;
+#else
                     m_UserPath = SteamManager.RunningUnderLepton
                         ? "/sdcard/Documents"
                         : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
@@ -2220,6 +2228,10 @@ namespace TiltBrush
 
         public static string MediaLibraryPath()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalMaterializedMediaLibraryPath;
+            }
             return Path.Combine(UserPath(), "Media Library");
         }
 
@@ -2294,6 +2306,10 @@ namespace TiltBrush
 
         static public string UserExportPath()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalExportStagingPath;
+            }
             return App.Config.m_ExportPath ?? Path.Combine(UserPath(), "Exports");
         }
 
@@ -2304,16 +2320,28 @@ namespace TiltBrush
 
         static public string SnapshotPath()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalSnapshotStagingPath;
+            }
             return Path.Combine(UserPath(), "Snapshots");
         }
 
         static public string VideosPath()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalVideoStagingPath;
+            }
             return Path.Combine(UserPath(), "Videos");
         }
 
         static public string VrVideosPath()
         {
+            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                return OpenBrushStorage.LocalVrVideoStagingPath;
+            }
             return Path.Combine(UserPath(), "VRVideos");
         }
 
@@ -2324,7 +2352,10 @@ namespace TiltBrush
                 AppExit();
             }
 
-            AutosaveRestoreFileExists = false;
+            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                AutosaveRestoreFileExists = false;
+            }
         }
 
         void OnPlaybackComplete()

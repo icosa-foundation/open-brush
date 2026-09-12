@@ -740,7 +740,8 @@ namespace TiltBrush
 
             // Create a copy of the .tilt file in tempUploadDir.
             string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
-            File.Copy(fileInfo.FullPath, tempTiltPath);
+            CopySceneFileToPath(
+                SaveLoadScript.m_Instance.SceneFile, tempTiltPath);
 
             // Save thumbnail as a png to temp path
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
@@ -819,7 +820,8 @@ namespace TiltBrush
 
             // Create a copy of the .tilt file in tempUploadDir.
             string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
-            File.Copy(fileInfo.FullPath, tempTiltPath);
+            CopySceneFileToPath(
+                SaveLoadScript.m_Instance.SceneFile, tempTiltPath);
 
             // Collect files into a .zip file, including the .tilt file.
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
@@ -1065,7 +1067,8 @@ namespace TiltBrush
             SketchSnapshot snapshot = await SaveLoadScript.m_Instance.CreateSnapshotWithIconsAsync();
             snapshot.AssetId = fileInfo.AssetId; // FileInfo and snapshot must match
             await SaveLoadScript.m_Instance.SaveSnapshot(fileInfo, snapshot: snapshot);
-            if (!File.Exists(fileInfo.FullPath))
+            SceneFileInfo savedFile = SaveLoadScript.m_Instance.SceneFile;
+            if (!savedFile.Exists)
             {
                 string exceptionMessage = "Internal error uploading .tilt.";
                 if (SaveLoadScript.m_Instance.LastWriteSnapshotError != null)
@@ -1083,10 +1086,32 @@ namespace TiltBrush
             byte[] thumbnail = SaveLoadScript.m_Instance.GetLastThumbnailBytes();
             if (thumbnail == null)
             {
-                thumbnail = FileSketchSet.ReadThumbnail(fileInfo) ?? new byte[0];
+                thumbnail = FileSketchSet.ReadThumbnail(savedFile) ?? new byte[0];
             }
 
             return thumbnail;
+        }
+
+        private static void CopySceneFileToPath(
+            SceneFileInfo source, string destinationPath)
+        {
+            if (source is SafSceneFileInfo safSource)
+            {
+                using (Stream input = UserStorage.Backend.OpenRead(
+                    safSource.Document.DocumentId,
+                    requireSeekable: true,
+                    CancellationToken.None))
+                using (var output = new FileStream(
+                    destinationPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None))
+                {
+                    input.CopyTo(output);
+                }
+                return;
+            }
+            File.Copy(source.FullPath, destinationPath);
         }
 
         public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
