@@ -4473,10 +4473,10 @@ namespace TiltBrush
                 m_PanelManager.ToggleSketchbookPanels(isLoadingSketch: true);
             }
             ResetGrabbedPose(everything: true);
-            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
+                PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
