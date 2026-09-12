@@ -122,6 +122,7 @@ namespace TiltBrush
         private int m_RequestInstantSceneSwitch;
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
+        private Texture2D m_CustomSkyboxTexture;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -235,11 +236,7 @@ namespace TiltBrush
                 }
 
                 float aspectRatio = (float)tex.width / tex.height;
-                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(tex, aspectRatio);
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                SetCustomSkybox(tex, aspectRatio);
             }
             else
             {
@@ -259,11 +256,29 @@ namespace TiltBrush
             else
             {
                 float aspectRatio = (float)tex.width / tex.height;
-                m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(tex, aspectRatio);
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                SetCustomSkybox(tex, aspectRatio);
+            }
+        }
+
+        private void SetCustomSkybox(Texture2D texture, float aspectRatio)
+        {
+            Material previousMaterial = m_CustomSkyboxMaterial;
+            Texture2D previousTexture = m_CustomSkyboxTexture;
+
+            m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(texture, aspectRatio);
+            m_CustomSkyboxTexture = texture;
+            m_CustomSkyboxMaterial.mainTexture = texture;
+            m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+            RenderSettings.skybox = m_CustomSkyboxMaterial;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+
+            if (previousMaterial != null)
+            {
+                Destroy(previousMaterial);
+            }
+            if (previousTexture != null && previousTexture != texture)
+            {
+                Destroy(previousTexture);
             }
         }
 
@@ -274,7 +289,13 @@ namespace TiltBrush
                 string resource = aspectRatio > 1.5f
                     ? "Environments/CustomSkybox"
                     : "Environments/CustomStereoSkybox";
-                return Resources.Load<Material>(resource);
+                Material template = Resources.Load<Material>(resource);
+                if (template == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not load skybox material resource: {resource}");
+                }
+                return new Material(template);
             }
 
             Material template = Resources.Load<Material>(kHdrPanoramicSkyboxMaterialResource);
@@ -287,6 +308,18 @@ namespace TiltBrush
             var material = new Material(template);
             material.SetFloat("_Layout", aspectRatio > 1.5f ? 0 : 2);
             return material;
+        }
+
+        private void OnDestroy()
+        {
+            if (m_CustomSkyboxMaterial != null)
+            {
+                Destroy(m_CustomSkyboxMaterial);
+            }
+            if (m_CustomSkyboxTexture != null)
+            {
+                Destroy(m_CustomSkyboxTexture);
+            }
         }
 
         public Quaternion GradientOrientation
