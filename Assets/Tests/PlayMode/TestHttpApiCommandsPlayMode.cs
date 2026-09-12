@@ -283,7 +283,6 @@ namespace TiltBrush
                 yield break;
             }
 
-            LogAssert.ignoreFailingMessages = true;
             if (SceneManager.GetActiveScene().name != kSceneName)
             {
                 SceneManager.LoadScene(kSceneName);
