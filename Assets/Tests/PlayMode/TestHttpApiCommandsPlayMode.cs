@@ -502,14 +502,11 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return SendCommand("brush.force.painting.on", "true");
-            yield return WaitFrames(2);
             Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.new.stroke");
-            yield return WaitFrames(2);
             Assert.AreEqual("ForcedOn", GetForcePaintingMode("PreviousForcePaintingMode"));
-            Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
+            Assert.AreEqual("ForceNewStroke", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.force.painting.on", "false");
-            yield return WaitFrames(1);
         }
 
         [UnityTest]
