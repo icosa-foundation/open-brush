@@ -747,7 +747,7 @@ namespace TiltBrush
             }
             TrTransform lookPose = App.Scene.Pose;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = Quaternion.Inverse(qNewRotation);
+            lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
             bool tiltProtectionDisabled = App.Scene.disableTiltProtection;
             try
             {

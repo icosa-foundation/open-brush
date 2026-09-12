@@ -591,7 +591,8 @@ namespace TiltBrush
                 yield break;
             }
             AssertQuaternionApprox(
-                Quaternion.Inverse(Quaternion.Euler(45, 45, 0)), GetSceneRotation());
+                Quaternion.Euler(45, 45, 0),
+                Quaternion.Inverse(GetSceneRotation()) * GetHead().rotation);
         }
 
         [UnityTest]
