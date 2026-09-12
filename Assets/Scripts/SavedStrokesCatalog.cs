@@ -82,7 +82,7 @@ namespace TiltBrush
             }
         }
 
-        public string HomeDirectory => IsSafStorage ? "Saved Strokes" : App.SavedStrokesPath();
+        public string HomeDirectory => App.SavedStrokesPath();
         public bool IsHomeDirectory() => m_CurrentSavedStrokesDirectory == HomeDirectory;
 
         public bool IsSubDirectoryOfHome()
