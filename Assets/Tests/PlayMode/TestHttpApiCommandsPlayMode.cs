@@ -588,7 +588,8 @@ namespace TiltBrush
                 Assert.Ignore("user.direction is monoscopic-only");
             }
             yield return SendCommand("user.direction", "45,45,0");
-            AssertQuaternionApprox(Quaternion.Euler(45, 45, 0), GetSceneRotation());
+            AssertQuaternionApprox(
+                Quaternion.Inverse(Quaternion.Euler(45, 45, 0)), GetSceneRotation());
         }
 
         [UnityTest]
