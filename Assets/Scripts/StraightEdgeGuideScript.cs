@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -45,10 +44,9 @@ namespace TiltBrush
         private bool m_SnapActive;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
-        // Stack of line endpoints for undo support (most recent at end)
-        private readonly List<(Vector3 origin, Vector3 target)> m_LineHistory = new List<(Vector3, Vector3)>();
-        // Track all straight edge strokes to support undo/redo properly
-        private readonly Dictionary<Stroke, (Vector3 origin, Vector3 target)> m_StrokeToLine = new Dictionary<Stroke, (Vector3, Vector3)>();
+        // Straight-edge line strokes created during this sketch session, oldest first. Keeping the
+        // stroke rather than copied endpoints lets snapping follow visibility, canvas, and transforms.
+        private readonly List<Stroke> m_LineHistory = new List<Stroke>();
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
@@ -98,8 +96,6 @@ namespace TiltBrush
             if (SketchMemoryScript.m_Instance != null)
             {
                 SketchMemoryScript.m_Instance.CommandPerformed += OnCommandPerformed;
-                SketchMemoryScript.m_Instance.CommandUndo += OnCommandUndo;
-                SketchMemoryScript.m_Instance.CommandRedo += OnCommandRedo;
             }
         }
 
@@ -108,103 +104,24 @@ namespace TiltBrush
             if (SketchMemoryScript.m_Instance != null)
             {
                 SketchMemoryScript.m_Instance.CommandPerformed -= OnCommandPerformed;
-                SketchMemoryScript.m_Instance.CommandUndo -= OnCommandUndo;
-                SketchMemoryScript.m_Instance.CommandRedo -= OnCommandRedo;
             }
         }
 
         private void OnCommandPerformed(BaseCommand command)
         {
-            // Record endpoints when a straight edge line is created
-            if (command is BrushStrokeCommand brushCommand)
+            if (!PointerManager.m_Instance.StraightEdgeModeEnabled || m_CurrentShape != Shape.Line)
             {
-                bool isStraightEdge = PointerManager.m_Instance.StraightEdgeModeEnabled;
-                bool isLine = m_CurrentShape == Shape.Line;
-
-                if (isStraightEdge && isLine)
-                {
-                    Stroke stroke = brushCommand.m_Stroke;
-                    if (stroke != null && stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
-                    {
-                        // Endpoints are in canvas space
-                        Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
-                        Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
-
-                        // Store mapping from stroke to its line endpoints for undo tracking
-                        m_StrokeToLine[stroke] = (origin_CS, target_CS);
-
-                        // Add directly to history (don't rebuild - stroke isn't in AllStrokes yet)
-                        m_LineHistory.Add((origin_CS, target_CS));
-
-                        // Keep only last N lines (m_EndpointHistoryLength)
-                        while (m_LineHistory.Count > m_EndpointHistoryLength)
-                        {
-                            m_LineHistory.RemoveAt(0);
-                        }
-                    }
-                }
+                return;
             }
-        }
 
-        private void OnCommandUndo(BaseCommand command)
-        {
-            // Rebuild history from current sketch state after undo
             if (command is BrushStrokeCommand brushCommand)
             {
-                // Remove the stroke mapping since it's being undone
-                if (m_StrokeToLine.ContainsKey(brushCommand.m_Stroke))
-                {
-                    m_StrokeToLine.Remove(brushCommand.m_Stroke);
-                }
-                RebuildHistory();
-            }
-        }
-
-        private void OnCommandRedo(BaseCommand command)
-        {
-            // Rebuild history from current sketch state after redo
-            if (command is BrushStrokeCommand brushCommand)
-            {
-                // Re-add the stroke mapping since it's being redone
-                bool isStraightEdge = PointerManager.m_Instance.StraightEdgeModeEnabled;
-                bool isLine = m_CurrentShape == Shape.Line;
-
                 Stroke stroke = brushCommand.m_Stroke;
-                if (stroke != null && stroke.m_ControlPoints != null && stroke.m_ControlPoints.Length >= 2)
+                if (stroke != null && stroke.m_ControlPoints != null &&
+                    stroke.m_ControlPoints.Length >= 2 && !m_LineHistory.Contains(stroke))
                 {
-                    // Check if this was a straight edge stroke by seeing if we can extract endpoints
-                    Vector3 origin_CS = stroke.m_ControlPoints[0].m_Pos;
-                    Vector3 target_CS = stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
-
-                    // Re-add to mapping
-                    m_StrokeToLine[stroke] = (origin_CS, target_CS);
+                    m_LineHistory.Add(stroke);
                 }
-                RebuildHistory();
-            }
-        }
-
-        private void RebuildHistory()
-        {
-            m_LineHistory.Clear();
-
-            // Get all strokes that are currently in the sketch (not undone)
-            var currentStrokes = SketchMemoryScript.AllStrokes();
-            var currentStrokesSet = new HashSet<Stroke>(currentStrokes);
-
-            // Find straight edge strokes and add their endpoints to history
-            foreach (var kvp in m_StrokeToLine)
-            {
-                if (currentStrokesSet.Contains(kvp.Key))
-                {
-                    m_LineHistory.Add(kvp.Value);
-                    Debug.Log($"[SNAP_UNDO] RebuildHistory: Added stroke to history");
-                }
-            }
-
-            // Keep only last N lines (m_EndpointHistoryLength)
-            while (m_LineHistory.Count > m_EndpointHistoryLength)
-            {
-                m_LineHistory.RemoveAt(0);
             }
         }
 
@@ -384,11 +301,24 @@ namespace TiltBrush
             bool found = false;
             Vector3 closest_WS = Vector3.zero;
 
-            // Check all lines in history (each line has 2 endpoints)
-            foreach (var line in m_LineHistory)
+            int eligibleLineCount = 0;
+            for (int i = m_LineHistory.Count - 1;
+                 i >= 0 && eligibleLineCount < m_EndpointHistoryLength;
+                 --i)
             {
+                Stroke stroke = m_LineHistory[i];
+                CanvasScript canvas = stroke?.Canvas;
+                if (stroke == null || !stroke.IsGeometryEnabled || canvas == null ||
+                    canvas != App.Scene.ActiveCanvas ||
+                    stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+                {
+                    continue;
+                }
+
+                ++eligibleLineCount;
+
                 // Check origin
-                Vector3 origin_WS = Coords.CanvasPose * line.origin;
+                Vector3 origin_WS = canvas.Pose * stroke.m_ControlPoints[0].m_Pos;
                 float distSqr = (origin_WS - position_WS).sqrMagnitude;
                 if (distSqr <= closestDistanceSqr)
                 {
@@ -398,7 +328,8 @@ namespace TiltBrush
                 }
 
                 // Check target
-                Vector3 target_WS = Coords.CanvasPose * line.target;
+                Vector3 target_WS = canvas.Pose *
+                    stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
                 distSqr = (target_WS - position_WS).sqrMagnitude;
                 if (distSqr <= closestDistanceSqr)
                 {
@@ -415,7 +346,6 @@ namespace TiltBrush
         public void ClearEndpointHistory()
         {
             m_LineHistory.Clear();
-            m_StrokeToLine.Clear();
         }
     }
 } // namespace TiltBrush
