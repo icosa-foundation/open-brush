@@ -640,6 +640,7 @@ namespace TiltBrush
 
         void Update()
         {
+            bool endpointSnapActive = false;
             if (m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
             {
                 m_StraightEdgeGuide.SnapEnabled =
@@ -660,7 +661,7 @@ namespace TiltBrush
                     }
                 }
 
-                m_StraightEdgeGuide.UpdateTarget(pointerPosition);
+                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition);
             }
 
             // Preview endpoint snapping when not actively drawing
@@ -672,8 +673,11 @@ namespace TiltBrush
                 if (m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedPosition))
                 {
                     SetMainPointerPosition(snappedPosition);
+                    endpointSnapActive = true;
                 }
             }
+
+            m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
 
             if (SymmetryModeEnabled)
             {
