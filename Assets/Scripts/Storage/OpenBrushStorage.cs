@@ -303,24 +303,51 @@ namespace TiltBrush
         }
 
         public static void PublishImportedMediaToSharedStorageAsync(
-            string localPath, string sharedPath, string label, Action<bool, string> onComplete)
+            string localPath, string sharedPath, string label, Action<bool, string> onComplete,
+            Action<string> onPublished = null)
         {
             if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
                 onComplete?.Invoke(false, "Unsupported media import destination.");
                 return;
             }
-            AndroidStorageManager.StartStorageOperation(label, () =>
-            {
-                IUserStorageBackend backend = UserStorage.Backend;
-                // Serialize API name selection and publication, including delayed picker continuations.
-                using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+            string publishedLocalPath = null;
+            AndroidStorageManager.StartStorageOperation(label,
+                () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
+                    onPublished != null, out publishedLocalPath),
+                (success, error) =>
                 {
-                    string destination = GetUniqueImportPath(backend, area, relativePath);
-                    return SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
-                        transactionOwnsPayload: false, CancellationToken.None);
+                    onComplete?.Invoke(success, error);
+                    if (success) { onPublished?.Invoke(publishedLocalPath); }
+                });
+        }
+
+        internal static SafPublicationResult PublishImportedMedia(
+            IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
+            bool prepareLocalImport, out string publishedLocalPath)
+        {
+            publishedLocalPath = null;
+            // Serialize API name selection and publication, including delayed picker continuations.
+            using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+            {
+                string localDirectory = Path.GetDirectoryName(localPath);
+                string destination = GetUniqueImportPath(backend, area, relativePath,
+                    candidate => !string.Equals(candidate, Path.GetFileName(localPath),
+                        StringComparison.OrdinalIgnoreCase) &&
+                        File.Exists(Path.Combine(localDirectory, candidate)));
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
+                    transactionOwnsPayload: false, CancellationToken.None);
+                if (result.Success && prepareLocalImport)
+                {
+                    // The importing widget needs both the final logical name and its local bytes.
+                    publishedLocalPath = Path.Combine(localDirectory, Path.GetFileName(destination));
+                    if (!string.Equals(localPath, publishedLocalPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(localPath, publishedLocalPath);
+                    }
                 }
-            }, onComplete);
+                return result;
+            }
         }
 
         public static bool PublishVideoCaptureToSharedStorage(

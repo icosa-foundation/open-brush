@@ -54,7 +54,8 @@ namespace TiltBrush
             string fullLocalPath = GetSafeRelativePathInDirectory(
                 App.ModelLibraryPath(), modelDirectory, "model import directory");
             string filename = _DownloadMediaFileFromUrlToDirectory(
-                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf");
+                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf",
+                onPublished: publishedFilename => ImportModel(Path.Combine(modelDirectory, publishedFilename)));
             if (filename == null) { return; }
             if (ext == "gltf")
             {

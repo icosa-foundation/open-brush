@@ -1060,7 +1060,9 @@ namespace TiltBrush
             if (IsHttpLocation(location))
             {
                 location = _DownloadMediaFileFromUrl(
-                    location, "Videos", allowRedirects, requiredContentTypePrefix);
+                    location, "Videos", allowRedirects, requiredContentTypePrefix,
+                    onPublished: filename => ImportVideo(filename));
+                if (location == null) { return null; }
             }
             location = GetSafeRelativePathInDirectory(
                 App.VideoLibraryPath(), location, "video path");
@@ -1105,7 +1107,9 @@ namespace TiltBrush
             if (IsHttpLocation(location))
             {
                 location = _DownloadMediaFileFromUrl(
-                    location, "BackgroundImages", allowRedirects, requiredContentTypePrefix);
+                    location, "BackgroundImages", allowRedirects, requiredContentTypePrefix,
+                    onPublished: filename => ImportSkybox(filename));
+                if (location == null) { return; }
             }
             SceneSettings.m_Instance.LoadCustomSkybox(location);
         }
@@ -1128,7 +1132,9 @@ namespace TiltBrush
             if (IsHttpLocation(location))
             {
                 location = _DownloadMediaFileFromUrl(
-                    location, "Images", allowRedirects, requiredContentTypePrefix);
+                    location, "Images", allowRedirects, requiredContentTypePrefix,
+                    onPublished: filename => ImportImage(filename));
+                if (location == null) { return null; }
             }
             var imageWidget = _ImportImage(location, _CurrentBrushTransform());
             if (imageWidget != null)

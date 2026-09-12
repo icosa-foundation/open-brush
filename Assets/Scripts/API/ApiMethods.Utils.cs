@@ -232,11 +232,12 @@ namespace TiltBrush
             string url,
             string relativeDestinationFolder,
             bool allowRedirects,
-            string requiredContentTypePrefix = null)
+            string requiredContentTypePrefix = null,
+            Action<string> onPublished = null)
         {
             return _DownloadMediaFileFromUrl(
                 new Uri(url), relativeDestinationFolder, allowRedirects,
-                requiredContentTypePrefix);
+                requiredContentTypePrefix, onPublished);
         }
 
         private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
@@ -248,13 +249,15 @@ namespace TiltBrush
             Uri url,
             string relativeDestinationFolder,
             bool allowRedirects,
-            string requiredContentTypePrefix = null)
+            string requiredContentTypePrefix = null,
+            Action<string> onPublished = null)
         {
             string absoluteDestinationPath = GetSafeRelativePathInDirectory(
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
+                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
+                onPublished: onPublished);
         }
 
         private static string _DownloadMediaFileFromUrlToDirectory(
@@ -262,7 +265,8 @@ namespace TiltBrush
             string absoluteDestinationPath,
             bool allowRedirects,
             string requiredContentTypePrefix = null,
-            bool publish = true)
+            bool publish = true,
+            Action<string> onPublished = null)
         {
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
@@ -334,7 +338,12 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
-                if (publish) { _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath); }
+                if (publish)
+                {
+                    _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath, onPublished);
+                    // SAF publication may wait for folder selection and choose a different name.
+                    if (OpenBrushStorage.IsGooglePlayStorageMode && onPublished != null) { return null; }
+                }
                 return uniqueFilename;
             }
             return null;
@@ -408,7 +417,8 @@ namespace TiltBrush
                     "[SAF_SNAPSHOT_BUNDLE] API snapshot remains staged locally because folder selection was canceled."));
         }
 
-        internal static void _PublishApiMediaLibraryPathToSharedStorage(string localPath)
+        internal static void _PublishApiMediaLibraryPathToSharedStorage(
+            string localPath, Action<string> onPublished = null)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
@@ -420,7 +430,8 @@ namespace TiltBrush
                 relativePath,
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete));
+                    path, relativePath, label, complete,
+                    onPublished == null ? null : publishedPath => onPublished(Path.GetFileName(publishedPath))));
         }
 
         private static void _PublishApiPathToSharedStorage(

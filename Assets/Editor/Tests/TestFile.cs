@@ -697,6 +697,59 @@ namespace TiltBrush
             Assert.IsTrue(backend.Contains("Picture.png"));
         }
 
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void SafImports_ReturnPublishedNameAndMatchingLocalBytes(bool collision, bool failCommit)
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-import-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "Picture.png");
+            byte[] importedBytes = { 3, 4, 5 };
+            File.WriteAllBytes(stagedPath, importedBytes);
+            var backend = new FakeSafBackend { FailCommitNumber = failCommit ? 1 : 0 };
+            StorageDocumentId originalId = default;
+            if (collision)
+            {
+                originalId = backend.Add("Picture.png", new byte[] { 1 });
+                File.WriteAllBytes(Path.Combine(stagingRoot, "Picture (1).png"), new byte[] { 2 });
+            }
+            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
+                    backend, StorageArea.MediaLibraryImages, "Picture.png", stagedPath,
+                    prepareLocalImport: true, out string publishedPath);
+                Assert.AreEqual(!failCommit, result.Success, result.Error);
+                if (failCommit)
+                {
+                    Assert.IsNull(publishedPath);
+                }
+                else
+                {
+                    string expectedName = collision ? "Picture (2).png" : "Picture.png";
+                    Assert.AreEqual(Path.Combine(stagingRoot, expectedName), publishedPath);
+                    CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(publishedPath));
+                    CollectionAssert.Contains(backend.CommittedNames, expectedName);
+                }
+                CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(stagedPath));
+                if (collision)
+                {
+                    CollectionAssert.AreEqual(new byte[] { 2 },
+                        File.ReadAllBytes(Path.Combine(stagingRoot, "Picture (1).png")));
+                    using Stream original = backend.OpenRead(
+                        originalId, false, CancellationToken.None);
+                    Assert.AreEqual(1, original.ReadByte());
+                }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
         [Test]
         public void SafTransactionRecovery_RestoresValidatedBackup()
         {
