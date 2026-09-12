@@ -179,11 +179,60 @@ namespace TiltBrush
                     {
                         // Otherwise, this will generate a cache.
                         m_FullSize = Object.Instantiate(Icon);
-                        var co = LoadImage(FilePath, m_FullSize, runForeground).GetEnumerator();
+                        IEnumerable loader = HdrTextureLoader.IsSupportedFile(FilePath)
+                            ? LoadHdrImage(FilePath)
+                            : LoadImage(FilePath, m_FullSize, runForeground);
+                        var co = loader.GetEnumerator();
                         App.Instance.StartCoroutine(co);
                     }
                 }
             }
+        }
+
+        // Reloads an HDR reference if its full-size cache is missing. Unlike LoadImage(), this
+        // preserves HDR color values and EXR alpha rather than passing through Color32.
+        IEnumerable LoadHdrImage(string path)
+        {
+            m_FullSizeReferences++;
+            Texture2D loadedTexture = null;
+            Texture2D resizedTexture = null;
+            try
+            {
+                loadedTexture = HdrTextureLoader.Load(
+                    File.ReadAllBytes(path), path, makeNoLongerReadable: false,
+                    preserveAlpha: true);
+                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                if (loadedTexture.width > resizeLimit || loadedTexture.height > resizeLimit)
+                {
+                    resizedTexture = ResampleTexture(
+                        loadedTexture, resizeLimit, TextureFormat.RGBAHalf,
+                        RenderTextureFormat.ARGBHalf, linear: true);
+                }
+
+                Texture2D replacement = resizedTexture != null ? resizedTexture : loadedTexture;
+                Object.Destroy(m_FullSize);
+                m_FullSize = replacement;
+                ImageCache.SaveImageCache(m_FullSize, path);
+                loadedTexture = null;
+                resizedTexture = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[HdrReferenceImageFullsize:{FileName}] {e}");
+            }
+            finally
+            {
+                if (resizedTexture != null)
+                {
+                    Object.Destroy(resizedTexture);
+                }
+                if (loadedTexture != null)
+                {
+                    Object.Destroy(loadedTexture);
+                }
+                ReleaseImageFullsize();
+            }
+            yield break;
         }
 
         /// Should be called when the texture from a reference image is no longer required.
