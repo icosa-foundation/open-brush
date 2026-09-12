@@ -87,8 +87,17 @@ namespace TiltBrush
         }
 
         // Performs CPU-only decoding and is safe to call from an image-loading worker thread.
-        public static DecodedImage Decode(byte[] bytes, string path)
+        public static DecodedImage Decode(byte[] bytes, string path, int maxDimension = -1)
         {
+            GetDimensions(bytes, path, out int width, out int height);
+            if (maxDimension > 0 &&
+                (long)width * height > (long)maxDimension * maxDimension)
+            {
+                throw new ImageLoadError(
+                    $"Image dimensions {width}x{height} are greater than max dimensions of {maxDimension}x{maxDimension}!",
+                    ImageLoadError.ImageLoadErrorCode.ImageTooLargeError);
+            }
+
             string extension = Path.GetExtension(path);
             if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
             {
@@ -103,6 +112,31 @@ namespace TiltBrush
             if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
             {
                 return DecodeRadiance(bytes);
+            }
+            throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
+        }
+
+        public static void GetDimensions(byte[] bytes, string path, out int width, out int height)
+        {
+            string extension = Path.GetExtension(path);
+            if (string.Equals(extension, ".hdr", StringComparison.OrdinalIgnoreCase))
+            {
+                using (var stream = new MemoryStream(bytes))
+                {
+                    var header = new RGBEHeader();
+                    if (header.ReadHeader(stream) != RGBEReturnCode.RGBE_RETURN_SUCCESS)
+                    {
+                        throw new InvalidDataException("Invalid Radiance HDR header");
+                    }
+                    width = header.width;
+                    height = header.height;
+                    return;
+                }
+            }
+            if (string.Equals(extension, ".exr", StringComparison.OrdinalIgnoreCase))
+            {
+                GetExrDimensions(bytes, out width, out height);
+                return;
             }
             throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
         }
@@ -147,6 +181,77 @@ namespace TiltBrush
                     Pixels = pixels
                 };
             }
+        }
+
+        private static void GetExrDimensions(byte[] bytes, out int width, out int height)
+        {
+            if (!IsExrData(bytes) || bytes.Length < 9)
+            {
+                throw new InvalidDataException("Invalid OpenEXR header");
+            }
+
+            int position = 8;
+            while (position < bytes.Length)
+            {
+                string name = ReadNullTerminatedString(bytes, ref position);
+                if (name.Length == 0)
+                {
+                    break;
+                }
+                string type = ReadNullTerminatedString(bytes, ref position);
+                int size = ReadInt32(bytes, ref position);
+                if (size < 0 || position > bytes.Length - size)
+                {
+                    throw new InvalidDataException("Invalid OpenEXR attribute size");
+                }
+                if (name == "dataWindow" && type == "box2i" && size >= 16)
+                {
+                    int valuePosition = position;
+                    int minX = ReadInt32(bytes, ref valuePosition);
+                    int minY = ReadInt32(bytes, ref valuePosition);
+                    int maxX = ReadInt32(bytes, ref valuePosition);
+                    int maxY = ReadInt32(bytes, ref valuePosition);
+                    width = checked(maxX - minX + 1);
+                    height = checked(maxY - minY + 1);
+                    if (width <= 0 || height <= 0)
+                    {
+                        throw new InvalidDataException("Invalid OpenEXR data window");
+                    }
+                    return;
+                }
+                position += size;
+            }
+            throw new InvalidDataException("OpenEXR dataWindow attribute is missing");
+        }
+
+        private static string ReadNullTerminatedString(byte[] bytes, ref int position)
+        {
+            int start = position;
+            while (position < bytes.Length && bytes[position] != 0)
+            {
+                position++;
+            }
+            if (position >= bytes.Length)
+            {
+                throw new InvalidDataException("Unterminated OpenEXR header string");
+            }
+            string value = System.Text.Encoding.ASCII.GetString(bytes, start, position - start);
+            position++;
+            return value;
+        }
+
+        private static int ReadInt32(byte[] bytes, ref int position)
+        {
+            if (position > bytes.Length - 4)
+            {
+                throw new EndOfStreamException();
+            }
+            int value = bytes[position] |
+                (bytes[position + 1] << 8) |
+                (bytes[position + 2] << 16) |
+                (bytes[position + 3] << 24);
+            position += 4;
+            return value;
         }
 
         private static bool IsRleScanline(BinaryReader reader, int width)

@@ -196,8 +196,10 @@ namespace TiltBrush
             m_FullSizeReferences++;
             Texture2D loadedTexture = null;
             Texture2D resizedTexture = null;
+            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
-                () => HdrTextureLoader.Decode(File.ReadAllBytes(path), path),
+                () => HdrTextureLoader.Decode(
+                    File.ReadAllBytes(path), path, maxDimension),
                 longRunning: true);
             HdrTextureLoader.DecodedImage decoded = null;
             Exception decodeError = null;
@@ -483,8 +485,10 @@ namespace TiltBrush
             Texture2D resizedTexture = null;
             try
             {
+                int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
-                    () => HdrTextureLoader.Decode(File.ReadAllBytes(FilePath), FilePath),
+                    () => HdrTextureLoader.Decode(
+                        File.ReadAllBytes(FilePath), FilePath, maxDimension),
                     longRunning: true);
                 HdrTextureLoader.DecodedImage decoded = null;
                 Exception decodeError = null;
@@ -505,7 +509,14 @@ namespace TiltBrush
                 }
                 if (decodeError != null)
                 {
-                    m_State = ImageState.Error;
+                    Exception cause = decodeError is FutureFailed
+                        ? decodeError.InnerException
+                        : decodeError;
+                    var imageLoadError = cause as ImageLoadError;
+                    m_State = imageLoadError?.imageLoadErrorCode ==
+                        ImageLoadError.ImageLoadErrorCode.ImageTooLargeError
+                        ? ImageState.ErrorImageTooLarge
+                        : ImageState.Error;
                     Debug.LogWarning($"[HdrReferenceImageLoad:{FileName}] {decodeError}");
                     yield break;
                 }

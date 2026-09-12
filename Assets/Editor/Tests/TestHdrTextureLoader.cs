@@ -194,5 +194,42 @@ namespace TiltBrush
             Assert.AreEqual(128.0f / 255.0f, decoded.Pixels[0].g, 0.0001f);
             Assert.AreEqual(1.0f, decoded.Pixels[0].b, 0.0001f);
         }
+
+        [Test]
+        public void ReadsExrDimensionsBeforeDecode()
+        {
+            Texture2D source = new Texture2D(3, 2, TextureFormat.RGBAFloat, false, true);
+            try
+            {
+                source.Apply();
+                byte[] bytes = source.EncodeToEXR(Texture2D.EXRFlags.OutputAsFloat);
+
+                HdrTextureLoader.GetDimensions(bytes, "generated.exr", out int width, out int height);
+
+                Assert.AreEqual(3, width);
+                Assert.AreEqual(2, height);
+                var error = Assert.Throws<ImageLoadError>(
+                    () => HdrTextureLoader.Decode(bytes, "generated.exr", maxDimension: 2));
+                Assert.AreEqual(
+                    ImageLoadError.ImageLoadErrorCode.ImageTooLargeError,
+                    error.imageLoadErrorCode);
+            }
+            finally
+            {
+                Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
+        public void ReadsRadianceDimensionsBeforeDecode()
+        {
+            byte[] bytes = Encoding.ASCII.GetBytes(
+                "#?RADIANCE\nFORMAT=32-bit_rle_rgbe\n\n-Y 7 +X 11\n");
+
+            HdrTextureLoader.GetDimensions(bytes, "generated.hdr", out int width, out int height);
+
+            Assert.AreEqual(11, width);
+            Assert.AreEqual(7, height);
+        }
     }
 }
