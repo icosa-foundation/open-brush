@@ -119,7 +119,7 @@ namespace TiltBrush
             // Unity appears to only clean up memory from mucking about with meshes on frame boundaries,
             // So Tilt Brush was using vast amounts of memory to do a quickload.
             // This causes Tilt Brush to only draw a certain distance before returning a frame.
-            float maxDistancePerFrame = App.PlatformConfig.QuickLoadMaxDistancePerFrame;
+            float maxDistancePerFrame = UserConfig.PerformanceOverrides.QuickLoadMaxDistancePerFrame;
             if (m_metersRemaining > maxDistancePerFrame)
             {
                 m_metersRemaining = maxDistancePerFrame;
