@@ -1564,10 +1564,6 @@ namespace TiltBrush
                 }
 
                 float pressure = tr.scale;
-                if (Mathf.Approximately(pressure, 0f))
-                {
-                    pressure = 1f;
-                }
 
                 controlPoints.Add(new PointerManager.ControlPoint
                 {
