@@ -649,6 +649,24 @@ namespace TiltBrush
         }
 
         [UnityTest]
+        public IEnumerator Cmd_BrushLookAtKeepsRollForSameBearing()
+        {
+            yield return EnsureReady();
+            var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+            var brushLookAt = apiMethods.GetMethod(
+                "BrushLookAt",
+                BindingFlags.Public | BindingFlags.Static);
+            Assert.NotNull(brushLookAt, "ApiMethods.BrushLookAt not found");
+            Vector3 direction = new Vector3(0.0005f, 1, 0);
+
+            brushLookAt.Invoke(null, new object[] { GetBrushPosition() + direction });
+            Quaternion nearRotation = GetBrushRotation();
+            brushLookAt.Invoke(null, new object[] { GetBrushPosition() + direction * 1000 });
+
+            AssertQuaternionApprox(nearRotation, GetBrushRotation());
+        }
+
+        [UnityTest]
         public IEnumerator Cmd_BrushMoveToHand()
         {
             yield return EnsureReady();

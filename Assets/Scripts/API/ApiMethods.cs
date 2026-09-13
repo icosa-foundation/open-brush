@@ -989,6 +989,7 @@ namespace TiltBrush
             {
                 return;
             }
+            direction.Normalize();
             Vector3 up = Vector3.Cross(direction, Vector3.up).sqrMagnitude < 1e-6f
                 ? Vector3.forward
                 : Vector3.up;
