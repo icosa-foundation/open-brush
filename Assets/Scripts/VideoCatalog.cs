@@ -114,7 +114,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             ++m_ScanGeneration;
-            foreach (var video in m_Videos)
+            foreach (var video in m_Videos ?? Enumerable.Empty<ReferenceVideo>())
             {
                 video.Dispose();
             }

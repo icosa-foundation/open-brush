@@ -71,7 +71,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             ++m_ScanGeneration;
-            foreach (var clip in m_SoundClips)
+            foreach (var clip in m_SoundClips ?? Enumerable.Empty<SoundClip>())
             {
                 clip.Dispose();
             }
