@@ -63,6 +63,10 @@ namespace TiltBrush
             DisposeFileWatcher();
             m_CurrentVideoDirectory = newPath;
             ++m_ScanGeneration;
+            if (m_Videos != null)
+            {
+                foreach (ReferenceVideo video in m_Videos) { video.ReleaseThumbnail(); }
+            }
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles.Clear();
 
@@ -368,6 +372,10 @@ namespace TiltBrush
 
             // Remove deleted videos from the list. Currently playing videos may continue to play, but will
             // not appear in the reference panel.
+            foreach (ReferenceVideo retired in videos.Where(x => toDelete.Contains(x.AbsolutePath, pathComparer)))
+            {
+                retired.ReleaseThumbnail();
+            }
             videos.RemoveAll(x => toDelete.Contains(
                 x.AbsolutePath, pathComparer));
 
@@ -395,6 +403,7 @@ namespace TiltBrush
                     !string.Equals(directory, m_CurrentVideoDirectory,
                         StringComparison.Ordinal))
                 {
+                    videoRef.ReleaseThumbnail();
                     yield break;
                 }
             }
@@ -402,7 +411,7 @@ namespace TiltBrush
             if (generation != m_ScanGeneration || !string.Equals(
                     directory, m_CurrentVideoDirectory, StringComparison.Ordinal))
             {
-                foreach (var video in newVideos) video.Dispose();
+                foreach (var video in newVideos) video.ReleaseThumbnail();
                 yield break;
             }
             CatalogChanged?.Invoke();
@@ -507,7 +516,7 @@ namespace TiltBrush
 
             foreach (ReferenceVideo removed in oldVideos.Values)
             {
-                removed.Dispose();
+                removed.ReleaseThumbnail();
             }
             m_Videos = nextVideos;
 
@@ -526,6 +535,7 @@ namespace TiltBrush
                         scanRootIdentity, backend.RootIdentity,
                         directory, m_CurrentVideoDirectory, pathComparer))
                 {
+                    video.ReleaseThumbnail();
                     m_DirectoryScanRequired = true;
                     yield break;
                 }

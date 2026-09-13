@@ -444,9 +444,16 @@ namespace TiltBrush
                     controller.Dispose();
                 }
             }
+            ReleaseThumbnail();
+        }
+
+        // The catalog owns the thumbnail; widget controllers own playback independently.
+        internal void ReleaseThumbnail()
+        {
             if (Thumbnail != null)
             {
                 UnityEngine.Object.Destroy(Thumbnail);
+                Thumbnail = null;
             }
         }
 
