@@ -7,6 +7,15 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [TestCase("stream.txt", true)]
+        [TestCase("stream.TXT", true)]
+        [TestCase("clip.mp4", false)]
+        public void VideoExtensionMatching_RecognizesNetworkPointers(string path, bool expected)
+        {
+            var video = new ReferenceVideo(path, "fixture", null, path);
+            Assert.AreEqual(expected, video.NetworkVideo);
+        }
+
         [Test]
         public void VideoRestore_ResolvesSiblingFoldersWithoutChangingThePanelListing()
         {

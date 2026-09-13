@@ -202,7 +202,7 @@ namespace TiltBrush
             string filePath, string catalogIdentity, Func<string> materialize,
             string persistentPath = null)
         {
-            NetworkVideo = filePath.EndsWith(".txt");
+            NetworkVideo = filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
             AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
             PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
