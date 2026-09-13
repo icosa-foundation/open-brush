@@ -35,7 +35,7 @@ namespace TiltBrush
                 byte[] jpeg = source.EncodeToJPG();
                 byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
 
-                RawImage decoded = ImageUtils.FromImageData(
+                RawImage decoded = ImageUtils.FromVrJpeg(
                     vrJpeg, "generated.vr.jpg", abortDimension: 16,
                     decodeDimension: 4);
 
@@ -43,6 +43,28 @@ namespace TiltBrush
                 Assert.AreEqual(4, decoded.ColorWidth);
                 Assert.AreEqual(4, decoded.ColorHeight);
                 Assert.AreEqual(16, decoded.ColorData.Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
+        public void TreatsVrJpegAsOrdinaryImageByDefault()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
+
+                RawImage decoded = ImageUtils.FromImageData(vrJpeg, "generated.vr.jpg");
+
+                Assert.IsTrue(VrJpegMetadata.IsVrJpeg(vrJpeg));
+                Assert.AreEqual(4, decoded.ColorWidth);
+                Assert.AreEqual(2, decoded.ColorHeight);
+                Assert.AreEqual(8, decoded.ColorData.Length);
             }
             finally
             {

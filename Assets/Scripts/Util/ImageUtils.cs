@@ -71,11 +71,6 @@ namespace TiltBrush
 
             if (IsJpeg(data))
             {
-                // Check if it's a VR JPEG (Google Cardboard Camera format)
-                if (VrJpegMetadata.IsVrJpeg(data))
-                {
-                    return FromVrJpeg(data, filename, abortDimension, decodeDimension);
-                }
                 return FromJpeg(data, filename);
             }
             else if (IsPng(data))

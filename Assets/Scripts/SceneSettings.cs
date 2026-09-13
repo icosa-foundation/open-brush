@@ -235,7 +235,7 @@ namespace TiltBrush
                     {
                         try
                         {
-                            RawImage rawImage = ImageUtils.FromImageData(
+                            RawImage rawImage = ImageUtils.FromVrJpeg(
                                 fileData, filename,
                                 App.PlatformConfig.ReferenceImagesMaxDimension,
                                 App.PlatformConfig.ReferenceImagesResizeDimension);
