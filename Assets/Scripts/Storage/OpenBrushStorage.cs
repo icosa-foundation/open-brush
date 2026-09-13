@@ -605,18 +605,11 @@ namespace TiltBrush
             string exportName = Path.GetFileName(localExportDirectory);
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
-                var stagedPaths = new List<SafStagedPath>
-                {
-                    new SafStagedPath(localExportDirectory, exportName),
-                    new SafStagedPath(localReadmePath, "README.txt"),
-                };
+                IUserStorageBackend backend = UserStorage.Backend;
                 AndroidStorageManager.StartStorageOperation(
                     $"export {exportName}",
-                    () => SafStagedOutputPublisher.PublishBundle(
-                        UserStorage.Backend,
-                        StorageArea.Exports,
-                        stagedPaths,
-                        transactionOwnsPayload: true,
+                    () => SafStagedOutputPublisher.PublishExport(
+                        backend, localExportDirectory, localReadmePath,
                         CancellationToken.None),
                     onComplete);
                 return;

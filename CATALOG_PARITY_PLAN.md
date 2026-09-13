@@ -58,6 +58,10 @@ Detailed reproduction steps, evidence limits and proposed actions are tracked in
 
 ## Validation matrix
 
+Review follow-up, 2026-09-13:
+
+1. P1 / `discussion_r4000339652`: repeated exports could overwrite earlier shared exports after their private staging directory was deleted. Fixed by selecting names against the shared Exports area and pending publication journals under a per-root export reservation lock. Journaled destinations remain stable during recovery. Eight isolated NUnit cases pass, including completed and failed/recovered repeated exports; the Editor test project builds. Real Android provider validation remains pending.
+
 1. Root/A/B/deeper folders, same basenames across folders and roots, and supported/unsupported extensions with varied case.
 2. Saved references outside the open folder, references spanning sibling folders, cold startup and recovery of missing files.
 3. Navigation during delayed listing/thumbnail work, external changes/deletions/renames, duplicate notifications and obsolete watchers.

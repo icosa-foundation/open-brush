@@ -81,6 +81,77 @@ namespace TiltBrush
     {
         private const int kVersion = 1;
 
+        public static SafPublicationResult PublishExport(
+            IUserStorageBackend backend, string stagedDirectory, string stagedReadme,
+            CancellationToken cancellationToken)
+        {
+            if (backend == null || backend.Kind != StorageBackendKind.StorageAccessFramework ||
+                !backend.IsReady)
+            {
+                return new SafPublicationResult(StorageResultCode.NotReady,
+                    "Open Brush shared folder is unavailable.");
+            }
+            string rootId = backend.RootIdentity;
+            // Keep selection and journal creation together across concurrent exports. Failed
+            // publications retain their destination in the journal for recovery after restart.
+            using IDisposable reservation = SafDestinationLocks.Acquire(
+                $"{rootId}\nExports\n__export_name__".ToLowerInvariant(), cancellationToken);
+            var reservedNames = new List<string>();
+            string journalDirectory = GetPublicationDirectory(rootId);
+            if (Directory.Exists(journalDirectory))
+            {
+                foreach (string path in Directory.EnumerateFiles(journalDirectory, "*.json"))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var record = JsonConvert.DeserializeObject<SafPublicationRecord>(File.ReadAllText(path));
+                    if (record == null || record.Version != kVersion || record.RootId != rootId)
+                    {
+                        throw new IOException("Cannot reserve an export name while a publication journal is invalid.");
+                    }
+                    if (record.Area != StorageArea.Exports.ToString()) { continue; }
+                    EnsureItems(record);
+                    foreach (SafPublicationItem item in record.Items)
+                    {
+                        reservedNames.Add(item.DestinationRelativePath.Split('/')[0]);
+                    }
+                }
+            }
+            string destination = SelectExportDirectoryName(backend,
+                Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
+            if (rootId != backend.RootIdentity)
+            {
+                return new SafPublicationResult(StorageResultCode.Cancelled, "The shared export folder changed.");
+            }
+            return PublishBundle(backend, StorageArea.Exports,
+                new[] { new SafStagedPath(stagedDirectory, destination),
+                    new SafStagedPath(stagedReadme, "README.txt") },
+                transactionOwnsPayload: true, cancellationToken);
+        }
+
+        internal static string SelectExportDirectoryName(IUserStorageBackend backend,
+            string preferredName, IEnumerable<string> reservedNames, CancellationToken cancellationToken)
+        {
+            string rootId = backend.RootIdentity;
+            StorageDirectoryResult listing = backend.List(StorageArea.Exports, "", cancellationToken);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException($"Could not check shared export names: {listing.Error}");
+            }
+            if (rootId != backend.RootIdentity)
+            {
+                throw new IOException("The shared export folder changed while selecting a name.");
+            }
+            var names = new HashSet<string>(reservedNames, StringComparer.OrdinalIgnoreCase);
+            foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
+            string candidate = preferredName;
+            for (int index = 0; names.Contains(candidate); ++index)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                candidate = $"{preferredName} {index}";
+            }
+            return candidate;
+        }
+
         public static SafPublicationResult Publish(
             IUserStorageBackend backend,
             StorageArea area,
