@@ -616,6 +616,36 @@ namespace TiltBrush
             Quaternion verticalRotation = GetBrushRotation();
             yield return SendCommand("brush.look.at", "1,1,1");
             AssertQuaternionApprox(verticalRotation, GetBrushRotation());
+
+            object scenePose = GetScenePose();
+            var apiType = GetTypeOrFail("TiltBrush.ApiManager");
+            var api = GetStaticProperty(apiType, "Instance");
+            Quaternion brushRotation = GetBrushRotation();
+            try
+            {
+                object scaledPose = GetScenePose();
+                SetStructField(scaledPose, "scale", 10000f);
+                SetInstanceProperty(GetSceneScript(), "Pose", scaledPose);
+                SetInstanceField(api, "BrushRotation", Quaternion.identity);
+
+                var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+                var brushLookAt = apiMethods.GetMethod(
+                    "BrushLookAt",
+                    BindingFlags.Public | BindingFlags.Static);
+                Assert.NotNull(brushLookAt, "ApiMethods.BrushLookAt not found");
+                brushLookAt.Invoke(
+                    null,
+                    new object[] { GetBrushPosition() + Vector3.right * 0.0005f });
+
+                Assert.Greater(
+                    Vector3.Dot(GetBrushRotation() * Vector3.forward, Vector3.right),
+                    0.99f);
+            }
+            finally
+            {
+                SetInstanceProperty(GetSceneScript(), "Pose", scenePose);
+                SetInstanceField(api, "BrushRotation", brushRotation);
+            }
         }
 
         [UnityTest]
