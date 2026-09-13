@@ -191,6 +191,27 @@ namespace TiltBrush
         }
 
         [Test]
+        public void StopsMetadataParsingAtStartOfScan()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
+                byte[] jpegWithStuffedScanBytes = ReplaceScanData(vrJpeg);
+
+                VrJpegMetadata metadata = VrJpegMetadata.ReadFromBytes(jpegWithStuffedScanBytes);
+
+                Assert.IsNotNull(metadata.RightEyeImageData);
+                Assert.Greater(metadata.RightEyeImageData.Length, 0);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
         public void ConvertsGpanoTopOffsetToBottomOrigin()
         {
             Texture2D source = CreateSourceTexture();
@@ -295,6 +316,33 @@ namespace TiltBrush
                 WriteBytes(segment, payload);
                 return segment.ToArray();
             }
+        }
+
+        private static byte[] ReplaceScanData(byte[] jpeg)
+        {
+            for (int i = 0; i <= jpeg.Length - 4; ++i)
+            {
+                if (jpeg[i] != 0xFF || jpeg[i + 1] != 0xDA)
+                {
+                    continue;
+                }
+
+                int segmentLength = (jpeg[i + 2] << 8) | jpeg[i + 3];
+                int scanStart = i + 2 + segmentLength;
+                if (segmentLength < 2 || scanStart > jpeg.Length)
+                {
+                    throw new InvalidDataException("Invalid JPEG start-of-scan segment");
+                }
+
+                using (var output = new MemoryStream())
+                {
+                    output.Write(jpeg, 0, scanStart);
+                    WriteBytes(output, new byte[] { 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xD9 });
+                    return output.ToArray();
+                }
+            }
+
+            throw new InvalidDataException("JPEG start-of-scan marker not found");
         }
 
         private static void WriteBigEndian(Stream stream, uint value)

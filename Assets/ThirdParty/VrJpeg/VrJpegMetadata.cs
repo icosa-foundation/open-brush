@@ -49,6 +49,7 @@ namespace TiltBrush
 
         private const byte JPEG_MARKER_START = 0xFF;
         private const byte JPEG_MARKER_APP1 = 0xE1;
+        private const byte JPEG_MARKER_SOS = 0xDA;
         private const string XMP_HEADER = "http://ns.adobe.com/xap/1.0/\0";
         private const string XMP_EXTENDED_HEADER = "http://ns.adobe.com/xmp/extension/\0";
 
@@ -102,7 +103,7 @@ namespace TiltBrush
                 }
 
                 byte markerType = reader.ReadByte();
-                if (markerType == 0xD9) // EOI (End of Image)
+                if (markerType == JPEG_MARKER_SOS || markerType == 0xD9) // SOS or EOI
                 {
                     break;
                 }
