@@ -96,6 +96,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            StopWatchingModelDirectories();
             m_ModelRestoreGate.Invalidate();
             m_SafScanCompletion?.TrySetResult(false);
         }
@@ -144,17 +145,7 @@ namespace TiltBrush
         public void ChangeDirectory(string newPath)
         {
             m_CurrentModelsDirectory = newPath;
-
-            if (m_FileWatchers != null)
-            {
-                foreach (var watcher in m_FileWatchers)
-                {
-                    watcher.FileChanged -= OnChanged;
-                    watcher.FileCreated -= OnChanged;
-                    watcher.FileDeleted -= OnChanged;
-                    watcher.Dispose();
-                }
-            }
+            StopWatchingModelDirectories();
 
             m_FileWatchers = new List<FileWatcher>();
             IEnumerable<string> watchedDirectories =
@@ -167,7 +158,7 @@ namespace TiltBrush
                 if (!PrepareModelWatchDirectory(directory, App.ModelLibraryPath())) { continue; }
                 var watcher = new FileWatcher(directory)
                 {
-                    NotifyFilter = NotifyFilters.LastWrite
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName
                 };
                 watcher.FileChanged += OnChanged;
                 watcher.FileCreated += OnChanged;
@@ -177,6 +168,20 @@ namespace TiltBrush
             }
 
             LoadModelsForNewDirectory(m_CurrentModelsDirectory);
+        }
+
+        private void StopWatchingModelDirectories()
+        {
+            if (m_FileWatchers == null) { return; }
+            foreach (FileWatcher watcher in m_FileWatchers)
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.FileChanged -= OnChanged;
+                watcher.FileCreated -= OnChanged;
+                watcher.FileDeleted -= OnChanged;
+                watcher.Dispose();
+            }
+            m_FileWatchers.Clear();
         }
 
         public string HomeDirectory => App.ModelLibraryPath();
@@ -204,6 +209,7 @@ namespace TiltBrush
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
+            if (!(source is FileWatcher watcher) || m_FileWatchers == null || !m_FileWatchers.Contains(watcher)) { return; }
             m_FolderChanged = true;
 
             if (e.ChangeType == WatcherChangeTypes.Changed)
