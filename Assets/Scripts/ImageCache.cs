@@ -50,7 +50,8 @@ namespace TiltBrush
 
         public static Texture2D LoadIconCache(string filePath, out float aspectRatio)
         {
-            return LoadTextureCache(kIconFile, filePath, out aspectRatio);
+            return LoadTextureCache(
+                kIconFile, filePath, requireAspectRatio: true, out aspectRatio);
         }
 
         public static void SaveImageCache(Texture2D imageTexture, string filePath)
@@ -61,7 +62,8 @@ namespace TiltBrush
         public static Texture2D LoadImageCache(string filePath)
         {
             float unused;
-            return LoadTextureCache(kImageFile, filePath, out unused);
+            return LoadTextureCache(
+                kImageFile, filePath, requireAspectRatio: false, out unused);
         }
 
         public static byte[] BytesFromTexture(Texture2D texture)
@@ -233,7 +235,8 @@ namespace TiltBrush
 
         // Tries to load an image cache, returns null on failure.
         private static Texture2D LoadTextureCache(
-            string cacheFileName, string filePath, out float aspectRatio)
+            string cacheFileName, string filePath, bool requireAspectRatio,
+            out float aspectRatio)
         {
             aspectRatio = 1.0f;
             string cacheDirectory = CacheDirectory(filePath);
@@ -261,8 +264,21 @@ namespace TiltBrush
             string cachePath = Path.Combine(cacheDirectory, cacheFileName);
             if (File.Exists(cachePath))
             {
-                string aspectRatioFileName = Path.Combine(cacheDirectory, kAspectRatioFile);
-                aspectRatio = BitConverter.ToSingle(File.ReadAllBytes(aspectRatioFileName), 0);
+                if (requireAspectRatio)
+                {
+                    string aspectRatioFileName = Path.Combine(
+                        cacheDirectory, kAspectRatioFile);
+                    if (!File.Exists(aspectRatioFileName))
+                    {
+                        return null;
+                    }
+                    byte[] aspectRatioBytes = File.ReadAllBytes(aspectRatioFileName);
+                    if (aspectRatioBytes.Length < sizeof(float))
+                    {
+                        return null;
+                    }
+                    aspectRatio = BitConverter.ToSingle(aspectRatioBytes, 0);
+                }
                 return TextureFromBytes(File.ReadAllBytes(cachePath));
             }
 

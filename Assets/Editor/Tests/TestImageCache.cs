@@ -95,6 +95,37 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestImageCacheDoesNotRequireIconAspectRatio()
+        {
+            string sourceFile = Path.GetTempFileName();
+            string imageFile = "Assets/Editor/Tests/TestData/TiltBrushLogo.jpg";
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(imageFile);
+            Texture2D reconstructedTexture = null;
+            try
+            {
+                ImageCache.SaveImageCache(texture, sourceFile);
+
+                reconstructedTexture = ImageCache.LoadImageCache(sourceFile);
+
+                Assert.NotNull(reconstructedTexture);
+                CompareTextures(texture, reconstructedTexture);
+            }
+            finally
+            {
+                if (reconstructedTexture != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(reconstructedTexture);
+                }
+                string cacheDirectory = ImageCache.CacheDirectory(sourceFile);
+                if (Directory.Exists(cacheDirectory))
+                {
+                    Directory.Delete(cacheDirectory, true);
+                }
+                File.Delete(sourceFile);
+            }
+        }
+
+        [Test]
         public void TestDeletingObsoleteCaches()
         {
             // Clear out obsolete caches before testing it with a new asset.
