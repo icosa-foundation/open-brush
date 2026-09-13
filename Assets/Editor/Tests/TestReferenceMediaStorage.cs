@@ -8,6 +8,27 @@ namespace TiltBrush
     internal class TestReferenceMediaStorage
     {
         [Test]
+        public void ModelCatalog_SupportedExtensionsMatchAllStorageBackends()
+        {
+            var extensions = ModelCatalog.GetSupportedExtensions();
+            CollectionAssert.IsSubsetOf(
+                new[] { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" },
+                extensions);
+            Assert.IsTrue(extensions.Contains(".SPZ"));
+            Assert.IsTrue(extensions.Contains(".SOG"));
+#if USD_SUPPORTED
+            CollectionAssert.IsSubsetOf(new[] { ".usda", ".usdc", ".usd" }, extensions);
+#else
+            Assert.IsFalse(extensions.Contains(".usd"));
+#endif
+#if FBX_SUPPORTED
+            Assert.IsTrue(extensions.Contains(".fbx"));
+#else
+            Assert.IsFalse(extensions.Contains(".fbx"));
+#endif
+        }
+
+        [Test]
         public void VideoQuery_ListsOnlySelectedDirectoryAndPreservesLogicalPaths()
         {
             string root = Path.Combine(Path.GetTempPath(), $"open-brush-video-query-{Guid.NewGuid():N}");

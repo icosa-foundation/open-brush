@@ -560,20 +560,12 @@ namespace TiltBrush
                 // For Blocks: skip files in the root directory (only process subdirectories)
                 if (!isBlocksRoot)
                 {
-                    // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
-
-#if USD_SUPPORTED
-                    extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });
-#endif
-#if FBX_SUPPORTED
-                    extensions.Add( ".fbx" );
-#endif
+                    HashSet<string> extensions = GetSupportedExtensions();
 
                     for (int i = 0; i < aFiles.Length; ++i)
                     {
                         string filename = Path.GetFileName(aFiles[i]);
-                        string sExtension = Path.GetExtension(aFiles[i]).ToLower();
+                        string sExtension = Path.GetExtension(aFiles[i]);
 
                         // For Blocks tree: only process files named "model.obj"
                         if (isBlocksTree && !filename.Equals("model.obj", StringComparison.OrdinalIgnoreCase))
@@ -823,10 +815,10 @@ namespace TiltBrush
             m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
         }
 
-        private static HashSet<string> GetSupportedExtensions()
+        internal static HashSet<string> GetSupportedExtensions()
         {
-            var extensions = new HashSet<string>
-                { ".gltf2", ".gltf", ".glb", ".ply", ".svg", ".obj", ".vox" };
+            var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
 #if USD_SUPPORTED
             extensions.UnionWith(new[] { ".usda", ".usdc", ".usd" });
 #endif
