@@ -75,6 +75,15 @@ namespace TiltBrush
             return field.GetValue(instance);
         }
 
+        private static void SetInstanceField(object instance, string name, object value)
+        {
+            var field = instance.GetType().GetField(
+                name,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.NotNull(field, $"Field not found: {instance.GetType().FullName}.{name}");
+            field.SetValue(instance, value);
+        }
+
         private static T GetStructField<T>(object boxedStruct, string name)
         {
             var field = boxedStruct.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
@@ -684,6 +693,34 @@ namespace TiltBrush
         }
 
         [UnityTest]
+        public IEnumerator Cmd_UserDirectionOnlyDisablesTiltProtectionWhenNeeded()
+        {
+            yield return EnsureReady();
+            if (IsVr())
+            {
+                Assert.Ignore("User direction is a monoscopic-only command.");
+            }
+
+            object scene = GetSceneScript();
+            object scenePose = GetScenePose();
+            bool previousTiltProtection = (bool)GetInstanceField(scene, "disableTiltProtection");
+            try
+            {
+                SetInstanceField(scene, "disableTiltProtection", false);
+                yield return SendCommand("user.direction", "0,45,0");
+                Assert.IsFalse((bool)GetInstanceField(scene, "disableTiltProtection"));
+
+                yield return SendCommand("user.direction", "45,45,0");
+                Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
+            }
+            finally
+            {
+                SetInstanceProperty(scene, "Pose", scenePose);
+                SetInstanceField(scene, "disableTiltProtection", previousTiltProtection);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Cmd_UserLookAt()
         {
             yield return EnsureReady();
@@ -736,6 +773,42 @@ namespace TiltBrush
             finally
             {
                 SetInstanceProperty(GetSceneScript(), "Pose", scenePose);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Cmd_UserLookAtOnlyDisablesTiltProtectionWhenNeeded()
+        {
+            yield return EnsureReady();
+            if (IsVr())
+            {
+                Assert.Ignore("Monoscopic look-at tilt protection is not used in VR.");
+            }
+
+            object scene = GetSceneScript();
+            object scenePose = GetScenePose();
+            bool previousTiltProtection = (bool)GetInstanceField(scene, "disableTiltProtection");
+            var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+            var userLookAt = apiMethods.GetMethod(
+                "UserLookAt",
+                BindingFlags.Public | BindingFlags.Static);
+            Assert.NotNull(userLookAt, "ApiMethods.UserLookAt not found");
+            try
+            {
+                SetInstanceField(scene, "disableTiltProtection", false);
+                Vector3 userPosition = InverseTransformScenePoint(GetHead().position);
+                userLookAt.Invoke(null, new object[] { userPosition + Vector3.forward });
+                Assert.IsFalse((bool)GetInstanceField(scene, "disableTiltProtection"));
+
+                userPosition = InverseTransformScenePoint(GetHead().position);
+                userLookAt.Invoke(null, new object[] {
+                    userPosition + Vector3.forward + Vector3.up });
+                Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
+            }
+            finally
+            {
+                SetInstanceProperty(scene, "Pose", scenePose);
+                SetInstanceField(scene, "disableTiltProtection", previousTiltProtection);
             }
         }
 
