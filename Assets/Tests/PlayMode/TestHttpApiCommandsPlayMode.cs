@@ -701,7 +701,11 @@ namespace TiltBrush
             Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.new.stroke");
             Assert.AreEqual("ForcedOn", GetForcePaintingMode("PreviousForcePaintingMode"));
-            Assert.AreEqual("ForceNewStroke", GetForcePaintingMode("ForcePainting"));
+            CollectionAssert.Contains(
+                new[] { "ForceNewStroke", "WasForceNewStroke" },
+                GetForcePaintingMode("ForcePainting"));
+            yield return WaitFrames(2);
+            Assert.AreEqual("ForcedOn", GetForcePaintingMode("ForcePainting"));
             yield return SendCommand("brush.force.painting.on", "false");
         }
 
