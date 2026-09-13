@@ -25,6 +25,8 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private const float kMinLookDistance_RS = 0.001f;
+
         private static readonly HashSet<string> kSupportedReferenceImageExtensions =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -263,11 +265,15 @@ namespace TiltBrush
             string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
             DropCamWidget dropCam = null;
             bool wasActive = false;
+            Vector3 previousPosition = default;
+            Quaternion previousRotation = default;
             bool shouldRestoreDropCam = false;
             try
             {
                 dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
                 wasActive = dropCam.gameObject.activeSelf;
+                previousPosition = dropCam.transform.position;
+                previousRotation = dropCam.transform.rotation;
                 shouldRestoreDropCam = true;
                 dropCam.ShowInstantly(true);
 
@@ -295,6 +301,11 @@ namespace TiltBrush
                 if (shouldRestoreDropCam && dropCam != null)
                 {
                     dropCam.ShowInstantly(wasActive);
+                    if (!wasActive)
+                    {
+                        dropCam.transform.SetPositionAndRotation(
+                            previousPosition, previousRotation);
+                    }
                 }
             }
         }
@@ -741,9 +752,20 @@ namespace TiltBrush
         )]
         public static void UserDirection(Vector3 direction)
         {
+            if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None)
+            {
+                return;
+            }
             TrTransform lookPose = App.Scene.Pose;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
+            lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+            if (Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
         }
 
@@ -763,11 +785,52 @@ namespace TiltBrush
             "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)",
             "1,2,3"
         )]
-        public static void UserLookAt(Vector3 direction)
+        public static void UserLookAt(Vector3 position)
         {
             TrTransform lookPose = App.Scene.Pose;
-            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
+            Vector3 direction = position - userPosition;
+            if ((direction * lookPose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
+            Quaternion headRotation = ViewpointScript.Head.rotation;
+            Vector3 up = Vector3.up;
+            if (isVr)
+            {
+                direction.y = 0;
+                if ((direction * lookPose.scale).sqrMagnitude <
+                    kMinLookDistance_RS * kMinLookDistance_RS)
+                {
+                    return;
+                }
+                Vector3 headDirection = ViewpointScript.Head.forward;
+                headDirection.y = 0;
+                if (headDirection.sqrMagnitude < 1e-6f)
+                {
+                    Vector3 headRight = ViewpointScript.Head.right;
+                    headRight.y = 0;
+                    headDirection = Vector3.Cross(headRight, Vector3.up);
+                }
+                headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
+            }
+            direction.Normalize();
+            if (!isVr && Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
+            {
+                up = Vector3.forward;
+            }
+            lookPose.rotation = headRotation *
+                Quaternion.Inverse(Quaternion.LookRotation(direction, up));
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+
+            if (!isVr &&
+                Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
         }
 
@@ -918,9 +981,19 @@ namespace TiltBrush
             "Changes the brush direction to look at the specified point",
             "1,2,3"
         )]
-        public static void BrushLookAt(Vector3 direction)
+        public static void BrushLookAt(Vector3 position)
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
+            Vector3 direction = position - ApiManager.Instance.BrushPosition;
+            if ((direction * App.Scene.ActiveCanvas.Pose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            direction.Normalize();
+            Vector3 up = Vector3.Cross(direction, Vector3.up).sqrMagnitude < 1e-6f
+                ? Vector3.forward
+                : Vector3.up;
+            ApiManager.Instance.BrushRotation.SetLookRotation(direction, up);
         }
 
         [ApiEndpoint(
@@ -933,13 +1006,13 @@ namespace TiltBrush
         [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
         public static void BrushLookUp()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
         public static void BrushLookDown()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]

@@ -96,6 +96,11 @@ namespace TiltBrush
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                if (m_WasClicked)
+                {
+                    m_WasClicked = false;
+                    ApiManager.Instance.EndUndo();
+                }
             }
 
             // Make sure our UI reticle isn't active.
