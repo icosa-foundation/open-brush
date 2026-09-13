@@ -130,27 +130,6 @@ namespace TiltBrush
             Assert.That(Vector3.Distance(toVolume * segments[0][1].m_Pos, Vector3.right), Is.LessThan(0.00001));
         }
 
-        [Test]
-        public void CroppedRandomizedBrushesKeepSourceKnotSalts()
-        {
-            var sourceIndices = new System.Collections.Generic.List<float[]>();
-            StrokeCropping.ClipStrokeToVolume(new[] {
-                Point(new Vector3(0, -2, 0), 0),
-                Point(new Vector3(0, -1, 0), 100),
-                Point(new Vector3(0, 1, 0), 200),
-                Point(new Vector3(0, 2, 0), 300)
-            }, Volume(4), TrTransform.identity, sourceIndices);
-
-            Assert.AreEqual(1.5f, sourceIndices[0][0]);
-            int offset = StrokeCropping.GetKnotIndexOffset(0, sourceIndices[0][0]);
-            Assert.AreEqual(
-                SprayBrush.CalculateSalt(2, 3, 0),
-                SprayBrush.CalculateSalt(1, 3, offset));
-            Assert.AreEqual(
-                GeniusParticlesBrush.CalculateSalt(2, 3, 0),
-                GeniusParticlesBrush.CalculateSalt(1, 3, offset));
-        }
-
         private static PointerManager.ControlPoint Point(Vector3 p, uint time) => new()
         {
             m_Pos = p, m_Orient = Quaternion.identity, m_Pressure = 1, m_TimestampMs = time

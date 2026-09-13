@@ -75,14 +75,9 @@ namespace TiltBrush
 
         protected int CalculateSalt(int knotIndex, int particleIndex)
         {
-            return CalculateSalt(knotIndex, particleIndex, m_DecayedKnots + KnotIndexOffset);
-        }
-
-        internal static int CalculateSalt(int knotIndex, int particleIndex, int knotIndexOffset)
-        {
             // Act as if the preview stroke is one very long stroke, and we're only generating
             // the geometry for the very tail end of it.
-            int pretendKnotIndex = knotIndex + knotIndexOffset;
+            int pretendKnotIndex = knotIndex + m_DecayedKnots;
             return kSaltMaxSaltsPerParticle * (pretendKnotIndex * kSaltMaxParticlesPerKnot + particleIndex);
         }
 

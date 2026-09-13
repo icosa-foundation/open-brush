@@ -62,14 +62,9 @@ namespace TiltBrush
 
         protected int CalculateSalt(int knotIndex, int quadIndex)
         {
-            return CalculateSalt(knotIndex, quadIndex, m_DecayedKnots + KnotIndexOffset);
-        }
-
-        internal static int CalculateSalt(int knotIndex, int quadIndex, int knotIndexOffset)
-        {
             // Act as if the preview stroke is one very long stroke, and we're only generating
             // the geometry for the very tail end of it.
-            int pretendKnotIndex = knotIndex + knotIndexOffset;
+            int pretendKnotIndex = knotIndex + m_DecayedKnots;
             // If there are lots of quads in this knot, don't take random numbers from
             // adjacent knots; cycle around and reuse this knot's random numbers.
             return kSaltMaxSaltsPerQuad * (

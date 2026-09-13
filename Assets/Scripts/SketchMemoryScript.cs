@@ -1318,8 +1318,7 @@ namespace TiltBrush
                 m_BrushScale = oldStroke.m_BrushScale,
                 m_BrushSize = oldStroke.m_BrushSize,
                 m_Color = oldStroke.m_Color,
-                m_Seed = oldStroke.m_Seed,
-                m_KnotIndexOffset = oldStroke.m_KnotIndexOffset
+                m_Seed = oldStroke.m_Seed
             };
             Array.Copy(oldStroke.m_ControlPointsToDrop, newStroke.m_ControlPointsToDrop,
                 oldStroke.m_ControlPointsToDrop.Length);
@@ -1370,7 +1369,6 @@ namespace TiltBrush
             newStroke.m_BrushSize = oldStroke.m_BrushSize;
             newStroke.m_Color = oldStroke.m_Color;
             newStroke.m_Seed = oldStroke.m_Seed;
-            newStroke.m_KnotIndexOffset = oldStroke.m_KnotIndexOffset;
 
             // Now swap r and b
             newStroke.m_Color.r = oldStroke.m_Color.b;
