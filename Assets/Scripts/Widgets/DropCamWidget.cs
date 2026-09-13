@@ -134,9 +134,18 @@ namespace TiltBrush
 
         public void ShowInstantly(bool bShow)
         {
+            bool wasActive = gameObject.activeSelf;
             gameObject.SetActive(bShow);
-            m_CurrentState = bShow ? State.Showing : State.Hiding;
+            m_CurrentState = bShow ? State.Visible : State.Invisible;
+            m_ShowTimer = bShow ? m_ShowDuration : 0.0f;
+            m_IntroAnimState = bShow ? IntroAnimState.On : IntroAnimState.Off;
+            m_IntroAnimValue = bShow ? 1.0f : 0.0f;
+            if (bShow && !wasActive)
+            {
+                ResetCam();
+            }
             ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
+            RefreshRenderers();
         }
 
         override protected void OnShow()

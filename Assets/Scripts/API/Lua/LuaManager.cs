@@ -1425,7 +1425,7 @@ namespace TiltBrush
                     break;
             }
 
-            if (angleSnapEnabled)
+            if (ShouldApplyToolScriptAngleSnap(angleSnapEnabled, pathWrapper._Space))
             {
                 tr_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
                     ? selectionManager.QuantizeAngle_CS(tr_CS.rotation)
@@ -1465,6 +1465,13 @@ namespace TiltBrush
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
                 previewControlPoints, previewStrokeScale, previewColor);
+        }
+
+        internal static bool ShouldApplyToolScriptAngleSnap(
+            bool angleSnapEnabled, ScriptCoordSpace space)
+        {
+            return angleSnapEnabled &&
+                (space == ScriptCoordSpace.Default || space == ScriptCoordSpace.Pointer);
         }
 
         internal static int FindFirstDrawableToolScriptPathIndex(

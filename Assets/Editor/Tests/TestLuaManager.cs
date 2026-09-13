@@ -103,5 +103,17 @@ namespace TiltBrush
                     strokePreviewRequested: true, gestureIsActive: true,
                     triggerIsHeld: false));
         }
+
+        [TestCase(ScriptCoordSpace.Default, true)]
+        [TestCase(ScriptCoordSpace.Pointer, true)]
+        [TestCase(ScriptCoordSpace.Canvas, false)]
+        public void ToolScriptAngleSnapOnlyAppliesToPlacedSpaces(
+            ScriptCoordSpace space, bool expected)
+        {
+            Assert.AreEqual(
+                expected,
+                LuaManager.ShouldApplyToolScriptAngleSnap(
+                    angleSnapEnabled: true, space: space));
+        }
     }
 }
