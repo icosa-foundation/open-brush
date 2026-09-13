@@ -10,7 +10,6 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         points = Path:New()
         local totalSteps = Parameters.steps
         if Tool.isPreview then
@@ -25,5 +24,4 @@ function Main()
             points:Insert(Transform:Position(x, y, z))
         end
         return points
-    end
 end

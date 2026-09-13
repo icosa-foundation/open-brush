@@ -69,7 +69,7 @@ namespace TiltBrush
                     new() {Name=LuaNames.ToolScriptEndPoint, PropertyType = transformProp, Description = "The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation."},
                     new() {Name=LuaNames.ToolScriptVector, PropertyType = vector3Prop, Description = "The vector from startPoint to endPoint"},
                     new() {Name=LuaNames.ToolScriptRotation, PropertyType = vector3Prop, Description = "Legacy controller-up vector at release. Use endPoint.rotation for full release orientation."},
-                    new() {Name=LuaNames.ToolScriptIsPreview, PropertyType = booleanProp, Description = "True while a stroke-preview Tool Script is generating a live preview; false when generating the final path on release."},
+                    new() {Name=LuaNames.ToolScriptIsPreview, PropertyType = booleanProp, Description = "True for a live stroke-preview invocation and false for the single final invocation. Tool Scripts using previewType=stroke are invoked only during those phases."},
                 }
             };
             LuaDocsRegistration.ApiDocClasses.Add(toolApiDocClass);

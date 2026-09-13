@@ -75,29 +75,33 @@ namespace TiltBrush
         }
 
         [Test]
-        public void ToolScriptReleaseTakesPrecedenceOverHeldCommandState()
+        public void ToolScriptStrokePreviewIsIdleOutsideGesture()
         {
-            Assert.IsFalse(ScriptedTool.IsToolScriptTriggerHeld(
-                activateCommandIsActive: true, triggerReleasedThisFrame: true));
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Idle,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: false,
+                    triggerIsHeld: false));
         }
 
         [Test]
-        public void ToolScriptStrokePreviewWaitsForLuaVisibleReleaseBeforeFinalizing()
+        public void ToolScriptStrokePreviewUsesPreviewPhaseWhileHeld()
         {
-            Assert.IsFalse(ScriptedTool.ShouldFinalizeToolScriptGesture(
-                strokePreviewRequested: true, triggerHeld: false,
-                triggerReleasedThisFrame: false));
-            Assert.IsTrue(ScriptedTool.ShouldFinalizeToolScriptGesture(
-                strokePreviewRequested: true, triggerHeld: false,
-                triggerReleasedThisFrame: true));
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Preview,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: true,
+                    triggerIsHeld: true));
         }
 
         [Test]
-        public void ToolScriptShapePreviewRetainsInactiveCommandFallback()
+        public void ToolScriptStrokePreviewUsesFinalPhaseWhenGestureEnds()
         {
-            Assert.IsTrue(ScriptedTool.ShouldFinalizeToolScriptGesture(
-                strokePreviewRequested: false, triggerHeld: false,
-                triggerReleasedThisFrame: false));
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Final,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: true,
+                    triggerIsHeld: false));
         }
     }
 }

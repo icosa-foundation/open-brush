@@ -13,7 +13,6 @@ Parameters = {
 
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         points = Path:New()
         local angleStep = Tool.isPreview and 0.04 or 0.01
         for i = 0.0, Math.pi * 2, angleStep do
@@ -29,5 +28,4 @@ function Main()
         end
         points:Insert(points[0]) -- Close the loop
         return points
-    end
 end

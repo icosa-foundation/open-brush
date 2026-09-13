@@ -14,13 +14,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
     public class ScriptedTool : BaseTool
     {
+        internal enum StrokePreviewExecutionPhase
+        {
+            Idle,
+            Preview,
+            Final
+        }
 
         //the parent of all of our tool's visual indicator objects
         private GameObject m_toolDirectionIndicator;
@@ -54,7 +59,6 @@ namespace TiltBrush
 
         public List<PreviewMaterialEntry> previewMaterials;
 
-        private LuaManager.ToolScriptExecutionResult m_LastToolScriptResult;
         private float m_NextStrokePreviewTime;
 
         //Init is similar to Awake(), and should be used for initializing references and other setup code
@@ -92,7 +96,6 @@ namespace TiltBrush
                 m_AttachmentSphere.parent = transform;
                 m_AttachmentSphere.gameObject.SetActive(false);
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
-                m_LastToolScriptResult = null;
             }
 
             // Make sure our UI reticle isn't active.
@@ -157,7 +160,6 @@ namespace TiltBrush
                 // Initial click. Store the transform
                 m_FirstPositionClicked_CS = rAttachPoint_CS;
                 m_FirstPositionClicked_GS = rAttachPoint_GS;
-                m_LastToolScriptResult = null;
                 m_NextStrokePreviewTime = 0f;
 
                 SetApiProperty($"Tool.{LuaNames.ToolScriptStartPoint}",
@@ -168,10 +170,10 @@ namespace TiltBrush
             bool shouldEndUndo = false;
 
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
-            bool triggerReleasedThisFrame = InputManager.Brush.BecameInactiveThisFrame;
-            bool triggerHeld = IsToolScriptTriggerHeld(
-                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate),
-                triggerReleasedThisFrame);
+            bool triggerHeld = InputManager.m_Instance.GetCommand(
+                InputManager.SketchCommands.Activate);
+            StrokePreviewExecutionPhase strokePreviewPhase = GetStrokePreviewExecutionPhase(
+                strokePreviewRequested, m_WasClicked, triggerHeld);
             if (triggerHeld)
             {
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
@@ -263,8 +265,7 @@ namespace TiltBrush
             }
             else
             {
-                if (m_WasClicked && ShouldFinalizeToolScriptGesture(
-                    strokePreviewRequested, triggerHeld, triggerReleasedThisFrame))
+                if (m_WasClicked)
                 {
                     m_WasClicked = false;
                     var snappedStart_CS = GetSnappedToolPoint(
@@ -281,11 +282,13 @@ namespace TiltBrush
                 }
             }
 
-            bool isPreviewExecution = strokePreviewRequested && m_WasClicked;
+            bool isPreviewExecution = strokePreviewPhase == StrokePreviewExecutionPhase.Preview;
             float previewInterval = GetStrokePreviewInterval();
-            bool scriptExecuted = ShouldExecuteToolScript(
-                isPreviewExecution, previewInterval, Time.realtimeSinceStartup,
-                m_NextStrokePreviewTime);
+            bool scriptExecuted = (!strokePreviewRequested ||
+                strokePreviewPhase != StrokePreviewExecutionPhase.Idle) &&
+                ShouldExecuteToolScript(
+                    isPreviewExecution, previewInterval, Time.realtimeSinceStartup,
+                    m_NextStrokePreviewTime);
             LuaManager.ToolScriptExecutionResult executionResult = null;
             if (scriptExecuted)
             {
@@ -300,12 +303,15 @@ namespace TiltBrush
 
             if (strokePreviewRequested)
             {
-                if (scriptExecuted && executionResult != null)
+                if (strokePreviewPhase == StrokePreviewExecutionPhase.Final)
                 {
-                    m_LastToolScriptResult = executionResult;
+                    PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
+                    if (executionResult != null)
+                    {
+                        LuaManager.Instance.DrawToolScriptResult(executionResult);
+                    }
                 }
-
-                if (scriptExecuted && executionResult?.PreviewControlPoints != null &&
+                else if (scriptExecuted && executionResult?.PreviewControlPoints != null &&
                     executionResult.PreviewControlPoints.Count > 1)
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
@@ -328,10 +334,6 @@ namespace TiltBrush
 
             if (shouldEndUndo)
             {
-                if (strokePreviewRequested && m_LastToolScriptResult != null)
-                {
-                    LuaManager.Instance.DrawToolScriptResult(m_LastToolScriptResult);
-                }
                 PointerManager.m_Instance.MainPointer.ClearToolScriptPreview();
                 ApiManager.Instance.EndUndo();
             }
@@ -364,26 +366,17 @@ namespace TiltBrush
             return !isPreviewExecution || previewInterval <= 0f || currentTime >= nextPreviewTime;
         }
 
-        internal static bool IsToolScriptTriggerHeld(
-            bool activateCommandIsActive, bool triggerReleasedThisFrame)
+        internal static StrokePreviewExecutionPhase GetStrokePreviewExecutionPhase(
+            bool strokePreviewRequested, bool gestureIsActive, bool triggerIsHeld)
         {
-            // The command's held state can remain true on the release edge. Treat the edge as
-            // authoritative so the last execution gets Tool.isPreview=false before it is committed.
-            return activateCommandIsActive && !triggerReleasedThisFrame;
-        }
-
-        internal static bool ShouldFinalizeToolScriptGesture(
-            bool strokePreviewRequested, bool triggerHeld, bool triggerReleasedThisFrame)
-        {
-            if (triggerHeld)
+            if (!strokePreviewRequested || !gestureIsActive)
             {
-                return false;
+                return StrokePreviewExecutionPhase.Idle;
             }
 
-            // Stroke-preview scripts may generate different final geometry when Lua observes
-            // Brush.triggerReleasedThisFrame. Do not commit their cached preview during the gap
-            // between the Activate command becoming inactive and that release edge arriving.
-            return !strokePreviewRequested || triggerReleasedThisFrame;
+            return triggerIsHeld
+                ? StrokePreviewExecutionPhase.Preview
+                : StrokePreviewExecutionPhase.Final;
         }
 
         private static TrTransform GetSnappedToolPoint(

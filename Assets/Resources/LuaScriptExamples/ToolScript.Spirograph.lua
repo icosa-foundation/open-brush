@@ -14,7 +14,6 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local path = Path:New()
         local R = Parameters.outerRadius -- Fixed outer circle radius
         local r = Parameters.innerRadius -- Rolling circle radius
@@ -59,5 +58,4 @@ function Main()
         -- Normalize path to fit within the canvas
         path:Normalize(2)
         return path
-    end
 end

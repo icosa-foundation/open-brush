@@ -12,7 +12,6 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local p = Parameters.p
         local q = Parameters.q
         local R = 1.0
@@ -66,5 +65,4 @@ function Main()
         -- Keep overall size fixed; shape controlled by p, q and ratio
         path:Normalize(2)
         return path
-    end
 end

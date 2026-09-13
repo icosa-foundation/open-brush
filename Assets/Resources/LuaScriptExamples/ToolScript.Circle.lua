@@ -17,7 +17,5 @@ local function buildCircle()
 end
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
-        return buildCircle()
-    end
+    return buildCircle()
 end
