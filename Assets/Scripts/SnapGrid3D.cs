@@ -54,6 +54,12 @@ public class SnapGrid3D : MonoBehaviour
 
     private void OnRenderObject()
     {
+        Camera currentCamera = Camera.current;
+        if (currentCamera == null)
+        {
+            return;
+        }
+
         var currentTool = SketchSurfacePanel.m_Instance.ActiveTool;
         if (currentTool is StrokeModificationTool)
         {
@@ -71,7 +77,7 @@ public class SnapGrid3D : MonoBehaviour
 
         canvasTransform = App.Scene.ActiveCanvas.transform;
 
-        if ((Camera.current.cullingMask & (1 << gameObject.layer)) != 0)
+        if ((currentCamera.cullingMask & (1 << gameObject.layer)) != 0)
         {
             var lineVertexCount = 6 * 2;
             var starVertexCount = lineVertexCount * 3;
