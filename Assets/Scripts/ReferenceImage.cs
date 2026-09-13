@@ -501,9 +501,16 @@ namespace TiltBrush
                     yield break;
                 }
 
+                while (ReferenceImageCatalog.m_Instance.TexturesCreatedThisFrame >=
+                    ReferenceImageCatalog.TEXTURE_CREATIONS_PER_FRAME)
+                {
+                    yield return null;
+                }
+
                 try
                 {
                     texture = HdrTextureLoader.CreateTexture(decoded);
+                    ReferenceImageCatalog.m_Instance.TexturesCreatedThisFrame++;
                     if (!ValidateDimensions(
                         texture.width, texture.height,
                         App.PlatformConfig.ReferenceImagesMaxDimension))
