@@ -522,10 +522,49 @@ namespace TiltBrush
             return true;
         }
 
-        /// Gets a video form the catalog, given its filename. Returns null if no such video is found.
+        /// Resolves a saved library path independently of the folder shown in the panel.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            return m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            return m_Videos.FirstOrDefault(x => x.PersistentPath == path) ??
+                ResolveVideoByPersistentPath(
+                    UserStorage.Backend, HomeDirectory, path, m_supportedVideoExtensions);
+        }
+
+        internal static ReferenceVideo ResolveVideoByPersistentPath(
+            IUserStorageBackend backend, string libraryPath, string path,
+            IEnumerable<string> supportedExtensions)
+        {
+            if (string.IsNullOrWhiteSpace(path)) { return null; }
+            try
+            {
+                string normalized = path.Replace('\\', '/');
+                if (Path.IsPathRooted(normalized) || normalized.Contains(":")) { return null; }
+                string root = Path.GetFullPath(libraryPath);
+                string absolutePath = Path.GetFullPath(Path.Combine(root, normalized));
+                string prefix = $"{root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}";
+                StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                if (!absolutePath.StartsWith(prefix, comparison) ||
+                    !IsSupportedVideoExtension(absolutePath, supportedExtensions)) { return null; }
+
+                string relativePath = Path.GetRelativePath(root, absolutePath).Replace('\\', '/');
+                if (backend.Kind == StorageBackendKind.StorageAccessFramework)
+                {
+                    // The provider is authoritative; an old materialization is not a fallback
+                    // for a missing shared file or a revoked grant.
+                    var source = new OpenBrushStorage.MediaSource(
+                        backend, StorageArea.MediaLibraryVideos, relativePath);
+                    return new ReferenceVideo(source.LocalPath, source.Identity,
+                        () => source.Materialize(MaterializationScope.File), relativePath);
+                }
+                return File.Exists(absolutePath)
+                    ? new ReferenceVideo(absolutePath, absolutePath, null, relativePath) : null;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                      e is ArgumentException || e is NotSupportedException)
+            {
+                return null;
+            }
         }
 
 

@@ -872,6 +872,40 @@ namespace TiltBrush
             Assert.AreEqual(Identity(), Identity());
         }
 
+        [Test]
+        public void VideoRestore_ResolvesSafPathsLazilyWithoutUsingOldCacheFiles()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-video-restore-{Guid.NewGuid():N}");
+            var backend = new FakeSafBackend { MaterializationPath = Path.Combine(root, "cache.mp4") };
+            backend.Add("first.mp4", new byte[] { 1 });
+            backend.Add("second.mp4", new byte[] { 2 });
+            var first = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A/first.mp4", new[] { ".mp4" });
+            Assert.IsNotNull(first);
+            Assert.AreEqual("A", backend.LastListedDirectory);
+            Assert.AreEqual(StorageArea.MediaLibraryVideos, backend.LastListedArea);
+            var second = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "B/second.mp4", new[] { ".mp4" });
+            Assert.IsNotNull(second);
+            Assert.AreEqual("B", backend.LastListedDirectory);
+            Assert.AreEqual("A/first.mp4", first.PersistentPath);
+            Assert.AreEqual("B/second.mp4", second.PersistentPath);
+            Assert.IsFalse(first.IsInitialized);
+            Assert.AreEqual(0, backend.ReadCount);
+            Assert.IsNull(backend.LastMaterializationScope);
+
+            Directory.CreateDirectory(root);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "stale.mp4"), "old local cache");
+                Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, "stale.mp4", new[] { ".mp4" }));
+                backend.ListFailureCode = StorageResultCode.PermissionDenied;
+                Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A/first.mp4", new[] { ".mp4" }));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         [TestCase("subdir/image.png")]
         [TestCase("import-123/image.png")]
         public void SafSavedImage_ResolvesOutsideTheActiveDirectory(string relativePath)

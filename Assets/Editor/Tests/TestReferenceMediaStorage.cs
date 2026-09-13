@@ -8,6 +8,40 @@ namespace TiltBrush
     internal class TestReferenceMediaStorage
     {
         [Test]
+        public void VideoRestore_ResolvesSiblingFoldersWithoutChangingThePanelListing()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-video-restore-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path.Combine(root, "A"));
+            Directory.CreateDirectory(Path.Combine(root, "B"));
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "A", "clip.mp4"), "first fixture");
+                File.WriteAllText(Path.Combine(root, "B", "clip.MP4"), "second fixture");
+                var backend = new LocalUserStorageBackend(_ => root);
+                string[] extensions = { ".mp4" };
+                var first = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A\\clip.mp4", extensions);
+                var second = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "./B/clip.MP4", extensions);
+                Assert.IsNotNull(first);
+                Assert.IsNotNull(second);
+                Assert.AreEqual("A/clip.mp4", first.PersistentPath);
+                Assert.AreEqual("B/clip.MP4", second.PersistentPath);
+                Assert.AreNotEqual(first.AbsolutePath, second.AbsolutePath);
+                Assert.IsFalse(first.IsInitialized);
+                Assert.IsFalse(second.IsInitialized);
+                Assert.IsEmpty(VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, ""));
+                foreach (string path in new[] { "missing.mp4", "../outside.mp4", "/absolute.mp4",
+                             "C:/absolute.mp4", "A/clip.bin", "", null })
+                {
+                    Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, path, extensions), path);
+                }
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
         public void ModelCatalog_SupportedExtensionsMatchAllStorageBackends()
         {
             var extensions = ModelCatalog.GetSupportedExtensions();

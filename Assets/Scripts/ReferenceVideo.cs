@@ -196,21 +196,16 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public ReferenceVideo(string filePath)
-        {
-            NetworkVideo = filePath.EndsWith(".txt");
-            PersistentPath = _GetPersistentPath(filePath);
-            HumanName = System.IO.Path.GetFileName(PersistentPath);
-            AbsolutePath = filePath;
-            CatalogIdentity = filePath;
-        }
+            : this(filePath, filePath, null) { }
 
         public ReferenceVideo(
             string filePath, string catalogIdentity, Func<string> materialize,
             string persistentPath = null)
-            : this(filePath)
         {
+            NetworkVideo = filePath.EndsWith(".txt");
+            AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
-            PersistentPath = persistentPath ?? PersistentPath;
+            PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             m_Materialize = materialize;
         }
