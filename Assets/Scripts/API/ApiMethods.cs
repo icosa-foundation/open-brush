@@ -813,11 +813,11 @@ namespace TiltBrush
                 }
                 headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
             }
-            else if (Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
+            direction.Normalize();
+            if (!isVr && Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
             {
                 up = Vector3.forward;
             }
-            direction.Normalize();
             lookPose.rotation = headRotation *
                 Quaternion.Inverse(Quaternion.LookRotation(direction, up));
             lookPose.translation = ViewpointScript.Head.position -
