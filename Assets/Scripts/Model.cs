@@ -1050,15 +1050,22 @@ namespace TiltBrush
             return true;
         }
 
-        public async Task LoadModelAsync()
+        private Task m_PrefabLoadTask;
+
+        public Task LoadModelAsync()
         {
-            Task t = StartCreatePrefab(null);
-            await t;
+            // Saved references and recovery can request the same model while import is pending.
+            // Share that import instead of replacing its hierarchy with a second result.
+            if (m_PrefabLoadTask == null || m_PrefabLoadTask.IsCompleted)
+            {
+                m_PrefabLoadTask = StartCreatePrefab(null);
+            }
+            return m_PrefabLoadTask;
         }
 
         public void LoadModel()
         {
-            _ = StartCreatePrefab(null);
+            _ = LoadModelAsync();
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
