@@ -73,5 +73,12 @@ namespace TiltBrush
                 isPreviewExecution: true, previewInterval: 0.1f,
                 currentTime: 1f, nextPreviewTime: 1f));
         }
+
+        [Test]
+        public void ToolScriptReleaseTakesPrecedenceOverHeldCommandState()
+        {
+            Assert.IsFalse(ScriptedTool.IsToolScriptTriggerHeld(
+                activateCommandIsActive: true, triggerReleasedThisFrame: true));
+        }
     }
 }

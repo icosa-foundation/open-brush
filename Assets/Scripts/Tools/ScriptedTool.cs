@@ -168,7 +168,10 @@ namespace TiltBrush
             bool shouldEndUndo = false;
 
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
-            if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            bool triggerHeld = IsToolScriptTriggerHeld(
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate),
+                InputManager.Brush.BecameInactiveThisFrame);
+            if (triggerHeld)
             {
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
 
@@ -257,7 +260,7 @@ namespace TiltBrush
                     }
                 }
             }
-            else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            else
             {
                 if (m_WasClicked)
                 {
@@ -357,6 +360,14 @@ namespace TiltBrush
             float currentTime, float nextPreviewTime)
         {
             return !isPreviewExecution || previewInterval <= 0f || currentTime >= nextPreviewTime;
+        }
+
+        internal static bool IsToolScriptTriggerHeld(
+            bool activateCommandIsActive, bool triggerReleasedThisFrame)
+        {
+            // The command's held state can remain true on the release edge. Treat the edge as
+            // authoritative so the last execution gets Tool.isPreview=false before it is committed.
+            return activateCommandIsActive && !triggerReleasedThisFrame;
         }
 
         private static TrTransform GetSnappedToolPoint(
