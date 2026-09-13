@@ -70,18 +70,33 @@ namespace TiltBrush
 
         private static object GetInstanceField(object instance, string name)
         {
-            var field = instance.GetType().GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = FindInstanceField(instance.GetType(), name);
             Assert.NotNull(field, $"Field not found: {instance.GetType().FullName}.{name}");
             return field.GetValue(instance);
         }
 
         private static void SetInstanceField(object instance, string name, object value)
         {
-            var field = instance.GetType().GetField(
-                name,
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = FindInstanceField(instance.GetType(), name);
             Assert.NotNull(field, $"Field not found: {instance.GetType().FullName}.{name}");
             field.SetValue(instance, value);
+        }
+
+        private static FieldInfo FindInstanceField(Type type, string name)
+        {
+            while (type != null)
+            {
+                var field = type.GetField(
+                    name,
+                    BindingFlags.Public | BindingFlags.NonPublic |
+                    BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (field != null)
+                {
+                    return field;
+                }
+                type = type.BaseType;
+            }
+            return null;
         }
 
         private static T GetStructField<T>(object boxedStruct, string name)
@@ -984,6 +999,23 @@ namespace TiltBrush
             Assert.IsTrue(Array.Exists(
                 GetDropCam().GetComponentsInChildren<Renderer>(includeInactive: true),
                 renderer => renderer.enabled));
+        }
+
+        [UnityTest]
+        public IEnumerator Cmd_SpectatorToggleClearsVelocity()
+        {
+            yield return EnsureReady();
+            yield return SendCommand("spectator.on");
+            var dropCamType = GetTypeOrFail("TiltBrush.DropCamWidget");
+            var dropCam = GetDropCam().GetComponent(dropCamType);
+            Assert.NotNull(dropCam, "DropCamWidget component not found");
+
+            SetInstanceField(dropCam, "m_Velocity_LS", Vector3.one);
+            SetInstanceField(dropCam, "m_AngularVelocity_LS", Vector3.one);
+            yield return SendCommand("spectator.toggle");
+
+            Assert.AreEqual(Vector3.zero, GetInstanceField(dropCam, "m_Velocity_LS"));
+            Assert.AreEqual(Vector3.zero, GetInstanceField(dropCam, "m_AngularVelocity_LS"));
         }
 
         [UnityTest]
