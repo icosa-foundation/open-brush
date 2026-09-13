@@ -369,7 +369,7 @@ namespace TiltBrush
                 }
             }
             return backend.EnumerateTree(StorageArea.MediaLibrarySoundClips, relativeDirectory,
-                new StorageTreeQuery(includeExtensions: extensions), CancellationToken.None);
+                new StorageTreeQuery(recursive: false, includeExtensions: extensions), CancellationToken.None);
         }
 
         private static string GetSafCatalogIdentity(IUserStorageBackend backend, StorageDocument document)

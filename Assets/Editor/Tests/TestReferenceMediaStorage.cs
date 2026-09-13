@@ -1,10 +1,37 @@
+using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [Test]
+        public void VideoQuery_ListsOnlySelectedDirectoryAndPreservesLogicalPaths()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-video-query-{Guid.NewGuid():N}");
+            string nested = Path.Combine(root, "Nested");
+            string deeper = Path.Combine(nested, "Deeper");
+            Directory.CreateDirectory(deeper);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "root.mp4"), "root video");
+                File.WriteAllText(Path.Combine(nested, "clip.mp4"), "child video");
+                File.WriteAllText(Path.Combine(deeper, "hidden.mp4"), "nested video");
+                var backend = new LocalUserStorageBackend(_ => root);
+                var parent = VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, "");
+                Assert.AreEqual("root.mp4", parent.Single().RelativeDisplayPath);
+                var child = VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, "Nested");
+                Assert.AreEqual("Nested/clip.mp4", child.Single().RelativeDisplayPath);
+                Assert.IsFalse(child.Single().IsDirectory);
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         private static StorageDocument OverwriteDocument(string id, string name, bool directory)
         {
             return new StorageDocument(new StorageDocumentId(id), default, name,

@@ -374,7 +374,7 @@ namespace TiltBrush
             }
 
             var listingFuture = new Future<List<StorageDocument>>(
-                () => ListSafFilesRecursively(
+                () => ListSafFiles(
                     backend, StorageArea.MediaLibraryVideos, relativeDirectory),
                 cleanupFunction: null,
                 longRunning: true);
@@ -465,7 +465,7 @@ namespace TiltBrush
             CatalogChanged?.Invoke();
         }
 
-        private static List<StorageDocument> ListSafFilesRecursively(
+        internal static List<StorageDocument> ListSafFiles(
             IUserStorageBackend backend, StorageArea area, string relativeDirectory)
         {
             var files = new List<StorageDocument>();
@@ -477,15 +477,7 @@ namespace TiltBrush
             }
             foreach (StorageDocument document in listing.Documents)
             {
-                if (document.IsDirectory)
-                {
-                    string childDirectory = string.IsNullOrEmpty(relativeDirectory)
-                        ? document.DisplayName
-                        : $"{relativeDirectory}/{document.DisplayName}";
-                    files.AddRange(ListSafFilesRecursively(
-                        backend, area, childDirectory));
-                }
-                else
+                if (!document.IsDirectory)
                 {
                     files.Add(new StorageDocument(
                         document.DocumentId, document.ParentDocumentId, document.DisplayName,

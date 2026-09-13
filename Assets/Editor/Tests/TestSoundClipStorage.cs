@@ -42,15 +42,24 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SoundQuery_FindsNestedAudioAndPreservesLogicalPaths()
+        public void SoundQuery_ListsOnlySelectedDirectoryAndPreservesLogicalPaths()
         {
             string nested = Path.Combine(m_Root, "Nested");
             Directory.CreateDirectory(nested);
             File.WriteAllText(Path.Combine(nested, "clip.WAV"), "audio");
             File.WriteAllText(Path.Combine(nested, "ignored.txt"), "text");
+            File.WriteAllText(Path.Combine(m_Root, "root.wav"), "root audio");
+            string deeper = Path.Combine(nested, "Deeper");
+            Directory.CreateDirectory(deeper);
+            File.WriteAllText(Path.Combine(deeper, "hidden.wav"), "nested audio");
+
+            StorageTreeResult parent = SoundClipCatalog.QuerySafSoundClips(
+                m_Backend, "", new[] { ".wav" }, null);
+            Assert.IsTrue(parent.Success, parent.Error);
+            Assert.AreEqual("root.wav", parent.Entries.Single().RelativeDisplayPath);
 
             StorageTreeResult result = SoundClipCatalog.QuerySafSoundClips(
-                m_Backend, "", new[] { ".wav" }, null);
+                m_Backend, "Nested", new[] { ".wav" }, null);
 
             Assert.IsTrue(result.Success, result.Error);
             Assert.AreEqual(1, result.Entries.Count);
