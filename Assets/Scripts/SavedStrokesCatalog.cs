@@ -65,7 +65,7 @@ namespace TiltBrush
                 m_FileWatcher.EnableRaisingEvents = false;
                 m_FileWatcher = null;
             }
-            m_CurrentSavedStrokesDirectory = IsSafStorage ? HomeDirectory : newPath;
+            m_CurrentSavedStrokesDirectory = newPath;
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
@@ -87,7 +87,36 @@ namespace TiltBrush
 
         public bool IsSubDirectoryOfHome()
         {
-            return m_CurrentSavedStrokesDirectory.StartsWith(HomeDirectory);
+            return IsPathWithinDirectory(HomeDirectory, m_CurrentSavedStrokesDirectory);
+        }
+
+        internal static bool IsNavigableDirectory(string path)
+        {
+            return !path.EndsWith(
+                SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsPathWithinDirectory(string root, string path)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return fullPath.Equals(fullRoot, comparison) ||
+                fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar,
+                    comparison);
+        }
+
+        internal static bool IsDirectChildPath(string directory, string path)
+        {
+            return string.Equals(
+                Path.GetFullPath(Path.GetDirectoryName(path) ?? "").TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
         public string GetCurrentDirectory()
@@ -248,8 +277,7 @@ namespace TiltBrush
             for (int i = 0; i < catalog.NumSketches; i++)
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);
-                if (!IsSafStorage &&
-                    !sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory))
+                if (!IsInCurrentDirectory(sketchFileInfo))
                 {
                     continue;
                 }
@@ -260,6 +288,37 @@ namespace TiltBrush
 
             m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
+        }
+
+        // The sketch set is a library-wide index; the reference panel is a
+        // folder page. Keep only direct children of the selected folder here.
+        private bool IsInCurrentDirectory(SceneFileInfo fileInfo)
+        {
+            if (fileInfo == null)
+            {
+                return false;
+            }
+            if (!IsSafStorage)
+            {
+                return IsDirectChildPath(
+                    m_CurrentSavedStrokesDirectory, fileInfo.FullPath);
+            }
+
+            if (!(fileInfo is SafSceneFileInfo safInfo) ||
+                !OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
+                    m_CurrentSavedStrokesDirectory, out string sharedPath) ||
+                !OpenBrushStorage.TryResolveStorageDestination(
+                    sharedPath, out StorageArea area, out string relativeDirectory) ||
+                area != StorageArea.SavedStrokes)
+            {
+                return false;
+            }
+            string logicalPath = safInfo.Document.RelativeDisplayPath
+                .Replace('\\', '/').Trim('/');
+            string logicalParent = relativeDirectory.Replace('\\', '/').Trim('/');
+            int separator = logicalPath.LastIndexOf('/');
+            string parentPath = separator < 0 ? "" : logicalPath.Substring(0, separator);
+            return string.Equals(parentPath, logicalParent, StringComparison.OrdinalIgnoreCase);
         }
 
         private void EnsureSafSubscription()

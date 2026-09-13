@@ -538,17 +538,36 @@ namespace TiltBrush
 
         private void ProcessDirectory(string path)
         {
-            var di = new DirectoryInfo(path);
-            if (!di.Exists)
+            var directories = new Stack<string>();
+            directories.Push(path);
+            while (directories.Count > 0)
             {
-                return;
-            }
-            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
-            {
-                //don't add bogus files to the catalog
-                if (info.IsHeaderValid())
+                var di = new DirectoryInfo(directories.Pop());
+                if (!di.Exists)
                 {
-                    AddSketchToSet(info);
+                    continue;
+                }
+                foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
+                {
+                    //don't add bogus files to the catalog
+                    if (info.IsHeaderValid())
+                    {
+                        AddSketchToSet(info);
+                    }
+                }
+                // Saved-stroke navigation uses the one catalog for all folders. A .tilt
+                // directory is itself a sketch container and must not be traversed.
+                if (m_Type == SketchSetType.SavedStrokes)
+                {
+                    foreach (DirectoryInfo child in di.EnumerateDirectories())
+                    {
+                        if (!child.Name.EndsWith(
+                                SaveLoadScript.TILT_SUFFIX,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            directories.Push(child.FullName);
+                        }
+                    }
                 }
             }
             m_Sketches.Sort();

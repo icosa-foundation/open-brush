@@ -281,7 +281,12 @@ namespace TiltBrush
                 else
                 {
                     m_CurrentSubdirectories = Directory.Exists(currentDir)
-                        ? Directory.GetDirectories(currentDir) : System.Array.Empty<string>();
+                        ? Directory.GetDirectories(currentDir)
+                            .Where(path => m_CurrentTab.ReferenceButtonType !=
+                                ReferenceButton.Type.SavedStrokes ||
+                                SavedStrokesCatalog.IsNavigableDirectory(path))
+                            .ToArray()
+                        : System.Array.Empty<string>();
                 }
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
@@ -401,6 +406,9 @@ namespace TiltBrush
             }
             var directories = listing.Success ? listing.Documents
                 .Where(document => document.IsDirectory)
+                .Where(document => m_CurrentTab.ReferenceButtonType !=
+                    ReferenceButton.Type.SavedStrokes ||
+                    SavedStrokesCatalog.IsNavigableDirectory(document.DisplayName))
                 .Select(document => Path.Combine(currentDirectory, document.DisplayName)).ToList()
                 : new List<string>();
             string blocksPath = App.BlocksModelLibraryPath();

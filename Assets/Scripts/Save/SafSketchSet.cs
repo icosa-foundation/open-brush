@@ -45,6 +45,8 @@ namespace TiltBrush
 
         private readonly IUserStorageBackend m_Backend;
         private StorageDocument m_Document;
+        private readonly StorageArea m_Area;
+        private readonly string m_RootIdentity;
         private readonly TiltFile m_TiltFile;
         private string m_AssetId;
         private string m_SourceId;
@@ -65,10 +67,13 @@ namespace TiltBrush
         public DateTime CreationTime => m_Document.LastModified ?? DateTime.MinValue;
         public StorageDocument Document => m_Document;
 
-        public SafSceneFileInfo(IUserStorageBackend backend, StorageDocument document)
+        public SafSceneFileInfo(IUserStorageBackend backend, StorageDocument document,
+            StorageArea area = StorageArea.Sketches)
         {
             m_Backend = backend ?? throw new ArgumentNullException(nameof(backend));
             m_Document = document ?? throw new ArgumentNullException(nameof(document));
+            m_Area = area;
+            m_RootIdentity = backend.RootIdentity;
             m_TiltFile = new TiltFile(
                 new StorageReadStreamSource(backend, document.DocumentId),
                 document.RelativeDisplayPath);
@@ -104,12 +109,40 @@ namespace TiltBrush
 
         public bool IsHeaderValid()
         {
+            if (m_Document.IsDirectory)
+            {
+                var children = ListContainerFiles();
+                return new[] { TiltFile.FN_METADATA, TiltFile.FN_SKETCH, TiltFile.FN_THUMBNAIL }
+                    .All(name => children.Any(child => child.DisplayName == name));
+            }
             return m_TiltFile.IsHeaderValid();
         }
 
         public Stream GetReadStream(string subfileName)
         {
+            if (m_Document.IsDirectory)
+            {
+                StorageDocument child = ListContainerFiles()
+                    .FirstOrDefault(file => file.DisplayName == subfileName);
+                return child == null ? null : m_Backend.OpenRead(
+                    child.DocumentId, requireSeekable: true, CancellationToken.None);
+            }
             return m_TiltFile.GetReadStream(subfileName);
+        }
+
+        private IReadOnlyList<StorageDocument> ListContainerFiles()
+        {
+            if (m_RootIdentity != m_Backend.RootIdentity) { return Array.Empty<StorageDocument>(); }
+            StorageDirectoryResult result = m_Backend.List(
+                m_Area, m_Document.RelativeDisplayPath, CancellationToken.None);
+            if (!result.Success || m_RootIdentity != m_Backend.RootIdentity)
+            {
+                return Array.Empty<StorageDocument>();
+            }
+            // A logical path can be reused after a directory is replaced. Only read children
+            // belonging to the actual container selected by this catalog entry.
+            return result.Documents.Where(child => !child.IsDirectory &&
+                child.ParentDocumentId.Equals(m_Document.DocumentId)).ToArray();
         }
 
         public SketchMetadata ReadMetadata()
@@ -236,7 +269,7 @@ namespace TiltBrush
         private readonly IUserStorageBackend m_Backend;
         private readonly List<SafSketch> m_Sketches = new List<SafSketch>();
         private readonly Stack<int> m_RequestedLoads = new Stack<int>();
-        private Future<StorageDirectoryResult> m_RefreshFuture;
+        private Future<StorageTreeResult> m_RefreshFuture;
         private string m_RefreshRootIdentity;
         private string m_AppliedRootIdentity;
         private bool m_Ready;
@@ -442,8 +475,8 @@ namespace TiltBrush
                     m_AppliedRootIdentity = m_RefreshRootIdentity;
                     OnChanged();
                 }
-                m_RefreshFuture = new Future<StorageDirectoryResult>(
-                    () => m_Backend.List(m_Area, "", CancellationToken.None),
+                m_RefreshFuture = new Future<StorageTreeResult>(
+                    QuerySketchDocuments,
                     longRunning: true);
                 OnSketchRefreshingChanged();
                 return;
@@ -453,7 +486,7 @@ namespace TiltBrush
                 return;
             }
 
-            StorageDirectoryResult result;
+            StorageTreeResult result;
             try
             {
                 if (!m_RefreshFuture.TryGetResult(out result))
@@ -496,20 +529,36 @@ namespace TiltBrush
             }
 
             ClearCatalog();
-            foreach (StorageDocument document in result.Documents)
+            foreach (StorageDocument document in result.Entries)
             {
-                if (!document.IsDirectory &&
-                    document.DisplayName.EndsWith(
+                if (document.DisplayName.EndsWith(
                         SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase))
                 {
                     m_Sketches.Add(new SafSketch(
-                        new SafSceneFileInfo(m_Backend, document)));
+                        new SafSceneFileInfo(m_Backend, document, m_Area)));
                 }
             }
             m_Sketches.Sort((left, right) =>
                 right.CreationTime.CompareTo(left.CreationTime));
             m_AppliedRootIdentity = m_Backend.RootIdentity;
             OnChanged();
+        }
+
+        private StorageTreeResult QuerySketchDocuments()
+        {
+            if (m_Type != SketchSetType.SavedStrokes)
+            {
+                // Preserve the ordinary Sketchbook's direct-file listing and error behavior.
+                StorageDirectoryResult listing = m_Backend.List(m_Area, "", CancellationToken.None);
+                return listing.Success
+                    ? StorageTreeResult.Succeeded(listing.Documents.Where(file => !file.IsDirectory).ToArray())
+                    : StorageTreeResult.Failed(listing.Code, listing.Error);
+            }
+            return m_Backend.EnumerateTree(m_Area, "", new StorageTreeQuery(
+                includeDirectories: true,
+                includeExtensions: new[] { SaveLoadScript.TILT_SUFFIX },
+                recurseIntoDirectory: name => !name.EndsWith(
+                    SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)), CancellationToken.None);
         }
 
         private void ClearCatalog()

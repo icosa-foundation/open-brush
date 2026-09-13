@@ -179,6 +179,7 @@ namespace TiltBrush
         public IReadOnlyCollection<string> ExcludeExtensions { get; }
         public int MaximumDepth { get; }
         public int MaximumItemCount { get; }
+        public Func<string, bool> RecurseIntoDirectory { get; }
 
         public StorageTreeQuery(
             bool recursive = true,
@@ -186,7 +187,8 @@ namespace TiltBrush
             IEnumerable<string> includeExtensions = null,
             IEnumerable<string> excludeExtensions = null,
             int maximumDepth = 32,
-            int maximumItemCount = 10000)
+            int maximumItemCount = 10000,
+            Func<string, bool> recurseIntoDirectory = null)
         {
             if (maximumDepth < 0)
             {
@@ -204,6 +206,7 @@ namespace TiltBrush
             ExcludeExtensions = NormalizeExtensions(excludeExtensions);
             MaximumDepth = maximumDepth;
             MaximumItemCount = maximumItemCount;
+            RecurseIntoDirectory = recurseIntoDirectory;
         }
 
         internal bool IncludesFile(string displayName)
@@ -885,7 +888,9 @@ namespace TiltBrush
                             {
                                 entries.Add(normalized);
                             }
-                            if (query.Recursive)
+                            if (query.Recursive &&
+                                (query.RecurseIntoDirectory == null ||
+                                 query.RecurseIntoDirectory(document.DisplayName)))
                             {
                                 if (current.Depth >= query.MaximumDepth)
                                 {
