@@ -254,6 +254,7 @@ namespace TiltBrush
                 Assert.AreEqual(2, decoded.Width);
                 Assert.AreEqual(1, decoded.Height);
                 Assert.AreEqual(TextureFormat.RGBAHalf, decodedTexture.format);
+                Assert.Greater(decodedTexture.mipmapCount, 1);
             }
             finally
             {
@@ -288,6 +289,7 @@ namespace TiltBrush
                 Assert.AreEqual(2, destination.width);
                 Assert.AreEqual(1, destination.height);
                 Assert.AreEqual(TextureFormat.RGBAHalf, destination.format);
+                Assert.Greater(destination.mipmapCount, 1);
                 Assert.AreEqual(4.0f, destination.GetPixel(0, 0).r, 0.01f);
                 Assert.AreEqual(0.375f, destination.GetPixel(0, 0).a, 0.01f);
             }

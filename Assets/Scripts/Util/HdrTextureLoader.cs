@@ -158,15 +158,15 @@ namespace TiltBrush
             if (texture == null)
             {
                 texture = new Texture2D(
-                    image.Width, image.Height, TextureFormat.RGBAHalf, false, true);
+                    image.Width, image.Height, TextureFormat.RGBAHalf, true, true);
             }
             else
             {
                 texture.Reinitialize(
-                    image.Width, image.Height, TextureFormat.RGBAHalf, false);
+                    image.Width, image.Height, TextureFormat.RGBAHalf, true);
             }
             texture.SetPixels(image.Pixels);
-            texture.Apply(false, false);
+            texture.Apply(true, false);
             return texture;
         }
 
