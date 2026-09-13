@@ -703,7 +703,14 @@ namespace TiltBrush
 
             object scene = GetSceneScript();
             object scenePose = GetScenePose();
+            Transform head = GetHead();
+            Quaternion previousHeadRotation = head.rotation;
             bool previousTiltProtection = (bool)GetInstanceField(scene, "disableTiltProtection");
+            var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
+            var userDirection = apiMethods.GetMethod(
+                "UserDirection",
+                BindingFlags.Public | BindingFlags.Static);
+            Assert.NotNull(userDirection, "ApiMethods.UserDirection not found");
             try
             {
                 SetInstanceField(scene, "disableTiltProtection", false);
@@ -712,10 +719,17 @@ namespace TiltBrush
 
                 yield return SendCommand("user.direction", "45,45,0");
                 Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
+
+                SetInstanceProperty(scene, "Pose", scenePose);
+                SetInstanceField(scene, "disableTiltProtection", false);
+                head.rotation = Quaternion.Euler(30, 0, 0);
+                userDirection.Invoke(null, new object[] { new Vector3(0, 45, 0) });
+                Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
             }
             finally
             {
                 SetInstanceProperty(scene, "Pose", scenePose);
+                head.rotation = previousHeadRotation;
                 SetInstanceField(scene, "disableTiltProtection", previousTiltProtection);
             }
         }
@@ -787,6 +801,8 @@ namespace TiltBrush
 
             object scene = GetSceneScript();
             object scenePose = GetScenePose();
+            Transform head = GetHead();
+            Quaternion previousHeadRotation = head.rotation;
             bool previousTiltProtection = (bool)GetInstanceField(scene, "disableTiltProtection");
             var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
             var userLookAt = apiMethods.GetMethod(
@@ -804,10 +820,18 @@ namespace TiltBrush
                 userLookAt.Invoke(null, new object[] {
                     userPosition + Vector3.forward + Vector3.up });
                 Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
+
+                SetInstanceProperty(scene, "Pose", scenePose);
+                SetInstanceField(scene, "disableTiltProtection", false);
+                head.rotation = Quaternion.Euler(30, 0, 0);
+                userPosition = InverseTransformScenePoint(head.position);
+                userLookAt.Invoke(null, new object[] { userPosition + Vector3.forward });
+                Assert.IsTrue((bool)GetInstanceField(scene, "disableTiltProtection"));
             }
             finally
             {
                 SetInstanceProperty(scene, "Pose", scenePose);
+                head.rotation = previousHeadRotation;
                 SetInstanceField(scene, "disableTiltProtection", previousTiltProtection);
             }
         }

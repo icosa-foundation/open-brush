@@ -762,7 +762,7 @@ namespace TiltBrush
             lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
             lookPose.translation = ViewpointScript.Head.position -
                 lookPose.rotation * (lookPose.scale * userPosition);
-            if (Vector3.Dot(qNewRotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            if (Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
             {
                 App.Scene.disableTiltProtection = true;
             }
@@ -826,7 +826,8 @@ namespace TiltBrush
             lookPose.translation = ViewpointScript.Head.position -
                 lookPose.rotation * (lookPose.scale * userPosition);
 
-            if (!isVr && Mathf.Abs(direction.y) > 1e-6f)
+            if (!isVr &&
+                Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
             {
                 App.Scene.disableTiltProtection = true;
             }
