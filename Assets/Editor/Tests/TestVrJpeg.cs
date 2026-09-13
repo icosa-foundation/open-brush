@@ -153,6 +153,44 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RejectsExtendedXmpLargerThanJpegPayload()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(
+                    jpeg, jpeg, extendedTotalSize: uint.MaxValue);
+
+                Assert.Throws<InvalidDataException>(
+                    () => VrJpegMetadata.ReadFromBytes(vrJpeg));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
+        public void RejectsExtendedXmpChunkOutsideDeclaredRange()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(
+                    jpeg, jpeg, extendedTotalSize: 1);
+
+                Assert.Throws<InvalidDataException>(
+                    () => VrJpegMetadata.ReadFromBytes(vrJpeg));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
         public void ConvertsGpanoTopOffsetToBottomOrigin()
         {
             Texture2D source = CreateSourceTexture();
@@ -189,7 +227,8 @@ namespace TiltBrush
         }
 
         private static byte[] CreateVrJpeg(
-            byte[] leftEyeJpeg, byte[] rightEyeJpeg, int croppedAreaTopPixels = 1)
+            byte[] leftEyeJpeg, byte[] rightEyeJpeg, int croppedAreaTopPixels = 1,
+            uint? extendedTotalSize = null)
         {
             string standardXmp = $@"
                 <x:xmpmeta xmlns:x=""adobe:ns:meta/""><rdf:RDF
@@ -218,7 +257,8 @@ namespace TiltBrush
                 {
                     WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpHeader));
                     WriteBytes(extendedPayload, Encoding.ASCII.GetBytes(kExtendedXmpGuid));
-                    WriteBigEndian(extendedPayload, (uint)extendedXml.Length);
+                    WriteBigEndian(
+                        extendedPayload, extendedTotalSize ?? (uint)extendedXml.Length);
                     WriteBigEndian(extendedPayload, 0);
                     WriteBytes(extendedPayload, extendedXml);
                     extendedSegment = CreateApp1Segment(extendedPayload.ToArray());

@@ -111,6 +111,10 @@ namespace TiltBrush
                 ushort segmentLength = ReadUInt16BigEndian(reader);
                 long segmentStart = stream.Position;
                 long segmentEnd = segmentStart + segmentLength - 2;
+                if (segmentLength < 2 || segmentEnd > stream.Length)
+                {
+                    throw new InvalidDataException("Invalid JPEG segment length");
+                }
 
                 if (markerType == JPEG_MARKER_APP1 && segmentLength > XMP_HEADER.Length)
                 {
@@ -153,8 +157,22 @@ namespace TiltBrush
                 chunks.Sort((a, b) => a.Offset.CompareTo(b.Offset));
 
                 int totalSize = chunks.Count > 0 ? chunks[0].TotalSize : 0;
-                byte[] completeData = new byte[totalSize];
+                int coveredLength = 0;
+                foreach (var chunk in chunks)
+                {
+                    if (chunk.TotalSize != totalSize || chunk.Offset != coveredLength)
+                    {
+                        throw new InvalidDataException(
+                            "Extended XMP chunks have inconsistent bounds");
+                    }
+                    coveredLength = checked(chunk.Offset + chunk.Data.Length);
+                }
+                if (coveredLength != totalSize)
+                {
+                    throw new InvalidDataException("Extended XMP data is incomplete");
+                }
 
+                byte[] completeData = new byte[totalSize];
                 foreach (var chunk in chunks)
                 {
                     Array.Copy(chunk.Data, 0, completeData, chunk.Offset, chunk.Data.Length);
@@ -167,8 +185,17 @@ namespace TiltBrush
             return metadata;
         }
 
-        private static void ParseExtendedXmpSegment(BinaryReader reader, Dictionary<string, List<ExtendedXmpChunk>> extendedXmpData, int segmentLength)
+        private static void ParseExtendedXmpSegment(
+            BinaryReader reader,
+            Dictionary<string, List<ExtendedXmpChunk>> extendedXmpData,
+            int segmentLength)
         {
+            int metadataLength = XMP_EXTENDED_HEADER.Length + 32 + 8;
+            if (segmentLength < metadataLength)
+            {
+                throw new InvalidDataException("Extended XMP segment is truncated");
+            }
+
             byte[] headerBytes = reader.ReadBytes(XMP_EXTENDED_HEADER.Length);
             byte[] guidBytes = reader.ReadBytes(32);
             string guid = Encoding.ASCII.GetString(guidBytes);
@@ -176,12 +203,27 @@ namespace TiltBrush
             uint totalSize = ReadUInt32BigEndian(reader);
             uint offset = ReadUInt32BigEndian(reader);
 
-            int dataLength = segmentLength - XMP_EXTENDED_HEADER.Length - 32 - 8;
+            int dataLength = segmentLength - metadataLength;
+            if (totalSize > int.MaxValue || totalSize > reader.BaseStream.Length ||
+                offset > totalSize || (uint)dataLength > totalSize - offset)
+            {
+                throw new InvalidDataException("Extended XMP chunk is outside its declared bounds");
+            }
             byte[] data = reader.ReadBytes(dataLength);
+            if (data.Length != dataLength)
+            {
+                throw new EndOfStreamException();
+            }
 
             if (!extendedXmpData.ContainsKey(guid))
             {
                 extendedXmpData[guid] = new List<ExtendedXmpChunk>();
+            }
+            else if (extendedXmpData[guid].Count > 0 &&
+                extendedXmpData[guid][0].TotalSize != (int)totalSize)
+            {
+                throw new InvalidDataException(
+                    "Extended XMP chunks declare inconsistent total sizes");
             }
 
             extendedXmpData[guid].Add(new ExtendedXmpChunk
