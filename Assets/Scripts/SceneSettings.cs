@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using OpenBrush.Multiplayer;
@@ -123,6 +124,7 @@ namespace TiltBrush
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
         private Texture2D m_CustomSkyboxTexture;
+        private int m_CustomSkyboxLoadVersion;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -218,19 +220,24 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
+            int loadVersion = ++m_CustomSkyboxLoadVersion;
             Texture2D tex = null;
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
             if (File.Exists(path))
             {
-                var fileData = File.ReadAllBytes(path);
-
                 if (HdrTextureLoader.IsSupportedFile(path))
                 {
-                    tex = HdrTextureLoader.Load(fileData, path);
+                    tex = ImageCache.LoadImageCache(path);
+                    if (tex == null)
+                    {
+                        StartCoroutine(LoadCustomHdrSkybox(path, filename, loadVersion));
+                        return;
+                    }
                 }
                 else
                 {
+                    var fileData = File.ReadAllBytes(path);
                     if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
                     {
                         try
@@ -271,6 +278,66 @@ namespace TiltBrush
             }
         }
 
+        private IEnumerator LoadCustomHdrSkybox(
+            string path, string filename, int loadVersion)
+        {
+            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+            var reader = new Future<HdrTextureLoader.DecodedImage>(
+                () => HdrTextureLoader.Decode(
+                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                longRunning: true);
+            HdrTextureLoader.DecodedImage decoded = null;
+            Exception decodeError = null;
+            while (decoded == null && decodeError == null)
+            {
+                try
+                {
+                    reader.TryGetResult(out decoded);
+                }
+                catch (Exception e)
+                {
+                    decodeError = e;
+                }
+                if (decoded == null && decodeError == null)
+                {
+                    yield return null;
+                }
+            }
+
+            if (loadVersion != m_CustomSkyboxLoadVersion ||
+                m_CustomSkyboxTextureName != filename)
+            {
+                yield break;
+            }
+            if (decodeError != null)
+            {
+                Debug.LogWarning($"[CustomHdrSkybox:{filename}] {decodeError}");
+                yield break;
+            }
+
+            Texture2D texture = null;
+            try
+            {
+                texture = HdrTextureLoader.CreateTexture(decoded);
+                ImageCache.SaveImageCache(texture, path);
+                float aspectRatio = (float)texture.width / texture.height;
+                SetCustomSkybox(texture, aspectRatio);
+                texture = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[CustomHdrSkybox:{filename}] {e}");
+            }
+            finally
+            {
+                if (texture != null)
+                {
+                    Destroy(texture);
+                }
+            }
+        }
+
         // note: this takes in the full file path, instead of just the name
         public void LoadCustomSkyboxFromCache(string filepath)
         {
@@ -282,6 +349,7 @@ namespace TiltBrush
             }
             else
             {
+                ++m_CustomSkyboxLoadVersion;
                 float aspectRatio = (float)tex.width / tex.height;
                 SetCustomSkybox(tex, aspectRatio);
             }
@@ -899,6 +967,7 @@ namespace TiltBrush
                     m_SkyColorB = env.m_SkyboxColorB;
                     m_GradientSkew = Quaternion.identity;
                     m_CustomSkyboxTextureName = null;
+                    ++m_CustomSkyboxLoadVersion;
                 }
 
                 m_DesiredEnvironment = env;
