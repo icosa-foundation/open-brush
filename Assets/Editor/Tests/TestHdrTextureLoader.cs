@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using System.IO;
 using System.Text;
 using UnityEngine;
 
@@ -306,6 +307,18 @@ namespace TiltBrush
 
             Assert.AreEqual(11, width);
             Assert.AreEqual(7, height);
+        }
+
+        [Test]
+        public void RejectsUnsupportedRadiancePixelFormat()
+        {
+            byte[] bytes = Encoding.ASCII.GetBytes(
+                "#?RADIANCE\nFORMAT=32-bit_rle_xyze\n\n-Y 1 +X 1\n\0\0\0\0");
+
+            var error = Assert.Throws<InvalidDataException>(
+                () => HdrTextureLoader.Decode(bytes, "generated.hdr"));
+
+            StringAssert.Contains("32-bit_rle_xyze", error.Message);
         }
 
         [Test]

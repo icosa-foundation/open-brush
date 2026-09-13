@@ -256,6 +256,13 @@ namespace TiltBrush
                 string line = ReadAsciiLine(bytes, ref position).Trim();
                 if (line.StartsWith("FORMAT=", StringComparison.Ordinal))
                 {
+                    string format = line.Substring("FORMAT=".Length);
+                    if (!string.Equals(
+                        format, "32-bit_rle_rgbe", StringComparison.Ordinal))
+                    {
+                        throw new InvalidDataException(
+                            $"Unsupported Radiance HDR format: {format}");
+                    }
                     hasFormat = true;
                     continue;
                 }
