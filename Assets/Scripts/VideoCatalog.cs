@@ -295,6 +295,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            if (m_ScanningDirectory) { m_DirectoryScanRequired = true; }
             if (!m_ScanningDirectory)
             {
                 m_DirectoryScanRequired = false;

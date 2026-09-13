@@ -15,6 +15,26 @@ namespace TiltBrush
     {
         [TestCase(false)]
         [TestCase(true)]
+        public void RefreshDuringScanQueuesAnotherPass(bool sound)
+        {
+            var owner = new GameObject("MediaQueuedScanTest");
+            owner.SetActive(false);
+            try
+            {
+                MonoBehaviour catalog = sound ? (MonoBehaviour)owner.AddComponent<SoundClipCatalog>() : owner.AddComponent<VideoCatalog>();
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                catalog.GetType().GetField("m_ScanningDirectory", flags).SetValue(catalog, true);
+                ((IReferenceItemCatalog)catalog).ForceCatalogScan();
+                Assert.IsTrue((bool)catalog.GetType().GetField("m_DirectoryScanRequired", flags).GetValue(catalog));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void MissingLocalFolderReleasesScanningFlag(bool sound)
         {
             IUserStorageBackend previous = UserStorage.Backend;

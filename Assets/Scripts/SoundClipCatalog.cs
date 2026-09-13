@@ -116,8 +116,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
-            if (m_ScanningDirectory &&
-                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            if (m_ScanningDirectory)
             {
                 m_DirectoryScanRequired = true;
             }
@@ -304,6 +303,7 @@ namespace TiltBrush
                         rootIdentity, backend.RootIdentity,
                         directory, m_CurrentSoundClipDirectory, pathComparer))
                 {
+                    if (generation == m_ScanGeneration) { m_DirectoryScanRequired = true; }
                     yield break;
                 }
                 if (query.IsFaulted || query.IsCanceled)
@@ -351,6 +351,7 @@ namespace TiltBrush
                             directory, m_CurrentSoundClipDirectory, pathComparer))
                     {
                         clip.ReleaseThumbnail();
+                        if (generation == m_ScanGeneration) { m_DirectoryScanRequired = true; }
                         yield break;
                     }
                 }
