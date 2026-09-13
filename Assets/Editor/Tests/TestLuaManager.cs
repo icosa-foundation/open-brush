@@ -80,5 +80,24 @@ namespace TiltBrush
             Assert.IsFalse(ScriptedTool.IsToolScriptTriggerHeld(
                 activateCommandIsActive: true, triggerReleasedThisFrame: true));
         }
+
+        [Test]
+        public void ToolScriptStrokePreviewWaitsForLuaVisibleReleaseBeforeFinalizing()
+        {
+            Assert.IsFalse(ScriptedTool.ShouldFinalizeToolScriptGesture(
+                strokePreviewRequested: true, triggerHeld: false,
+                triggerReleasedThisFrame: false));
+            Assert.IsTrue(ScriptedTool.ShouldFinalizeToolScriptGesture(
+                strokePreviewRequested: true, triggerHeld: false,
+                triggerReleasedThisFrame: true));
+        }
+
+        [Test]
+        public void ToolScriptShapePreviewRetainsInactiveCommandFallback()
+        {
+            Assert.IsTrue(ScriptedTool.ShouldFinalizeToolScriptGesture(
+                strokePreviewRequested: false, triggerHeld: false,
+                triggerReleasedThisFrame: false));
+        }
     }
 }

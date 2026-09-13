@@ -168,9 +168,10 @@ namespace TiltBrush
             bool shouldEndUndo = false;
 
             Vector3 upVector = InputManager.m_Instance.GetBrushControllerAttachPoint().rotation * Vector3.up;
+            bool triggerReleasedThisFrame = InputManager.Brush.BecameInactiveThisFrame;
             bool triggerHeld = IsToolScriptTriggerHeld(
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate),
-                InputManager.Brush.BecameInactiveThisFrame);
+                triggerReleasedThisFrame);
             if (triggerHeld)
             {
                 var previewAxisVal = LuaManager.Instance.GetSettingForActiveScript(LuaApiCategory.ToolScript, LuaNames.ToolPreviewAxis);
@@ -262,7 +263,8 @@ namespace TiltBrush
             }
             else
             {
-                if (m_WasClicked)
+                if (m_WasClicked && ShouldFinalizeToolScriptGesture(
+                    strokePreviewRequested, triggerHeld, triggerReleasedThisFrame))
                 {
                     m_WasClicked = false;
                     var snappedStart_CS = GetSnappedToolPoint(
@@ -368,6 +370,20 @@ namespace TiltBrush
             // The command's held state can remain true on the release edge. Treat the edge as
             // authoritative so the last execution gets Tool.isPreview=false before it is committed.
             return activateCommandIsActive && !triggerReleasedThisFrame;
+        }
+
+        internal static bool ShouldFinalizeToolScriptGesture(
+            bool strokePreviewRequested, bool triggerHeld, bool triggerReleasedThisFrame)
+        {
+            if (triggerHeld)
+            {
+                return false;
+            }
+
+            // Stroke-preview scripts may generate different final geometry when Lua observes
+            // Brush.triggerReleasedThisFrame. Do not commit their cached preview during the gap
+            // between the Activate command becoming inactive and that release edge arriving.
+            return !strokePreviewRequested || triggerReleasedThisFrame;
         }
 
         private static TrTransform GetSnappedToolPoint(
