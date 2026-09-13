@@ -746,6 +746,27 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
+        [Test]
+        public void BlocksDirectory_WatchesExistingSourceWithoutCreatingIt()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-blocks-test-{Guid.NewGuid():N}");
+            string models = Path.Combine(root, "Open Brush", "Media Library", "Models");
+            string blocks = Path.Combine(root, "Blocks", "OfflineModels");
+            try
+            {
+                Assert.IsFalse(ModelCatalog.PrepareModelWatchDirectory(blocks, models));
+                Assert.IsFalse(Directory.Exists(root), "An absent Blocks tree must not be created.");
+                Assert.IsTrue(ModelCatalog.PrepareModelWatchDirectory(models, models));
+                Assert.IsTrue(Directory.Exists(models));
+                Directory.CreateDirectory(blocks);
+                Assert.IsTrue(ModelCatalog.PrepareModelWatchDirectory(blocks, models));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void SafModelMaterialization_PrunesOnlyObsoleteFilesInItsGroup(bool cancelled)

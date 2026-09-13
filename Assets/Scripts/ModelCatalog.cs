@@ -124,6 +124,17 @@ namespace TiltBrush
                 .Distinct();
         }
 
+        internal static bool PrepareModelWatchDirectory(string directory, string modelLibraryPath)
+        {
+            // Only Open Brush's own library is ours to create. Blocks is an optional,
+            // externally managed source and must already exist before we watch it.
+            if (string.Equals(directory, modelLibraryPath, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            return Directory.Exists(directory);
+        }
+
         private string GetModelRoot(string path)
         {
             return GetModelDirectories()
@@ -153,7 +164,7 @@ namespace TiltBrush
             foreach (var directory in watchedDirectories.Where(
                          path => !string.IsNullOrEmpty(path)))
             {
-                Directory.CreateDirectory(directory);
+                if (!PrepareModelWatchDirectory(directory, App.ModelLibraryPath())) { continue; }
                 var watcher = new FileWatcher(directory)
                 {
                     NotifyFilter = NotifyFilters.LastWrite
