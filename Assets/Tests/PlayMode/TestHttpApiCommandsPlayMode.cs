@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -195,6 +196,16 @@ namespace TiltBrush
             var dropCamTransform = sketchControls.transform.Find("DropCam");
             Assert.NotNull(dropCamTransform, "DropCam not found under SketchControls");
             return dropCamTransform.gameObject;
+        }
+
+        private static string GetSnapshotPath()
+        {
+            var appType = GetTypeOrFail("TiltBrush.App");
+            var method = appType.GetMethod(
+                "SnapshotPath",
+                BindingFlags.Public | BindingFlags.Static);
+            Assert.NotNull(method, "App.SnapshotPath not found");
+            return (string)method.Invoke(null, null);
         }
 
         private static IEnumerator WaitFrames(int frames)
@@ -815,10 +826,64 @@ namespace TiltBrush
             yield return SendCommand("spectator.mode", "stationary");
             yield return HideSpectatorNormally(2f);
             yield return SendCommand("spectator.toggle");
-            yield return WaitForSpectatorVisible(2f);
+            var dropCamType = GetTypeOrFail("TiltBrush.DropCamWidget");
+            var dropCam = GetDropCam().GetComponent(dropCamType);
+            Assert.NotNull(dropCam, "DropCamWidget component not found");
+            Assert.IsTrue((bool)GetInstanceProperty(dropCam, "isVisible"));
             Assert.IsTrue(Array.Exists(
                 GetDropCam().GetComponentsInChildren<Renderer>(includeInactive: true),
                 renderer => renderer.enabled));
+        }
+
+        [UnityTest]
+        public IEnumerator Cmd_CaptureDropCamRestoresState()
+        {
+            yield return EnsureReady();
+            const string activeFilename = "http-api-test-dropcam-active.png";
+            const string inactiveFilename = "http-api-test-dropcam-inactive.png";
+            string activePath = Path.Combine(GetSnapshotPath(), activeFilename);
+            string inactivePath = Path.Combine(GetSnapshotPath(), inactiveFilename);
+            try
+            {
+                yield return PrepareStationarySpectator();
+                var dropCam = GetDropCam();
+                Vector3 position = dropCam.transform.position;
+                Quaternion rotation = dropCam.transform.rotation;
+
+                yield return SendCommand(
+                    "capture.dropcam",
+                    $"{activeFilename},64,64,false");
+
+                Assert.IsTrue(dropCam.activeSelf);
+                AssertVector3Approx(position, dropCam.transform.position);
+                AssertQuaternionApprox(rotation, dropCam.transform.rotation);
+                Assert.IsTrue(File.Exists(activePath));
+                Assert.Greater(new FileInfo(activePath).Length, 0);
+
+                yield return SendCommand("spectator.off");
+                position = dropCam.transform.position;
+                rotation = dropCam.transform.rotation;
+                yield return SendCommand(
+                    "capture.dropcam",
+                    $"{inactiveFilename},64,64,false");
+
+                Assert.IsFalse(dropCam.activeSelf);
+                AssertVector3Approx(position, dropCam.transform.position);
+                AssertQuaternionApprox(rotation, dropCam.transform.rotation);
+                Assert.IsTrue(File.Exists(inactivePath));
+                Assert.Greater(new FileInfo(inactivePath).Length, 0);
+            }
+            finally
+            {
+                if (File.Exists(activePath))
+                {
+                    File.Delete(activePath);
+                }
+                if (File.Exists(inactivePath))
+                {
+                    File.Delete(inactivePath);
+                }
+            }
         }
 
         [UnityTest]
