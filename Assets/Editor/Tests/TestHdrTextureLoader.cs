@@ -265,6 +265,38 @@ namespace TiltBrush
         }
 
         [Test]
+        public void PopulatesExistingTextureWithoutReplacingIt()
+        {
+            var destination = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+            try
+            {
+                var decoded = new HdrTextureLoader.DecodedImage
+                {
+                    Width = 2,
+                    Height = 1,
+                    Pixels = new[]
+                    {
+                        new Color(4.0f, 0.5f, 0.25f, 0.375f),
+                        new Color(0.25f, 2.0f, 0.5f, 0.75f)
+                    }
+                };
+
+                Texture2D result = HdrTextureLoader.CreateTexture(decoded, destination);
+
+                Assert.AreSame(destination, result);
+                Assert.AreEqual(2, destination.width);
+                Assert.AreEqual(1, destination.height);
+                Assert.AreEqual(TextureFormat.RGBAHalf, destination.format);
+                Assert.AreEqual(4.0f, destination.GetPixel(0, 0).r, 0.01f);
+                Assert.AreEqual(0.375f, destination.GetPixel(0, 0).a, 0.01f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(destination);
+            }
+        }
+
+        [Test]
         public void ReadsRadianceDimensionsBeforeDecode()
         {
             byte[] bytes = Encoding.ASCII.GetBytes(

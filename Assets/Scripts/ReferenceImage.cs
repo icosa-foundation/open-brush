@@ -194,8 +194,6 @@ namespace TiltBrush
         IEnumerable LoadHdrImage(string path)
         {
             m_FullSizeReferences++;
-            Texture2D loadedTexture = null;
-            Texture2D resizedTexture = null;
             int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
             int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
@@ -226,21 +224,8 @@ namespace TiltBrush
                 {
                     throw decodeError;
                 }
-                loadedTexture = HdrTextureLoader.CreateTexture(decoded);
-                int resizeLimit = resizeDimension;
-                if (loadedTexture.width > resizeLimit || loadedTexture.height > resizeLimit)
-                {
-                    resizedTexture = ResampleTexture(
-                        loadedTexture, resizeLimit, TextureFormat.RGBAHalf,
-                        RenderTextureFormat.ARGBHalf, linear: true);
-                }
-
-                Texture2D replacement = resizedTexture != null ? resizedTexture : loadedTexture;
-                Object.Destroy(m_FullSize);
-                m_FullSize = replacement;
+                HdrTextureLoader.CreateTexture(decoded, m_FullSize);
                 ImageCache.SaveImageCache(m_FullSize, path);
-                loadedTexture = null;
-                resizedTexture = null;
             }
             catch (Exception e)
             {
@@ -248,14 +233,6 @@ namespace TiltBrush
             }
             finally
             {
-                if (resizedTexture != null)
-                {
-                    Object.Destroy(resizedTexture);
-                }
-                if (loadedTexture != null)
-                {
-                    Object.Destroy(loadedTexture);
-                }
                 ReleaseImageFullsize();
             }
             yield break;

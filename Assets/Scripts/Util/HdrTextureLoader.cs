@@ -152,10 +152,19 @@ namespace TiltBrush
             throw new ArgumentException($"Unsupported HDR image extension: {extension}", nameof(path));
         }
 
-        public static Texture2D CreateTexture(DecodedImage image)
+        public static Texture2D CreateTexture(DecodedImage image, Texture2D destination = null)
         {
-            var texture = new Texture2D(
-                image.Width, image.Height, TextureFormat.RGBAHalf, false, true);
+            Texture2D texture = destination;
+            if (texture == null)
+            {
+                texture = new Texture2D(
+                    image.Width, image.Height, TextureFormat.RGBAHalf, false, true);
+            }
+            else
+            {
+                texture.Reinitialize(
+                    image.Width, image.Height, TextureFormat.RGBAHalf, false);
+            }
             texture.SetPixels(image.Pixels);
             texture.Apply(false, false);
             return texture;
