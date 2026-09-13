@@ -3023,6 +3023,8 @@ ColorOverrideMode.Add = nil
 
 
 ---@class Tool
+---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
