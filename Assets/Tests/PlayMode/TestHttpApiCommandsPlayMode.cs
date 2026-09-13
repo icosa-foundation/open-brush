@@ -861,6 +861,10 @@ namespace TiltBrush
                 Assert.Greater(new FileInfo(activePath).Length, 0);
 
                 yield return SendCommand("spectator.off");
+                yield return SendCommand("spectator.mode", "slowFollow");
+                dropCam.transform.SetPositionAndRotation(
+                    dropCam.transform.position + new Vector3(1, 2, 3),
+                    Quaternion.Euler(10, 20, 30));
                 position = dropCam.transform.position;
                 rotation = dropCam.transform.rotation;
                 yield return SendCommand(

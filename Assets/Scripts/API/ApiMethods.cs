@@ -265,11 +265,15 @@ namespace TiltBrush
             string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
             DropCamWidget dropCam = null;
             bool wasActive = false;
+            Vector3 previousPosition = default;
+            Quaternion previousRotation = default;
             bool shouldRestoreDropCam = false;
             try
             {
                 dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
                 wasActive = dropCam.gameObject.activeSelf;
+                previousPosition = dropCam.transform.position;
+                previousRotation = dropCam.transform.rotation;
                 shouldRestoreDropCam = true;
                 dropCam.ShowInstantly(true);
 
@@ -297,6 +301,11 @@ namespace TiltBrush
                 if (shouldRestoreDropCam && dropCam != null)
                 {
                     dropCam.ShowInstantly(wasActive);
+                    if (!wasActive)
+                    {
+                        dropCam.transform.SetPositionAndRotation(
+                            previousPosition, previousRotation);
+                    }
                 }
             }
         }
