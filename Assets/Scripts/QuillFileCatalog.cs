@@ -340,24 +340,8 @@ namespace TiltBrush
                 string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory);
                 var query = new Future<List<QuillFileInfo>>(() =>
                 {
-                    var result = new List<QuillFileInfo>();
-                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill,
-                        relativeDirectory == "." ? "" : relativeDirectory.Replace('\\', '/'),
-                        CancellationToken.None);
-                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
-                    {
-                        throw new IOException(listing.Error);
-                    }
-                    if (!listing.Success) { return result; }
-                    foreach (StorageDocument document in listing.Documents)
-                    {
-                        if (document.IsDirectory || !Path.GetExtension(document.DisplayName)
-                                .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
-                        string path = backend.Materialize(document.DocumentId,
-                            MaterializationScope.File, CancellationToken.None);
-                        result.Add(QuillFileInfo.FromImmFile(new FileInfo(path)));
-                    }
-                    return result;
+                    return QuerySafFiles(backend,
+                        relativeDirectory == "." ? "" : relativeDirectory.Replace('\\', '/'));
                 }, cleanupFunction: null, longRunning: true);
                 while (true)
                 {
@@ -429,6 +413,73 @@ namespace TiltBrush
         {
             string quillJson = Path.Combine(directoryPath, "Quill.json");
             return File.Exists(quillJson);
+        }
+
+        internal static List<QuillFileInfo> QuerySafFiles(
+            IUserStorageBackend backend, string relativeDirectory)
+        {
+            if (backend == null) { throw new ArgumentNullException(nameof(backend)); }
+            string directory = (relativeDirectory ?? "").Replace('\\', '/').Trim('/');
+            string rootIdentity = backend.RootIdentity;
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.MediaLibraryQuill, directory, CancellationToken.None);
+            EnsureSafRootUnchanged(backend, rootIdentity);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException(listing.Error);
+            }
+            if (!listing.Success) { return new List<QuillFileInfo>(); }
+
+            var result = new List<QuillFileInfo>();
+            foreach (StorageDocument document in listing.Documents)
+            {
+                EnsureSafRootUnchanged(backend, rootIdentity);
+                if (document.IsDirectory)
+                {
+                    string childDirectory = string.IsNullOrEmpty(directory)
+                        ? document.DisplayName
+                        : $"{directory}/{document.DisplayName}";
+                    StorageDirectoryResult children = backend.List(
+                        StorageArea.MediaLibraryQuill, childDirectory, CancellationToken.None);
+                    EnsureSafRootUnchanged(backend, rootIdentity);
+                    if (!children.Success)
+                    {
+                        if (children.Code == StorageResultCode.NotFound) { continue; }
+                        throw new IOException(children.Error);
+                    }
+                    bool hasQuillJson = children.Documents.Any(child =>
+                        !child.IsDirectory && child.ParentDocumentId.Equals(document.DocumentId) &&
+                        child.DisplayName == "Quill.json");
+                    bool hasQuillQbin = children.Documents.Any(child =>
+                        !child.IsDirectory && child.ParentDocumentId.Equals(document.DocumentId) &&
+                        child.DisplayName == "Quill.qbin");
+                    if (!hasQuillJson || !hasQuillQbin) { continue; }
+
+                    // File scope also materializes directory documents recursively; dependency
+                    // tree scope adds model-specific reconciliation, which Quill does not need.
+                    string path = backend.Materialize(
+                        document.DocumentId, MaterializationScope.File, CancellationToken.None);
+                    EnsureSafRootUnchanged(backend, rootIdentity);
+                    result.Add(QuillFileInfo.FromQuillDirectory(new DirectoryInfo(path)));
+                    continue;
+                }
+                if (!Path.GetExtension(document.DisplayName)
+                        .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
+                string immPath = backend.Materialize(
+                    document.DocumentId, MaterializationScope.File, CancellationToken.None);
+                EnsureSafRootUnchanged(backend, rootIdentity);
+                result.Add(QuillFileInfo.FromImmFile(new FileInfo(immPath)));
+            }
+            return result;
+        }
+
+        private static void EnsureSafRootUnchanged(
+            IUserStorageBackend backend, string rootIdentity)
+        {
+            if (!string.Equals(rootIdentity, backend.RootIdentity, StringComparison.Ordinal))
+            {
+                throw new IOException("The selected Open Brush folder changed during Quill scan.");
+            }
         }
 
         private static string GetDirectoryForSource(SourceDirectory sourceDirectory)

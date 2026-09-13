@@ -108,3 +108,4 @@
 2. Prioritize U1, U7, U9 and U10 because they can change or lose restored scene content.
 3. U2, U4, U6, U11 and U12 have overlapping watcher/scan symptoms; keep the underlying fixes and issue scopes distinct.
 4. Do not label stubbed media initialization or production-method checks as Android provider or full Unity tests.
+5. Quill discovery observation: local `IsQuillProject` checks only for `Quill.json`, so an incomplete directory lacking `Quill.qbin` can appear in the catalog. The SAF review fix recognizes complete containers with both exact-case filenames. Confirm the import-time consequence of a missing binary before filing an upstream issue; this local heuristic was not changed by the SAF fix.

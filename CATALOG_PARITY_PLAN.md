@@ -27,7 +27,7 @@
 | 7 | P2 | Repair local video/sound change processing and watcher ownership | Changes retain folder/extension filters, new+changed paths deduplicate, prior watchers are disposed; independent fixes/reports remain separate | Implemented; isolated filtering, batching and native rename cases pass; Unity/device ownership and playback validation pending |
 | 8 | P2 | Standardize scan lifecycle | Root/directory/generation changes reject stale results; missing/unreadable folders clear scanning flags and permit recovery | Mechanical safeguards implemented; isolated stale-query, failure cleanup and queued-refresh cases pass; failure presentation deferred; Unity/device validation pending |
 | 9 | P2 | Repair remaining restoration side effects | Resolved images do not enter another folder's panel list; normalized missing-model recovery clears the correct pending entry after success | Implemented; image lookup regression compiles; model checks passed under action 4; Unity validation pending |
-| 10 | P2 | Resolve Quill project-directory parity | Equivalent project containers work through SAF, or an intentional restriction is explicitly agreed and documented | Discussion deferred to the end at user's request |
+| 10 | P2 | Resolve Quill project-directory parity | Equivalent project containers work through SAF, or an intentional restriction is explicitly agreed and documented | User authorized the review fix; complete direct-child Quill projects now materialize through SAF; six isolated cases pass; actual Unity/Android import validation pending |
 | 11 | P2 | Normalize video extension matching | Uppercase extensions behave like lowercase in discovery and updates | Discovery, network-pointer recognition and update filtering implemented; isolated checks passed; Unity validation pending |
 | 12 | Release gate | Run a shared parity matrix | Local and delayed fake-SAF tests pass, followed by real Android provider tests for navigation, identities, restoration and updates | Partial: isolated suites pass and generated Editor test project builds; full Unity/Android matrix and deferred decisions remain outstanding |
 
@@ -52,15 +52,17 @@ Detailed reproduction steps, evidence limits and proposed actions are tracked in
 ## Deferred discussions
 
 1. Action 3: source identity and ambiguous legacy Blocks/Models references.
-2. Action 10: Quill project-container support through SAF.
-3. Action 8: presentation of scan failures, including retaining or clearing previously displayed entries. Mechanical cleanup and stale-result guards can proceed without selecting a new failure-presentation policy.
-4. User requested completing all work within the agreed contract before returning to these discussions. No pushes or upstream issue submission are authorized.
+2. Action 8: presentation of scan failures, including retaining or clearing previously displayed entries. Mechanical cleanup and stale-result guards can proceed without selecting a new failure-presentation policy.
+3. Action 10 is no longer deferred: the user authorized fixing the Quill review finding, pushing both new review fixes and resolving the addressed threads. Upstream issue submission remains unauthorized.
 
-## Validation matrix
+## Review follow-ups
 
-Review follow-up, 2026-09-13:
+2026-09-13:
 
 1. P1 / `discussion_r4000339652`: repeated exports could overwrite earlier shared exports after their private staging directory was deleted. Fixed by selecting names against the shared Exports area and pending publication journals under a per-root export reservation lock. Journaled destinations remain stable during recovery. Eight isolated NUnit cases pass, including completed and failed/recovered repeated exports; the Editor test project builds. Real Android provider validation remains pending.
+2. P2 / `discussion_r4000339654`: complete unpacked Quill projects were excluded by the SAF scan. Fixed selected-folder discovery and directory materialization for direct-child projects containing `Quill.json` and `Quill.qbin`, preserving standalone IMM support and rejecting root changes. Six isolated NUnit cases pass, including nested navigation, incomplete/case-mismatched containers, wrong parent IDs and changed roots. Full Editor test project builds; fake materialization does not validate real Quill imports. Local discovery's existing JSON-only heuristic is unchanged and noted in the upstream report document as an additional validation item.
+
+## Validation matrix
 
 1. Root/A/B/deeper folders, same basenames across folders and roots, and supported/unsupported extensions with varied case.
 2. Saved references outside the open folder, references spanning sibling folders, cold startup and recovery of missing files.
