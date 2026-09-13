@@ -31,7 +31,7 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
         private bool m_WaitingForSketchSetUpdate;
-        private bool m_SafSubscribed;
+        private bool m_SketchSetSubscribed;
         private bool m_SeedingSafDefaults;
         private string m_SafSeedAttemptedRootIdentity;
         private const string kSafSeedPreference =
@@ -60,21 +60,19 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
-            if (m_FileWatcher != null)
-            {
-                m_FileWatcher.EnableRaisingEvents = false;
-                m_FileWatcher = null;
-            }
+            StopWatchingCurrentDirectory();
             m_CurrentSavedStrokesDirectory = newPath;
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
+            EnsureSketchSetSubscription();
+            SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes)?.RequestRefresh();
             StartCoroutine(ScanReferenceDirectory());
 
             if (!IsSafStorage && Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSavedStrokesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
@@ -94,6 +92,18 @@ namespace TiltBrush
         {
             return !path.EndsWith(
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsNavigableLocalDirectory(string path)
+        {
+            try
+            {
+                return IsNavigableDirectory(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         internal static bool IsPathWithinDirectory(string root, string path)
@@ -132,13 +142,10 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            if (m_FileWatcher != null)
-            {
-                m_FileWatcher.EnableRaisingEvents = false;
-            }
+            StopWatchingCurrentDirectory();
 
             // Clean up event subscription if still active
-            if (m_WaitingForSketchSetUpdate || m_SafSubscribed)
+            if (m_WaitingForSketchSetUpdate || m_SketchSetSubscribed)
             {
                 var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
                 if (sketchSet != null)
@@ -166,9 +173,9 @@ namespace TiltBrush
         // has already scanned.
         private void Update()
         {
+            EnsureSketchSetSubscription();
             if (IsSafStorage)
             {
-                EnsureSafSubscription();
                 if (!m_SeedingSafDefaults &&
                     UserStorage.Backend.IsReady &&
                     m_SafSeedAttemptedRootIdentity !=
@@ -198,7 +205,19 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
+            if (!ReferenceEquals(source, m_FileWatcher)) { return; }
             m_DirectoryScanRequired = true;
+        }
+
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null) { return; }
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public void NotifyFileCreated(string fullpath)
@@ -208,10 +227,10 @@ namespace TiltBrush
                 NotifyStorageChanged();
                 return;
             }
-            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            if (IsPathWithinDirectory(m_CurrentSavedStrokesDirectory, fullpath))
             {
                 // Don't scan immediately - wait for FileSketchSet to process the file
-                if (!m_WaitingForSketchSetUpdate)
+                if (!m_WaitingForSketchSetUpdate && !m_SketchSetSubscribed)
                 {
                     var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
                     if (sketchSet != null)
@@ -240,14 +259,14 @@ namespace TiltBrush
             SketchSet sketchSet =
                 SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
             sketchSet?.RequestRefresh();
-            EnsureSafSubscription();
+            EnsureSketchSetSubscription();
         }
 
         private void OnFileSketchSetChanged()
         {
             m_DirectoryScanRequired = true;
 
-            if (IsSafStorage)
+            if (m_SketchSetSubscribed)
             {
                 return;
             }
@@ -321,9 +340,9 @@ namespace TiltBrush
             return string.Equals(parentPath, logicalParent, StringComparison.OrdinalIgnoreCase);
         }
 
-        private void EnsureSafSubscription()
+        private void EnsureSketchSetSubscription()
         {
-            if (!IsSafStorage || m_SafSubscribed || SketchCatalog.m_Instance == null)
+            if (m_SketchSetSubscribed || SketchCatalog.m_Instance == null)
             {
                 return;
             }
@@ -331,8 +350,9 @@ namespace TiltBrush
                 SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
             if (sketchSet != null)
             {
-                sketchSet.OnChanged += OnFileSketchSetChanged;
-                m_SafSubscribed = true;
+                if (!m_WaitingForSketchSetUpdate) { sketchSet.OnChanged += OnFileSketchSetChanged; }
+                m_WaitingForSketchSetUpdate = false;
+                m_SketchSetSubscribed = true;
             }
         }
 

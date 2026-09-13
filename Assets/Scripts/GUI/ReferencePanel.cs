@@ -284,7 +284,7 @@ namespace TiltBrush
                         ? Directory.GetDirectories(currentDir)
                             .Where(path => m_CurrentTab.ReferenceButtonType !=
                                 ReferenceButton.Type.SavedStrokes ||
-                                SavedStrokesCatalog.IsNavigableDirectory(path))
+                                SavedStrokesCatalog.IsNavigableLocalDirectory(path))
                             .ToArray()
                         : System.Array.Empty<string>();
                 }

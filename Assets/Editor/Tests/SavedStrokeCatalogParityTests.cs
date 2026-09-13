@@ -8,6 +8,52 @@ namespace TiltBrush
     internal class SavedStrokeCatalogParityTests
     {
         [Test]
+        public void LocalSavedStrokeRefreshTracksNestedFolderMovesAndDeletion()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"saved-stroke-refresh-{System.Guid.NewGuid():N}");
+            string container = Path.Combine(root, "A", "Container.tilt");
+            Directory.CreateDirectory(container);
+            try
+            {
+                foreach (string name in new[] { TiltFile.FN_METADATA, TiltFile.FN_SKETCH, TiltFile.FN_THUMBNAIL })
+                {
+                    File.WriteAllText(Path.Combine(container, name), name);
+                }
+                var set = (FileSketchSet)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(FileSketchSet));
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                void Set(string name, object value) => typeof(FileSketchSet).GetField(name, flags).SetValue(set, value);
+                var sketches = typeof(FileSketchSet).GetField("m_Sketches", flags);
+                sketches.SetValue(set, System.Activator.CreateInstance(sketches.FieldType));
+                Set("m_Type", SketchSetType.SavedStrokes);
+                Set("m_SketchesPath", root);
+                Set("m_RequestedLoads", new System.Collections.Generic.Stack<int>());
+                Set("Update__working", new System.Collections.Generic.Stack<int>());
+                Set("m_ToAdd", new System.Collections.Queue());
+                Set("m_ToDelete", new System.Collections.Queue());
+                int updates = 0;
+                Set("OnChanged", (System.Action)(() => ++updates));
+                set.RequestRefresh();
+                set.Update();
+                Assert.AreEqual(1, set.NumSketches);
+                Assert.AreEqual(container, set.GetSketchSceneFileInfo(0).FullPath);
+                Directory.Move(Path.Combine(root, "A"), Path.Combine(root, "B"));
+                set.RequestRefresh();
+                set.Update();
+                Assert.AreEqual(1, set.NumSketches);
+                Assert.AreEqual(Path.Combine(root, "B", "Container.tilt"), set.GetSketchSceneFileInfo(0).FullPath);
+                Directory.Delete(Path.Combine(root, "B"), true);
+                set.RequestRefresh();
+                set.Update();
+                Assert.AreEqual(0, set.NumSketches);
+                Assert.AreEqual(3, updates);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [Test]
         public void SafDirectorySketchReadsContainerChildrenRatherThanDirectoryStream()
         {
             string root = Path.Combine(Path.GetTempPath(), $"saved-stroke-container-{System.Guid.NewGuid():N}");

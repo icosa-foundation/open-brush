@@ -221,6 +221,7 @@ namespace TiltBrush
         private Queue m_ToDelete;
         private bool m_ReadOnly;
         private string m_SketchesPath;
+        private volatile bool m_RefreshRequested;
 
         public SketchSetType Type
         {
@@ -402,9 +403,14 @@ namespace TiltBrush
                     m_FileWatcher.FileCreated -= fileCreatedHandler;
                     m_FileWatcher.FileDeleted -= fileDeletedHandler;
                     m_FileWatcher.FileChanged -= fileChangedHandler;
+                    m_FileWatcher.Dispose();
                 }
 
-                m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
+                // Saved strokes use a tree index. Watch ordinary folder moves and edits
+                // inside directory-format sketches as well as .tilt file changes.
+                m_FileWatcher = m_Type == SketchSetType.SavedStrokes
+                    ? new FileWatcher(m_SketchesPath)
+                    : new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
 
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
@@ -414,14 +420,17 @@ namespace TiltBrush
 
                 fileCreatedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
                     m_ToAdd.Enqueue(e.FullPath);
                 };
                 fileDeletedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
                     m_ToDelete.Enqueue(e.FullPath);
                 };
                 fileChangedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
@@ -479,10 +488,22 @@ namespace TiltBrush
 
         public void RequestRefresh()
         {
+            if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; }
         }
 
         public void Update()
         {
+            // Coalesce filesystem notifications into one refresh on the main thread.
+            // Other sketch sets keep their existing incremental, root-only behavior.
+            if (m_RefreshRequested)
+            {
+                m_RefreshRequested = false;
+                foreach (FileSketch sketch in m_Sketches) { sketch.UnloadIcon(); }
+                m_RequestedLoads.Clear();
+                m_Sketches.Clear();
+                ProcessDirectory(m_SketchesPath);
+                OnChanged();
+            }
             // process async directory changes from file system watcher
             // note: code here assumes we're the only consumer
             bool changedEvent = false;
@@ -542,32 +563,34 @@ namespace TiltBrush
             directories.Push(path);
             while (directories.Count > 0)
             {
-                var di = new DirectoryInfo(directories.Pop());
-                if (!di.Exists)
+                string directory = directories.Pop();
+                try
                 {
-                    continue;
-                }
-                foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
-                {
-                    //don't add bogus files to the catalog
-                    if (info.IsHeaderValid())
+                    var di = new DirectoryInfo(directory);
+                    if (!di.Exists) { continue; }
+                    foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
                     {
-                        AddSketchToSet(info);
+                        //don't add bogus files to the catalog
+                        if (info.IsHeaderValid()) { AddSketchToSet(info); }
                     }
-                }
-                // Saved-stroke navigation uses the one catalog for all folders. A .tilt
-                // directory is itself a sketch container and must not be traversed.
-                if (m_Type == SketchSetType.SavedStrokes)
-                {
-                    foreach (DirectoryInfo child in di.EnumerateDirectories())
+                    // A .tilt directory is a sketch container, not a folder to traverse.
+                    // Do not follow directory links that can cycle or leave the library.
+                    if (m_Type == SketchSetType.SavedStrokes)
                     {
-                        if (!child.Name.EndsWith(
-                                SaveLoadScript.TILT_SUFFIX,
-                                StringComparison.OrdinalIgnoreCase))
+                        foreach (DirectoryInfo child in di.EnumerateDirectories())
                         {
-                            directories.Push(child.FullName);
+                            if (!child.Name.EndsWith(SaveLoadScript.TILT_SUFFIX,
+                                    StringComparison.OrdinalIgnoreCase) &&
+                                (child.Attributes & FileAttributes.ReparsePoint) == 0)
+                            {
+                                directories.Push(child.FullName);
+                            }
                         }
                     }
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning($"CATALOG_SCAN Could not scan sketch folder {directory}: {e.Message}");
                 }
             }
             m_Sketches.Sort();
