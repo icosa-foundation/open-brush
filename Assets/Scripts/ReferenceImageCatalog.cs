@@ -830,7 +830,6 @@ namespace TiltBrush
             if (refImage == null)
             {
                 refImage = new ReferenceImage(fullPath);
-                m_Images.Add(refImage);
             }
             return refImage;
         }
