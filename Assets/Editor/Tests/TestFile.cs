@@ -746,6 +746,27 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
+        [TestCase("/sdcard/Blocks/OfflineModels")]
+        [TestCase("/sdcard/Documents/Blocks/OfflineModels")]
+        [TestCase("/Users/example/Documents/Blocks/OfflineModels")]
+        public void BlocksDirectory_ConvertsPathsFromActualRoot(string root)
+        {
+            Assert.AreEqual("project/model.obj", WidgetManager.GetBlocksModelSubpath(
+                $"{root}/project/model.obj", root));
+            Assert.AreEqual("project/model.obj", WidgetManager.GetBlocksModelSubpath(
+                $"{root}/project/../project/model.obj", $"{root}/"));
+            Assert.AreEqual("", WidgetManager.GetBlocksModelSubpath(root, root));
+            Assert.IsNull(WidgetManager.GetBlocksModelSubpath($"{root}-other/model.obj", root));
+            Assert.IsNull(WidgetManager.GetBlocksModelSubpath($"{root}/../outside/model.obj", root));
+        }
+
+        [Test]
+        public void BlocksDirectory_RejectsUnrootedModelPath()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                WidgetManager.GetBlocksModelSubpath("project/model.obj", "/sdcard/Blocks/OfflineModels"));
+        }
+
         [TestCase(false, "/sdcard/Blocks/OfflineModels")]
         [TestCase(true, "/sdcard/Documents/Blocks/OfflineModels")]
         public void BlocksDirectory_AndroidRootIsIndependentOfPrivateUserCache(

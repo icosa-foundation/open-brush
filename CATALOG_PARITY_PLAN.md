@@ -18,7 +18,7 @@
 
 | ID | Priority | Action | Acceptance criteria | Status |
 |---|---|---|---|---|
-| 1 | P1 | Finish Blocks path conversion fix | Both WidgetManager helpers derive paths from the actual Blocks root, not UserPath; local, Google Play and Lepton cases work; sibling-prefix/traversal paths rejected | In progress |
+| 1 | P1 | Finish Blocks path conversion fix | Both WidgetManager helpers derive paths from the actual Blocks root, not UserPath; local, Google Play and Lepton cases work; sibling-prefix/traversal paths rejected | Implemented; isolated checks passed; Unity/device validation pending |
 | 2 | P1 | Restore videos independently of browser state | Saved videos in two sibling folders reload from any active folder; local and SAF fallbacks validate paths and preserve missing-file behavior | Pending |
 | 3 | P1 | Eliminate Blocks/Models identity collisions | Equal relative paths under different roots stay distinct and reload the intended file; compatibility policy for old references tested | Pending |
 | 4 | P1 | Verify/fix asynchronous SAF model restoration | Delayed cold-start indexing and restored missing files resolve pending widgets without requiring folder navigation | Pending |
@@ -56,3 +56,4 @@
 
 1. 2026-09-13: Created plan. Prior review fixes `1b1d048e9` (reject directory overwrite targets) and `d61fc4c13` (direct-child video/sound listings) are committed locally, not pushed. The latter needs action 2 before the workflow can be considered covered.
 2. 2026-09-13: Began action 1. Earlier `3261395be` fixed the Blocks root but left UserPath-based substring assumptions in `WidgetManager.GetPathRootedAtBlocks` and `GetModelSubpath`; audit reproduced an exception with a private working-cache path.
+3. 2026-09-13: Implemented action 1: both Blocks conversions share a root-based, normalized, boundary-checked helper; legacy `Blocks/OfflineModels/...` output remains unchanged. Added NUnit regressions. Passed 23 isolated production-method checks across shared Android, Lepton and desktop roots, root equality, sibling-prefix/traversal rejection, and ordinary Models lookup. The App.UserPath stub throws if accessed, verifying the dependency is removed. Unity/device tests have not run. Commit message: `Derive Blocks model paths from the actual Blocks root`.
