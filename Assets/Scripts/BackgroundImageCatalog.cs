@@ -42,18 +42,7 @@ namespace TiltBrush
         public override void ChangeDirectory(string newPath)
         {
             m_CurrentBackgroundImagesDirectory = newPath;
-            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
-                Directory.Exists(m_CurrentBackgroundImagesDirectory))
-            {
-                m_FileWatcher = new FileWatcher(m_CurrentBackgroundImagesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
-            m_Images = new List<ReferenceImage>();
-            ProcessReferenceDirectory(userOverlay: false);
+            base.ChangeDirectory(newPath);
         }
 
         public override string HomeDirectory => App.BackgroundImagesLibraryPath();

@@ -85,12 +85,12 @@ namespace TiltBrush
         public virtual void ChangeDirectory(string newPath)
         {
             m_CurrentImagesDirectory = newPath;
-
+            StopWatchingCurrentDirectory();
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
                 Directory.Exists(m_CurrentImagesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnChanged;
                 m_FileWatcher.FileCreated += OnChanged;
                 m_FileWatcher.FileDeleted += OnChanged;
@@ -98,7 +98,26 @@ namespace TiltBrush
             }
 
             m_Images = new List<ReferenceImage>();
+            m_RequestedLoads.Clear();
+            m_ResetImageEnumeration = true;
+            m_ChangedFile = null;
             ProcessReferenceDirectory(userOverlay: false);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            StopWatchingCurrentDirectory();
+        }
+
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null) { return; }
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnChanged;
+            m_FileWatcher.FileCreated -= OnChanged;
+            m_FileWatcher.FileDeleted -= OnChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
@@ -449,6 +468,7 @@ namespace TiltBrush
 
         protected void OnChanged(object source, FileSystemEventArgs e)
         {
+            if (!ReferenceEquals(source, m_FileWatcher)) { return; }
             m_DirNeedsProcessing = true;
 
             // If a file was changed, store the name so we can refresh it.
