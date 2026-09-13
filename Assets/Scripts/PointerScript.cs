@@ -1101,12 +1101,13 @@ namespace TiltBrush
         // During playback, rMemoryObjectForPlayback is non-null, and strokeFlags should not be passed.
         // otherwise, rMemoryObjectForPlayback is null, and strokeFlags should be valid.
         // When non-null, rMemoryObjectForPlayback corresponds to the current line.
-        public void DetachLine(
+        public Stroke DetachLine(
             bool bDiscard,
             Stroke rMemoryObjectForPlayback,
             SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None,
             bool isFinalStroke = false)
         {
+            Stroke detachedStroke = null;
 
             if (rMemoryObjectForPlayback != null)
             {
@@ -1180,6 +1181,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = subset.m_Stroke;
                 }
                 else
                 {
@@ -1221,6 +1223,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = m_CurrentLine.Stroke;
                 }
                 else
                 {
@@ -1247,6 +1250,7 @@ namespace TiltBrush
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
             m_ControlPointColors = null;
+            return detachedStroke;
         }
 
         public bool ShouldCurrentLineEnd()
