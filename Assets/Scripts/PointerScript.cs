@@ -718,7 +718,19 @@ namespace TiltBrush
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
                 line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
-                line.SetPreviewMode();
+                if (m_ToolScriptStrokeCreator == null)
+                {
+                    line.SetPreviewMode();
+                }
+                else
+                {
+                    // A Tool Script preview replays a complete candidate stroke. Ordinary
+                    // pointer previews use preview mode to taper the initial knot to zero
+                    // pressure and relax other drawing behavior, which makes their mesh differ
+                    // from the committed stroke. Use the same deterministic seed as
+                    // DrawNestedTrList as well, so randomized brush geometry remains stable.
+                    line.RandomSeed = 0;
+                }
 
                 m_PreviewLine = line;
                 m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
