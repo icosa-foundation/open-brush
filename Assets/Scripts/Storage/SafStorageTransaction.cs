@@ -522,41 +522,56 @@ namespace TiltBrush
             {
                 throw new IOException(listing.Error);
             }
-            if (TargetDocumentId.IsValid)
+            m_Record.TargetDocumentId = ResolveFileOverwriteTarget(
+                listing.Documents, TargetDocumentId, m_Record.TargetDisplayName).Value;
+        }
+
+        internal static StorageDocumentId ResolveFileOverwriteTarget(
+            IReadOnlyList<StorageDocument> documents, StorageDocumentId targetDocumentId, string targetName)
+        {
+            if (targetDocumentId.IsValid)
             {
-                StorageDocument target = listing.Documents.FirstOrDefault(document =>
-                    document.DocumentId.Equals(TargetDocumentId));
+                StorageDocument target = documents.FirstOrDefault(document =>
+                    document.DocumentId.Equals(targetDocumentId));
                 if (target == null)
                 {
                     throw new IOException(
                         "The SAF document selected for overwrite no longer exists.");
                 }
+                if (target.IsDirectory)
+                {
+                    throw new IOException("A SAF directory cannot be overwritten by a file.");
+                }
                 if (!string.Equals(
                         target.DisplayName,
-                        m_Record.TargetDisplayName,
+                        targetName,
                         StringComparison.Ordinal))
                 {
                     throw new IOException(
                         "The SAF document selected for overwrite was renamed externally.");
                 }
-                if (listing.Documents.Any(document =>
-                        !document.DocumentId.Equals(TargetDocumentId) &&
+                if (documents.Any(document =>
+                        !document.DocumentId.Equals(targetDocumentId) &&
                         string.Equals(
                             document.DisplayName,
-                            m_Record.TargetDisplayName,
+                            targetName,
                             StringComparison.OrdinalIgnoreCase)))
                 {
                     throw new IOException(
                         "Multiple SAF documents share the overwrite destination name.");
                 }
-                return;
+                return target.DocumentId;
             }
 
-            List<StorageDocument> matches = listing.Documents.Where(document =>
+            List<StorageDocument> matches = documents.Where(document =>
                 string.Equals(
                     document.DisplayName,
-                    m_Record.TargetDisplayName,
+                    targetName,
                     StringComparison.OrdinalIgnoreCase)).ToList();
+            if (matches.Any(document => document.IsDirectory))
+            {
+                throw new IOException("A SAF directory already occupies the requested filename.");
+            }
             if (matches.Count > 1)
             {
                 throw new IOException(
@@ -564,8 +579,9 @@ namespace TiltBrush
             }
             if (matches.Count == 1)
             {
-                m_Record.TargetDocumentId = matches[0].DocumentId.Value;
+                return matches[0].DocumentId;
             }
+            return default;
         }
 
         private Stream OpenTemporaryRead()

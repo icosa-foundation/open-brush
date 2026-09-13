@@ -1,9 +1,52 @@
+using System.IO;
 using NUnit.Framework;
 
 namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        private static StorageDocument OverwriteDocument(string id, string name, bool directory)
+        {
+            return new StorageDocument(new StorageDocumentId(id), default, name,
+                "application/octet-stream", directory, null, null, 0, name);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_RejectsDirectoryByNameOrExplicitIdentity(bool explicitIdentity)
+        {
+            StorageDocument directory = OverwriteDocument("directory", "target.bin", true);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { directory }, explicitIdentity ? directory.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_AllowsExistingFile(bool explicitIdentity)
+        {
+            StorageDocument file = OverwriteDocument("file", "target.bin", false);
+            Assert.AreEqual(file.DocumentId, SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_RejectsFileAndDirectoryNameCollision(bool explicitIdentity)
+        {
+            StorageDocument file = OverwriteDocument("file", "target.bin", false);
+            StorageDocument directory = OverwriteDocument("directory", "TARGET.BIN", true);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file, directory }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [Test]
+        public void SafOverwrite_AllowsNewFileAlongsideUnrelatedDirectory()
+        {
+            StorageDocument directory = OverwriteDocument("directory", "other", true);
+            Assert.IsFalse(SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { directory }, default, "target.bin").IsValid);
+        }
+
         [Test]
         public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
         {
