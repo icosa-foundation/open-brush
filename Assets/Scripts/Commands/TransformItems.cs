@@ -144,6 +144,7 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
             );
+            AudioManager.m_Instance.PlayGroupedSound(App.Scene.SelectionCanvas.GetCanvasBoundingBox().center);
         }
     }
 }
