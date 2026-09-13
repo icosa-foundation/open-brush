@@ -479,6 +479,15 @@ namespace TiltBrush
             Assert.NotNull(startUndo, "ApiManager.StartUndo not found");
             Assert.NotNull(endUndo, "ApiManager.EndUndo not found");
             Assert.NotNull(enableTool, "ScriptedTool.EnableTool not found");
+            Type luaManagerType = GetTypeOrFail("TiltBrush.LuaManager");
+            object luaManager = GetStaticProperty(luaManagerType, "Instance");
+            if (!(bool)GetInstanceProperty(luaManager, "IsInitialized"))
+            {
+                MethodInfo initLua = luaManagerType.GetMethod(
+                    "Init", BindingFlags.Public | BindingFlags.Instance);
+                Assert.NotNull(initLua, "LuaManager.Init not found");
+                initLua.Invoke(luaManager, new object[] { true });
+            }
 
             try
             {
