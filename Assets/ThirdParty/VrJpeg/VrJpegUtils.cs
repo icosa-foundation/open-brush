@@ -50,12 +50,15 @@ namespace TiltBrush
         /// <param name="layout">How to arrange the left and right eye images</param>
         /// <param name="fillPoles">Whether to fill in the poles using interpolation</param>
         /// <param name="maxWidth">Maximum width of the output texture (0 = no limit)</param>
+        /// <param name="maxInputDimension">Maximum decoded pixel bound for each eye (-1 = no limit)</param>
         /// <returns>A RawImage containing the stereo equirectangular panorama</returns>
         public static RawImage LoadVrJpeg(string filename, EyeLayout layout = EyeLayout.OverUnder,
-                                         bool fillPoles = true, int maxWidth = 8192)
+                                         bool fillPoles = true, int maxWidth = 8192,
+                                         int maxInputDimension = -1)
         {
             byte[] fileData = File.ReadAllBytes(filename);
-            return LoadVrJpegFromBytes(fileData, filename, layout, fillPoles, maxWidth);
+            return LoadVrJpegFromBytes(
+                fileData, filename, layout, fillPoles, maxWidth, maxInputDimension);
         }
 
         /// <summary>
@@ -63,10 +66,12 @@ namespace TiltBrush
         /// </summary>
         public static RawImage LoadVrJpegFromBytes(byte[] data, string filename,
                                                    EyeLayout layout = EyeLayout.OverUnder,
-                                                   bool fillPoles = true, int maxWidth = 8192)
+                                                   bool fillPoles = true, int maxWidth = 8192,
+                                                   int maxInputDimension = -1)
         {
             var result = LoadVrJpegWithAudio(
-                data, filename, layout, fillPoles, maxWidth, extractAudio: false);
+                data, filename, layout, fillPoles, maxWidth, extractAudio: false,
+                maxInputDimension: maxInputDimension);
             return result.StereoImage;
         }
 
@@ -78,15 +83,19 @@ namespace TiltBrush
         /// <param name="fillPoles">Whether to fill in the poles using interpolation</param>
         /// <param name="maxWidth">Maximum width of the output texture (0 = no limit)</param>
         /// <param name="extractAudio">Whether to extract embedded audio data</param>
+        /// <param name="maxInputDimension">Maximum decoded pixel bound for each eye (-1 = no limit)</param>
         /// <returns>VrJpegLoadResult containing stereo image and optional audio</returns>
         public static VrJpegLoadResult LoadVrJpegWithAudioFromFile(string filename,
                                                                    EyeLayout layout = EyeLayout.OverUnder,
                                                                    bool fillPoles = true,
                                                                    int maxWidth = 8192,
-                                                                   bool extractAudio = true)
+                                                                   bool extractAudio = true,
+                                                                   int maxInputDimension = -1)
         {
             byte[] fileData = File.ReadAllBytes(filename);
-            return LoadVrJpegWithAudio(fileData, filename, layout, fillPoles, maxWidth, extractAudio);
+            return LoadVrJpegWithAudio(
+                fileData, filename, layout, fillPoles, maxWidth, extractAudio,
+                maxInputDimension);
         }
 
         /// <summary>
@@ -96,11 +105,12 @@ namespace TiltBrush
                                                            EyeLayout layout = EyeLayout.OverUnder,
                                                            bool fillPoles = true,
                                                            int maxWidth = 8192,
-                                                           bool extractAudio = true)
+                                                           bool extractAudio = true,
+                                                           int maxInputDimension = -1)
         {
-            if (maxWidth > 0)
+            if (maxInputDimension > 0)
             {
-                ImageUtils.ValidateDimensions(data, maxWidth);
+                ImageUtils.ValidateDimensions(data, maxInputDimension);
             }
 
             // Read metadata
@@ -110,18 +120,18 @@ namespace TiltBrush
             {
                 throw new ImageLoadError("VR JPEG does not contain right eye image data");
             }
-            if (maxWidth > 0)
+            if (maxInputDimension > 0)
             {
-                ImageUtils.ValidateDimensions(metadata.RightEyeImageData, maxWidth);
+                ImageUtils.ValidateDimensions(
+                    metadata.RightEyeImageData, maxInputDimension);
             }
 
-            // Load both eyes only after verifying that neither can exceed the memory limit.
-            RawImage leftEye = ImageUtils.FromJpeg(data, filename);
-            RawImage rightEye = ImageUtils.FromJpeg(metadata.RightEyeImageData, filename + "_right");
-
-            // Convert both eyes to equirectangular
-            RawImage leftEquirect = ConvertToEquirectangular(leftEye, metadata, fillPoles, maxWidth);
-            RawImage rightEquirect = ConvertToEquirectangular(rightEye, metadata, fillPoles, maxWidth);
+            // Convert each eye before decoding the next so only one full-size source is retained.
+            RawImage leftEquirect = DecodeEyeToEquirectangular(
+                data, filename, metadata, fillPoles, maxWidth);
+            RawImage rightEquirect = DecodeEyeToEquirectangular(
+                metadata.RightEyeImageData, filename + "_right",
+                metadata, fillPoles, maxWidth);
 
             // Combine into stereo image
             RawImage stereo = CombineEyes(leftEquirect, rightEquirect, layout);
@@ -142,6 +152,14 @@ namespace TiltBrush
             }
 
             return result;
+        }
+
+        private static RawImage DecodeEyeToEquirectangular(
+            byte[] jpegData, string filename, VrJpegMetadata metadata,
+            bool fillPoles, int maxWidth)
+        {
+            RawImage eye = ImageUtils.FromJpeg(jpegData, filename);
+            return ConvertToEquirectangular(eye, metadata, fillPoles, maxWidth);
         }
 
         /// <summary>

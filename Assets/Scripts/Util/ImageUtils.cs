@@ -178,16 +178,13 @@ namespace TiltBrush
             try
             {
                 int maxWidth = 8192;
-                if (abortDimension > 0)
-                {
-                    maxWidth = Mathf.Min(maxWidth, abortDimension);
-                }
                 if (decodeDimension > 0)
                 {
                     maxWidth = Mathf.Min(maxWidth, decodeDimension);
                 }
                 return VrJpegUtils.LoadVrJpegFromBytes(jpegData, filename,
-                    VrJpegUtils.EyeLayout.OverUnder, fillPoles: true, maxWidth: maxWidth);
+                    VrJpegUtils.EyeLayout.OverUnder, fillPoles: true,
+                    maxWidth: maxWidth, maxInputDimension: abortDimension);
             }
             catch (Exception e)
             {

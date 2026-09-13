@@ -51,7 +51,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void RejectsVrJpegLeftEyeAboveDecodeLimit()
+        public void RejectsVrJpegLeftEyeAboveInputLimit()
         {
             Texture2D source = CreateSourceTexture();
             try
@@ -60,7 +60,7 @@ namespace TiltBrush
                 byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
 
                 Assert.Throws<ImageLoadError>(() => VrJpegUtils.LoadVrJpegFromBytes(
-                    vrJpeg, "generated.vr.jpg", maxWidth: 2));
+                    vrJpeg, "generated.vr.jpg", maxWidth: 2, maxInputDimension: 2));
             }
             finally
             {
@@ -69,7 +69,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void RejectsVrJpegRightEyeAboveDecodeLimit()
+        public void RejectsVrJpegRightEyeAboveInputLimit()
         {
             Texture2D smallSource = CreateSourceTexture(2, 1);
             Texture2D largeSource = CreateSourceTexture();
@@ -79,12 +79,33 @@ namespace TiltBrush
                     smallSource.EncodeToJPG(), largeSource.EncodeToJPG());
 
                 Assert.Throws<ImageLoadError>(() => VrJpegUtils.LoadVrJpegFromBytes(
-                    vrJpeg, "generated.vr.jpg", maxWidth: 2));
+                    vrJpeg, "generated.vr.jpg", maxWidth: 2, maxInputDimension: 2));
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(smallSource);
                 UnityEngine.Object.DestroyImmediate(largeSource);
+            }
+        }
+
+        [Test]
+        public void ResizesVrJpegEyesBelowSeparateInputLimit()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
+
+                RawImage decoded = VrJpegUtils.LoadVrJpegFromBytes(
+                    vrJpeg, "generated.vr.jpg", maxWidth: 2, maxInputDimension: 4);
+
+                Assert.AreEqual(2, decoded.ColorWidth);
+                Assert.AreEqual(2, decoded.ColorHeight);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
             }
         }
 
