@@ -104,48 +104,58 @@ namespace TiltBrush
 
         public static void SnapSelectedRotationAngles()
         {
-            var xforms = new List<TrTransform>();
-            var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-            var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
-            foreach (var stroke in strokes)
-            {
-                // Do nothing as there's no intuitive "natural" rotation for brush strokes.
-                // Pass in a translation that will leave the stroke unchanged
-                xforms.Add(TrTransform.T(stroke.m_BatchSubset.m_Bounds.center));
-            }
-
-            foreach (var widget in widgets)
-            {
-                var tr = widget.LocalTransform;
-                tr.rotation = SelectionManager.m_Instance.QuantizeAngle(tr.rotation);
-                xforms.Add(tr);
-            }
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new SetTransformsFromListCommand(strokes, widgets, xforms)
+            // Do nothing to strokes as there's no intuitive "natural" rotation for brush strokes.
+            _SnapSelection(
+                strokeCenter => strokeCenter,
+                widgetTr =>
+                {
+                    widgetTr.rotation = SelectionManager.m_Instance.QuantizeAngle(widgetTr.rotation);
+                    return widgetTr;
+                }
             );
         }
 
         public static void SnapSelectionToGrid()
         {
+            _SnapSelection(
+                strokeCenter => SelectionManager.m_Instance.SnapToGrid_CS(strokeCenter),
+                widgetTr =>
+                {
+                    widgetTr.translation = SelectionManager.m_Instance.SnapToGrid_CS(widgetTr.translation);
+                    return widgetTr;
+                }
+            );
+        }
+
+        // Applies a per-item snapping function to the selection and records it as a single command.
+        // strokeSnap maps a stroke's bounds center to its new position; widgetSnap maps a widget's
+        // local transform to its new one. Either can be the identity if that item type is unaffected.
+        private static void _SnapSelection(System.Func<Vector3, Vector3> strokeSnap,
+                                          System.Func<TrTransform, TrTransform> widgetSnap)
+        {
             var xforms = new List<TrTransform>();
             var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
             var widgets = SelectionManager.m_Instance.GetValidSelectedWidgets();
+            Vector3 soundPosition = InputManager.m_Instance.GetControllerPosition(
+                InputManager.ControllerName.Brush);
+
+            if (strokes.Count == 0 && widgets.Count == 0)
+            {
+                AudioManager.m_Instance.DisabledItemSelect(soundPosition);
+                return;
+            }
+
             foreach (var stroke in strokes)
             {
-                var snappedPos = SelectionManager.m_Instance.SnapToGrid_CS(stroke.m_BatchSubset.m_Bounds.center);
-                xforms.Add(TrTransform.T(snappedPos));
+                xforms.Add(TrTransform.T(strokeSnap(stroke.m_BatchSubset.m_Bounds.center)));
             }
             foreach (var widget in widgets)
             {
-                var tr = widget.LocalTransform;
-                tr.translation = SelectionManager.m_Instance.SnapToGrid_CS(tr.translation);
-                xforms.Add(tr);
+                xforms.Add(widgetSnap(widget.LocalTransform));
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
             );
-            Vector3 soundPosition = InputManager.m_Instance.GetControllerPosition(
-                InputManager.ControllerName.Brush);
             AudioManager.m_Instance.PlayGroupedSound(soundPosition);
         }
     }
