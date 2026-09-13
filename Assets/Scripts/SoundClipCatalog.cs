@@ -70,6 +70,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            ++m_ScanGeneration;
             foreach (var clip in m_SoundClips)
             {
                 clip.Dispose();
@@ -170,14 +171,41 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory(
             string directory, List<SoundClip> soundClips, HashSet<string> changedSet, int generation)
         {
+            try
+            {
+                using (var scan = ScanReferenceDirectoryImpl(
+                    directory, soundClips, changedSet, generation))
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                if (generation == m_ScanGeneration) m_ScanningDirectory = false;
+            }
+        }
+
+        private IEnumerator<object> ScanReferenceDirectoryImpl(
+            string directory, List<SoundClip> soundClips, HashSet<string> changedSet, int generation)
+        {
 
             StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
                 ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath), pathComparer);
-            var detected = new HashSet<string>(
-                Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
-                    x => m_supportedSoundClipExtensions.Contains(
-                        Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
+            HashSet<string> detected;
+            try
+            {
+                detected = new HashSet<string>(
+                    Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                        x => m_supportedSoundClipExtensions.Contains(
+                            Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                e is ArgumentException || e is NotSupportedException)
+            {
+                Debug.LogWarning($"CATALOG_SCAN Could not scan sound folder {directory}: {e.Message}");
+                yield break;
+            }
             var changed = changedSet.Where(x => IsDirectChildSupportedPath(
                 directory, x, m_supportedSoundClipExtensions));
             var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
@@ -227,7 +255,6 @@ namespace TiltBrush
                 }
             }
 
-            m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
             if (m_DebugOutput)
             {
@@ -240,6 +267,8 @@ namespace TiltBrush
         {
             IUserStorageBackend backend = UserStorage.Backend;
             string rootIdentity = backend.RootIdentity;
+            StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             try
             {
                 if (!backend.IsReady)
@@ -280,7 +309,10 @@ namespace TiltBrush
                 {
                     yield return null;
                 }
-                if (generation != m_ScanGeneration || rootIdentity != backend.RootIdentity)
+                if (!CatalogScanGuard.IsCurrent(
+                        generation, m_ScanGeneration, backend, UserStorage.Backend,
+                        rootIdentity, backend.RootIdentity,
+                        directory, m_CurrentSoundClipDirectory, pathComparer))
                 {
                     yield break;
                 }
@@ -323,7 +355,10 @@ namespace TiltBrush
                 foreach (SoundClip clip in added)
                 {
                     yield return clip.Initialize();
-                    if (generation != m_ScanGeneration || rootIdentity != backend.RootIdentity)
+                    if (!CatalogScanGuard.IsCurrent(
+                            generation, m_ScanGeneration, backend, UserStorage.Backend,
+                            rootIdentity, backend.RootIdentity,
+                            directory, m_CurrentSoundClipDirectory, pathComparer))
                     {
                         clip.ReleaseThumbnail();
                         yield break;

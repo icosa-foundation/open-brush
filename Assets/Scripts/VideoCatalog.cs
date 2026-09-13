@@ -34,6 +34,7 @@ namespace TiltBrush
         public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
         private bool m_ScanningDirectory;
+        private int m_ScanGeneration;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
         private bool m_SeedingSafDefaults;
@@ -61,6 +62,7 @@ namespace TiltBrush
         {
             DisposeFileWatcher();
             m_CurrentVideoDirectory = newPath;
+            ++m_ScanGeneration;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
@@ -70,7 +72,7 @@ namespace TiltBrush
             }
             else
             {
-                StartCoroutine(ScanReferenceDirectory());
+                ForceCatalogScan();
             }
 
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
@@ -107,6 +109,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            ++m_ScanGeneration;
             foreach (var video in m_Videos)
             {
                 video.Dispose();
@@ -291,7 +294,8 @@ namespace TiltBrush
             if (!m_ScanningDirectory)
             {
                 m_DirectoryScanRequired = false;
-                StartCoroutine(ScanReferenceDirectory());
+                StartCoroutine(ScanReferenceDirectory(
+                    m_CurrentVideoDirectory, ++m_ScanGeneration));
             }
         }
 
@@ -310,12 +314,28 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerator<object> ScanReferenceDirectory()
+        private IEnumerator<object> ScanReferenceDirectory(string directory, int generation)
         {
             m_ScanningDirectory = true;
+            try
+            {
+                using (var scan = ScanReferenceDirectoryImpl(directory, generation))
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                m_ScanningDirectory = false;
+            }
+        }
+
+        private IEnumerator<object> ScanReferenceDirectoryImpl(string directory, int generation)
+        {
+            List<ReferenceVideo> videos = m_Videos;
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
-                foreach (object item in ScanSafReferenceDirectory())
+                foreach (object item in ScanSafReferenceDirectory(directory, generation))
                 {
                     yield return item;
                 }
@@ -333,12 +353,22 @@ namespace TiltBrush
 
             StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
                 ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-            var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath), pathComparer);
-            var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(
-                    x => IsSupportedVideoExtension(x, m_supportedVideoExtensions)));
+            var existing = new HashSet<string>(videos.Select(x => x.AbsolutePath), pathComparer);
+            HashSet<string> detected;
+            try
+            {
+                detected = new HashSet<string>(
+                    Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                        x => IsSupportedVideoExtension(x, m_supportedVideoExtensions)));
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                e is ArgumentException || e is NotSupportedException)
+            {
+                Debug.LogWarning($"CATALOG_SCAN Could not scan video folder {directory}: {e.Message}");
+                yield break;
+            }
             var changed = changedSet.Where(x => IsDirectChildSupportedPath(
-                m_CurrentVideoDirectory, x, m_supportedVideoExtensions));
+                directory, x, m_supportedVideoExtensions));
             var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
                 changed, detected, pathComparer);
             var toDelete = existing.Except(detected, pathComparer)
@@ -348,7 +378,7 @@ namespace TiltBrush
 
             // Remove deleted videos from the list. Currently playing videos may continue to play, but will
             // not appear in the reference panel.
-            m_Videos.RemoveAll(x => toDelete.Contains(
+            videos.RemoveAll(x => toDelete.Contains(
                 x.AbsolutePath, pathComparer));
 
             var newVideos = new List<ReferenceVideo>();
@@ -356,7 +386,7 @@ namespace TiltBrush
             {
                 ReferenceVideo videoRef = new ReferenceVideo(filePath);
                 newVideos.Add(videoRef);
-                m_Videos.Add(videoRef);
+                videos.Add(videoRef);
             }
 
             // If we have a lot of videos, they may take a while to create thumbnails. Make sure we refresh
@@ -371,9 +401,20 @@ namespace TiltBrush
                     nextRefresh = DateTime.Now + interval;
                 }
                 yield return videoRef.Initialize();
+                if (generation != m_ScanGeneration ||
+                    !string.Equals(directory, m_CurrentVideoDirectory,
+                        StringComparison.Ordinal))
+                {
+                    yield break;
+                }
             }
 
-            m_ScanningDirectory = false;
+            if (generation != m_ScanGeneration || !string.Equals(
+                    directory, m_CurrentVideoDirectory, StringComparison.Ordinal))
+            {
+                foreach (var video in newVideos) video.Dispose();
+                yield break;
+            }
             CatalogChanged?.Invoke();
             if (m_DebugOutput)
             {
@@ -381,18 +422,19 @@ namespace TiltBrush
             }
         }
 
-        private IEnumerable<object> ScanSafReferenceDirectory()
+        private IEnumerable<object> ScanSafReferenceDirectory(string directory, int generation)
         {
             IUserStorageBackend backend = UserStorage.Backend;
             string scanRootIdentity = backend.RootIdentity;
+            StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             string relativeDirectory;
             if (!TryGetRelativeDirectory(
-                    HomeDirectory, m_CurrentVideoDirectory, out relativeDirectory))
+                    HomeDirectory, directory, out relativeDirectory))
             {
                 Debug.LogError(
                     $"SAF_CATALOG Video directory is outside its storage area: " +
-                    $"{m_CurrentVideoDirectory}");
-                m_ScanningDirectory = false;
+                    $"{directory}");
                 yield break;
             }
 
@@ -414,7 +456,6 @@ namespace TiltBrush
                     Debug.LogWarning(
                         $"SAF_CATALOG Video query failed; retaining the previous catalog: " +
                         $"{e.InnerException?.Message ?? e.Message}");
-                    m_ScanningDirectory = false;
                     yield break;
                 }
                 if (finished)
@@ -429,7 +470,15 @@ namespace TiltBrush
                     backend.RootIdentity,
                     StringComparison.Ordinal))
             {
-                m_ScanningDirectory = false;
+                m_DirectoryScanRequired = true;
+                yield break;
+            }
+
+            if (!CatalogScanGuard.IsCurrent(
+                    generation, m_ScanGeneration, backend, UserStorage.Backend,
+                    scanRootIdentity, backend.RootIdentity,
+                    directory, m_CurrentVideoDirectory, pathComparer))
+            {
                 m_DirectoryScanRequired = true;
                 yield break;
             }
@@ -482,9 +531,24 @@ namespace TiltBrush
                     nextRefresh = DateTime.Now + interval;
                 }
                 yield return video.Initialize();
+                if (!CatalogScanGuard.IsCurrent(
+                        generation, m_ScanGeneration, backend, UserStorage.Backend,
+                        scanRootIdentity, backend.RootIdentity,
+                        directory, m_CurrentVideoDirectory, pathComparer))
+                {
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
             }
 
-            m_ScanningDirectory = false;
+            if (!CatalogScanGuard.IsCurrent(
+                    generation, m_ScanGeneration, backend, UserStorage.Backend,
+                    scanRootIdentity, backend.RootIdentity,
+                    directory, m_CurrentVideoDirectory, pathComparer))
+            {
+                m_DirectoryScanRequired = true;
+                yield break;
+            }
             CatalogChanged?.Invoke();
         }
 
