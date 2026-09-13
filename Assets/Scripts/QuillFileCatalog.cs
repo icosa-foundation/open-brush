@@ -40,6 +40,7 @@ namespace TiltBrush
         private string m_CurrentDirectory;
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
+        private int m_ScanGeneration;
         private string m_SearchText = "";
         private string m_SafRootIdentity;
         private bool UsesSaf => m_SourceDirectory == SourceDirectory.Imm &&
@@ -84,6 +85,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            ++m_ScanGeneration;
             if (Instance == this)
             {
                 Instance = null;
@@ -131,6 +133,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            m_DirectoryScanRequired = true;
             if (!m_IsScanningDirectory)
             {
                 m_DirectoryScanRequired = false;
@@ -146,6 +149,7 @@ namespace TiltBrush
             }
 
             m_CurrentDirectory = path;
+            ++m_ScanGeneration;
             m_Files.Clear();
 
             // Quill's external project folder is only discovered, never created by Open Brush.
@@ -297,11 +301,28 @@ namespace TiltBrush
             }
 
             m_IsScanningDirectory = true;
+            try
+            {
+                using (var scan = ScanDirectoryImpl(m_ScanGeneration))
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                m_IsScanningDirectory = false;
+            }
+        }
 
+        private IEnumerator<object> ScanDirectoryImpl(int generation)
+        {
             var files = new List<QuillFileInfo>();
             if (UsesSaf)
             {
-                yield return SeedSafDefaults(UserStorage.Backend, m_DefaultQuillFiles, resourcePath =>
+                IUserStorageBackend backend = UserStorage.Backend;
+                string rootIdentity = backend.RootIdentity;
+                string directory = m_CurrentDirectory;
+                yield return SeedSafDefaults(backend, m_DefaultQuillFiles, resourcePath =>
                 {
                     TextAsset resource = Resources.Load<TextAsset>(resourcePath);
                     if (resource == null) { return null; }
@@ -309,9 +330,13 @@ namespace TiltBrush
                     Resources.UnloadAsset(resource);
                     return bytes;
                 });
-                IUserStorageBackend backend = UserStorage.Backend;
-                string rootIdentity = backend.RootIdentity;
-                string directory = m_CurrentDirectory;
+                if (!CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
+                    backend, UserStorage.Backend, rootIdentity, backend.RootIdentity,
+                    directory, m_CurrentDirectory, StringComparer.Ordinal))
+                {
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
                 string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory);
                 var query = new Future<List<QuillFileInfo>>(() =>
                 {
@@ -341,15 +366,15 @@ namespace TiltBrush
                     catch (FutureFailed e)
                     {
                         Debug.LogWarning($"[SAF_REVIEW_IMM] Could not scan IMM library: {e.Message}");
-                        m_IsScanningDirectory = false;
                         yield break;
                     }
                     if (finished) { break; }
                     yield return null;
                 }
-                if (rootIdentity != backend.RootIdentity || directory != m_CurrentDirectory || !UsesSaf)
+                if (!UsesSaf || !CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
+                    backend, UserStorage.Backend, rootIdentity, backend.RootIdentity,
+                    directory, m_CurrentDirectory, StringComparer.Ordinal))
                 {
-                    m_IsScanningDirectory = false;
                     m_DirectoryScanRequired = true;
                     yield break;
                 }
@@ -397,7 +422,6 @@ namespace TiltBrush
                 .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            m_IsScanningDirectory = false;
             CatalogChanged?.Invoke();
         }
 

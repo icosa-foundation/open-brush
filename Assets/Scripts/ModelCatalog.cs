@@ -59,6 +59,7 @@ namespace TiltBrush
         private TaskCompletionSource<bool> m_SafScanCompletion;
         private bool m_SafRescanRequested;
         private string m_SafCatalogRootIdentity;
+        private IUserStorageBackend m_SafCatalogBackend;
         private string m_SafSeedAttemptedRootIdentity;
         private bool m_SeedingSafDefaults;
 
@@ -439,6 +440,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            if (m_SafScanInProgress) { m_SafRescanRequested = true; }
             if (!m_SafScanInProgress)
             {
                 LoadModelsForNewDirectory(m_CurrentModelsDirectory);
@@ -717,10 +719,10 @@ namespace TiltBrush
             IUserStorageBackend backend = UserStorage.Backend;
             string scanRootIdentity = backend.RootIdentity;
             if (m_SafCatalogRootIdentity != null &&
-                !string.Equals(
+                (!ReferenceEquals(m_SafCatalogBackend, backend) || !string.Equals(
                     m_SafCatalogRootIdentity,
                     scanRootIdentity,
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal)))
             {
                 string localBlocksRoot = App.BlocksModelLibraryPath();
                 var localModels = m_ModelsByRelativePath.Where(pair =>
@@ -745,6 +747,7 @@ namespace TiltBrush
                 CatalogChanged?.Invoke();
             }
             m_SafCatalogRootIdentity = scanRootIdentity;
+            m_SafCatalogBackend = backend;
             var scan = new Future<List<SafModelRecord>>(
                 () => ListSafModelsRecursively(backend, ""),
                 cleanupFunction: null,
@@ -776,7 +779,7 @@ namespace TiltBrush
                 }
                 yield return null;
             }
-            if (!string.Equals(
+            if (!ReferenceEquals(backend, UserStorage.Backend) || !string.Equals(
                     scanRootIdentity,
                     backend.RootIdentity,
                     StringComparison.Ordinal))
@@ -933,7 +936,7 @@ namespace TiltBrush
             if (backend.Kind != StorageBackendKind.StorageAccessFramework) { return GetModel(relativePath); }
 
             string root = backend.RootIdentity;
-            if (!m_SafScanInProgress && m_SafCatalogRootIdentity == root &&
+            if (!m_SafScanInProgress && ReferenceEquals(m_SafCatalogBackend, backend) && m_SafCatalogRootIdentity == root &&
                 m_ModelsByRelativePath.TryGetValue(relativePath, out Model cached)) { return cached; }
             if (!m_SafScanInProgress) { LoadModelsForNewDirectory(m_CurrentModelsDirectory); }
             Task scan = m_SafScanCompletion?.Task;

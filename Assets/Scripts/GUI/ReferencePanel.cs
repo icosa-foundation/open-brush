@@ -148,6 +148,7 @@ namespace TiltBrush
 
         protected void OnDestroy()
         {
+            ++m_DirectoryQueryVersion;
             foreach (var tab in m_Tabs)
             {
                 tab.Catalog.CatalogChanged -= OnCatalogChanged;
@@ -395,7 +396,7 @@ namespace TiltBrush
                 if (finished) { break; }
                 yield return null;
             }
-            if (version != m_DirectoryQueryVersion || rootIdentity != backend.RootIdentity)
+            if (version != m_DirectoryQueryVersion || !ReferenceEquals(backend, UserStorage.Backend) || rootIdentity != backend.RootIdentity)
             {
                 yield break;
             }
