@@ -627,14 +627,19 @@ namespace TiltBrush
             AssertQuaternionApprox(verticalRotation, GetBrushRotation());
 
             object scenePose = GetScenePose();
+            object activeCanvas = GetInstanceProperty(GetSceneScript(), "ActiveCanvas");
+            object canvasLocalPose = GetInstanceProperty(activeCanvas, "LocalPose");
             var apiType = GetTypeOrFail("TiltBrush.ApiManager");
             var api = GetStaticProperty(apiType, "Instance");
             Quaternion brushRotation = GetBrushRotation();
             try
             {
                 object scaledPose = GetScenePose();
-                SetStructField(scaledPose, "scale", 10000f);
+                SetStructField(scaledPose, "scale", 1f);
                 SetInstanceProperty(GetSceneScript(), "Pose", scaledPose);
+                object scaledCanvasPose = GetInstanceProperty(activeCanvas, "LocalPose");
+                SetStructField(scaledCanvasPose, "scale", 10000f);
+                SetInstanceProperty(activeCanvas, "LocalPose", scaledCanvasPose);
                 SetInstanceField(api, "BrushRotation", Quaternion.identity);
 
                 var apiMethods = GetTypeOrFail("TiltBrush.ApiMethods");
@@ -653,6 +658,7 @@ namespace TiltBrush
             finally
             {
                 SetInstanceProperty(GetSceneScript(), "Pose", scenePose);
+                SetInstanceProperty(activeCanvas, "LocalPose", canvasLocalPose);
                 SetInstanceField(api, "BrushRotation", brushRotation);
             }
         }

@@ -984,7 +984,7 @@ namespace TiltBrush
         public static void BrushLookAt(Vector3 position)
         {
             Vector3 direction = position - ApiManager.Instance.BrushPosition;
-            if ((direction * App.Scene.Pose.scale).sqrMagnitude <
+            if ((direction * App.Scene.ActiveCanvas.Pose.scale).sqrMagnitude <
                 kMinLookDistance_RS * kMinLookDistance_RS)
             {
                 return;
