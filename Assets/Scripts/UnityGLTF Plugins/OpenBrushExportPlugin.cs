@@ -454,6 +454,7 @@ namespace TiltBrush
                             strokeInfo["TailTimestampMs"] = stroke.TailTimestampMs.ToString();
                             strokeInfo["Group"] = stroke.Group.GetHashCode().ToString();
                             strokeInfo["Seed"] = stroke.m_Seed.ToString();
+                            strokeInfo["KnotIndexOffset"] = stroke.m_KnotIndexOffset.ToString();
                             strokeInfo["Color"] = stroke.m_Color.ToString();
                             var primitiveExtras = new Dictionary<string, Dictionary<string, string>>
                             {
@@ -507,6 +508,7 @@ namespace TiltBrush
                             subsetInfo["TailTimestampMs"] = subset.m_Stroke.TailTimestampMs.ToString();
                             subsetInfo["Group"] = subset.m_Stroke.Group.GetHashCode().ToString();
                             subsetInfo["Seed"] = subset.m_Stroke.m_Seed.ToString();
+                            subsetInfo["KnotIndexOffset"] = subset.m_Stroke.m_KnotIndexOffset.ToString();
                             subsetInfo["Color"] = subset.m_Stroke.m_Color.ToString();
                             batchInfo.Add(subsetInfo);
                         }

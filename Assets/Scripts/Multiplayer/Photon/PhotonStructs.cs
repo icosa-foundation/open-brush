@@ -170,8 +170,8 @@ namespace OpenBrush.Multiplayer
         // Use for determining length.
         public int m_ControlPointsCapacity;
         // Seed for deterministic pseudo-random numbers for geometry generation.
-        // Not currently serialized.
         public int m_Seed;
+        public int m_KnotIndexOffset;
 
         public static Stroke ToStroke(NetworkedStroke netStroke)
         {
@@ -184,6 +184,7 @@ namespace OpenBrush.Multiplayer
                 m_BrushSize = netStroke.m_BrushSize,
                 m_Color = netStroke.m_Color,
                 m_Seed = netStroke.m_Seed,
+                m_KnotIndexOffset = netStroke.m_KnotIndexOffset,
                 m_ControlPoints = new PointerManager.ControlPoint[netStroke.m_ControlPointsCapacity],
                 m_ControlPointsToDrop = new bool[netStroke.m_ControlPointsCapacity]
             };
@@ -210,6 +211,7 @@ namespace OpenBrush.Multiplayer
             m_BrushSize = data.m_BrushSize;
             m_Color = data.m_Color;
             m_Seed = data.m_Seed;
+            m_KnotIndexOffset = data.m_KnotIndexOffset;
 
             m_ControlPointsCapacity = data.m_ControlPoints.Length;
 

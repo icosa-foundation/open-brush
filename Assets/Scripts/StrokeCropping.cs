@@ -105,6 +105,8 @@ namespace TiltBrush
                     {
                         m_ControlPoints = segments[i],
                         m_ControlPointsToDrop = new bool[segments[i].Length],
+                        m_KnotIndexOffset = GetKnotIndexOffset(
+                            stroke.m_KnotIndexOffset, sourceIndices[i][0]),
                         m_IntendedCanvas = canvas,
                         m_PreviousCanvas = stroke.m_PreviousCanvas,
                         m_Type = Stroke.Type.NotCreated
@@ -133,6 +135,11 @@ namespace TiltBrush
             if (parent == null) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             else command.Redo(); // Apply now; the tool/API undo group records its children on completion.
             return liveList;
+        }
+
+        internal static int GetKnotIndexOffset(int originalOffset, float sourceIndex)
+        {
+            return originalOffset + Mathf.FloorToInt(sourceIndex);
         }
 
         internal static List<PointerManager.ControlPoint[]> ClipStrokeToVolume(

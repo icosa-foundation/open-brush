@@ -34,8 +34,10 @@ namespace TiltBrush
         public PointerManager.ControlPoint[] m_ControlPoints;
         public SketchMemoryScript.StrokeFlags m_Flags;
         // Seed for deterministic pseudo-random numbers for geometry generation.
-        // Not currently serialized.
         public int m_Seed;
+        // Original knot index represented by control point zero. This preserves deterministic
+        // brush geometry when a stroke is split or cropped.
+        public int m_KnotIndexOffset;
         protected SketchGroupTag m_Group = SketchGroupTag.None;
         public SketchGroupTag Group => m_Group;
         public Guid m_Guid;
@@ -71,6 +73,7 @@ namespace TiltBrush
                 this.m_BrushScale = existing.m_BrushScale;
                 this.m_Flags = existing.m_Flags;
                 this.m_Seed = existing.m_Seed;
+                this.m_KnotIndexOffset = existing.m_KnotIndexOffset;
                 this.m_Group = existing.m_Group;
                 this.m_ControlPoints = new PointerManager.ControlPoint[existing.m_ControlPoints.Length];
                 Array.Copy(existing.m_ControlPoints, this.m_ControlPoints, this.m_ControlPoints.Length);

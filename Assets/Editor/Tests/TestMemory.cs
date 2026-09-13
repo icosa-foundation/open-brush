@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using NUnit.Framework;
@@ -23,6 +24,46 @@ namespace TiltBrush
 
     internal class TestMemory
     {
+        [Test]
+        public void WriteMemoryPersistsKnotIndexOffset()
+        {
+            var stroke = new Stroke
+            {
+                m_BrushScale = 1,
+                m_KnotIndexOffset = 7,
+                m_ControlPoints = new PointerManager.ControlPoint[0]
+            };
+            var snapshots = new[]
+            {
+                new SketchWriter.AdjustedMemoryBrushStroke
+                {
+                    strokeData = stroke,
+                    adjustedStrokeFlags = StrokeFlags.None,
+                    layerIndex = 0
+                }
+            };
+
+            using var stream = new MemoryStream();
+            SketchWriter.WriteMemory(stream, snapshots, new GroupIdMapping(), out _);
+            stream.Position = 0;
+            using var reader = new SketchBinaryReader(stream);
+            reader.UInt32(); // sentinel
+            reader.Int32(); // version
+            reader.Int32(); // reserved header
+            reader.UInt32(); // additional header size
+            Assert.AreEqual(1, reader.Int32());
+            reader.Int32(); // brush index
+            reader.Color();
+            reader.Float(); // brush size
+            var mask = (SketchWriter.StrokeExtension)reader.UInt32();
+            reader.UInt32(); // control point extension mask
+            Assert.IsTrue(mask.HasFlag(SketchWriter.StrokeExtension.KnotIndexOffset));
+            reader.UInt32(); // flags
+            reader.Int32(); // seed
+            reader.UInt32(); // layer
+            Assert.AreEqual(7, reader.Int32());
+        }
+
         [Test]
         public void TestMemoryListForSave()
         {

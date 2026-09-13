@@ -75,6 +75,7 @@ namespace TiltBrush
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
+            KnotIndexOffset = 1 << 5, // int32; zero when the stroke has not been split.
             ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
@@ -232,6 +233,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_KnotIndexOffset != 0) { strokeExtensionMask |= StrokeExtension.KnotIndexOffset; }
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -256,6 +258,10 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.KnotIndexOffset) != 0)
+                {
+                    writer.Int32(stroke.m_KnotIndexOffset);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -362,6 +368,7 @@ namespace TiltBrush
                 if (stroke.m_BrushScale != 1) { strokeExtensionMask |= StrokeExtension.Scale; }
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
+                if (stroke.m_KnotIndexOffset != 0) { strokeExtensionMask |= StrokeExtension.KnotIndexOffset; }
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
 
                 writer.UInt32((uint)strokeExtensionMask);
@@ -386,6 +393,10 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.KnotIndexOffset) != 0)
+                {
+                    writer.Int32(stroke.m_KnotIndexOffset);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -676,6 +687,9 @@ namespace TiltBrush
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
+                        case StrokeExtension.KnotIndexOffset:
+                            stroke.m_KnotIndexOffset = reader.Int32();
+                            break;
                         default:
                             {
                                 // Skip unknown extension.
@@ -884,6 +898,9 @@ namespace TiltBrush
                             }
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
+                            break;
+                        case StrokeExtension.KnotIndexOffset:
+                            stroke.m_KnotIndexOffset = reader.Int32();
                             break;
                         default:
                             {

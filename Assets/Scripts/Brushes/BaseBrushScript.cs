@@ -152,6 +152,8 @@ namespace TiltBrush
             get { return m_StrokeData; }
         }
 
+        protected int KnotIndexOffset => m_StrokeData?.m_KnotIndexOffset ?? 0;
+
         /// The size of the brush, in the parent-local (Canvas) coordinate system
         public float BaseSize_LS
         {
