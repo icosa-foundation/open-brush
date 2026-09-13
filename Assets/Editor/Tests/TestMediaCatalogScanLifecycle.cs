@@ -39,7 +39,6 @@ namespace TiltBrush
                 else
                 {
                     type.GetField("m_Videos", flags).SetValue(catalog, new List<ReferenceVideo>());
-                    type.GetField("m_ChangedFiles", flags).SetValue(catalog, new HashSet<string>());
                     arguments = new object[] { directory, 1 };
                 }
                 LogAssert.Expect(LogType.Warning, new Regex("CATALOG_SCAN Could not scan .* folder"));

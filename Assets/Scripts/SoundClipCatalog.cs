@@ -31,9 +31,9 @@ namespace TiltBrush
 
         private FileWatcher m_FileWatcher;
         private bool m_ScanningDirectory;
-        private bool m_DirectoryScanRequired;
+        private volatile bool m_DirectoryScanRequired;
         private int m_ScanGeneration;
-        private HashSet<string> m_ChangedFiles;
+        private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
 
         private List<SoundClip> m_SoundClips;
         private string m_CurrentSoundClipDirectory;
@@ -130,16 +130,13 @@ namespace TiltBrush
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
             if (!ReferenceEquals(source, m_FileWatcher)) return;
-            m_DirectoryScanRequired = true;
             if (e.ChangeType == WatcherChangeTypes.Changed &&
                 IsDirectChildSupportedPath(
                     m_CurrentSoundClipDirectory, e.FullPath, m_supportedSoundClipExtensions))
             {
-                lock (m_ChangedFiles)
-                {
-                    m_ChangedFiles.Add(e.FullPath);
-                }
+                m_ChangedFiles.Add(e.FullPath);
             }
+            m_DirectoryScanRequired = true;
         }
 
         private void StartCatalogScan()
@@ -155,14 +152,7 @@ namespace TiltBrush
                 return;
             }
 
-            // We do a switcheroo on the changed list here so that there isn't a conflict with it
-            // if a filewatch callback happens.
-            HashSet<string> changedSet;
-            lock (m_ChangedFiles)
-            {
-                changedSet = m_ChangedFiles;
-                m_ChangedFiles = new HashSet<string>();
-            }
+            var changedSet = new HashSet<string>(m_ChangedFiles.Drain());
 
             StartCoroutine(ScanReferenceDirectory(
                 m_CurrentSoundClipDirectory, m_SoundClips, changedSet, generation));
@@ -534,7 +524,7 @@ namespace TiltBrush
             }
             m_CurrentSoundClipDirectory = newPath;
             m_SoundClips = new List<SoundClip>();
-            m_ChangedFiles = new HashSet<string>();
+            m_ChangedFiles.Clear();
 
             StartCatalogScan();
 

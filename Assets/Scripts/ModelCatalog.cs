@@ -48,11 +48,11 @@ namespace TiltBrush
         private readonly ModelRestoreGate m_ModelRestoreGate = new ModelRestoreGate();
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
-        private bool m_FolderChanged;
+        private volatile bool m_FolderChanged;
         private List<FileWatcher> m_FileWatchers;
         private string m_CurrentModelsDirectory;
         public string CurrentModelsDirectory => m_CurrentModelsDirectory;
-        private string m_ChangedFile;
+        private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
         private bool m_SafScanInProgress;
@@ -211,16 +211,11 @@ namespace TiltBrush
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             if (!(source is FileWatcher watcher) || m_FileWatchers == null || !m_FileWatchers.Contains(watcher)) { return; }
-            m_FolderChanged = true;
-
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                m_ChangedFile = WidgetManager.GetModelSubpath(e.FullPath);
+                m_ChangedFiles.Add(WidgetManager.GetModelSubpath(e.FullPath));
             }
-            else
-            {
-                m_ChangedFile = null;
-            }
+            m_FolderChanged = true;
         }
 
         public void ClearMissingModels()
@@ -343,17 +338,15 @@ namespace TiltBrush
 
         public void LoadModels()
         {
+            m_FolderChanged = false;
             var oldModels = new Dictionary<string, Model>(m_ModelsByRelativePath);
             m_ModelRootsByRelativePath.Clear();
 
             // If we changed a file, pretend like we don't have it.
-            if (m_ChangedFile != null)
+            foreach (string changedPath in m_ChangedFiles.Drain())
             {
-                if (oldModels.ContainsKey(m_ChangedFile))
-                {
-                    oldModels.Remove(m_ChangedFile);
-                }
-                m_ChangedFile = null;
+                if (oldModels.TryGetValue(changedPath, out Model changedModel)) { changedModel.ReleaseFromCatalog(); }
+                oldModels.Remove(changedPath);
             }
 
             m_ModelsByRelativePath.Clear();
@@ -378,7 +371,6 @@ namespace TiltBrush
             // to ensure proper filtering based on the current directory
             // Note: CatalogChanged event is fired by LoadModelsForNewDirectory, not here
 
-            m_FolderChanged = false;
         }
 
         public void LoadModelsForNewDirectory(string path)
@@ -716,6 +708,7 @@ namespace TiltBrush
         private IEnumerator<object> LoadSafModelsForNewDirectoryImpl(string path)
         {
             m_SafScanInProgress = true;
+            m_FolderChanged = false;
             IUserStorageBackend backend = UserStorage.Backend;
             string scanRootIdentity = backend.RootIdentity;
             if (m_SafCatalogRootIdentity != null &&
@@ -799,6 +792,7 @@ namespace TiltBrush
 
             string blocksRoot = App.BlocksModelLibraryPath();
             var oldBlocks = new Dictionary<string, Model>(previous);
+            foreach (string changedPath in m_ChangedFiles.Drain()) { oldBlocks.Remove(changedPath); }
             ProcessDirectory(blocksRoot, oldBlocks, recurse: true);
 
             HashSet<string> supportedExtensions = GetSupportedExtensions();
@@ -842,7 +836,6 @@ namespace TiltBrush
             }
 
             PopulateOrderedModels(m_CurrentModelsDirectory);
-            m_FolderChanged = false;
             m_SafScanInProgress = false;
             RecoverMissingModels();
             CatalogChanged?.Invoke();

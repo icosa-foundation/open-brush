@@ -40,8 +40,8 @@ namespace TiltBrush
 
         protected List<ReferenceImage> m_Images;
         protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
-        private bool m_DirNeedsProcessing;
-        private string m_ChangedFile;
+        private volatile bool m_DirNeedsProcessing;
+        private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
         private int m_InCompositorLoad;
         private bool m_RunningImageCacheCoroutine;
         private bool m_ResetImageEnumeration;
@@ -102,7 +102,7 @@ namespace TiltBrush
             m_Images = new List<ReferenceImage>();
             m_RequestedLoads.Clear();
             m_ResetImageEnumeration = true;
-            m_ChangedFile = null;
+            m_ChangedFiles.Clear();
             ProcessReferenceDirectory(userOverlay: false);
         }
 
@@ -472,17 +472,12 @@ namespace TiltBrush
         protected void OnChanged(object source, FileSystemEventArgs e)
         {
             if (!ReferenceEquals(source, m_FileWatcher)) { return; }
-            m_DirNeedsProcessing = true;
-
-            // If a file was changed, store the name so we can refresh it.
+            // Preserve every change, even when followed by create/delete notifications.
             if (e.ChangeType == WatcherChangeTypes.Changed)
             {
-                m_ChangedFile = e.FullPath;
+                m_ChangedFiles.Add(e.FullPath);
             }
-            else
-            {
-                m_ChangedFile = null;
-            }
+            m_DirNeedsProcessing = true;
         }
 
         /// Returns a handle to the specified catalog entry, or null if the index is invalid.
@@ -593,13 +588,9 @@ namespace TiltBrush
             var oldImagesByPath = m_Images.ToDictionary(image => image.CatalogIdentity);
 
             // If we changed a file, pretend like we don't have it.
-            if (m_ChangedFile != null)
+            foreach (string changedPath in m_ChangedFiles.Drain())
             {
-                if (oldImagesByPath.ContainsKey(m_ChangedFile))
-                {
-                    oldImagesByPath.Remove(m_ChangedFile);
-                }
-                m_ChangedFile = null;
+                oldImagesByPath.Remove(changedPath);
             }
             m_Images.Clear();
 

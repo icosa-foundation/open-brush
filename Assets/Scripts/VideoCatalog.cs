@@ -35,8 +35,8 @@ namespace TiltBrush
         private List<ReferenceVideo> m_Videos;
         private bool m_ScanningDirectory;
         private int m_ScanGeneration;
-        private bool m_DirectoryScanRequired;
-        private HashSet<string> m_ChangedFiles;
+        private volatile bool m_DirectoryScanRequired;
+        private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
         private bool m_SeedingSafDefaults;
         private string m_SafSeedAttemptedRootIdentity;
 
@@ -64,7 +64,7 @@ namespace TiltBrush
             m_CurrentVideoDirectory = newPath;
             ++m_ScanGeneration;
             m_Videos = new List<ReferenceVideo>();
-            m_ChangedFiles = new HashSet<string>();
+            m_ChangedFiles.Clear();
 
             if (m_ScanningDirectory)
             {
@@ -302,16 +302,13 @@ namespace TiltBrush
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
             if (!ReferenceEquals(source, m_FileWatcher)) return;
-            m_DirectoryScanRequired = true;
             if (e.ChangeType == WatcherChangeTypes.Changed &&
                 IsDirectChildSupportedPath(
                     m_CurrentVideoDirectory, e.FullPath, m_supportedVideoExtensions))
             {
-                lock (m_ChangedFiles)
-                {
-                    m_ChangedFiles.Add(e.FullPath);
-                }
+                m_ChangedFiles.Add(e.FullPath);
             }
+            m_DirectoryScanRequired = true;
         }
 
         private IEnumerator<object> ScanReferenceDirectory(string directory, int generation)
@@ -342,14 +339,7 @@ namespace TiltBrush
                 yield break;
             }
 
-            HashSet<string> changedSet = null;
-            // We do a switcheroo on the changed list here so that there isn't a conflict with it
-            // if a filewatch callback happens.
-            lock (m_ChangedFiles)
-            {
-                changedSet = m_ChangedFiles;
-                m_ChangedFiles = new HashSet<string>();
-            }
+            string[] changedSet = m_ChangedFiles.Drain();
 
             StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
                 ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
