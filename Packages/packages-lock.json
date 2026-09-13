@@ -894,6 +894,13 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.subsystems": "1.0.0"
       }
+    },
+    "tw.hoba.isomesh": {
+      "version": "https://github.com/icosa-mirror/IsoMesh.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "5343074fe710daa99843e677493a96472047bff7"
     }
   }
 }

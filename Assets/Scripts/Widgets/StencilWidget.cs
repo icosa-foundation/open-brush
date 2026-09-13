@@ -57,18 +57,21 @@ namespace TiltBrush
 
         /// Data that is saved to the .tilt file.
         /// Be very careful when changing this, because it affects the save file format.
-        /// This does not really need to be virtual, except to implement the temporary
-        /// backwards-compatibility code.
         public Guides.State GetSaveState(GroupIdMapping groupIdMapping)
         {
-            return new Guides.State
+            var state = new Guides.State
             {
                 Transform = TrTransform.TRS(transform.localPosition, transform.localRotation, 0),
                 Extents = Extents,
                 Pinned = m_Pinned,
                 GroupId = groupIdMapping.GetId(Group)
             };
+            PopulateSaveState(state);
+            return state;
         }
+
+        protected virtual void PopulateSaveState(Guides.State state) { }
+
         public Guides.State SaveState
         {
             set
@@ -82,8 +85,11 @@ namespace TiltBrush
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
                 SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
+                ApplySaveState(value);
             }
         }
+
+        protected virtual void ApplySaveState(Guides.State state) { }
 
         /// Returns the axis the user probably means to modify.
         /// Subclasses are free to return any Axis value, including Invalid (no preferred axis)
@@ -168,6 +174,18 @@ namespace TiltBrush
             surfaceNorm = transform.forward;
         }
 
+        public virtual void RaycastToNearest(Vector3 pos, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            // Not supported except on SDFs
+            surfacePos = transform.position;
+            surfaceNorm = transform.forward;
+        }
+
+        override public Vector2 GetWidgetSizeRange()
+        {
+            return new Vector2(m_MinSize_CS, m_MaxSize_CS);
+        }
+
         override protected void OnUserBeginTwoHandGrab(
             Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInObject)
         {
@@ -246,15 +264,15 @@ namespace TiltBrush
 
         public static void FromGuideIndex(Guides guide)
         {
-            StencilType stencilType = guide.Type;
-
             foreach (var state in guide.States)
             {
                 StencilWidget stencil;
                 try
                 {
-                    stencil = Instantiate(
-                        WidgetManager.m_Instance.GetStencilPrefab(stencilType));
+                    StencilWidget stencilPrefab = state.Sdf == null
+                        ? WidgetManager.m_Instance.GetStencilPrefab(guide.Type)
+                        : WidgetManager.m_Instance.SdfStencilPrefab;
+                    stencil = Instantiate(stencilPrefab);
                 }
                 catch (ArgumentException e)
                 {
@@ -271,6 +289,12 @@ namespace TiltBrush
                 catch (ArgumentException e)
                 {
                     Debug.LogException(e, stencil);
+                    if (stencil is SdfStencil)
+                    {
+                        stencil.gameObject.SetActive(false);
+                        Destroy(stencil.gameObject);
+                        continue;
+                    }
                 }
                 stencil.Show(true, false);
             }

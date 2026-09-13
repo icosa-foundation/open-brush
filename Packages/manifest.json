@@ -45,6 +45,7 @@
     "org.nuget.google.apis": "1.64.0",
     "org.nuget.google.apis.auth": "1.64.0",
     "org.nuget.google.apis.core": "https://github.com/icosa-mirror/org.nuget.google.apis.core.git#1.64.0-openbrush",
+    "tw.hoba.isomesh": "https://github.com/icosa-mirror/IsoMesh.git#upm",
     "tv.superla.radiancehdr": "https://github.com/superlatv/RadianceHDRUnity.git#upm",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.adaptiveperformance": "1.0.0",

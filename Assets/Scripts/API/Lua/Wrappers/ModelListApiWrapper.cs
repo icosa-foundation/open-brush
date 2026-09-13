@@ -11,7 +11,14 @@ namespace TiltBrush
         public List<ModelWidget> _Models;
 
         [LuaDocsDescription("Returns the last model that was selected")]
-        public ModelApiWrapper lastSelected => new(SelectionManager.m_Instance.LastSelectedModel);
+        public ModelApiWrapper lastSelected
+        {
+            get
+            {
+                ModelWidget model = SelectionManager.m_Instance.LastSelectedModel;
+                return model == null ? null : new ModelApiWrapper(model);
+            }
+        }
 
         [LuaDocsDescription("Returns the last Model")]
         public ModelApiWrapper last => (_Models == null || _Models.Count == 0) ? null : new ModelApiWrapper(_Models[^1]);
