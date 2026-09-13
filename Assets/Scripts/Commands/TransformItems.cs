@@ -144,7 +144,9 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
             );
-            AudioManager.m_Instance.PlayGroupedSound(App.Scene.SelectionCanvas.GetCanvasBoundingBox().center);
+            Vector3 soundPosition = InputManager.m_Instance.GetControllerPosition(
+                InputManager.ControllerName.Brush);
+            AudioManager.m_Instance.PlayGroupedSound(soundPosition);
         }
     }
 }
