@@ -414,10 +414,38 @@ namespace TiltBrush
         {
             for (int scanline = 0; scanline < header.ScanlineCount; scanline++)
             {
-                for (int pixel = 0; pixel < header.PixelCount; pixel++)
+                int pixel = 0;
+                int runShift = 0;
+                Color previous = default;
+                bool hasPrevious = false;
+                while (pixel < header.PixelCount)
                 {
+                    byte[] rgbe = ReadRgbe(reader);
+                    if (rgbe[0] == 1 && rgbe[1] == 1 && rgbe[2] == 1)
+                    {
+                        if (!hasPrevious || runShift > 24)
+                        {
+                            throw new InvalidDataException("Invalid legacy Radiance HDR run");
+                        }
+                        long repeatCount = (long)rgbe[3] << runShift;
+                        if (repeatCount > header.PixelCount - pixel)
+                        {
+                            throw new InvalidDataException("Legacy Radiance HDR run is too long");
+                        }
+                        for (long i = 0; i < repeatCount; i++)
+                        {
+                            StoreRadiancePixel(
+                                header, scanline, pixel++, previous, pixels);
+                        }
+                        runShift += 8;
+                        continue;
+                    }
+
+                    previous = RgbeToColor(rgbe[0], rgbe[1], rgbe[2], rgbe[3]);
                     StoreRadiancePixel(
-                        header, scanline, pixel, ReadRgbeColor(reader), pixels);
+                        header, scanline, pixel++, previous, pixels);
+                    hasPrevious = true;
+                    runShift = 0;
                 }
             }
         }
@@ -504,14 +532,14 @@ namespace TiltBrush
             return sign == '+' ? index : count - 1 - index;
         }
 
-        private static Color ReadRgbeColor(BinaryReader reader)
+        private static byte[] ReadRgbe(BinaryReader reader)
         {
             byte[] rgbe = reader.ReadBytes(4);
             if (rgbe.Length != 4)
             {
                 throw new EndOfStreamException();
             }
-            return RgbeToColor(rgbe[0], rgbe[1], rgbe[2], rgbe[3]);
+            return rgbe;
         }
 
         private static Color RgbeToColor(byte r, byte g, byte b, byte exponent)
