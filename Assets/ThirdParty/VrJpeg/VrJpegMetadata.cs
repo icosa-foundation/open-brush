@@ -102,7 +102,13 @@ namespace TiltBrush
                     continue;
                 }
 
-                byte markerType = reader.ReadByte();
+                byte markerType;
+                do
+                {
+                    markerType = reader.ReadByte();
+                }
+                while (markerType == JPEG_MARKER_START);
+
                 if (markerType == JPEG_MARKER_SOS || markerType == 0xD9) // SOS or EOI
                 {
                     break;

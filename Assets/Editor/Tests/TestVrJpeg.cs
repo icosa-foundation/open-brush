@@ -212,6 +212,27 @@ namespace TiltBrush
         }
 
         [Test]
+        public void ReadsMetadataWithMarkerFillBytes()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
+                byte[] jpegWithFillByte = AddMarkerFillByte(vrJpeg);
+
+                VrJpegMetadata metadata = VrJpegMetadata.ReadFromBytes(jpegWithFillByte);
+
+                Assert.IsNotNull(metadata.RightEyeImageData);
+                Assert.Greater(metadata.RightEyeImageData.Length, 0);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
         public void ConvertsGpanoTopOffsetToBottomOrigin()
         {
             Texture2D source = CreateSourceTexture();
@@ -343,6 +364,15 @@ namespace TiltBrush
             }
 
             throw new InvalidDataException("JPEG start-of-scan marker not found");
+        }
+
+        private static byte[] AddMarkerFillByte(byte[] jpeg)
+        {
+            var output = new byte[jpeg.Length + 1];
+            Array.Copy(jpeg, 0, output, 0, 2);
+            output[2] = 0xFF;
+            Array.Copy(jpeg, 2, output, 3, jpeg.Length - 2);
+            return output;
         }
 
         private static void WriteBigEndian(Stream stream, uint value)
