@@ -128,8 +128,11 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
+            if (!ReferenceEquals(source, m_FileWatcher)) return;
             m_DirectoryScanRequired = true;
-            if (e.ChangeType == WatcherChangeTypes.Changed)
+            if (e.ChangeType == WatcherChangeTypes.Changed &&
+                IsDirectChildSupportedPath(
+                    m_CurrentSoundClipDirectory, e.FullPath, m_supportedSoundClipExtensions))
             {
                 lock (m_ChangedFiles)
                 {
@@ -168,18 +171,28 @@ namespace TiltBrush
             string directory, List<SoundClip> soundClips, HashSet<string> changedSet, int generation)
         {
 
-            var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath));
+            StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath), pathComparer);
             var detected = new HashSet<string>(
                 Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
                     x => m_supportedSoundClipExtensions.Contains(
                         Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
+            var changed = changedSet.Where(x => IsDirectChildSupportedPath(
+                directory, x, m_supportedSoundClipExtensions));
+            var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
+                changed, detected, pathComparer);
+            var toDelete = existing.Except(detected, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
+            var toScan = detected.Except(existing, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
 
             // Remove deleted sound clips from the list. Currently playing clips may continue to play, but will
             // not appear in the reference panel.
-            var retiredSoundClips = soundClips.Where(x => toDelete.Contains(x.AbsolutePath)).ToArray();
-            soundClips.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+            var retiredSoundClips = soundClips.Where(x => toDelete.Contains(
+                x.AbsolutePath, pathComparer)).ToArray();
+            soundClips.RemoveAll(x => toDelete.Contains(
+                x.AbsolutePath, pathComparer));
             foreach (var soundClip in retiredSoundClips)
             {
                 soundClip.ReleaseThumbnail();
@@ -493,12 +506,34 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
                 Directory.Exists(m_CurrentSoundClipDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_CurrentSoundClipDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher = new FileWatcher(m_CurrentSoundClipDirectory, "*.*");
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite |
+                    NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
                 m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        internal static bool IsDirectChildSupportedPath(
+            string directory, string path, IEnumerable<string> supportedExtensions)
+        {
+            try
+            {
+                string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string fullPath = Path.GetFullPath(path);
+                return string.Equals(Path.GetDirectoryName(fullPath), fullDirectory,
+                        Path.DirectorySeparatorChar == '\\'
+                            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) &&
+                    supportedExtensions.Contains(Path.GetExtension(fullPath),
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return false;
             }
         }
 

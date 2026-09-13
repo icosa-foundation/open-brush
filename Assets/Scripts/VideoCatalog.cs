@@ -59,6 +59,7 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            DisposeFileWatcher();
             m_CurrentVideoDirectory = newPath;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
@@ -75,8 +76,9 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
                 Directory.Exists(m_CurrentVideoDirectory))
             {
-                m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory, "*.*");
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite |
+                    NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
@@ -109,10 +111,18 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
-            if (m_FileWatcher != null)
-            {
-                m_FileWatcher.EnableRaisingEvents = false;
-            }
+            DisposeFileWatcher();
+        }
+
+        private void DisposeFileWatcher()
+        {
+            if (m_FileWatcher == null) return;
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)
@@ -287,8 +297,11 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
+            if (!ReferenceEquals(source, m_FileWatcher)) return;
             m_DirectoryScanRequired = true;
-            if (e.ChangeType == WatcherChangeTypes.Changed)
+            if (e.ChangeType == WatcherChangeTypes.Changed &&
+                IsDirectChildSupportedPath(
+                    m_CurrentVideoDirectory, e.FullPath, m_supportedVideoExtensions))
             {
                 lock (m_ChangedFiles)
                 {
@@ -318,16 +331,25 @@ namespace TiltBrush
                 m_ChangedFiles = new HashSet<string>();
             }
 
-            var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
+            StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath), pathComparer);
             var detected = new HashSet<string>(
                 Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(
                     x => IsSupportedVideoExtension(x, m_supportedVideoExtensions)));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
+            var changed = changedSet.Where(x => IsDirectChildSupportedPath(
+                m_CurrentVideoDirectory, x, m_supportedVideoExtensions));
+            var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
+                changed, detected, pathComparer);
+            var toDelete = existing.Except(detected, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
+            var toScan = detected.Except(existing, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
 
             // Remove deleted videos from the list. Currently playing videos may continue to play, but will
             // not appear in the reference panel.
-            m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+            m_Videos.RemoveAll(x => toDelete.Contains(
+                x.AbsolutePath, pathComparer));
 
             var newVideos = new List<ReferenceVideo>();
             foreach (var filePath in toScan)
@@ -498,6 +520,26 @@ namespace TiltBrush
             string extension = Path.GetExtension(path);
             return supportedExtensions.Any(supportedExtension =>
                 string.Equals(extension, supportedExtension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal static bool IsDirectChildSupportedPath(
+            string directory, string path, IEnumerable<string> supportedExtensions)
+        {
+            try
+            {
+                string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string fullPath = Path.GetFullPath(path);
+                return string.Equals(Path.GetDirectoryName(fullPath), fullDirectory,
+                        Path.DirectorySeparatorChar == '\\'
+                            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) &&
+                    IsSupportedVideoExtension(fullPath, supportedExtensions);
+            }
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return false;
+            }
         }
 
         private static bool TryGetRelativeDirectory(
