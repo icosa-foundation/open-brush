@@ -1686,6 +1686,11 @@ namespace TiltBrush
 
         public void DestroyAllWidgets()
         {
+            // Invalidate imports that could otherwise recreate widgets after a scene reset.
+            if (ModelCatalog.m_Instance != null)
+            {
+                ModelCatalog.m_Instance.ClearMissingModels();
+            }
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);

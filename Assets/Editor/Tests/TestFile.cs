@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using NUnit.Framework;
 
@@ -744,6 +745,105 @@ namespace TiltBrush
             backend.RootIdentity = "different-root";
             Assert.Throws<IOException>(() => source.OpenRead());
             Assert.Throws<IOException>(() => source.Materialize(scope));
+        }
+
+        private static void SetModelCatalogField(ModelCatalog catalog, string name, object value)
+        {
+            typeof(ModelCatalog).GetField(name,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(catalog, value);
+        }
+
+        [TestCase("success")]
+        [TestCase("root_changed")]
+        [TestCase("cleared")]
+        [TestCase("not_found")]
+        [TestCase("superseded")]
+        public async Task SafModelRestore_WaitsForIndexAndRejectsStaleResults(string outcome)
+        {
+            IUserStorageBackend previousBackend = UserStorage.Backend;
+            var backend = new FakeSafBackend();
+            var owner = new GameObject("SafModelRestoreTest");
+            owner.SetActive(false); // Do not run catalog Awake/App initialization.
+            try
+            {
+                var catalog = owner.AddComponent<ModelCatalog>();
+                catalog.m_ModelsByRelativePath = new Dictionary<string, Model>();
+                SetModelCatalogField(catalog, "m_MissingModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_CurrentModelsDirectory", "unrelated-panel-folder");
+                SetModelCatalogField(catalog, "m_SafScanInProgress", true);
+                SetModelCatalogField(catalog, "m_SafCatalogRootIdentity", backend.RootIdentity);
+                var scan = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                SetModelCatalogField(catalog, "m_SafScanCompletion", scan);
+                UserStorage.SetBackendForTests(backend);
+                Task<Model> lookup = catalog.GetModelAsync("Nested/model.obj");
+                Assert.IsFalse(lookup.IsCompleted);
+                if (outcome == "superseded")
+                {
+                    var replacement = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    SetModelCatalogField(catalog, "m_SafScanCompletion", replacement);
+                    scan.SetResult(false);
+                    // Let the lookup observe the first completion; it must still await replacement.
+                    await Task.Yield();
+                    Assert.IsFalse(lookup.IsCompleted);
+                    scan = replacement;
+                }
+                var model = new Model("Nested/model.obj");
+                if (outcome != "not_found") catalog.m_ModelsByRelativePath.Add("Nested/model.obj", model);
+                if (outcome == "root_changed") backend.RootIdentity = "replacement-root";
+                if (outcome == "cleared") catalog.ClearMissingModels();
+                SetModelCatalogField(catalog, "m_SafScanInProgress", false);
+                scan.SetResult(outcome != "not_found");
+                Model result = await lookup;
+                if (outcome == "success" || outcome == "superseded") Assert.AreSame(model, result);
+                else Assert.IsNull(result);
+                Assert.AreEqual("unrelated-panel-folder", catalog.CurrentModelsDirectory);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previousBackend);
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ModelRestore_RetainsCompleteMissingMetadataAndInvalidatesOldLoads()
+        {
+            IUserStorageBackend previousBackend = UserStorage.Backend;
+            var backend = new FakeSafBackend();
+            var owner = new GameObject("ModelRestoreMetadataTest");
+            owner.SetActive(false);
+            try
+            {
+                var catalog = owner.AddComponent<ModelCatalog>();
+                UserStorage.SetBackendForTests(backend);
+                SetModelCatalogField(catalog, "m_MissingModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                var data = new TiltModels75 {
+                    FilePath = "Nested/model.obj", RawTransforms = new[] { TrTransform.identity },
+                    Subtrees = new[] { "part" }, PinStates = new[] { false }, LayerIds = new[] { 2 },
+                    GroupIds = new uint[] { 3 }, SplitMeshPaths = new List<string> { "split" }
+                };
+                catalog.AddMissingModel(data);
+                Assert.AreSame(data, catalog.MissingModels.Single());
+                Func<bool> current = catalog.CaptureModelRestoreValidation();
+                Func<bool> sceneCurrent = catalog.CaptureModelRestoreSceneValidation();
+                Assert.IsTrue(current());
+                backend.RootIdentity = "newly-selected-root";
+                Assert.IsFalse(current());
+                Assert.IsTrue(sceneCurrent(), "A source change must not discard pending scene metadata.");
+                Assert.AreSame(data, catalog.MissingModels.Single());
+                catalog.ClearMissingModels();
+                Assert.IsFalse(current());
+                Assert.IsFalse(sceneCurrent());
+                Assert.IsEmpty(catalog.MissingModels);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previousBackend);
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
         [TestCase("/sdcard/Blocks/OfflineModels")]

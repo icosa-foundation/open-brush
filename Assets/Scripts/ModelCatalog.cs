@@ -17,6 +17,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace TiltBrush
@@ -43,6 +44,8 @@ namespace TiltBrush
         private Dictionary<string, TrTransform[]> m_MissingNormalizedModelsByRelativePath;
         // The other is post-m13 and contains raw transforms (original model's pivot and size)
         private Dictionary<string, TrTransform[]> m_MissingModelsByRelativePath;
+        private readonly Dictionary<string, TiltModels75> m_MissingModelData = new Dictionary<string, TiltModels75>();
+        private readonly ModelRestoreGate m_ModelRestoreGate = new ModelRestoreGate();
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
@@ -53,6 +56,7 @@ namespace TiltBrush
         private bool m_RecurseDirectories = false;
         private Dictionary<string, string> m_ModelRootsByRelativePath;
         private bool m_SafScanInProgress;
+        private TaskCompletionSource<bool> m_SafScanCompletion;
         private bool m_SafRescanRequested;
         private string m_SafCatalogRootIdentity;
         private string m_SafSeedAttemptedRootIdentity;
@@ -78,21 +82,9 @@ namespace TiltBrush
         {
             get
             {
-                var missingModels = m_MissingModelsByRelativePath.Select(e => new TiltModels75
-                {
-                    FilePath = e.Key,
-                    Transforms = m_MissingNormalizedModelsByRelativePath.ContainsKey(e.Key) ?
-                        m_MissingNormalizedModelsByRelativePath[e.Key] : null,
-                    RawTransforms = e.Value
-                });
-                var missingNormalizedModels = m_MissingNormalizedModelsByRelativePath.Select(e =>
-                    m_MissingModelsByRelativePath.ContainsKey(e.Key) ? null :
-                        new TiltModels75
-                        {
-                            FilePath = e.Key,
-                            Transforms = e.Value
-                        }).Where(m => m != null);
-                return missingModels.Concat(missingNormalizedModels);
+                return m_MissingModelsByRelativePath.Keys
+                    .Union(m_MissingNormalizedModelsByRelativePath.Keys)
+                    .Select(GetMissingModelData);
             }
         }
 
@@ -102,8 +94,16 @@ namespace TiltBrush
             Init();
         }
 
+        private void OnDestroy()
+        {
+            m_ModelRestoreGate.Invalidate();
+            m_SafScanCompletion?.TrySetResult(false);
+        }
+
         public void Init()
         {
+            m_ModelRestoreGate.Invalidate();
+            m_MissingModelData.Clear();
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 App.InitMediaLibraryPath();
@@ -218,6 +218,8 @@ namespace TiltBrush
 
         public void ClearMissingModels()
         {
+            m_ModelRestoreGate.Invalidate();
+            m_MissingModelData.Clear();
             m_MissingNormalizedModelsByRelativePath.Clear();
             m_MissingModelsByRelativePath.Clear();
         }
@@ -225,6 +227,7 @@ namespace TiltBrush
         public void AddMissingModel(
             string relativePath, TrTransform[] xfs, TrTransform[] rawXfs)
         {
+            m_MissingModelData.Remove(relativePath);
             if (xfs != null)
             {
                 m_MissingNormalizedModelsByRelativePath[relativePath] = xfs;
@@ -232,6 +235,84 @@ namespace TiltBrush
             if (rawXfs != null)
             {
                 m_MissingModelsByRelativePath[relativePath] = rawXfs;
+            }
+        }
+
+        public void AddMissingModel(TiltModels75 data)
+        {
+            if (data.FilePath == null) { return; }
+            AddMissingModel(data.FilePath, data.Transforms, data.RawTransforms);
+            m_MissingModelData[data.FilePath] = data;
+        }
+
+        private TiltModels75 GetMissingModelData(string path)
+        {
+            if (m_MissingModelData.TryGetValue(path, out TiltModels75 data)) { return data; }
+            m_MissingNormalizedModelsByRelativePath.TryGetValue(path, out TrTransform[] normalized);
+            m_MissingModelsByRelativePath.TryGetValue(path, out TrTransform[] raw);
+            return new TiltModels75 { FilePath = path, Transforms = normalized, RawTransforms = raw };
+        }
+
+        internal Func<bool> CaptureModelRestoreSceneValidation()
+        {
+            int generation = m_ModelRestoreGate.Generation;
+            return () => generation == m_ModelRestoreGate.Generation;
+        }
+
+        internal Func<bool> CaptureModelRestoreValidation()
+        {
+            int generation = m_ModelRestoreGate.Generation;
+            IUserStorageBackend backend = UserStorage.Backend;
+            string root = backend.RootIdentity;
+            return () => generation == m_ModelRestoreGate.Generation &&
+                ReferenceEquals(backend, UserStorage.Backend) && root == backend.RootIdentity;
+        }
+
+        private void RecoverMissingModels()
+        {
+            // The full index, not the panel's current folder, determines what can be restored.
+            foreach (TiltModels75 data in MissingModels.ToArray())
+            {
+                if (m_ModelsByRelativePath.ContainsKey(data.FilePath))
+                {
+                    _ = RecoverMissingModelAsync(data);
+                }
+            }
+        }
+
+        private async Task RecoverMissingModelAsync(TiltModels75 data)
+        {
+            string path = data.FilePath;
+            Func<bool> sceneCurrent = CaptureModelRestoreSceneValidation();
+            Func<bool> sourceCurrent = CaptureModelRestoreValidation();
+            Func<bool> pendingCurrent = () => sourceCurrent() &&
+                ReferenceEquals(GetMissingModelData(path).Transforms, data.Transforms) &&
+                ReferenceEquals(GetMissingModelData(path).RawTransforms, data.RawTransforms) &&
+                (!m_MissingModelData.TryGetValue(path, out TiltModels75 pending) || ReferenceEquals(pending, data));
+            try
+            {
+                await m_ModelRestoreGate.RunAsync(path,
+                    current => ModelWidget.CreateModelsFromRelativePath(
+                        path, data.Subtrees, data.Transforms, data.RawTransforms, data.PinStates,
+                        data.GroupIds, data.LayerIds, data.SplitMeshPaths, data.NotSplittableMeshPaths,
+                        () => current() && pendingCurrent()),
+                    () =>
+                    {
+                        if (!pendingCurrent()) { return; }
+                        m_MissingModelsByRelativePath.Remove(path);
+                        m_MissingNormalizedModelsByRelativePath.Remove(path);
+                        m_MissingModelData.Remove(path);
+                    }, pendingCurrent);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"MODEL_RESTORE Could not recover {path}: {e.Message}");
+            }
+            finally
+            {
+                // The new source's scan may have attempted recovery while this path was
+                // still in flight against the old source. Retry after releasing the gate.
+                if (sceneCurrent() && !sourceCurrent()) { ForceCatalogScan(); }
             }
         }
 
@@ -343,21 +424,7 @@ namespace TiltBrush
             // Update the entry for the current directory to ensure ItemCount uses the filtered list
             m_OrderedModelNames[m_CurrentModelsDirectory] = modelsInDirectory;
 
-            foreach (string relativePath in modelsInDirectory)
-            {
-                if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    _ = ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-                if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
-                {
-                    _ = ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
-                }
-            }
+            RecoverMissingModels();
             if (CatalogChanged != null)
             {
                 CatalogChanged();
@@ -617,6 +684,29 @@ namespace TiltBrush
 
         private IEnumerator<object> LoadSafModelsForNewDirectory(string path)
         {
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            m_SafScanCompletion = completion;
+            try
+            {
+                using (IEnumerator<object> scan = LoadSafModelsForNewDirectoryImpl(path))
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                // A queued rescan may already have installed its own completion source.
+                if (ReferenceEquals(m_SafScanCompletion, completion))
+                {
+                    m_SafScanCompletion = null;
+                    m_SafScanInProgress = false;
+                }
+                completion.TrySetResult(true);
+            }
+        }
+
+        private IEnumerator<object> LoadSafModelsForNewDirectoryImpl(string path)
+        {
             m_SafScanInProgress = true;
             IUserStorageBackend backend = UserStorage.Backend;
             string scanRootIdentity = backend.RootIdentity;
@@ -639,10 +729,7 @@ namespace TiltBrush
                     .Distinct();
                 foreach (Model oldModel in removedModels)
                 {
-                    if (oldModel.m_ModelParent != null)
-                    {
-                        Destroy(oldModel.m_ModelParent.gameObject);
-                    }
+                    oldModel.ReleaseFromCatalog();
                 }
                 m_ModelsByRelativePath = localModels;
                 m_ModelRootsByRelativePath = localModels.Keys.ToDictionary(
@@ -735,9 +822,9 @@ namespace TiltBrush
             var retained = new HashSet<Model>(m_ModelsByRelativePath.Values);
             foreach (Model oldModel in previous.Values.Distinct())
             {
-                if (!retained.Contains(oldModel) && oldModel.m_ModelParent != null)
+                if (!retained.Contains(oldModel))
                 {
-                    Destroy(oldModel.m_ModelParent.gameObject);
+                    oldModel.ReleaseFromCatalog();
                 }
             }
             if (previous.Values.Any(model => !retained.Contains(model)))
@@ -748,6 +835,7 @@ namespace TiltBrush
             PopulateOrderedModels(m_CurrentModelsDirectory);
             m_FolderChanged = false;
             m_SafScanInProgress = false;
+            RecoverMissingModels();
             CatalogChanged?.Invoke();
             if (m_SafRescanRequested)
             {
@@ -831,6 +919,40 @@ namespace TiltBrush
         /// GetModel, for .tilt files written by TB 7.5 and up
         /// Paths are always relative to Media Library/, unless someone hacked the tilt file
         /// in which case we ignore the model.
+        public async Task<Model> GetModelAsync(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath)) { return null; }
+            int generation = m_ModelRestoreGate.Generation;
+            IUserStorageBackend backend = UserStorage.Backend;
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework) { return GetModel(relativePath); }
+
+            string root = backend.RootIdentity;
+            if (!m_SafScanInProgress && m_SafCatalogRootIdentity == root &&
+                m_ModelsByRelativePath.TryGetValue(relativePath, out Model cached)) { return cached; }
+            if (!m_SafScanInProgress) { LoadModelsForNewDirectory(m_CurrentModelsDirectory); }
+            Task scan = m_SafScanCompletion?.Task;
+            while (scan != null)
+            {
+                await scan;
+                if (generation != m_ModelRestoreGate.Generation ||
+                    !ReferenceEquals(backend, UserStorage.Backend) || root != backend.RootIdentity)
+                {
+                    return null;
+                }
+                // A queued rescan can replace the scan we were awaiting.
+                Task nextScan = m_SafScanCompletion?.Task;
+                if (ReferenceEquals(scan, nextScan)) { break; }
+                scan = nextScan;
+            }
+            if (generation != m_ModelRestoreGate.Generation ||
+                !ReferenceEquals(backend, UserStorage.Backend) || root != backend.RootIdentity)
+            {
+                return null;
+            }
+            m_ModelsByRelativePath.TryGetValue(relativePath, out Model model);
+            return model;
+        }
+
         public Model GetModel(string relativePath)
         {
             Model m;
