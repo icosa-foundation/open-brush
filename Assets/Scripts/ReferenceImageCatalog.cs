@@ -46,6 +46,7 @@ namespace TiltBrush
         private bool m_RunningImageCacheCoroutine;
         private bool m_ResetImageEnumeration;
         private bool m_SafQueryInProgress;
+        private int m_DirectoryGeneration;
         private bool m_SeedingSafDefaults;
         private string m_SafSeedAttemptedRootIdentity;
         private const string kSafSeedPreference =
@@ -84,6 +85,7 @@ namespace TiltBrush
 
         public virtual void ChangeDirectory(string newPath)
         {
+            ++m_DirectoryGeneration;
             m_CurrentImagesDirectory = newPath;
             StopWatchingCurrentDirectory();
             if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
@@ -106,6 +108,7 @@ namespace TiltBrush
 
         protected virtual void OnDestroy()
         {
+            ++m_DirectoryGeneration;
             StopWatchingCurrentDirectory();
         }
 
@@ -675,12 +678,28 @@ namespace TiltBrush
             string imageDir, bool userOverlay)
         {
             m_SafQueryInProgress = true;
+            try
+            {
+                using (var query = QuerySafReferenceDirectoryImpl(imageDir, userOverlay))
+                {
+                    while (query.MoveNext()) { yield return query.Current; }
+                }
+            }
+            finally
+            {
+                m_SafQueryInProgress = false;
+            }
+        }
+
+        private IEnumerator<object> QuerySafReferenceDirectoryImpl(
+            string imageDir, bool userOverlay)
+        {
+            int generation = m_DirectoryGeneration;
             string queryRootIdentity = UserStorage.Backend.RootIdentity;
             string relativeDirectory;
             if (!TryGetRelativeDirectory(HomeDirectory, imageDir, out relativeDirectory))
             {
                 Debug.LogError($"SAF_CATALOG Image directory is outside its storage area: {imageDir}");
-                m_SafQueryInProgress = false;
                 yield break;
             }
 
@@ -703,7 +722,6 @@ namespace TiltBrush
                     Debug.LogWarning(
                         $"SAF_CATALOG Image query failed; retaining the previous catalog: " +
                         $"{e.InnerException?.Message ?? e.Message}");
-                    m_SafQueryInProgress = false;
                     yield break;
                 }
                 if (finished)
@@ -717,15 +735,16 @@ namespace TiltBrush
                 Debug.LogWarning(
                     $"SAF_CATALOG Image query failed; retaining the previous catalog: " +
                     $"{listing.Code} {listing.Error}");
-                m_SafQueryInProgress = false;
                 yield break;
             }
-            if (!string.Equals(
+            if (generation != m_DirectoryGeneration ||
+                !ReferenceEquals(backend, UserStorage.Backend) ||
+                !string.Equals(imageDir, GetCurrentDirectory(), StringComparison.Ordinal) ||
+                !string.Equals(
                     queryRootIdentity,
                     backend.RootIdentity,
                     StringComparison.Ordinal))
             {
-                m_SafQueryInProgress = false;
                 m_DirNeedsProcessing = true;
                 yield break;
             }
@@ -773,7 +792,6 @@ namespace TiltBrush
 
             m_Images = nextImages;
             m_RequestedLoads.Clear();
-            m_SafQueryInProgress = false;
             StartImageCacheLoading(userOverlay);
             CatalogChanged?.Invoke();
         }
