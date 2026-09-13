@@ -98,18 +98,25 @@ namespace TiltBrush
                                                            int maxWidth = 8192,
                                                            bool extractAudio = true)
         {
+            if (maxWidth > 0)
+            {
+                ImageUtils.ValidateDimensions(data, maxWidth);
+            }
+
             // Read metadata
             VrJpegMetadata metadata = VrJpegMetadata.ReadFromBytes(data);
 
-            // Load left eye (the main JPEG image)
-            RawImage leftEye = ImageUtils.FromJpeg(data, filename);
-
-            // Load right eye from metadata
             if (metadata.RightEyeImageData == null)
             {
                 throw new ImageLoadError("VR JPEG does not contain right eye image data");
             }
+            if (maxWidth > 0)
+            {
+                ImageUtils.ValidateDimensions(metadata.RightEyeImageData, maxWidth);
+            }
 
+            // Load both eyes only after verifying that neither can exceed the memory limit.
+            RawImage leftEye = ImageUtils.FromJpeg(data, filename);
             RawImage rightEye = ImageUtils.FromJpeg(metadata.RightEyeImageData, filename + "_right");
 
             // Convert both eyes to equirectangular

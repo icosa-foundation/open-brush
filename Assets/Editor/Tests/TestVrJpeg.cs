@@ -51,6 +51,44 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RejectsVrJpegLeftEyeAboveDecodeLimit()
+        {
+            Texture2D source = CreateSourceTexture();
+            try
+            {
+                byte[] jpeg = source.EncodeToJPG();
+                byte[] vrJpeg = CreateVrJpeg(jpeg, jpeg);
+
+                Assert.Throws<ImageLoadError>(() => VrJpegUtils.LoadVrJpegFromBytes(
+                    vrJpeg, "generated.vr.jpg", maxWidth: 2));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
+        [Test]
+        public void RejectsVrJpegRightEyeAboveDecodeLimit()
+        {
+            Texture2D smallSource = CreateSourceTexture(2, 1);
+            Texture2D largeSource = CreateSourceTexture();
+            try
+            {
+                byte[] vrJpeg = CreateVrJpeg(
+                    smallSource.EncodeToJPG(), largeSource.EncodeToJPG());
+
+                Assert.Throws<ImageLoadError>(() => VrJpegUtils.LoadVrJpegFromBytes(
+                    vrJpeg, "generated.vr.jpg", maxWidth: 2));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(smallSource);
+                UnityEngine.Object.DestroyImmediate(largeSource);
+            }
+        }
+
+        [Test]
         public void TreatsVrJpegAsOrdinaryImageByDefault()
         {
             Texture2D source = CreateSourceTexture();
@@ -116,10 +154,10 @@ namespace TiltBrush
             }
         }
 
-        private static Texture2D CreateSourceTexture()
+        private static Texture2D CreateSourceTexture(int width = 4, int height = 2)
         {
-            var texture = new Texture2D(4, 2, TextureFormat.RGBA32, false);
-            var pixels = new Color32[8];
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            var pixels = new Color32[width * height];
             for (int i = 0; i < pixels.Length; i++)
             {
                 pixels[i] = new Color32((byte)(i * 20), 64, 128, 255);
