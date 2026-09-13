@@ -320,7 +320,8 @@ namespace TiltBrush
 
             var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
             var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
+                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                    x => IsSupportedVideoExtension(x, m_supportedVideoExtensions)));
             var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
             var toScan = detected.Except(existing).Concat(changedSet).ToArray();
 
@@ -416,8 +417,8 @@ namespace TiltBrush
             var newVideos = new List<ReferenceVideo>();
             foreach (StorageDocument document in documents)
             {
-                if (!m_supportedVideoExtensions.Contains(
-                        Path.GetExtension(document.DisplayName)))
+                if (!IsSupportedVideoExtension(
+                        document.DisplayName, m_supportedVideoExtensions))
                 {
                     continue;
                 }
@@ -489,6 +490,14 @@ namespace TiltBrush
                 }
             }
             return files;
+        }
+
+        internal static bool IsSupportedVideoExtension(
+            string path, IEnumerable<string> supportedExtensions)
+        {
+            string extension = Path.GetExtension(path);
+            return supportedExtensions.Any(supportedExtension =>
+                string.Equals(extension, supportedExtension, StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool TryGetRelativeDirectory(

@@ -96,5 +96,22 @@ namespace TiltBrush
             CollectionAssert.AreEqual(defaults["default.wav"], File.ReadAllBytes(Path.Combine(m_Root, "default.wav")));
             Assert.AreEqual("default.wav", result.Entries.Single().RelativeDisplayPath);
         }
+
+        [TestCase("clip.mp4", ".mp4")]
+        [TestCase("CLIP.MP4", ".mp4")]
+        [TestCase("clip.Mp4", ".MP4")]
+        public void VideoExtensionMatching_IsCaseInsensitive(
+            string path, string supportedExtension)
+        {
+            Assert.IsTrue(VideoCatalog.IsSupportedVideoExtension(
+                path, new[] { supportedExtension }));
+        }
+
+        [Test]
+        public void VideoExtensionMatching_RejectsUnsupportedExtension()
+        {
+            Assert.IsFalse(VideoCatalog.IsSupportedVideoExtension(
+                "clip.MOV", new[] { ".mp4", ".webm" }));
+        }
     }
 }
