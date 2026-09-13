@@ -3831,6 +3831,10 @@ MonoBehaviour:
     m_Key: SNAP_SETTINGS_PANEL_STROKES
     m_Metadata:
       m_Items: []
+  - m_Id: 542389062831005696
+    m_Key: SNAP_SETTINGS_PANEL_SNAP_TO_STRAIGHT_LINES
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
