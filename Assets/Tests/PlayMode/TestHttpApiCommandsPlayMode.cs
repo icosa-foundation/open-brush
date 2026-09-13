@@ -207,6 +207,19 @@ namespace TiltBrush
             return dropCamTransform.gameObject;
         }
 
+        private static Component FindSceneComponent(Type type)
+        {
+            foreach (UnityEngine.Object candidate in Resources.FindObjectsOfTypeAll(type))
+            {
+                if (candidate is Component component && component.gameObject.scene.isLoaded)
+                {
+                    return component;
+                }
+            }
+            Assert.Fail($"Scene component not found: {type.FullName}");
+            return null;
+        }
+
         private static string GetSnapshotPath()
         {
             var appType = GetTypeOrFail("TiltBrush.App");
@@ -434,6 +447,47 @@ namespace TiltBrush
 
         [UnityTest] public IEnumerator Cmd_DebugBrush() { yield return EnsureReady(); yield return SendCommand("debug.brush"); }
         [UnityTest] public IEnumerator Cmd_StrokesDebug() { yield return EnsureReady(); yield return SendCommand("strokes.debug"); }
+
+        [UnityTest]
+        public IEnumerator ScriptedTool_DisablingActiveGestureClosesUndoGroup()
+        {
+            yield return EnsureReady();
+            Type scriptedToolType = GetTypeOrFail("TiltBrush.ScriptedTool");
+            Component scriptedTool = FindSceneComponent(scriptedToolType);
+            bool wasActive = scriptedTool.gameObject.activeSelf;
+            Type apiType = GetTypeOrFail("TiltBrush.ApiManager");
+            object api = GetStaticProperty(apiType, "Instance");
+            MethodInfo startUndo = apiType.GetMethod("StartUndo", BindingFlags.Public | BindingFlags.Instance);
+            MethodInfo endUndo = apiType.GetMethod("EndUndo", BindingFlags.Public | BindingFlags.Instance);
+            MethodInfo enableTool = scriptedToolType.GetMethod(
+                "EnableTool", BindingFlags.Public | BindingFlags.Instance);
+            Assert.NotNull(startUndo, "ApiManager.StartUndo not found");
+            Assert.NotNull(endUndo, "ApiManager.EndUndo not found");
+            Assert.NotNull(enableTool, "ScriptedTool.EnableTool not found");
+
+            try
+            {
+                startUndo.Invoke(api, null);
+                SetInstanceField(scriptedTool, "m_WasClicked", true);
+
+                enableTool.Invoke(scriptedTool, new object[] { false });
+
+                Assert.IsFalse((bool)GetInstanceField(scriptedTool, "m_WasClicked"));
+                Assert.IsNull(GetInstanceProperty(api, "ActiveUndo"));
+            }
+            finally
+            {
+                if (GetInstanceProperty(api, "ActiveUndo") != null)
+                {
+                    endUndo.Invoke(api, null);
+                }
+                SetInstanceField(scriptedTool, "m_WasClicked", false);
+                if (wasActive)
+                {
+                    enableTool.Invoke(scriptedTool, new object[] { true });
+                }
+            }
+        }
 
         [UnityTest]
         public IEnumerator Cmd_BrushMoveTo()
