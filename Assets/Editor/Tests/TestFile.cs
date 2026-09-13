@@ -746,6 +746,27 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
+        [TestCase(false, "/sdcard/Blocks/OfflineModels")]
+        [TestCase(true, "/sdcard/Documents/Blocks/OfflineModels")]
+        public void BlocksDirectory_AndroidRootIsIndependentOfPrivateUserCache(
+            bool runningUnderLepton, string expected)
+        {
+            foreach (string userPath in new[] { "/sdcard/Open Brush",
+                         "/private/OpenBrushWorkingCache/Open Brush" })
+            {
+                Assert.AreEqual(expected, App.GetBlocksModelLibraryPath(
+                    userPath, true, runningUnderLepton).Replace('\\', '/'));
+            }
+        }
+
+        [Test]
+        public void BlocksDirectory_DesktopKeepsTheSharedSiblingLocation()
+        {
+            string documents = Path.Combine(Path.GetTempPath(), "Documents");
+            Assert.AreEqual(Path.Combine(documents, "Blocks", "OfflineModels"),
+                App.GetBlocksModelLibraryPath(Path.Combine(documents, "Open Brush"), false, false));
+        }
+
         [Test]
         public void BlocksDirectory_WatchesExistingSourceWithoutCreatingIt()
         {

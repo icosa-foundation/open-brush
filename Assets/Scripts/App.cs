@@ -2242,7 +2242,20 @@ namespace TiltBrush
 
         public static string BlocksModelLibraryPath()
         {
-            string userPath = UserPath();
+            bool isAndroid = Application.platform == RuntimePlatform.Android;
+            return GetBlocksModelLibraryPath(
+                UserPath(), isAndroid, isAndroid && SteamManager.RunningUnderLepton);
+        }
+
+        internal static string GetBlocksModelLibraryPath(
+            string userPath, bool isAndroid, bool runningUnderLepton)
+        {
+            // Blocks is a separate app's shared library, not part of our private working cache.
+            if (isAndroid)
+            {
+                return Path.Combine(
+                    runningUnderLepton ? "/sdcard/Documents" : "/sdcard", "Blocks", "OfflineModels");
+            }
             var userParent = Directory.GetParent(userPath);
             string blocksRoot = userParent != null ? userParent.FullName : userPath;
             return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
