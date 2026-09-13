@@ -748,8 +748,11 @@ namespace TiltBrush
                 return;
             }
             TrTransform lookPose = App.Scene.Pose;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
             lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
             App.Scene.disableTiltProtection = true;
             App.Scene.Pose = lookPose;
         }

@@ -653,6 +653,8 @@ namespace TiltBrush
         public IEnumerator Cmd_UserDirection()
         {
             yield return EnsureReady();
+            yield return SendCommand("user.move.to", "1,1,1");
+            Vector3 userPosition = InverseTransformScenePoint(GetHead().position);
             var initialRotation = GetSceneRotation();
             yield return SendCommand("user.direction", "45,45,0");
             if (IsVr())
@@ -663,6 +665,7 @@ namespace TiltBrush
             AssertQuaternionApprox(
                 Quaternion.Euler(45, 45, 0),
                 Quaternion.Inverse(GetSceneRotation()) * GetHead().rotation);
+            AssertVector3Approx(userPosition, InverseTransformScenePoint(GetHead().position));
             yield return SendCommand("user.move.by", "0,0,0");
             AssertQuaternionApprox(
                 Quaternion.Euler(45, 45, 0),
