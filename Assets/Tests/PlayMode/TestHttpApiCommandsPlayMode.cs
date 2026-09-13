@@ -1197,6 +1197,7 @@ namespace TiltBrush
         {
             yield return EnsureReady();
             yield return PrepareStationarySpectator();
+            yield return SendCommand("spectator.move.to", "1,2,3");
             yield return SendCommand("spectator.look.at", "0,0,0");
             yield return WaitFrames(2);
             var dropCam = GetDropCam();
