@@ -32,6 +32,12 @@ namespace TiltBrush
                 throw new ArgumentNullException(nameof(document));
             }
 
+            byte[] preservedSourceData = document.GetPreservedSourceData();
+            if (preservedSourceData != null)
+            {
+                return WritePreservingSourceChunks(document, preservedSourceData);
+            }
+
             if (document.Models.Count == 0)
             {
                 throw new InvalidOperationException("RuntimeVoxDocument must contain at least one model.");
@@ -104,6 +110,11 @@ namespace TiltBrush
         }
 
         private static byte[] BuildXyziChunk(RuntimeVoxDocument.RuntimeModel model)
+            => BuildXyziChunk(model, null);
+
+        private static byte[] BuildXyziChunk(
+            RuntimeVoxDocument.RuntimeModel model,
+            IReadOnlyList<byte> logicalToRawPalette)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
@@ -139,7 +150,10 @@ namespace TiltBrush
                     writer.Write((byte)voxel.Key.x);
                     writer.Write((byte)voxel.Key.y);
                     writer.Write((byte)voxel.Key.z);
-                    writer.Write(voxel.Value);
+                    byte paletteIndex = logicalToRawPalette == null
+                        ? voxel.Value
+                        : logicalToRawPalette[voxel.Value - 1];
+                    writer.Write(paletteIndex);
                 }
 
                 return WrapChunk("XYZI", stream.ToArray());
@@ -275,6 +289,243 @@ namespace TiltBrush
                 }
 
                 return WrapChunk("RGBA", stream.ToArray());
+            }
+        }
+
+        private static byte[] WritePreservingSourceChunks(
+            RuntimeVoxDocument document,
+            byte[] sourceData)
+        {
+            PreservedVoxFile source = PreservedVoxFile.Parse(sourceData);
+            List<PreservedChunk> chunks = source.Main.Children;
+            List<PreservedChunk> sizeChunks = chunks.Where(chunk => chunk.Id == "SIZE").ToList();
+            List<PreservedChunk> voxelChunks = chunks.Where(chunk => chunk.Id == "XYZI").ToList();
+
+            if (sizeChunks.Count != voxelChunks.Count)
+            {
+                throw new InvalidDataException(
+                    "Cannot preserve VOX source because its SIZE and XYZI chunk counts differ.");
+            }
+
+            var modelsBySourceId = new Dictionary<int, RuntimeVoxDocument.RuntimeModel>();
+            foreach (RuntimeVoxDocument.RuntimeModel model in document.Models)
+            {
+                if (model.SourceModelId < 0 || model.SourceModelId >= sizeChunks.Count)
+                {
+                    throw new InvalidOperationException(
+                        "Adding model definitions to an imported VOX scene is not supported yet.");
+                }
+                modelsBySourceId.TryAdd(model.SourceModelId, model);
+            }
+
+            byte[] logicalToRawPalette = Enumerable.Range(1, 255).Select(value => (byte)value).ToArray();
+            PreservedChunk indexMap = chunks.FirstOrDefault(chunk => chunk.Id == "IMAP");
+            if (indexMap != null)
+            {
+                if (indexMap.Content.Length < byte.MaxValue)
+                {
+                    throw new InvalidDataException("VOX IMAP chunk is shorter than 255 entries.");
+                }
+                Array.Copy(indexMap.Content, logicalToRawPalette, logicalToRawPalette.Length);
+            }
+
+            int sizeIndex = 0;
+            int voxelIndex = 0;
+            foreach (PreservedChunk chunk in chunks)
+            {
+                if (chunk.Id == "SIZE")
+                {
+                    if (modelsBySourceId.TryGetValue(
+                            sizeIndex,
+                            out RuntimeVoxDocument.RuntimeModel model))
+                    {
+                        chunk.Content = ExtractChunkContent(BuildSizeChunk(
+                            model.Size.x,
+                            model.Size.y,
+                            model.Size.z));
+                    }
+                    sizeIndex++;
+                }
+                else if (chunk.Id == "XYZI")
+                {
+                    if (modelsBySourceId.TryGetValue(
+                            voxelIndex,
+                            out RuntimeVoxDocument.RuntimeModel model))
+                    {
+                        chunk.Content = ExtractChunkContent(BuildXyziChunk(
+                            model,
+                            logicalToRawPalette));
+                    }
+                    voxelIndex++;
+                }
+                else if (chunk.Id == "RGBA")
+                {
+                    chunk.Content = BuildPreservedRgbaContent(
+                        document.Palette,
+                        chunk.Content,
+                        logicalToRawPalette);
+                }
+            }
+
+            return source.Write();
+        }
+
+        private static byte[] BuildPreservedRgbaContent(
+            Color32[] palette,
+            byte[] originalContent,
+            IReadOnlyList<byte> logicalToRawPalette)
+        {
+            if (palette == null || palette.Length != 256)
+            {
+                throw new InvalidOperationException("Palette must contain exactly 256 colors.");
+            }
+            if (originalContent == null || originalContent.Length != 1024)
+            {
+                throw new InvalidDataException("VOX RGBA chunk must contain exactly 256 colors.");
+            }
+
+            byte[] content = (byte[])originalContent.Clone();
+            for (int logicalIndex = 0; logicalIndex < byte.MaxValue; logicalIndex++)
+            {
+                int rawIndex = logicalToRawPalette[logicalIndex] - 1;
+                if (rawIndex < 0 || rawIndex >= byte.MaxValue)
+                {
+                    throw new InvalidDataException("VOX IMAP contains an invalid palette index.");
+                }
+
+                Color32 color = palette[logicalIndex];
+                int offset = rawIndex * 4;
+                content[offset] = color.r;
+                content[offset + 1] = color.g;
+                content[offset + 2] = color.b;
+                content[offset + 3] = color.a;
+            }
+            return content;
+        }
+
+        private static byte[] ExtractChunkContent(byte[] chunk)
+        {
+            int contentLength = BitConverter.ToInt32(chunk, 4);
+            var content = new byte[contentLength];
+            Buffer.BlockCopy(chunk, 12, content, 0, contentLength);
+            return content;
+        }
+
+        private sealed class PreservedVoxFile
+        {
+            public int Version { get; private set; }
+            public PreservedChunk Main { get; private set; }
+            public byte[] TrailingData { get; private set; }
+
+            public static PreservedVoxFile Parse(byte[] data)
+            {
+                if (data == null || data.Length < 20)
+                {
+                    throw new InvalidDataException("VOX source is too short.");
+                }
+
+                using (var stream = new MemoryStream(data, writable: false))
+                using (var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true))
+                {
+                    if (Encoding.ASCII.GetString(reader.ReadBytes(4)) != "VOX ")
+                    {
+                        throw new InvalidDataException("VOX source has an invalid header.");
+                    }
+
+                    var result = new PreservedVoxFile
+                    {
+                        Version = reader.ReadInt32(),
+                        Main = PreservedChunk.Read(reader, stream.Length),
+                    };
+                    if (result.Main.Id != "MAIN")
+                    {
+                        throw new InvalidDataException("VOX source does not contain a MAIN root chunk.");
+                    }
+                    result.TrailingData = reader.ReadBytes(checked((int)(stream.Length - stream.Position)));
+                    return result;
+                }
+            }
+
+            public byte[] Write()
+            {
+                using (var stream = new MemoryStream())
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(Encoding.ASCII.GetBytes("VOX "));
+                    writer.Write(Version);
+                    Main.Write(writer);
+                    writer.Write(TrailingData);
+                    writer.Flush();
+                    return stream.ToArray();
+                }
+            }
+        }
+
+        private sealed class PreservedChunk
+        {
+            public string Id { get; private set; }
+            public byte[] Content { get; set; }
+            public List<PreservedChunk> Children { get; private set; }
+
+            public static PreservedChunk Read(BinaryReader reader, long containingEnd)
+            {
+                if (containingEnd - reader.BaseStream.Position < 12)
+                {
+                    throw new InvalidDataException("VOX chunk header is truncated.");
+                }
+
+                string id = Encoding.ASCII.GetString(reader.ReadBytes(4));
+                int contentLength = reader.ReadInt32();
+                int childrenLength = reader.ReadInt32();
+                if (contentLength < 0 || childrenLength < 0)
+                {
+                    throw new InvalidDataException("VOX chunk has a negative length.");
+                }
+
+                long chunkEnd = checked(reader.BaseStream.Position + contentLength + childrenLength);
+                if (chunkEnd > containingEnd)
+                {
+                    throw new InvalidDataException($"VOX chunk '{id}' exceeds its container.");
+                }
+
+                byte[] content = reader.ReadBytes(contentLength);
+                long childrenEnd = reader.BaseStream.Position + childrenLength;
+                var children = new List<PreservedChunk>();
+                while (reader.BaseStream.Position < childrenEnd)
+                {
+                    children.Add(Read(reader, childrenEnd));
+                }
+                if (reader.BaseStream.Position != childrenEnd)
+                {
+                    throw new InvalidDataException($"VOX chunk '{id}' has malformed children.");
+                }
+
+                return new PreservedChunk
+                {
+                    Id = id,
+                    Content = content,
+                    Children = children,
+                };
+            }
+
+            public void Write(BinaryWriter writer)
+            {
+                using (var childrenStream = new MemoryStream())
+                using (var childrenWriter = new BinaryWriter(childrenStream))
+                {
+                    foreach (PreservedChunk child in Children)
+                    {
+                        child.Write(childrenWriter);
+                    }
+                    childrenWriter.Flush();
+                    byte[] childrenData = childrenStream.ToArray();
+
+                    writer.Write(Encoding.ASCII.GetBytes(Id));
+                    writer.Write(Content.Length);
+                    writer.Write(childrenData.Length);
+                    writer.Write(Content);
+                    writer.Write(childrenData);
+                }
             }
         }
 

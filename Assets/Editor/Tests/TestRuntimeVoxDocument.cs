@@ -15,6 +15,7 @@
 using NUnit.Framework;
 using System;
 using System.IO;
+using System.Text;
 using UnityEngine;
 
 namespace TiltBrush
@@ -240,6 +241,101 @@ namespace TiltBrush
             Assert.AreEqual(1, fromStream.Models.Count);
             Assert.AreEqual(1, fromMemory.Models[0].Voxels.Count);
             Assert.AreEqual(1, fromStream.Models[0].Voxels.Count);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_PreservesSourceChunksWhileEditingVoxels()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "preserved",
+                new Vector3Int(8, 8, 8));
+            sourceModel.TransformOffset = new Vector3(2, 3, 4);
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            source.ReplacePaletteEntry(1, new Color32(200, 10, 20, 255));
+            source.ReplacePaletteEntry(2, new Color32(20, 30, 200, 255));
+
+            byte[] metadata = { 9, 8, 7, 6, 5 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "META", metadata);
+            var indexMap = new byte[256];
+            for (int i = 0; i < byte.MaxValue; i++)
+            {
+                indexMap[i] = (byte)(i + 1);
+            }
+            indexMap[0] = 2;
+            indexMap[1] = 1;
+            sourceBytes = AppendMainChild(sourceBytes, "IMAP", indexMap);
+            byte[] originalRootTransform = FindMainChildContent(sourceBytes, "nTRN", 0);
+            byte[] originalModelTransform = FindMainChildContent(sourceBytes, "nTRN", 1);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+            Assert.IsTrue(loaded.HasPreservedSourceData);
+            Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte originalColor));
+            Assert.AreEqual(2, originalColor);
+            Assert.IsTrue(loaded.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+            loaded.ReplacePaletteEntry(2, new Color32(12, 34, 56, 255));
+
+            byte[] editedBytes = loaded.ToVoxBytes();
+            CollectionAssert.AreEqual(metadata, FindMainChildContent(editedBytes, "META", 0));
+            CollectionAssert.AreEqual(indexMap, FindMainChildContent(editedBytes, "IMAP", 0));
+            CollectionAssert.AreEqual(
+                originalRootTransform,
+                FindMainChildContent(editedBytes, "nTRN", 0));
+            CollectionAssert.AreEqual(
+                originalModelTransform,
+                FindMainChildContent(editedBytes, "nTRN", 1));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(editedBytes);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out byte color));
+            Assert.AreEqual(2, color);
+            Assert.AreEqual(new Color32(12, 34, 56, 255), reloaded.Palette[1]);
+        }
+
+        private static byte[] AppendMainChild(byte[] source, string id, byte[] content)
+        {
+            int childrenLength = BitConverter.ToInt32(source, 16);
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(source);
+                writer.Write(Encoding.ASCII.GetBytes(id));
+                writer.Write(content.Length);
+                writer.Write(0);
+                writer.Write(content);
+                writer.Flush();
+
+                byte[] result = stream.ToArray();
+                byte[] newChildrenLength = BitConverter.GetBytes(childrenLength + 12 + content.Length);
+                Buffer.BlockCopy(newChildrenLength, 0, result, 16, sizeof(int));
+                return result;
+            }
+        }
+
+        private static byte[] FindMainChildContent(byte[] source, string wantedId, int occurrence)
+        {
+            int mainContentLength = BitConverter.ToInt32(source, 12);
+            int mainChildrenLength = BitConverter.ToInt32(source, 16);
+            int offset = 20 + mainContentLength;
+            int end = offset + mainChildrenLength;
+            while (offset < end)
+            {
+                string id = Encoding.ASCII.GetString(source, offset, 4);
+                int contentLength = BitConverter.ToInt32(source, offset + 4);
+                int childrenLength = BitConverter.ToInt32(source, offset + 8);
+                if (id == wantedId)
+                {
+                    if (occurrence == 0)
+                    {
+                        var content = new byte[contentLength];
+                        Buffer.BlockCopy(source, offset + 12, content, 0, contentLength);
+                        return content;
+                    }
+                    occurrence--;
+                }
+                offset += 12 + contentLength + childrenLength;
+            }
+            Assert.Fail($"Could not find VOX chunk '{wantedId}'.");
+            return null;
         }
     }
 }

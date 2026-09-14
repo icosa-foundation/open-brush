@@ -28,14 +28,32 @@ namespace TiltBrush
 
         public sealed class RuntimeModel
         {
-            private readonly Dictionary<Vector3Int, byte> m_voxels = new Dictionary<Vector3Int, byte>();
+            private readonly Dictionary<Vector3Int, byte> m_voxels;
 
             public string Name { get; }
             public Vector3Int Size { get; }
             public Vector3 TransformOffset { get; set; }
+            public Vector3 LocalTransformOffset { get; }
+            public Matrix4x4 GlobalRotation { get; }
+            public Matrix4x4 LocalRotation { get; }
+            public int SourceModelId { get; }
+            public bool IsCopy { get; }
             public IReadOnlyDictionary<Vector3Int, byte> Voxels => m_voxels;
 
             public RuntimeModel(string name, Vector3Int size)
+                : this(name, size, sourceModelId: 0, isCopy: false)
+            {
+            }
+
+            internal RuntimeModel(
+                string name,
+                Vector3Int size,
+                int sourceModelId,
+                bool isCopy,
+                Dictionary<Vector3Int, byte> voxels = null,
+                Vector3? localTransformOffset = null,
+                Matrix4x4? globalRotation = null,
+                Matrix4x4? localRotation = null)
             {
                 if (size.x <= 0 || size.y <= 0 || size.z <= 0 ||
                     size.x > MaxModelDimension ||
@@ -49,6 +67,12 @@ namespace TiltBrush
 
                 Name = name;
                 Size = size;
+                SourceModelId = sourceModelId;
+                IsCopy = isCopy;
+                m_voxels = voxels ?? new Dictionary<Vector3Int, byte>();
+                LocalTransformOffset = localTransformOffset ?? Vector3.zero;
+                GlobalRotation = globalRotation ?? Matrix4x4.identity;
+                LocalRotation = localRotation ?? Matrix4x4.identity;
             }
 
             public bool AddOrUpdateVoxel(Vector3Int position, byte paletteIndex)
@@ -138,8 +162,10 @@ namespace TiltBrush
         }
 
         private readonly List<RuntimeModel> m_models = new List<RuntimeModel>();
+        private byte[] m_sourceVoxBytes;
 
         public IReadOnlyList<RuntimeModel> Models => m_models;
+        public bool HasPreservedSourceData => m_sourceVoxBytes != null;
 
         // Palette is 1-based from VOX perspective. Palette[0] corresponds to index 1.
         public Color32[] Palette { get; } = new Color32[256];
@@ -155,7 +181,17 @@ namespace TiltBrush
 
         public RuntimeModel CreateModel(string name, Vector3Int size)
         {
-            var model = new RuntimeModel(name, size);
+            if (HasPreservedSourceData)
+            {
+                throw new InvalidOperationException(
+                    "Adding models to an imported VOX document is not supported because its scene graph is preserved read-only.");
+            }
+
+            var model = new RuntimeModel(
+                name,
+                size,
+                sourceModelId: m_models.Count,
+                isCopy: false);
             m_models.Add(model);
             return model;
         }
@@ -228,12 +264,20 @@ namespace TiltBrush
 
             var document = new RuntimeVoxDocument();
 
-            int paletteCount = Math.Min(document.Palette.Length, voxFile.Palette.RawColors.Length);
+            int paletteCount = Math.Min(byte.MaxValue, voxFile.Palette.Colors.Length);
             for (int i = 0; i < paletteCount; i++)
             {
-                VoxReader.Color source = voxFile.Palette.RawColors[i];
+                VoxReader.Color source = voxFile.Palette.Colors[i];
                 document.Palette[i] = new Color32(source.R, source.G, source.B, source.A);
             }
+
+            if (voxFile.Palette.RawColors.Length > byte.MaxValue)
+            {
+                VoxReader.Color unused = voxFile.Palette.RawColors[byte.MaxValue];
+                document.Palette[byte.MaxValue] = new Color32(unused.R, unused.G, unused.B, unused.A);
+            }
+
+            var voxelDataBySourceId = new Dictionary<int, Dictionary<Vector3Int, byte>>();
 
             foreach (IModel sourceModel in voxFile.Models)
             {
@@ -242,22 +286,45 @@ namespace TiltBrush
                     sourceModel.LocalSize.Y,
                     sourceModel.LocalSize.Z);
 
-                RuntimeModel runtimeModel = document.CreateModel(sourceModel.Name, modelSize);
+                if (!voxelDataBySourceId.TryGetValue(
+                        sourceModel.Id,
+                        out Dictionary<Vector3Int, byte> sharedVoxels))
+                {
+                    sharedVoxels = new Dictionary<Vector3Int, byte>();
+                    voxelDataBySourceId.Add(sourceModel.Id, sharedVoxels);
+                }
+
+                var runtimeModel = new RuntimeModel(
+                    sourceModel.Name,
+                    modelSize,
+                    sourceModel.Id,
+                    sourceModel.IsCopy,
+                    sharedVoxels,
+                    new Vector3(
+                        sourceModel.LocalPosition.X,
+                        sourceModel.LocalPosition.Y,
+                        sourceModel.LocalPosition.Z),
+                    ToUnityMatrix(sourceModel.GlobalRotation),
+                    ToUnityMatrix(sourceModel.LocalRotation));
+                document.m_models.Add(runtimeModel);
                 runtimeModel.TransformOffset = new Vector3(
                     sourceModel.GlobalPosition.X,
                     sourceModel.GlobalPosition.Y,
                     sourceModel.GlobalPosition.Z);
 
-                foreach (VoxReader.Voxel voxel in sourceModel.Voxels)
+                if (!sourceModel.IsCopy)
                 {
-                    var position = new Vector3Int(
-                        voxel.LocalPosition.X,
-                        voxel.LocalPosition.Y,
-                        voxel.LocalPosition.Z);
+                    foreach (VoxReader.Voxel voxel in sourceModel.Voxels)
+                    {
+                        var position = new Vector3Int(
+                            voxel.LocalPosition.X,
+                            voxel.LocalPosition.Y,
+                            voxel.LocalPosition.Z);
 
-                    // Voxel color indices from VoxReader are 0-based.
-                    byte paletteIndex = (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255);
-                    runtimeModel.AddOrUpdateVoxel(position, paletteIndex);
+                        // VoxReader exposes IMAP-adjusted color indices as 0-based values.
+                        byte paletteIndex = (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255);
+                        runtimeModel.AddOrUpdateVoxel(position, paletteIndex);
+                    }
                 }
             }
 
@@ -272,7 +339,9 @@ namespace TiltBrush
             }
 
             IVoxFile voxFile = VoxReader.VoxReader.Read(bytes);
-            return FromVoxFile(voxFile);
+            RuntimeVoxDocument document = FromVoxFile(voxFile);
+            document.m_sourceVoxBytes = (byte[])bytes.Clone();
+            return document;
         }
 
         public static RuntimeVoxDocument FromBytes(ReadOnlyMemory<byte> bytes)
@@ -297,6 +366,24 @@ namespace TiltBrush
         public byte[] ToVoxBytes()
         {
             return VoxWriter.Write(this);
+        }
+
+        internal byte[] GetPreservedSourceData()
+        {
+            return m_sourceVoxBytes;
+        }
+
+        private static Matrix4x4 ToUnityMatrix(VoxReader.Matrix3 source)
+        {
+            var result = Matrix4x4.identity;
+            for (int row = 0; row < 3; row++)
+            {
+                for (int column = 0; column < 3; column++)
+                {
+                    result[row, column] = source[row, column];
+                }
+            }
+            return result;
         }
     }
 }
