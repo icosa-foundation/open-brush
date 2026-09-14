@@ -3184,7 +3184,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
-    m_Localized: Snap Selected
+    m_Localized: 'Snap Current Selection:'
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634177
@@ -3360,11 +3360,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128978688454426624
-    m_Localized: Guides
+    m_Localized: Grabbed objects snap to guides?
     m_Metadata:
       m_Items: []
   - m_Id: 128979151367176192
-    m_Localized: Snap to Guides
+    m_Localized: Toggle snapping to guides
     m_Metadata:
       m_Items: []
   - m_Id: 129010807801118720
@@ -3969,6 +3969,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 540642327830028288
     m_Localized: Quill files saved in Quill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: Straight Edge strokes snap together?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: Toggle straight edge snapping
     m_Metadata:
       m_Items: []
   references:
