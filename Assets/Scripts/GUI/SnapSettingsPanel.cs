@@ -26,7 +26,8 @@ namespace TiltBrush
         LockSnapAngleX,
         LockSnapAngleY,
         LockSnapAngleZ,
-        SnapToGuides
+        SnapToGuides,
+        StraightEdgeEndpointSnap
     }
 
     public class SnapSettingsPanel : BasePanel
@@ -53,6 +54,10 @@ namespace TiltBrush
                     break;
                 case SnapSettingsPanelToggleType.LockSnapAngleZ:
                     SelectionManager.m_Instance.m_EnableSnapRotationZ = btn.ToggleState;
+                    break;
+                case SnapSettingsPanelToggleType.StraightEdgeEndpointSnap:
+                    PointerManager.m_Instance.StraightEdgeGuide.EndpointSnappingEnabled =
+                        btn.ToggleState;
                     break;
             }
         }
