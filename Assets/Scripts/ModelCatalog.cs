@@ -100,11 +100,41 @@ namespace TiltBrush
             ChangeDirectory(HomeDirectory);
         }
 
-        private IEnumerable<string> GetModelDirectories()
+        /// The directories the catalog creates and always watches.
+        private IEnumerable<string> GetBuiltInModelDirectories()
         {
             return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct();
+        }
+
+        /// Every directory models are read from: the built-in ones plus the roots configured under
+        /// MediaRoots. A configured root is only included while it exists - it can name a drive
+        /// that is not mounted, and unlike the built-in directories it is never created.
+        private IEnumerable<string> GetModelDirectories()
+        {
+            var directories = new List<string>();
+            var seen = new List<string>();
+            foreach (var directory in GetBuiltInModelDirectories()
+                .Concat(App.GetAllModelRoots().Where(Directory.Exists)))
+            {
+                // The same directory can arrive in different spellings - GetAllModelRoots returns
+                // normalized paths while the built-in ones are combined by hand - so compare the
+                // normalized forms rather than the strings as given.
+                string normalized;
+                try
+                {
+                    normalized = Path.GetFullPath(directory);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                if (seen.Any(x => string.Equals(x, normalized, App.MediaPathComparison))) { continue; }
+                seen.Add(normalized);
+                directories.Add(directory);
+            }
+            return directories;
         }
 
         private string GetModelRoot(string path)
@@ -128,10 +158,14 @@ namespace TiltBrush
                 }
             }
 
+            foreach (var directory in GetBuiltInModelDirectories())
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             m_FileWatchers = new List<FileWatcher>();
             foreach (var directory in GetModelDirectories())
             {
-                Directory.CreateDirectory(directory);
                 var watcher = new FileWatcher(directory)
                 {
                     NotifyFilter = NotifyFilters.LastWrite
