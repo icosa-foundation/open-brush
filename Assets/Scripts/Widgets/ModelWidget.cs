@@ -415,7 +415,10 @@ namespace TiltBrush
             // Unsplit models initially always have the possibility of being split.
             // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;
-            var allSplits = m_Model.m_SplitMeshPaths.Concat(m_Model.m_NotSplittableMeshPaths);
+            var splitMeshPaths = m_Model.m_SplitMeshPaths ?? Enumerable.Empty<string>();
+            var notSplittableMeshPaths =
+                m_Model.m_NotSplittableMeshPaths ?? Enumerable.Empty<string>();
+            var allSplits = splitMeshPaths.Concat(notSplittableMeshPaths);
             foreach (var path in allSplits)
             {
                 if (Subtree.StartsWith(path))
@@ -1002,7 +1005,7 @@ namespace TiltBrush
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
+        public static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
