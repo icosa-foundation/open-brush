@@ -60,7 +60,7 @@ namespace TiltBrush
 
         protected override bool ValidExtension(string ext)
         {
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".hdr";
+            return ext != ".svg" && base.ValidExtension(ext);
         }
 
         protected override void ProcessReferenceDirectory(bool userOverlay = true)
