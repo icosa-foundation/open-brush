@@ -38,6 +38,32 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestLinearTextureToBytesRoundtrip()
+        {
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+            Texture2D reconstructedTexture = null;
+            try
+            {
+                texture.SetPixels(new[] { Color.red, Color.green, Color.blue, Color.white });
+                texture.Apply();
+
+                reconstructedTexture = ImageCache.TextureFromBytes(
+                    ImageCache.BytesFromTexture(texture));
+
+                CompareTextures(texture, reconstructedTexture);
+                Assert.IsFalse(reconstructedTexture.isDataSRGB);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+                if (reconstructedTexture != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(reconstructedTexture);
+                }
+            }
+        }
+
+        [Test]
         public void TestCachingRoundtrip()
         {
             // Get the texture.
@@ -65,6 +91,37 @@ namespace TiltBrush
                 // Clean up the test cache.
                 string cacheDirectory = ImageCache.CacheDirectory(imageFile);
                 Directory.Delete(cacheDirectory, true);
+            }
+        }
+
+        [Test]
+        public void TestImageCacheDoesNotRequireIconAspectRatio()
+        {
+            string sourceFile = Path.GetTempFileName();
+            string imageFile = "Assets/Editor/Tests/TestData/TiltBrushLogo.jpg";
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(imageFile);
+            Texture2D reconstructedTexture = null;
+            try
+            {
+                ImageCache.SaveImageCache(texture, sourceFile);
+
+                reconstructedTexture = ImageCache.LoadImageCache(sourceFile);
+
+                Assert.NotNull(reconstructedTexture);
+                CompareTextures(texture, reconstructedTexture);
+            }
+            finally
+            {
+                if (reconstructedTexture != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(reconstructedTexture);
+                }
+                string cacheDirectory = ImageCache.CacheDirectory(sourceFile);
+                if (Directory.Exists(cacheDirectory))
+                {
+                    Directory.Delete(cacheDirectory, true);
+                }
+                File.Delete(sourceFile);
             }
         }
 
@@ -101,6 +158,7 @@ namespace TiltBrush
             Assert.AreEqual(textureA.width, textureB.width);
             Assert.AreEqual(textureA.height, textureB.height);
             Assert.AreEqual(textureA.format, textureB.format);
+            Assert.AreEqual(textureA.isDataSRGB, textureB.isDataSRGB);
 
             byte[] textureDataA = textureA.GetRawTextureData();
             byte[] textureDataB = textureB.GetRawTextureData();

@@ -1,6 +1,7 @@
 Settings = {
     description="Draws a conical spiral",
-    previewType="cube"
+    previewType="stroke",
+    previewInterval=0.1
 }
 
 Parameters = {
@@ -9,9 +10,11 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
         points = Path:New();
         totalSteps = Parameters.turns * Parameters.steps
+        if Tool.isPreview then
+            totalSteps = Math:Min(totalSteps, 200)
+        end
         for i = 0, 1, 1/totalSteps do
             angle = Math.pi * 2 * Parameters.turns * i
             position = Vector3:New(Math:Cos(angle) * i, Math:Sin(angle) * i, -(i * 2) + 1)
@@ -19,5 +22,4 @@ function Main()
             points:Insert(Transform:New(position, rotation))
         end
         return points
-    end
 end
