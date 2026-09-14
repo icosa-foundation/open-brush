@@ -1776,7 +1776,15 @@ namespace TiltBrush
 
             m_WidgetManager.RefreshNearestWidgetLists(m_CurrentGazeRay, m_CurrentGazeObject);
 
-            if (m_GrabWidgetState == GrabWidgetState.None)
+            if (rPrevGrabWidget != null && !rPrevGrabWidget.gameObject.activeInHierarchy)
+            {
+                // Hiding a layer also ends an existing grab, without imparting toss velocity.
+                rPrevGrabWidget.SetUserTwoHandGrabbing(false);
+                UpdateGrab_ToNone(rPrevGrabWidget);
+                m_GrabBrush.eatInput = true;
+                m_GrabWand.eatInput = true;
+            }
+            else if (m_GrabWidgetState == GrabWidgetState.None)
             {
                 UpdateGrab_WasNone(rPrevPotentialBrush, rPrevPotentialWand);
             }
@@ -1853,6 +1861,13 @@ namespace TiltBrush
                     m_BackupBrushGrabData = GetBestWidget(brushBests, m_BrushResults);
                 }
 
+                // Cached candidates can survive several frames between GPU result reads.
+                if (m_BackupBrushGrabData != null &&
+                    !m_BackupBrushGrabData.m_WidgetScript.gameObject.activeInHierarchy)
+                {
+                    m_BackupBrushGrabData = null;
+                }
+
                 if (m_BackupBrushGrabData != null)
                 {
                     m_PotentialGrabWidgetBrush = m_BackupBrushGrabData.m_WidgetScript;
@@ -1892,6 +1907,12 @@ namespace TiltBrush
                 else if (m_CurrentGrabIntersectionState == GrabIntersectionState.ReadWand)
                 {
                     m_BackupWandGrabData = GetBestWidget(wandBests, m_WandResults);
+                }
+
+                if (m_BackupWandGrabData != null &&
+                    !m_BackupWandGrabData.m_WidgetScript.gameObject.activeInHierarchy)
+                {
+                    m_BackupWandGrabData = null;
                 }
 
                 if (m_BackupWandGrabData != null)
@@ -2508,6 +2529,8 @@ namespace TiltBrush
             {
                 var candidate = candidates[i];
                 if (!candidate.m_NearController) continue;
+                // Check at consumption time as GPU results can predate a layer being hidden.
+                if (!candidate.m_WidgetScript.gameObject.activeInHierarchy) continue;
 
                 if (LayerScopedWidgetIsOnInactiveLayer(candidate.m_WidgetScript)) continue;
 
@@ -4480,9 +4503,9 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
+				PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
                 var playbackMode = playbackModeOverride ?? m_SketchPlaybackMode;
-                SketchMemoryScript.m_Instance.SetPlaybackMode(
-                    playbackMode, m_DefaultSketchLoadSpeed);
+                SketchMemoryScript.m_Instance.SetPlaybackMode(playbackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
@@ -5545,6 +5568,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
+            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;

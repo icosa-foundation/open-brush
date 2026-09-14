@@ -38,7 +38,16 @@ namespace TiltBrush
                     m_HasPendingToggleState = true;
                     return;
                 }
-                SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
+                if (m_TextureOff != null)
+                {
+                    SetButtonTexture(m_ToggleActive ? m_TextureOn : m_TextureOff);
+                }
+                else
+                {
+                    // If we don't have a separate "off" texture then use the shader to indicate state
+                    SetButtonTexture(m_TextureOn);
+                    SetButtonActivated(m_ToggleActive);
+                }
             }
         }
 
