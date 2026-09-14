@@ -80,6 +80,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private bool isRunning = false;
     private bool cancel = false;
+    private bool m_CaptureCancellationRequested;
     private Material _eyeDepthMat;
     private Material m_NativeDepthMaterial;
     private Transform m_VolumeTransform;
@@ -312,11 +313,17 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         this.target = domeTargets[0].Transform;
         this.radius = domeTargets[0].Radii.Max();
+        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, null, captureOutputFolder)
+        bool captureSucceeded = false;
+        IEnumerator capture = runtimeSequence
+            ? RuntimeSequenceCoroutine(domeTargets, null, captureOutputFolder,
+                () => captureSucceeded = true)
             : CaptureTargetsAndExportColmap(
-                domeTargets, null, captureOutputFolder, outAdd: ""));
+                domeTargets, null, captureOutputFolder, outAdd: "",
+                () => captureSucceeded = true);
+        StartCaptureInCompositor(CaptureAndPublish(
+            capture, captureOutputFolder, () => captureSucceeded));
     }
 
     [ContextMenu("Start Volume Capture")]
@@ -338,11 +345,17 @@ public class CameraCaptureRuntime : MonoBehaviour
         this.volumeCenter = volumeTargets[0].Transform.position;
         this.volumeSize = volumeTargets[0].Transform.lossyScale;
 
+        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(null, volumeTargets, captureOutputFolder)
+        bool captureSucceeded = false;
+        IEnumerator capture = runtimeSequence
+            ? RuntimeSequenceCoroutine(null, volumeTargets, captureOutputFolder,
+                () => captureSucceeded = true)
             : CaptureTargetsAndExportColmap(
-                null, volumeTargets, captureOutputFolder, outAdd: ""));
+                null, volumeTargets, captureOutputFolder, outAdd: "",
+                () => captureSucceeded = true);
+        StartCaptureInCompositor(CaptureAndPublish(
+            capture, captureOutputFolder, () => captureSucceeded));
     }
 
     [ContextMenu("Start All Capture")]
@@ -375,11 +388,17 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
         }
 
+        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, captureOutputFolder)
+        bool captureSucceeded = false;
+        IEnumerator capture = runtimeSequence
+            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, captureOutputFolder,
+                () => captureSucceeded = true)
             : CaptureTargetsAndExportColmap(
-                domeTargets, volumeTargets, captureOutputFolder, outAdd: ""));
+                domeTargets, volumeTargets, captureOutputFolder, outAdd: "",
+                () => captureSucceeded = true);
+        StartCaptureInCompositor(CaptureAndPublish(
+            capture, captureOutputFolder, () => captureSucceeded));
     }
 
     [ContextMenu("Cancel")]
@@ -388,6 +407,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         if (isRunning)
         {
             cancel = true;
+            m_CaptureCancellationRequested = true;
             Debug.LogWarning("[Capture] Cancel requested.");
         }
     }
@@ -441,7 +461,8 @@ public class CameraCaptureRuntime : MonoBehaviour
     private IEnumerator RuntimeSequenceCoroutine(
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
-        string captureOutputFolder)
+        string captureOutputFolder,
+        Action onCaptureComplete)
     {
         int totalFrames = Mathf.Max(1, Mathf.RoundToInt(duration * Mathf.Max(1, fbs)));
         isRunning = true;
@@ -464,6 +485,10 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         isRunning = false;
         cancel = false;
+        if (!m_CaptureCancellationRequested)
+        {
+            onCaptureComplete?.Invoke();
+        }
         ReportProgress(1f, "Runtime sequence finished");
     }
 
@@ -519,25 +544,34 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     public IEnumerator CaptureViewsAndExportColmap(string outAdd)
     {
+        m_CaptureCancellationRequested = false;
         var domeTargets = GetActiveDomeCaptureTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        yield return StartCoroutine(CaptureTargetsAndExportColmap(
-            domeTargets, null, captureOutputFolder, outAdd));
+        bool captureSucceeded = false;
+        yield return StartCoroutine(CaptureAndPublish(
+            CaptureTargetsAndExportColmap(domeTargets, null, captureOutputFolder, outAdd,
+                () => captureSucceeded = true),
+            captureOutputFolder, () => captureSucceeded));
     }
 
     public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
     {
+        m_CaptureCancellationRequested = false;
         var volumeTargets = GetActiveVolumeCaptureTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        yield return StartCoroutine(CaptureTargetsAndExportColmap(
-            null, volumeTargets, captureOutputFolder, outAdd));
+        bool captureSucceeded = false;
+        yield return StartCoroutine(CaptureAndPublish(
+            CaptureTargetsAndExportColmap(null, volumeTargets, captureOutputFolder, outAdd,
+                () => captureSucceeded = true),
+            captureOutputFolder, () => captureSucceeded));
     }
 
     private IEnumerator CaptureTargetsAndExportColmap(
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
         string captureOutputFolder,
-        string outAdd)
+        string outAdd,
+        Action onCaptureComplete = null)
     {
         isRunning = true;
         string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
@@ -782,7 +816,53 @@ public class CameraCaptureRuntime : MonoBehaviour
         if (!runtimeSequence && trainPostShot && !cancel)
             TryRunPostshotBatch(captureOutputFolder);
 
+        onCaptureComplete?.Invoke();
+
         yield return new WaitForEndOfFrame();
+    }
+
+    private IEnumerator CaptureAndPublish(
+        IEnumerator captureRoutine, string captureOutputFolder, Func<bool> captureSucceeded)
+    {
+        yield return StartCoroutine(captureRoutine);
+        if (!ShouldPublishGaussianCapture(
+                captureSucceeded(), m_CaptureCancellationRequested,
+                OpenBrushStorage.IsGooglePlayStorageMode))
+        {
+            m_CaptureCancellationRequested = false;
+            yield break;
+        }
+
+        bool publicationFinished = false;
+        bool publicationSucceeded = false;
+        string publicationError = null;
+        isRunning = true;
+        ReportProgress(0.99f, "Publishing Gaussian capture to shared storage");
+        OpenBrushStorage.PublishGaussianCaptureToSharedStorageAsync(
+            captureOutputFolder, (success, error) =>
+            {
+                publicationSucceeded = success;
+                publicationError = error;
+                publicationFinished = true;
+            });
+        while (!publicationFinished) { yield return null; }
+        isRunning = false;
+        m_CaptureCancellationRequested = false;
+        if (publicationSucceeded)
+        {
+            ReportProgress(1f, "Gaussian capture saved to shared storage");
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"[SAF_GAUSSIAN_CAPTURE] Shared publication failed: {publicationError}");
+        }
+    }
+
+    internal static bool ShouldPublishGaussianCapture(
+        bool captureSucceeded, bool cancellationRequested, bool usesSharedStorage)
+    {
+        return captureSucceeded && !cancellationRequested && usesSharedStorage;
     }
 
     private List<DomeCaptureTarget> GetActiveDomeCaptureTargets()

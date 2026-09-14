@@ -226,7 +226,9 @@ namespace TiltBrush
         /// Persistent path is relative to the Tilt Brush/Media Library/SoundClips directory, if it is a
         /// filename.
         public string PersistentPath { get; }
-        public string AbsolutePath { get; }
+        public string AbsolutePath { get; private set; }
+        internal string CatalogIdentity { get; }
+        private readonly Func<string> m_Materialize;
         public string HumanName { get; }
 
         public Texture2D Thumbnail { get; private set; }
@@ -242,10 +244,19 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public SoundClip(string filePath)
+            : this(filePath, filePath.Substring(App.SoundClipLibraryPath().Length + 1),
+                filePath, null)
         {
-            PersistentPath = filePath.Substring(App.SoundClipLibraryPath().Length + 1);
+        }
+
+        internal SoundClip(
+            string filePath, string persistentPath, string catalogIdentity, Func<string> materialize)
+        {
+            PersistentPath = persistentPath;
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
+            CatalogIdentity = catalogIdentity;
+            m_Materialize = materialize;
         }
 
         // Dummy SoundClip - this is used when a clip referenced in a sketch cannot be found.
@@ -297,8 +308,12 @@ namespace TiltBrush
             }
         }
 
-        async Task<AudioClip> LoadClip(string path)
+        async Task<AudioClip> LoadClip()
         {
+            string path = m_Materialize == null
+                ? AbsolutePath
+                : await Task.Run(m_Materialize);
+            AbsolutePath = path;
             AudioClip clip = null;
             AudioType audioType = path.ToLower() switch
             {
@@ -349,7 +364,7 @@ namespace TiltBrush
                 yield break;
             }
             controller.m_SoundClipAudioSource.playOnAwake = false;
-            var audioClipTask = LoadClip(AbsolutePath);
+            var audioClipTask = LoadClip();
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
@@ -405,12 +420,18 @@ namespace TiltBrush
             Height = 128;
             Aspect = 1;
 
-            var audioClipTask = LoadClip(AbsolutePath);
+            var audioClipTask = LoadClip();
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
             }
 
+            if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
+            {
+                Error = audioClipTask.Exception?.GetBaseException().Message ??
+                    "The audio load was canceled.";
+                yield break;
+            }
             var clip = audioClipTask.Result;
             if (clip != null)
             {

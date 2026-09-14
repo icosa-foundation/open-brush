@@ -1,5 +1,6 @@
 # Repository Guidelines
 
+- After pushing review fixes, resolve the PR review threads addressed by those commits.
 - **Temporary design documents:** Never commit or push temporary design, planning, or future-work documents. Keep them untracked and local unless the user explicitly asks for project documentation to be versioned.
 
 - **HTTP API testing:** The Open Brush HTTP API is available only while the Open Brush application is running or the Unity Editor is in Play mode. Check this before testing HTTP commands.

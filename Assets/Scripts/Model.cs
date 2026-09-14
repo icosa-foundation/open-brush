@@ -43,9 +43,11 @@ namespace TiltBrush
 
             private Type type;
             private string path;
+            // A SAF cache path is only for loading; identity and metadata use path.
+            private string materializedPath;
             private string id; // Only valid when the type is IcosaAssetId.
 
-            public static Location File(string relativePath)
+            public static Location File(string relativePath, string materializedPath = null)
             {
                 int lastIndex = relativePath.LastIndexOf('#');
                 string path, fragment;
@@ -64,6 +66,7 @@ namespace TiltBrush
                 {
                     type = Type.LocalFile,
                     path = path,
+                    materializedPath = materializedPath,
                 };
             }
 
@@ -90,6 +93,10 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
+                            if (materializedPath != null)
+                            {
+                                return materializedPath.Replace("\\", "/");
+                            }
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
                             if (System.IO.File.Exists(blocksPath))
                             {
@@ -226,6 +233,8 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
+        private readonly Func<string> m_Materialize;
+        internal string CatalogIdentity { get; }
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -300,6 +309,16 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            CatalogIdentity = relativePath;
+            Init();
+        }
+
+        public Model(
+            string relativePath, string catalogIdentity, Func<string> materialize)
+        {
+            m_Location = Location.File(relativePath);
+            CatalogIdentity = catalogIdentity;
+            m_Materialize = materialize;
             Init();
         }
 
@@ -307,6 +326,7 @@ namespace TiltBrush
         public Model(string assetId, string path)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            CatalogIdentity = $"IcosaAsset:{assetId}:{path}";
             Init();
         }
 
@@ -1030,15 +1050,22 @@ namespace TiltBrush
             return true;
         }
 
-        public async Task LoadModelAsync()
+        private Task m_PrefabLoadTask;
+
+        public Task LoadModelAsync()
         {
-            Task t = StartCreatePrefab(null);
-            await t;
+            // Saved references and recovery can request the same model while import is pending.
+            // Share that import instead of replacing its hierarchy with a second result.
+            if (m_PrefabLoadTask == null || m_PrefabLoadTask.IsCompleted)
+            {
+                m_PrefabLoadTask = StartCreatePrefab(null);
+            }
+            return m_PrefabLoadTask;
         }
 
         public void LoadModel()
         {
-            _ = StartCreatePrefab(null);
+            _ = LoadModelAsync();
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -1069,6 +1096,25 @@ namespace TiltBrush
                 m_LoadError = null;
                 IsGsplatModel = false;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
+
+                if (isLocal && m_Materialize != null)
+                {
+                    try
+                    {
+                        string materializedPath = await Task.Run(m_Materialize);
+                        if (string.IsNullOrEmpty(materializedPath))
+                        {
+                            throw new IOException($"Could not materialize model: {RelativePath}");
+                        }
+                        m_Location = Location.File(RelativePath, materializedPath);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"SAF_MATERIALIZE Could not materialize {RelativePath}: {e}");
+                        m_LoadError = new LoadError("Storage error", e.Message);
+                        return;
+                    }
+                }
 
                 string ext = m_Location.Extension;
                 // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time

@@ -230,12 +230,14 @@ namespace TiltBrush
         // Only valid during "Building"
         private float m_ProgressRingSize;
         private GifEncodeTask m_Task;
+        private bool m_GifPublicationPending;
 
         private bool m_SwipeBlinkRequested;
         private bool m_SwipeBlinkShowing;
         private float m_SwipeHintCountdown;
 
         private string m_VideoCaptureFile;
+        private bool m_VideoCapturePublished;
         private IEnumerator m_UploadIconBlinker;
         private bool m_WaitingForAuth = false;
 
@@ -609,25 +611,59 @@ namespace TiltBrush
 
         void ReportGifTaskDone()
         {
-            if (m_Task != null)
+            if (m_Task == null)
             {
-                string err = m_Task.Error;
-                if (err != null)
-                {
-                    OutputWindowScript.Error("Failed to save gif", err);
-                }
-                else
-                {
-                    OutputWindowScript.ReportFileSaved("Gif Written!", m_Task.GifName);
-                }
-                m_Task = null;
+                return;
+            }
+            string path = m_Task.GifName;
+            string error = m_Task.Error;
+            m_Task = null;
+
+            if (error != null || !OpenBrushStorage.IsGooglePlayStorageMode)
+            {
+                FinishGifSave(path, error);
+                return;
             }
 
+            // The encoder writes to private staging on SAF builds. Keep GIF capture busy
+            // until publication completes, and let the publisher own staging-file cleanup.
+            m_GifPublicationPending = true;
+            void Publish()
+            {
+                string reservedPath = RevalidateCaptureName(path, MultiCamStyle.AutoGif);
+                if (reservedPath != path)
+                {
+                    File.Move(path, reservedPath);
+                    path = reservedPath;
+                }
+                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
+                    path, "GIF capture", (success, publishError) => FinishGifSave(
+                        path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
+            }
+            if (AndroidStorageManager.RequireSharedFolderFor("GIF capture", Publish,
+                () => FinishGifSave(path, "Folder selection canceled. GIF remains staged locally.")))
+            {
+                Publish();
+            }
+        }
+
+        private void FinishGifSave(string path, string error)
+        {
+            m_GifPublicationPending = false;
             m_TimeGifCreationState = GifCreationState.Ready;
             m_AutoGifCreationState = GifCreationState.Ready;
 
             m_TimeGifCaptureTimer = 0.0f;
             SetTimeBar(m_TimeGifCaptureTimer);
+
+            if (error != null)
+            {
+                OutputWindowScript.Error("Failed to save gif", error);
+            }
+            else
+            {
+                OutputWindowScript.ReportFileSaved("Gif Written!", path);
+            }
         }
 
         void UpdateMultiCamTransform()
@@ -1285,6 +1321,36 @@ namespace TiltBrush
             UpdateCameraVisualTransforms();
         }
 
+        private static readonly Dictionary<string, (string Format, string Root)> sm_AutoCaptureNames =
+            new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
+
+        private static string ReserveCaptureName(string format, MultiCamStyle style)
+        {
+            var backend = UserStorage.Backend;
+            OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(format, out string sharedPath);
+            if (!OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area, out string relative))
+            {
+                throw new IOException("Unsupported capture destination.");
+            }
+            string directory = Path.GetDirectoryName(format);
+            string name = OpenBrushStorage.ReserveCaptureName(backend, area,
+                Path.GetDirectoryName(relative)?.Replace('\\', '/') ?? "", Path.GetFileName(format),
+                candidate => IsFilenameInUse(Path.Combine(directory, candidate), style));
+            string path = Path.Combine(directory, name);
+            sm_AutoCaptureNames[path] = (format, backend.IsReady ? backend.RootIdentity : null);
+            return path;
+        }
+
+        private static string RevalidateCaptureName(string path, MultiCamStyle style)
+        {
+            if (OpenBrushStorage.IsGooglePlayStorageMode && sm_AutoCaptureNames.TryGetValue(path, out var reservation) &&
+                reservation.Root != UserStorage.Backend.RootIdentity)
+            {
+                return ReserveCaptureName(reservation.Format, style);
+            }
+            return path;
+        }
+
         static public string GetSaveName(MultiCamStyle style)
         {
             string ext = "";
@@ -1334,6 +1400,8 @@ namespace TiltBrush
             {
                 basename = Path.Combine(m_SnapshotDirectory, basename);
             }
+
+            if (OpenBrushStorage.IsGooglePlayStorageMode) { return ReserveCaptureName(basename, style); }
 
             string fullpath;
             int lower = 0;
@@ -1691,6 +1759,17 @@ namespace TiltBrush
 
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
+            string sharedVideoPath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(filePath, out sharedVideoPath) &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    "saving videos",
+                    () => StartVideoCapture(filePath, offlineRender)))
+            {
+                return;
+            }
+
+            filePath = RevalidateCaptureName(filePath, MultiCamStyle.Video);
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.UsdPathSerializer,
@@ -1704,6 +1783,7 @@ namespace TiltBrush
             m_VideoRecordTimer.text = "0:00:00";
             m_VideoRecordIcon.gameObject.SetActive(true);
             m_VideoCaptureFile = filePath;
+            m_VideoCapturePublished = false;
             m_UploadingIcon.gameObject.SetActive(false);
             if (m_UploadIconBlinker != null)
             {
@@ -1767,12 +1847,25 @@ namespace TiltBrush
                 && recorder.IsPlayingBack
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            m_VideoSavingRoot.SetActive(recorder != null
-                && recorder.IsSaving
+            m_VideoSavingRoot.SetActive(IsVideoCaptureSaving(recorder)
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            if (m_CurrentVideoState == VideoState.Processing && !recorder.IsSaving)
+            if (m_CurrentVideoState == VideoState.Processing && !IsVideoCaptureSaving(recorder))
             {
+                if (OpenBrushStorage.IsGooglePlayStorageMode && !m_VideoCapturePublished)
+                {
+                    m_VideoCapturePublished = true;
+                    OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
+                        m_VideoCaptureFile,
+                        "video",
+                        (success, publishError) =>
+                        {
+                            if (!success)
+                            {
+                                OutputWindowScript.Error("Failed to save video", publishError);
+                            }
+                        });
+                }
                 if (App.GoogleIdentity.LoggedIn)
                 {
                     m_CurrentVideoState = VideoState.ReadyToShare;
@@ -1813,7 +1906,7 @@ namespace TiltBrush
                     }
 
                     // Disabled until sharing lands.
-                    if (recorder.IsSaving)
+                    if (IsVideoCaptureSaving(recorder))
                     {
                         m_VideoRecordAudioHeader.text = m_VideoSavingText;
                     }
@@ -1917,6 +2010,17 @@ namespace TiltBrush
             string saveName, MultiCamStyle style, HybridCamera odsCamera,
             Transform odsCaptureTransform)
         {
+            string sharedSnapshotPath;
+            if (OpenBrushStorage.IsGooglePlayStorageMode &&
+                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedSnapshotPath) &&
+                !AndroidStorageManager.RequireSharedFolderFor(
+                    "saving snapshots",
+                    () => App.Instance.StartCoroutine(TakeScreenshotAsync(saveName, style))))
+            {
+                yield break;
+            }
+
+            saveName = RevalidateCaptureName(saveName, style);
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
             // thread, but it'll require a 3rd party library to do the rgb32->png encode.
@@ -2071,6 +2175,32 @@ namespace TiltBrush
                     catch (IOException e) { err = e.Message; }
                     catch (UnauthorizedAccessException e) { err = e.Message; }
 
+                    if (err == null && OpenBrushStorage.IsGooglePlayStorageMode)
+                    {
+                        bool publishDone = false;
+                        bool publishSucceeded = false;
+                        string publishError = null;
+                        var generatedPaths = new List<string> { fullPath };
+                        if (style == MultiCamStyle.Depth)
+                        {
+                            generatedPaths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(fullPath));
+                        }
+                        OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
+                            generatedPaths,
+                            "snapshot",
+                            (success, error) =>
+                            {
+                                publishSucceeded = success;
+                                publishError = error;
+                                publishDone = true;
+                            });
+                        while (!publishDone)
+                        {
+                            yield return null;
+                        }
+                        if (!publishSucceeded) { err = publishError; }
+                    }
+
                     if (err != null)
                     {
                         OutputWindowScript.Error("Failed to save snapshot", err);
@@ -2102,6 +2232,18 @@ namespace TiltBrush
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }
+        }
+
+        private bool IsVideoCaptureSaving(VideoRecorder recorder)
+        {
+            if (recorder != null && recorder.IsSaving)
+            {
+                return true;
+            }
+
+            StillFrameSequenceExporter stillFrameExporter = GetVideoRecorder(m_CurrentCameraIndex)
+                ?.GetComponent<StillFrameSequenceExporter>();
+            return stillFrameExporter != null && stillFrameExporter.IsSaving;
         }
 
         //
@@ -2243,6 +2385,10 @@ namespace TiltBrush
             }
 
             ReportGifTaskDone();
+            while (m_GifPublicationPending)
+            {
+                yield return null;
+            }
         }
 
         void SetTimeBar(float fTime)

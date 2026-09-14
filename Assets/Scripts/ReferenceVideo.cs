@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Video;
@@ -170,6 +171,7 @@ namespace TiltBrush
 
         private VideoPlayer m_VideoPlayer;
         private HashSet<Controller> m_Controllers = new HashSet<Controller>();
+        private readonly Func<string> m_Materialize;
 
         /// Persistent path is relative to the Tilt Brush/Media Library/Videos directory, if it is a
         /// filename.
@@ -177,6 +179,7 @@ namespace TiltBrush
         public string AbsolutePath { get; }
         public bool NetworkVideo { get; }
         public string HumanName { get; }
+        internal string CatalogIdentity { get; }
 
         public Texture2D Thumbnail { get; private set; }
 
@@ -193,11 +196,18 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public ReferenceVideo(string filePath)
+            : this(filePath, filePath, null) { }
+
+        public ReferenceVideo(
+            string filePath, string catalogIdentity, Func<string> materialize,
+            string persistentPath = null)
         {
-            NetworkVideo = filePath.EndsWith(".txt");
-            PersistentPath = _GetPersistentPath(filePath);
-            HumanName = System.IO.Path.GetFileName(PersistentPath);
+            NetworkVideo = filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
             AbsolutePath = filePath;
+            CatalogIdentity = catalogIdentity;
+            PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
+            HumanName = System.IO.Path.GetFileName(PersistentPath);
+            m_Materialize = materialize;
         }
 
         /// A video inside the video library is identified by its path relative to that library.
@@ -270,6 +280,41 @@ namespace TiltBrush
         public IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
         {
             Error = null;
+            if (m_Materialize != null)
+            {
+                var materialization = new Future<string>(
+                    m_Materialize, cleanupFunction: null, longRunning: true);
+                string materializedPath = null;
+                while (true)
+                {
+                    bool finished;
+                    try
+                    {
+                        finished = materialization.TryGetResult(out materializedPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                        Error = ex.Message;
+                        yield break;
+                    }
+                    if (finished)
+                    {
+                        break;
+                    }
+                    yield return null;
+                }
+                if (!string.Equals(
+                        materializedPath, AbsolutePath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    Error =
+                        $"Materialized video path did not match its catalog path: {HumanName}";
+                    Debug.LogError($"SAF_MATERIALIZE {Error}");
+                    yield break;
+                }
+            }
+
             var gobj = new GameObject(HumanName);
             gobj.transform.SetParent(VideoCatalog.Instance.gameObject.transform);
             try
@@ -399,9 +444,16 @@ namespace TiltBrush
                     controller.Dispose();
                 }
             }
+            ReleaseThumbnail();
+        }
+
+        // The catalog owns the thumbnail; widget controllers own playback independently.
+        internal void ReleaseThumbnail()
+        {
             if (Thumbnail != null)
             {
                 UnityEngine.Object.Destroy(Thumbnail);
+                Thumbnail = null;
             }
         }
 
