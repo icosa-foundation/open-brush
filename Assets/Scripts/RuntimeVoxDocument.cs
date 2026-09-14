@@ -22,6 +22,10 @@ namespace TiltBrush
 {
     public sealed class RuntimeVoxDocument
     {
+        // XYZI stores each voxel coordinate in one byte, so valid coordinates are
+        // 0..255 and each model dimension can contain at most 256 cells.
+        public const int MaxModelDimension = byte.MaxValue + 1;
+
         public sealed class RuntimeModel
         {
             private readonly Dictionary<Vector3Int, byte> m_voxels = new Dictionary<Vector3Int, byte>();
@@ -33,9 +37,14 @@ namespace TiltBrush
 
             public RuntimeModel(string name, Vector3Int size)
             {
-                if (size.x <= 0 || size.y <= 0 || size.z <= 0)
+                if (size.x <= 0 || size.y <= 0 || size.z <= 0 ||
+                    size.x > MaxModelDimension ||
+                    size.y > MaxModelDimension ||
+                    size.z > MaxModelDimension)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(size), "Model size dimensions must be > 0");
+                    throw new ArgumentOutOfRangeException(
+                        nameof(size),
+                        $"Model size dimensions must be between 1 and {MaxModelDimension} cells.");
                 }
 
                 Name = name;

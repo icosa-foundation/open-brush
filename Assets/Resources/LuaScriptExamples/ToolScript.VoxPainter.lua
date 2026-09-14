@@ -4,7 +4,7 @@ Settings = {
 }
 
 Parameters = {
-    modelSize={label="Model Size", type="int", min=16, max=255, default=128},
+    modelSize={label="Model Size", type="int", min=16, max=256, default=128},
     gridSize={label="Voxel Size", type="float", min=0.02, max=1.0, default=0.1},
     mode={label="Mode", type="list", items={"Add", "Erase", "Paint"}, default="Add"},
     autoVisuals={label="Update While Drawing", type="toggle", default=true},

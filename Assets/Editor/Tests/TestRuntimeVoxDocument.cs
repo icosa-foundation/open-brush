@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using NUnit.Framework;
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -50,6 +51,38 @@ namespace TiltBrush
             Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(-1, 0, 0), 1));
             Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(2, 0, 0), 1));
             Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 0));
+        }
+
+        [Test]
+        public void RuntimeModel_AcceptsMaximumVoxDimensions()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "maximum",
+                new Vector3Int(
+                    RuntimeVoxDocument.MaxModelDimension,
+                    RuntimeVoxDocument.MaxModelDimension,
+                    RuntimeVoxDocument.MaxModelDimension));
+
+            Assert.IsTrue(model.AddOrUpdateVoxel(new Vector3Int(255, 255, 255), 1));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
+            Assert.AreEqual(model.Size, reloaded.Models[0].Size);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(
+                new Vector3Int(255, 255, 255),
+                out byte paletteIndex));
+            Assert.AreEqual(1, paletteIndex);
+        }
+
+        [TestCase(257, 1, 1)]
+        [TestCase(1, 257, 1)]
+        [TestCase(1, 1, 257)]
+        public void RuntimeModel_RejectsDimensionsLargerThanVoxCoordinates(int x, int y, int z)
+        {
+            var document = new RuntimeVoxDocument();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                document.CreateModel("too-large", new Vector3Int(x, y, z)));
         }
 
         [Test]
