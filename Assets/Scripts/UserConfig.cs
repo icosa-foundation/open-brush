@@ -235,39 +235,30 @@ namespace TiltBrush
             public int SnapshotHeight
             {
                 get { return m_SnapshotHeight ?? -1; }
-                set
-                {
-                    int max = App.Config.PlatformConfig.MaxSnapshotDimension;
-                    if (value > max)
-                    {
-                        OutputWindowScript.Error(
-                            $"Snapshot height of {value} is not supported. Set to {max} pixels.");
-                        m_SnapshotHeight = max;
-                    }
-                    else
-                    {
-                        m_SnapshotHeight = value;
-                    }
-                }
+                set { m_SnapshotHeight = value; }
             }
 
             int? m_SnapshotWidth;
             public int SnapshotWidth
             {
                 get { return m_SnapshotWidth ?? -1; }
-                set
+                set { m_SnapshotWidth = value; }
+            }
+
+            public void ClampSnapshotDimensions(int max)
+            {
+                if (m_SnapshotHeight > max)
                 {
-                    int max = App.Config.PlatformConfig.MaxSnapshotDimension;
-                    if (value > max)
-                    {
-                        OutputWindowScript.Error(
-                            $"Snapshot width of {value} is not supported. Set to {max} pixels.");
-                        m_SnapshotWidth = max;
-                    }
-                    else
-                    {
-                        m_SnapshotWidth = value;
-                    }
+                    OutputWindowScript.Error(
+                        $"Snapshot height of {m_SnapshotHeight} is not supported. Set to {max} pixels.");
+                    m_SnapshotHeight = max;
+                }
+
+                if (m_SnapshotWidth > max)
+                {
+                    OutputWindowScript.Error(
+                        $"Snapshot width of {m_SnapshotWidth} is not supported. Set to {max} pixels.");
+                    m_SnapshotWidth = max;
                 }
             }
 
@@ -311,6 +302,146 @@ namespace TiltBrush
         }
 
         public FlagsConfig Flags;
+
+        [Serializable]
+        public struct PerformanceConfig
+        {
+            // Null values retain the active PlatformConfig or quality-level setting.
+            public int? HullBrushMaxVertInputs;
+            public int? HullBrushMaxKnots;
+            public int? ReferenceImagesMaxFileSize;
+            public int? ReferenceImagesMaxDimension;
+            public int? ReferenceImagesResizeDimension;
+            public bool? UseFileSystemWatcher;
+            public bool? EnableAutosave;
+            public float? QuickLoadMaxDistancePerFrame;
+            public bool? AvoidUploadHandlerFile;
+            public bool? EnableExportMemoryOptimization;
+            public bool? EnableMulticamPreview;
+            public int? MaxSnapshotDimension;
+            public int? OverrideQuestFoveationLevel;
+            public bool? AnisotropicFiltering;
+            public bool? BillboardsFaceCameraPosition;
+            public int? ShadowMode;
+            public int? ShadowResolution;
+            public float? ShadowDistance;
+            public float? LodBias;
+            public int? SkinWeights;
+
+            public void Validate()
+            {
+                ValidatePositive(ref HullBrushMaxVertInputs, nameof(HullBrushMaxVertInputs));
+                ValidatePositive(ref HullBrushMaxKnots, nameof(HullBrushMaxKnots));
+                ValidatePositive(ref ReferenceImagesMaxFileSize, nameof(ReferenceImagesMaxFileSize));
+                ValidatePositive(ref ReferenceImagesMaxDimension, nameof(ReferenceImagesMaxDimension));
+                ValidatePositive(
+                    ref ReferenceImagesResizeDimension, nameof(ReferenceImagesResizeDimension));
+                ValidatePositive(
+                    ref QuickLoadMaxDistancePerFrame, nameof(QuickLoadMaxDistancePerFrame));
+                ValidatePositive(ref MaxSnapshotDimension, nameof(MaxSnapshotDimension));
+                ValidateRange(
+                    ref OverrideQuestFoveationLevel, 0, 3, nameof(OverrideQuestFoveationLevel));
+                ValidateEnum<ShadowQuality>(ref ShadowMode, nameof(ShadowMode));
+                ValidateEnum<ShadowResolution>(ref ShadowResolution, nameof(ShadowResolution));
+                ValidateNonNegative(ref ShadowDistance, nameof(ShadowDistance));
+                ValidatePositive(ref LodBias, nameof(LodBias));
+                ValidateEnum<SkinWeights>(ref SkinWeights, nameof(SkinWeights));
+            }
+
+            private static void ValidatePositive(ref int? value, string settingName)
+            {
+                if (value.HasValue &&
+                    (value.Value <= 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidatePositive(ref float? value, string settingName)
+            {
+                if (value.HasValue && value.Value <= 0)
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateNonNegative(ref float? value, string settingName)
+            {
+                if (value.HasValue &&
+                    (value.Value < 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateRange(
+                ref int? value, int minimum, int maximum, string settingName)
+            {
+                if (value.HasValue && (value.Value < minimum || value.Value > maximum))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void ValidateEnum<T>(ref int? value, string settingName)
+                where T : struct
+            {
+                if (value.HasValue && !Enum.IsDefined(typeof(T), value.Value))
+                {
+                    LogInvalidValue(settingName, value.Value);
+                    value = null;
+                }
+            }
+
+            private static void LogInvalidValue(string settingName, object value)
+            {
+                Debug.LogWarning(
+                    $"[PerformanceOverrides] Ignoring invalid {settingName} value {value}.");
+            }
+        }
+
+        public PerformanceConfig Performance;
+
+        public static class PerformanceOverrides
+        {
+            // Read the struct on each access so RefreshUserConfig takes effect immediately.
+            private static PerformanceConfig o => App.UserConfig.Performance;
+            public static int HullBrushMaxVertInputs => o.HullBrushMaxVertInputs ?? App.PlatformConfig.HullBrushMaxVertInputs;
+            public static int HullBrushMaxKnots => o.HullBrushMaxKnots ?? App.PlatformConfig.HullBrushMaxKnots;
+            public static int ReferenceImagesMaxFileSize => o.ReferenceImagesMaxFileSize ?? App.PlatformConfig.ReferenceImagesMaxFileSize;
+            public static int ReferenceImagesMaxDimension => o.ReferenceImagesMaxDimension ?? App.PlatformConfig.ReferenceImagesMaxDimension;
+            public static int ReferenceImagesResizeDimension => o.ReferenceImagesResizeDimension ?? App.PlatformConfig.ReferenceImagesResizeDimension;
+            public static bool UseFileSystemWatcher => o.UseFileSystemWatcher ?? App.PlatformConfig.UseFileSystemWatcher;
+            public static bool EnableAutosave => o.EnableAutosave ?? App.PlatformConfig.EnableAutosave;
+            public static float QuickLoadMaxDistancePerFrame => o.QuickLoadMaxDistancePerFrame ?? App.PlatformConfig.QuickLoadMaxDistancePerFrame;
+            public static bool AvoidUploadHandlerFile => o.AvoidUploadHandlerFile ?? App.PlatformConfig.AvoidUploadHandlerFile;
+            public static bool EnableExportMemoryOptimization => o.EnableExportMemoryOptimization ?? App.PlatformConfig.EnableExportMemoryOptimization;
+            public static bool EnableMulticamPreview => o.EnableMulticamPreview ?? App.PlatformConfig.EnableMulticamPreview;
+            public static int MaxSnapshotDimension => o.MaxSnapshotDimension ?? App.PlatformConfig.MaxSnapshotDimension;
+            public static int? OverrideQuestFoveationLevel => o.OverrideQuestFoveationLevel;
+            public static bool? AnisotropicFiltering => o.AnisotropicFiltering;
+            public static bool? BillboardsFaceCameraPosition => o.BillboardsFaceCameraPosition;
+            public static int? ShadowMode => o.ShadowMode;
+            public static int? ShadowResolution => o.ShadowResolution;
+            public static float? ShadowDistance => o.ShadowDistance;
+            public static float? LodBias => o.LodBias;
+            public static int? SkinWeights => o.SkinWeights;
+        }
+
+        public void ApplyPerformanceLimits()
+        {
+            PerformanceConfig performance = Performance;
+            performance.Validate();
+            Performance = performance;
+
+            FlagsConfig flags = Flags;
+            flags.ClampSnapshotDimensions(PerformanceOverrides.MaxSnapshotDimension);
+            Flags = flags;
+        }
 
         [Serializable]
         public struct DemoConfig
