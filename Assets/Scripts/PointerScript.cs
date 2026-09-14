@@ -77,6 +77,9 @@ namespace TiltBrush
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
+        private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
+        private bool m_ToolScriptPreviewDirty;
+        private Color? m_ToolScriptPreviewColor;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -513,32 +516,44 @@ namespace TiltBrush
             }
             else if (m_PreviewLineEnabled && m_CurrentBrush != null)
             {
-                // Preview mode: Create a preview line if we need one but don't have one
-                if (m_AllowPreviewLine && m_PreviewLine == null)
+                if (m_ToolScriptStrokeCreator != null)
                 {
-                    m_AllowPreviewLineTimer -= Time.deltaTime;
-                    if (m_AllowPreviewLineTimer <= 0.0f)
+                    if (m_PreviewLine == null)
                     {
                         CreatePreviewLine();
                     }
+
+                    if (m_PreviewLine != null && m_ToolScriptPreviewDirty)
+                    {
+                        UpdateToolScriptPreviewLine();
+                        m_ToolScriptPreviewDirty = false;
+                    }
                 }
-
-                if (m_PreviewLine != null)
+                else
                 {
-                    // For most brushes, we control the rebuilding of the preview brush,
-                    // since we have the necessary timing information and the brush doesn't.
-                    if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                    if (m_AllowPreviewLine && m_PreviewLine == null)
                     {
-                        RebuildPreviewLine();
-                    }
-                    else
-                    {
-                        m_PreviewLine.DecayBrush();
-                        m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        m_AllowPreviewLineTimer -= Time.deltaTime;
+                        if (m_AllowPreviewLineTimer <= 0.0f)
+                        {
+                            CreatePreviewLine();
+                        }
                     }
 
-                    // Always update preview brush after each frame
-                    m_PreviewLine.ApplyChangesToVisuals();
+                    if (m_PreviewLine != null)
+                    {
+                        if (m_PreviewLine.AlwaysRebuildPreviewBrush())
+                        {
+                            RebuildPreviewLine();
+                        }
+                        else
+                        {
+                            m_PreviewLine.DecayBrush();
+                            m_PreviewLine.UpdatePosition_LS(GetTransformForLine(m_PreviewLine.transform), 1f);
+                        }
+
+                        m_PreviewLine.ApplyChangesToVisuals();
+                    }
                 }
             }
 
@@ -693,17 +708,32 @@ namespace TiltBrush
                 // yet, but we can assume that the line transform == the canvas transform,
                 // since the line is parented to the canvas with an identity local transform.
                 // See also the TODO in GetTransformForLine; fixing that will resolve this wart.
-                Transform notReallyTheLineTransformButCloseEnough = App.Instance.m_CanvasTransform;
-                TrTransform xf_LS = GetTransformForLine(notReallyTheLineTransformButCloseEnough);
+                Transform previewCanvas = m_ToolScriptStrokeCreator != null
+                    ? App.Scene.ActiveCanvas.transform
+                    : App.Instance.m_CanvasTransform;
+                TrTransform xf_LS = GetTransformForLine(previewCanvas);
                 BaseBrushScript line = BaseBrushScript.Create(
-                    App.Instance.m_CanvasTransform,
+                    previewCanvas,
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
                 line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
-                line.SetPreviewMode();
+                if (m_ToolScriptStrokeCreator == null)
+                {
+                    line.SetPreviewMode();
+                }
+                else
+                {
+                    // A Tool Script preview replays a complete candidate stroke. Ordinary
+                    // pointer previews use preview mode to taper the initial knot to zero
+                    // pressure and relax other drawing behavior, which makes their mesh differ
+                    // from the committed stroke. Use the same deterministic seed as
+                    // DrawNestedTrList as well, so randomized brush geometry remains stable.
+                    line.RandomSeed = 0;
+                }
 
                 m_PreviewLine = line;
+                m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -722,11 +752,61 @@ namespace TiltBrush
             }
         }
 
+        private void UpdateToolScriptPreviewLine()
+        {
+            if (m_PreviewLine == null)
+            {
+                return;
+            }
+
+            var controlPoints = m_ToolScriptStrokeCreator?.ControlPoints;
+            if (controlPoints == null || controlPoints.Count < 2)
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            // Decay-based preview brushes retain their existing knots and geometry when reset.
+            // Tool previews replay the complete scripted path each frame, so start those brushes
+            // from a fresh instance rather than appending another copy of the path.
+            if (!m_PreviewLine.AlwaysRebuildPreviewBrush())
+            {
+                DisablePreviewLine();
+                CreatePreviewLine();
+                if (m_PreviewLine == null)
+                {
+                    return;
+                }
+            }
+
+            // StrokeScale is the exact scale that DrawToolScriptResult stores on the committed
+            // stroke. It already includes any pointer-to-canvas conversion, so applying the
+            // preview line's initial scale as well would scale twice when the scene is not 1.0.
+            float scale = m_ToolScriptStrokeCreator.StrokeScale;
+            var first = controlPoints[0];
+            m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
+            for (int i = 0; i < controlPoints.Count; ++i)
+            {
+                if (m_PreviewLine.IsOutOfVerts())
+                {
+                    break;
+                }
+
+                var cp = controlPoints[i];
+                m_PreviewLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+            }
+
+            m_PreviewLine.ApplyChangesToVisuals();
+        }
+
         void ResetPreviewProperties()
         {
             if (m_PreviewLine)
             {
-                m_PreviewLine.SetPreviewProperties(m_CurrentColor, m_CurrentBrushSize);
+                Color previewColor = m_ToolScriptStrokeCreator != null
+                    ? m_ToolScriptPreviewColor ?? m_CurrentColor
+                    : m_CurrentColor;
+                m_PreviewLine.SetPreviewProperties(previewColor, m_CurrentBrushSize);
             }
             if (m_PreviewLight)
             {
@@ -894,6 +974,53 @@ namespace TiltBrush
                 CurrentColorOverrideMode == ColorOverrideMode.None ? null : CurrentColorOverride;
         }
 
+        public void SetToolScriptPreview(
+            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
+            Color? previewColor)
+        {
+            if (controlPoints == null || controlPoints.Count < 2 ||
+                !IsValidToolScriptPreviewScale(strokeScale))
+            {
+                ClearToolScriptPreview();
+                return;
+            }
+
+            if (m_ToolScriptStrokeCreator == null)
+            {
+                // An ordinary pointer preview is parented to the preview canvas and its stroke
+                // scale is initialized for that space. Tool Script control points are in the
+                // active canvas, so recreate the line there before drawing the scripted path.
+                DisablePreviewLine();
+                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
+            }
+            else
+            {
+                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
+            }
+            m_ToolScriptPreviewColor = previewColor;
+            m_ToolScriptPreviewDirty = true;
+            ResetPreviewProperties();
+        }
+
+        internal static bool IsValidToolScriptPreviewScale(float strokeScale)
+        {
+            // Pointer-space previews have zero scale on the trigger-down frame. Passing that
+            // through to QuadStripBrush collapses its movement threshold to zero and allows
+            // coincident points to reach a zero-length direction normalization.
+            return strokeScale > 0f && !float.IsInfinity(strokeScale);
+        }
+
+        public void ClearToolScriptPreview()
+        {
+            m_ToolScriptStrokeCreator = null;
+            m_ToolScriptPreviewColor = null;
+            m_ToolScriptPreviewDirty = false;
+            if (m_PreviewLine != null)
+            {
+                DisablePreviewLine();
+            }
+        }
+
         /// Pass a Canvas parent, and a transform in that canvas's space.
         /// If overrideDesc passed, use that for the visuals -- m_CurrentBrush does not change.
         public void CreateNewLine(CanvasScript canvas, TrTransform xf_CS,
@@ -983,12 +1110,13 @@ namespace TiltBrush
         // During playback, rMemoryObjectForPlayback is non-null, and strokeFlags should not be passed.
         // otherwise, rMemoryObjectForPlayback is null, and strokeFlags should be valid.
         // When non-null, rMemoryObjectForPlayback corresponds to the current line.
-        public void DetachLine(
+        public Stroke DetachLine(
             bool bDiscard,
             Stroke rMemoryObjectForPlayback,
             SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None,
             bool isFinalStroke = false)
         {
+            Stroke detachedStroke = null;
 
             if (rMemoryObjectForPlayback != null)
             {
@@ -1063,6 +1191,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = subset.m_Stroke;
                 }
                 else
                 {
@@ -1104,6 +1233,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = m_CurrentLine.Stroke;
                 }
                 else
                 {
@@ -1130,6 +1260,7 @@ namespace TiltBrush
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
             m_ControlPointColors = null;
+            return detachedStroke;
         }
 
         public bool ShouldCurrentLineEnd()

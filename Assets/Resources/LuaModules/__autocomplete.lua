@@ -3023,10 +3023,13 @@ ColorOverrideMode.Add = nil
 
 
 ---@class Tool
+---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
 ---@field rotation Vector3 Legacy controller-up vector at release. Use endPoint.rotation for full release orientation.
+---@field isPreview boolean True for a live stroke-preview invocation and false for the single final invocation. Tool Scripts using previewType=stroke are invoked only during those phases.
 Tool = {}
 
 ---@class json
