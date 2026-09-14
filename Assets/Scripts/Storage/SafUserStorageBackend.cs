@@ -353,6 +353,7 @@ namespace TiltBrush
                 case StorageArea.Videos: return "Videos";
                 case StorageArea.VrVideos: return "VRVideos";
                 case StorageArea.Exports: return "Exports";
+                case StorageArea.SplatPoses: return "SplatPoses";
                 case StorageArea.Scripts: return "Scripts";
                 case StorageArea.Plugins: return "Plugins";
                 case StorageArea.Fonts: return "Fonts";

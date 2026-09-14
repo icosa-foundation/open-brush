@@ -96,26 +96,8 @@ namespace TiltBrush
             // publications retain their destination in the journal for recovery after restart.
             using IDisposable reservation = SafDestinationLocks.Acquire(
                 $"{rootId}\nExports\n__export_name__".ToLowerInvariant(), cancellationToken);
-            var reservedNames = new List<string>();
-            string journalDirectory = GetPublicationDirectory(rootId);
-            if (Directory.Exists(journalDirectory))
-            {
-                foreach (string path in Directory.EnumerateFiles(journalDirectory, "*.json"))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var record = JsonConvert.DeserializeObject<SafPublicationRecord>(File.ReadAllText(path));
-                    if (record == null || record.Version != kVersion || record.RootId != rootId)
-                    {
-                        throw new IOException("Cannot reserve an export name while a publication journal is invalid.");
-                    }
-                    if (record.Area != StorageArea.Exports.ToString()) { continue; }
-                    EnsureItems(record);
-                    foreach (SafPublicationItem item in record.Items)
-                    {
-                        reservedNames.Add(item.DestinationRelativePath.Split('/')[0]);
-                    }
-                }
-            }
+            List<string> reservedNames = GetPendingTopLevelNames(
+                rootId, StorageArea.Exports, cancellationToken);
             string destination = SelectExportDirectoryName(backend,
                 Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
             if (rootId != backend.RootIdentity)
@@ -125,21 +107,62 @@ namespace TiltBrush
             return PublishBundle(backend, StorageArea.Exports,
                 new[] { new SafStagedPath(stagedDirectory, destination),
                     new SafStagedPath(stagedReadme, "README.txt") },
-                transactionOwnsPayload: true, cancellationToken);
+                transactionOwnsPayload: true, cancellationToken,
+                expectedRootIdentity: rootId);
+        }
+
+        public static SafPublicationResult PublishUniqueDirectory(
+            IUserStorageBackend backend, StorageArea area, string stagedDirectory,
+            bool transactionOwnsPayload, CancellationToken cancellationToken)
+        {
+            if (backend == null || backend.Kind != StorageBackendKind.StorageAccessFramework ||
+                !backend.IsReady)
+            {
+                return new SafPublicationResult(StorageResultCode.NotReady,
+                    "Open Brush shared folder is unavailable.");
+            }
+            if (!Directory.Exists(stagedDirectory))
+            {
+                return new SafPublicationResult(StorageResultCode.NotFound,
+                    $"Staged output does not exist: {stagedDirectory}");
+            }
+            string rootId = backend.RootIdentity;
+            using IDisposable reservation = SafDestinationLocks.Acquire(
+                $"{rootId}\n{area}\n__directory_name__".ToLowerInvariant(), cancellationToken);
+            List<string> reservedNames = GetPendingTopLevelNames(rootId, area, cancellationToken);
+            string destination = SelectUniqueDirectoryName(
+                backend, area, Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
+            if (rootId != backend.RootIdentity)
+            {
+                return new SafPublicationResult(StorageResultCode.Cancelled,
+                    "The shared output folder changed.");
+            }
+            return PublishBundle(backend, area,
+                new[] { new SafStagedPath(stagedDirectory, destination) },
+                transactionOwnsPayload, cancellationToken,
+                expectedRootIdentity: rootId);
         }
 
         internal static string SelectExportDirectoryName(IUserStorageBackend backend,
             string preferredName, IEnumerable<string> reservedNames, CancellationToken cancellationToken)
         {
+            return SelectUniqueDirectoryName(
+                backend, StorageArea.Exports, preferredName, reservedNames, cancellationToken);
+        }
+
+        internal static string SelectUniqueDirectoryName(IUserStorageBackend backend,
+            StorageArea area, string preferredName, IEnumerable<string> reservedNames,
+            CancellationToken cancellationToken)
+        {
             string rootId = backend.RootIdentity;
-            StorageDirectoryResult listing = backend.List(StorageArea.Exports, "", cancellationToken);
+            StorageDirectoryResult listing = backend.List(area, "", cancellationToken);
             if (!listing.Success && listing.Code != StorageResultCode.NotFound)
             {
-                throw new IOException($"Could not check shared export names: {listing.Error}");
+                throw new IOException($"Could not check shared output names: {listing.Error}");
             }
             if (rootId != backend.RootIdentity)
             {
-                throw new IOException("The shared export folder changed while selecting a name.");
+                throw new IOException("The shared output folder changed while selecting a name.");
             }
             var names = new HashSet<string>(reservedNames, StringComparer.OrdinalIgnoreCase);
             foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
@@ -150,6 +173,31 @@ namespace TiltBrush
                 candidate = $"{preferredName} {index}";
             }
             return candidate;
+        }
+
+        private static List<string> GetPendingTopLevelNames(
+            string rootId, StorageArea area, CancellationToken cancellationToken)
+        {
+            var reservedNames = new List<string>();
+            string journalDirectory = GetPublicationDirectory(rootId);
+            if (!Directory.Exists(journalDirectory)) { return reservedNames; }
+            foreach (string path in Directory.EnumerateFiles(journalDirectory, "*.json"))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var record = JsonConvert.DeserializeObject<SafPublicationRecord>(File.ReadAllText(path));
+                if (record == null || record.Version != kVersion || record.RootId != rootId)
+                {
+                    throw new IOException(
+                        "Cannot reserve an output name while a publication journal is invalid.");
+                }
+                if (record.Area != area.ToString()) { continue; }
+                EnsureItems(record);
+                foreach (SafPublicationItem item in record.Items)
+                {
+                    reservedNames.Add(item.DestinationRelativePath.Split('/')[0]);
+                }
+            }
+            return reservedNames;
         }
 
         public static SafPublicationResult Publish(
@@ -181,7 +229,8 @@ namespace TiltBrush
             StorageArea area,
             IEnumerable<SafStagedPath> stagedPaths,
             bool transactionOwnsPayload,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string expectedRootIdentity = null)
         {
             if (backend == null ||
                 backend.Kind != StorageBackendKind.StorageAccessFramework ||
@@ -223,6 +272,12 @@ namespace TiltBrush
                     StorageResultCode.InvalidPath, "Publication bundle is empty.");
             }
             string rootId = backend.RootIdentity;
+            if (expectedRootIdentity != null && !string.Equals(
+                    expectedRootIdentity, rootId, StringComparison.Ordinal))
+            {
+                return new SafPublicationResult(
+                    StorageResultCode.Cancelled, "The shared output folder changed.");
+            }
             var record = new SafPublicationRecord
             {
                 TransactionId = Guid.NewGuid().ToString("N"),

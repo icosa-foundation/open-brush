@@ -638,6 +638,34 @@ namespace TiltBrush
                 });
         }
 
+        public static void PublishGaussianCaptureToSharedStorageAsync(
+            string localCaptureDirectory, Action<bool, string> onComplete)
+        {
+            if (!IsGooglePlayStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            string captureName = Path.GetFileName(localCaptureDirectory);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                AndroidStorageManager.StartStorageOperation(
+                    $"Gaussian capture {captureName}",
+                    () => SafStagedOutputPublisher.PublishUniqueDirectory(
+                        backend, StorageArea.SplatPoses, localCaptureDirectory,
+                        transactionOwnsPayload: false, CancellationToken.None),
+                    onComplete);
+                return;
+            }
+            PublishPathToSharedStorageAsync(
+                Path.Combine("SplatPoses", captureName),
+                localCaptureDirectory,
+                $"Gaussian capture {captureName}",
+                transactionOwnsPayload: false,
+                onComplete);
+        }
+
         private static void PublishPathToSharedStorageAsync(
             string relativePath,
             string localPath,
@@ -719,6 +747,7 @@ namespace TiltBrush
                 ("VRVideos", StorageArea.VrVideos),
                 ("Videos", StorageArea.Videos),
                 ("Exports", StorageArea.Exports),
+                ("SplatPoses", StorageArea.SplatPoses),
             };
             foreach ((string prefix, StorageArea mappedArea) in mappings)
             {

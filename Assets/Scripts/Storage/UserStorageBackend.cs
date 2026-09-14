@@ -45,6 +45,7 @@ namespace TiltBrush
         UserRoot,
         MediaLibraryQuill,
         Music,
+        SplatPoses,
     }
 
     public enum StorageResultCode
@@ -586,6 +587,7 @@ namespace TiltBrush
                 case StorageArea.Videos: return App.VideosPath();
                 case StorageArea.VrVideos: return App.VrVideosPath();
                 case StorageArea.Exports: return App.UserExportPath();
+                case StorageArea.SplatPoses: return App.SplatPosesPath();
                 case StorageArea.Scripts: return Path.Combine(App.UserPath(), "Scripts");
                 case StorageArea.Plugins: return Path.Combine(App.UserPath(), "Plugins");
                 case StorageArea.Fonts: return Path.Combine(App.UserPath(), "Fonts");

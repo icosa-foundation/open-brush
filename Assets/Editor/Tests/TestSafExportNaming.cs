@@ -77,6 +77,58 @@ namespace TiltBrush
 
         [TestCase(false)]
         [TestCase(true)]
+        public void GaussianDirectoriesPreserveCompletedAndPendingDatasets(bool failFirst)
+        {
+            string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath,
+                $"gaussian-test-{Guid.NewGuid():N}");
+            string shared = Path.Combine(fixture, "shared");
+            var backend = new ExportBackend(shared);
+            string recovery = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            Directory.CreateDirectory(shared);
+            try
+            {
+                string first = Path.Combine(fixture, "first", "Sketch_00");
+                string second = Path.Combine(fixture, "second", "Sketch_00");
+                Directory.CreateDirectory(first);
+                Directory.CreateDirectory(second);
+                File.WriteAllText(Path.Combine(first, "cameras.txt"), "first");
+                File.WriteAllText(Path.Combine(second, "cameras.txt"), "second");
+                backend.FailWrites = failFirst;
+                SafPublicationResult firstResult = SafStagedOutputPublisher.PublishUniqueDirectory(
+                    backend, StorageArea.SplatPoses, first,
+                    transactionOwnsPayload: false, CancellationToken.None);
+                Assert.AreEqual(!failFirst, firstResult.Success, firstResult.Error);
+                Assert.IsTrue(Directory.Exists(first));
+
+                backend.FailWrites = false;
+                SafPublicationResult secondResult = SafStagedOutputPublisher.PublishUniqueDirectory(
+                    backend, StorageArea.SplatPoses, second,
+                    transactionOwnsPayload: false, CancellationToken.None);
+                Assert.IsTrue(secondResult.Success, secondResult.Error);
+                Assert.IsTrue(Directory.Exists(second));
+                Assert.AreEqual("second", File.ReadAllText(
+                    Path.Combine(shared, "Sketch_00 0", "cameras.txt")));
+                if (failFirst)
+                {
+                    SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(
+                        backend, CancellationToken.None);
+                    Assert.AreEqual(1, report.Recovered);
+                    Assert.AreEqual(0, report.Pending);
+                }
+                Assert.AreEqual("first", File.ReadAllText(
+                    Path.Combine(shared, "Sketch_00", "cameras.txt")));
+                Assert.AreEqual("second", File.ReadAllText(
+                    Path.Combine(shared, "Sketch_00 0", "cameras.txt")));
+            }
+            finally
+            {
+                if (Directory.Exists(fixture)) { Directory.Delete(fixture, true); }
+                if (Directory.Exists(recovery)) { Directory.Delete(recovery, true); }
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
         public void ExistingSharedFilesAndDirectoriesReserveNames(bool isDirectory)
         {
             var backend = new CatalogTestBackend
@@ -139,6 +191,27 @@ namespace TiltBrush
             };
             Assert.Throws<IOException>(() => SafStagedOutputPublisher.SelectExportDirectoryName(
                 backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
+        }
+
+        [Test]
+        public void RootBoundPublicationRejectsAChangedRootBeforeJournaling()
+        {
+            string stagedFile = Path.GetTempFileName();
+            try
+            {
+                var backend = new CatalogTestBackend { RootIdentity = "new-root" };
+                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
+                    backend, StorageArea.SplatPoses,
+                    new[] { new SafStagedPath(stagedFile, "Capture/data.bin") },
+                    transactionOwnsPayload: false, CancellationToken.None,
+                    expectedRootIdentity: "old-root");
+                Assert.AreEqual(StorageResultCode.Cancelled, result.Code);
+                Assert.IsTrue(File.Exists(stagedFile));
+            }
+            finally
+            {
+                File.Delete(stagedFile);
+            }
         }
     }
 }
