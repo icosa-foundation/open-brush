@@ -1,6 +1,7 @@
 Settings = {
     description = "Draws a (p, q) torus knot with analytic ribbon-friendly orientation (tangent + torus radial)",
-    previewType = "sphere"
+    previewType = "stroke",
+    previewInterval = 0.1
 }
 
 Parameters = {
@@ -11,12 +12,14 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
         local p = Parameters.p
         local q = Parameters.q
         local R = 1.0
         local r = Parameters.ratio
         local total = Parameters.points
+        if Tool.isPreview then
+            total = Math:Min(total, 200)
+        end
 
         local path = Path:New()
 
@@ -62,5 +65,4 @@ function Main()
         -- Keep overall size fixed; shape controlled by p, q and ratio
         path:Normalize(2)
         return path
-    end
 end
