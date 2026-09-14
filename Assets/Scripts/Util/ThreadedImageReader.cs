@@ -160,7 +160,7 @@ namespace TiltBrush
         {
             // Throws exception on error.
             var orig = ImageUtils.FromImageData(
-                rawData, identifier, abortDimension);
+                rawData, identifier, abortDimension, maxDimension);
 
             if (orig == null)
             {
