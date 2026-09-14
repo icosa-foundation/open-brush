@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace TiltBrush
@@ -211,6 +212,50 @@ namespace TiltBrush
             finally
             {
                 File.Delete(stagedFile);
+            }
+        }
+
+        [Test]
+        public void CompletedPublicationRecoveryFinishesPartialOwnedPayloadCleanup()
+        {
+            string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath,
+                $"cleanup-test-{Guid.NewGuid():N}");
+            var backend = new ExportBackend(Path.Combine(fixture, "shared"));
+            string recovery = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string journalDirectory = Path.Combine(recovery, "publications");
+            string alreadyDeleted = Path.Combine(fixture, "already-deleted");
+            string remaining = Path.Combine(fixture, "remaining");
+            Directory.CreateDirectory(remaining);
+            File.WriteAllText(Path.Combine(remaining, "data.bin"), "payload");
+            Directory.CreateDirectory(journalDirectory);
+            var record = new SafPublicationRecord
+            {
+                TransactionId = "partial-cleanup",
+                RootId = backend.RootIdentity,
+                Area = StorageArea.Exports.ToString(),
+                TransactionOwnsPayload = true,
+                State = "Complete",
+                Items = new System.Collections.Generic.List<SafPublicationItem>
+                {
+                    new SafPublicationItem { SourcePath = alreadyDeleted, IsDirectory = true },
+                    new SafPublicationItem { SourcePath = remaining, IsDirectory = true },
+                },
+            };
+            string journal = Path.Combine(journalDirectory, $"{record.TransactionId}.json");
+            File.WriteAllText(journal, JsonConvert.SerializeObject(record));
+            try
+            {
+                SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(
+                    backend, CancellationToken.None);
+                Assert.AreEqual(1, report.Recovered);
+                Assert.AreEqual(0, report.Pending);
+                Assert.IsFalse(Directory.Exists(remaining));
+                Assert.IsFalse(File.Exists(journal));
+            }
+            finally
+            {
+                if (Directory.Exists(fixture)) { Directory.Delete(fixture, true); }
+                if (Directory.Exists(recovery)) { Directory.Delete(recovery, true); }
             }
         }
     }

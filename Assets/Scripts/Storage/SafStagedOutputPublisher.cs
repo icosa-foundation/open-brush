@@ -370,12 +370,18 @@ namespace TiltBrush
                         backend.RootIdentity,
                         StringComparison.Ordinal))
                 {
-                    return Fail(
-                        record,
-                        StorageResultCode.NotReady,
-                        "The staged output belongs to a different Open Brush folder.");
+                    const string error =
+                        "The staged output belongs to a different Open Brush folder.";
+                    return record.State == "Complete"
+                        ? FailCleanup(record, StorageResultCode.NotReady, error)
+                        : Fail(record, StorageResultCode.NotReady, error);
                 }
                 EnsureItems(record);
+                if (record.State == "Complete")
+                {
+                    CompleteCleanup(record);
+                    return new SafPublicationResult(StorageResultCode.Success);
+                }
                 foreach (SafPublicationItem item in record.Items)
                 {
                     if (item.IsDirectory && !Directory.Exists(item.SourcePath) ||
@@ -469,27 +475,56 @@ namespace TiltBrush
 
                 record.State = "Complete";
                 Persist(record);
-                DeleteJournal(record);
-                if (record.TransactionOwnsPayload)
-                {
-                    foreach (SafPublicationItem item in record.Items)
-                    {
-                        DeleteOwnedPayload(item.SourcePath, item.IsDirectory);
-                    }
-                }
+                CompleteCleanup(record);
                 return new SafPublicationResult(StorageResultCode.Success);
             }
             catch (OperationCanceledException e)
             {
-                return Fail(record, StorageResultCode.Cancelled, e.Message);
+                return record.State == "Complete"
+                    ? FailCleanup(record, StorageResultCode.Cancelled, e.Message)
+                    : Fail(record, StorageResultCode.Cancelled, e.Message);
             }
             catch (Exception e) when (
                 e is IOException ||
                 e is UnauthorizedAccessException ||
                 e is ArgumentException)
             {
-                return Fail(record, StorageResultCode.Failed, e.Message);
+                return record.State == "Complete"
+                    ? FailCleanup(record, StorageResultCode.Failed, e.Message)
+                    : Fail(record, StorageResultCode.Failed, e.Message);
             }
+        }
+
+        private static void CompleteCleanup(SafPublicationRecord record)
+        {
+            if (record.TransactionOwnsPayload)
+            {
+                foreach (SafPublicationItem item in record.Items)
+                {
+                    DeleteOwnedPayload(item.SourcePath, item.IsDirectory);
+                }
+            }
+            DeleteJournal(record);
+        }
+
+        private static SafPublicationResult FailCleanup(
+            SafPublicationRecord record, StorageResultCode code, string error)
+        {
+            record.AttemptCount++;
+            record.LastError = error ?? "";
+            // Keep Complete distinct from Pending: provider publication has finished and recovery
+            // must retry only idempotent staging cleanup, not require every source to still exist.
+            record.State = "Complete";
+            string resultError = error;
+            try
+            {
+                Persist(record);
+            }
+            catch (Exception persistError)
+            {
+                resultError = $"{error} Journal update also failed: {persistError.Message}";
+            }
+            return new SafPublicationResult(code, resultError);
         }
 
         private static SafPublicationResult VerifyCompletedFile(
@@ -699,10 +734,18 @@ namespace TiltBrush
         {
             if (isDirectory)
             {
-                Directory.Delete(path, true);
+                try
+                {
+                    Directory.Delete(path, true);
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    // A prior cleanup attempt already removed this payload.
+                }
             }
             else
             {
+                // File.Delete is already idempotent when the path does not exist.
                 File.Delete(path);
             }
         }
