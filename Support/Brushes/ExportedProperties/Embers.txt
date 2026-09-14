@@ -1,0 +1,87 @@
+{
+  "VariantOf": "",
+  "GUID": "02ffb866-7fb2-4d15-b761-1012cefb1360",
+  "Author": "Open Brush",
+  "Name": "Embers",
+  "Description": "Embers",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": -0.03,
+    "MaxVolume": 0.8,
+    "VolumeUpSpeed": 2.0,
+    "VolumeDownSpeed": 1.4,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": true
+  },
+  "Material": {
+    "Shader": "Brush/Particle/Embers",
+    "FloatProperties": {
+      "_ScrollRate": 0.6,
+      "_ScrollJitterIntensity": 0.3,
+      "_ScrollJitterFrequency": 5.0,
+      "_SpreadRate": 1.539
+    },
+    "ColorProperties": {
+      "_TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
+    },
+    "VectorProperties": {
+      "_ScrollDistance": [ 2.0, 6.0, 0.0, 1.0 ]
+    },
+    "TextureProperties": {
+      "_MainTex": ""
+    },
+    "TextureAtlasV": 1,
+    "TileRate": 1.0,
+    "UseBloomSwatchOnColorPicker": true
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.025, 0.075 ],
+    "PressureSizeRange": [ 0.0, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.001
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.04,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 0.35,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": true
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.63,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": false,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 1
+  },
+  "BrushDescriptionVersion": 1
+}

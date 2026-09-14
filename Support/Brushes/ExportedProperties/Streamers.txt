@@ -1,0 +1,83 @@
+{
+  "VariantOf": "",
+  "GUID": "44bb800a-fbc3-4592-8426-94ecb05ddec3",
+  "Author": "Open Brush",
+  "Name": "Streamers",
+  "Description": "Streamers",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.0,
+    "MaxVolume": 1.0,
+    "VolumeUpSpeed": 1.0,
+    "VolumeDownSpeed": 1.2,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": true
+  },
+  "Material": {
+    "Shader": "Brush/Special/Streamers",
+    "FloatProperties": {
+      "_Scroll1": 1.0,
+      "_Scroll2": 3.0,
+      "_DisplacementIntensity": 0.02,
+      "_EmissionGain": 0.4
+    },
+    "ColorProperties": {},
+    "VectorProperties": {},
+    "TextureProperties": {
+      "_MainTex": ""
+    },
+    "TextureAtlasV": 1,
+    "TileRate": 0.5,
+    "UseBloomSwatchOnColorPicker": false
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.1, 2.0 ],
+    "PressureSizeRange": [ 1.0, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.001
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 0.4, 1.0 ],
+    "LuminanceMin": 0.04,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 1.0,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": false
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.0,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": true,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 0
+  },
+  "BrushDescriptionVersion": 1
+}
