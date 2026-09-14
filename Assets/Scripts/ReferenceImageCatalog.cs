@@ -484,7 +484,7 @@ namespace TiltBrush
 
         protected virtual bool ValidExtension(string ext)
         {
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".svg";
+            return ReferenceImageFormat.IsSupportedExtension(ext);
         }
 
         /// Resolves a sketch's stored image path against the configured roots, in priority order.

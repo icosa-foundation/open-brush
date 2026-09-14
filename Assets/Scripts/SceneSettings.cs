@@ -13,10 +13,10 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using OpenBrush.Multiplayer;
-using Superla.RadianceHDR;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -25,6 +25,9 @@ namespace TiltBrush
 
     public class SceneSettings : MonoBehaviour
     {
+        private const string kHdrPanoramicSkyboxMaterialResource =
+            "Environments/HdrPanoramicSkybox";
+
         // A using() object that requests instant scene switches
         public class RequestInstantSceneSwitch : IDisposable
         {
@@ -120,6 +123,8 @@ namespace TiltBrush
         private int m_RequestInstantSceneSwitch;
         private string m_CustomSkyboxTextureName;
         private Material m_CustomSkyboxMaterial;
+        private Texture2D m_CustomSkyboxTexture;
+        private int m_CustomSkyboxLoadVersion;
 
         public float HardBoundsRadiusMeters_SS
         {
@@ -215,41 +220,123 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             m_CustomSkyboxTextureName = filename;
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+            int loadVersion = ++m_CustomSkyboxLoadVersion;
+            Texture2D tex = null;
             // Check multiple potential root directories for background images
             var path = ApiMethods.GetSafeMediaPath(
                 App.GetAllBackgroundImageRoots(), filename, "skybox path");
+
             if (File.Exists(path))
             {
-                var fileData = File.ReadAllBytes(path);
-
-                if (path.EndsWith(".hdr"))
+                if (HdrTextureLoader.IsSupportedFile(path))
                 {
-                    RadianceHDRTexture hdr = new RadianceHDRTexture(fileData);
-                    tex = hdr.texture;
+                    tex = ImageCache.LoadImageCache(path);
+                    if (tex == null)
+                    {
+                        StartCoroutine(LoadCustomHdrSkybox(path, filename, loadVersion));
+                        return;
+                    }
                 }
                 else
                 {
-                    tex.LoadImage(fileData);
+                    var fileData = File.ReadAllBytes(path);
+                    if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
+                    {
+                        try
+                        {
+                            RawImage rawImage = ImageUtils.FromVrJpeg(
+                                fileData, filename,
+                                App.PlatformConfig.ReferenceImagesMaxDimension,
+                                App.PlatformConfig.ReferenceImagesResizeDimension);
+                            tex = new Texture2D(
+                                rawImage.ColorWidth, rawImage.ColorHeight,
+                                TextureFormat.RGBA32, true);
+                            tex.SetPixels32(rawImage.ColorData);
+                            tex.Apply();
+                        }
+                        catch (ImageLoadError e)
+                        {
+                            Debug.LogWarning(
+                                $"VR JPEG decode failed for {filename}; loading it as a flat JPEG: {e.Message}");
+                        }
+                    }
+                    if (tex == null)
+                    {
+                        tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                        if (!tex.LoadImage(fileData))
+                        {
+                            Debug.LogError($"Failed to load skybox image: {path}");
+                            return;
+                        }
+                    }
                 }
 
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
-                }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                float aspectRatio = (float)tex.width / tex.height;
+                SetCustomSkybox(tex, aspectRatio);
             }
             else
             {
                 Debug.LogError($"Could not find skybox image: {path}");
+            }
+        }
+
+        private IEnumerator LoadCustomHdrSkybox(
+            string path, string filename, int loadVersion)
+        {
+            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
+            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+            var reader = new Future<HdrTextureLoader.DecodedImage>(
+                () => HdrTextureLoader.Decode(
+                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                longRunning: true);
+            HdrTextureLoader.DecodedImage decoded = null;
+            Exception decodeError = null;
+            while (decoded == null && decodeError == null)
+            {
+                try
+                {
+                    reader.TryGetResult(out decoded);
+                }
+                catch (Exception e)
+                {
+                    decodeError = e;
+                }
+                if (decoded == null && decodeError == null)
+                {
+                    yield return null;
+                }
+            }
+
+            if (loadVersion != m_CustomSkyboxLoadVersion ||
+                m_CustomSkyboxTextureName != filename)
+            {
+                yield break;
+            }
+            if (decodeError != null)
+            {
+                Debug.LogWarning($"[CustomHdrSkybox:{filename}] {decodeError}");
+                yield break;
+            }
+
+            Texture2D texture = null;
+            try
+            {
+                texture = HdrTextureLoader.CreateTexture(decoded);
+                ImageCache.SaveImageCache(texture, path);
+                float aspectRatio = (float)texture.width / texture.height;
+                SetCustomSkybox(texture, aspectRatio);
+                texture = null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[CustomHdrSkybox:{filename}] {e}");
+            }
+            finally
+            {
+                if (texture != null)
+                {
+                    Destroy(texture);
+                }
             }
         }
 
@@ -264,19 +351,71 @@ namespace TiltBrush
             }
             else
             {
-                float aspectRatio = tex.width / tex.height;
-                if (aspectRatio > 1.5)
+                ++m_CustomSkyboxLoadVersion;
+                float aspectRatio = (float)tex.width / tex.height;
+                SetCustomSkybox(tex, aspectRatio);
+            }
+        }
+
+        private void SetCustomSkybox(Texture2D texture, float aspectRatio)
+        {
+            Material previousMaterial = m_CustomSkyboxMaterial;
+            Texture2D previousTexture = m_CustomSkyboxTexture;
+
+            m_CustomSkyboxMaterial = CreateCustomSkyboxMaterial(texture, aspectRatio);
+            m_CustomSkyboxTexture = texture;
+            m_CustomSkyboxMaterial.mainTexture = texture;
+            m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
+            RenderSettings.skybox = m_CustomSkyboxMaterial;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+
+            if (previousMaterial != null)
+            {
+                Destroy(previousMaterial);
+            }
+            if (previousTexture != null && previousTexture != texture)
+            {
+                Destroy(previousTexture);
+            }
+        }
+
+        private static Material CreateCustomSkyboxMaterial(Texture2D texture, float aspectRatio)
+        {
+            if (!HdrTextureLoader.IsHdrTexture(texture))
+            {
+                string resource = aspectRatio > 1.5f
+                    ? "Environments/CustomSkybox"
+                    : "Environments/CustomStereoSkybox";
+                Material templateMaterial = Resources.Load<Material>(resource);
+                if (templateMaterial == null)
                 {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomSkybox");
+                    throw new InvalidOperationException(
+                        $"Could not load skybox material resource: {resource}");
                 }
-                else
-                {
-                    m_CustomSkyboxMaterial = Resources.Load<Material>("Environments/CustomStereoSkybox");
-                }
-                m_CustomSkyboxMaterial.mainTexture = tex;
-                m_CustomSkyboxMaterial.SetColor("_Tint", Color.gray);
-                RenderSettings.skybox = m_CustomSkyboxMaterial;
-                RenderSettings.ambientMode = AmbientMode.Skybox;
+                return new Material(templateMaterial);
+            }
+
+            Material template = Resources.Load<Material>(kHdrPanoramicSkyboxMaterialResource);
+            if (template == null)
+            {
+                throw new InvalidOperationException(
+                    $"Could not load skybox material resource: {kHdrPanoramicSkyboxMaterialResource}");
+            }
+
+            var material = new Material(template);
+            material.SetFloat("_Layout", aspectRatio > 1.5f ? 0 : 2);
+            return material;
+        }
+
+        private void OnDestroy()
+        {
+            if (m_CustomSkyboxMaterial != null)
+            {
+                Destroy(m_CustomSkyboxMaterial);
+            }
+            if (m_CustomSkyboxTexture != null)
+            {
+                Destroy(m_CustomSkyboxTexture);
             }
         }
 
@@ -830,6 +969,7 @@ namespace TiltBrush
                     m_SkyColorB = env.m_SkyboxColorB;
                     m_GradientSkew = Quaternion.identity;
                     m_CustomSkyboxTextureName = null;
+                    ++m_CustomSkyboxLoadVersion;
                 }
 
                 m_DesiredEnvironment = env;
