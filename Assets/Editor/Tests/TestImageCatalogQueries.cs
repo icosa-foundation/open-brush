@@ -30,12 +30,22 @@ namespace TiltBrush
         public bool IsReady => true;
         public string RootIdentity { get; set; } = "catalog-query-root";
         public Func<StorageDirectoryResult> Listing;
+        public int RenameCalls;
+        public int DeleteCalls;
         public StorageDirectoryResult List(StorageArea area, string path, CancellationToken cancellationToken) => Listing();
         public StorageTreeResult EnumerateTree(StorageArea area, string path, StorageTreeQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Stream OpenRead(StorageDocumentId documentId, bool requireSeekable, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IStorageWriteTransaction BeginWrite(StorageArea area, string relativePath, string mimeType, CancellationToken cancellationToken, StorageDocumentId targetDocumentId = default) => throw new NotSupportedException();
-        public StorageMutationResult Rename(StorageDocumentId documentId, string newDisplayName, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public StorageMutationResult Delete(StorageDocumentId documentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public StorageMutationResult Rename(StorageDocumentId documentId, string newDisplayName, CancellationToken cancellationToken)
+        {
+            ++RenameCalls;
+            return new StorageMutationResult(StorageResultCode.Success, documentId);
+        }
+        public StorageMutationResult Delete(StorageDocumentId documentId, CancellationToken cancellationToken)
+        {
+            ++DeleteCalls;
+            return new StorageMutationResult(StorageResultCode.Success, documentId);
+        }
         public string Materialize(StorageDocumentId documentId, MaterializationScope scope, CancellationToken cancellationToken) => throw new NotSupportedException();
         public string GetMaterializationPath(StorageDocumentId documentId) => throw new NotSupportedException();
     }

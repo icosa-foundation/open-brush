@@ -56,7 +56,7 @@ namespace TiltBrush
             Path.GetFileNameWithoutExtension(SaveLoadScript.RemoveMd5Suffix(
                 m_Document.DisplayName));
         public bool Valid => m_Document.DocumentId.IsValid;
-        public bool Available => Valid && m_Backend.IsReady;
+        public bool Available => Valid && IsCurrentStorageRoot;
         public string FullPath => null;
         public string StorageId => m_Document.DocumentId.Value;
         public bool Exists => Available;
@@ -66,6 +66,9 @@ namespace TiltBrush
         public int? TriangleCount => null;
         public DateTime CreationTime => m_Document.LastModified ?? DateTime.MinValue;
         public StorageDocument Document => m_Document;
+        internal bool IsCurrentStorageRoot =>
+            ReferenceEquals(m_Backend, UserStorage.Backend) &&
+            string.Equals(m_RootIdentity, m_Backend.RootIdentity, StringComparison.Ordinal);
 
         public SafSceneFileInfo(IUserStorageBackend backend, StorageDocument document,
             StorageArea area = StorageArea.Sketches)
@@ -81,8 +84,7 @@ namespace TiltBrush
 
         public void Delete()
         {
-            StorageMutationResult result = m_Backend.Delete(
-                m_Document.DocumentId, CancellationToken.None);
+            StorageMutationResult result = DeleteFromCurrentRoot();
             if (!result.Success)
             {
                 Debug.LogWarning(
@@ -96,8 +98,7 @@ namespace TiltBrush
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)
                 ? newName
                 : $"{newName}{SaveLoadScript.TILT_SUFFIX}";
-            StorageMutationResult result = m_Backend.Rename(
-                m_Document.DocumentId, displayName, CancellationToken.None);
+            StorageMutationResult result = RenameInCurrentRoot(displayName);
             if (!result.Success)
             {
                 Debug.LogWarning(
@@ -105,6 +106,43 @@ namespace TiltBrush
                 return StorageId;
             }
             return result.DocumentId.Value;
+        }
+
+        internal StorageMutationResult DeleteFromCurrentRoot()
+        {
+            if (!IsCurrentStorageRoot)
+            {
+                return StaleRootMutationResult();
+            }
+            if (m_Backend is SafUserStorageBackend safBackend)
+            {
+                return safBackend.DeleteFromRoot(
+                    m_RootIdentity, m_Document.DocumentId, CancellationToken.None);
+            }
+            return m_Backend.Delete(m_Document.DocumentId, CancellationToken.None);
+        }
+
+        internal StorageMutationResult RenameInCurrentRoot(string displayName)
+        {
+            if (!IsCurrentStorageRoot)
+            {
+                return StaleRootMutationResult();
+            }
+            if (m_Backend is SafUserStorageBackend safBackend)
+            {
+                return safBackend.RenameFromRoot(
+                    m_RootIdentity, m_Document.DocumentId, displayName, CancellationToken.None);
+            }
+            return m_Backend.Rename(
+                m_Document.DocumentId, displayName, CancellationToken.None);
+        }
+
+        private StorageMutationResult StaleRootMutationResult()
+        {
+            return new StorageMutationResult(
+                StorageResultCode.Cancelled,
+                m_Document.DocumentId,
+                "The sketch belongs to a previously selected Open Brush folder.");
         }
 
         public bool IsHeaderValid()
@@ -359,8 +397,7 @@ namespace TiltBrush
                     "The selected storage provider does not allow this document to be deleted.");
                 return;
             }
-            StorageMutationResult result = m_Backend.Delete(
-                fileInfo.Document.DocumentId, CancellationToken.None);
+            StorageMutationResult result = fileInfo.DeleteFromCurrentRoot();
             if (result.Success)
             {
                 RequestRefresh();
@@ -374,6 +411,7 @@ namespace TiltBrush
             else
             {
                 OutputWindowScript.Error("Failed to delete sketch", result.Error);
+                if (result.Code == StorageResultCode.Cancelled) { RequestRefresh(); }
             }
         }
 
@@ -396,8 +434,7 @@ namespace TiltBrush
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)
                 ? newName
                 : $"{newName}{SaveLoadScript.TILT_SUFFIX}";
-            StorageMutationResult result = m_Backend.Rename(
-                fileInfo.Document.DocumentId, displayName, CancellationToken.None);
+            StorageMutationResult result = fileInfo.RenameInCurrentRoot(displayName);
             if (result.Success)
             {
                 RequestRefresh();
@@ -411,6 +448,7 @@ namespace TiltBrush
             else
             {
                 OutputWindowScript.Error("Failed to rename sketch", result.Error);
+                if (result.Code == StorageResultCode.Cancelled) { RequestRefresh(); }
             }
         }
 

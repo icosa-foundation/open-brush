@@ -135,6 +135,15 @@ namespace TiltBrush
             string newDisplayName,
             CancellationToken cancellationToken)
         {
+            return RenameFromRoot(null, documentId, newDisplayName, cancellationToken);
+        }
+
+        internal StorageMutationResult RenameFromRoot(
+            string expectedRootIdentity,
+            StorageDocumentId documentId,
+            string newDisplayName,
+            CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
             if (!IsReady)
             {
@@ -160,6 +169,11 @@ namespace TiltBrush
             using (SafDestinationLocks.AcquireMany(
                 new[] { oldKey, newKey }, cancellationToken))
             {
+                if (expectedRootIdentity != null && !string.Equals(
+                        expectedRootIdentity, RootIdentity, StringComparison.Ordinal))
+                {
+                    return StaleRootMutation(documentId);
+                }
                 if (location != null)
                 {
                     string directory = GetLogicalDirectory(location.RelativePath);
@@ -169,6 +183,11 @@ namespace TiltBrush
                     {
                         return new StorageMutationResult(
                             listing.Code, documentId, listing.Error);
+                    }
+                    if (expectedRootIdentity != null && !string.Equals(
+                            expectedRootIdentity, RootIdentity, StringComparison.Ordinal))
+                    {
+                        return StaleRootMutation(documentId);
                     }
                     StorageDocument conflict = listing.Documents.FirstOrDefault(document =>
                         !document.DocumentId.Equals(documentId) &&
@@ -201,6 +220,14 @@ namespace TiltBrush
         public StorageMutationResult Delete(
             StorageDocumentId documentId, CancellationToken cancellationToken)
         {
+            return DeleteFromRoot(null, documentId, cancellationToken);
+        }
+
+        internal StorageMutationResult DeleteFromRoot(
+            string expectedRootIdentity,
+            StorageDocumentId documentId,
+            CancellationToken cancellationToken)
+        {
             cancellationToken.ThrowIfCancellationRequested();
             if (!IsReady)
             {
@@ -217,6 +244,11 @@ namespace TiltBrush
                     rootId, location.Area, location.RelativePath);
             using (SafDestinationLocks.Acquire(key, cancellationToken))
             {
+                if (expectedRootIdentity != null && !string.Equals(
+                        expectedRootIdentity, RootIdentity, StringComparison.Ordinal))
+                {
+                    return StaleRootMutation(documentId);
+                }
                 StorageMutationResult result = DeleteWithoutLock(documentId);
                 if (result.Success || result.Code == StorageResultCode.NotFound)
                 {
@@ -227,6 +259,14 @@ namespace TiltBrush
                 }
                 return result;
             }
+        }
+
+        private static StorageMutationResult StaleRootMutation(StorageDocumentId documentId)
+        {
+            return new StorageMutationResult(
+                StorageResultCode.Cancelled,
+                documentId,
+                "The document belongs to a previously selected Open Brush folder.");
         }
 
         public string Materialize(
