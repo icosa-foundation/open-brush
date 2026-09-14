@@ -89,6 +89,7 @@ namespace TiltBrush
             ToggleReshape = 5100,
             ToggleTintColor = 5101,
             ScriptedTool = 6000,
+            ToggleSculpt = 11100
         }
 
         /// WARNING: do not arbitrarily rename these enum values.
@@ -743,6 +744,7 @@ namespace TiltBrush
                 case SketchCommands.ToggleDefaultTool:
                 case SketchCommands.MenuContextClick:
                 case SketchCommands.ToggleSelection:
+                case SketchCommands.ToggleSculpt:
                 case SketchCommands.ToggleReshape:
                 case SketchCommands.ToggleTintColor:
                     return Brush.GetCommandDown(rCommand);
