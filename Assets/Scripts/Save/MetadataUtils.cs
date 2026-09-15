@@ -150,6 +150,7 @@ namespace TiltBrush
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
                 string[] editableVoxPaths = null;
+                bool[] editableVoxPreserveSource = null;
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.Subtrees[i] = ordered[i].subtree;
@@ -161,8 +162,10 @@ namespace TiltBrush
                     if (document != null)
                     {
                         editableVoxPaths ??= new string[ordered.Length];
+                        editableVoxPreserveSource ??= new bool[ordered.Length];
                         string path = $"vox/widgets/{voxPayloads.Count}.vox";
                         editableVoxPaths[i] = path;
+                        editableVoxPreserveSource[i] = document.HasPreservedSourceData;
                         voxPayloads.Add(new EditableVoxSavePayload
                         {
                             FilePath = path,
@@ -171,6 +174,7 @@ namespace TiltBrush
                     }
                 }
                 val.EditableVoxPaths = editableVoxPaths;
+                val.EditableVoxPreserveSource = editableVoxPreserveSource;
                 models.Add(val);
             }
 

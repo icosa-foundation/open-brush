@@ -176,6 +176,20 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_GeneratedBytesRemainExtensibleWhenRequested()
+        {
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("generated", new Vector3Int(4, 4, 4));
+
+            RuntimeVoxDocument restored = RuntimeVoxDocument.FromBytes(
+                source.ToVoxBytes(), preserveSourceData: false);
+
+            Assert.IsFalse(restored.HasPreservedSourceData);
+            Assert.DoesNotThrow(() => restored.CreateModel("second", new Vector3Int(2, 2, 2)));
+            Assert.AreEqual(2, restored.Models.Count);
+        }
+
+        [Test]
         public void RuntimeVoxDocument_RoundTripsMultipleModelsThroughVoxBytes()
         {
             var source = new RuntimeVoxDocument();

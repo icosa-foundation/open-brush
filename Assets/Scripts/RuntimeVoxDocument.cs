@@ -331,7 +331,7 @@ namespace TiltBrush
             return document;
         }
 
-        public static RuntimeVoxDocument FromBytes(byte[] bytes)
+        public static RuntimeVoxDocument FromBytes(byte[] bytes, bool preserveSourceData = true)
         {
             if (bytes == null)
             {
@@ -340,16 +340,19 @@ namespace TiltBrush
 
             IVoxFile voxFile = VoxReader.VoxReader.Read(bytes);
             RuntimeVoxDocument document = FromVoxFile(voxFile);
-            document.m_sourceVoxBytes = (byte[])bytes.Clone();
+            if (preserveSourceData)
+            {
+                document.m_sourceVoxBytes = (byte[])bytes.Clone();
+            }
             return document;
         }
 
-        public static RuntimeVoxDocument FromBytes(ReadOnlyMemory<byte> bytes)
+        public static RuntimeVoxDocument FromBytes(ReadOnlyMemory<byte> bytes, bool preserveSourceData = true)
         {
-            return FromBytes(bytes.ToArray());
+            return FromBytes(bytes.ToArray(), preserveSourceData);
         }
 
-        public static RuntimeVoxDocument FromStream(Stream stream)
+        public static RuntimeVoxDocument FromStream(Stream stream, bool preserveSourceData = true)
         {
             if (stream == null)
             {
@@ -359,7 +362,7 @@ namespace TiltBrush
             using (var memoryStream = new MemoryStream())
             {
                 stream.CopyTo(memoryStream);
-                return FromBytes(memoryStream.ToArray());
+                return FromBytes(memoryStream.ToArray(), preserveSourceData);
             }
         }
 

@@ -1186,7 +1186,9 @@ namespace TiltBrush
         {
             TrTransform[] transforms = modelDatas.RawTransforms;
             string[] paths = modelDatas.EditableVoxPaths;
+            bool[] preserveSource = modelDatas.EditableVoxPreserveSource;
             if (fileInfo == null || transforms == null || paths.Length != transforms.Length ||
+                (preserveSource != null && preserveSource.Length != paths.Length) ||
                 paths.Any(path => string.IsNullOrEmpty(path) ||
                     !path.StartsWith("vox/widgets/", StringComparison.Ordinal) ||
                     !path.EndsWith(".vox", StringComparison.OrdinalIgnoreCase) ||
@@ -1237,9 +1239,10 @@ namespace TiltBrush
                         source.CopyTo(copy);
                         bytes = copy.ToArray();
                     }
+                    bool preserveImportedSource = preserveSource == null || preserveSource[i];
                     CreateModel(models[i], subtree, transforms[i], pin,
                         isNonRawTransform: false, groupId, layerId,
-                        editableDocument: RuntimeVoxDocument.FromBytes(bytes));
+                        editableDocument: RuntimeVoxDocument.FromBytes(bytes, preserveImportedSource));
                 }
                 return true;
             }
