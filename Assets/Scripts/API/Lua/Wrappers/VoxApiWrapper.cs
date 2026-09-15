@@ -492,7 +492,7 @@ namespace TiltBrush
                 return false;
             }
 
-            Model model = Model.CreateEditableVoxModelFromBytes(_Document.ToVoxBytes());
+            TiltBrush.Model model = TiltBrush.Model.CreateEditableVoxModelFromBytes(_Document.ToVoxBytes());
             if (model == null)
             {
                 throw new InvalidOperationException("Could not create a model for the generated VOX document.");
