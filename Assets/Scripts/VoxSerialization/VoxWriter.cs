@@ -487,9 +487,9 @@ namespace TiltBrush
 
         private sealed class PreservedChunk
         {
-            public string Id { get; private set; }
+            public string Id { get; internal set; }
             public byte[] Content { get; set; }
-            public List<PreservedChunk> Children { get; private set; }
+            public List<PreservedChunk> Children { get; internal set; }
 
             public static PreservedChunk Read(BinaryReader reader, long containingEnd)
             {
