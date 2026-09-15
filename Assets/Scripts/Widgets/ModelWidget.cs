@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
@@ -1124,7 +1125,8 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(
+            TiltModels75 modelDatas, SceneFileInfo fileInfo)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -1132,7 +1134,11 @@ namespace TiltBrush
                 "InSet should have been removed at load time");
 
             bool ok;
-            if (modelDatas.FilePath != null)
+            if (modelDatas.EditableVoxPaths != null)
+            {
+                ok = CreateEmbeddedVoxWidgetsFromSaveData(modelDatas, fileInfo);
+            }
+            else if (modelDatas.FilePath != null)
             {
 
                 Task<bool> okTask = CreateModelsFromRelativePath(
@@ -1172,6 +1178,82 @@ namespace TiltBrush
             {
                 ModelCatalog.m_Instance.AddMissingModel(
                     modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
+            }
+        }
+
+        private static bool CreateEmbeddedVoxWidgetsFromSaveData(
+            TiltModels75 modelDatas, SceneFileInfo fileInfo)
+        {
+            TrTransform[] transforms = modelDatas.RawTransforms;
+            string[] paths = modelDatas.EditableVoxPaths;
+            if (fileInfo == null || transforms == null || paths.Length != transforms.Length ||
+                paths.Any(path => string.IsNullOrEmpty(path) ||
+                    !path.StartsWith("vox/widgets/", StringComparison.Ordinal) ||
+                    !path.EndsWith(".vox", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("..") || path.Contains("\\")))
+            {
+                Debug.LogWarning("VOXWIDGET-PERSIST: Invalid embedded VOX widget index.");
+                return false;
+            }
+
+            var models = new List<Model>(paths.Length);
+            try
+            {
+                foreach (string path in paths)
+                {
+                    byte[] bytes;
+                    using (Stream source = fileInfo.GetReadStream(path))
+                    using (var copy = new MemoryStream())
+                    {
+                        source.CopyTo(copy);
+                        bytes = copy.ToArray();
+                    }
+                    Model model = Model.CreateEditableVoxModelFromBytes(
+                        bytes, modelDatas.FilePath);
+                    if (model == null)
+                    {
+                        throw new InvalidDataException($"Could not import embedded VOX '{path}'.");
+                    }
+                    models.Add(model);
+                    model.SetMeshSplitData(
+                        modelDatas.SplitMeshPaths, modelDatas.NotSplittableMeshPaths);
+                    model.InitMeshSplits();
+                }
+
+                for (int i = 0; i < models.Count; i++)
+                {
+                    bool pin = modelDatas.PinStates != null && i < modelDatas.PinStates.Length &&
+                        modelDatas.PinStates[i];
+                    uint groupId = modelDatas.GroupIds != null && i < modelDatas.GroupIds.Length
+                        ? modelDatas.GroupIds[i] : 0;
+                    int layerId = modelDatas.LayerIds != null && i < modelDatas.LayerIds.Length
+                        ? modelDatas.LayerIds[i] : 0;
+                    string subtree = modelDatas.Subtrees != null && i < modelDatas.Subtrees.Length
+                        ? modelDatas.Subtrees[i] : null;
+                    byte[] bytes;
+                    using (Stream source = fileInfo.GetReadStream(paths[i]))
+                    using (var copy = new MemoryStream())
+                    {
+                        source.CopyTo(copy);
+                        bytes = copy.ToArray();
+                    }
+                    CreateModel(models[i], subtree, transforms[i], pin,
+                        isNonRawTransform: false, groupId, layerId,
+                        editableDocument: RuntimeVoxDocument.FromBytes(bytes));
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"VOXWIDGET-PERSIST: Failed to restore embedded VOX widgets: {e.Message}");
+                return false;
+            }
+            finally
+            {
+                foreach (Model model in models)
+                {
+                    model.ReleaseFromCatalog();
+                }
             }
         }
 
@@ -1227,13 +1309,18 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId,
+                                string assetId = null, RuntimeVoxDocument editableDocument = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
+            if (editableDocument != null)
+            {
+                modelWidget.AdoptEditableVoxDocument(editableDocument);
+            }
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)

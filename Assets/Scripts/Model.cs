@@ -292,17 +292,22 @@ namespace TiltBrush
                 : RuntimeVoxDocument.FromBytes(m_EditableVoxSource);
         }
 
-        // A generated widget still needs an ordinary Model hierarchy to participate in
-        // selection, batching, cloning, and widget geometry accounting. The source bytes
-        // are a template; the widget adopts the caller's mutable document separately.
-        internal static Model CreateGeneratedVoxModel(byte[] voxBytes)
+        // An embedded widget still needs an ordinary Model hierarchy to participate in
+        // selection, batching, cloning, and widget geometry accounting. The path is only
+        // a location label: the importer uses these bytes, not a Media Library file.
+        internal static Model CreateEditableVoxModelFromBytes(
+            byte[] voxBytes, string relativePath = null)
         {
-            var model = new Model($"GeneratedVox_{Guid.NewGuid():N}.vox");
+            string modelPath = string.IsNullOrEmpty(relativePath)
+                ? $"GeneratedVox_{Guid.NewGuid():N}.vox"
+                : relativePath;
+            var model = new Model(modelPath);
             var importer = new VoxImporter(voxBytes);
             var (root, warnings, _) = importer.Import();
             model.CalcBoundsNonGltf(root);
             if (!model.EndCreatePrefab(root, warnings))
             {
+                model.ReleaseFromCatalog();
                 return null;
             }
             model.SetEditableVoxSource(voxBytes);
