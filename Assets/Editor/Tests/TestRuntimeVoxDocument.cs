@@ -145,8 +145,8 @@ namespace TiltBrush
             }
             finally
             {
-                Object.DestroyImmediate(originalMesh);
-                Object.DestroyImmediate(shiftedMesh);
+                UnityEngine.Object.DestroyImmediate(originalMesh);
+                UnityEngine.Object.DestroyImmediate(shiftedMesh);
             }
         }
 
