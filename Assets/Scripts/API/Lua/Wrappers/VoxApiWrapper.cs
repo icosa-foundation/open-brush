@@ -597,29 +597,7 @@ namespace TiltBrush
                     }
                 }
             }
-            foreach (RuntimeVoxDocument document in ApiMethods.VoxGetVisibleDocuments().Reverse())
-            {
-                var wrapper = new VoxDocumentApiWrapper(document);
-                for (int i = document.Models.Count - 1; i >= 0; i--)
-                {
-                    VoxModelApiWrapper model = wrapper.models[i];
-                    Vector3Int cell = Vector3Int.RoundToInt(model.CanvasToVoxel(canvasPosition));
-                    if (model._Model.TryGetPaletteIndex(cell, out _))
-                    {
-                        return model;
-                    }
-                }
-            }
             return null;
-        }
-
-        [LuaDocsDescription("Creates a new runtime VOX document with one default model")]
-        [LuaDocsExample("local doc = Vox:New(16,16,16)")]
-        public static VoxDocumentApiWrapper New(int sizeX, int sizeY, int sizeZ)
-        {
-            var document = new RuntimeVoxDocument();
-            document.CreateModel("model_0", new Vector3Int(sizeX, sizeY, sizeZ));
-            return new VoxDocumentApiWrapper(document);
         }
 
         [LuaDocsDescription("Creates an editable document that becomes a normal model widget after its first voxel is painted")]
@@ -631,43 +609,5 @@ namespace TiltBrush
             return new VoxDocumentApiWrapper(document, createWidgetOnRefresh: true);
         }
 
-        [LuaDocsDescription("Creates a new runtime VOX document and immediately spawns it for interactive editing")]
-        [LuaDocsExample("local doc = Vox:NewScene(16,16,16,true,true)")]
-        public static VoxDocumentApiWrapper NewScene(
-            int sizeX,
-            int sizeY,
-            int sizeZ,
-            bool optimized = true,
-            bool generateCollider = true)
-        {
-            VoxDocumentApiWrapper document = New(sizeX, sizeY, sizeZ);
-            document.SetAutoVisuals(true, optimized, generateCollider);
-            return document;
-        }
-
-        [LuaDocsDescription("Imports VOX bytes from base64")]
-        [LuaDocsExample("local doc = Vox:ImportBase64(base64)")]
-        public static VoxDocumentApiWrapper ImportBase64(string base64)
-        {
-            byte[] bytes = Convert.FromBase64String(base64);
-            RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(bytes);
-            return new VoxDocumentApiWrapper(document);
-        }
-
-        [LuaDocsDescription("Imports VOX bytes and immediately spawns it for interactive editing")]
-        [LuaDocsExample("local doc = Vox:ImportSceneBase64(base64,true,true)")]
-        public static VoxDocumentApiWrapper ImportSceneBase64(
-            string base64,
-            bool optimized = true,
-            bool generateCollider = true)
-        {
-            VoxDocumentApiWrapper document = ImportBase64(base64);
-            document.SetAutoVisuals(true, optimized, generateCollider);
-            return document;
-        }
-
-        [LuaDocsDescription("Clears scene objects previously spawned by runtime VOX APIs")]
-        public static void ClearSpawned()
-            => ApiMethods.VoxSpawnClear();
     }
 }

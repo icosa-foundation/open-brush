@@ -14,7 +14,7 @@ local function setMirrored(model, x, y, z, paletteIndex)
 end
 
 local function makeCreature(position)
-    local doc = Vox:New(8, 8, 4)
+    local doc = Vox:NewWidget(8, 8, 4)
     local model = doc:Model()
     doc:SetAutoVisuals(false, true, false)
 
