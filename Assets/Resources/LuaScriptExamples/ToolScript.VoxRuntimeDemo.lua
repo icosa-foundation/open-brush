@@ -15,7 +15,7 @@ end
 
 local function makeCreature(position)
     local doc = Vox:New(8, 8, 4)
-    local model = doc.models[0]
+    local model = doc:Model()
     doc:SetAutoVisuals(false, true, false)
 
     local red = Random:Range(64, 255)

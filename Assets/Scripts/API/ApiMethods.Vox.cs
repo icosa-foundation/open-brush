@@ -298,7 +298,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "vox.set",
-            "Adds or updates one voxel in the active model",
+            "Adds or updates one voxel in the active model (model 0 by default; use vox.model.select for another model)",
             "1,2,3,5"
         )]
         public static void VoxSet(int x, int y, int z, int paletteIndex)
@@ -308,7 +308,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "vox.remove",
-            "Removes one voxel in the active model",
+            "Removes one voxel in the active model (model 0 by default; use vox.model.select for another model)",
             "1,2,3"
         )]
         public static void VoxRemove(int x, int y, int z)
@@ -318,7 +318,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "vox.move",
-            "Moves one voxel in the active model",
+            "Moves one voxel in the active model (model 0 by default; use vox.model.select for another model)",
             "1,2,3,2,2,3,true"
         )]
         public static void VoxMove(

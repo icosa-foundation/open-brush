@@ -69,6 +69,23 @@ namespace TiltBrush
         [LuaDocsDescription("The model name")]
         public string name => _Model.Name;
 
+        [LuaDocsDescription("The zero-based model index within the containing document")]
+        public int index
+        {
+            get
+            {
+                for (int i = 0; i < m_Document.Models.Count; i++)
+                {
+                    if (ReferenceEquals(m_Document.Models[i], _Model))
+                    {
+                        return i;
+                    }
+                }
+
+                return -1;
+            }
+        }
+
         [LuaDocsDescription("Number of voxels in this model")]
         public int voxelCount => _Model.Voxels.Count;
 
@@ -236,6 +253,11 @@ namespace TiltBrush
             ? null
             : new VoxModelApiWrapper(m_DocumentWrapper._Document, _Models[^1], m_DocumentWrapper);
 
+        [LuaDocsDescription("Returns the first model (model 0), for simple one-model-per-file use")]
+        public VoxModelApiWrapper first => (_Models == null || _Models.Count == 0)
+            ? null
+            : new VoxModelApiWrapper(m_DocumentWrapper._Document, _Models[0], m_DocumentWrapper);
+
         [LuaDocsDescription("Returns the model at the given index")]
         public VoxModelApiWrapper this[int index]
             => new VoxModelApiWrapper(
@@ -278,6 +300,26 @@ namespace TiltBrush
 
         [LuaDocsDescription("Returns the number of models in this VOX document")]
         public int modelCount => _Document.Models.Count;
+
+        [LuaDocsDescription("Returns a model by index. Omitting the index selects model 0 for simple one-model-per-file use.")]
+        [LuaDocsExample("local model = doc:Model() -- model 0; use doc:Model(index) for an explicit model")]
+        public VoxModelApiWrapper Model(int modelIndex = 0)
+        {
+            if (modelIndex < 0)
+            {
+                modelIndex += _Document.Models.Count;
+            }
+
+            if (modelIndex < 0 || modelIndex >= _Document.Models.Count)
+            {
+                return null;
+            }
+
+            return new VoxModelApiWrapper(_Document, _Document.Models[modelIndex], this);
+        }
+
+        [LuaDocsDescription("The default model (model 0), for simple one-model-per-file use")]
+        public VoxModelApiWrapper defaultModel => Model();
 
         [LuaDocsDescription("If true, model/palette edits automatically rebuild scene geometry")]
         public bool autoVisuals => m_AutoVisuals;

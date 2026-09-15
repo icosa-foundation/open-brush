@@ -36,7 +36,7 @@ function Main()
         if model == nil then
             if Parameters.mode ~= "Add" then return end
             doc = Vox:NewWidget(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
-            model = doc.models[0]
+            model = doc:Model()
             origin = position
             model:PlaceAt(origin, Parameters.gridSize)
         else
