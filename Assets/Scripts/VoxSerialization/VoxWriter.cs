@@ -57,7 +57,9 @@ namespace TiltBrush
                 contentChunks.Add(BuildXyziChunk(model));
             }
 
-            if (document.Models.Count > 1 || document.Models.Any(model => model.TransformOffset != Vector3.zero))
+            if (document.Models.Count > 1 ||
+                document.Models.Any(model => model.TransformOffset != Vector3.zero ||
+                    !string.IsNullOrEmpty(model.Name)))
             {
                 contentChunks.AddRange(BuildSceneGraphChunks(document.Models));
             }

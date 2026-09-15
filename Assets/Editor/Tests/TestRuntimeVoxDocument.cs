@@ -166,6 +166,7 @@ namespace TiltBrush
 
             Assert.AreEqual(1, reloaded.Models.Count);
             RuntimeVoxDocument.RuntimeModel reloadedModel = reloaded.Models[0];
+            Assert.AreEqual("roundtrip", reloadedModel.Name);
             Assert.AreEqual(2, reloadedModel.Voxels.Count);
             Assert.IsTrue(reloadedModel.TryGetPaletteIndex(new Vector3Int(0, 0, 0), out byte firstColor));
             Assert.IsTrue(reloadedModel.TryGetPaletteIndex(new Vector3Int(1, 2, 3), out byte secondColor));
