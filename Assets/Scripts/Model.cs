@@ -237,6 +237,9 @@ namespace TiltBrush
 
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
+        // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
+        // Each widget creates its own mutable RuntimeVoxDocument from this template.
+        private byte[] m_EditableVoxSource;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -280,6 +283,18 @@ namespace TiltBrush
         public bool AllowExport
         {
             get { return m_AllowExport; }
+        }
+
+        internal RuntimeVoxDocument CreateEditableVoxDocument()
+        {
+            return m_EditableVoxSource == null
+                ? null
+                : RuntimeVoxDocument.FromBytes(m_EditableVoxSource);
+        }
+
+        private void SetEditableVoxSource(byte[] source)
+        {
+            m_EditableVoxSource = source == null ? null : (byte[])source.Clone();
         }
 
         private void Init()
@@ -793,6 +808,7 @@ namespace TiltBrush
 
         GameObject LoadVox(List<string> warningsOut)
         {
+            SetEditableVoxSource(null);
             try
             {
                 // Default to optimized mode with face culling
@@ -801,6 +817,7 @@ namespace TiltBrush
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
+                SetEditableVoxSource(reader.CopySourceBytes());
                 return gameObject;
             }
             catch (Exception ex)
@@ -1327,6 +1344,7 @@ namespace TiltBrush
             }
             DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
             m_OwnedGsplatAsset = null;
+            SetEditableVoxSource(null);
             m_AppliedMeshSplits?.Clear();
         }
 

@@ -15,6 +15,7 @@
 using NUnit.Framework;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using UnityEngine;
 
@@ -289,6 +290,61 @@ namespace TiltBrush
             Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out byte color));
             Assert.AreEqual(2, color);
             Assert.AreEqual(new Color32(12, 34, 56, 255), reloaded.Palette[1]);
+        }
+
+        [Test]
+        public void Model_CreatesIndependentEditableVoxDocuments()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "source",
+                new Vector3Int(8, 8, 8));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            byte[] metadata = { 3, 1, 4, 1, 5 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "META", metadata);
+
+            var model = new Model("editable-source.vox");
+            MethodInfo setSource = typeof(Model).GetMethod(
+                "SetEditableVoxSource",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo createDocument = typeof(Model).GetMethod(
+                "CreateEditableVoxDocument",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(setSource);
+            Assert.IsNotNull(createDocument);
+            setSource.Invoke(model, new object[] { sourceBytes });
+
+            var first = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            var second = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            Assert.IsNotNull(first);
+            Assert.IsNotNull(second);
+            Assert.AreNotSame(first, second);
+            CollectionAssert.AreEqual(
+                metadata,
+                FindMainChildContent(first.ToVoxBytes(), "META", 0));
+            CollectionAssert.AreEqual(
+                metadata,
+                FindMainChildContent(second.ToVoxBytes(), "META", 0));
+
+            Assert.IsTrue(first.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+            Assert.IsFalse(second.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out _));
+
+            sourceBytes[0] = 0;
+            var third = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            Assert.IsNotNull(third);
+            Assert.IsTrue(third.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte paletteIndex));
+            Assert.AreEqual(1, paletteIndex);
+        }
+
+        [Test]
+        public void Model_WithoutVoxSourceHasNoEditableDocument()
+        {
+            var model = new Model("ordinary.obj");
+            MethodInfo createDocument = typeof(Model).GetMethod(
+                "CreateEditableVoxDocument",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(createDocument);
+            Assert.IsNull(createDocument.Invoke(model, null));
         }
 
         private static byte[] AppendMainChild(byte[] source, string id, byte[] content)

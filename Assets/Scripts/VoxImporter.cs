@@ -33,7 +33,7 @@ namespace TiltBrush
         private readonly string m_path;
         private readonly string m_dir;
         private readonly string m_sourceName;
-        private readonly byte[] m_voxData;
+        private byte[] m_voxData;
         private readonly List<string> m_warnings = new List<string>();
         private readonly ImportMaterialCollector m_collector;
         private readonly VoxMeshBuilder m_meshBuilder;
@@ -180,9 +180,20 @@ namespace TiltBrush
 
         private IVoxFile LoadVoxFile()
         {
-            return m_voxData != null
-                ? VoxReader.VoxReader.Read(m_voxData)
-                : VoxReader.VoxReader.Read(m_path);
+            if (m_voxData == null)
+            {
+                m_voxData = File.ReadAllBytes(m_path);
+            }
+            return VoxReader.VoxReader.Read(m_voxData);
+        }
+
+        internal byte[] CopySourceBytes()
+        {
+            if (m_voxData == null)
+            {
+                m_voxData = File.ReadAllBytes(m_path);
+            }
+            return (byte[])m_voxData.Clone();
         }
 
         private string GetRootObjectName()

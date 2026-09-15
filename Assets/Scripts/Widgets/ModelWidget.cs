@@ -31,6 +31,7 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private RuntimeVoxDocument m_EditableVoxDocument;
         private bool m_PreserveCustomSize;
 
 
@@ -91,6 +92,7 @@ namespace TiltBrush
                     m_Model.ReleaseUsage();
                 }
                 m_Model = value;
+                m_EditableVoxDocument = m_Model?.CreateEditableVoxDocument();
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
@@ -101,6 +103,9 @@ namespace TiltBrush
                 LoadModel();
             }
         }
+
+        // Owned by this widget. Never shared with the catalog Model or another widget.
+        public RuntimeVoxDocument EditableVoxDocument => m_EditableVoxDocument;
 
         protected override Vector3 HomeSnapOffset
         {
@@ -183,6 +188,11 @@ namespace TiltBrush
             clone.transform.rotation = rotation;
             clone.m_Subtree = m_Subtree;
             clone.Model = Model;
+            if (m_EditableVoxDocument != null)
+            {
+                clone.m_EditableVoxDocument = RuntimeVoxDocument.FromBytes(
+                    m_EditableVoxDocument.ToVoxBytes());
+            }
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
