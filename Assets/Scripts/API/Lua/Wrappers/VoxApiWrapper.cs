@@ -301,7 +301,6 @@ namespace TiltBrush
         public int modelCount => _Document.Models.Count;
 
         [LuaDocsDescription("Returns a model by index. Omitting the index selects model 0 for simple one-model-per-file use.")]
-        [LuaDocsExample("local model = doc:Model() -- model 0; use doc:Model(index) for an explicit model")]
         public VoxModelApiWrapper Model(int modelIndex = 0)
         {
             if (modelIndex < 0)
