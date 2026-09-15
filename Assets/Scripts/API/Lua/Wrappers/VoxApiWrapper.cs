@@ -88,7 +88,7 @@ namespace TiltBrush
         public Vector3 centerVoxel => new Vector3(_Model.Size.x / 2, _Model.Size.y / 2, _Model.Size.z / 2);
 
         [LuaDocsDescription("The size of one voxel in canvas units")]
-        public float voxelSize => m_DocumentWrapper.GetSceneTransform().scale;
+        public float voxelSize => Mathf.Abs(m_DocumentWrapper.GetSceneTransform().scale);
 
         [LuaDocsDescription("Places this model's middle voxel at a canvas position with the given voxel size")]
         [LuaDocsExample("model:PlaceAt(Brush.position, 0.1)")]
@@ -247,21 +247,30 @@ namespace TiltBrush
         public int count => _Models?.Count ?? 0;
     }
 
-    [LuaDocsDescription("A runtime VOX document")]
+    [LuaDocsDescription("An editable VOX document")]
     [MoonSharpUserData]
     public class VoxDocumentApiWrapper
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
         [MoonSharpHidden] private GameObject SceneRoot => ApiMethods.VoxGetDocumentRoot(_Document);
+        [MoonSharpHidden] private ModelWidget m_Widget;
+        [MoonSharpHidden] private readonly bool m_WidgetBacked;
+        [MoonSharpHidden] private bool m_WidgetWasCreated;
         [MoonSharpHidden] private bool m_VisualsDirty = true;
         [MoonSharpHidden] private bool m_AutoVisuals;
         [MoonSharpHidden] private bool m_LastSpawnOptimized = true;
         [MoonSharpHidden] private bool m_LastSpawnCollider = true;
         [MoonSharpHidden] private TrTransform m_SpawnTransform = TrTransform.identity;
 
-        public VoxDocumentApiWrapper(RuntimeVoxDocument document)
+        public VoxDocumentApiWrapper(
+            RuntimeVoxDocument document,
+            ModelWidget widget = null,
+            bool createWidgetOnRefresh = false)
         {
             _Document = document;
+            m_Widget = widget;
+            m_WidgetBacked = widget != null || createWidgetOnRefresh;
+            m_WidgetWasCreated = widget != null;
         }
 
         [LuaDocsDescription("All models in this VOX document")]
@@ -320,6 +329,24 @@ namespace TiltBrush
         {
             m_LastSpawnOptimized = optimized;
             m_LastSpawnCollider = generateCollider;
+            if (m_WidgetBacked)
+            {
+                if (m_Widget == null && m_WidgetWasCreated)
+                {
+                    return;
+                }
+                if (m_Widget == null && !TryCreateWidget())
+                {
+                    return;
+                }
+                if (!m_Widget.Showing)
+                {
+                    m_Widget.Show(true, false);
+                }
+                m_Widget.RefreshEditableVoxMeshes(optimized);
+                m_VisualsDirty = false;
+                return;
+            }
             TrTransform placement = GetSceneTransform();
             ApiMethods.VoxShowDocument(_Document, optimized, generateCollider);
             SetTransform(placement);
@@ -348,6 +375,20 @@ namespace TiltBrush
             }
 
             m_SpawnTransform = transform;
+            if (m_Widget != null)
+            {
+                TrTransform current = GetSceneTransform();
+                if (current == transform)
+                {
+                    return;
+                }
+                m_Widget.SetSignedWidgetSize(transform.scale);
+                transform.scale = m_Widget.GetSignedWidgetSize();
+                App.Scene.ActiveCanvas.AsCanvas[m_Widget.transform] = transform;
+                m_SpawnTransform = GetSceneTransform();
+                SaveLoadScript.m_Instance?.SketchChanged();
+                return;
+            }
             GameObject root = SceneRoot;
             if (root != null)
             {
@@ -364,7 +405,7 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Configures automatic visual updates and mesh options. Repeated unchanged calls do not rebuild geometry. When disabled, call Refresh to show pending edits.")]
+        [LuaDocsDescription("Configures automatic visual updates and mesh options. Widget-backed documents retain their normal widget collider; generateCollider applies only to runtime roots. When disabled, call Refresh to show pending edits.")]
         [LuaDocsExample("doc:SetAutoVisuals(true, true, true)")]
         public void SetAutoVisuals(bool enabled = true, bool optimized = true, bool generateCollider = true)
         {
@@ -381,7 +422,14 @@ namespace TiltBrush
         [LuaDocsDescription("Shows pending edits, or spawns this document if it is not visible. Does nothing if the visuals are already current.")]
         public void Refresh()
         {
-            if (m_VisualsDirty || SceneRoot == null)
+            if (m_WidgetBacked)
+            {
+                if (m_VisualsDirty || m_Widget == null || !m_Widget.Showing)
+                {
+                    Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
+                }
+            }
+            else if (m_VisualsDirty || SceneRoot == null)
             {
                 Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
             }
@@ -391,14 +439,28 @@ namespace TiltBrush
         public void ClearScene()
         {
             m_SpawnTransform = GetSceneTransform();
-            ApiMethods.VoxHideDocument(_Document);
+            if (m_Widget != null)
+            {
+                m_Widget.Show(false, false);
+            }
+            else if (!m_WidgetBacked)
+            {
+                ApiMethods.VoxHideDocument(_Document);
+            }
         }
 
         [MoonSharpHidden]
         internal void OnDocumentMutated()
         {
             m_VisualsDirty = true;
-            ApiMethods.VoxMarkSourceDirty(_Document);
+            if (m_WidgetBacked)
+            {
+                SaveLoadScript.m_Instance?.SketchChanged();
+            }
+            else
+            {
+                ApiMethods.VoxMarkSourceDirty(_Document);
+            }
             if (m_AutoVisuals)
             {
                 Refresh();
@@ -408,8 +470,53 @@ namespace TiltBrush
         [MoonSharpHidden]
         internal TrTransform GetSceneTransform()
         {
+            if (m_Widget != null)
+            {
+                return App.Scene.ActiveCanvas.AsCanvas[m_Widget.transform];
+            }
             GameObject root = SceneRoot;
             return root != null ? TrTransform.FromLocalTransform(root.transform) : m_SpawnTransform;
+        }
+
+        [MoonSharpHidden]
+        private bool TryCreateWidget()
+        {
+            if (!_Document.Models.Any(model => model.Voxels.Count > 0))
+            {
+                return false;
+            }
+
+            Model model = Model.CreateGeneratedVoxModel(_Document.ToVoxBytes());
+            if (model == null)
+            {
+                throw new InvalidOperationException("Could not create a model for the generated VOX document.");
+            }
+
+            ModelWidget widget = null;
+            try
+            {
+                widget = UnityEngine.Object.Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
+                widget.LoadingFromSketch = true;
+                widget.Model = model;
+                widget.AdoptEditableVoxDocument(_Document);
+                m_Widget = widget;
+                m_WidgetWasCreated = true;
+                SetTransform(m_SpawnTransform);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
+                model.ReleaseFromCatalog();
+                return true;
+            }
+            catch
+            {
+                if (widget != null)
+                {
+                    UnityEngine.Object.Destroy(widget.gameObject);
+                }
+                model.ReleaseFromCatalog();
+                m_Widget = null;
+                m_WidgetWasCreated = false;
+                throw;
+            }
         }
 
         [MoonSharpHidden]
@@ -422,10 +529,32 @@ namespace TiltBrush
     [MoonSharpUserData]
     public class VoxApiWrapper
     {
-        [LuaDocsDescription("Finds a visible model with an occupied voxel at a canvas position, including models restored from a sketch. Returns nil if none is found.")]
+        [LuaDocsDescription("Finds an occupied voxel in a visible editable VOX widget or runtime document. Returns nil if none is found.")]
         [LuaDocsExample("local model = Vox:FindModelAt(Brush.position)")]
         public static VoxModelApiWrapper FindModelAt(Vector3 canvasPosition)
         {
+            if (WidgetManager.m_Instance != null && WidgetManager.m_Instance.IsInitialized)
+            {
+                foreach (ModelWidget widget in WidgetManager.m_Instance.ModelWidgets.Reverse())
+                {
+                    RuntimeVoxDocument document = widget.EditableVoxDocument;
+                    if (document == null || !widget.Showing || !widget.gameObject.activeInHierarchy ||
+                        !string.IsNullOrEmpty(widget.Subtree))
+                    {
+                        continue;
+                    }
+                    var wrapper = new VoxDocumentApiWrapper(document, widget);
+                    for (int i = document.Models.Count - 1; i >= 0; i--)
+                    {
+                        VoxModelApiWrapper model = wrapper.models[i];
+                        Vector3Int cell = Vector3Int.RoundToInt(model.CanvasToVoxel(canvasPosition));
+                        if (model._Model.TryGetPaletteIndex(cell, out _))
+                        {
+                            return model;
+                        }
+                    }
+                }
+            }
             foreach (RuntimeVoxDocument document in ApiMethods.VoxGetVisibleDocuments().Reverse())
             {
                 var wrapper = new VoxDocumentApiWrapper(document);
@@ -449,6 +578,15 @@ namespace TiltBrush
             var document = new RuntimeVoxDocument();
             document.CreateModel("model_0", new Vector3Int(sizeX, sizeY, sizeZ));
             return new VoxDocumentApiWrapper(document);
+        }
+
+        [LuaDocsDescription("Creates an editable document that becomes a normal model widget after its first voxel is painted")]
+        [LuaDocsExample("local doc = Vox:NewWidget(16,16,16)")]
+        public static VoxDocumentApiWrapper NewWidget(int sizeX, int sizeY, int sizeZ)
+        {
+            var document = new RuntimeVoxDocument();
+            document.CreateModel("model_0", new Vector3Int(sizeX, sizeY, sizeZ));
+            return new VoxDocumentApiWrapper(document, createWidgetOnRefresh: true);
         }
 
         [LuaDocsDescription("Creates a new runtime VOX document and immediately spawns it for interactive editing")]

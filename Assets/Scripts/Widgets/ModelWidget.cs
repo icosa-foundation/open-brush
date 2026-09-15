@@ -110,6 +110,15 @@ namespace TiltBrush
         // Owned by this widget. Never shared with the catalog Model or another widget.
         public RuntimeVoxDocument EditableVoxDocument => m_EditableVoxDocument;
 
+        internal void AdoptEditableVoxDocument(RuntimeVoxDocument document)
+        {
+            if (document == null || !IsVoxModel())
+            {
+                throw new InvalidOperationException("Only VOX model widgets can adopt an editable document.");
+            }
+            m_EditableVoxDocument = document;
+        }
+
         protected override Vector3 HomeSnapOffset
         {
             get
