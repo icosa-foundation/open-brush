@@ -92,6 +92,23 @@ namespace TiltBrush
             AssertVectorAlmostEqual(cubes.bounds.size, optimized.bounds.size);
         }
 
+        [Test]
+        public void DiagonallyAdjacentVoxels_DoNotMergeOpposingFaces()
+        {
+            IModel model = ReadSingleModel(CreateVoxBytes(new[]
+            {
+                new TestVoxel(0, 0, 0, 1),
+                new TestVoxel(1, 1, 0, 1)
+            }, sizeX: 2, sizeY: 2, sizeZ: 1));
+
+            var builder = new VoxMeshBuilder();
+            Mesh optimized = builder.GenerateOptimizedMesh(model);
+
+            Assert.NotNull(optimized);
+            Assert.AreEqual(48, optimized.vertexCount);
+            Assert.AreEqual(72, optimized.triangles.Length);
+        }
+
         private static void AssertVectorAlmostEqual(Vector3 expected, Vector3 actual, float tolerance = 0.0001f)
         {
             Assert.AreEqual(expected.x, actual.x, tolerance);

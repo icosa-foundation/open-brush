@@ -263,7 +263,8 @@ namespace TiltBrush
                         int width = 1;
                         while (iu + width < dims[u] &&
                                mask[iu + width, iv] &&
-                               ColorsEqual(colorMask[iu + width, iv], currentColor))
+                               ColorsEqual(colorMask[iu + width, iv], currentColor) &&
+                               faceTowardsPositive[iu + width, iv] == faceTowardsPositive[iu, iv])
                         {
                             width++;
                         }
@@ -275,7 +276,8 @@ namespace TiltBrush
                             for (int k = 0; k < width; k++)
                             {
                                 if (!mask[iu + k, iv + height] ||
-                                    !ColorsEqual(colorMask[iu + k, iv + height], currentColor))
+                                    !ColorsEqual(colorMask[iu + k, iv + height], currentColor) ||
+                                    faceTowardsPositive[iu + k, iv + height] != faceTowardsPositive[iu, iv])
                                 {
                                     done = true;
                                     break;
@@ -364,7 +366,8 @@ namespace TiltBrush
                         int width = 1;
                         while (iu + width < dims[u] &&
                                mask[iu + width, iv] &&
-                               ColorsEqual(colorMask[iu + width, iv], currentColor))
+                               ColorsEqual(colorMask[iu + width, iv], currentColor) &&
+                               faceTowardsPositive[iu + width, iv] == faceTowardsPositive[iu, iv])
                         {
                             width++;
                         }
@@ -376,7 +379,8 @@ namespace TiltBrush
                             for (int k = 0; k < width; k++)
                             {
                                 if (!mask[iu + k, iv + height] ||
-                                    !ColorsEqual(colorMask[iu + k, iv + height], currentColor))
+                                    !ColorsEqual(colorMask[iu + k, iv + height], currentColor) ||
+                                    faceTowardsPositive[iu + k, iv + height] != faceTowardsPositive[iu, iv])
                                 {
                                     done = true;
                                     break;
