@@ -274,7 +274,6 @@ namespace TiltBrush
     public class VoxDocumentApiWrapper
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
-        [MoonSharpHidden] private GameObject SceneRoot => ApiMethods.VoxGetDocumentRoot(_Document);
         [MoonSharpHidden] private ModelWidget m_Widget;
         [MoonSharpHidden] private readonly bool m_WidgetBacked;
         [MoonSharpHidden] private bool m_WidgetWasCreated;
@@ -389,10 +388,6 @@ namespace TiltBrush
                 m_VisualsDirty = false;
                 return;
             }
-            TrTransform placement = GetSceneTransform();
-            ApiMethods.VoxShowDocument(_Document, optimized, generateCollider);
-            SetTransform(placement);
-            m_VisualsDirty = false;
         }
 
         [LuaDocsDescription("Spawns this document at a specific canvas position")]
@@ -431,20 +426,6 @@ namespace TiltBrush
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }
-            GameObject root = SceneRoot;
-            if (root != null)
-            {
-                if (root.transform.localPosition == transform.translation &&
-                    root.transform.localRotation == transform.rotation &&
-                    root.transform.localScale == Vector3.one * transform.scale)
-                {
-                    return;
-                }
-                root.transform.localPosition = transform.translation;
-                root.transform.localRotation = transform.rotation;
-                root.transform.localScale = Vector3.one * transform.scale;
-                ApiMethods.VoxNotifySceneChanged();
-            }
         }
 
         [LuaDocsDescription("Configures automatic visual updates and mesh options. Widget-backed documents retain their normal widget collider; generateCollider applies only to runtime roots. When disabled, call Refresh to show pending edits.")]
@@ -464,14 +445,7 @@ namespace TiltBrush
         [LuaDocsDescription("Shows pending edits, or spawns this document if it is not visible. Does nothing if the visuals are already current.")]
         public void Refresh()
         {
-            if (m_WidgetBacked)
-            {
-                if (m_VisualsDirty || m_Widget == null || !m_Widget.Showing)
-                {
-                    Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
-                }
-            }
-            else if (m_VisualsDirty || SceneRoot == null)
+            if (m_VisualsDirty || m_Widget == null || !m_Widget.Showing)
             {
                 Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
             }
@@ -485,10 +459,6 @@ namespace TiltBrush
             {
                 m_Widget.Show(false, false);
             }
-            else if (!m_WidgetBacked)
-            {
-                ApiMethods.VoxHideDocument(_Document);
-            }
         }
 
         [MoonSharpHidden]
@@ -498,10 +468,6 @@ namespace TiltBrush
             if (m_WidgetBacked)
             {
                 SaveLoadScript.m_Instance?.SketchChanged();
-            }
-            else
-            {
-                ApiMethods.VoxMarkSourceDirty(_Document);
             }
             if (m_AutoVisuals)
             {
@@ -516,8 +482,7 @@ namespace TiltBrush
             {
                 return App.Scene.ActiveCanvas.AsCanvas[m_Widget.transform];
             }
-            GameObject root = SceneRoot;
-            return root != null ? TrTransform.FromLocalTransform(root.transform) : m_SpawnTransform;
+            return m_SpawnTransform;
         }
 
         [MoonSharpHidden]

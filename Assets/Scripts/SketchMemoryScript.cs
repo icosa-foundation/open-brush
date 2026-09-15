@@ -173,7 +173,7 @@ namespace TiltBrush
         }
 
         // Note this value is cached and only updated once per frame.
-        public bool HasVisibleObjects() { return m_HasVisibleObjects || ApiMethods.VoxHasVisibleObjects; }
+        public bool HasVisibleObjects() { return m_HasVisibleObjects; }
 
         public bool MemoryExceeded
         {
@@ -288,7 +288,6 @@ namespace TiltBrush
         public void SetLastOperationStackCount()
         {
             m_LastOperationStackCount = m_OperationStack.Count;
-            ApiMethods.VoxMarkSaved();
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)
@@ -330,10 +329,6 @@ namespace TiltBrush
         // True if strokes have been modified since last load or save (approximately)
         public bool IsMemoryDirty()
         {
-            if (ApiMethods.VoxHasUnsavedChanges)
-            {
-                return true;
-            }
             if (m_OperationStack.Count != m_LastOperationStackCount)
             {
                 IEnumerable<BaseCommand> newCommands = null;
