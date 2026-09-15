@@ -32,6 +32,9 @@ namespace TiltBrush
 
         private Model m_Model;
         private RuntimeVoxDocument m_EditableVoxDocument;
+        private readonly HashSet<Mesh> m_OwnedVoxMeshes = new HashSet<Mesh>();
+        private bool m_HasEditableVoxVisuals;
+        private bool m_EditableVoxOptimized = true;
         private bool m_PreserveCustomSize;
 
 
@@ -119,7 +122,7 @@ namespace TiltBrush
         protected override Vector3 GetHomeSnapLocation(Quaternion snapOrient)
         {
             return base.GetHomeSnapLocation(snapOrient) -
-                snapOrient * (App.Scene.Pose.scale * m_Size * m_Model.m_MeshBounds.center);
+                snapOrient * (App.Scene.Pose.scale * m_Size * MeshBounds.center);
         }
 
         public override float MaxAxisScale
@@ -197,6 +200,10 @@ namespace TiltBrush
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
+            if (m_HasEditableVoxVisuals)
+            {
+                clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
+            }
             clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
@@ -291,6 +298,7 @@ namespace TiltBrush
         void LoadModel()
         {
             // Clean up existing model
+            ReleaseOwnedVoxMeshes();
             if (m_ModelInstance != null)
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
@@ -396,6 +404,191 @@ namespace TiltBrush
             if (m_Model.IsCached())
             {
                 m_Model.RefreshCache();
+            }
+        }
+
+        // Explicit refresh keeps a painting gesture free to defer expensive mesh rebuilds.
+        // Only this widget's cloned hierarchy is modified; the catalog Model remains shared.
+        public void RefreshEditableVoxMeshes(bool optimized = true)
+        {
+            if (m_EditableVoxDocument == null || m_ModelInstance == null || m_ObjModelScript == null)
+            {
+                throw new InvalidOperationException("This widget has no loaded editable VOX model.");
+            }
+            if (!string.IsNullOrEmpty(Subtree))
+            {
+                throw new NotSupportedException(
+                    "Editable VOX mesh refresh for a split model subtree is not supported yet.");
+            }
+
+            var builder = new VoxMeshBuilder();
+            var replacementMeshes = new List<Mesh>(m_EditableVoxDocument.Models.Count);
+            var previousAssignments = new List<(MeshFilter filter, Mesh mesh)>();
+            try
+            {
+                foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+                {
+                    replacementMeshes.Add(optimized
+                        ? builder.GenerateOptimizedMesh(model, m_EditableVoxDocument.Palette)
+                        : builder.GenerateSeparateCubesMesh(model, m_EditableVoxDocument.Palette));
+                }
+
+                for (int i = 0; i < m_EditableVoxDocument.Models.Count; i++)
+                {
+                    RuntimeVoxDocument.RuntimeModel model = m_EditableVoxDocument.Models[i];
+                    MeshFilter visibleFilter = GetOrCreateVoxModelFilter(
+                        m_ModelInstance,
+                        i,
+                        model,
+                        ghost: false);
+                    previousAssignments.Add((visibleFilter, visibleFilter.sharedMesh));
+                    visibleFilter.sharedMesh = replacementMeshes[i];
+
+                    if (m_SnapGhost != null)
+                    {
+                        MeshFilter ghostFilter = GetOrCreateVoxModelFilter(
+                            m_SnapGhost,
+                            i,
+                            model,
+                            ghost: true);
+                        previousAssignments.Add((ghostFilter, ghostFilter.sharedMesh));
+                        ghostFilter.sharedMesh = replacementMeshes[i];
+                    }
+                }
+            }
+            catch
+            {
+                foreach ((MeshFilter filter, Mesh mesh) in previousAssignments)
+                {
+                    if (filter != null)
+                    {
+                        filter.sharedMesh = mesh;
+                    }
+                }
+                foreach (Mesh mesh in replacementMeshes)
+                {
+                    DestroyOwnedVoxMesh(mesh);
+                }
+                throw;
+            }
+
+            ReleaseOwnedVoxMeshes();
+            foreach (Mesh mesh in replacementMeshes)
+            {
+                m_OwnedVoxMeshes.Add(mesh);
+            }
+            m_HasEditableVoxVisuals = true;
+            m_EditableVoxOptimized = optimized;
+
+            m_ObjModelScript.UpdateAllMeshChildren();
+            WidgetManager.m_Instance.AdjustModelVertCount(-m_NumVertsTrackedByWidgetManager);
+            m_ObjModelScript.InvalidateMeshVertexCount();
+            m_NumVertsTrackedByWidgetManager = m_ObjModelScript.GetNumVertsInMeshes();
+            WidgetManager.m_Instance.AdjustModelVertCount(m_NumVertsTrackedByWidgetManager);
+
+            RecalculateColliderBounds();
+        }
+
+        private MeshFilter GetOrCreateVoxModelFilter(
+            Transform hierarchyRoot,
+            int modelIndex,
+            RuntimeVoxDocument.RuntimeModel model,
+            bool ghost)
+        {
+            string prefix = $"Model_{modelIndex}_";
+            Transform modelTransform = null;
+            foreach (Transform child in hierarchyRoot)
+            {
+                if (child.name.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    modelTransform = child;
+                    break;
+                }
+            }
+
+            if (modelTransform == null)
+            {
+                var modelObject = new GameObject($"{prefix}{model.Name}");
+                modelTransform = modelObject.transform;
+                modelTransform.SetParent(hierarchyRoot, false);
+            }
+
+            modelTransform.localPosition = model.TransformOffset;
+            modelTransform.localRotation = VoxMeshBuilder.ModelRotation;
+            MeshFilter filter = modelTransform.GetComponent<MeshFilter>();
+            if (filter == null)
+            {
+                filter = modelTransform.gameObject.AddComponent<MeshFilter>();
+            }
+
+            MeshRenderer renderer = modelTransform.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                renderer = modelTransform.gameObject.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = ghost
+                    ? m_SnapGhostMaterial
+                    : ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial;
+            }
+            if (ghost)
+            {
+                modelTransform.gameObject.layer = LayerMask.NameToLayer("Panels");
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            return filter;
+        }
+
+        private Bounds GetEditableVoxModelBounds()
+        {
+            var bounds = new Bounds();
+            bool first = true;
+            foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+            {
+                for (int x = 0; x < 2; x++)
+                    for (int y = 0; y < 2; y++)
+                        for (int z = 0; z < 2; z++)
+                        {
+                            var corner = new Vector3(
+                                x == 0 ? -0.5f : model.Size.x - 0.5f,
+                                y == 0 ? -0.5f : model.Size.y - 0.5f,
+                                z == 0 ? -0.5f : model.Size.z - 0.5f);
+                            Vector3 position = model.TransformOffset + VoxMeshBuilder.ModelRotation * corner;
+                            if (first)
+                            {
+                                bounds = new Bounds(position, Vector3.zero);
+                                first = false;
+                            }
+                            else
+                            {
+                                bounds.Encapsulate(position);
+                            }
+                        }
+            }
+            return first ? m_Model.m_MeshBounds : bounds;
+        }
+
+        private void ReleaseOwnedVoxMeshes()
+        {
+            foreach (Mesh mesh in m_OwnedVoxMeshes)
+            {
+                DestroyOwnedVoxMesh(mesh);
+            }
+            m_OwnedVoxMeshes.Clear();
+            m_HasEditableVoxVisuals = false;
+        }
+
+        private static void DestroyOwnedVoxMesh(Mesh mesh)
+        {
+            if (mesh == null)
+            {
+                return;
+            }
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.Destroy(mesh);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
             }
         }
 
@@ -577,6 +770,14 @@ namespace TiltBrush
 
         public void RecalculateColliderBounds()
         {
+            if (m_HasEditableVoxVisuals)
+            {
+                m_MeshBounds = GetEditableVoxModelBounds();
+                m_BoxCollider.transform.localPosition = m_MeshBounds.center;
+                m_BoxCollider.size = m_MeshBounds.size + m_ContainerBloat;
+                return;
+            }
+
             var widgetTransform = m_ObjModelScript.transform.parent;
 
             // Save the widget's original transform
@@ -758,11 +959,11 @@ namespace TiltBrush
         {
             get
             {
-                if (string.IsNullOrEmpty(m_Subtree))
+                if (m_HasEditableVoxVisuals || !string.IsNullOrEmpty(m_Subtree))
                 {
-                    return m_Model.m_MeshBounds;
+                    return m_MeshBounds;
                 }
-                return m_MeshBounds;
+                return m_Model.m_MeshBounds;
             }
         }
 
@@ -1114,7 +1315,7 @@ namespace TiltBrush
 
         override public bool CanSnapToHome()
         {
-            return m_Model.m_MeshBounds.center == Vector3.zero;
+            return MeshBounds.center == Vector3.zero;
         }
 
         private bool IsVoxModel()
