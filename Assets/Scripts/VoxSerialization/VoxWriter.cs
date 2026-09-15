@@ -326,7 +326,17 @@ namespace TiltBrush
                 {
                     throw new InvalidDataException("VOX IMAP chunk is shorter than 255 entries.");
                 }
-                Array.Copy(indexMap.Content, logicalToRawPalette, logicalToRawPalette.Length);
+
+                for (int rawIndex = 0; rawIndex < byte.MaxValue; rawIndex++)
+                {
+                    byte logicalIndex = indexMap.Content[rawIndex];
+                    if (logicalIndex == 0)
+                    {
+                        throw new InvalidDataException("VOX IMAP contains an invalid logical palette index.");
+                    }
+
+                    logicalToRawPalette[logicalIndex - 1] = (byte)(rawIndex + 1);
+                }
             }
 
             int sizeIndex = 0;

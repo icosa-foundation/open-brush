@@ -264,7 +264,8 @@ namespace TiltBrush
                 indexMap[i] = (byte)(i + 1);
             }
             indexMap[0] = 2;
-            indexMap[1] = 1;
+            indexMap[1] = 3;
+            indexMap[2] = 1;
             sourceBytes = AppendMainChild(sourceBytes, "IMAP", indexMap);
             byte[] originalRootTransform = FindMainChildContent(sourceBytes, "nTRN", 0);
             byte[] originalModelTransform = FindMainChildContent(sourceBytes, "nTRN", 1);
