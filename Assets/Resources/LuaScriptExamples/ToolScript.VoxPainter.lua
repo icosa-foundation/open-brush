@@ -1,5 +1,5 @@
 Settings = {
-    description="Hold the trigger and move to paint voxels. First press on an existing voxel to edit its model, or in empty space to start a new grid. Voxels are saved with the sketch.",
+    description="Hold the trigger to paint voxels on an imported VOX widget, or start a new widget in empty space. Editable widget saving is still under development.",
     space="canvas"
 }
 
@@ -9,7 +9,6 @@ Parameters = {
     mode={label="Mode", type="list", items={"Add", "Erase", "Paint"}, default="Add"},
     autoVisuals={label="Update While Drawing", type="toggle", default=true},
     optimizedMesh={label="Optimized Mesh", type="toggle", default=true},
-    collider={label="Collider", type="toggle", default=false},
 }
 
 function Start()
@@ -22,8 +21,12 @@ end
 
 function Main()
     if Brush.triggerReleasedThisFrame or not Brush.triggerIsPressed then
-        if origin ~= nil then doc:Refresh() end
+        if doc ~= nil then doc:Refresh() end
+        doc = nil
+        model = nil
+        origin = nil
         lastCell = nil
+        lastMode = nil
         return
     end
 
@@ -32,17 +35,16 @@ function Main()
         model = Vox:FindModelAt(position)
         if model == nil then
             if Parameters.mode ~= "Add" then return end
-            doc = Vox:New(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
+            doc = Vox:NewWidget(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
             model = doc.models[0]
             origin = position
+            model:PlaceAt(origin, Parameters.gridSize)
         else
             doc = model.document
-            origin = model:VoxelToCanvas(model.centerVoxel)
             Parameters.gridSize = model.voxelSize
         end
     end
-    model:PlaceAt(origin, Parameters.gridSize)
-    doc:SetAutoVisuals(Parameters.autoVisuals, Parameters.optimizedMesh, Parameters.collider)
+    doc:SetAutoVisuals(Parameters.autoVisuals, Parameters.optimizedMesh, false)
 
     local cell = model:CanvasToVoxel(position)
     if lastCell ~= nil and cell:Equals(lastCell) and lastMode == Parameters.mode then
@@ -61,5 +63,5 @@ function Main()
 end
 
 function End()
-    if origin ~= nil then doc:Refresh() end
+    if doc ~= nil then doc:Refresh() end
 end
