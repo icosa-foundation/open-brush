@@ -34,7 +34,6 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
-        private ApiMethods.RuntimeVoxSavePayload[] m_RuntimeVoxPayloads;
         private MetadataUtils.EditableVoxSavePayload[] m_EditableVoxPayloads;
 
         private JsonSerializer m_JsonSerializer;
@@ -135,7 +134,6 @@ namespace TiltBrush
 
         public SketchMetadata GetSketchMetadata()
         {
-            m_RuntimeVoxPayloads = ApiMethods.VoxGetSavePayloads();
             TiltModels75[] modelIndex = MetadataUtils.GetTiltModels(
                 m_GroupIdMapping, out m_EditableVoxPayloads);
             // Note: This assumes Room space == Global space.
@@ -173,7 +171,6 @@ namespace TiltBrush
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
-                RuntimeVoxIndex = m_RuntimeVoxPayloads?.Select(x => x.State).ToArray(),
             };
         }
 
@@ -276,22 +273,6 @@ namespace TiltBrush
                         zip.CloseEntry();
                     }
 
-                    if (m_RuntimeVoxPayloads != null)
-                    {
-                        foreach (ApiMethods.RuntimeVoxSavePayload payload in m_RuntimeVoxPayloads)
-                        {
-                            if (payload?.VoxBytes == null || payload.State == null ||
-                                string.IsNullOrEmpty(payload.State.FilePath))
-                            {
-                                continue;
-                            }
-
-                            zip.PutNextEntry(new ZipEntry(payload.State.FilePath));
-                            zip.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
-                            zip.CloseEntry();
-                        }
-                    }
-
                     if (m_EditableVoxPayloads != null)
                     {
                         foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
@@ -344,23 +325,6 @@ namespace TiltBrush
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
-
-                    if (m_RuntimeVoxPayloads != null)
-                    {
-                        foreach (ApiMethods.RuntimeVoxSavePayload payload in m_RuntimeVoxPayloads)
-                        {
-                            if (payload?.VoxBytes == null || payload.State == null ||
-                                string.IsNullOrEmpty(payload.State.FilePath))
-                            {
-                                continue;
-                            }
-
-                            using (var stream = tiltWriter.GetWriteStream(payload.State.FilePath))
-                            {
-                                stream.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
-                            }
-                        }
-                    }
 
                     if (m_EditableVoxPayloads != null)
                     {

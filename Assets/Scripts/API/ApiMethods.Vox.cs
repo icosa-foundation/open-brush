@@ -23,13 +23,6 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        public sealed class RuntimeVoxSavePayload
-        {
-            public RuntimeVoxDocument Document;
-            public RuntimeVoxState State;
-            public byte[] VoxBytes;
-        }
-
         private sealed class VoxSceneState
         {
             public GameObject Root;
@@ -479,115 +472,6 @@ namespace TiltBrush
             VoxMarkSaved();
         }
 
-        public static RuntimeVoxSavePayload[] VoxGetSavePayloads()
-        {
-            // Only scene content belongs in a sketch. Hidden/scratch documents stay in memory,
-            // but must not reappear after a clear-and-save cycle.
-            var visibleDocuments = VoxGetVisibleDocuments().ToList();
-            if (visibleDocuments.Count == 0)
-            {
-                return null;
-            }
-
-            var payloads = new RuntimeVoxSavePayload[visibleDocuments.Count];
-            for (int i = 0; i < visibleDocuments.Count; i++)
-            {
-                RuntimeVoxDocument document = visibleDocuments[i];
-                s_voxSceneByDocument.TryGetValue(document, out VoxSceneState sceneState);
-                VoxDocumentSourceState source = GetSourceState(document);
-                bool embed = ShouldEmbedOnSave(source);
-
-                TrTransform transform = TrTransform.identity;
-                if (sceneState?.Root != null)
-                {
-                    transform = TrTransform.TRS(
-                        sceneState.Root.transform.localPosition,
-                        sceneState.Root.transform.localRotation,
-                        sceneState.Root.transform.localScale.x);
-                }
-
-                payloads[i] = new RuntimeVoxSavePayload
-                {
-                    Document = document,
-                    VoxBytes = embed ? document.ToVoxBytes() : null,
-                    State = new RuntimeVoxState
-                    {
-                        FilePath = embed ? $"vox/{i}.vox" : null,
-                        Transform = transform,
-                        Optimized = sceneState?.Optimized ?? true,
-                        GenerateCollider = sceneState?.GenerateCollider ?? true,
-                        SourceKind = source.SourceKind,
-                        SourcePath = source.SourcePath,
-                        Dirty = source.Dirty,
-                    },
-                };
-            }
-
-            return payloads;
-        }
-
-        public static void VoxRestoreFromTilt(SceneFileInfo fileInfo, RuntimeVoxState[] runtimeVoxIndex)
-        {
-            VoxResetRuntimeState();
-            if (fileInfo == null || runtimeVoxIndex == null || runtimeVoxIndex.Length == 0)
-            {
-                return;
-            }
-
-            foreach (RuntimeVoxState item in runtimeVoxIndex)
-            {
-                if (item == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    byte[] bytes = LoadRuntimeVoxBytes(fileInfo, item);
-                    if (bytes == null || bytes.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(bytes);
-                    s_voxDocuments.Add(document);
-                    s_voxSourceByDocument[document] = new VoxDocumentSourceState
-                    {
-                        SourceKind = string.IsNullOrEmpty(item.SourceKind)
-                            ? (string.IsNullOrEmpty(item.FilePath) ? VoxSourceKindGenerated : VoxSourceKindEmbeddedSubfile)
-                            : item.SourceKind,
-                        SourcePath = item.SourcePath ?? string.Empty,
-                        Dirty = item.Dirty,
-                    };
-                    RebuildSceneForDocument(
-                        document,
-                        spawnNearBrush: false,
-                        optimizedOverride: item.Optimized,
-                        colliderOverride: item.GenerateCollider);
-
-                    if (s_voxSceneByDocument.TryGetValue(document, out VoxSceneState state) &&
-                        state?.Root != null)
-                    {
-                        float scale = item.Transform.scale <= 0f ? 1f : item.Transform.scale;
-                        state.Root.transform.localPosition = item.Transform.translation;
-                        state.Root.transform.localRotation = item.Transform.rotation;
-                        state.Root.transform.localScale = Vector3.one * scale;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Failed to restore runtime VOX item '{item.FilePath ?? item.SourcePath}': {e.Message}");
-                }
-            }
-
-            if (s_voxDocuments.Count > 0)
-            {
-                s_activeVoxDocumentIndex = 0;
-                s_activeVoxModelIndex = 0;
-            }
-            VoxMarkSaved();
-        }
-
         [ApiEndpoint(
             "vox.export.base64",
             "Exports the active runtime VOX document to base64",
@@ -918,33 +802,6 @@ namespace TiltBrush
             return true;
         }
 
-        private static byte[] LoadRuntimeVoxBytes(SceneFileInfo fileInfo, RuntimeVoxState item)
-        {
-            if (!string.IsNullOrEmpty(item.FilePath))
-            {
-                using (Stream stream = fileInfo.GetReadStream(item.FilePath))
-                {
-                    return ReadAllBytes(stream);
-                }
-            }
-
-            if (string.Equals(item.SourceKind, VoxSourceKindMediaLibraryFile, StringComparison.OrdinalIgnoreCase))
-            {
-                string normalized = NormalizeRelativeVoxPath(item.SourcePath);
-                if (!string.IsNullOrEmpty(normalized))
-                {
-                    var model = new Model(normalized);
-                    string absolutePath = model.GetLocation().AbsolutePath;
-                    if (!string.IsNullOrEmpty(absolutePath) && File.Exists(absolutePath))
-                    {
-                        return File.ReadAllBytes(absolutePath);
-                    }
-                }
-            }
-
-            return null;
-        }
-
         private static string NormalizeRelativeVoxPath(string relativePath)
         {
             if (string.IsNullOrWhiteSpace(relativePath))
@@ -975,20 +832,6 @@ namespace TiltBrush
             }
 
             return normalized;
-        }
-
-        private static byte[] ReadAllBytes(Stream stream)
-        {
-            if (stream == null)
-            {
-                return Array.Empty<byte>();
-            }
-
-            using (var memory = new MemoryStream())
-            {
-                stream.CopyTo(memory);
-                return memory.ToArray();
-            }
         }
 
         private static object ToVector3Payload(Vector3 value)
