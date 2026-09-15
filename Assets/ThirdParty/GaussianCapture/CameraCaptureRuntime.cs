@@ -116,6 +116,14 @@ public class CameraCaptureRuntime : MonoBehaviour
         public string FilePrefix;
     }
 
+    // A capture target defined by an explicit list of world-space poses rather than by a
+    // shape the poses are derived from.
+    private struct PoseCaptureTarget
+    {
+        public List<(Vector3 position, Quaternion rotation)> Poses;
+        public string FilePrefix;
+    }
+
     private struct SparseDepthCandidate
     {
         public float PixelX;
@@ -585,9 +593,20 @@ public class CameraCaptureRuntime : MonoBehaviour
                 List<Vector3> directions = GenerateCustomSphericalDirections();
                 if (domeTargets == null) { domeTargets = new List<DomeCaptureTarget>(); }
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
+
+                // A dome target is just a way of generating a list of poses, so resolve it to
+                // one and capture through a single pose loop.
+                var poseTargets = domeTargets
+                    .Select(x => new PoseCaptureTarget
+                    {
+                        Poses = GetDomeCameraPoses(
+                            x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType),
+                        FilePrefix = x.FilePrefix
+                    })
+                    .ToList();
+
                 int totalImages =
-                    domeTargets.Sum(x => GetDomeCameraPoses(
-                        x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
+                    poseTargets.Sum(x => x.Poses.Count) +
                     volumeTargets.Sum(x => GetVolumeCameraGridCenters(
                         x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
@@ -610,15 +629,9 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                     BakeSkinnedMeshColliders();
 
-                    foreach (var domeTarget in domeTargets)
+                    foreach (var poseTarget in poseTargets)
                     {
-                        var poses = GetDomeCameraPoses(
-                            domeTarget.Transform,
-                            domeTarget.Radii,
-                            domeTarget.NumRings,
-                            domeTarget.ViewsPerRing,
-                            domeTarget.ShapeType);
-                        foreach (var (position, rotation) in poses)
+                        foreach (var (position, rotation) in poseTarget.Poses)
                         {
                             if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
 
@@ -633,7 +646,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                             Quaternion q = QuaternionFromMatrix(R);
                             Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
-                            string imageName = $"{domeTarget.FilePrefix}_view_{imageId:D4}.png";
+                            string imageName = $"{poseTarget.FilePrefix}_view_{imageId:D4}.png";
                             string imagePath = Path.Combine(folderPath, imageName);
                             SetupCaptureCamera();
                             Texture2D capturedOpaqueDepth =
