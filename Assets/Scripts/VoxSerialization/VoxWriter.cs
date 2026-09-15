@@ -341,6 +341,7 @@ namespace TiltBrush
 
             int sizeIndex = 0;
             int voxelIndex = 0;
+            bool hasRgba = false;
             foreach (PreservedChunk chunk in chunks)
             {
                 if (chunk.Id == "SIZE")
@@ -370,11 +371,22 @@ namespace TiltBrush
                 }
                 else if (chunk.Id == "RGBA")
                 {
+                    hasRgba = true;
                     chunk.Content = BuildPreservedRgbaContent(
                         document.Palette,
                         chunk.Content,
                         logicalToRawPalette);
                 }
+            }
+
+            if (!hasRgba)
+            {
+                chunks.Add(new PreservedChunk
+                {
+                    Id = "RGBA",
+                    Content = ExtractChunkContent(BuildRgbaChunk(document.Palette)),
+                    Children = new List<PreservedChunk>(),
+                });
             }
 
             return source.Write();
