@@ -543,27 +543,31 @@ namespace TiltBrush
             bool first = true;
             foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
             {
-                for (int x = 0; x < 2; x++)
-                    for (int y = 0; y < 2; y++)
-                        for (int z = 0; z < 2; z++)
-                        {
-                            var corner = new Vector3(
-                                x == 0 ? -0.5f : model.Size.x - 0.5f,
-                                y == 0 ? -0.5f : model.Size.y - 0.5f,
-                                z == 0 ? -0.5f : model.Size.z - 0.5f);
-                            Vector3 position = model.TransformOffset + VoxMeshBuilder.ModelRotation * corner;
-                            if (first)
+                foreach (Vector3Int voxel in model.Voxels.Keys)
+                {
+                    for (int x = 0; x < 2; x++)
+                        for (int y = 0; y < 2; y++)
+                            for (int z = 0; z < 2; z++)
                             {
-                                bounds = new Bounds(position, Vector3.zero);
-                                first = false;
+                                var corner = new Vector3(
+                                    voxel.x + (x == 0 ? -0.5f : 0.5f),
+                                    voxel.y + (y == 0 ? -0.5f : 0.5f),
+                                    voxel.z + (z == 0 ? -0.5f : 0.5f));
+                                Vector3 position = model.TransformOffset +
+                                    VoxMeshBuilder.ModelRotation * corner;
+                                if (first)
+                                {
+                                    bounds = new Bounds(position, Vector3.zero);
+                                    first = false;
+                                }
+                                else
+                                {
+                                    bounds.Encapsulate(position);
+                                }
                             }
-                            else
-                            {
-                                bounds.Encapsulate(position);
-                            }
-                        }
+                }
             }
-            return first ? m_Model.m_MeshBounds : bounds;
+            return bounds;
         }
 
         private void ReleaseOwnedVoxMeshes()
