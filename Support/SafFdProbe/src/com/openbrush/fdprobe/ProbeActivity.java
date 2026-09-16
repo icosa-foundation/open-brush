@@ -313,37 +313,56 @@ public class ProbeActivity extends Activity {
      * Needs real media in the chosen folder; reports separately for each kind.
      */
     private void runMediaPlayerCheck(Uri tree) {
-        Uri videoUri = null, audioUri = null;
-        String videoName = null, audioName = null;
-        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(
-                tree, DocumentsContract.getTreeDocumentId(tree));
+        MediaHit video = new MediaHit();
+        MediaHit audio = new MediaHit();
+        findMedia(tree, DocumentsContract.getTreeDocumentId(tree), video, audio, 0);
+
+        tryMediaPlayer("15a video", video,
+                "large video could render through a native SurfaceTexture plugin, never copied");
+        tryMediaPlayer("15b audio", audio,
+                "informational only: audio still needs an AudioClip for the visualizer FFT");
+    }
+
+    private static final class MediaHit {
+        Uri uri;
+        String name;
+    }
+
+    /** Depth-first search for the first video and first audio document in the tree. */
+    private void findMedia(Uri tree, String documentId, MediaHit video, MediaHit audio, int depth) {
+        if (depth > 6 || (video.uri != null && audio.uri != null)) return;
+        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, documentId);
+        java.util.List<String> subdirs = new java.util.ArrayList<>();
         try (Cursor c = getContentResolver().query(children, new String[]{
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                 DocumentsContract.Document.COLUMN_DISPLAY_NAME,
                 DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null)) {
             while (c != null && c.moveToNext()) {
+                String id = c.getString(0);
+                String name = c.getString(1);
                 String mime = c.getString(2) == null ? "" : c.getString(2);
-                if (videoUri == null && mime.startsWith("video/")) {
-                    videoUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
-                    videoName = c.getString(1);
-                } else if (audioUri == null && mime.startsWith("audio/")) {
-                    audioUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
-                    audioName = c.getString(1);
+                if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                    subdirs.add(id);
+                } else if (video.uri == null && mime.startsWith("video/")) {
+                    video.uri = DocumentsContract.buildDocumentUriUsingTree(tree, id);
+                    video.name = name;
+                } else if (audio.uri == null && mime.startsWith("audio/")) {
+                    audio.uri = DocumentsContract.buildDocumentUriUsingTree(tree, id);
+                    audio.name = name;
                 }
-                if (videoUri != null && audioUri != null) break;
             }
         } catch (Throwable t) {
-            say("SKIP 15 could not list for media: " + t.getClass().getSimpleName());
+            say("WARN 15 could not list a subdirectory: " + t.getClass().getSimpleName());
             return;
         }
-
-        tryMediaPlayer("15a video", videoUri, videoName,
-                "large video could render through a native SurfaceTexture plugin, never copied");
-        tryMediaPlayer("15b audio", audioUri, audioName,
-                "informational only: audio still needs an AudioClip for the visualizer FFT");
+        for (String id : subdirs) {
+            findMedia(tree, id, video, audio, depth + 1);
+        }
     }
 
-    private void tryMediaPlayer(String label, Uri uri, String name, String note) {
+    private void tryMediaPlayer(String label, MediaHit hit, String note) {
+        Uri uri = hit.uri;
+        String name = hit.name;
         if (uri == null) {
             say("SKIP " + label + " none in the chosen folder; drop one in and re-run");
             return;

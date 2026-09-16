@@ -248,9 +248,28 @@ audio files are single-digit to low-hundreds of megabytes, whereas video is
 where gigabytes live. **Materialize audio; pursue the native path only for
 video.**
 
-`Support/SafFdProbe` check 15 tests audio and video separately against real
-files in the chosen folder, and skips each kind if none is present. 15a is the
-decision-relevant one; 15b is informational.
+**Measured 2026-09-16.** Check 15a passed: Android's `MediaPlayer` played
+`Media Library/Videos/animated-logo.mp4` directly from its `content://` URI
+(duration 3435 ms) on a Nothing Phone (3a), Android 16. So the capability is
+real — large video *can* be rendered from SAF without copying, via a native
+`MediaPlayer` into a `SurfaceTexture` exposed to Unity as an external texture.
+
+That is a capability result, not a recommendation. Against it: `ReferenceVideo`
+uses `VideoPlayer.texture`, `isPlaying`, `Play`, `Pause`,
+`GetDirectAudioMute` and `GetDirectAudioVolume`, so a native replacement has to
+reimplement playback control, per-source audio and lifetime management — a
+meaningful plugin, and one that cuts against the simplification this plan is
+otherwise pursuing. For it: it is the only way to avoid copying multi-gigabyte
+video into app-private storage.
+
+Decide it on whether users actually import very large video. Open Brush's own
+camera-path exports are a few hundred kilobytes and the seeded sample is 1.5 MB;
+imported 4K footage is the case that would justify the work. Until that is
+known, materialize video and revisit.
+
+Check 15b skipped — no audio in the folder. It is informational either way,
+since the audio conclusion rests on Unity's mixer requirements rather than on
+`MediaPlayer`'s capabilities.
 
 ### The resulting model
 
@@ -262,7 +281,7 @@ decision-relevant one; 15b is informational.
 | Reference images | `OpenRead` — streamed, pending confirmation |
 | Fonts | materialized once at startup, small fixed area, never evicted |
 | Audio | `Materialize` under a budget — small, and needed as an `AudioClip` |
-| Video | `Materialize`, unless probe 15a shows a native `SurfaceTexture` path is viable |
+| Video | `Materialize` for now. Probe 15a confirmed a native `SurfaceTexture` path is possible; adopt it only if large imported video proves to be a real case |
 | Captures, exports | `BeginWrite`, then publish |
 
 Two mechanisms, no pin flag, no per-type policy.
@@ -430,12 +449,17 @@ detection of it.
 
 ### Unverified assumption
 
-`flushToDisk: true` should reach the disk through a SAF descriptor, since the
-probe established that the descriptor is a real regular file and `fsync(2)` on
-it is meaningful. A provider could in principle ignore it. `Support/SafFdProbe`
-checks 12-14 now measure write throughput, the cost of a single `fsync`, and
-read-back throughput, so the assumption and its cost can both be confirmed
-before this change is relied upon.
+**Measured 2026-09-16, and affordable.** `Support/SafFdProbe` check 13 timed a
+full `fsync` of 1 GiB through a detached SAF descriptor at 740 ms on a Nothing
+Phone (3a), Android 16. A realistic 200 MB sketch therefore costs roughly
+150 ms — clearly affordable once per save, and set against the five or six
+journal fsyncs `saf-transaction-journal-removal-plan.md` removes, saves get
+faster overall. Write throughput was 1024 MiB in 624 ms.
+
+Check 14's read figure (3954 MB/s) should not be quoted as a recovery cost
+floor: the file had just been written and was served from page cache. Recovery
+cost is dominated by decompression rather than I/O in any case, which is the
+reason for removing the deep check rather than optimising it.
 
 ## Scale: Fewer But Larger Files
 

@@ -89,6 +89,36 @@ target name first — which is exactly why it renames the canonical document to
 `.ob-bak` before renaming the temporary into place. Reordering those steps
 would silently produce `Sketch (1).tilt` instead of overwriting.
 
+### Run 2026-09-16, same device, tree = `/sdcard/Open Brush`
+
+Re-run against the real Open Brush folder with checks 12-15 added.
+
+```text
+INFO 12  free=100482 MiB, payload=1024 MiB
+PASS 12  wrote 1024 MiB in 624 ms (1640 MB/s)
+PASS 13  fsync of 1024 MiB took 740 ms
+PASS 14  read 1024 MiB in 258 ms (3954 MB/s)
+PASS 15a video played content:// directly (animated-logo.mp4, duration=3435ms)
+SKIP 15b audio none in the chosen folder
+```
+
+**Check 13 settles the durability question.** A full `fsync` of 1 GiB costs
+740 ms, so a realistic 200 MB sketch costs roughly 150 ms. One fsync per save
+before the rename sequence is clearly affordable, especially set against the
+five or six journal fsyncs the journal-removal plan deletes. Fsync the payload;
+do not pay for deep validation at recovery.
+
+**Check 14's number is optimistic and should not be quoted as a recovery
+floor.** The file had just been written, so the read was served almost entirely
+from page cache — 3954 MB/s is not flash throughput. A cold read would be far
+slower. The figure is retained only to show the measurement ran; recovery cost
+is in any case dominated by decompression (CPU) rather than I/O.
+
+**Check 15a passed.** Android's `MediaPlayer` played a `content://` video
+directly, so a native `SurfaceTexture`-backed plugin could render large video
+straight from SAF without copying it. This is a capability result, not a
+recommendation — see the plan for the cost/benefit.
+
 ### Still outstanding
 
 This probe covers the provider. It does not cover the IL2CPP/.NET half —
