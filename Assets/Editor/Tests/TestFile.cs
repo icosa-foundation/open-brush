@@ -1637,8 +1637,7 @@ namespace TiltBrush
             var backend = new FakeSafBackend();
             backend.Add("first.lua", System.Text.Encoding.UTF8.GetBytes("one"));
             backend.Add("remove.lua", System.Text.Encoding.UTF8.GetBytes("remove"));
-            var content = new SafUserRuntimeContent(
-                backend, root, area => Path.Combine(root, "legacy", area.ToString()));
+            var content = new SafUserRuntimeContent(backend, root);
             try
             {
                 RuntimeProjectionResult initial = content.EnsureCurrentAsync(
@@ -1682,8 +1681,7 @@ namespace TiltBrush
                 Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
             var backend = new FakeSafBackend();
             backend.Add("plugin.lua", System.Text.Encoding.UTF8.GetBytes("retained"));
-            var content = new SafUserRuntimeContent(
-                backend, root, area => Path.Combine(root, "legacy", area.ToString()));
+            var content = new SafUserRuntimeContent(backend, root);
             try
             {
                 RuntimeProjectionResult initial = content.EnsureCurrentAsync(
@@ -1718,8 +1716,7 @@ namespace TiltBrush
                 RootAfterFirstRead = $"replacement-root-{Guid.NewGuid():N}",
             };
             backend.Add("plugin.lua", System.Text.Encoding.UTF8.GetBytes("content"));
-            var content = new SafUserRuntimeContent(
-                backend, root, area => Path.Combine(root, "legacy", area.ToString()));
+            var content = new SafUserRuntimeContent(backend, root);
             try
             {
                 RuntimeProjectionResult result = content.EnsureCurrentAsync(
@@ -1739,71 +1736,7 @@ namespace TiltBrush
             }
         }
 
-        [Test]
-        public void SafRuntimeContent_MigratesAndCleansLegacyPrivateFile()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
-            string legacyRoot = Path.Combine(root, "legacy", "Plugins");
-            Directory.CreateDirectory(legacyRoot);
-            string legacyFile = Path.Combine(legacyRoot, "plugin.lua");
-            File.WriteAllText(legacyFile, "legacy");
-            var backend = new FakeSafBackend();
-            var content = new SafUserRuntimeContent(
-                backend, root, _ => legacyRoot);
-            try
-            {
-                RuntimeProjectionResult result = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
 
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.AreEqual(
-                    "legacy", File.ReadAllText(Path.Combine(result.RuntimePath, "plugin.lua")));
-                Assert.IsFalse(File.Exists(legacyFile));
-                Assert.IsTrue(backend.Contains("plugin.lua"));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
-
-        [Test]
-        public void SafRuntimeContent_PreservesDifferingMigrationConflict()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
-            string legacyRoot = Path.Combine(root, "legacy", "Plugins");
-            Directory.CreateDirectory(legacyRoot);
-            File.WriteAllText(Path.Combine(legacyRoot, "plugin.lua"), "local");
-            var backend = new FakeSafBackend();
-            backend.Add("plugin.lua", System.Text.Encoding.UTF8.GetBytes("shared"));
-            var content = new SafUserRuntimeContent(
-                backend, root, _ => legacyRoot);
-            try
-            {
-                RuntimeProjectionResult result = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.AreEqual(
-                    "shared", File.ReadAllText(Path.Combine(result.RuntimePath, "plugin.lua")));
-                string[] recovered = Directory.GetFiles(
-                    result.RuntimePath, "plugin.local-recovered-*.lua");
-                Assert.AreEqual(1, recovered.Length);
-                Assert.AreEqual("local", File.ReadAllText(recovered[0]));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
 
         [Test]
         public void RuntimeContentSeeder_WritesOnlyMissingFiles()

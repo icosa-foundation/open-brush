@@ -265,7 +265,6 @@ namespace TiltBrush
     public sealed class SafUserRuntimeContent : IUserRuntimeContent
     {
         private const int kManifestVersion = 1;
-        private const int kMigrationVersion = 1;
         private const int kMaximumDepth = 32;
         private const int kMaximumItemCount = 5000;
         private const long kMaximumFileBytes = 64L * 1024L * 1024L;
@@ -303,31 +302,10 @@ namespace TiltBrush
             public string Sha256;
         }
 
-        [Serializable]
-        private sealed class MigrationRecord
-        {
-            public int Version;
-            public string RootNamespace;
-            public string Area;
-            public string StartedUtc;
-            public bool CanonicalCopiesComplete;
-            public bool LocalCleanupComplete;
-            public List<MigrationItem> Items = new List<MigrationItem>();
-        }
 
-        [Serializable]
-        private sealed class MigrationItem
-        {
-            public string SourceRelativePath;
-            public string SourceSha256;
-            public string DestinationRelativePath;
-            public bool CanonicalCopyComplete;
-            public bool LocalCleanupComplete;
-        }
 
         private readonly IUserStorageBackend m_Backend;
         private readonly string m_BasePath;
-        private readonly Func<StorageArea, string> m_LegacyRoot;
         private readonly Dictionary<StorageArea, SemaphoreSlim> m_AreaGates =
             new Dictionary<StorageArea, SemaphoreSlim>();
 
@@ -335,8 +313,7 @@ namespace TiltBrush
 
         public SafUserRuntimeContent(
             IUserStorageBackend backend,
-            string basePath = null,
-            Func<StorageArea, string> legacyRoot = null)
+            string basePath = null)
         {
             m_Backend = backend ?? throw new ArgumentNullException(nameof(backend));
             if (backend.Kind != StorageBackendKind.StorageAccessFramework)
@@ -346,7 +323,6 @@ namespace TiltBrush
             }
             m_BasePath = basePath ?? Path.Combine(
                 Application.persistentDataPath, "OpenBrushSafRuntime");
-            m_LegacyRoot = legacyRoot ?? LocalUserStorageBackend.GetAreaRoot;
             foreach (StorageArea area in RuntimeAreas)
             {
                 m_AreaGates.Add(area, new SemaphoreSlim(1, 1));
@@ -442,30 +418,6 @@ namespace TiltBrush
             }
 
             string areaRoot = GetAreaRoot(rootIdentity, area);
-            RuntimeProjectionResult migrationResult = MigrateLegacyContent(
-                area,
-                rootIdentity,
-                areaRoot,
-                tree,
-                cancellationToken);
-            if (!migrationResult.Success)
-            {
-                return migrationResult;
-            }
-            MigrationRecord migration = ReadMigrationRecord(areaRoot);
-            if (migration != null &&
-                migration.CanonicalCopiesComplete &&
-                !migration.LocalCleanupComplete &&
-                migration.Items.Count > 0)
-            {
-                tree = m_Backend.EnumerateTree(
-                    area, "", query, cancellationToken);
-                if (!tree.Success)
-                {
-                    return RuntimeProjectionResult.Failed(
-                        tree.Code, GetRuntimePath(area), tree.Error);
-                }
-            }
 
             string generation = Guid.NewGuid().ToString("N");
             string generationRoot = GetGenerationRoot(areaRoot, generation);
@@ -527,7 +479,6 @@ namespace TiltBrush
                 WriteJsonAtomically(Path.Combine(areaRoot, kPointerFileName), pointer);
                 try
                 {
-                    CleanupMigratedLocalContent(area, areaRoot, migration);
                     CleanupOldGenerations(areaRoot, generation, previous?.Generation);
                 }
                 catch (Exception e) when (
@@ -570,354 +521,12 @@ namespace TiltBrush
             }
         }
 
-        private RuntimeProjectionResult MigrateLegacyContent(
-            StorageArea area,
-            string rootIdentity,
-            string areaRoot,
-            StorageTreeResult tree,
-            CancellationToken cancellationToken)
-        {
-            string journalPath = GetMigrationJournalPath(areaRoot);
-            MigrationRecord record = ReadMigrationRecord(areaRoot);
-            if (record != null)
-            {
-                if (!IsValidMigrationRecord(record, rootIdentity, area))
-                {
-                    return RuntimeProjectionResult.Failed(
-                        StorageResultCode.Failed,
-                        GetRuntimePath(area),
-                        $"Runtime content migration record for {area} has an unknown " +
-                        $"or mismatched format.");
-                }
-                if (record.CanonicalCopiesComplete)
-                {
-                    return RuntimeProjectionResult.Succeeded(GetRuntimePath(area));
-                }
-            }
-            else
-            {
-                record = CreateMigrationRecord(area, rootIdentity);
-                WriteJsonAtomically(journalPath, record);
-            }
 
-            string legacyRoot = m_LegacyRoot(area);
-            if (!Directory.Exists(legacyRoot))
-            {
-                record.CanonicalCopiesComplete = true;
-                record.LocalCleanupComplete = true;
-                WriteJsonAtomically(journalPath, record);
-                return RuntimeProjectionResult.Succeeded(GetRuntimePath(area));
-            }
 
-            if (record.Items.Count == 0)
-            {
-                long legacyBytes = 0;
-                foreach (string path in Directory.EnumerateFiles(
-                    legacyRoot, "*", SearchOption.AllDirectories))
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    string relativePath = Path.GetRelativePath(legacyRoot, path)
-                        .Replace('\\', '/');
-                    string safePath = GetSafeContentPath(legacyRoot, relativePath);
-                    if (!string.Equals(
-                            Path.GetFullPath(path),
-                            safePath,
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new IOException(
-                            "Legacy runtime content resolved outside its source directory.");
-                    }
-                    var file = new FileInfo(path);
-                    legacyBytes += file.Length;
-                    if (record.Items.Count >= kMaximumItemCount ||
-                        legacyBytes > kMaximumAreaBytes)
-                    {
-                        return RuntimeProjectionResult.Failed(
-                            StorageResultCode.Failed,
-                            GetRuntimePath(area),
-                            $"Legacy {area} content exceeds the runtime-content migration limit.");
-                    }
-                    if (file.Length > kMaximumFileBytes)
-                    {
-                        return RuntimeProjectionResult.Failed(
-                            StorageResultCode.Failed,
-                            GetRuntimePath(area),
-                            $"{relativePath} exceeds the {kMaximumFileBytes} byte " +
-                            $"runtime-content migration limit.");
-                    }
-                    record.Items.Add(new MigrationItem
-                    {
-                        SourceRelativePath = relativePath,
-                        SourceSha256 = ComputeFileHash(path, cancellationToken),
-                    });
-                }
-                record.Items.Sort((left, right) =>
-                    StringComparer.OrdinalIgnoreCase.Compare(
-                        left.SourceRelativePath, right.SourceRelativePath));
-                WriteJsonAtomically(journalPath, record);
-            }
 
-            var remoteByPath = tree.Entries
-                .Where(entry => !entry.IsDirectory)
-                .ToDictionary(
-                    entry => entry.RelativeDisplayPath,
-                    entry => entry,
-                    StringComparer.OrdinalIgnoreCase);
-            var reservedPaths = new HashSet<string>(
-                remoteByPath.Keys, StringComparer.OrdinalIgnoreCase);
-            foreach (MigrationItem existing in record.Items)
-            {
-                if (!string.IsNullOrEmpty(existing.DestinationRelativePath))
-                {
-                    reservedPaths.Add(existing.DestinationRelativePath);
-                }
-            }
 
-            foreach (MigrationItem item in record.Items)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (item.CanonicalCopyComplete)
-                {
-                    continue;
-                }
-                string sourcePath = GetSafeContentPath(
-                    legacyRoot, item.SourceRelativePath);
-                if (!File.Exists(sourcePath))
-                {
-                    return RuntimeProjectionResult.Failed(
-                        StorageResultCode.NotFound,
-                        GetRuntimePath(area),
-                        $"Legacy runtime content disappeared during migration: " +
-                        $"{item.SourceRelativePath}");
-                }
-                string currentHash = ComputeFileHash(sourcePath, cancellationToken);
-                if (!string.Equals(
-                        currentHash, item.SourceSha256, StringComparison.Ordinal))
-                {
-                    return RuntimeProjectionResult.Failed(
-                        StorageResultCode.Failed,
-                        GetRuntimePath(area),
-                        $"Legacy runtime content changed during migration: " +
-                        $"{item.SourceRelativePath}");
-                }
 
-                string destinationPath = item.SourceRelativePath;
-                if (!string.IsNullOrEmpty(item.DestinationRelativePath) &&
-                    remoteByPath.TryGetValue(
-                        item.DestinationRelativePath, out StorageDocument recordedRemote))
-                {
-                    string recordedHash = ComputeDocumentHash(
-                        recordedRemote, cancellationToken);
-                    if (string.Equals(
-                            recordedHash, item.SourceSha256, StringComparison.Ordinal))
-                    {
-                        item.CanonicalCopyComplete = true;
-                        WriteJsonAtomically(journalPath, record);
-                        continue;
-                    }
-                }
-                if (remoteByPath.TryGetValue(
-                        item.SourceRelativePath, out StorageDocument remote))
-                {
-                    string remoteHash = ComputeDocumentHash(remote, cancellationToken);
-                    if (string.Equals(
-                            remoteHash, item.SourceSha256, StringComparison.Ordinal))
-                    {
-                        item.DestinationRelativePath = item.SourceRelativePath;
-                        item.CanonicalCopyComplete = true;
-                        WriteJsonAtomically(journalPath, record);
-                        continue;
-                    }
-                    destinationPath = GetConflictPath(
-                        item.SourceRelativePath,
-                        record.StartedUtc,
-                        reservedPaths);
-                }
 
-                item.DestinationRelativePath = destinationPath;
-                reservedPaths.Add(destinationPath);
-                WriteJsonAtomically(journalPath, record);
-                RuntimeProjectionResult publication = PublishLegacyFile(
-                    area,
-                    sourcePath,
-                    item,
-                    cancellationToken);
-                if (!publication.Success)
-                {
-                    return publication;
-                }
-                item.CanonicalCopyComplete = true;
-                WriteJsonAtomically(journalPath, record);
-            }
-
-            record.CanonicalCopiesComplete = true;
-            record.LocalCleanupComplete = record.Items.Count == 0;
-            WriteJsonAtomically(journalPath, record);
-            Debug.Log(
-                $"SAF_MIGRATION {area} preserved {record.Items.Count} legacy file(s).");
-            return RuntimeProjectionResult.Succeeded(GetRuntimePath(area));
-        }
-
-        private RuntimeProjectionResult PublishLegacyFile(
-            StorageArea area,
-            string sourcePath,
-            MigrationItem item,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                using (IStorageWriteTransaction transaction = m_Backend.BeginWrite(
-                    area,
-                    item.DestinationRelativePath,
-                    StorageMimeTypes.ForPath(item.DestinationRelativePath),
-                    cancellationToken))
-                {
-                    string copiedHash;
-                    using (Stream destination = transaction.OpenWrite())
-                    {
-                        copiedHash = CopyFileAndHash(
-                            sourcePath, destination, cancellationToken);
-                    }
-                    if (!string.Equals(
-                            copiedHash, item.SourceSha256, StringComparison.Ordinal))
-                    {
-                        transaction.Rollback();
-                        return RuntimeProjectionResult.Failed(
-                            StorageResultCode.Failed,
-                            GetRuntimePath(area),
-                            $"Legacy runtime content changed while being published: " +
-                            $"{item.SourceRelativePath}");
-                    }
-                    StorageMutationResult commit = transaction.Commit();
-                    if (!commit.Success)
-                    {
-                        return RuntimeProjectionResult.Failed(
-                            commit.Code, GetRuntimePath(area), commit.Error);
-                    }
-                }
-                return RuntimeProjectionResult.Succeeded(GetRuntimePath(area));
-            }
-            catch (OperationCanceledException e)
-            {
-                return RuntimeProjectionResult.Failed(
-                    StorageResultCode.Cancelled, GetRuntimePath(area), e.Message);
-            }
-            catch (UnauthorizedAccessException e)
-            {
-                return RuntimeProjectionResult.Failed(
-                    StorageResultCode.PermissionDenied, GetRuntimePath(area), e.Message);
-            }
-            catch (Exception e) when (
-                e is IOException ||
-                e is ArgumentException ||
-                e is CryptographicException)
-            {
-                return RuntimeProjectionResult.Failed(
-                    StorageResultCode.Failed, GetRuntimePath(area), e.Message);
-            }
-        }
-
-        private void CleanupMigratedLocalContent(
-            StorageArea area, string areaRoot, MigrationRecord record)
-        {
-            if (record == null ||
-                !record.CanonicalCopiesComplete ||
-                record.LocalCleanupComplete)
-            {
-                return;
-            }
-            string legacyRoot = m_LegacyRoot(area);
-            foreach (MigrationItem item in record.Items)
-            {
-                if (item.LocalCleanupComplete)
-                {
-                    continue;
-                }
-                string sourcePath = GetSafeContentPath(
-                    legacyRoot, item.SourceRelativePath);
-                try
-                {
-                    if (File.Exists(sourcePath) &&
-                        string.Equals(
-                            ComputeFileHash(sourcePath, CancellationToken.None),
-                            item.SourceSha256,
-                            StringComparison.Ordinal))
-                    {
-                        File.Delete(sourcePath);
-                    }
-                    item.LocalCleanupComplete = !File.Exists(sourcePath);
-                }
-                catch (Exception e) when (
-                    e is IOException ||
-                    e is UnauthorizedAccessException ||
-                    e is CryptographicException)
-                {
-                    Debug.LogWarning(
-                        $"SAF_MIGRATION {area} local cleanup pending for " +
-                        $"{item.SourceRelativePath}: {e.Message}");
-                }
-            }
-            record.LocalCleanupComplete =
-                record.Items.All(item => item.LocalCleanupComplete);
-            try
-            {
-                WriteJsonAtomically(GetMigrationJournalPath(areaRoot), record);
-            }
-            catch (Exception e) when (
-                e is IOException || e is UnauthorizedAccessException || e is JsonException)
-            {
-                Debug.LogWarning(
-                    $"SAF_MIGRATION {area} cleanup state remains pending: {e.Message}");
-            }
-        }
-
-        private static MigrationRecord CreateMigrationRecord(
-            StorageArea area, string rootIdentity)
-        {
-            return new MigrationRecord
-            {
-                Version = kMigrationVersion,
-                RootNamespace = GetRootNamespace(rootIdentity),
-                Area = area.ToString(),
-                StartedUtc = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"),
-            };
-        }
-
-        private static MigrationRecord ReadMigrationRecord(string areaRoot)
-        {
-            string path = GetMigrationJournalPath(areaRoot);
-            if (!File.Exists(path))
-            {
-                return null;
-            }
-            try
-            {
-                return JsonConvert.DeserializeObject<MigrationRecord>(
-                    File.ReadAllText(path));
-            }
-            catch (Exception e) when (e is IOException || e is JsonException)
-            {
-                Debug.LogWarning(
-                    $"SAF_MIGRATION Could not read migration record: {e.Message}");
-                return new MigrationRecord { Version = -1 };
-            }
-        }
-
-        private static bool IsValidMigrationRecord(
-            MigrationRecord record, string rootIdentity, StorageArea area)
-        {
-            return record != null &&
-                record.Version == kMigrationVersion &&
-                record.RootNamespace == GetRootNamespace(rootIdentity) &&
-                record.Area == area.ToString() &&
-                !string.IsNullOrEmpty(record.StartedUtc) &&
-                record.Items != null;
-        }
-
-        private static string GetMigrationJournalPath(string areaRoot)
-        {
-            return Path.Combine(areaRoot, "migration.json");
-        }
 
         private string ComputeDocumentHash(
             StorageDocument document, CancellationToken cancellationToken)
@@ -929,15 +538,6 @@ namespace TiltBrush
             }
         }
 
-        private static string ComputeFileHash(
-            string path, CancellationToken cancellationToken)
-        {
-            using (var stream = new FileStream(
-                path, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return ComputeStreamHash(stream, cancellationToken);
-            }
-        }
 
         private static string ComputeStreamHash(
             Stream stream, CancellationToken cancellationToken)
