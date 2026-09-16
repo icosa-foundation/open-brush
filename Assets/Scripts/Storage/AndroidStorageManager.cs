@@ -106,6 +106,9 @@ namespace TiltBrush
             }
 
             m_StartupSelectionComplete = true;
+            // The only root comparison left. Everything derived from the previous root is
+            // discarded here if the folder is not the one this installation last used.
+            SafRootChangeGuard.ReconcileAtStartup();
             RunFileDescriptorProbeOnce();
             yield return RecoverTransactions(null);
         }

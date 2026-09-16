@@ -58,7 +58,7 @@ namespace TiltBrush
         private bool m_SafScanInProgress;
         private TaskCompletionSource<bool> m_SafScanCompletion;
         private bool m_SafRescanRequested;
-        private string m_SafCatalogRootIdentity;
+        private bool m_SafCatalogScanned;
         private IUserStorageBackend m_SafCatalogBackend;
         private bool m_SafSeedAttempted;
         private bool m_SeedingSafDefaults;
@@ -684,12 +684,7 @@ namespace TiltBrush
             m_SafScanInProgress = true;
             m_FolderChanged = false;
             IUserStorageBackend backend = UserStorage.Backend;
-            string scanRootIdentity = backend.RootIdentity;
-            if (m_SafCatalogRootIdentity != null &&
-                (!ReferenceEquals(m_SafCatalogBackend, backend) || !string.Equals(
-                    m_SafCatalogRootIdentity,
-                    scanRootIdentity,
-                    StringComparison.Ordinal)))
+            if (m_SafCatalogScanned && !ReferenceEquals(m_SafCatalogBackend, backend))
             {
                 string localBlocksRoot = App.BlocksModelLibraryPath();
                 var localModels = m_ModelsByRelativePath.Where(pair =>
@@ -713,7 +708,7 @@ namespace TiltBrush
                 m_OrderedModelNames.Clear();
                 CatalogChanged?.Invoke();
             }
-            m_SafCatalogRootIdentity = scanRootIdentity;
+            m_SafCatalogScanned = true;
             m_SafCatalogBackend = backend;
             var scan = new Future<List<SafModelRecord>>(
                 () => ListSafModelsRecursively(backend, ""),
@@ -746,10 +741,7 @@ namespace TiltBrush
                 }
                 yield return null;
             }
-            if (!ReferenceEquals(backend, UserStorage.Backend) || !string.Equals(
-                    scanRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
+            if (!ReferenceEquals(backend, UserStorage.Backend))
             {
                 m_SafScanInProgress = false;
                 m_SafRescanRequested = false;
@@ -896,8 +888,7 @@ namespace TiltBrush
             IUserStorageBackend backend = UserStorage.Backend;
             if (backend.Kind != StorageBackendKind.StorageAccessFramework) { return GetModel(relativePath); }
 
-            string root = backend.RootIdentity;
-            if (!m_SafScanInProgress && ReferenceEquals(m_SafCatalogBackend, backend) && m_SafCatalogRootIdentity == root &&
+            if (!m_SafScanInProgress && ReferenceEquals(m_SafCatalogBackend, backend) && m_SafCatalogScanned &&
                 m_ModelsByRelativePath.TryGetValue(relativePath, out Model cached)) { return cached; }
             if (!m_SafScanInProgress) { LoadModelsForNewDirectory(m_CurrentModelsDirectory); }
             Task scan = m_SafScanCompletion?.Task;
@@ -905,7 +896,7 @@ namespace TiltBrush
             {
                 await scan;
                 if (generation != m_ModelRestoreGate.Generation ||
-                    !ReferenceEquals(backend, UserStorage.Backend) || root != backend.RootIdentity)
+                    !ReferenceEquals(backend, UserStorage.Backend))
                 {
                     return null;
                 }
@@ -915,7 +906,7 @@ namespace TiltBrush
                 scan = nextScan;
             }
             if (generation != m_ModelRestoreGate.Generation ||
-                !ReferenceEquals(backend, UserStorage.Backend) || root != backend.RootIdentity)
+                !ReferenceEquals(backend, UserStorage.Backend))
             {
                 return null;
             }
