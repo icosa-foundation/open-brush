@@ -655,6 +655,9 @@ namespace TiltBrush
             {
                 HttpServer.AddHttpHandler("/load", HttpLoadSketchCallback);
             }
+            // Lets Unity's audio and video loaders read shared storage by URL, which is the only
+            // form they accept. No-op outside Google Play storage mode.
+            SafMediaHttpServer.Register();
 
             m_AutosaveRestoreFileExists = File.Exists(AutosaveRestoreFilePath());
 

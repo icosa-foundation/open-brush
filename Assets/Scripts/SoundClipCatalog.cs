@@ -428,7 +428,11 @@ namespace TiltBrush
                     }
                     return backend.Materialize(document.DocumentId,
                         MaterializationScope.File, CancellationToken.None);
-                });
+                },
+                // Streamed straight from shared storage when the local handler is available, so a
+                // large clip is not copied into app-private storage before it can be played.
+                () => SafMediaHttpServer.GetUrl(
+                    StorageArea.UserRoot, document.RelativeDisplayPath));
         }
 
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.

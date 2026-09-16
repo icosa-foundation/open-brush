@@ -172,6 +172,10 @@ namespace TiltBrush
         private VideoPlayer m_VideoPlayer;
         private HashSet<Controller> m_Controllers = new HashSet<Controller>();
         private readonly Func<string> m_Materialize;
+        // When set, a URL VideoPlayer can open directly, so the video is streamed from shared
+        // storage instead of being copied into app-private storage first. Large videos are the
+        // main reason that copy was expensive.
+        private readonly Func<string> m_MediaUrl;
 
         /// Persistent path is relative to the Tilt Brush/Media Library/Videos directory, if it is a
         /// filename.
@@ -200,7 +204,8 @@ namespace TiltBrush
 
         public ReferenceVideo(
             string filePath, string catalogIdentity, Func<string> materialize,
-            string persistentPath = null)
+            string persistentPath = null,
+            Func<string> mediaUrl = null)
         {
             NetworkVideo = filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
             AbsolutePath = filePath;
@@ -208,6 +213,7 @@ namespace TiltBrush
             PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             m_Materialize = materialize;
+            m_MediaUrl = mediaUrl;
         }
 
         /// A video inside the video library is identified by its path relative to that library.
@@ -280,7 +286,10 @@ namespace TiltBrush
         public IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
         {
             Error = null;
-            if (m_Materialize != null)
+            // A network video's AbsolutePath names a .txt holding the real URL, so it never
+            // streams from storage.
+            string streamedUrl = NetworkVideo ? null : m_MediaUrl?.Invoke();
+            if (streamedUrl == null && m_Materialize != null)
             {
                 var materialization = new Future<string>(
                     m_Materialize, cleanupFunction: null, longRunning: true);
@@ -332,7 +341,7 @@ namespace TiltBrush
                 {
                     // AbsolutePath is the path this video was found at, which is not necessarily
                     // VideoLibraryPath + PersistentPath. The network branch above already uses it.
-                    m_VideoPlayer.url = $"{AbsolutePath}";
+                    m_VideoPlayer.url = streamedUrl ?? $"{AbsolutePath}";
                 }
                 m_VideoPlayer.isLooping = true;
                 m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;

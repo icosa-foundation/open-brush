@@ -229,6 +229,9 @@ namespace TiltBrush
         public string AbsolutePath { get; private set; }
         internal string CatalogIdentity { get; }
         private readonly Func<string> m_Materialize;
+        // When set, a URL Unity's audio loader can open directly, so the clip is streamed from
+        // shared storage instead of being copied into app-private storage first.
+        private readonly Func<string> m_MediaUrl;
         public string HumanName { get; }
 
         public Texture2D Thumbnail { get; private set; }
@@ -250,13 +253,15 @@ namespace TiltBrush
         }
 
         internal SoundClip(
-            string filePath, string persistentPath, string catalogIdentity, Func<string> materialize)
+            string filePath, string persistentPath, string catalogIdentity, Func<string> materialize,
+            Func<string> mediaUrl = null)
         {
             PersistentPath = persistentPath;
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
             m_Materialize = materialize;
+            m_MediaUrl = mediaUrl;
         }
 
         // Dummy SoundClip - this is used when a clip referenced in a sketch cannot be found.
@@ -310,10 +315,22 @@ namespace TiltBrush
 
         async Task<AudioClip> LoadClip()
         {
-            string path = m_Materialize == null
-                ? AbsolutePath
-                : await Task.Run(m_Materialize);
-            AbsolutePath = path;
+            // Prefer streaming over the local HTTP handler. UnityWebRequestMultimedia takes only a
+            // URL, which is the only reason a copy was ever needed; serving the document avoids it.
+            string streamedUrl = m_MediaUrl?.Invoke();
+            string path;
+            if (streamedUrl != null)
+            {
+                // The logical path still drives format detection; it carries the extension.
+                path = PersistentPath;
+            }
+            else
+            {
+                path = m_Materialize == null
+                    ? AbsolutePath
+                    : await Task.Run(m_Materialize);
+                AbsolutePath = path;
+            }
             AudioClip clip = null;
             AudioType audioType = path.ToLower() switch
             {
@@ -328,7 +345,7 @@ namespace TiltBrush
                 _ => throw new ArgumentOutOfRangeException(nameof(path), $"Unsupported audio type: {path}.")
             };
 
-            string url = new Uri(path).AbsoluteUri;
+            string url = streamedUrl ?? new Uri(path).AbsoluteUri;
             using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
                 _ = uwr.SendWebRequest();

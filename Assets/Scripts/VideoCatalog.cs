@@ -510,7 +510,11 @@ namespace TiltBrush
                     identity,
                     () => backend.Materialize(
                         documentId, MaterializationScope.File, CancellationToken.None),
-                    document.RelativeDisplayPath);
+                    document.RelativeDisplayPath,
+                    // Streamed from shared storage when the local handler is available; the device
+                    // probe confirmed the descriptor is seekable, so scrubbing works over ranges.
+                    () => SafMediaHttpServer.GetUrl(
+                        StorageArea.UserRoot, document.RelativeDisplayPath));
                 nextVideos.Add(video);
                 newVideos.Add(video);
             }
