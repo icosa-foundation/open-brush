@@ -46,7 +46,6 @@ namespace TiltBrush
         private readonly IUserStorageBackend m_Backend;
         private StorageDocument m_Document;
         private readonly StorageArea m_Area;
-        private readonly string m_RootIdentity;
         private readonly TiltFile m_TiltFile;
         private string m_AssetId;
         private string m_SourceId;
@@ -67,8 +66,7 @@ namespace TiltBrush
         public DateTime CreationTime => m_Document.LastModified ?? DateTime.MinValue;
         public StorageDocument Document => m_Document;
         internal bool IsCurrentStorageRoot =>
-            ReferenceEquals(m_Backend, UserStorage.Backend) &&
-            string.Equals(m_RootIdentity, m_Backend.RootIdentity, StringComparison.Ordinal);
+            ReferenceEquals(m_Backend, UserStorage.Backend);
 
         public SafSceneFileInfo(IUserStorageBackend backend, StorageDocument document,
             StorageArea area = StorageArea.Sketches)
@@ -76,7 +74,6 @@ namespace TiltBrush
             m_Backend = backend ?? throw new ArgumentNullException(nameof(backend));
             m_Document = document ?? throw new ArgumentNullException(nameof(document));
             m_Area = area;
-            m_RootIdentity = backend.RootIdentity;
             m_TiltFile = new TiltFile(
                 new StorageReadStreamSource(backend, document.DocumentId),
                 document.RelativeDisplayPath);
@@ -114,11 +111,6 @@ namespace TiltBrush
             {
                 return StaleRootMutationResult();
             }
-            if (m_Backend is SafUserStorageBackend safBackend)
-            {
-                return safBackend.DeleteFromRoot(
-                    m_RootIdentity, m_Document.DocumentId, CancellationToken.None);
-            }
             return m_Backend.Delete(m_Document.DocumentId, CancellationToken.None);
         }
 
@@ -127,11 +119,6 @@ namespace TiltBrush
             if (!IsCurrentStorageRoot)
             {
                 return StaleRootMutationResult();
-            }
-            if (m_Backend is SafUserStorageBackend safBackend)
-            {
-                return safBackend.RenameFromRoot(
-                    m_RootIdentity, m_Document.DocumentId, displayName, CancellationToken.None);
             }
             return m_Backend.Rename(
                 m_Document.DocumentId, displayName, CancellationToken.None);
@@ -170,10 +157,10 @@ namespace TiltBrush
 
         private IReadOnlyList<StorageDocument> ListContainerFiles()
         {
-            if (m_RootIdentity != m_Backend.RootIdentity) { return Array.Empty<StorageDocument>(); }
+
             StorageDirectoryResult result = m_Backend.List(
                 m_Area, m_Document.RelativeDisplayPath, CancellationToken.None);
-            if (!result.Success || m_RootIdentity != m_Backend.RootIdentity)
+            if (!result.Success)
             {
                 return Array.Empty<StorageDocument>();
             }
