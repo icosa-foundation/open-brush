@@ -342,20 +342,6 @@ namespace TiltBrush
             PublishNext();
         }
 
-        public static bool PublishMediaLibraryPathToSharedStorage(
-            string localPath, out string error)
-        {
-            error = null;
-
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedMediaLibraryRelativePath(localPath, out string relativePath))
-            {
-                return true;
-            }
-
-            return PublishPathToSharedStorage(
-                relativePath, localPath, transactionOwnsPayload: false, out error);
-        }
 
         public static void PublishMediaLibraryPathToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
@@ -452,71 +438,6 @@ namespace TiltBrush
             }
         }
 
-        public static bool PublishVideoCaptureToSharedStorage(
-            string localVideoPath, out string error)
-        {
-            error = null;
-
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
-            {
-                return true;
-            }
-
-            if (File.Exists(localVideoPath))
-            {
-                return PublishGeneratedFileToSharedStorage(localVideoPath, out error);
-            }
-
-            string directory = Path.GetDirectoryName(localVideoPath);
-            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
-            string frameDirectory = Path.Combine(directory, basename + "_frames");
-            string metadataPath = Path.Combine(directory, basename + "_sequence.txt");
-
-            if (!Directory.Exists(frameDirectory))
-            {
-                error = "Local video capture output does not exist: " + localVideoPath;
-                return false;
-            }
-
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
-            {
-                var stagedPaths = new List<SafStagedPath>
-                {
-                    new SafStagedPath(frameDirectory, Path.GetFileName(frameDirectory)),
-                };
-                if (File.Exists(metadataPath))
-                {
-                    stagedPaths.Add(new SafStagedPath(
-                        metadataPath, Path.GetFileName(metadataPath)));
-                }
-                StorageArea area = localVideoPath.StartsWith(
-                    App.VrVideosPath(), StringComparison.OrdinalIgnoreCase)
-                    ? StorageArea.VrVideos
-                    : StorageArea.Videos;
-                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
-                    UserStorage.Backend,
-                    area,
-                    stagedPaths,
-                    transactionOwnsPayload: true,
-                    CancellationToken.None);
-                error = result.Error;
-                return result.Success;
-            }
-
-            if (!PublishGeneratedFileToSharedStorage(frameDirectory, out error))
-            {
-                return false;
-            }
-
-            if (File.Exists(metadataPath) &&
-                !PublishGeneratedFileToSharedStorage(metadataPath, out error))
-            {
-                return false;
-            }
-
-            return true;
-        }
 
         public static void PublishVideoCaptureToSharedStorageAsync(
             string localVideoPath, string label, Action<bool, string> onComplete)

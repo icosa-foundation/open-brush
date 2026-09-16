@@ -81,15 +81,6 @@ namespace TiltBrush
             }
         }
 
-        public static string GetOpenBrushFolderDisplayName()
-        {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            using var bridge = new AndroidJavaClass(kBridgeClass);
-            return bridge.CallStatic<string>("getOpenBrushFolderDisplayName", GetActivity());
-#else
-            return App.kAppFolderName;
-#endif
-        }
 
         public static string GetSelectedRootIdentity()
         {
@@ -101,14 +92,6 @@ namespace TiltBrush
 #endif
         }
 
-        public static void ClearOpenBrushFolder()
-        {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            using var bridge = new AndroidJavaClass(kBridgeClass);
-            bridge.CallStatic("clearOpenBrushFolder", GetActivity());
-            InvalidateReadiness();
-#endif
-        }
 
         public static bool EnsureDirectory(string relativePath)
         {
