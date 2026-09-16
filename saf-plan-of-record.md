@@ -36,6 +36,56 @@ deletions, not by what keeps the branch runnable.
    user-initiated refresh is enough.
 4. SAF builds must reach functional parity with non-SAF builds.
 
+## Progress
+
+Updated 2026-09-16. Verified by editor compile after each batch (`unity command
+recompile` / `recompile_status`); no runtime testing yet.
+
+### Done
+
+- **Step 1, complete.** Startup gated on folder selection, exit on decline.
+  `RequireSharedFolderFor`, the continuation slots, the dismissal preference and
+  the save-locally fallback are gone, and the nine call sites are straight-line
+  again.
+- **Step 2, partly.** `OpenRead(area, relativePath)` / `Exists` added to the
+  backend. Lua modules, audio, video and glTF models now read from storage
+  rather than a copy. `SafMediaHttpServer` serves audio and video over the
+  existing loopback HTTP server, token-authenticated with range support.
+- **Step 5, complete.** The payload is fsynced before the rename sequence and
+  recovery validation dropped to `testData: false`, closing the inversion where
+  the journal was durable and the sketch was not.
+- **Deletions.** The legacy runtime-content migration and its tests, the
+  pre-release pending-transfer reporter, four unreachable storage methods, and
+  the helpers each left orphaned. `UserRuntimeContent` is 806 lines, from 1262.
+- **Two repo bugs fixed.** Four `.meta` files had 33-character GUIDs, so those
+  test files had never compiled or run. Corrected.
+
+### Not done
+
+- **Models other than glTF.** OBJ, USD and splats still materialize. OBJ is
+  reachable cheaply: it is entirely `UnityWebRequest`-based, so it can consume
+  the loopback handler like audio and video, needing only URL-aware path
+  joining in `_Load` and `FixLocalPaths`.
+- **Reference images.** Convertible, but `EnsureMaterialized` has four call
+  sites and `FilePath` keys the image cache, so it is not a small change.
+- **Step 3.** The materialization cache cannot go until the above land; it is
+  still the route for OBJ, USD, splats and images.
+- **Steps 4, 6.** Root identity (255 references) and the publish surface. The
+  publish collapse turned out to be semantic rather than mechanical - thirteen
+  call sites with genuinely different staging, bundling and naming - so it
+  wants review rather than a blind refactor.
+- **Step 8.** Ledger version tolerance is entangled with account and root
+  namespace checks that do real work; only two or three lines are actually
+  dead.
+
+### Net so far
+
+717 insertions against 818 deletions across `Assets/`. The insertions are the
+streaming infrastructure that makes the large deletions reachable, so the
+number understates the direction: the cache and the projection are what remain,
+and both are blocked on consumer conversions rather than on anything
+structural.
+
 ## Order of work
 
 ### 1. Gate startup; delete the degraded mode
