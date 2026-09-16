@@ -303,17 +303,18 @@ public class ProbeActivity extends Activity {
 
 
     /**
-     * Check 15. Audio and video are the only large content that Unity cannot load
-     * from a stream -- VideoPlayer.url and UnityWebRequestMultimedia both want a
-     * file. If Android's own MediaPlayer accepts the content:// URI directly, a
-     * small native plugin could play multi-gigabyte media straight out of SAF
-     * instead of copying it into app-private storage first.
+     * Check 15. Audio and video are the only content Unity cannot load from a
+     * stream -- VideoPlayer.url and UnityWebRequestMultimedia both want a file.
+     * Tests audio and video separately, because the answer matters for different
+     * reasons: a video that plays from content:// could be rendered through a
+     * native SurfaceTexture plugin and never copied, whereas audio still has to
+     * reach Unity's mixer as an AudioClip for the visualizer's FFT.
      *
-     * Needs a real media file in the chosen folder; skips if none is present.
+     * Needs real media in the chosen folder; reports separately for each kind.
      */
     private void runMediaPlayerCheck(Uri tree) {
-        Uri mediaUri = null;
-        String mediaName = null;
+        Uri videoUri = null, audioUri = null;
+        String videoName = null, audioName = null;
         Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(
                 tree, DocumentsContract.getTreeDocumentId(tree));
         try (Cursor c = getContentResolver().query(children, new String[]{
@@ -322,35 +323,41 @@ public class ProbeActivity extends Activity {
                 DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null)) {
             while (c != null && c.moveToNext()) {
                 String mime = c.getString(2) == null ? "" : c.getString(2);
-                if (mime.startsWith("video/") || mime.startsWith("audio/")) {
-                    mediaUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
-                    mediaName = c.getString(1);
-                    break;
+                if (videoUri == null && mime.startsWith("video/")) {
+                    videoUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                    videoName = c.getString(1);
+                } else if (audioUri == null && mime.startsWith("audio/")) {
+                    audioUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                    audioName = c.getString(1);
                 }
+                if (videoUri != null && audioUri != null) break;
             }
         } catch (Throwable t) {
             say("SKIP 15 could not list for media: " + t.getClass().getSimpleName());
             return;
         }
 
-        if (mediaUri == null) {
-            say("SKIP 15 no audio/video file in the chosen folder."
-                    + " Drop one in and re-run to test direct content:// playback.");
+        tryMediaPlayer("15a video", videoUri, videoName,
+                "large video could render through a native SurfaceTexture plugin, never copied");
+        tryMediaPlayer("15b audio", audioUri, audioName,
+                "informational only: audio still needs an AudioClip for the visualizer FFT");
+    }
+
+    private void tryMediaPlayer(String label, Uri uri, String name, String note) {
+        if (uri == null) {
+            say("SKIP " + label + " none in the chosen folder; drop one in and re-run");
             return;
         }
-
         MediaPlayer player = new MediaPlayer();
         try {
-            player.setDataSource(this, mediaUri);
+            player.setDataSource(this, uri);
             player.prepare();
-            int duration = player.getDuration();
-            say("PASS 15 MediaPlayer played content:// directly (" + mediaName
-                    + ", duration=" + duration + "ms)"
-                    + "  <- large media need not be copied locally");
+            say("PASS " + label + " played content:// directly (" + name
+                    + ", duration=" + player.getDuration() + "ms)  <- " + note);
         } catch (Throwable t) {
-            say("FAIL 15 MediaPlayer rejected content:// (" + mediaName + "): "
+            say("FAIL " + label + " MediaPlayer rejected content:// (" + name + "): "
                     + t.getClass().getSimpleName() + " " + t.getMessage()
-                    + "  <- large media must be materialized");
+                    + "  <- must be materialized");
         } finally {
             try { player.release(); } catch (Throwable ignored) { }
         }

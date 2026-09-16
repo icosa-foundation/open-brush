@@ -226,12 +226,31 @@ fail at runtime rather than at compile time.
 Icosa path is fully stream-backed. `OpenBrushAudioImportContext.GltfDirectory`
 is also a directory path.
 
-**Open question for video.** Android's own `MediaPlayer.setDataSource(context,
-uri)` accepts `content://` URIs, even though Unity's `VideoPlayer.url` does not.
-If that holds on target devices, a small native plugin could play large video
-straight from SAF instead of copying it. `Support/SafFdProbe` check 15 tests
-this against a real media file in the chosen folder; it skips when none is
-present, so drop a video in before running it.
+**Audio and video are not symmetric, despite both being `MediaPlayer` content.**
+Android's `MediaPlayer.setDataSource(context, uri)` accepts `content://` URIs
+for both, but what Open Brush needs back from each differs:
+
+- **Video** only needs pixels. `ReferenceVideo.cs:64` uses `VideoPlayer.texture`
+  to draw onto a widget. A native `MediaPlayer` rendering into a
+  `SurfaceTexture` and handing Unity an external texture is the standard Android
+  video-plugin pattern and preserves everything Open Brush actually uses. So if
+  `MediaPlayer` accepts the URI, large video need never be copied.
+- **Audio** needs samples inside Unity's mixer. `VisualizerScript.cs:129-130`
+  calls `m_AudioSource.GetOutputData` and `GetSpectrumData(..., BlackmanHarris)`
+  to drive the visualiser, and `SoundClip` needs `clip.length` and seekable
+  `.time` for scrubbing. A `MediaPlayer` playing to the system mixer gives Unity
+  neither, so it would cost the visualiser and spatialised audio.
+
+Audio could in principle stream via `AudioClip.Create(..., stream: true,
+PCMReaderCallback)`, but that callback wants PCM, so compressed formats would
+need a decoder implemented in-process. That is real work for little benefit:
+audio files are single-digit to low-hundreds of megabytes, whereas video is
+where gigabytes live. **Materialize audio; pursue the native path only for
+video.**
+
+`Support/SafFdProbe` check 15 tests audio and video separately against real
+files in the chosen folder, and skips each kind if none is present. 15a is the
+decision-relevant one; 15b is informational.
 
 ### The resulting model
 
@@ -242,7 +261,8 @@ present, so drop a video in before running it.
 | Models | `OpenRead` — streamed, through a SAF `IDataLoader` / `IUriLoader` |
 | Reference images | `OpenRead` — streamed, pending confirmation |
 | Fonts | materialized once at startup, small fixed area, never evicted |
-| Audio, video | `Materialize` under a budget — the only content that must be copied |
+| Audio | `Materialize` under a budget — small, and needed as an `AudioClip` |
+| Video | `Materialize`, unless probe 15a shows a native `SurfaceTexture` path is viable |
 | Captures, exports | `BeginWrite`, then publish |
 
 Two mechanisms, no pin flag, no per-type policy.
