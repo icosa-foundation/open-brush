@@ -349,8 +349,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 poses.Add((position, rotation * viewRotation));
             }
 
-            float speed = Mathf.Max(path.GetSpeed(pathT), CameraPathSpeedKnot.kMinSpeed);
-            if (path.MoveAlongPath(speed * interval, pathT, out pathT))
+            if (path.MoveAlongPathByTime(interval, pathT, out pathT))
             {
                 // Rolled past the end of the path.
                 break;
