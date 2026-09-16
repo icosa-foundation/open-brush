@@ -107,19 +107,14 @@ external-change path is `AndroidStorageManager.OnApplicationPause(false)`
 (line 470), which on resume refreshes runtime content, refreshes shared
 catalogs and kicks Drive sync.
 
-Remove the resume refresh. Combined with decision 3, nothing rebuilds the
+Remove the resume refresh. Combined with decision 3, nothing rebuilds a
 projection while consumers hold paths into it, which removes the reason the
-generational swap exists:
+generational swap exists: `ProjectionPointer`, the per-generation directories,
+generation-name validation, `CleanupOldGenerations` and
+`DeleteOwnedGeneration`.
 
-- `ProjectionPointer`, the per-generation directories, generation-name
-  validation, `CleanupOldGenerations` and `DeleteOwnedGeneration`.
-
-**Keep `ProjectionManifest` and `ProjectionEntry`.** An earlier draft of this
-plan proposed deleting them alongside the generations. That was wrong. Their
-fields — `RelativePath`, `DocumentId`, `Size`, `LastModifiedTicks`, `Sha256` —
-are exactly the input a diff needs to decide what changed in SAF since the last
-materialization, which is what both a manual refresh and an incremental
-re-materialization require. See "Unify The File Types" below.
+The section below goes further and removes the projection itself for scripts
+and plugins, which makes most of this moot.
 
 **Do not extend this decision to desktop.** `PlatformConfigPC.asset:22` sets
 `UseFileSystemWatcher: 1` and it works: dropping a model into the folder makes
@@ -127,42 +122,11 @@ it appear. The catalogs are shared code, so removing the Android paths will
 make the desktop watcher paths look vestigial. They are not. Scope the change
 to the SAF backend.
 
-### Optional manual refresh
-
-A user-initiated refresh — "I added a plugin, show it" — is compatible with all
-four decisions and does not bring back generations.
-
-The generational swap solved atomic replacement of an entire tree. That is the
-wrong unit. The materialization target is an ordinary local filesystem, where
-per-file atomic rename works, unlike SAF where the device probe showed rename
-deduplicates. `SafUserStorageBackend.MaterializeFile` already does this
-correctly: write `.obtmp-<guid>`, then `File.Replace` or `File.Move`.
-
-- A new file: copy to temp, rename in. No existing path disturbed.
-- A changed file: the same. A held path stays valid and simply has new content;
-  a path does not dangle when the file it points at is overwritten.
-- A deleted file: out of scope. `LuaManager.cs:311` shows deletion is not
-  supported at runtime on desktop either — the watcher hookup is commented
-  `// m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO`. Requiring a
-  restart for deletion is parity with current behaviour, not a new limitation.
-
-The consumer-side plumbing already exists. `LuaManager` binds `FileChanged` and
-`FileCreated` to `OnScriptsDirectoryChanged` (lines 309-310) and reloads
-individual scripts through `LoadScriptFromPath` (line 662). A manual refresh
-calls the same entry point the desktop watcher calls.
-
-Media, sketches and fonts need even less: media materializes on demand, so a
-refresh is a catalog rescan, and `RequestRefresh()` already exists on those
-catalogs and on `SafSketchSet`.
-
-Keep it user-initiated. Wiring it to resume or a timer reintroduces rebuilding
-underneath live consumers, which is what the generations existed for.
-
 ## Unify The File Types
 
 Sketches, media, plugins, scripts, fonts and generated output are currently
-handled by four different subsystems. That split is not principled, and it
-should be collapsed.
+handled by four different subsystems. That split is not principled and should
+be collapsed.
 
 `IUserStorageBackend` is already file-type agnostic: `List`, `EnumerateTree`,
 `OpenRead`, `BeginWrite`, `Rename`, `Materialize(documentId, scope)`. Nothing in
@@ -170,50 +134,111 @@ it knows what a sketch or a plugin is, and `MaterializationScope` is already
 `{ File, DependencyTree }` — a model with its textures and a plugin folder with
 its `require`d modules are the same shape.
 
-Only two things actually vary between the callers:
+Only one thing actually varies between callers: **whether the consumer can take
+a stream, or genuinely requires a filesystem path.** That is a property of the
+consuming library, not of the file type. The device probe established that a
+detached descriptor exposes no usable `/proc/self/fd` path, so a consumer that
+needs a path needs a real local file.
 
-1. **Stream or path.** Determined by the consumer library, not the file type.
-   `TiltFile` is Open Brush's own code and was converted to streams; UnityGLTF,
-   TextMeshPro and MoonSharp take paths, and the device probe established that a
-   detached descriptor exposes no usable `/proc/self/fd` path, so a path must be
-   a real file.
-2. **How long the path is held.** Media paths are transient, used during import
-   and then finished with. Plugin and font paths are held for the session by
-   `LuaManager` and the font APIs.
+### Scripts and plugins do not need paths
 
-Axis 2 is the only reason runtime content is not simply `Materialize(tree)`:
-eviction would delete a plugin from under a running script.
-`EvictMaterializationCache(protectedPath)` already implements that concept,
-pinning the group currently being materialized. Generalise "protected" from one
-group to a pinned set and `UserRuntimeContent` becomes a caller rather than a
-parallel subsystem.
+This is the finding that collapses the design. `OpenBrushScriptLoader`
+(`Assets/Scripts/API/Lua/OpenBrushScriptLoader.cs`, installed at
+`LuaManager.cs:295`) has exactly two filesystem touchpoints:
 
-The resulting model:
+```csharp
+public override bool ScriptFileExists(string name)
+    => File.Exists(path);
 
-| Content | Unit | Path lifetime | Mechanism |
-| --- | --- | --- | --- |
-| Sketches | document | none, streamed | `OpenRead` |
-| Media | document + dependencies | transient | `Materialize` unpinned |
-| Plugins, scripts, fonts | tree | session | `Materialize` pinned |
-| Captures, exports | document | n/a | `BeginWrite` then publish |
+public override object LoadFile(string file, Table globalContext)
+    => new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+```
 
-Two mechanisms, one pin flag and a write transaction. Sketches differ only
-because Open Brush owns both ends and could afford to convert its consumer to
-streams; that is a privilege, not a policy.
+MoonSharp's loader contract is **stream-based**. `LoadFile` returns a `Stream`;
+the path is only how this implementation happens to obtain one. And
+`IUserStorageBackend.OpenRead` returns a `Stream`.
 
-### Deduplicate the two copy routines
+So scripts and plugins can be read directly from SAF with no materialization at
+all, exactly as sketches are:
 
-There are currently two implementations of the same operation:
+- `LoadFile` becomes `backend.OpenRead(documentId, requireSeekable: false, ct)`.
+- `ScriptFileExists` becomes a lookup in the directory listing the catalog
+  already holds.
 
-- `SafUserStorageBackend.cs:448` — `OpenRead`, `CopyTo`,
-  `Flush(flushToDisk: true)`, atomic `File.Replace`/`File.Move`, stamp mtime and
-  atime.
-- `UserRuntimeContent.cs:1040` — read loop with running SHA-256, write,
-  `Flush(flushToDisk: true)`, stamp mtime, return a `ProjectionEntry`.
+The correct abstraction seam already exists and is simply being fed a path.
+`ApiManager.cs:202` (`File.Exists(startupScriptPath)`) is the same shape and
+converts the same way.
 
-Collapse to one routine. Keep the SHA-256 and manifest-entry production from the
-runtime-content version and the atomic replace from the backend version; both
-are worth having in the single implementation.
+### Fonts are the only genuine path consumer
+
+`SvgTextUtils.cs:30` takes `UserRuntimeContent.Instance.GetRuntimePath(
+StorageArea.Fonts)`, and Unity has no clean runtime path from `byte[]` to
+`Font`. Fonts genuinely need files on disk.
+
+They are also few and small — single-digit megabytes. Materialize the font tree
+once at startup into a small fixed app-private directory and never evict it.
+That needs no eviction policy, no pinning mechanism and no manifest: "this
+directory is not part of the media budget" is the whole rule.
+
+### The resulting model
+
+| Content | Mechanism |
+| --- | --- |
+| Sketches | `OpenRead` — streamed |
+| Scripts, plugins | `OpenRead` — streamed, through the existing `OpenBrushScriptLoader` seam |
+| Media | `Materialize` under a budget, evictable |
+| Fonts | materialized once at startup, small fixed area, never evicted |
+| Captures, exports | `BeginWrite`, then publish |
+
+Two mechanisms, no pin flag, no per-type policy.
+
+An earlier draft of this plan proposed a third concept — "path lifetime",
+transient for media versus session-long for plugins and fonts — and a
+corresponding pin flag on the materialization cache. That was an artefact of
+assuming plugins needed files. They do not, and with plugins streamed the only
+session-long path consumer is fonts, where an unevictable fixed directory is
+simpler than any pinning mechanism.
+
+### Consequences for `UserRuntimeContent`
+
+`UserRuntimeContent` (1,262 lines) does not become a caller of shared
+materialization; it largely **disappears**, replaced by a stream-backed script
+loader and a small font copy at startup. Specifically:
+
+- `ProjectionPointer`, `ProjectionManifest`, `ProjectionEntry`, the generation
+  directories and their cleanup all go. An earlier draft argued for retaining
+  the manifest as diff input; with nothing to diff, it goes too.
+- The read loop with running SHA-256 (`UserRuntimeContent.cs:1040`) goes,
+  removing the duplication with `SafUserStorageBackend.cs:448`. The two were
+  independent implementations of open, copy, fsync and stamp mtime; only the
+  backend's survives, and it already does atomic replace correctly.
+- `MigrationRecord` is retained. It is one-shot legacy migration of app-private
+  Scripts, Plugins and Fonts into the SAF tree and is unaffected by how those
+  files are read afterwards.
+
+### Manual refresh becomes trivial
+
+A user-initiated refresh — "I added a plugin, show it" — costs almost nothing
+under this model, because there is nothing to copy:
+
+- **Scripts and plugins**: re-read the SAF directory listing. Newly added files
+  are visible to `ScriptFileExists` and `LoadFile` immediately, since both go
+  straight to storage. `LuaManager` already has the consumer-side entry point,
+  `OnScriptsDirectoryChanged` calling `LoadScriptFromPath` (lines 309-310, 662),
+  which needs redirecting to a document identity rather than a path.
+- **Media and sketches**: a catalog rescan. `RequestRefresh()` already exists on
+  those catalogs and on `SafSketchSet`. Media materializes on demand, so a newly
+  added model needs nothing until it is used.
+- **Fonts**: re-run the startup copy.
+
+Deletion stays restart-only. `LuaManager.cs:311` shows it is unsupported at
+runtime on desktop too — the watcher hookup is commented
+`// m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO` — so this is
+parity with current behaviour rather than a new limitation.
+
+Keep the refresh user-initiated. Wiring it to resume or a timer reintroduces
+concurrent-refresh handling in the catalogs, which decisions 3 and 4 exist to
+remove.
 
 ## What Stays, And Why
 
@@ -381,10 +406,11 @@ buffer, one-cursor directory queries with struct-of-arrays JNI marshalling
    storage on every import, and the eviction pass, the ordering and the tree
    walk are all managing something that never avoids work.
 
-   Add a hit path keyed on the manifest data (`DocumentId`, `Size`,
-   `LastModifiedTicks`, and `Sha256` when a cheap check is inconclusive). This
-   is the same diff a manual refresh needs, which is why the manifest is
-   retained.
+   Add a hit path keyed on the document metadata the directory listing already
+   returns — `DocumentId`, `Size` and `LastModified` — reusing the cached copy
+   when all three match. This applies to the media cache only; scripts and
+   plugins are streamed and fonts are copied once at startup, so neither has a
+   cache to hit.
 
    An earlier draft of this plan attributed the poor eviction ordering to
    `/data` being mounted `noatime` (confirmed on a Nothing Phone (3a):
@@ -428,53 +454,53 @@ would already be gone. Either order works; this order is cheaper.
 
 ## Estimated Scale
 
-Roughly 1,500–2,500 lines, across 24 files, from decisions 1–4. Unifying the
-file types removes most of what remains of `UserRuntimeContent` (1,262 lines)
-by reducing it to a caller of the shared materialization routine, though some
-of that is offset by the pinning and diff logic moving down into the backend.
+Roughly 1,500–2,500 lines from decisions 1–4, across 24 files. Unifying the
+file types removes most of `UserRuntimeContent` (1,262 lines) outright rather
+than relocating it, since streaming scripts and plugins needs no projection,
+no manifest and no second copy routine; a small font materialization and the
+retained one-shot `MigrationRecord` are what remain.
 
-This is an estimate from reference counts, not from doing the work: 255
+These are estimates from reference counts, not from doing the work: 255
 root-identity references are not 255 deleted lines, since many are a single
 argument in a signature that survives.
 
 The line count is not the main benefit. The benefits are that
 `Backend.IsReady` becomes a startup invariant instead of a condition checked in
-twenty places, that nine save/export/capture paths stop being resumable
+twenty places, that nine save, export and capture paths stop being resumable
 mid-operation, that root identity stops being something every future
-contributor must reason about in every catalog, and that there is one way to
-get a local path for a shared document rather than two subsystems that each
-implement their own copy loop.
+contributor must reason about in every catalog, and that there is one rule for
+how a shared document reaches its consumer — stream it, unless the library
+cannot take a stream.
 
 ## Suggested Order
 
 1. Run the outstanding IL2CPP device gate.
 2. Gate startup on folder selection (not on enumeration); exit on decline.
    Remove `RequireSharedFolderFor` and unwind the nine call sites.
-3. Add the missing cache-hit path in `MaterializeFile`, and fsync the payload
-   before the rename sequence while dropping recovery to `testData: false`.
-   These are small, independent correctness fixes and should not queue behind
-   the structural work.
-4. Remove the resume refresh; drop the generational swap while keeping the
-   manifest.
-5. Unify the file types: one copy routine, `Materialize` with a pin flag, and
-   `UserRuntimeContent` reduced to a caller.
-6. Collapse root namespacing to the startup URI comparison.
-7. Then the journal removal.
+3. Add the missing cache-hit path in `MaterializeFile`; fsync the payload
+   before the rename sequence and drop recovery to `testData: false`. Small,
+   independent correctness fixes that should not queue behind structural work.
+4. Redirect `OpenBrushScriptLoader` and `ApiManager`'s startup-script check to
+   `OpenRead`. This is the highest-leverage structural change and is
+   self-contained: it removes the reason the projection exists.
+5. Replace the rest of `UserRuntimeContent` with a startup font materialization.
+6. Remove the resume refresh; add the user-initiated refresh if wanted.
+7. Collapse root namespacing to the startup URI comparison.
+8. Then the journal removal.
 
-Each step is independently shippable and independently revertable. Steps 2 and
-3 are the highest value and should not wait for the others.
+Each step is independently shippable and independently revertable. Steps 2, 3
+and 4 carry most of the value and do not depend on each other.
 
 ## Open Question
 
 Dropping the automatic resume refresh means external edits made while the
-application is backgrounded are not visible until either a relaunch or a
+application is backgrounded are not visible until a relaunch or a
 user-initiated refresh. On Android every route to editing files — USB, the
 Files app, a browser download — backgrounds the application first, so this is
 the common workflow rather than an edge case.
 
-Accepted on the basis that the manual refresh described above covers the case
-at a fraction of the cost, because it can update individual files atomically
-on a local filesystem instead of having to swap a whole tree safely underneath
-live consumers.
+Accepted, because with scripts and plugins streamed the refresh is a directory
+re-listing rather than a tree rebuild, so the cost of offering it is close to
+zero and it need not be automatic to be adequate.
 
 Deletion remains restart-only, matching `LuaManager.cs:311`.
