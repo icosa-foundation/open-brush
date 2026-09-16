@@ -372,8 +372,9 @@ namespace TiltBrush
             }
             string relative = Path.GetRelativePath(App.VideoLibraryPath(), fullPath).Replace('\\', '/');
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryVideos, relative);
-            return new ReferenceVideo(source.LocalPath, source.Identity,
-                () => source.Materialize(MaterializationScope.File), relative);
+            return new ReferenceVideo(
+                relative, source.Identity, relative,
+                () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative));
         }
 
         internal static Model ResolveApiModel(string relativePath)
@@ -385,7 +386,7 @@ namespace TiltBrush
                 return new Model(relativePath);
             }
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryModels, relativePath);
-            return new Model(relativePath, source.Identity, () => source.Materialize(MaterializationScope.DependencyTree));
+            return Model.ForLibraryFile(relativePath, source.Identity);
         }
 
         internal static void _PublishApiVideoCaptureToSharedStorage(string localPath)

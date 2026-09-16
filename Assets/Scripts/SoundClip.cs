@@ -228,7 +228,6 @@ namespace TiltBrush
         public string PersistentPath { get; }
         public string AbsolutePath { get; private set; }
         internal string CatalogIdentity { get; }
-        private readonly Func<string> m_Materialize;
         // When set, a URL Unity's audio loader can open directly, so the clip is streamed from
         // shared storage instead of being copied into app-private storage first.
         private readonly Func<string> m_MediaUrl;
@@ -253,14 +252,13 @@ namespace TiltBrush
         }
 
         internal SoundClip(
-            string filePath, string persistentPath, string catalogIdentity, Func<string> materialize,
+            string filePath, string persistentPath, string catalogIdentity,
             Func<string> mediaUrl = null)
         {
             PersistentPath = persistentPath;
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
-            m_Materialize = materialize;
             m_MediaUrl = mediaUrl;
         }
 
@@ -326,10 +324,7 @@ namespace TiltBrush
             }
             else
             {
-                path = m_Materialize == null
-                    ? AbsolutePath
-                    : await Task.Run(m_Materialize);
-                AbsolutePath = path;
+                path = AbsolutePath;
             }
             AudioClip clip = null;
             AudioType audioType = path.ToLower() switch

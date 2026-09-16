@@ -810,13 +810,7 @@ namespace TiltBrush
                 if (!previousByIdentity.TryGetValue(identity, out Model model))
                 {
                     StorageDocumentId documentId = record.Document.DocumentId;
-                    model = new Model(
-                        record.RelativePath,
-                        identity,
-                        () => backend.Materialize(
-                            documentId,
-                            MaterializationScope.DependencyTree,
-                            CancellationToken.None));
+                    model = Model.ForLibraryFile(record.RelativePath, identity);
                 }
                 m_ModelsByRelativePath.TryAdd(model.RelativePath, model);
                 m_ModelRootsByRelativePath[model.RelativePath] = HomeDirectory;

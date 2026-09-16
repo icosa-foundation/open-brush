@@ -13,7 +13,7 @@ namespace TiltBrush
         public void ReleasingCatalogThumbnailDoesNotDisposePlaybackControllers()
         {
             var owner = new GameObject("VideoThumbnailOwnershipTest");
-            var video = new ReferenceVideo("fixture.mp4", "fixture", null, "fixture.mp4");
+            var video = new ReferenceVideo("fixture.mp4", "fixture", "fixture.mp4");
             var texture = new Texture2D(1, 1);
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             try

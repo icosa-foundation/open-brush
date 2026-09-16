@@ -418,19 +418,11 @@ namespace TiltBrush
 
         internal static SoundClip CreateSafSoundClip(IUserStorageBackend backend, StorageDocument document)
         {
-            string rootIdentity = backend.RootIdentity;
-            return new SoundClip(backend.GetMaterializationPath(document.DocumentId),
-                document.RelativeDisplayPath, GetSafCatalogIdentity(backend, document), () =>
-                {
-                    if (rootIdentity != backend.RootIdentity)
-                    {
-                        throw new IOException("The shared sound library changed.");
-                    }
-                    return backend.Materialize(document.DocumentId,
-                        MaterializationScope.File, CancellationToken.None);
-                },
-                // Streamed straight from shared storage when the local handler is available, so a
-                // large clip is not copied into app-private storage before it can be played.
+            return new SoundClip(
+                document.RelativeDisplayPath,
+                document.RelativeDisplayPath,
+                GetSafCatalogIdentity(backend, document),
+                // Streamed straight from shared storage; nothing is copied out to play it.
                 () => SafMediaHttpServer.GetUrl(
                     StorageArea.UserRoot, document.RelativeDisplayPath));
         }

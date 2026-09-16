@@ -504,12 +504,10 @@ namespace TiltBrush
                 }
 
                 StorageDocumentId documentId = document.DocumentId;
-                string path = backend.GetMaterializationPath(documentId);
+                string path = document.RelativeDisplayPath;
                 var video = new ReferenceVideo(
                     path,
                     identity,
-                    () => backend.Materialize(
-                        documentId, MaterializationScope.File, CancellationToken.None),
                     document.RelativeDisplayPath,
                     // Streamed from shared storage when the local handler is available; the device
                     // probe confirmed the descriptor is seekable, so scrubbing works over ranges.
@@ -665,11 +663,13 @@ namespace TiltBrush
                     // for a missing shared file or a revoked grant.
                     var source = new OpenBrushStorage.MediaSource(
                         backend, StorageArea.MediaLibraryVideos, relativePath);
-                    return new ReferenceVideo(source.LocalPath, source.Identity,
-                        () => source.Materialize(MaterializationScope.File), relativePath);
+                    return new ReferenceVideo(
+                        relativePath, source.Identity, relativePath,
+                        () => SafMediaHttpServer.GetUrl(
+                            StorageArea.MediaLibraryVideos, relativePath));
                 }
                 return File.Exists(absolutePath)
-                    ? new ReferenceVideo(absolutePath, absolutePath, null, relativePath) : null;
+                    ? new ReferenceVideo(absolutePath, absolutePath, relativePath) : null;
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
                                       e is ArgumentException || e is NotSupportedException)

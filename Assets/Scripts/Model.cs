@@ -233,8 +233,7 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
-        private readonly Func<string> m_Materialize;
-        internal string CatalogIdentity { get; }
+        internal string CatalogIdentity { get; private set; }
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -327,13 +326,6 @@ namespace TiltBrush
             UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
             m_Location.GetLocationType() == Location.Type.LocalFile;
 
-        /// True when this model's importer can read from storage directly, making the
-        /// materialized copy unnecessary.
-        private bool CanImportWithoutLocalCopy()
-        {
-            return IsSharedStorageModel && ImportsWithoutLocalFile(m_Location.Extension);
-        }
-
         /// A URL for loaders built on UnityWebRequest, which accept http:// but not a document id.
         private string GetSharedStorageUrl()
         {
@@ -350,13 +342,13 @@ namespace TiltBrush
             Init();
         }
 
-        public Model(
-            string relativePath, string catalogIdentity, Func<string> materialize)
+        /// A media-library model with a catalog identity distinct from its path. A factory
+        /// rather than a constructor because (string, string) already means an Icosa asset.
+        public static Model ForLibraryFile(string relativePath, string catalogIdentity)
         {
-            m_Location = Location.File(relativePath);
-            CatalogIdentity = catalogIdentity;
-            m_Materialize = materialize;
-            Init();
+            var model = new Model(relativePath);
+            model.CatalogIdentity = catalogIdentity;
+            return model;
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
@@ -1140,29 +1132,6 @@ namespace TiltBrush
                 m_LoadError = null;
                 IsGsplatModel = false;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
-
-                // glTF reads through SafGltfDataLoader, which resolves the document and its
-                // external references straight out of storage, so those models need no local copy
-                // at all. Formats whose importers still require a real file - OBJ, USD, splats -
-                // continue to materialize.
-                if (isLocal && m_Materialize != null && !CanImportWithoutLocalCopy())
-                {
-                    try
-                    {
-                        string materializedPath = await Task.Run(m_Materialize);
-                        if (string.IsNullOrEmpty(materializedPath))
-                        {
-                            throw new IOException($"Could not materialize model: {RelativePath}");
-                        }
-                        m_Location = Location.File(RelativePath, materializedPath);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError($"SAF_MATERIALIZE Could not materialize {RelativePath}: {e}");
-                        m_LoadError = new LoadError("Storage error", e.Message);
-                        return;
-                    }
-                }
 
                 string ext = m_Location.Extension;
                 // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time

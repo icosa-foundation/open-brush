@@ -171,7 +171,6 @@ namespace TiltBrush
 
         private VideoPlayer m_VideoPlayer;
         private HashSet<Controller> m_Controllers = new HashSet<Controller>();
-        private readonly Func<string> m_Materialize;
         // When set, a URL VideoPlayer can open directly, so the video is streamed from shared
         // storage instead of being copied into app-private storage first. Large videos are the
         // main reason that copy was expensive.
@@ -200,10 +199,10 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public ReferenceVideo(string filePath)
-            : this(filePath, filePath, null) { }
+            : this(filePath, filePath) { }
 
         public ReferenceVideo(
-            string filePath, string catalogIdentity, Func<string> materialize,
+            string filePath, string catalogIdentity,
             string persistentPath = null,
             Func<string> mediaUrl = null)
         {
@@ -212,7 +211,6 @@ namespace TiltBrush
             CatalogIdentity = catalogIdentity;
             PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
-            m_Materialize = materialize;
             m_MediaUrl = mediaUrl;
         }
 
@@ -289,40 +287,6 @@ namespace TiltBrush
             // A network video's AbsolutePath names a .txt holding the real URL, so it never
             // streams from storage.
             string streamedUrl = NetworkVideo ? null : m_MediaUrl?.Invoke();
-            if (streamedUrl == null && m_Materialize != null)
-            {
-                var materialization = new Future<string>(
-                    m_Materialize, cleanupFunction: null, longRunning: true);
-                string materializedPath = null;
-                while (true)
-                {
-                    bool finished;
-                    try
-                    {
-                        finished = materialization.TryGetResult(out materializedPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogException(ex);
-                        Error = ex.Message;
-                        yield break;
-                    }
-                    if (finished)
-                    {
-                        break;
-                    }
-                    yield return null;
-                }
-                if (!string.Equals(
-                        materializedPath, AbsolutePath,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    Error =
-                        $"Materialized video path did not match its catalog path: {HumanName}";
-                    Debug.LogError($"SAF_MATERIALIZE {Error}");
-                    yield break;
-                }
-            }
 
             var gobj = new GameObject(HumanName);
             gobj.transform.SetParent(VideoCatalog.Instance.gameObject.transform);

@@ -12,7 +12,7 @@ namespace TiltBrush
         [TestCase("clip.mp4", false)]
         public void VideoExtensionMatching_RecognizesNetworkPointers(string path, bool expected)
         {
-            var video = new ReferenceVideo(path, "fixture", null, path);
+            var video = new ReferenceVideo(path, "fixture", path);
             Assert.AreEqual(expected, video.NetworkVideo);
         }
 
@@ -176,9 +176,9 @@ namespace TiltBrush
         [Test]
         public void SafVideos_PreserveSubfoldersAndSeparatePlaybackPath()
         {
-            var first = new ReferenceVideo("cache-a/clip.mp4", "id-a", null, "First/clip.mp4");
-            var second = new ReferenceVideo("cache-b/clip.mp4", "id-b", null, "Second/clip.mp4");
-            var reopened = new ReferenceVideo("cache-c/clip.mp4", "id-c", null, "First/clip.mp4");
+            var first = new ReferenceVideo("cache-a/clip.mp4", "id-a", "First/clip.mp4");
+            var second = new ReferenceVideo("cache-b/clip.mp4", "id-b", "Second/clip.mp4");
+            var reopened = new ReferenceVideo("cache-c/clip.mp4", "id-c", "First/clip.mp4");
             Assert.AreEqual(first.PersistentPath, reopened.PersistentPath);
             Assert.AreNotEqual(first.PersistentPath, second.PersistentPath);
             Assert.AreEqual("cache-c/clip.mp4", reopened.AbsolutePath);
