@@ -31,7 +31,6 @@ namespace TiltBrush
         // requires a restart rather than a hot swap, so it must not re-enter startup.
         private static bool m_StartupSelectionComplete;
         private static string m_FileDescriptorProbeRootIdentity;
-        private static string m_ActiveRootIdentity;
         private static AndroidStorageManager m_Instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -440,70 +439,36 @@ namespace TiltBrush
             }
         }
 
-        private void OnApplicationPause(bool paused)
-        {
-            if (!paused &&
-                UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
-                UserStorage.Backend.IsReady)
-            {
-                StartCoroutine(RefreshRuntimeContentAfterResume());
-            }
-        }
-
-        private IEnumerator RefreshRuntimeContentAfterResume()
-        {
-            yield return RefreshRuntimeContent();
-            RefreshSharedCatalogs();
-            if (App.DriveSync?.SyncEnabled == true)
-            {
-                App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
-            }
-        }
-
+        /// Runs once, after startup recovery. The root is fixed for the lifetime of a run, so
+        /// there is no second pass to distinguish from this one.
         private static void RefreshSharedCatalogs()
         {
-            string rootIdentity = UserStorage.Backend.RootIdentity;
-            bool rootChanged = !string.Equals(
-                m_ActiveRootIdentity, rootIdentity, StringComparison.Ordinal);
-            m_ActiveRootIdentity = rootIdentity;
-
             SketchCatalog.m_Instance?.GetSet(SketchSetType.User)?.RequestRefresh();
             SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes)?.RequestRefresh();
-            if (rootChanged)
+            if (ReferenceImageCatalog.m_Instance != null)
             {
-                if (ReferenceImageCatalog.m_Instance != null)
-                {
-                    ReferenceImageCatalog.m_Instance.ChangeDirectory(
-                        ReferenceImageCatalog.m_Instance.HomeDirectory);
-                }
-                if (BackgroundImageCatalog.m_Instance != null)
-                {
-                    BackgroundImageCatalog.m_Instance.ChangeDirectory(
-                        BackgroundImageCatalog.m_Instance.HomeDirectory);
-                }
-                if (ModelCatalog.m_Instance != null)
-                {
-                    ModelCatalog.m_Instance.ChangeDirectory(
-                        ModelCatalog.m_Instance.HomeDirectory);
-                }
-                if (VideoCatalog.Instance != null)
-                {
-                    VideoCatalog.Instance.ChangeDirectory(
-                        VideoCatalog.Instance.HomeDirectory);
-                }
-                if (SoundClipCatalog.Instance != null)
-                {
-                    SoundClipCatalog.Instance.ChangeDirectory(
-                        SoundClipCatalog.Instance.HomeDirectory);
-                }
+                ReferenceImageCatalog.m_Instance.ChangeDirectory(
+                    ReferenceImageCatalog.m_Instance.HomeDirectory);
             }
-            else
+            if (BackgroundImageCatalog.m_Instance != null)
             {
-                ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
-                BackgroundImageCatalog.m_Instance?.ForceCatalogScan();
-                ModelCatalog.m_Instance?.ForceCatalogScan();
-                VideoCatalog.Instance?.ForceCatalogScan();
-                SoundClipCatalog.Instance?.ForceCatalogScan();
+                BackgroundImageCatalog.m_Instance.ChangeDirectory(
+                    BackgroundImageCatalog.m_Instance.HomeDirectory);
+            }
+            if (ModelCatalog.m_Instance != null)
+            {
+                ModelCatalog.m_Instance.ChangeDirectory(
+                    ModelCatalog.m_Instance.HomeDirectory);
+            }
+            if (VideoCatalog.Instance != null)
+            {
+                VideoCatalog.Instance.ChangeDirectory(
+                    VideoCatalog.Instance.HomeDirectory);
+            }
+            if (SoundClipCatalog.Instance != null)
+            {
+                SoundClipCatalog.Instance.ChangeDirectory(
+                    SoundClipCatalog.Instance.HomeDirectory);
             }
         }
 
