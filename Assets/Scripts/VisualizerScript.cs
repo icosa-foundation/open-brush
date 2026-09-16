@@ -39,7 +39,7 @@ namespace TiltBrush
         private LoadMusicState m_CurrentLoadMusicState;
         private int m_LoadMusicIndex;
         private int m_MusicLoadVersion;
-        private string m_MusicRootIdentity;
+        private bool m_MusicInitialized;
         private WWW m_LoadMusicWWW;
 
         public float m_SmoothLerp = .2f;
@@ -121,7 +121,7 @@ namespace TiltBrush
             if (m_Active)
             {
                 if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
-                    UserStorage.Backend.IsReady && m_MusicRootIdentity != UserStorage.Backend.RootIdentity)
+                    UserStorage.Backend.IsReady && !m_MusicInitialized)
                 {
                     LoadNextSong();
                 }
@@ -256,7 +256,7 @@ namespace TiltBrush
             int version = ++m_MusicLoadVersion;
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
             {
-                m_MusicRootIdentity = UserStorage.Backend.RootIdentity;
+                m_MusicInitialized = true;
                 m_CurrentLoadMusicState = LoadMusicState.WaitingForStorage;
                 StartCoroutine(LoadNextSafSong(version));
                 return;
@@ -291,7 +291,6 @@ namespace TiltBrush
         private IEnumerator LoadNextSafSong(int version)
         {
             IUserStorageBackend backend = UserStorage.Backend;
-            string rootIdentity = backend.RootIdentity;
             int musicIndex = m_LoadMusicIndex++;
             var query = new Future<string>(() =>
             {
@@ -321,11 +320,6 @@ namespace TiltBrush
                 yield return null;
             }
             if (version != m_MusicLoadVersion) { yield break; }
-            if (rootIdentity != backend.RootIdentity)
-            {
-                LoadNextSong();
-                yield break;
-            }
             if (!string.IsNullOrEmpty(path))
             {
                 EnableMic(false);

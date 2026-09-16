@@ -295,8 +295,6 @@ namespace TiltBrush
         private readonly List<SafSketch> m_Sketches = new List<SafSketch>();
         private readonly Stack<int> m_RequestedLoads = new Stack<int>();
         private Future<StorageTreeResult> m_RefreshFuture;
-        private string m_RefreshRootIdentity;
-        private string m_AppliedRootIdentity;
         private bool m_Ready;
         private bool m_RefreshRequested;
 
@@ -489,17 +487,6 @@ namespace TiltBrush
             if (m_RefreshFuture == null && m_RefreshRequested)
             {
                 m_RefreshRequested = false;
-                m_RefreshRootIdentity = m_Backend.RootIdentity;
-                if (m_AppliedRootIdentity != null &&
-                    !string.Equals(
-                        m_AppliedRootIdentity,
-                        m_RefreshRootIdentity,
-                        StringComparison.Ordinal))
-                {
-                    ClearCatalog();
-                    m_AppliedRootIdentity = m_RefreshRootIdentity;
-                    OnChanged();
-                }
                 m_RefreshFuture = new Future<StorageTreeResult>(
                     QuerySketchDocuments,
                     longRunning: true);
@@ -526,7 +513,6 @@ namespace TiltBrush
                     $"previous catalog: {e.InnerException?.Message ?? e.Message}");
                 m_RefreshFuture.Close();
                 m_RefreshFuture = null;
-                m_RefreshRootIdentity = null;
                 m_Ready = true;
                 OnSketchRefreshingChanged();
                 return;
@@ -536,16 +522,6 @@ namespace TiltBrush
             m_RefreshFuture = null;
             OnSketchRefreshingChanged();
             m_Ready = true;
-            if (!string.Equals(
-                    m_RefreshRootIdentity,
-                    m_Backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_RefreshRootIdentity = null;
-                m_RefreshRequested = true;
-                return;
-            }
-            m_RefreshRootIdentity = null;
             if (!result.Success)
             {
                 Debug.LogWarning(
@@ -565,7 +541,6 @@ namespace TiltBrush
             }
             m_Sketches.Sort((left, right) =>
                 right.CreationTime.CompareTo(left.CreationTime));
-            m_AppliedRootIdentity = m_Backend.RootIdentity;
             OnChanged();
         }
 
