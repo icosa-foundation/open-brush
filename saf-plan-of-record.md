@@ -149,17 +149,13 @@ Keep `SafDestinationLocks`, payload validation, and the presence-based restore.
   `CheckDiskSpaceWithError` for direct SAF saves — correctly, since `m_SaveDir`
   is the wrong directory — but nothing replaced it. The commit sequence needs
   twice the sketch size transiently in shared storage.
-- **Silent truncation.** `StorageTreeQuery` caps at `MaximumItemCount = 10000`
-  and `StorageTreeResult` has no truncation flag, so a capped walk is
-  indistinguishable from a complete one. Add the flag and surface it. This
-  violates the fd-backed plan's own invariant that a failed query never means an
-  empty directory.
-
-### 8. Version-tolerance cleanup
-
-Delete `DriveSyncLedger`'s `kVersion` mismatch branch and the remaining
-`Version` fields. There is no shipped format to negotiate with. Add version
-negotiation when there is.
+- ~~**Silent truncation.**~~ **Withdrawn — this was wrong.** The review claimed a capped
+  tree walk returned `Succeeded` with a partial list. It does not:
+  `StorageTreeEnumerator` returns `StorageTreeResult.Failed` with an explicit
+  message for both limits — "Storage tree exceeds the N item limit"
+  (`UserStorageBackend.cs:910`) and "exceeds the N level depth limit at <path>"
+  (`UserStorageBackend.cs:930`). Both fail loudly. The caps may still be worth
+  raising, but there is no correctness bug here.
 
 ## Gate
 

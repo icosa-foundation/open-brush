@@ -595,14 +595,12 @@ buffer, one-cursor directory queries with struct-of-arrays JNI marshalling
    where the sketch lands, but nothing replaced it. The commit sequence needs
    twice the sketch size transiently in shared storage.
 
-4. **Tree enumeration truncates silently.** `StorageTreeQuery` defaults to
-   `MaximumItemCount = 10000`, `UserRuntimeContent` uses 5000, and
-   `StorageTreeResult` has no truncation flag — a capped walk returns
-   `Succeeded` with a partial list, indistinguishable from a complete one. Lower
-   priority for the large-file shape, but it violates core invariant 4 of the
-   fd-backed plan ("failure to query SAF never means the directory is empty"),
-   and enumerate-once-at-startup would make a truncated listing permanent for
-   the session.
+4. ~~**Tree enumeration truncates silently.**~~ **Withdrawn.** Verified against
+   `StorageTreeEnumerator`: exceeding either limit returns
+   `StorageTreeResult.Failed` with a descriptive message
+   (`UserStorageBackend.cs:910` for the item cap, `:930` for depth), not a
+   partial `Succeeded`. Core invariant 4 is not violated. Raising the caps
+   remains a judgement call; there is no bug to fix.
 
 ### Correction to the startup gate
 
