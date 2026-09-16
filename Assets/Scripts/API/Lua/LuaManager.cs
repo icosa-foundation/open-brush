@@ -368,7 +368,7 @@ namespace TiltBrush
             {
                 return;
             }
-            RuntimeContentWriteResult result = await UserRuntimeContent.PublishIfMissingAsync(
+            RuntimeContentWriteResult result = await RuntimeContentPublisher.PublishIfMissingAsync(
                 StorageArea.Plugins, relativePath, "text/x-lua", library.bytes,
                 CancellationToken.None);
             if (!result.Success)
@@ -1446,7 +1446,7 @@ namespace TiltBrush
                 return false;
             }
             RuntimeContentWriteResult result =
-                await UserRuntimeContent.PublishIfMissingAsync(
+                await RuntimeContentPublisher.PublishIfMissingAsync(
                     StorageArea.Plugins,
                     displayName,
                     "text/x-lua",

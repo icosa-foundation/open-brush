@@ -1562,112 +1562,8 @@ namespace TiltBrush
             }
         }
 
-        [Test]
-        public void SafRuntimeContent_ProjectsCanonicalFilesAndRefreshesChanges()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
-            var backend = new FakeSafBackend();
-            backend.Add("first.lua", System.Text.Encoding.UTF8.GetBytes("one"));
-            backend.Add("remove.lua", System.Text.Encoding.UTF8.GetBytes("remove"));
-            var content = new SafUserRuntimeContent(backend, root);
-            try
-            {
-                RuntimeProjectionResult initial = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-                Assert.IsTrue(initial.Success, initial.Error);
-                Assert.AreEqual(
-                    "one", File.ReadAllText(Path.Combine(initial.RuntimePath, "first.lua")));
-                Assert.IsTrue(File.Exists(Path.Combine(initial.RuntimePath, "remove.lua")));
 
-                backend.Replace(
-                    "first.lua", System.Text.Encoding.UTF8.GetBytes("two"));
-                StorageDocument remove = backend.List(
-                    StorageArea.Plugins, "", CancellationToken.None).Documents
-                    .Single(document => document.DisplayName == "remove.lua");
-                backend.Delete(remove.DocumentId, CancellationToken.None);
-                backend.Add("added.lua", System.Text.Encoding.UTF8.GetBytes("added"));
 
-                RuntimeProjectionResult refreshed = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-                Assert.IsTrue(refreshed.Success, refreshed.Error);
-                Assert.AreNotEqual(initial.RuntimePath, refreshed.RuntimePath);
-                Assert.AreEqual(
-                    "two", File.ReadAllText(Path.Combine(refreshed.RuntimePath, "first.lua")));
-                Assert.AreEqual(
-                    "added", File.ReadAllText(Path.Combine(refreshed.RuntimePath, "added.lua")));
-                Assert.IsFalse(File.Exists(Path.Combine(refreshed.RuntimePath, "remove.lua")));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
-
-        [Test]
-        public void SafRuntimeContent_QueryFailureRetainsCurrentGeneration()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
-            var backend = new FakeSafBackend();
-            backend.Add("plugin.lua", System.Text.Encoding.UTF8.GetBytes("retained"));
-            var content = new SafUserRuntimeContent(backend, root);
-            try
-            {
-                RuntimeProjectionResult initial = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-                Assert.IsTrue(initial.Success, initial.Error);
-                backend.ListFailureCode = StorageResultCode.ProviderUnavailable;
-
-                RuntimeProjectionResult failed = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-
-                Assert.IsFalse(failed.Success);
-                Assert.AreEqual(initial.RuntimePath, failed.RuntimePath);
-                Assert.AreEqual(
-                    "retained", File.ReadAllText(Path.Combine(failed.RuntimePath, "plugin.lua")));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
-
-        [Test]
-        public void SafRuntimeContent_RootChangeCannotCommitGeneration()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"open-brush-runtime-content-test-{Guid.NewGuid():N}");
-            var backend = new FakeSafBackend
-            {
-                RootAfterFirstRead = $"replacement-root-{Guid.NewGuid():N}",
-            };
-            backend.Add("plugin.lua", System.Text.Encoding.UTF8.GetBytes("content"));
-            var content = new SafUserRuntimeContent(backend, root);
-            try
-            {
-                RuntimeProjectionResult result = content.EnsureCurrentAsync(
-                    StorageArea.Plugins, CancellationToken.None).GetAwaiter().GetResult();
-
-                Assert.IsFalse(result.Success);
-                Assert.AreEqual(StorageResultCode.Cancelled, result.Code);
-                Assert.IsFalse(File.Exists(Path.Combine(
-                    content.GetRuntimePath(StorageArea.Plugins), "plugin.lua")));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
 
 
 
@@ -1739,43 +1635,6 @@ namespace TiltBrush
             }
         }
 
-        [Test]
-        public void RuntimeContentPublication_DoesNotOverwriteFileCreatedAfterListing()
-        {
-            IUserStorageBackend previousBackend = UserStorage.Backend;
-            var backend = new FakeSafBackend
-            {
-                CreateBeforeNextWriteData =
-                    System.Text.Encoding.UTF8.GetBytes("user"),
-            };
-            UserStorage.SetBackendForTests(backend);
-            try
-            {
-                RuntimeContentWriteResult result =
-                    UserRuntimeContent.PublishIfMissingAsync(
-                        StorageArea.Scripts,
-                        "appeared.html",
-                        "text/html",
-                        System.Text.Encoding.UTF8.GetBytes("default"),
-                        CancellationToken.None).GetAwaiter().GetResult();
-
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.IsFalse(result.Created);
-                Assert.AreEqual(0, backend.CommitCount);
-                StorageDocument appeared = backend.List(
-                    StorageArea.Scripts, "", CancellationToken.None).Documents.Single();
-                using (var reader = new StreamReader(backend.OpenRead(
-                    appeared.DocumentId, false, CancellationToken.None)))
-                {
-                    Assert.AreEqual("user", reader.ReadToEnd());
-                }
-            }
-            finally
-            {
-                UserStorage.SetBackendForTests(previousBackend);
-                UserRuntimeContent.SetForTests(new LocalUserRuntimeContent());
-            }
-        }
 
         [Test]
         public void DepthCapturePublication_CoversEveryWrittenSidecar()

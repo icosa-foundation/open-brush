@@ -1697,19 +1697,6 @@ namespace TiltBrush
             {
                 confirmationError = e;
             }
-            if (item.Area == StorageArea.Scripts ||
-                item.Area == StorageArea.Plugins ||
-                item.Area == StorageArea.Fonts)
-            {
-                RuntimeProjectionResult refresh =
-                    await UserRuntimeContent.Instance.EnsureCurrentAsync(
-                        item.Area, token);
-                if (!refresh.Success)
-                {
-                    throw new IOException(
-                        $"Drive download committed but runtime refresh failed: {refresh.Error}");
-                }
-            }
             if (confirmationError != null)
             {
                 throw new IOException(

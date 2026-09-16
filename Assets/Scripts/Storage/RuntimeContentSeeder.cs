@@ -17,9 +17,133 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace TiltBrush
 {
+    public sealed class RuntimeContentWriteResult
+    {
+        public StorageResultCode Code { get; }
+        public bool Created { get; }
+        public string Error { get; }
+        public bool Success => Code == StorageResultCode.Success;
+
+        public RuntimeContentWriteResult(
+            StorageResultCode code, bool created, string error = null)
+        {
+            Code = code;
+            Created = created;
+            Error = error;
+        }
+    }
+
+    /// Writes bundled content into shared storage when it is not already there. Nothing is
+    /// projected onto a filesystem: this is a plain write-if-absent.
+    public static class RuntimeContentPublisher
+    {
+        public static async Task<RuntimeContentWriteResult> PublishIfMissingAsync(
+            StorageArea area,
+            string relativePath,
+            string mimeType,
+            byte[] data,
+            CancellationToken cancellationToken)
+        {
+                        if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+            string normalized = NormalizeRelativePath(relativePath);
+            string directory = GetLogicalDirectory(normalized);
+            string displayName = Path.GetFileName(normalized);
+            IUserStorageBackend backend = UserStorage.Backend;
+            RuntimeContentWriteResult write = await Task.Run(() =>
+            {
+                StorageDirectoryResult listing = backend.List(
+                    area, directory, cancellationToken);
+                if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                {
+                    return new RuntimeContentWriteResult(
+                        listing.Code, created: false, listing.Error);
+                }
+                if (listing.Success && listing.Documents.Any(document =>
+                        string.Equals(
+                            document.DisplayName,
+                            displayName,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Success, created: false);
+                }
+                try
+                {
+                    using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                        area,
+                        normalized,
+                        mimeType ?? StorageMimeTypes.ForPath(normalized),
+                        cancellationToken))
+                    {
+                        if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                            transaction.TargetDocumentId.IsValid)
+                        {
+                            return new RuntimeContentWriteResult(
+                                StorageResultCode.Success, created: false);
+                        }
+                        using (Stream output = transaction.OpenWrite())
+                        {
+                            output.Write(data, 0, data.Length);
+                        }
+                        StorageMutationResult commit = transaction.Commit();
+                        return new RuntimeContentWriteResult(
+                            commit.Code, commit.Success, commit.Error);
+                    }
+                }
+                catch (OperationCanceledException e)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Cancelled, created: false, e.Message);
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.PermissionDenied, created: false, e.Message);
+                }
+                catch (Exception e) when (
+                    e is IOException || e is ArgumentException || e is InvalidOperationException)
+                {
+                    return new RuntimeContentWriteResult(
+                        StorageResultCode.Failed, created: false, e.Message);
+                }
+            }, cancellationToken);
+            // Nothing to refresh: consumers read from storage directly.
+            return write;
+        }
+
+        private static string NormalizeRelativePath(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath) ||
+                Path.IsPathRooted(relativePath))
+            {
+                throw new ArgumentException("Runtime content path must be relative.");
+            }
+            string normalized = relativePath.Replace('\\', '/').Trim('/');
+            foreach (string segment in normalized.Split('/'))
+            {
+                if (string.IsNullOrEmpty(segment) || segment == "." || segment == "..")
+                {
+                    throw new ArgumentException(
+                        "Runtime content path escapes its storage area.");
+                }
+            }
+            return normalized;
+        }
+
+        private static string GetLogicalDirectory(string relativePath)
+        {
+            int separator = relativePath.LastIndexOf('/');
+            return separator < 0 ? "" : relativePath.Substring(0, separator);
+        }
+    }
+
     public sealed class RuntimeContentSeed
     {
         public StorageArea Area { get; }
@@ -30,7 +154,6 @@ namespace TiltBrush
         public RuntimeContentSeed(
             StorageArea area, string relativePath, string mimeType, byte[] data)
         {
-            LocalUserRuntimeContent.EnsureRuntimeArea(area);
             Area = area;
             RelativePath = relativePath ?? throw new ArgumentNullException(nameof(relativePath));
             MimeType = mimeType;

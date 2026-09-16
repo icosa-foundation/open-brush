@@ -272,48 +272,12 @@ namespace TiltBrush
             onComplete?.Invoke();
         }
 
-        // Seeds bundled content and projects the font tree, which is the one area still needing
-        // real files. Scripts and plugins are read straight from storage.
+        // Seeds bundled content into shared storage. Nothing is projected onto a filesystem:
+        // scripts and plugins are read straight from storage, and fonts are unsupported for now.
         private IEnumerator RefreshRuntimeContent()
         {
             App.Instance.RefreshUserConfig();
             yield return SeedRuntimeContent();
-            foreach (StorageArea area in new[]
-            {
-                StorageArea.Scripts,
-                StorageArea.Plugins,
-                StorageArea.Fonts,
-            })
-            {
-                Task<RuntimeProjectionResult> refresh =
-                    UserRuntimeContent.Instance.EnsureCurrentAsync(
-                        area, CancellationToken.None);
-                while (!refresh.IsCompleted)
-                {
-                    yield return null;
-                }
-                if (refresh.IsFaulted)
-                {
-                    string error = refresh.Exception?.GetBaseException().Message ??
-                        "Unknown runtime-content refresh failure.";
-                    Debug.LogWarning(
-                        $"SAF_PROJECTION {area} refresh failed: {error}");
-                    continue;
-                }
-                if (refresh.IsCanceled)
-                {
-                    Debug.LogWarning(
-                        $"SAF_PROJECTION {area} refresh was canceled.");
-                    continue;
-                }
-                RuntimeProjectionResult result = refresh.Result;
-                if (!result.Success)
-                {
-                    Debug.LogWarning(
-                        $"SAF_PROJECTION {area} refresh retained previous content: " +
-                        $"{result.Error}");
-                }
-            }
         }
 
         private IEnumerator SeedRuntimeContent()
