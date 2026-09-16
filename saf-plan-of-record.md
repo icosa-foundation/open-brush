@@ -60,6 +60,29 @@ recompile` / `recompile_status`); no runtime testing yet.
 - **Two repo bugs fixed.** Four `.meta` files had 33-character GUIDs, so those
   test files had never compiled or run. Corrected.
 
+### UserRuntimeContent: what is left holding it up
+
+Enumeration is converted - `ApiManager` and `LuaManager` both list and read
+through the backend now - so the projection no longer feeds script discovery.
+Five uses of `GetRuntimePath` remain, in three groups:
+
+1. **Module resolution.** `LuaModulesPath` feeds `ScriptLoaderBase.ModulePaths`,
+   and `OpenBrushScriptLoader.TryGetStorageRelativePath` strips that same prefix
+   to recover an area-relative path. This needs a *stable* root, not a real one:
+   a logical sentinel would do, provided both ends agree.
+2. **Writes.** Bundled Lua libraries (`LuaManager.cs:336`) and newly created
+   plugins (`:1467`) write into the projected directory. These should go through
+   `backend.BeginWrite` instead - two sites, and the correct fix regardless.
+3. **Fonts.** `SvgTextUtils.cs:30`. The one genuine path consumer; Unity has no
+   runtime `byte[]` to `Font` route.
+
+Also now dead and removable: the filesystem branches in
+`ApiManager.PopulateUserScripts` and `LuaManager.LoadUserScripts` that sit
+behind the new `UsesStorageBackend` early-returns, and the
+`Directory.CreateDirectory` calls against a projected path that no longer holds
+anything on SAF. The watchers at `ApiManager.cs:259` and `LuaManager.cs:307`
+stay - they are desktop-only and already guarded.
+
 ### Not done
 
 - **Models other than glTF.** OBJ, USD and splats still materialize. OBJ is
