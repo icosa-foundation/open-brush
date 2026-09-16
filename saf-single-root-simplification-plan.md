@@ -177,6 +177,143 @@ to recover in place. Retain "Preserve SAF roots during provider failures" and
 "Retain SAF sketches after refresh failures" — a failed query must never be
 read as an empty directory (core invariant 4 of the fd-backed plan).
 
+## Durability: Fix The Write, Not The Recovery
+
+This section supersedes nothing above; it is an independent correctness fix
+found while reviewing behaviour with multi-gigabyte sketches.
+
+### The inversion
+
+SAF has no atomic replace — the device probe confirmed `renameDocument` onto an
+existing display name produces `Sketch (1).tilt` rather than overwriting. So a
+save is a five-step sequence: write `.ob-tmp`, validate it, rename the canonical
+to `.ob-bak`, rename the temporary into place, delete the backup. Process death
+between steps 3 and 4 leaves no canonical document, and startup recovery
+(`SafTransactionRecovery`) reinstates one from whichever leftover validates.
+
+Recovery therefore has to distinguish a complete document from a truncated one.
+It currently does that with `IsValidDocument` (`SafTransactionRecovery.cs:244`),
+which passes `testData: true` to `TiltFile.IsArchiveValid` — decompressing every
+zip entry to `Stream.Null`. The commit path validating the same bytes
+(`SafStorageTransaction.ValidatePayload`) passes `testData: false`, reading only
+the central directory. The two paths disagree about what "valid" means for the
+same artifact.
+
+Tracing why turns up the reason:
+
+```csharp
+// SafStorageTransaction.cs:114 - the journal (app-private JSON bookkeeping)
+stream.Flush(flushToDisk: true);     // real fsync, 5-6 times per save
+
+// SafStorageTransaction.cs:682 - the payload (the user's sketch)
+m_Stream.Flush();                    // no fsync
+```
+
+The bookkeeping is made durable; the data is not. A zip's central directory is
+written last, so an interrupted write normally leaves no readable directory and
+the cheap check catches it. But with no fsync, a power loss or kernel panic can
+lose dirty pages from the middle while the tail lands, producing a structurally
+valid archive with garbage inside — which only decompression detects. The deep
+check exists to find corruption that the missing fsync permits.
+
+Note the two crash classes are not equally likely. Process death — the OOM
+killer, a crash, the user swiping the app away, Android reclaiming a backgrounded
+app — is common, and the page cache survives it, so the file is intact and
+`Flush()` suffices. Power loss and kernel panic are rare, and only those produce
+torn middles.
+
+### The fix
+
+1. Call `Flush(flushToDisk: true)` on the payload stream before the rename
+   sequence begins. One fsync per save, proportional to a write already being
+   performed.
+2. Change `IsValidDocument` to `testData: false`, matching the commit path.
+   Truncation is caught by the central directory; torn middles are now
+   prevented rather than detected.
+
+The cost accounting is favourable. One fsync is added per save while
+`saf-transaction-journal-removal-plan.md` removes five or six, so saves get
+faster. Recovery drops from decompressing up to three multi-gigabyte candidates
+to reading three central directories — milliseconds rather than a stall behind
+the startup gate.
+
+This supersedes an earlier suggestion in `saf-design-review.md` to make recovery
+validation size-aware. Preventing the corruption is better than thresholding the
+detection of it.
+
+### Unverified assumption
+
+`flushToDisk: true` should reach the disk through a SAF descriptor, since the
+probe established that the descriptor is a real regular file and `fsync(2)` on
+it is meaningful. A provider could in principle ignore it. `Support/SafFdProbe`
+checks 12-14 now measure write throughput, the cost of a single `fsync`, and
+read-back throughput, so the assumption and its cost can both be confirmed
+before this change is relied upon.
+
+## Scale: Fewer But Larger Files
+
+The realistic power-user shape is a modest number of very large files — a
+multi-gigabyte sketch, a large model, long video captures — not tens of
+thousands of small ones.
+
+### What suits that shape already
+
+Reading a large `.tilt` involves no copy at all. The probe confirmed the
+descriptor is a seekable regular file, so `ZipSubfileReader` seeks directly into
+the archive in shared storage and a 2 GB sketch costs zero bytes of app-private
+storage to open. This is the strongest argument for the fd-backed approach over
+the mirrored cache it replaced.
+
+Also sound: no whole-file buffering anywhere in the storage path, no `int` casts
+on sizes (all `long`, so no 2 GB overflow), `Stream.CopyTo`'s default 80 KiB
+buffer, one-cursor directory queries with struct-of-arrays JNI marshalling
+(eleven calls regardless of row count), and lazy thumbnail loading through
+`SafSketchSet.RequestOnlyLoadedMetadata`.
+
+### Gaps
+
+1. **No free-space accounting on the SAF path.** `SaveLoadScript.cs:490` reads
+   `if (!directSafSave && !FileUtils.CheckDiskSpaceWithError(m_SaveDir))`. The
+   check is correctly skipped for direct SAF saves, because `m_SaveDir` is not
+   where the sketch lands — but nothing replaced it. The commit sequence needs
+   twice the sketch size transiently in shared storage, so a 2 GB sketch needs
+   4 GB free. Materialization copies a whole document into app-private storage
+   with no check either.
+
+2. **The materialization cache cap is the wrong shape.**
+   `EvictMaterializationCache` caps at a hardcoded 512 MB with no free-space
+   awareness. A single 500 MB model nearly exhausts the budget and evicts
+   everything else.
+
+3. **The cache is FIFO, not LRU.** Eviction orders by `file.LastAccessTimeUtc`
+   (`SafUserStorageBackend.cs:843`), but Android mounts `/data` with `noatime` —
+   confirmed on a Nothing Phone (3a): `f2fs rw,lazytime,...,noatime,...`. Access
+   time never updates, so eviction order is creation order and the most-used
+   asset is evicted first. Fix: touch `LastWriteTimeUtc` on cache hit (these are
+   local files, so it works) and order by that.
+
+4. **Every materialization walks the whole cache.** `GetFiles("*",
+   SearchOption.AllDirectories)` plus a `Sum` of lengths runs on each call,
+   compounding with the thrashing caused by gap 3.
+
+5. **Tree enumeration truncates silently.** `StorageTreeQuery` defaults to
+   `MaximumItemCount = 10000`, `UserRuntimeContent` uses 5000, and
+   `StorageTreeResult` has no truncation flag — a capped walk returns
+   `Succeeded` with a partial list, indistinguishable from a complete one. Lower
+   priority for the large-file shape, but it violates core invariant 4 of the
+   fd-backed plan ("failure to query SAF never means the directory is empty"),
+   and enumerate-once-at-startup would make a truncated listing permanent for
+   the session.
+
+### Correction to the startup gate
+
+The gating described above must gate on folder *selection*, not on enumeration.
+Startup latency should not scale with library size. Once a root exists the
+application can start, with catalogs populating in the background as they do
+today. The simplification this plan is after — no degraded mode, no resumable
+save paths — comes from "a root always exists after startup", not from
+"everything is enumerated before startup".
+
 ## Interaction With The Journal-Removal Plan
 
 `saf-transaction-journal-removal-plan.md` is complementary, not superseded.

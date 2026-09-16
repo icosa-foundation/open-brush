@@ -10,6 +10,7 @@ import android.provider.DocumentsContract;
 import android.system.Os;
 import android.system.OsConstants;
 import android.system.StructStat;
+import android.system.StructStatVfs;
 import android.util.Log;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -192,6 +193,9 @@ public class ProbeActivity extends Activity {
                     + " (also safe)");
         }
 
+        // --- 12-14. large-file throughput, fsync cost, read-back cost -------------
+        runLargeFileChecks(dir);
+
         // --- 11. cleanup ----------------------------------------------------------
         boolean del = DocumentsContract.deleteDocument(getContentResolver(), doc);
         say((del ? "PASS" : "FAIL") + " 11 deleteDocument");
@@ -204,6 +208,93 @@ public class ProbeActivity extends Activity {
         ParcelFileDescriptor pfd;
         FileDescriptor jfd;
         void close() { try { pfd.close(); } catch (Throwable ignored) { } }
+    }
+
+
+    /**
+     * Checks 12-14. Sizes a payload against free space, then measures sequential
+     * write throughput, the cost of a single fsync, and read-back throughput.
+     *
+     * These decide two design questions: whether one fsync per save before the
+     * rename dance is affordable (it replaces recovery-time deep validation), and
+     * how long a multi-gigabyte sketch takes to move through SAF.
+     */
+    private void runLargeFileChecks(Uri dir) {
+        Uri big = null;
+        try {
+            long freeBytes = -1;
+            try {
+                StructStatVfs vfs = Os.statvfs("/sdcard");
+                freeBytes = vfs.f_bavail * vfs.f_frsize;
+            } catch (Throwable ignored) { }
+
+            // Use at most a quarter of free space, capped at 1 GiB, floored at 64 MiB.
+            long target = 1024L * 1024L * 1024L;
+            if (freeBytes > 0) target = Math.min(target, freeBytes / 4);
+            if (target < 64L * 1024L * 1024L) {
+                say("SKIP 12-14 insufficient free space (" + (freeBytes >> 20) + " MiB)");
+                return;
+            }
+            say("INFO 12 free=" + (freeBytes >> 20) + " MiB, payload=" + (target >> 20) + " MiB");
+
+            big = DocumentsContract.createDocument(
+                    getContentResolver(), dir, "application/octet-stream", "obfdprobe-big.bin");
+            if (big == null) { say("FAIL 12 createDocument(big) null"); return; }
+
+            Fd fd = detach(big, "rw");
+            if (fd == null) { say("FAIL 12 no descriptor for big file"); return; }
+            try {
+                byte[] buf = new byte[1024 * 1024];
+                new Random(7).nextBytes(buf);
+
+                long t0 = System.nanoTime();
+                long written = 0;
+                while (written < target) {
+                    int want = (int) Math.min(buf.length, target - written);
+                    int off = 0;
+                    while (off < want) off += Os.write(fd.jfd, buf, off, want - off);
+                    written += want;
+                }
+                long t1 = System.nanoTime();
+                say("PASS 12 wrote " + (written >> 20) + " MiB in " + ms(t1 - t0)
+                        + " ms (" + mbps(written, t1 - t0) + " MB/s)");
+
+                long t2 = System.nanoTime();
+                Os.fsync(fd.jfd);
+                long t3 = System.nanoTime();
+                say("PASS 13 fsync of " + (written >> 20) + " MiB took " + ms(t3 - t2) + " ms");
+
+                Os.lseek(fd.jfd, 0, OsConstants.SEEK_SET);
+                long t4 = System.nanoTime();
+                long read = 0;
+                while (true) {
+                    int r = Os.read(fd.jfd, buf, 0, buf.length);
+                    if (r <= 0) break;
+                    read += r;
+                }
+                long t5 = System.nanoTime();
+                say("PASS 14 read " + (read >> 20) + " MiB in " + ms(t5 - t4)
+                        + " ms (" + mbps(read, t5 - t4) + " MB/s)"
+                        + "  <- recovery deep-validation I/O floor");
+            } finally {
+                fd.close();
+            }
+        } catch (Throwable t) {
+            say("FAIL 12-14 " + t.getClass().getSimpleName() + ": " + t.getMessage());
+        } finally {
+            if (big != null) {
+                try { DocumentsContract.deleteDocument(getContentResolver(), big); }
+                catch (Throwable ignored) { }
+            }
+        }
+    }
+
+    private static long ms(long nanos) { return nanos / 1000000L; }
+
+    private static String mbps(long bytes, long nanos) {
+        if (nanos <= 0) return "?";
+        double seconds = nanos / 1e9;
+        return String.format(java.util.Locale.US, "%.0f", (bytes / 1048576.0) / seconds);
     }
 
     private Fd detach(Uri uri, String mode) throws Exception {

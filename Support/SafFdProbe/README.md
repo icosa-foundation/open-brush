@@ -43,6 +43,12 @@ creates. Pass an SDK and JDK path as arguments to override autodetection.
 | 8 | `rwt` truncate mode | Used by the replacement path |
 | 9 | `renameDocument` round trip | The commit sequence depends on rename |
 | 10 | Rename onto an existing name | Determines whether rename can ever replace |
+| 12 | Large sequential write throughput | How long a multi-gigabyte sketch takes to save |
+| 13 | Cost of a single `fsync` | Decides whether one fsync per save can replace recovery-time deep validation |
+| 14 | Large sequential read throughput | The I/O floor for recovery deep validation |
+
+Checks 12-14 size their payload against free space (a quarter of it, capped at
+1 GiB) and skip if under 64 MiB is available.
 
 ## Results
 
