@@ -58,8 +58,16 @@ namespace TiltBrush
             {
                 return null;
             }
-            string escaped = Uri.EscapeDataString(
-                (relativePath ?? string.Empty).Replace('\\', '/').Trim('/'));
+            // Escaped per segment so the separators survive. Consumers that resolve siblings by
+            // joining onto the directory - the OBJ loader locating its .mtl and textures - need a
+            // URL whose path has real slashes in it.
+            string[] segments = (relativePath ?? string.Empty)
+                .Replace('\\', '/').Trim('/').Split('/');
+            for (int i = 0; i < segments.Length; ++i)
+            {
+                segments[i] = Uri.EscapeDataString(segments[i]);
+            }
+            string escaped = string.Join("/", segments);
             return $"http://127.0.0.1:{HttpServer.HTTP_PORT}{kPath}/{sm_Token}/{(int)area}/{escaped}";
         }
 
@@ -117,7 +125,17 @@ namespace TiltBrush
             if (!Enum.IsDefined(typeof(StorageArea), areaValue)) { return false; }
             area = (StorageArea)areaValue;
 
-            relativePath = Uri.UnescapeDataString(rest.Substring(secondSlash + 1));
+            string[] rawSegments = rest.Substring(secondSlash + 1).Split('/');
+            for (int i = 0; i < rawSegments.Length; ++i)
+            {
+                rawSegments[i] = Uri.UnescapeDataString(rawSegments[i]);
+                // A segment that decodes to a separator would escape the intended directory.
+                if (rawSegments[i].Contains("/") || rawSegments[i].Contains("\\"))
+                {
+                    return false;
+                }
+            }
+            relativePath = string.Join("/", rawSegments);
             // The backend rejects escaping paths, but refuse the obvious shapes before the round
             // trip and never let a caller name an absolute path.
             if (string.IsNullOrWhiteSpace(relativePath) ||
