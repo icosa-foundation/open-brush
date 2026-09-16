@@ -38,7 +38,7 @@ namespace TiltBrush
         private volatile bool m_DirectoryScanRequired;
         private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
         private bool m_SeedingSafDefaults;
-        private string m_SafSeedAttemptedRootIdentity;
+        private bool m_SafSeedAttempted;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -153,8 +153,7 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
-                m_SafSeedAttemptedRootIdentity !=
-                    UserStorage.Backend.RootIdentity &&
+                !m_SafSeedAttempted &&
                 PlayerPrefs.GetInt(
                     kSafSeedPreference,
                     0) == 0)
@@ -171,8 +170,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
-            string seedRootIdentity = backend.RootIdentity;
-            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+                        m_SafSeedAttempted = true;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(
                     StorageArea.MediaLibraryVideos, "", CancellationToken.None),
@@ -258,14 +256,6 @@ namespace TiltBrush
                 }
             }
 
-            if (!string.Equals(
-                    seedRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_SeedingSafDefaults = false;
-                yield break;
-            }
             PlayerPrefs.SetInt(
                 kSafSeedPreference,
                 1);
@@ -463,14 +453,6 @@ namespace TiltBrush
                 yield return null;
             }
 
-            if (!string.Equals(
-                    scanRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_DirectoryScanRequired = true;
-                yield break;
-            }
 
             if (!CatalogScanGuard.IsCurrent(
                     generation, m_ScanGeneration, backend, UserStorage.Backend,

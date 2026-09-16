@@ -33,7 +33,7 @@ namespace TiltBrush
         private bool m_WaitingForSketchSetUpdate;
         private bool m_SketchSetSubscribed;
         private bool m_SeedingSafDefaults;
-        private string m_SafSeedAttemptedRootIdentity;
+        private bool m_SafSeedAttempted;
         private const string kSafSeedPreference =
             "GooglePlayStorage.SeededDefaultSavedStrokesFdV1";
 
@@ -178,8 +178,7 @@ namespace TiltBrush
             {
                 if (!m_SeedingSafDefaults &&
                     UserStorage.Backend.IsReady &&
-                    m_SafSeedAttemptedRootIdentity !=
-                        UserStorage.Backend.RootIdentity &&
+                    !m_SafSeedAttempted &&
                     PlayerPrefs.GetInt(
                         kSafSeedPreference,
                         0) == 0)
@@ -358,8 +357,7 @@ namespace TiltBrush
         private IEnumerator<object> SeedSafDefaults()
         {
             m_SeedingSafDefaults = true;
-            string seedRootIdentity = UserStorage.Backend.RootIdentity;
-            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+            m_SafSeedAttempted = true;
             StorageDirectoryResult listing = UserStorage.Backend.List(
                 StorageArea.SavedStrokes, "", default);
             if (!listing.Success && listing.Code != StorageResultCode.NotFound)
@@ -424,14 +422,6 @@ namespace TiltBrush
                 }
             }
 
-            if (!string.Equals(
-                    seedRootIdentity,
-                    UserStorage.Backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_SeedingSafDefaults = false;
-                yield break;
-            }
             PlayerPrefs.SetInt(
                 kSafSeedPreference,
                 1);

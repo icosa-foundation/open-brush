@@ -48,7 +48,7 @@ namespace TiltBrush
         private bool m_SafQueryInProgress;
         private int m_DirectoryGeneration;
         private bool m_SeedingSafDefaults;
-        private string m_SafSeedAttemptedRootIdentity;
+        private bool m_SafSeedAttempted;
         private const string kSafSeedPreference =
             "GooglePlayStorage.SeededDefaultReferenceImagesFdV1";
 
@@ -150,8 +150,7 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
-                m_SafSeedAttemptedRootIdentity !=
-                    UserStorage.Backend.RootIdentity &&
+                !m_SafSeedAttempted &&
                 PlayerPrefs.GetInt(
                     SafSeedPreferenceKey,
                     0) == 0)
@@ -216,8 +215,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
-            string seedRootIdentity = backend.RootIdentity;
-            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+                        m_SafSeedAttempted = true;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(StorageAreaKind, "", CancellationToken.None),
                 cleanupFunction: null,
@@ -301,14 +299,6 @@ namespace TiltBrush
                 }
             }
 
-            if (!string.Equals(
-                    seedRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_SeedingSafDefaults = false;
-                yield break;
-            }
             PlayerPrefs.SetInt(
                 SafSeedPreferenceKey,
                 1);
