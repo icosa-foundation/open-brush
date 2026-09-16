@@ -300,9 +300,12 @@ namespace TiltBrush
                 if (!listing.Success) { throw new IOException(listing.Error); }
                 var songs = listing.Documents.Where(document => !document.IsDirectory)
                     .OrderBy(document => document.DisplayName, StringComparer.OrdinalIgnoreCase).ToArray();
-                return songs.Length == 0 ? null : backend.Materialize(
-                    songs[musicIndex % songs.Length].DocumentId, MaterializationScope.File,
-                    CancellationToken.None);
+                // WWW takes a URL, so the track streams from shared storage over the loopback
+                // handler rather than being copied out to be played.
+                return songs.Length == 0
+                    ? null
+                    : SafMediaHttpServer.GetUrl(
+                        StorageArea.Music, songs[musicIndex % songs.Length].DisplayName);
             }, cleanupFunction: null, longRunning: true);
             string path = null;
             while (true)
@@ -326,7 +329,10 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(path))
             {
                 EnableMic(false);
-                m_LoadMusicWWW = new WWW(new Uri(path).AbsoluteUri);
+                m_LoadMusicWWW = new WWW(
+                    path.StartsWith("http://") || path.StartsWith("https://")
+                        ? path
+                        : new Uri(path).AbsoluteUri);
                 m_CurrentLoadMusicState = LoadMusicState.WaitingForWWW;
             }
             else

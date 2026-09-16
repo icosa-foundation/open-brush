@@ -760,7 +760,8 @@ namespace TiltBrush
                 }
 
                 StorageDocumentId documentId = document.DocumentId;
-                string displayPath = backend.GetMaterializationPath(documentId);
+                // No local copy exists to point at; the library-relative path is the identity.
+                string displayPath = document.RelativeDisplayPath;
                 nextImages.Add(new ReferenceImage(
                     displayPath,
                     catalogIdentity,
