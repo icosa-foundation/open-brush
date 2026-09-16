@@ -59,8 +59,10 @@ public class CameraCaptureRuntime : MonoBehaviour
     public Vector3 volumeSize = new Vector3(5, 5, 5);
 
     [Header("Camera Path Capture")]
-    [Tooltip("Seconds of camera path playback between capture points.")]
-    public float cameraPathSampleInterval = 1f;
+    [Tooltip("Capture points per camera path position knot.  Knot density already tracks " +
+             "how long the camera lingered when the path was recorded by flying, so 1 is a " +
+             "good default there.  Raise it for hand-drawn paths, which have far fewer knots.")]
+    public float cameraPathSamplesPerKnot = 1f;
 
     [Header("Background")]
     [Tooltip("Render skybox and environment as background (default). Disable to get transparent background for COLMAP masking.")]
@@ -321,11 +323,19 @@ public class CameraCaptureRuntime : MonoBehaviour
         Quaternion.Euler(90f, 0f, 0f),
     };
 
-    // Returns world-space camera poses sampled along a camera path at fixed playback time
-    // intervals, six axis-aligned views per sample. Does not perform any capture.
+    // Returns world-space camera poses sampled evenly along a camera path, six axis-aligned
+    // views per sample. Does not perform any capture.
+    //
+    // Samples are spaced uniformly in PathT, which puts one at each position knot when
+    // samplesPerKnot is 1.  Knot density is the sampling signal rather than playback speed:
+    // a fly-recorded path already places knots at a fixed time interval and skips them
+    // entirely when the camera is not moving, so lingering earns extra coverage and a
+    // stationary camera earns none.  Sampling by playback time instead would spend hundreds
+    // of near-identical poses on the dead air at the end of a recording, and being relative
+    // to the path's own knots keeps this independent of sketch and scene scale.
     public List<(Vector3 position, Quaternion rotation)> GetCameraPathPoses(
         CameraPathWidget pathWidget,
-        float sampleIntervalSeconds)
+        float samplesPerKnot)
     {
         var poses = new List<(Vector3, Quaternion)>();
         var path = pathWidget == null ? null : pathWidget.Path;
@@ -334,25 +344,25 @@ public class CameraCaptureRuntime : MonoBehaviour
             return poses;
         }
 
-        float interval = Mathf.Max(0.01f, sampleIntervalSeconds);
-        var pathT = new PathT(0f);
-        pathT.Clamp(path.PositionKnots.Count);
+        int knotCount = path.NumPositionKnots;
+        int sampleCount = Mathf.Clamp(
+            Mathf.CeilToInt(knotCount * Mathf.Max(0f, samplesPerKnot)), 2, kMaxCameraPathSamples);
 
-        // A slow path over a long duration can produce a lot of samples; cap it so a
-        // mis-set interval cannot generate an effectively unbounded capture.
-        for (int sample = 0; sample < kMaxCameraPathSamples; ++sample)
+        // PathT runs over [0, knotCount - 1], so this spans the whole path inclusive of
+        // both ends and lands exactly on the knots when sampleCount == knotCount.
+        float maxT = knotCount - 1;
+        float step = maxT / (sampleCount - 1);
+
+        for (int sample = 0; sample < sampleCount; ++sample)
         {
+            var pathT = new PathT(sample * step);
+            pathT.Clamp(knotCount);
+
             Vector3 position = path.GetPosition(pathT);
             Quaternion rotation = path.GetRotation(pathT);
             foreach (var viewRotation in kSixAxisViewRotations)
             {
                 poses.Add((position, rotation * viewRotation));
-            }
-
-            if (path.MoveAlongPathByTime(interval, pathT, out pathT))
-            {
-                // Rolled past the end of the path.
-                break;
             }
         }
 
@@ -375,7 +385,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             return targets;
         }
 
-        var poses = GetCameraPathPoses(pathWidget, cameraPathSampleInterval);
+        var poses = GetCameraPathPoses(pathWidget, cameraPathSamplesPerKnot);
         if (poses.Count == 0)
         {
             return targets;
