@@ -305,16 +305,41 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
+        /// Formats whose importers read from a stream or a URL, so they need no local copy.
+        /// glTF goes through SafGltfDataLoader; OBJ is entirely UnityWebRequest-based and takes
+        /// the loopback media URL. Everything else - USD, FBX, PLY and Gaussian splats - reaches a
+        /// third-party loader that opens a path, and is unsupported on shared storage.
+        private static bool ImportsWithoutLocalFile(string extension)
+        {
+            switch (extension)
+            {
+                case ".gltf":
+                case ".glb":
+                case ".gltf2":
+                case ".obj":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool IsSharedStorageModel =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+            m_Location.GetLocationType() == Location.Type.LocalFile;
+
         /// True when this model's importer can read from storage directly, making the
         /// materialized copy unnecessary.
         private bool CanImportWithoutLocalCopy()
         {
-            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
-            {
-                return false;
-            }
-            string extension = m_Location.Extension;
-            return extension == ".gltf" || extension == ".glb" || extension == ".gltf2";
+            return IsSharedStorageModel && ImportsWithoutLocalFile(m_Location.Extension);
+        }
+
+        /// A URL for loaders built on UnityWebRequest, which accept http:// but not a document id.
+        private string GetSharedStorageUrl()
+        {
+            return IsSharedStorageModel
+                ? SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryModels, RelativePath)
+                : null;
         }
 
         // Constructor for local models i.e. Media Library assets
@@ -872,11 +897,18 @@ namespace TiltBrush
             {
                 GameObject gameObject = new GameObject("ImportedObjRoot");
                 var objLoader = gameObject.AddComponent<OBJ>();
-                await objLoader.BeginLoadAsync(m_Location.AbsolutePath);
-                string assetLocation = Path.GetDirectoryName(m_Location.AbsolutePath);
+                // OBJ reads everything - geometry, .mtl, textures - through UnityWebRequest, which
+                // takes http://, so shared storage serves it over the loopback handler with no
+                // local copy. FixLocalPaths already passes an http URL through untouched.
+                string source = GetSharedStorageUrl() ?? m_Location.AbsolutePath;
+                await objLoader.BeginLoadAsync(source);
+                string assetLocation = Path.GetDirectoryName(source);
                 gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
-                m_AllowExport = (m_ImportMaterialCollector != null);
+                // ImportMaterialCollector resolves texture files off assetLocation at export time.
+                // Streamed from shared storage there is no such directory, so exporting a sketch
+                // that contains this model is unsupported rather than silently wrong.
+                m_AllowExport = m_ImportMaterialCollector != null && GetSharedStorageUrl() == null;
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
@@ -1137,6 +1169,18 @@ namespace TiltBrush
                 // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
                 var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
                 int __icosaStartFrame = Time.frameCount;
+                if (isLocal &&
+                    UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                    !ImportsWithoutLocalFile(ext))
+                {
+                    // Their importers open a path, and shared storage has none to give. Rather
+                    // than copy the document out to satisfy them, report it plainly.
+                    m_LoadError = new LoadError(
+                        $"{ext} models are not supported on this build");
+                    Debug.LogWarning(
+                        $"SAF_MODEL {ext} needs a local file and is unsupported: {RelativePath}");
+                    return;
+                }
                 if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
