@@ -60,7 +60,7 @@ namespace TiltBrush
         private bool m_SafRescanRequested;
         private string m_SafCatalogRootIdentity;
         private IUserStorageBackend m_SafCatalogBackend;
-        private string m_SafSeedAttemptedRootIdentity;
+        private bool m_SafSeedAttempted;
         private bool m_SeedingSafDefaults;
 
         public bool IsScanning
@@ -265,9 +265,8 @@ namespace TiltBrush
         {
             int generation = m_ModelRestoreGate.Generation;
             IUserStorageBackend backend = UserStorage.Backend;
-            string root = backend.RootIdentity;
             return () => generation == m_ModelRestoreGate.Generation &&
-                ReferenceEquals(backend, UserStorage.Backend) && root == backend.RootIdentity;
+                ReferenceEquals(backend, UserStorage.Backend);
         }
 
         private void RecoverMissingModels()
@@ -444,8 +443,7 @@ namespace TiltBrush
             if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework &&
                 UserStorage.Backend.IsReady &&
                 !m_SeedingSafDefaults &&
-                m_SafSeedAttemptedRootIdentity !=
-                    UserStorage.Backend.RootIdentity)
+                !m_SafSeedAttempted)
             {
                 StartCoroutine(SeedSafDefaults());
             }
@@ -459,8 +457,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
-            string seedRootIdentity = backend.RootIdentity;
-            m_SafSeedAttemptedRootIdentity = seedRootIdentity;
+            m_SafSeedAttempted = true;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(
                     StorageArea.MediaLibraryModels, "", CancellationToken.None),
@@ -494,13 +491,11 @@ namespace TiltBrush
                 yield break;
             }
 
-            string handledKey = OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                $"{kSafSeedPreference}.HandledFilesV1", seedRootIdentity);
+            string handledKey = $"{kSafSeedPreference}.HandledFilesV1";
             var handled = DefaultMediaSeeder.GetHandledFiles(
                 PlayerPrefs.HasKey(handledKey) ? PlayerPrefs.GetString(handledKey) : null,
                 App.Instance.HasPlayedBefore ||
-                 PlayerPrefs.GetInt(OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                     kSafSeedPreference, seedRootIdentity), 0) != 0 ||
+                 PlayerPrefs.GetInt(kSafSeedPreference, 0) != 0 ||
                  (listing.Success && listing.Documents.Count > 0),
                 new[] { "DefaultModels/Andy.glb", "DefaultModels/Tiltasaurus.glb" });
             // Persist migration before writes, including when all legacy defaults were deleted.
@@ -509,11 +504,6 @@ namespace TiltBrush
             {
                 foreach (string resourcePath in m_DefaultModels)
                 {
-                    if (seedRootIdentity != backend.RootIdentity)
-                    {
-                        m_SeedingSafDefaults = false;
-                        yield break;
-                    }
                     if (string.IsNullOrEmpty(resourcePath)) { continue; }
                     string normalizedResource = resourcePath.Replace('\\', '/');
                     if (handled.Contains(normalizedResource)) { continue; }
@@ -569,29 +559,13 @@ namespace TiltBrush
                         m_SeedingSafDefaults = false;
                         yield break;
                     }
-                    if (seedRootIdentity != backend.RootIdentity)
-                    {
-                        m_SeedingSafDefaults = false;
-                        yield break;
-                    }
                     handled.Add(normalizedResource);
                     PlayerPrefs.SetString(handledKey, string.Join("\n", handled.OrderBy(value => value)));
                     PlayerPrefs.Save();
                 }
             }
 
-            if (!string.Equals(
-                    seedRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                m_SeedingSafDefaults = false;
-                yield break;
-            }
-            PlayerPrefs.SetInt(
-                OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                    kSafSeedPreference, seedRootIdentity),
-                1);
+            PlayerPrefs.SetInt(kSafSeedPreference, 1);
             PlayerPrefs.Save();
             m_SeedingSafDefaults = false;
             ForceCatalogScan();

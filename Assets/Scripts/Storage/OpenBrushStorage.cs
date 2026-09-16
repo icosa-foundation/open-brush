@@ -84,13 +84,6 @@ namespace TiltBrush
             get { return "Open Brush/Exports"; }
         }
 
-        public static string GetSafRootScopedPreferenceKey(
-            string baseKey, string rootIdentity = null)
-        {
-            string identity = rootIdentity ?? UserStorage.Backend.RootIdentity;
-            return $"{baseKey}.{SafTransactionJournal.GetRootNamespaceId(identity)}";
-        }
-
         internal sealed class MediaSource
         {
             private readonly IUserStorageBackend m_Backend;

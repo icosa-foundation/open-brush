@@ -1306,8 +1306,7 @@ namespace TiltBrush
             {
                 foreach (string root in new[] { firstRoot, secondRoot })
                 {
-                    PlayerPrefs.DeleteKey(OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                        "QuillDefaults.HandledFilesV1", root));
+                    PlayerPrefs.DeleteKey("QuillDefaults.HandledFilesV1");
                 }
                 PlayerPrefs.Save();
             }
@@ -1334,8 +1333,7 @@ namespace TiltBrush
             }
             finally
             {
-                PlayerPrefs.DeleteKey(OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                    "QuillDefaults.HandledFilesV1", backend.RootIdentity));
+                PlayerPrefs.DeleteKey("QuillDefaults.HandledFilesV1");
                 PlayerPrefs.Save();
             }
         }

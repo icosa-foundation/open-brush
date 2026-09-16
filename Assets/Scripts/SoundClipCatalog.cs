@@ -274,8 +274,7 @@ namespace TiltBrush
                     yield break;
                 }
 
-                string seedKey = OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                    kSafSeedPreference, rootIdentity);
+                string seedKey = kSafSeedPreference;
                 Dictionary<string, byte[]> defaults = null;
                 if (PlayerPrefs.GetInt(seedKey, 0) == 0)
                 {

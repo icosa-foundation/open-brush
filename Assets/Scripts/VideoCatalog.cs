@@ -156,8 +156,7 @@ namespace TiltBrush
                 m_SafSeedAttemptedRootIdentity !=
                     UserStorage.Backend.RootIdentity &&
                 PlayerPrefs.GetInt(
-                    OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                        kSafSeedPreference),
+                    kSafSeedPreference,
                     0) == 0)
             {
                 StartCoroutine(SeedSafDefaults());
@@ -268,8 +267,7 @@ namespace TiltBrush
                 yield break;
             }
             PlayerPrefs.SetInt(
-                OpenBrushStorage.GetSafRootScopedPreferenceKey(
-                    kSafSeedPreference, seedRootIdentity),
+                kSafSeedPreference,
                 1);
             PlayerPrefs.Save();
             m_SeedingSafDefaults = false;

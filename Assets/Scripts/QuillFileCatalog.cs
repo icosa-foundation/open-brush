@@ -225,7 +225,7 @@ namespace TiltBrush
         {
             if (!backend.IsReady) { yield break; }
             string root = backend.RootIdentity;
-            string key = OpenBrushStorage.GetSafRootScopedPreferenceKey("QuillDefaults.HandledFilesV1", root);
+            string key = "QuillDefaults.HandledFilesV1";
             var handled = DefaultMediaSeeder.GetHandledFiles(PlayerPrefs.GetString(key, ""), false, null);
             foreach (string resourcePath in defaults ?? Array.Empty<string>())
             {
