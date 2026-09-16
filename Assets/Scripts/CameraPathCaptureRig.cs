@@ -114,14 +114,6 @@ namespace TiltBrush
         public void RecordPath()
         {
             string saveName = MultiCamTool.GetSaveName(MultiCamStyle.Video);
-            string sharedVideoPath;
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedVideoPath) &&
-                !AndroidStorageManager.RequireSharedFolderFor("saving videos", RecordPath))
-            {
-                return;
-            }
-
             // See README.md section # Video support and # Camera path support.
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(true);

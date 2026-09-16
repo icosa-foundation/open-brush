@@ -466,17 +466,6 @@ namespace TiltBrush
             bool directSafSave =
                 !saveToLocalCacheOnly &&
                 UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
-            if (!saveToLocalCacheOnly &&
-                OpenBrushStorage.IsGooglePlayStorageMode &&
-                directSafSave &&
-                !AndroidStorageManager.RequireSharedFolderFor(
-                    selectedOnly ? "saving saved strokes" : "saving sketches",
-                    () => StartCoroutine(SaveLow(info, bNotify, snapshot, selectedOnly)),
-                    null))
-            {
-                return new List<Timeslice>().GetEnumerator();
-            }
-
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {

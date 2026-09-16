@@ -25,20 +25,15 @@ namespace TiltBrush
 {
     public class AndroidStorageManager : MonoBehaviour
     {
-        private const string kLegacyStartupPromptDismissedKey =
-            "GooglePlayStorage.StartupPromptDismissed";
         // Pre-release mirrored-cache builds used this key. Payloads are deliberately retained on
         // disk, but the obsolete retry records must not drive the FD-backed backend.
         private const string kPendingTransfersKey = "GooglePlayStorage.PendingTransfers";
 
-        // The Android SAF picker is modal: while it has focus, users cannot initiate another
-        // storage operation through the Open Brush UI. Keep at most one continuation (normally the
-        // action that opened the picker). API or background callers are deliberately not queued once
-        // that slot is occupied.
-        private static Action m_PendingAction;
-        private static Action m_PendingCanceledAction;
+        // The Android SAF picker is modal, so at most one request is ever outstanding.
         private static bool m_RequestInProgress;
-        private static bool m_StartupPromptShown;
+        // Set once the startup grant is in place. A later re-selection is a recovery path that
+        // requires a restart rather than a hot swap, so it must not re-enter startup.
+        private static bool m_StartupSelectionComplete;
         private static string m_FileDescriptorProbeRootIdentity;
         private static string m_ActiveRootIdentity;
         private static AndroidStorageManager m_Instance;
@@ -52,11 +47,6 @@ namespace TiltBrush
             }
 
             ReportObsoletePendingTransferState();
-            if (PlayerPrefs.HasKey(kLegacyStartupPromptDismissedKey))
-            {
-                PlayerPrefs.DeleteKey(kLegacyStartupPromptDismissedKey);
-                PlayerPrefs.Save();
-            }
 
             var existing = GameObject.Find(nameof(AndroidStorageManager));
             if (existing != null)
@@ -96,56 +86,35 @@ namespace TiltBrush
 
             yield return null;
 
-            if (AndroidSafStorage.HasOpenBrushFolder())
+            if (!AndroidSafStorage.HasOpenBrushFolder())
             {
-                RunFileDescriptorProbeOnce();
-                yield return RecoverTransactions(null);
-                yield break;
-            }
+                // A Google Play build has no usable storage without this grant and no degraded
+                // mode to fall back on, so the choice is the folder or nothing. Ask once and
+                // exit if the user declines.
+                string message =
+                    "Open Brush needs a folder for your sketches and media. " +
+                    "Choosing one is required to continue.";
+                ControllerConsoleScript.m_Instance?.AddNewLine(message);
+                OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
 
-            if (!m_StartupPromptShown &&
-                !AndroidSafStorage.HasOpenBrushFolder())
-            {
-                m_StartupPromptShown = true;
-                RequireSharedFolderFor("shared storage", null, null);
-            }
-        }
-
-        public static bool RequireSharedFolderFor(string featureName, Action onReady)
-        {
-            return RequireSharedFolderFor(featureName, onReady, null);
-        }
-
-        public static bool RequireSharedFolderFor(
-            string featureName, Action onReady, Action onCanceled)
-        {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode || AndroidSafStorage.HasOpenBrushFolder())
-            {
-                return true;
-            }
-
-            if (m_RequestInProgress)
-            {
-                if (m_PendingAction == null && onReady != null)
+                m_RequestInProgress = true;
+                AndroidSafStorage.RequestOpenBrushFolder();
+                while (m_RequestInProgress)
                 {
-                    m_PendingAction = onReady;
-                    m_PendingCanceledAction = onCanceled;
+                    yield return null;
                 }
-                ControllerConsoleScript.m_Instance?.AddNewLine(
-                    $"Waiting for Open Brush folder selection before {featureName}.");
-                return false;
+
+                if (!AndroidSafStorage.HasOpenBrushFolder())
+                {
+                    // OnOpenBrushFolderCanceled has already begun quitting.
+                    yield break;
+                }
             }
 
-            m_PendingAction = onReady;
-            m_PendingCanceledAction = onCanceled;
-            m_RequestInProgress = true;
-            string message =
-                $"Choose an Open Brush folder to enable {featureName}. You can cancel and continue without shared storage.";
-            ControllerConsoleScript.m_Instance?.AddNewLine(message);
-            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
-            AndroidSafStorage.RequestOpenBrushFolder();
-            return false;
+            m_StartupSelectionComplete = true;
+            RunFileDescriptorProbeOnce();
+            yield return RecoverTransactions(null);
         }
 
         public static void ReselectSharedFolder()
@@ -161,8 +130,6 @@ namespace TiltBrush
                 return;
             }
 
-            m_PendingAction = null;
-            m_PendingCanceledAction = null;
             m_RequestInProgress = true;
             AndroidSafStorage.RequestOpenBrushFolder();
         }
@@ -172,30 +139,42 @@ namespace TiltBrush
             m_RequestInProgress = false;
             AndroidSafStorage.InvalidateReadiness();
 
-            RunFileDescriptorProbeOnce();
-            StartCoroutine(RecoverTransactions(() =>
+            if (!m_StartupSelectionComplete)
             {
-                Action pendingAction = m_PendingAction;
-                m_PendingAction = null;
-                m_PendingCanceledAction = null;
-                pendingAction?.Invoke();
-            }));
+                // Startup is still waiting on this; it runs the probe and recovery itself.
+                return;
+            }
+
+            // A re-selection after startup is the recovery path for a revoked grant. The root is
+            // fixed for the lifetime of a run, so everything derived from it - catalogs, loaders,
+            // in-flight work - is stale. Restarting is the supported way to pick the new root up.
+            string message =
+                "Open Brush folder updated. Restart Open Brush to use the new folder.";
+            ControllerConsoleScript.m_Instance?.AddNewLine(message);
+            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
         }
 
         public void OnOpenBrushFolderCanceled(string unused)
         {
             m_RequestInProgress = false;
-            Action pendingCanceledAction = m_PendingCanceledAction;
-            m_PendingAction = null;
-            m_PendingCanceledAction = null;
-            bool existingFolderRemainsAvailable = AndroidSafStorage.HasOpenBrushFolder();
-            string message = existingFolderRemainsAvailable
-                ? "Open Brush folder selection canceled. The existing folder remains selected."
-                : "Open Brush folder selection canceled. Shared-storage features remain unavailable.";
-            ControllerConsoleScript.m_Instance?.AddNewLine(message);
-            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
-            pendingCanceledAction?.Invoke();
+
+            if (AndroidSafStorage.HasOpenBrushFolder())
+            {
+                string kept =
+                    "Open Brush folder selection canceled. The existing folder remains selected.";
+                ControllerConsoleScript.m_Instance?.AddNewLine(kept);
+                OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, kept, fPopScalar: 0.5f);
+                return;
+            }
+
+            // No grant and no degraded mode: there is nowhere to read or write. Exit rather than
+            // run an application whose every storage operation would fail.
+            Debug.LogWarning(
+                "SAF_STORAGE No Open Brush folder was selected; quitting.");
+            Application.Quit();
+            Debug.Break();
         }
 
         private static void RunFileDescriptorProbeOnce()

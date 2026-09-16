@@ -4308,13 +4308,6 @@ namespace TiltBrush
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(directoryName, out _) &&
-                !AndroidStorageManager.RequireSharedFolderFor("saving models", SaveModel))
-            {
-                return;
-            }
-
             string usdname = Path.Combine(directoryName, basename + ".usd");
             // TODO: export selection only, though this is still only experimental. The blocking
             // issue to implement this is that the export collector needs to expose this as an option.

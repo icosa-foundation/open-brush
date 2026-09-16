@@ -640,11 +640,7 @@ namespace TiltBrush
                     path, "GIF capture", (success, publishError) => FinishGifSave(
                         path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
             }
-            if (AndroidStorageManager.RequireSharedFolderFor("GIF capture", Publish,
-                () => FinishGifSave(path, "Folder selection canceled. GIF remains staged locally.")))
-            {
-                Publish();
-            }
+            Publish();
         }
 
         private void FinishGifSave(string path, string error)
@@ -1759,16 +1755,6 @@ namespace TiltBrush
 
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
-            string sharedVideoPath;
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(filePath, out sharedVideoPath) &&
-                !AndroidStorageManager.RequireSharedFolderFor(
-                    "saving videos",
-                    () => StartVideoCapture(filePath, offlineRender)))
-            {
-                return;
-            }
-
             filePath = RevalidateCaptureName(filePath, MultiCamStyle.Video);
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
@@ -2010,16 +1996,6 @@ namespace TiltBrush
             string saveName, MultiCamStyle style, HybridCamera odsCamera,
             Transform odsCaptureTransform)
         {
-            string sharedSnapshotPath;
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(saveName, out sharedSnapshotPath) &&
-                !AndroidStorageManager.RequireSharedFolderFor(
-                    "saving snapshots",
-                    () => App.Instance.StartCoroutine(TakeScreenshotAsync(saveName, style))))
-            {
-                yield break;
-            }
-
             saveName = RevalidateCaptureName(saveName, style);
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other

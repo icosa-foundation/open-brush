@@ -455,15 +455,7 @@ namespace TiltBrush
                     });
             }
 
-            if (AndroidSafStorage.HasOpenBrushFolder())
-            {
-                Publish();
-                return;
-            }
-            // One picker continuation owns the color image and every generated sidecar.
-            AndroidStorageManager.RequireSharedFolderFor("snapshot", Publish,
-                () => ControllerConsoleScript.m_Instance?.AddNewLine(
-                    "[SAF_SNAPSHOT_BUNDLE] API snapshot remains staged locally because folder selection was canceled."));
+            Publish();
         }
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(
@@ -507,18 +499,7 @@ namespace TiltBrush
                 });
             }
 
-            if (AndroidSafStorage.HasOpenBrushFolder())
-            {
-                Publish();
-                return;
-            }
-
-            AndroidStorageManager.RequireSharedFolderFor(
-                label,
-                Publish,
-                () => ControllerConsoleScript.m_Instance?.AddNewLine(
-                    $"SAF_OUTPUT API {label} remains staged locally because folder " +
-                    "selection was canceled."));
+            Publish();
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)

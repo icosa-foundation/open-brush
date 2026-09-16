@@ -127,12 +127,6 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode &&
-                !AndroidStorageManager.RequireSharedFolderFor("export", ExportScene))
-            {
-                return;
-            }
-
             var current = SaveLoadScript.m_Instance.SceneFile;
             string validHumanName = FileUtils.GetValidFilename(current.HumanName);
             if (string.IsNullOrEmpty(validHumanName))
