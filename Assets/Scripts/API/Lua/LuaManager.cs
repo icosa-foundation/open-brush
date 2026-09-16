@@ -495,11 +495,59 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
+            if (UsesStorageBackend)
+            {
+                // Shared storage has no directory to walk, so enumerate it through the backend
+                // and read each plugin as a stream.
+                StorageTreeResult tree = UserStorage.Backend.EnumerateTree(
+                    StorageArea.Plugins, "",
+                    new StorageTreeQuery(
+                        recursive: true,
+                        includeDirectories: false,
+                        includeExtensions: new[] { ".lua" }),
+                    CancellationToken.None);
+                if (!tree.Success)
+                {
+                    Debug.LogWarning($"SAF_PLUGINS Could not list plugins: {tree.Error}");
+                    return;
+                }
+                foreach (StorageDocument document in tree.Entries)
+                {
+                    LoadScriptFromStorage(document);
+                }
+                return;
+            }
             string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
             }
+        }
+
+        /// True when plugins live in shared storage, which exposes no filesystem path.
+        private static bool UsesStorageBackend =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
+
+        private string LoadScriptFromStorage(StorageDocument document)
+        {
+            string filename = document.DisplayName;
+            if (filename.StartsWith("__")) { return null; }
+            string contents;
+            try
+            {
+                using (Stream source = UserStorage.Backend.OpenRead(
+                           document.DocumentId, requireSeekable: false, CancellationToken.None))
+                using (var reader = new StreamReader(source))
+                {
+                    contents = reader.ReadToEnd();
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_PLUGINS Could not read {filename}: {e.Message}");
+                return null;
+            }
+            return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
         private void OnRuntimeContentRefreshed(StorageArea area)
