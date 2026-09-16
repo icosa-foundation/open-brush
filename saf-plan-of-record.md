@@ -70,7 +70,17 @@ recompile` / `recompile_status`); no runtime testing yet.
   sites and `FilePath` keys the image cache, so it is not a small change.
 - **Step 3.** The materialization cache cannot go until the above land; it is
   still the route for OBJ, USD, splats and images.
-- **Steps 4, 6.** Root identity (255 references) and the publish surface. The
+- **Step 4, started.** Root identity is down from 255 references to 243, with the
+  catalog scan guard narrowed. The rest is the per-operation guards in the
+  catalogs, `EnsureSelectedRoot`/`IsSelectedRootCurrent` in the transaction path,
+  the root-scoped preference keys and namespaces, and the `rootChanged` catalog
+  resets. The cache namespacing that fed much of it is already gone with
+  materialization, so the remaining work is smaller than the count suggests.
+- **Step 3, complete.** Materialization is deleted entirely - the interface
+  members, both implementations, the cache, the budget, the eviction and every
+  `Func<string>` threading it through the media classes. Nothing copies out of
+  shared storage.
+- **Step 6.** The publish surface. The
   publish collapse turned out to be semantic rather than mechanical - thirteen
   call sites with genuinely different staging, bundling and naming - so it
   wants review rather than a blind refactor.
