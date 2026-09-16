@@ -20,21 +20,19 @@ namespace TiltBrush
         }
 
         [Test]
-        public void ScanGuard_RejectsStaleGenerationBackendRootAndDirectory()
+        public void ScanGuard_RejectsStaleGenerationBackendAndDirectory()
         {
             object backend = new object();
             StringComparer comparer = Path.DirectorySeparatorChar == '\\'
                 ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             Assert.IsTrue(CatalogScanGuard.IsCurrent(
-                2, 2, backend, backend, "root", "root", "A", "A", comparer));
+                2, 2, backend, backend, "A", "A", comparer));
             Assert.IsFalse(CatalogScanGuard.IsCurrent(
-                1, 2, backend, backend, "root", "root", "A", "A", comparer));
+                1, 2, backend, backend, "A", "A", comparer));
             Assert.IsFalse(CatalogScanGuard.IsCurrent(
-                2, 2, backend, new object(), "root", "root", "A", "A", comparer));
+                2, 2, backend, new object(), "A", "A", comparer));
             Assert.IsFalse(CatalogScanGuard.IsCurrent(
-                2, 2, backend, backend, "old", "root", "A", "A", comparer));
-            Assert.IsFalse(CatalogScanGuard.IsCurrent(
-                2, 2, backend, backend, "root", "root", "A", "B", comparer));
+                2, 2, backend, backend, "A", "B", comparer));
         }
 
         [TestCase("clip.mp4", true)]

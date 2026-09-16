@@ -331,7 +331,7 @@ namespace TiltBrush
                     return bytes;
                 });
                 if (!CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
-                    backend, UserStorage.Backend, rootIdentity, backend.RootIdentity,
+                    backend, UserStorage.Backend,
                     directory, m_CurrentDirectory, StringComparer.Ordinal))
                 {
                     m_DirectoryScanRequired = true;
@@ -356,7 +356,7 @@ namespace TiltBrush
                     yield return null;
                 }
                 if (!UsesSaf || !CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
-                    backend, UserStorage.Backend, rootIdentity, backend.RootIdentity,
+                    backend, UserStorage.Backend,
                     directory, m_CurrentDirectory, StringComparer.Ordinal))
                 {
                     m_DirectoryScanRequired = true;

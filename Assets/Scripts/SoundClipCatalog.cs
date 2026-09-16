@@ -300,7 +300,6 @@ namespace TiltBrush
                 }
                 if (!CatalogScanGuard.IsCurrent(
                         generation, m_ScanGeneration, backend, UserStorage.Backend,
-                        rootIdentity, backend.RootIdentity,
                         directory, m_CurrentSoundClipDirectory, pathComparer))
                 {
                     if (generation == m_ScanGeneration) { m_DirectoryScanRequired = true; }
@@ -347,7 +346,6 @@ namespace TiltBrush
                     yield return clip.Initialize();
                     if (!CatalogScanGuard.IsCurrent(
                             generation, m_ScanGeneration, backend, UserStorage.Backend,
-                            rootIdentity, backend.RootIdentity,
                             directory, m_CurrentSoundClipDirectory, pathComparer))
                     {
                         clip.ReleaseThumbnail();

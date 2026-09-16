@@ -476,7 +476,6 @@ namespace TiltBrush
 
             if (!CatalogScanGuard.IsCurrent(
                     generation, m_ScanGeneration, backend, UserStorage.Backend,
-                    scanRootIdentity, backend.RootIdentity,
                     directory, m_CurrentVideoDirectory, pathComparer))
             {
                 m_DirectoryScanRequired = true;
@@ -535,7 +534,6 @@ namespace TiltBrush
                 yield return video.Initialize();
                 if (!CatalogScanGuard.IsCurrent(
                         generation, m_ScanGeneration, backend, UserStorage.Backend,
-                        scanRootIdentity, backend.RootIdentity,
                         directory, m_CurrentVideoDirectory, pathComparer))
                 {
                     video.ReleaseThumbnail();
@@ -546,7 +544,6 @@ namespace TiltBrush
 
             if (!CatalogScanGuard.IsCurrent(
                     generation, m_ScanGeneration, backend, UserStorage.Backend,
-                    scanRootIdentity, backend.RootIdentity,
                     directory, m_CurrentVideoDirectory, pathComparer))
             {
                 m_DirectoryScanRequired = true;
