@@ -318,7 +318,6 @@ namespace TiltBrush
                 destinationKey, cancellationToken);
             try
             {
-                EnsureSelectedRoot();
                 FindExistingTarget(cancellationToken);
                 SafTransactionJournal.Persist(m_Record);
                 Debug.Log(
@@ -343,7 +342,6 @@ namespace TiltBrush
                 throw new InvalidOperationException("Storage transaction stream is already open.");
             }
 
-            EnsureSelectedRoot();
             string providerDirectory = CombineProviderDirectory();
             if (!AndroidSafStorage.TryCreateNamedFileStream(
                     providerDirectory,
@@ -357,23 +355,6 @@ namespace TiltBrush
                 throw new IOException(error);
             }
             m_Record.TemporaryDocumentId = temporaryId.Value;
-            if (!IsSelectedRootCurrent())
-            {
-                CloseStream();
-                StorageMutationResult cleanup =
-                    AndroidSafStorage.DeleteDocument(temporaryId);
-                if (cleanup.Success || cleanup.Code == StorageResultCode.NotFound)
-                {
-                    m_Record.TemporaryDocumentId = null;
-                }
-                Fail(
-                    SafTransactionState.RollbackRequired,
-                    cleanup.Success || cleanup.Code == StorageResultCode.NotFound
-                        ? "The selected Open Brush folder changed while creating a temporary document."
-                        : $"The selected Open Brush folder changed and temporary cleanup failed: " +
-                          $"{cleanup.Error}");
-                throw new IOException(m_Record.LastError);
-            }
             m_Record.State = SafTransactionState.WritingTemporary.ToString();
             SafTransactionJournal.Persist(m_Record);
             return m_Stream;
@@ -510,10 +491,8 @@ namespace TiltBrush
 
         private void FindExistingTarget(CancellationToken cancellationToken)
         {
-            EnsureSelectedRoot();
             StorageDirectoryResult listing = AndroidSafStorage.QueryDirectory(
                 CombineProviderDirectory());
-            EnsureSelectedRoot();
             if (listing.Code == StorageResultCode.NotFound)
             {
                 return;
@@ -709,23 +688,6 @@ namespace TiltBrush
         {
             m_DestinationLock?.Dispose();
             m_DestinationLock = null;
-        }
-
-        private bool IsSelectedRootCurrent()
-        {
-            return string.Equals(
-                m_Record.RootId,
-                AndroidSafStorage.GetSelectedRootIdentity(),
-                StringComparison.Ordinal);
-        }
-
-        private void EnsureSelectedRoot()
-        {
-            if (!IsSelectedRootCurrent())
-            {
-                throw new IOException(
-                    "The selected Open Brush folder changed during the storage transaction.");
-            }
         }
 
         private static void SplitRelativePath(

@@ -100,15 +100,10 @@ namespace TiltBrush
                 rootId, StorageArea.Exports, cancellationToken);
             string destination = SelectExportDirectoryName(backend,
                 Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
-            if (rootId != backend.RootIdentity)
-            {
-                return new SafPublicationResult(StorageResultCode.Cancelled, "The shared export folder changed.");
-            }
             return PublishBundle(backend, StorageArea.Exports,
                 new[] { new SafStagedPath(stagedDirectory, destination),
                     new SafStagedPath(stagedReadme, "README.txt") },
-                transactionOwnsPayload: true, cancellationToken,
-                expectedRootIdentity: rootId);
+                transactionOwnsPayload: true, cancellationToken);
         }
 
         public static SafPublicationResult PublishUniqueDirectory(
@@ -132,15 +127,9 @@ namespace TiltBrush
             List<string> reservedNames = GetPendingTopLevelNames(rootId, area, cancellationToken);
             string destination = SelectUniqueDirectoryName(
                 backend, area, Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
-            if (rootId != backend.RootIdentity)
-            {
-                return new SafPublicationResult(StorageResultCode.Cancelled,
-                    "The shared output folder changed.");
-            }
             return PublishBundle(backend, area,
                 new[] { new SafStagedPath(stagedDirectory, destination) },
-                transactionOwnsPayload, cancellationToken,
-                expectedRootIdentity: rootId);
+                transactionOwnsPayload, cancellationToken);
         }
 
         internal static string SelectExportDirectoryName(IUserStorageBackend backend,
@@ -159,10 +148,6 @@ namespace TiltBrush
             if (!listing.Success && listing.Code != StorageResultCode.NotFound)
             {
                 throw new IOException($"Could not check shared output names: {listing.Error}");
-            }
-            if (rootId != backend.RootIdentity)
-            {
-                throw new IOException("The shared output folder changed while selecting a name.");
             }
             var names = new HashSet<string>(reservedNames, StringComparer.OrdinalIgnoreCase);
             foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
@@ -229,8 +214,7 @@ namespace TiltBrush
             StorageArea area,
             IEnumerable<SafStagedPath> stagedPaths,
             bool transactionOwnsPayload,
-            CancellationToken cancellationToken,
-            string expectedRootIdentity = null)
+            CancellationToken cancellationToken)
         {
             if (backend == null ||
                 backend.Kind != StorageBackendKind.StorageAccessFramework ||
@@ -272,12 +256,6 @@ namespace TiltBrush
                     StorageResultCode.InvalidPath, "Publication bundle is empty.");
             }
             string rootId = backend.RootIdentity;
-            if (expectedRootIdentity != null && !string.Equals(
-                    expectedRootIdentity, rootId, StringComparison.Ordinal))
-            {
-                return new SafPublicationResult(
-                    StorageResultCode.Cancelled, "The shared output folder changed.");
-            }
             var record = new SafPublicationRecord
             {
                 TransactionId = Guid.NewGuid().ToString("N"),

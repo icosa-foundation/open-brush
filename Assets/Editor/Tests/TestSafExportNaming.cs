@@ -194,26 +194,6 @@ namespace TiltBrush
                 backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
         }
 
-        [Test]
-        public void RootBoundPublicationRejectsAChangedRootBeforeJournaling()
-        {
-            string stagedFile = Path.GetTempFileName();
-            try
-            {
-                var backend = new CatalogTestBackend { RootIdentity = "new-root" };
-                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
-                    backend, StorageArea.SplatPoses,
-                    new[] { new SafStagedPath(stagedFile, "Capture/data.bin") },
-                    transactionOwnsPayload: false, CancellationToken.None,
-                    expectedRootIdentity: "old-root");
-                Assert.AreEqual(StorageResultCode.Cancelled, result.Code);
-                Assert.IsTrue(File.Exists(stagedFile));
-            }
-            finally
-            {
-                File.Delete(stagedFile);
-            }
-        }
 
         [Test]
         public void CompletedPublicationRecoveryFinishesPartialOwnedPayloadCleanup()
