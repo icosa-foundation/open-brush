@@ -6,11 +6,28 @@ Implemented replacement for the whole-tree mirrored-cache design on Google
 Play Android builds.
 
 Static desktop, editor, Android-symbol, and Java compilation can validate the
-code shape, but they do not satisfy the mandatory device gate. Before release,
-run the built-in `SAF_FD` debug probe and the device matrix below on the target
-local Android Documents provider. If detached descriptors are not reliable and
-seekable under IL2CPP, retain the backend/catalog/transaction architecture and
-replace direct archive reads with sparse per-document materialization.
+code shape, but they do not satisfy the mandatory device gate.
+
+Amendment (2026-09-16): the provider half of that gate has now been run and
+passed. `Support/SafFdProbe` is a standalone Android app that exercises the
+provider assumptions without a Unity build; on a Nothing Phone (3a), Android 16
+(API 36), against `com.android.externalstorage`, a detached descriptor is a
+seekable regular file (`S_ISREG`, `mode=0100660`) that accepts a 3 MB write,
+supports random-access read-back at mid-file, and round-trips byte-identical
+when reopened by URI. `rwt` and `renameDocument` are both supported
+(`flags=0x146`). Two further results are recorded in the design below: a
+detached descriptor has no usable `/proc/self/fd` path, and `renameDocument`
+deduplicates rather than replaces. See `Support/SafFdProbe/README.md`.
+
+The IL2CPP half of the gate remains outstanding. Before release, run the
+built-in `SAF_FD` debug probe (`AndroidSafStorage.RunFileDescriptorProbe`) from
+a real Google Play build to confirm that `SafeFileHandle` over a detached
+descriptor behaves under Unity's runtime, and run the device matrix below
+against any additional target provider. If detached descriptors are not
+reliable and seekable under IL2CPP, retain the backend/catalog/transaction
+architecture and replace direct archive reads with sparse per-document
+materialization. Cloud-backed providers are still expected to fail the
+seekability check and fall back to materialization.
 
 ## Decision Summary
 
@@ -20,8 +37,14 @@ user-visible store for Google Play builds.
 - Sketches and saved strokes are enumerated directly from SAF.
 - Known `.tilt` documents are read and written through seekable file
   descriptors when the provider supports them.
-- Open Brush does not mirror SAF directories into app-private storage.
-- Open Brush does not reconcile two directory trees.
+- Open Brush does not whole-tree mirror the canonical sketch store into
+  app-private storage, and does not reconcile two directory trees.
+- Bounded, manifest-tracked projection of *path-consumer* trees (`Scripts`,
+  `Plugins`, `Fonts`) is the accepted exception, added by
+  `google-play-saf-feature-parity-plan.md`. Their consumers require real
+  filesystem paths, and the device probe confirmed that a detached descriptor
+  exposes no usable `/proc/self/fd` path, so projection is the only way to
+  serve them without rewriting every consumer to take streams.
 - Autosaves and failure-recovery data remain app-private.
 - Libraries that require ordinary paths use narrowly scoped staging or
   on-demand materialization.
@@ -90,8 +113,9 @@ bounded storage-adapter problem.
 ## Core Invariants
 
 1. A shared document exists canonically only in SAF.
-2. App-private materializations are disposable caches, not a second canonical
-   directory.
+2. App-private materializations and projections are disposable caches, not a
+   second canonical directory. SAF remains canonical; a projection may be
+   deleted and rebuilt at any time without data loss.
 3. App-private staged outputs are pending transactions, not synchronized
    mirrors.
 4. Failure to query SAF never means that the SAF directory is empty.

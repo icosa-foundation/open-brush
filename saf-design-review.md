@@ -13,11 +13,14 @@ broken that requirement; those are corrected below, and the corrections are
 recorded rather than silently removed, because the reasoning that produced
 them is the reasoning a future reviewer is most likely to repeat.
 
+Updated 2026-09-16 with device probe results (`Support/SafFdProbe`), which
+discharge the provider half of the release gate and independently validate two
+parts of the design this review had questioned.
+
 Conclusion: the constraint driving this branch is real, the fd-backed
-approach is right, and under a parity requirement the great majority of the
-code is justified. Roughly 800 lines are removable without any behavioural
-change, and one design document needs amending so it stops contradicting the
-shipped implementation.
+approach is right and now measured, and under a parity requirement the great
+majority of the code is justified. Roughly 800 lines are removable without any
+behavioural change.
 
 ## The Question This Answers
 
@@ -122,6 +125,60 @@ implementation looks like it has more machinery than its local counterpart,
 check first whether it is compensating for a filesystem capability that SAF
 lacks. Several places here are.
 
+## Device Probe Results
+
+`Support/SafFdProbe` is a standalone ~16 KB Android app that exercises the
+provider-side assumptions of this design without building Open Brush. It runs
+in seconds rather than the twenty minutes a Unity Android build takes, so it is
+practical to re-run per device and per OS release.
+
+Run 2026-09-16 on a Nothing Phone (3a), Android 16 (API 36), against
+`com.android.externalstorage`:
+
+```text
+INFO 2  flags=0x146 write=true rename=true delete=true
+PASS 3  detachFd -> 132
+INFO 3a fstat mode=0100660 regular=true size=0
+PASS 3b lseek(SEEK_END) = 0
+PASS 4  wrote 3145728 bytes through detached fd
+PASS 5  random-access read at 1572864 got=64 match=true
+FAIL 6  /proc/self/fd path unusable: EACCES (Permission denied)
+PASS 7  reopen 'r' size=3145728 read=3145728 identical=true
+PASS 8  rwt accepted, size after truncate = 0
+PASS 9  renameDocument -> primary:Documents/obfdprobe.tilt.ob-bak
+INFO 10 rename onto existing name -> obfdprobe (1).tilt
+```
+
+**The core assumption holds.** A detached descriptor is a seekable regular
+file that accepts a multi-megabyte write, supports random-access read-back at
+mid-file, and round-trips byte-identical when reopened by URI. Rename, delete
+and `rwt` truncate are all supported. The fd-backed read path is sound on the
+local provider.
+
+**Check 6 failed, and that answer matters.** `/proc/self/fd/N` is not openable
+as a path — it resolves to the underlying FUSE path the sandbox cannot reach.
+This was the one remaining shortcut by which path-only libraries might have
+consumed SAF documents directly. It does not exist. On-demand materialization
+for models, SVG, fonts and Lua is therefore required, not convenient, and the
+`Scripts`/`Plugins`/`Fonts` projection questioned below is the only practical
+way to serve those consumers.
+
+**Check 10 deduplicated instead of replacing.** `renameDocument` onto an
+existing display name produced `obfdprobe (1).tilt`. Rename can never be used
+to atomically replace a document, so the commit sequence must free the target
+name first. That is exactly what it does — rename canonical to `.ob-bak`,
+then rename temporary into place. The ordering is load-bearing, not defensive
+habit, and the branch's "Reject ambiguous SAF renames" and "Target SAF
+overwrites by document identity" commits are addressing a real provider
+behaviour.
+
+The IL2CPP half of the gate is still outstanding: `SafeFileHandle` over a
+detached descriptor under Unity's runtime needs a real Google Play build and
+`AndroidSafStorage.RunFileDescriptorProbe`. A regular-file descriptor is the
+case `FileStream` handles natively, so residual risk is low but not zero.
+No cloud-backed provider has been probed; those are expected to fail check 3
+and fall back to materialization.
+
 ## Remaining Concerns
 
 ### 1. Two design documents disagree about mirroring
@@ -157,6 +214,13 @@ this review went wrong.
 The amendment already appended to the parity plan — removing the
 `ContentObserver` layer because observation "exceeded the parity bar this
 plan exists to meet" — is a good precedent for this kind of correction.
+
+**Resolved 2026-09-16.** `google-play-saf-fd-backed-storage-plan.md` has been
+amended: the blanket "does not mirror" line now distinguishes whole-tree
+mirroring of the canonical sketch store (still rejected) from bounded
+projection of path-consumer trees (accepted), core invariant 2 names the
+exception, and the device probe result establishing that no `/proc/self/fd`
+path exists is cited as the reason projection is unavoidable.
 
 ### 2. The transaction journal is redundant, and the branch already says so
 
@@ -213,20 +277,18 @@ marshalling, backend interface, call sites — and is not proposed for change.
 
 ## Recommended Actions
 
-1. **Run the device probe before any other work.** The entire read path rests
-   on an unvalidated assumption. `google-play-saf-fd-backed-storage-plan.md`
-   states that if detached descriptors are not reliably seekable under IL2CPP,
-   the architecture keeps its shape but direct archive reads must be replaced
-   with sparse per-document materialization.
-   `AndroidSafStorage.RunFileDescriptorProbe` (`AndroidSafStorage.cs:351`)
-   exists for this. Everything below is cheaper after it passes and wasted if
-   it fails.
+1. ~~**Run the device probe before any other work.**~~ Done for the provider
+   half; see above and `Support/SafFdProbe/README.md`. **Still outstanding:**
+   run `AndroidSafStorage.RunFileDescriptorProbe` (`AndroidSafStorage.cs:351`)
+   from a real Google Play build to close the IL2CPP half, and re-run
+   `Support/SafFdProbe` against any further target provider.
 
-2. **Execute the journal-removal plan.** 400–500 lines, one persistent store,
-   five fsyncs per save. Already specified and justified on this branch.
+2. ~~**Amend the fd-backed plan's mirroring language.**~~ Done.
 
-3. **Amend the fd-backed plan's mirroring language** so it matches the
-   shipped design and stops contradicting the parity plan.
+3. **Execute the journal-removal plan.** 400–500 lines, one persistent store,
+   five fsyncs per save. Already specified and justified on this branch. Safe
+   to start now that the commit sequence it must preserve has been validated
+   on device.
 
 4. **Collapse the publish surface** to one parameterised method. ~300 lines.
 
