@@ -166,8 +166,8 @@ namespace TiltBrush
         [Test]
         public void SafImages_KeepLibraryPathAcrossCacheLocations()
         {
-            var first = new ReferenceImage("cache-a/image.png", "id-a", null, null, 1, "./Nested/image.png");
-            var reopened = new ReferenceImage("cache-b/image.png", "id-b", null, null, 1, "./Nested/image.png");
+            var first = new ReferenceImage("cache-a/image.png", "id-a", null, 1, "./Nested/image.png");
+            var reopened = new ReferenceImage("cache-b/image.png", "id-b", null, 1, "./Nested/image.png");
             Assert.AreEqual("./Nested/image.png", first.RelativePath);
             Assert.AreEqual(first.RelativePath, reopened.RelativePath);
             Assert.AreNotEqual(first.FileFullPath, reopened.FileFullPath);

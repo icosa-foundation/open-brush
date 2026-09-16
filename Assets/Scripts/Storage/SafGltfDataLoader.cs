@@ -16,7 +16,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEngine;
 using UnityGLTF.Loader;
 
 namespace TiltBrush
@@ -66,19 +65,9 @@ namespace TiltBrush
                 ? requested
                 : $"{m_Directory}/{requested}";
 
-            // GLTFSceneImporter runs buffer and texture reads on worker threads when
-            // IsMultithreaded is set. A SAF read reaches the provider through JNI, which is only
-            // legal on a thread attached to the JVM, and Unity attaches only its own.
-            AttachToJvmIfNeeded();
+            // Worker-thread reads are attached to the JVM inside the SAF backend.
             return UserStorage.Backend.OpenRead(
                 m_Area, path, requireSeekable: false, CancellationToken.None);
-        }
-
-        private static void AttachToJvmIfNeeded()
-        {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            AndroidJNI.AttachCurrentThread();
-#endif
         }
 
         private static string Normalize(string path)

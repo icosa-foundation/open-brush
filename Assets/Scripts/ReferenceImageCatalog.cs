@@ -766,8 +766,6 @@ namespace TiltBrush
                     catalogIdentity,
                     () => backend.OpenRead(
                         documentId, requireSeekable: false, CancellationToken.None),
-                    () => backend.Materialize(
-                        documentId, MaterializationScope.File, CancellationToken.None),
                     document.Size,
                     $"./{Path.Combine(relativeDirectory, document.DisplayName).Replace("\\", "/")}"));
             }
@@ -873,7 +871,7 @@ namespace TiltBrush
                     .Where(part => part.Length > 0 && part != "."));
                 return new ReferenceImage(
                     source.LocalPath, source.Identity, source.OpenRead,
-                    () => source.Materialize(MaterializationScope.File), source.Document.Size,
+                source.Document.Size,
                     $"./{logicalPath}");
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||

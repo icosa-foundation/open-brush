@@ -188,12 +188,24 @@ namespace TiltBrush
 #endif
         }
 
+        /// Reads can be issued from worker threads - image decoding, glTF buffer loads, Lua module
+        /// resolution - and every one of them reaches the provider through JNI, which is only legal
+        /// on a thread attached to the JVM. Unity attaches only its own, so attach here rather than
+        /// relying on each caller to remember.
+        private static void AttachToJvmIfNeeded()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            AndroidJNI.AttachCurrentThread();
+#endif
+        }
+
         public static bool TryOpenSeekableReadStream(
             string relativePath, out FileStream stream, out string error)
         {
             stream = null;
             error = null;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "openFileDescriptor", GetActivity(), relativePath, "rw");
@@ -211,6 +223,7 @@ namespace TiltBrush
             stream = null;
             error = null;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "openDocumentFileDescriptor", GetActivity(), documentId.Value, "r");

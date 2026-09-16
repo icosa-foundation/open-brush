@@ -55,7 +55,6 @@ namespace TiltBrush
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
         private readonly Func<Stream> m_OpenRead;
-        private readonly Func<string> m_Materialize;
         private readonly string m_PersistentPath;
         private readonly long? m_KnownFileSize;
         private readonly string m_CacheIdentity;
@@ -161,7 +160,6 @@ namespace TiltBrush
             string displayPath,
             string catalogIdentity,
             Func<Stream> openRead,
-            Func<string> materialize,
             long? knownFileSize,
             string persistentPath = null)
         {
@@ -170,7 +168,6 @@ namespace TiltBrush
             CatalogIdentity = catalogIdentity;
             m_CacheIdentity = catalogIdentity;
             m_OpenRead = openRead;
-            m_Materialize = materialize;
             m_KnownFileSize = knownFileSize;
         }
 
@@ -181,7 +178,7 @@ namespace TiltBrush
         {
             if (FilePath.EndsWith(".svg"))
             {
-                EnsureMaterialized();
+                if (IsUnsupportedVectorImage) { return; }
                 // Try the cache first.
                 m_FullSize = ImageCache.LoadImageCache(FilePath, m_CacheIdentity);
                 if (m_FullSize == null)
@@ -195,7 +192,6 @@ namespace TiltBrush
             }
             else
             {
-                EnsureMaterialized();
                 m_FullSizeReferences++;
                 if (m_FullSizeReferences == 1)
                 {
@@ -224,7 +220,7 @@ namespace TiltBrush
             int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
-                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                    ReadEncodedBytes(), path, maxDimension, resizeDimension),
                 longRunning: true);
             HdrTextureLoader.DecodedImage decoded = null;
             Exception decodeError = null;
@@ -423,7 +419,11 @@ namespace TiltBrush
 
             if (FilePath.EndsWith(".svg"))
             {
-                EnsureMaterialized();
+                if (IsUnsupportedVectorImage)
+                {
+                    m_State = ImageState.Error;
+                    return true;
+                }
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
@@ -489,7 +489,6 @@ namespace TiltBrush
 
         IEnumerator<Timeslice> RequestLoadHdrCoroutine()
         {
-            EnsureMaterialized();
             Texture2D texture = null;
             Texture2D resizedTexture = null;
             try
@@ -498,7 +497,7 @@ namespace TiltBrush
                 int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
                     () => HdrTextureLoader.Decode(
-                        File.ReadAllBytes(FilePath), FilePath,
+                        ReadEncodedBytes(), FilePath,
                         maxDimension, resizeDimension),
                     longRunning: true);
                 HdrTextureLoader.DecodedImage decoded = null;
@@ -873,20 +872,27 @@ namespace TiltBrush
                     App.PlatformConfig.ReferenceImagesMaxFileSize);
         }
 
-        private void EnsureMaterialized()
+        /// Reads the encoded image. The catalog supplies a stream for documents that have no
+        /// filesystem path, so nothing needs to be copied out of shared storage to decode it.
+        private byte[] ReadEncodedBytes()
         {
-            if (File.Exists(m_Path) || m_Materialize == null)
+            if (m_OpenRead == null)
             {
-                return;
+                return File.ReadAllBytes(FilePath);
             }
-            string materializedPath = m_Materialize();
-            if (!string.Equals(
-                    materializedPath, m_Path, StringComparison.OrdinalIgnoreCase))
+            using (Stream source = m_OpenRead())
+            using (var buffer = new MemoryStream())
             {
-                throw new IOException(
-                    $"Materialized image path did not match its catalog path: {FileName}");
+                source.CopyTo(buffer);
+                return buffer.ToArray();
             }
         }
+
+        /// SVG import goes through RuntimeSVGImporter, which opens a path. Shared storage has
+        /// none, so SVG references are unsupported there rather than copied out to satisfy it.
+        private bool IsUnsupportedVectorImage =>
+            FilePath.EndsWith(".svg") && m_OpenRead != null &&
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)
         {
