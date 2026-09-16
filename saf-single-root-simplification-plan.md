@@ -369,9 +369,9 @@ loader and a small font copy at startup. Specifically:
   removing the duplication with `SafUserStorageBackend.cs:448`. The two were
   independent implementations of open, copy, fsync and stamp mtime; only the
   backend's survives, and it already does atomic replace correctly.
-- `MigrationRecord` is retained. It is one-shot legacy migration of app-private
-  Scripts, Plugins and Fonts into the SAF tree and is unaffected by how those
-  files are read afterwards.
+- `MigrationRecord` is deleted, not retained. See "Nothing On This Branch Has
+  Ever Been Run" below: its only possible source is an earlier state of this
+  unreleased branch.
 
 ### Manual refresh becomes trivial
 
@@ -414,9 +414,6 @@ it is affected by these decisions:
 - **`DriveSyncLedger`.** It compensates for SAF providers owning document
   timestamps, replacing `File.SetLastWriteTime`. The changing party is a remote
   Drive, which no decision here constrains.
-- **`MigrationRecord`** in `UserRuntimeContent`. One-shot legacy migration of
-  app-private Scripts/Plugins/Fonts into the SAF tree, hash-verified. Dormant
-  after first run; dead for new installs.
 - **Autosave and crash recovery.** Deliberately app-private.
 - **Provider failure handling.** See the safeguard below.
 
@@ -610,6 +607,91 @@ application can start, with catalogs populating in the background as they do
 today. The simplification this plan is after — no degraded mode, no resumable
 save paths — comes from "a root always exists after startup", not from
 "everything is enumerated before startup".
+
+## Nothing On This Branch Has Ever Been Run
+
+Recorded 2026-09-16: the branch has never been run, and no build from it has
+shipped. There is no installed base holding data in any format it introduced.
+
+This removes a class of work that is otherwise invisible, because it looks like
+ordinary robustness.
+
+### Dead upgrade paths
+
+**Runtime content migration.** `UserRuntimeContent`'s `MigrationRecord`,
+`MigrationItem`, `CreateMigrationRecord`, `IsValidMigrationRecord`, the
+hash-verified copy loop and the `CanonicalCopiesComplete` /
+`LocalCleanupComplete` state exist to move app-private `Scripts`, `Plugins` and
+`Fonts` into the SAF tree. `m_LegacyRoot` defaults to
+`LocalUserStorageBackend.GetAreaRoot` (`UserRuntimeContent.cs:349`), which on a
+Google Play build is app-private storage. The only way to have content there is
+to have run an earlier state of *this* branch, when those trees were
+deliberately app-private — an acknowledged regression that
+`google-play-saf-feature-parity-plan.md` then fixed. Nobody has. Delete it, and
+with it the SHA-256 verification that only ever guarded this transfer.
+
+An earlier draft of this plan listed `MigrationRecord` under "what stays". That
+was wrong.
+
+**Legacy preference migration.** `AndroidStorageManager.cs:28, 55` reads and
+deletes `GooglePlayStorage.StartupPromptDismissed`. No device has that key.
+
+### Dead format tolerance
+
+`google-play-saf-feature-parity-plan.md` invariant 14 requires that "unknown
+projection manifests, Drive ledgers, and transaction-journal versions are
+retained and reported rather than discarded". That is forward-compatibility with
+formats nothing has ever written. `DriveSyncLedger.cs:27, 229-236` carries a
+`kVersion`, a mismatch branch and a "retained" diagnostic; `UserRuntimeContent`
+carries three more `Version` fields.
+
+Reduce each to nothing, or to a bare assertion. Version negotiation can be added
+when there is a shipped version to negotiate with.
+
+This also frees the journal-removal plan's rename of sidecars from
+`.ob-<guid>.tmp` to `<target>.ob-tmp`: no compatibility shim, no recovery pass
+for the old naming.
+
+### Freedom of sequence
+
+The ordering below was built so each step ships independently and the branch
+works between steps. That constraint does not apply. The steps can be collapsed
+into a single pass, and the interim cache-hit branch described under Scale can
+be skipped entirely — delete the materialization cache rather than repairing it
+on the way past.
+
+### What is still real
+
+Being unreleased removes compatibility with *this branch's* formats. It does not
+remove compatibility with everything:
+
+- **The shared folder layout must stay compatible.** Released builds put
+  `Media Library`, `Plugins`, `Scripts`, `Sketches`, `Snapshots` and `Videos`
+  under `Open Brush`, and users have data there now — a Nothing Phone (3a)
+  checked during this review had exactly that tree, populated. The SAF layout
+  must continue to match it.
+- **`.tilt` format handling stays**, including the ZIP package migration
+  preserved from `main`. Those are real user sketches.
+- **Crash recovery stays.** It protects a save interrupted at runtime, not an
+  upgrade across versions.
+- **The correctness fixes stay** — the payload fsync, and free-space accounting
+  on the SAF path.
+
+### Consider rebuilding rather than subtracting
+
+With no data to preserve, no shipped format and no working state to protect
+between steps, the usual argument for incremental refactoring is weak. The
+findings in this document amount to a specification for a substantially smaller
+implementation: one storage backend, one streaming rule with a single font
+exception, one commit sequence, no root namespacing, no degraded mode, no
+projection, no materialization cache, no migration.
+
+Rebuilding the storage layer against that specification, keeping the parts
+proven on device — the fd read/write path, the rename sequence, the Java
+bridge — may well be less work than subtracting from roughly 15,000 lines while
+keeping it consistent at each step. That is a judgement call rather than a
+recommendation, and the tests already on the branch make either route
+verifiable.
 
 ## Interaction With The Journal-Removal Plan
 
