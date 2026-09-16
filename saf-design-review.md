@@ -6,11 +6,18 @@ Review of `feature/saf-google-play-fd-backed` as of commit `01805166b9`,
 written in response to the concern that the design is more complex than the
 problem requires.
 
-Conclusion: the core approach is correct and the constraint driving it is
-real, but roughly a third of the production code on this branch is
-self-assigned scope rather than anything Android forces. Four specific
-reductions are proposed at the end. None of them require rewriting the
-storage layer.
+Revised after review feedback. The governing requirement for this branch is
+**functional parity between Google Play SAF builds and existing non-SAF
+builds**. An earlier draft of this document proposed cuts that would have
+broken that requirement; those are corrected below, and the corrections are
+recorded rather than silently removed, because the reasoning that produced
+them is the reasoning a future reviewer is most likely to repeat.
+
+Conclusion: the constraint driving this branch is real, the fd-backed
+approach is right, and under a parity requirement the great majority of the
+code is justified. Roughly 800 lines are removable without any behavioural
+change, and one design document needs amending so it stops contradicting the
+shipped implementation.
 
 ## The Question This Answers
 
@@ -49,63 +56,114 @@ document whose identity is already known. It does not yield listing,
 creation, rename or delete — those must go through `DocumentsContract`.
 
 So the floor for this feature is: SAF for directory operations, file
-descriptors for file contents. That is real, irreducible work. It is not
-22,000 lines of work.
+descriptors for file contents.
 
-## Where The Code Actually Goes
+## Why The Line Count Is Large
 
 22,318 lines added, 852 deleted. Measured by area:
 
 | Area | Added | Assessment |
 | --- | --- | --- |
-| `Assets/Scripts/Storage/` | 7,480 | Core is required; the layering is not |
-| Media catalogs and media types | 2,787 | Mostly required — they assume `Directory.GetFiles` |
+| `Assets/Scripts/Storage/` | 7,480 | Required; one layer is over-elaborated |
 | `Assets/Editor/Tests/` | 3,881 | Appropriate |
-| Plan documents (6 files) | 3,114 | Appropriate |
+| Plan documents | 3,114 | Appropriate |
+| Media catalogs and media types | 2,787 | Required |
 | `Assets/Scripts/Save/` | 1,287 | Required |
-| `DriveSync` + `DriveSyncLedger` + `DriveAccess` | 1,249 | Self-assigned scope |
+| `DriveSync` + `DriveSyncLedger` + `DriveAccess` | 1,249 | Required |
 | `Assets/Plugins/Android/` (Java bridge) | 977 | Required |
 
-Tests and design documents together account for 6,995 lines, which leaves
-about 15,300 lines of production code. The tests and the written-down
-reasoning are the parts of this branch that are unambiguously worth having;
-they are not the problem.
+Tests and design documents account for 6,995 lines, leaving about 15,300
+lines of production code.
 
-## Three Structural Concerns
+The reason that number is large is not over-engineering. It is that
+`MANAGE_EXTERNAL_STORAGE` was load-bearing for far more of the application
+than the sketch save path. Every subsystem that called `Directory.GetFiles`,
+`File.Exists` or `File.Move` against the user folder — six media catalogs,
+save/load, export, capture publication, Drive sync — has to be re-expressed
+against an interface that SAF can satisfy. There is no small version of that
+change that preserves parity.
 
-### 1. The design contradicts itself on mirroring
+## Correction: Google Drive Sync Is Not Optional Scope
+
+An earlier draft recommended cutting `DriveSync` from this branch, on the
+reasoning that Drive sync is "orthogonal to where files live locally." That
+reasoning was wrong on three counts.
+
+**It is a shipping Android feature.** `DriveSync` on `main` carries no
+platform gating. It is surfaced through `DrivePopUpWindow`,
+`ProfilePopUpWindow`, `SketchbookPanel`, `ScriptsPanel` and
+`SyncScriptsToDriveButton`, on every platform including Quest. Dropping it
+from Play builds would be exactly the SAF/non-SAF functional gap this branch
+exists to close.
+
+**It is not orthogonal to storage — it is built directly on the filesystem.**
+`DriveSync` on `main` uses `DirectoryInfo`/`FileInfo` enumeration
+(`folder.Local.GetFiles()`), `Directory.CreateDirectory`, `File.Move`,
+`File.Exists`, `File.Delete` and `File.SetLastWriteTime` against the user
+folder. Every one of those fails on a SAF tree. Porting it to
+`IUserStorageBackend` is mandatory for it to function at all under Play
+storage, not discretionary hardening.
+
+**The ledger that looked like gold-plating is a forced substitute.** `main`
+has no conflict handling in `DriveSync` at all, which made the new
+`DriveSyncLedger` (311 lines) look like scope creep. It is not.
+`main`'s algorithm depends on `File.SetLastWriteTime` to stamp a downloaded
+file with Drive's timestamp so the next comparison sees the two sides as
+equal. SAF providers own document timestamps and expose no way to set them.
+Without a substitute, every downloaded file appears locally newer than Drive
+forever and re-uploads in a loop. The parity plan states this directly:
+"SAF providers generally control document timestamps, so timestamp
+comparison alone can make the same downloaded file appear locally newer and
+upload it again." Recording Drive file ID and version per relative path is
+the minimum replacement for a capability SAF does not provide.
+
+The general lesson, which applies to the rest of this branch: when a SAF
+implementation looks like it has more machinery than its local counterpart,
+check first whether it is compensating for a filesystem capability that SAF
+lacks. Several places here are.
+
+## Remaining Concerns
+
+### 1. Two design documents disagree about mirroring
 
 `google-play-saf-fd-backed-storage-plan.md` rejects the mirrored-cache
-approach explicitly, and the rejection is the central argument of the
-document. It lists the costs: destructive reconciliation, canonical/cache
-conflicts, local-only path preservation, pending-transfer persistence, cache
-deletion notifications, retry ordering, startup provider failure handling,
-and concurrent inbound and outbound transfers. Core invariant 2 states that
-app-private materializations are disposable caches and not a second canonical
-directory.
+approach as its central argument, listing the costs: destructive
+reconciliation, canonical/cache conflicts, local-only path preservation,
+pending-transfer persistence, cache deletion notifications, retry ordering,
+startup provider failure handling, and concurrent transfers. Core invariant 2
+states that app-private materializations are disposable caches and not a
+second canonical directory.
 
-`google-play-saf-feature-parity-plan.md` then reintroduces a mirror for
-`Scripts`, `Plugins` and `Fonts`. `SafUserRuntimeContent`
-(`UserRuntimeContent.cs:265`) carries a `ProjectionManifest`,
-`ProjectionEntry` and `MigrationRecord` — a projection with persistent
-bookkeeping and write-back, which is a mirror with a different name.
+`google-play-saf-feature-parity-plan.md` then introduces a projection for
+`Scripts`, `Plugins` and `Fonts` — `SafUserRuntimeContent`
+(`UserRuntimeContent.cs:265`) with a `ProjectionManifest`, `ProjectionEntry`
+and `MigrationRecord`.
 
-That plan has already been amended once to remove the `ContentObserver` layer
-it originally specified, on the grounds that observation "exceeded the parity
-bar this plan exists to meet, and its background-triggered refreshes were the
-main source of concurrent-refresh complexity." That amendment is evidence for
-the general point: parity was pursued past the point where it paid for itself.
+Under a parity requirement this projection is **correct and necessary**.
+Those trees are user-managed content that Quest users populate over USB, and
+their consumers (`ApiManager`, `LuaManager`, Lua module loading,
+`SvgTextUtils`) require real filesystem paths. Making them app-private would
+be a parity gap, and rewriting every consumer to take streams is a far larger
+change than projecting them.
 
-If a mirror is the wrong answer for sketches, it needs a stronger
-justification than parity to be the right answer for three more trees.
+So this is a documentation defect, not a code defect. The fd-backed plan's
+blanket anti-mirror language should be amended to state what the branch
+actually implements: whole-tree bidirectional mirroring of the *canonical
+sketch store* is rejected; bounded, manifest-tracked projection of
+*path-consumer trees* is the accepted pattern. As written, the two documents
+send a reviewer to opposite conclusions, which is how the earlier draft of
+this review went wrong.
 
-### 2. The transaction machinery is oversized, and the branch already says so
+The amendment already appended to the parity plan — removing the
+`ContentObserver` layer because observation "exceeded the parity bar this
+plan exists to meet" — is a good precedent for this kind of correction.
+
+### 2. The transaction journal is redundant, and the branch already says so
 
 `SafStorageTransaction.cs`, `SafTransactionRecovery.cs` and
 `SafStagedOutputPublisher.cs` total 1,885 lines.
-
-`saf-transaction-journal-removal-plan.md` is a plan, written on this branch,
-to delete the journal portion of that. Its findings stand on their own:
+`saf-transaction-journal-removal-plan.md`, written on this branch, argues for
+deleting the journal portion. Its findings stand:
 
 - `SafTransactionRecovery.RecoverRecord` makes every decision from observable
   directory state. The recorded `SafTransactionState` "is never consulted to
@@ -118,29 +176,24 @@ to delete the journal portion of that. Its findings stand on their own:
 - The write-ahead-log shape implies multi-operation atomicity that nothing
   uses. Every transaction on the branch is a single-file replacement.
 
-Its own honest accounting puts the net saving at 400–500 lines, because the
-load-bearing parts survive: the rename sequence (write temp, validate, rename
-canonical to backup, rename temp to canonical, delete backup), payload
-validation, presence-based restore, and `SafDestinationLocks`. The win is
-removing a persistent state store, its retention policy, its failure handling
-and its per-save fsync cost — not the line count.
+Net saving is 400–500 lines by its own accounting, because the load-bearing
+parts survive: the rename sequence (write temp, validate, rename canonical to
+backup, rename temp to canonical, delete backup), payload validation,
+presence-based restore, and `SafDestinationLocks`. The real win is removing a
+persistent store, its retention policy, its failure handling and its per-save
+fsync cost.
 
-The replacement it proposes (encode the target display name in the sidecar
-names, so `MySketch.tilt.ob-bak` self-describes, and sweep at startup) is
-simpler and strictly more robust, because it cannot desynchronize from the
-directory it describes.
+Its replacement — encode the target display name in sidecar names, so
+`MySketch.tilt.ob-bak` self-describes, and sweep at startup — is simpler and
+strictly more robust, because it cannot desynchronize from the directory it
+describes.
 
-### 3. Four facades over one concept
+This is a pure simplification with no parity implications.
 
-The storage layer presents, in order: `OpenBrushStorage` (static, 797 lines),
-`AndroidStorageManager` (MonoBehaviour, 599), `AndroidSafStorage` (static
-JNI, 589), `SafUserStorageBackend` (`IUserStorageBackend`, 890), and
-`UserStorageBackend` (interface plus `LocalUserStorageBackend`, 987).
+### 3. The publish surface is duplicated per call site
 
-A three-layer shape is defensible — JNI marshalling, a backend interface, and
-call sites. The part that reads as abstraction leakage is `OpenBrushStorage`'s
-publish surface, which has grown roughly twenty near-duplicate entry points:
-`PublishGeneratedFileToSharedStorage`,
+`OpenBrushStorage` (797 lines) exposes roughly twenty near-duplicate publish
+entry points: `PublishGeneratedFileToSharedStorage`,
 `PublishGeneratedFileToSharedStorageAsync`,
 `PublishGeneratedFilesToSharedStorageAsync`,
 `PublishMediaLibraryPathToSharedStorage`,
@@ -149,58 +202,49 @@ publish surface, which has grown roughly twenty near-duplicate entry points:
 `PublishVideoCaptureToSharedStorage`,
 `PublishVideoCaptureToSharedStorageAsync`,
 `PublishExportToSharedStorageAsync`,
-`PublishGaussianCaptureToSharedStorageAsync`, and so on. These differ by
-staging directory and target area, which are parameters, not methods.
+`PublishGaussianCaptureToSharedStorageAsync`, and others. These differ by
+staging directory and target area, which are parameters rather than methods.
 
-## Proposed Reductions
+A single `Publish(stagedPath, StorageArea, relativePath)` with async as a
+wrapper would remove roughly 300 lines. The broader five-type stack
+(`OpenBrushStorage`, `AndroidStorageManager`, `AndroidSafStorage`,
+`SafUserStorageBackend`, `UserStorageBackend`) is defensible — JNI
+marshalling, backend interface, call sites — and is not proposed for change.
 
-In priority order. All four are removals or consolidations; none changes a
-correctness invariant.
+## Recommended Actions
 
-1. **Run the device probe first.** The entire read path is gated on an
-   unvalidated assumption. `google-play-saf-fd-backed-storage-plan.md` states
-   that if detached descriptors are not reliably seekable under IL2CPP, the
-   architecture keeps its shape but direct archive reads must be replaced with
-   sparse per-document materialization. `AndroidSafStorage.RunFileDescriptorProbe`
-   (`AndroidSafStorage.cs:351`) exists for this. Running it on a target device
-   is cheap and avoids simplifying code that is about to be reworked anyway.
+1. **Run the device probe before any other work.** The entire read path rests
+   on an unvalidated assumption. `google-play-saf-fd-backed-storage-plan.md`
+   states that if detached descriptors are not reliably seekable under IL2CPP,
+   the architecture keeps its shape but direct archive reads must be replaced
+   with sparse per-document materialization.
+   `AndroidSafStorage.RunFileDescriptorProbe` (`AndroidSafStorage.cs:351`)
+   exists for this. Everything below is cheaper after it passes and wasted if
+   it fails.
 
-2. **Execute the journal-removal plan.** Already written, already justified,
-   deferred only until after the probe. 400–500 lines, one persistent store,
-   and five fsyncs per save.
+2. **Execute the journal-removal plan.** 400–500 lines, one persistent store,
+   five fsyncs per save. Already specified and justified on this branch.
 
-3. **Cut Google Drive sync from this branch.** `DriveSync` and its ledger are
-   1,249 lines and the second-largest single change here. Drive sync is
-   orthogonal to where files live locally; it was disabled for SAF by the
-   fd-backed plan and re-enabled by the parity plan. Ship SAF storage, then
-   decide separately whether Drive sync is still wanted on Play builds.
+3. **Amend the fd-backed plan's mirroring language** so it matches the
+   shipped design and stops contradicting the parity plan.
 
-4. **Decide `Scripts`/`Plugins`/`Fonts` deliberately.** Either accept them as
-   app-private — simpler, and honest about the tradeoff — or accept the
-   projection and amend the fd-backed plan so the two documents agree.
-   Shipping a mirror underneath a design document that argues mirrors are
-   unacceptable is the worst of the three options. Removing the projection
-   would drop 1,262 lines.
+4. **Collapse the publish surface** to one parameterised method. ~300 lines.
 
-5. **Collapse the publish surface.** One `Publish(stagedPath, StorageArea,
-   relativePath)` plus a small enum, with async as a wrapper rather than a
-   parallel method family.
+Total removable: roughly 800 lines, none of it behavioural. The remaining
+~14,500 lines of production code is a defensible size for replacing a
+path-based storage model across sketches, six media catalogs, save/load,
+export, capture publication and Drive sync, on a platform that forbids paths,
+while holding parity with builds that allow them.
 
-Items 3, 4 and 5 together remove roughly 2,800 lines; with item 2 the total is
-around 3,300. The remaining ~12,000 lines of production code is a defensible
-size for replacing a path-based storage model across sketches, six media
-catalogs, save/load, and export on a platform that forbids paths.
+## What Is Right Here
 
-## What Is Not Wrong Here
-
-For the avoidance of doubt, since most of the above is criticism:
-
-- The fd-backed approach is the right one. The alternative designs are a
-  whole-tree mirror (rejected for good reasons) or per-file copies on every
-  read (slower and no simpler).
-- The commit sequence protecting the canonical document is correct and should
-  not be weakened by any of the above.
-- The catalog changes are largely unavoidable. Those classes call
-  `Directory.GetFiles` and `File.Exists` directly, and something has to give.
-- Writing the design down before implementing it, and writing 3,881 lines of
-  tests, is why this review could be done from the repository at all.
+- The fd-backed approach is correct. The alternatives are a whole-tree mirror
+  (rejected for good reasons) or per-file copies on every read (slower and no
+  simpler).
+- The commit sequence protecting the canonical document is correct and must
+  not be weakened by recommendation 2.
+- The catalog and Drive sync changes are forced by the platform, not chosen.
+- Writing the design down before implementing, and writing 3,881 lines of
+  tests, is why this review could be conducted from the repository at all —
+  and why the errors in its first draft were correctable from the repository
+  too.
