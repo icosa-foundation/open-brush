@@ -305,6 +305,18 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
+        /// True when this model's importer can read from storage directly, making the
+        /// materialized copy unnecessary.
+        private bool CanImportWithoutLocalCopy()
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return false;
+            }
+            string extension = m_Location.Extension;
+            return extension == ".gltf" || extension == ".glb" || extension == ".gltf2";
+        }
+
         // Constructor for local models i.e. Media Library assets
         public Model(string relativePath)
         {
@@ -1097,7 +1109,11 @@ namespace TiltBrush
                 IsGsplatModel = false;
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
-                if (isLocal && m_Materialize != null)
+                // glTF reads through SafGltfDataLoader, which resolves the document and its
+                // external references straight out of storage, so those models need no local copy
+                // at all. Formats whose importers still require a real file - OBJ, USD, splats -
+                // continue to materialize.
+                if (isLocal && m_Materialize != null && !CanImportWithoutLocalCopy())
                 {
                     try
                     {
