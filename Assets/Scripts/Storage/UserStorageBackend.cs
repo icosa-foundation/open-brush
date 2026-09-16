@@ -309,6 +309,16 @@ namespace TiltBrush
             string relativeDirectory,
             StorageTreeQuery query,
             CancellationToken cancellationToken);
+        /// Opens a document addressed by its area-relative path. Consumers that resolve paths at
+        /// runtime - Lua module loading, glTF external references - need this, because they do not
+        /// hold a document identity at the point of use.
+        Stream OpenRead(
+            StorageArea area,
+            string relativePath,
+            bool requireSeekable,
+            CancellationToken cancellationToken);
+        /// True when an area-relative path names an existing, non-directory document.
+        bool Exists(StorageArea area, string relativePath);
         Stream OpenRead(
             StorageDocumentId documentId,
             bool requireSeekable,
@@ -463,6 +473,29 @@ namespace TiltBrush
                 throw new IOException($"Storage document is not seekable: {documentId}");
             }
             return stream;
+        }
+
+        public Stream OpenRead(
+            StorageArea area,
+            string relativePath,
+            bool requireSeekable,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string path = ResolveRelativePath(m_AreaRoot(area), relativePath);
+            return OpenRead(new StorageDocumentId(path), requireSeekable, cancellationToken);
+        }
+
+        public bool Exists(StorageArea area, string relativePath)
+        {
+            try
+            {
+                return File.Exists(ResolveRelativePath(m_AreaRoot(area), relativePath));
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
         }
 
         public IStorageWriteTransaction BeginWrite(

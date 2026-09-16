@@ -219,6 +219,17 @@ namespace TiltBrush
             }
 
             public Stream OpenRead(
+                StorageArea area,
+                string relativePath,
+                bool requireSeekable,
+                CancellationToken cancellationToken)
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool Exists(StorageArea area, string relativePath) => false;
+
+            public Stream OpenRead(
                 StorageDocumentId documentId,
                 bool requireSeekable,
                 CancellationToken cancellationToken)

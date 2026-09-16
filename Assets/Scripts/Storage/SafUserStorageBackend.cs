@@ -88,6 +88,55 @@ namespace TiltBrush
         }
 
         public Stream OpenRead(
+            StorageArea area,
+            string relativePath,
+            bool requireSeekable,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string path = CombinePath(GetAreaPath(area), relativePath);
+            if (!AndroidSafStorage.TryOpenSeekableReadStream(
+                    path, out FileStream stream, out string error))
+            {
+                throw new IOException(error);
+            }
+            if (requireSeekable && !stream.CanSeek)
+            {
+                stream.Dispose();
+                throw new IOException("The selected SAF document is not seekable.");
+            }
+            return stream;
+        }
+
+        public bool Exists(StorageArea area, string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                return false;
+            }
+            // Resolved through the parent listing rather than by opening a descriptor, so an
+            // existence check does not cost a file-descriptor round trip through the provider.
+            string normalized = relativePath.Replace('\\', '/').Trim('/');
+            int separator = normalized.LastIndexOf('/');
+            string directory = separator < 0 ? string.Empty : normalized.Substring(0, separator);
+            string name = separator < 0 ? normalized : normalized.Substring(separator + 1);
+            StorageDirectoryResult listing = List(area, directory, CancellationToken.None);
+            if (!listing.Success)
+            {
+                return false;
+            }
+            foreach (StorageDocument document in listing.Documents)
+            {
+                if (!document.IsDirectory &&
+                    string.Equals(document.DisplayName, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Stream OpenRead(
             StorageDocumentId documentId,
             bool requireSeekable,
             CancellationToken cancellationToken)

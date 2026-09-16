@@ -123,6 +123,9 @@ namespace TiltBrush
                 return path;
             }
 
+            public Stream OpenRead(StorageArea area, string relativePath, bool requireSeekable,
+                CancellationToken cancellationToken) => throw new NotSupportedException();
+            public bool Exists(StorageArea area, string relativePath) => false;
             public Stream OpenRead(StorageDocumentId documentId, bool requireSeekable,
                 CancellationToken cancellationToken) => new MemoryStream(m_Entries[documentId].Data);
             public StorageTreeResult EnumerateTree(StorageArea area, string relativeDirectory,

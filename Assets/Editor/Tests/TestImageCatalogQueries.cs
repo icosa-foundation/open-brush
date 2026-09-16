@@ -34,6 +34,8 @@ namespace TiltBrush
         public int DeleteCalls;
         public StorageDirectoryResult List(StorageArea area, string path, CancellationToken cancellationToken) => Listing();
         public StorageTreeResult EnumerateTree(StorageArea area, string path, StorageTreeQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Stream OpenRead(StorageArea area, string relativePath, bool requireSeekable, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public bool Exists(StorageArea area, string relativePath) => false;
         public Stream OpenRead(StorageDocumentId documentId, bool requireSeekable, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IStorageWriteTransaction BeginWrite(StorageArea area, string relativePath, string mimeType, CancellationToken cancellationToken, StorageDocumentId targetDocumentId = default) => throw new NotSupportedException();
         public StorageMutationResult Rename(StorageDocumentId documentId, string newDisplayName, CancellationToken cancellationToken)

@@ -19,6 +19,8 @@ namespace TiltBrush
             public string RootIdentity { get; } = $"export-test-{Guid.NewGuid():N}";
             public StorageDirectoryResult List(StorageArea area, string path, CancellationToken token) => m_Local.List(area, path, token);
             public StorageTreeResult EnumerateTree(StorageArea area, string path, StorageTreeQuery query, CancellationToken token) => m_Local.EnumerateTree(area, path, query, token);
+            public Stream OpenRead(StorageArea area, string relativePath, bool seekable, CancellationToken token) => m_Local.OpenRead(area, relativePath, seekable, token);
+            public bool Exists(StorageArea area, string relativePath) => m_Local.Exists(area, relativePath);
             public Stream OpenRead(StorageDocumentId id, bool seekable, CancellationToken token) => m_Local.OpenRead(id, seekable, token);
             public IStorageWriteTransaction BeginWrite(StorageArea area, string path, string mime, CancellationToken token, StorageDocumentId targetDocumentId = default)
             {
