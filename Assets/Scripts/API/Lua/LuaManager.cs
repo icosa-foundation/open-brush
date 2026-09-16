@@ -588,67 +588,6 @@ namespace TiltBrush
         }
 
 
-        private void ReloadUserScriptsFromRuntimeContent()
-        {
-            var selectedNames = new Dictionary<LuaApiCategory, string>();
-            foreach (LuaApiCategory category in ApiCategories)
-            {
-                List<string> names = GetScriptNames(category);
-                int index = ActiveScripts[category];
-                if (index >= 0 && index < names.Count)
-                {
-                    selectedNames[category] = names[index];
-                }
-            }
-            string[] activeBackgroundNames = m_ActiveBackgroundScripts.Keys.ToArray();
-            if (BackgroundScriptsEnabled)
-            {
-                foreach (Script script in m_ActiveBackgroundScripts.Values)
-                {
-                    EndScript(script);
-                }
-            }
-
-            m_ScriptPathsToUpdate.Clear();
-            m_WidgetConfigs.Clear();
-            m_ActiveBackgroundScripts.Clear();
-            foreach (LuaApiCategory category in ApiCategories)
-            {
-                Scripts[category].Clear();
-                ActiveScripts[category] = 0;
-            }
-            ((ScriptLoaderBase)Script.DefaultOptions.ScriptLoader).ModulePaths = new[]
-            {
-                Path.Join(LuaModulesPath, "?.lua")
-            };
-            LoadExampleScripts();
-            LoadUserScripts();
-
-            foreach (KeyValuePair<LuaApiCategory, string> selected in selectedNames)
-            {
-                List<string> names = GetScriptNames(selected.Key);
-                int index = names.IndexOf(selected.Value);
-                if (index >= 0)
-                {
-                    ActiveScripts[selected.Key] = index;
-                }
-            }
-            foreach (string scriptName in activeBackgroundNames)
-            {
-                if (Scripts[LuaApiCategory.BackgroundScript].TryGetValue(
-                        scriptName, out Script script))
-                {
-                    m_ActiveBackgroundScripts[scriptName] = script;
-                    if (BackgroundScriptsEnabled)
-                    {
-                        InitScript(script);
-                    }
-                }
-            }
-            var panel = (ScriptsPanel)PanelManager.m_Instance?.GetPanelByType(
-                BasePanel.PanelType.Scripts);
-            panel?.InitScriptUiNav();
-        }
 
         private void LoadExampleScripts()
         {
