@@ -271,6 +271,69 @@ Check 15b skipped — no audio in the folder. It is informational either way,
 since the audio conclusion rests on Unity's mixer requirements rather than on
 `MediaPlayer`'s capabilities.
 
+### Serve media over the existing loopback HTTP server
+
+The copying of audio and video is not a SAF limitation. The device probe
+measured a SAF descriptor reading at 1024 MiB in 258 ms; the bytes are
+available and the descriptor is an ordinary seekable regular file.
+
+The constraint is Unity's API surface. `UnityWebRequestMultimedia.GetAudioClip(
+url, audioType)` (`SoundClip.cs:332`) and `VideoPlayer.url`
+(`ReferenceVideo.cs:328`) both accept only a **URL string** — not a stream, not
+a byte array, not a descriptor. So the current implementation reads every byte
+out of SAF, writes every byte into an app-private file, and hands Unity a
+`file://` URL to the copy, which Unity then reads again. The copy exists purely
+to convert bytes we already hold into a path an API will accept.
+
+Both APIs do, however, accept `http://`. Open Brush already runs an HTTP server
+with the needed extension points:
+
+- `HttpServer.AddRawHttpHandler(path, Func<HttpListenerContext,
+  HttpListenerContext>)` (`HttpServer.cs:183`);
+- `HttpServer.IsTrustedLocalBrowserRequest(request)` (`HttpServer.cs:210`);
+- `ApiManager.cs:102` already registers a raw handler (`/cameraview`).
+
+So register a handler that streams a SAF document straight from
+`backend.OpenRead(documentId)` to the response, and hand Unity:
+
+```text
+http://127.0.0.1:<port>/saf/<token>/<documentId>
+```
+
+No copy, no second file, no eviction. One handler replaces both the audio
+materialization and the native `SurfaceTexture` video plugin considered above;
+that plugin proposal is superseded, being strictly more work for a subset of
+the benefit.
+
+**Security. This is not optional.** `HttpServer.cs:53` binds
+`http://+:{HTTP_PORT}/` — all interfaces, not loopback — so the server is
+reachable from the local network. `IsTrustedLocalBrowserRequest` is opt-in per
+handler rather than automatic, and even it only establishes that a request is
+loopback and local, which on Android any other installed application satisfies.
+A handler that serves arbitrary documents by identifier would therefore be a
+file-disclosure surface for every app on the device and, absent the trust check,
+for the local network.
+
+Requirements:
+
+- an unguessable per-session token in the path, rejected by constant-time
+  comparison;
+- `IsTrustedLocalBrowserRequest` applied explicitly in the handler;
+- document identifiers resolved only within the selected root, never accepted as
+  arbitrary paths;
+- the handler registered only on Google Play SAF builds.
+
+**Also required for correctness:**
+
+- HTTP range request support, so seeking and scrubbing do not re-read from the
+  start. The descriptor is seekable, so this is a `lseek` plus a bounded copy.
+- `Content-Length` from the document metadata the directory listing already
+  returns.
+
+**What this leaves.** Fonts become the only content needing a local file, since
+Unity offers neither a `byte[]` → `Font` path nor a URL-based font loader. They
+are a few megabytes, copied once at startup into a fixed directory.
+
 ### The resulting model
 
 | Content | Mechanism |
@@ -279,12 +342,12 @@ since the audio conclusion rests on Unity's mixer requirements rather than on
 | Scripts, plugins | `OpenRead` — streamed, through the existing `OpenBrushScriptLoader` seam |
 | Models | `OpenRead` — streamed, through a SAF `IDataLoader` / `IUriLoader` |
 | Reference images | `OpenRead` — streamed, pending confirmation |
+| Audio, video | `OpenRead` — streamed over the loopback HTTP handler |
 | Fonts | materialized once at startup, small fixed area, never evicted |
-| Audio | `Materialize` under a budget — small, and needed as an `AudioClip` |
-| Video | `Materialize` for now. Probe 15a confirmed a native `SurfaceTexture` path is possible; adopt it only if large imported video proves to be a real case |
 | Captures, exports | `BeginWrite`, then publish |
 
-Two mechanisms, no pin flag, no per-type policy.
+One mechanism — stream from storage — plus a single small font directory. No
+materialization cache, no eviction policy, no pin flag, no per-type policy.
 
 An earlier draft of this plan proposed a third concept — "path lifetime",
 transient for media versus session-long for plugins and fonts — and a
@@ -491,41 +554,46 @@ buffer, one-cursor directory queries with struct-of-arrays JNI marshalling
    4 GB free. Materialization copies a whole document into app-private storage
    with no check either.
 
-2. **The materialization cache cap is the wrong shape.**
-   `EvictMaterializationCache` caps at a hardcoded 512 MB with no free-space
-   awareness. A single 500 MB model nearly exhausts the budget and evicts
-   everything else.
+2. **The materialization cache should be deleted, not fixed.** Three findings
+   below were written when models, audio and video were all materialized. With
+   models and images streamed through their loader seams and media streamed over
+   the loopback handler, nothing remains in the cache except fonts, which are
+   copied once at startup into a fixed directory that is never evicted. All
+   three then become deletions rather than repairs:
 
-3. **The materialization cache never serves a hit.** `MaterializeFile`
-   (`SafUserStorageBackend.cs:427`) has no cache-hit branch — no
-   `if (File.Exists(destination) && upToDate) return destination`. It
-   unconditionally re-copies the document from SAF and overwrites through
-   `File.Replace`, every call. So the 512 MB budget is a staging directory with
-   an eviction policy, not a cache: a 500 MB model is re-copied from shared
-   storage on every import, and the eviction pass, the ordering and the tree
-   walk are all managing something that never avoids work.
+   - *The cap is the wrong shape.* `EvictMaterializationCache` caps at a
+     hardcoded 512 MB with no free-space awareness, and a single 500 MB model
+     nearly exhausts it.
+   - *It never serves a hit.* `MaterializeFile`
+     (`SafUserStorageBackend.cs:427`) has no cache-hit branch — no
+     `if (File.Exists(destination) && upToDate) return destination`. It
+     unconditionally re-copies from SAF and overwrites through `File.Replace`
+     on every call, so the budget is a staging directory with an eviction
+     policy rather than a cache.
+   - *Every materialization walks the whole cache.* `GetFiles("*",
+     SearchOption.AllDirectories)` plus a `Sum` of lengths runs on each call.
 
-   Add a hit path keyed on the document metadata the directory listing already
-   returns — `DocumentId`, `Size` and `LastModified` — reusing the cached copy
-   when all three match. This applies to the media cache only; scripts and
-   plugins are streamed and fonts are copied once at startup, so neither has a
-   cache to hit.
+   If the streaming conversions are staged rather than done together, add the
+   cache-hit branch as an interim fix — keyed on `DocumentId`, `Size` and
+   `LastModified` from the directory listing — and delete the whole thing at the
+   end. Do not invest in the eviction policy.
 
-   An earlier draft of this plan attributed the poor eviction ordering to
-   `/data` being mounted `noatime` (confirmed on a Nothing Phone (3a):
+   An earlier draft attributed the poor eviction ordering to `/data` being
+   mounted `noatime` (confirmed on a Nothing Phone (3a):
    `f2fs rw,lazytime,...,noatime,...`). That reasoning was wrong: `noatime`
    suppresses only *implicit* atime updates on read, and
    `SafUserStorageBackend.cs:478` sets it explicitly via
-   `File.SetLastAccessTimeUtc`, which works regardless. The ordering is
-   materialization order because there is no reuse to record, not because the
-   timestamp is unwritable. Once a hit path exists, stamping access time on a
-   hit makes the ordering a real LRU.
+   `File.SetLastAccessTimeUtc`. The ordering was materialization order because
+   there was no reuse to record.
 
-4. **Every materialization walks the whole cache.** `GetFiles("*",
-   SearchOption.AllDirectories)` plus a `Sum` of lengths runs on each call.
-   Currently this compounds with gap 3, since every use is a fresh copy.
+3. **No free-space accounting on the SAF path** still applies, and matters more
+   once copying stops hiding it. `SaveLoadScript.cs:490` reads
+   `if (!directSafSave && !FileUtils.CheckDiskSpaceWithError(m_SaveDir))`: the
+   check is correctly skipped for direct SAF saves, because `m_SaveDir` is not
+   where the sketch lands, but nothing replaced it. The commit sequence needs
+   twice the sketch size transiently in shared storage.
 
-5. **Tree enumeration truncates silently.** `StorageTreeQuery` defaults to
+4. **Tree enumeration truncates silently.** `StorageTreeQuery` defaults to
    `MaximumItemCount = 10000`, `UserRuntimeContent` uses 5000, and
    `StorageTreeResult` has no truncation flag — a capped walk returns
    `Succeeded` with a partial list, indistinguishable from a complete one. Lower
@@ -576,19 +644,23 @@ cannot take a stream.
 1. Run the outstanding IL2CPP device gate.
 2. Gate startup on folder selection (not on enumeration); exit on decline.
    Remove `RequireSharedFolderFor` and unwind the nine call sites.
-3. Add the missing cache-hit path in `MaterializeFile`; fsync the payload
-   before the rename sequence and drop recovery to `testData: false`. Small,
-   independent correctness fixes that should not queue behind structural work.
+3. Fsync the payload before the rename sequence and drop recovery to
+   `testData: false`. Measured at roughly 150 ms for a 200 MB sketch, and net
+   faster once the journal fsyncs go.
 4. Redirect `OpenBrushScriptLoader` and `ApiManager`'s startup-script check to
-   `OpenRead`. This is the highest-leverage structural change and is
-   self-contained: it removes the reason the projection exists.
-5. Replace the rest of `UserRuntimeContent` with a startup font materialization.
-6. Remove the resume refresh; add the user-initiated refresh if wanted.
-7. Collapse root namespacing to the startup URI comparison.
-8. Then the journal removal.
+   `OpenRead`, removing the reason the projection exists.
+5. Add the loopback media handler, with its token and range support, and point
+   `SoundClip` and `ReferenceVideo` at it.
+6. Convert models and reference images to their loader seams.
+7. Delete the materialization cache; replace the rest of `UserRuntimeContent`
+   with a startup font materialization.
+8. Remove the resume refresh; add the user-initiated refresh if wanted.
+9. Collapse root namespacing to the startup URI comparison.
+10. Then the journal removal.
 
-Each step is independently shippable and independently revertable. Steps 2, 3
-and 4 carry most of the value and do not depend on each other.
+Steps 2, 3 and 5 are independent of each other and carry most of the value.
+Step 7 is only safe once 4, 5 and 6 are done, since it removes the fallback
+they replace.
 
 ## Open Question
 
