@@ -196,6 +196,18 @@ second canonical directory.
 (`UserRuntimeContent.cs:265`) with a `ProjectionManifest`, `ProjectionEntry`
 and `MigrationRecord`.
 
+**Correction (2026-09-16).** This review originally called the projection "a
+mirror with a different name". That was wrong, and the error is the same one
+made about Drive sync: unfamiliar machinery read as redundancy without checking
+which way the data flows. `UserRuntimeContent` has exactly one write entry
+point, `PublishIfMissingAsync` (line 118), which seeds bundled content if
+absent. There is no write-back of user edits, no reconciliation and no conflict
+resolution. What looked like sync is a generational snapshot — build a new
+directory from SAF, flip `ProjectionPointer`, garbage-collect the old — which
+is a one-directional cache with an atomic swap, plus a one-shot
+`MigrationRecord` for legacy app-private content. A mirror implies two
+authorities; this has one.
+
 Under a parity requirement this projection is **correct and necessary**.
 Those trees are user-managed content that Quest users populate over USB, and
 their consumers (`ApiManager`, `LuaManager`, Lua module loading,
@@ -291,6 +303,14 @@ marshalling, backend interface, call sites — and is not proposed for change.
    on device.
 
 4. **Collapse the publish surface** to one parameterised method. ~300 lines.
+
+5. **Execute `saf-single-root-simplification-plan.md`.** Added 2026-09-16 after
+   four product decisions removed constraints the implementation was built to
+   satisfy: startup is gated on folder selection, declining exits, the root
+   never changes, and shared files are not modified externally while running.
+   Roughly 1,500–2,500 lines across 24 files, and it supersedes the "mirror
+   with a different name" criticism below — the generational projection was a
+   correct answer to a requirement that no longer exists.
 
 Total removable: roughly 800 lines, none of it behavioural. The remaining
 ~14,500 lines of production code is a defensible size for replacing a
