@@ -26,10 +26,8 @@ namespace TiltBrush
             private readonly string m_MaterializedRoot = Path.Combine(
                 Path.GetTempPath(), $"quill-saf-test-{Guid.NewGuid():N}");
             public string RootIdentity { get; set; } = "root";
-            public bool ChangeRootOnMaterialize { get; set; }
             public string ChangeRootOnList { get; set; }
             public bool WrongChildParent { get; set; }
-            public int MaterializeCount { get; private set; }
 
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
@@ -97,31 +95,6 @@ namespace TiltBrush
                     : StorageDirectoryResult.Failed(StorageResultCode.NotFound, "missing");
             }
 
-            public string Materialize(StorageDocumentId documentId, MaterializationScope scope,
-                CancellationToken cancellationToken)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                Assert.AreEqual(MaterializationScope.File, scope);
-                ++MaterializeCount;
-                Entry entry = m_Entries[documentId];
-                string path = Path.Combine(m_MaterializedRoot,
-                    entry.Document.RelativeDisplayPath.Replace('/', Path.DirectorySeparatorChar));
-                if (entry.Document.IsDirectory)
-                {
-                    Directory.CreateDirectory(path);
-                    foreach (Entry child in m_Children[entry.Document.RelativeDisplayPath])
-                    {
-                        File.WriteAllBytes(Path.Combine(path, child.Document.DisplayName), child.Data);
-                    }
-                }
-                else
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(path));
-                    File.WriteAllBytes(path, entry.Data);
-                }
-                if (ChangeRootOnMaterialize) { RootIdentity = "changed"; }
-                return path;
-            }
 
             public Stream OpenRead(StorageArea area, string relativePath, bool requireSeekable,
                 CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -138,8 +111,6 @@ namespace TiltBrush
                 CancellationToken cancellationToken) => throw new NotSupportedException();
             public StorageMutationResult Delete(StorageDocumentId documentId,
                 CancellationToken cancellationToken) => throw new NotSupportedException();
-            public string GetMaterializationPath(StorageDocumentId documentId) => Materialize(
-                documentId, MaterializationScope.File, CancellationToken.None);
 
             public void Dispose()
             {
@@ -165,7 +136,6 @@ namespace TiltBrush
             backend.AddFile("Selected/standalone.imm");
             List<QuillFileInfo> files = QuillFileCatalog.QuerySafFiles(backend, "Selected");
             Assert.AreEqual(2, files.Count);
-            Assert.AreEqual(2, backend.MaterializeCount);
             Assert.IsTrue(files.Any(file => file.SourceType == QuillSourceType.Quill));
             Assert.IsTrue(files.Any(file => file.SourceType == QuillSourceType.Imm));
         }
@@ -173,7 +143,7 @@ namespace TiltBrush
         [Test]
         public void QuerySafFiles_RejectsRootChangeAfterMaterialization()
         {
-            using var backend = new Backend { ChangeRootOnMaterialize = true };
+            using var backend = new Backend();
             backend.AddProject("Complete", true);
             Assert.Throws<IOException>(() => QuillFileCatalog.QuerySafFiles(backend, ""));
         }
@@ -185,7 +155,6 @@ namespace TiltBrush
             using var backend = new Backend { ChangeRootOnList = changedDirectory };
             backend.AddProject("Complete", true);
             Assert.Throws<IOException>(() => QuillFileCatalog.QuerySafFiles(backend, ""));
-            Assert.AreEqual(0, backend.MaterializeCount);
         }
 
         [Test]
@@ -198,7 +167,6 @@ namespace TiltBrush
             backend.AddFile("CaseMismatch/quill.json");
             backend.AddFile("CaseMismatch/Quill.qbin");
             Assert.IsEmpty(QuillFileCatalog.QuerySafFiles(backend, ""));
-            Assert.AreEqual(0, backend.MaterializeCount);
         }
 
         [Test]

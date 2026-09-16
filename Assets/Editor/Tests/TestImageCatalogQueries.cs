@@ -48,8 +48,6 @@ namespace TiltBrush
             ++DeleteCalls;
             return new StorageMutationResult(StorageResultCode.Success, documentId);
         }
-        public string Materialize(StorageDocumentId documentId, MaterializationScope scope, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public string GetMaterializationPath(StorageDocumentId documentId) => throw new NotSupportedException();
     }
 
     public class TestImageCatalogQueries

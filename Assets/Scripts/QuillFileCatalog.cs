@@ -455,20 +455,15 @@ namespace TiltBrush
                         child.DisplayName == "Quill.qbin");
                     if (!hasQuillJson || !hasQuillQbin) { continue; }
 
-                    // File scope also materializes directory documents recursively; dependency
-                    // tree scope adds model-specific reconciliation, which Quill does not need.
-                    string path = backend.Materialize(
-                        document.DocumentId, MaterializationScope.File, CancellationToken.None);
-                    EnsureSafRootUnchanged(backend, rootIdentity);
-                    result.Add(QuillFileInfo.FromQuillDirectory(new DirectoryInfo(path)));
+                    // QuillFileInfo.FromQuillDirectory takes a DirectoryInfo, so this import
+                    // needs a real directory tree. Shared storage has none, and copying one out
+                    // is what this backend exists to avoid.
                     continue;
                 }
                 if (!Path.GetExtension(document.DisplayName)
                         .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
-                string immPath = backend.Materialize(
-                    document.DocumentId, MaterializationScope.File, CancellationToken.None);
-                EnsureSafRootUnchanged(backend, rootIdentity);
-                result.Add(QuillFileInfo.FromImmFile(new FileInfo(immPath)));
+                // FromImmFile takes a FileInfo; same reasoning as the Quill directory above.
+                continue;
             }
             return result;
         }

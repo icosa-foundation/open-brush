@@ -4146,42 +4146,15 @@ namespace TiltBrush
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
                 string loadPath = rInfo.FullPath;
-                if (rInfo is SafSceneFileInfo safInfo)
+                if (rInfo is SafSceneFileInfo)
                 {
-                    var materialization = new Future<string>(
-                        () => UserStorage.Backend.Materialize(
-                            safInfo.Document.DocumentId,
-                            MaterializationScope.File,
-                            default),
-                        cleanupFunction: null,
-                        longRunning: true);
-                    bool failed = false;
-                    while (true)
-                    {
-                        bool finished;
-                        try
-                        {
-                            finished = materialization.TryGetResult(out loadPath);
-                        }
-                        catch (FutureFailed e)
-                        {
-                            Debug.LogWarning(
-                                $"SAF_MATERIALIZE Could not export {rInfo.HumanName}: " +
-                                $"{e.InnerException?.Message ?? e.Message}");
-                            failed = true;
-                            break;
-                        }
-                        if (finished)
-                        {
-                            break;
-                        }
-                        yield return null;
-                    }
-                    materialization.Close();
-                    if (failed)
-                    {
-                        continue;
-                    }
+                    // Bulk export reads each sketch through LoadAndExport, which opens a path.
+                    // Shared storage has none, and copying every sketch out to satisfy it is
+                    // exactly the behaviour this backend exists to avoid.
+                    Debug.LogWarning(
+                        $"SAF_EXPORT Bulk export is unsupported on shared storage: " +
+                        $"{rInfo.HumanName}");
+                    continue;
                 }
                 using (var coroutine = LoadAndExport(loadPath))
                 {

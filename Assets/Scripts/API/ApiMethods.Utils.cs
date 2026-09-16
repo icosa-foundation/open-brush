@@ -359,7 +359,7 @@ namespace TiltBrush
             }
             string relative = Path.GetRelativePath(App.ReferenceImagePath(), fullPath).Replace('\\', '/');
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryImages, relative);
-            return new ReferenceImage(source.LocalPath, source.Identity, source.OpenRead,
+            return new ReferenceImage(relative, source.Identity, source.OpenRead,
                 source.Document.Size, $"./{relative}");
         }
 

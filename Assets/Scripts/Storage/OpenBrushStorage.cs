@@ -98,7 +98,6 @@ namespace TiltBrush
             public StorageDocument Document { get; }
             public string Identity =>
                 $"{m_Root}:{Document.DocumentId.Value}|{Document.LastModified:o}|{Document.Size}";
-            public string LocalPath => m_Backend.GetMaterializationPath(Document.DocumentId);
 
             public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
             {
@@ -119,11 +118,6 @@ namespace TiltBrush
                 return m_Backend.OpenRead(Document.DocumentId, false, CancellationToken.None);
             }
 
-            public string Materialize(MaterializationScope scope)
-            {
-                CheckRoot();
-                return m_Backend.Materialize(Document.DocumentId, scope, CancellationToken.None);
-            }
         }
 
         internal static StorageDocument ResolveMediaDocument(

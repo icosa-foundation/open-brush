@@ -871,8 +871,8 @@ namespace TiltBrush
                 string logicalPath = string.Join("/", relativePath.Replace('\\', '/').Split('/')
                     .Where(part => part.Length > 0 && part != "."));
                 return new ReferenceImage(
-                    source.LocalPath, source.Identity, source.OpenRead,
-                source.Document.Size,
+                    logicalPath, source.Identity, source.OpenRead,
+                    source.Document.Size,
                     $"./{logicalPath}");
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||

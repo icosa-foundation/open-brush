@@ -33,7 +33,6 @@ namespace TiltBrush
         }
 
         private readonly object m_LocationGate = new object();
-        private readonly object m_MaterializationGate = new object();
         private readonly Dictionary<StorageDocumentId, DocumentLocation> m_Locations =
             new Dictionary<StorageDocumentId, DocumentLocation>();
         private string m_MappedRootId;
@@ -318,70 +317,8 @@ namespace TiltBrush
                 "The document belongs to a previously selected Open Brush folder.");
         }
 
-        public string Materialize(
-            StorageDocumentId documentId,
-            MaterializationScope scope,
-            CancellationToken cancellationToken)
-        {
-            // A second load must not prune a group while the first is still copying it.
-            lock (m_MaterializationGate)
-            {
-                return MaterializeLocked(documentId, scope, cancellationToken);
-            }
-        }
 
-        private string MaterializeLocked(
-            StorageDocumentId documentId,
-            MaterializationScope scope,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            string rootIdentity = RootIdentity;
-            DocumentLocation location = GetLocation(documentId);
-            if (location == null)
-            {
-                throw new IOException(
-                    "The selected SAF document is not part of the active catalog.");
-            }
 
-            StorageDocumentId materializationGroupId = location.Document.DocumentId;
-            string groupRoot = GetMaterializationGroupRoot(location.Area, materializationGroupId);
-            bool reconcileModel = scope == MaterializationScope.DependencyTree &&
-                location.Area == StorageArea.MediaLibraryModels;
-            var materializedFiles = reconcileModel
-                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase) : null;
-            string path = MaterializeFile(
-                location, materializationGroupId, cancellationToken, materializedFiles);
-            if (reconcileModel)
-            {
-                MaterializeModelDependencies(
-                    location,
-                    path,
-                    materializationGroupId,
-                    cancellationToken,
-                    materializedFiles);
-                if (rootIdentity != RootIdentity)
-                {
-                    throw new IOException("Selected media folder changed during materialization.");
-                }
-                RemoveObsoleteMaterializedFiles(
-                    groupRoot, materializedFiles, cancellationToken);
-            }
-            EvictMaterializationCache(groupRoot);
-            return path;
-        }
-
-        public string GetMaterializationPath(StorageDocumentId documentId)
-        {
-            DocumentLocation location = GetLocation(documentId);
-            if (location == null)
-            {
-                throw new IOException(
-                    "The selected SAF document is not part of the active catalog.");
-            }
-            return GetMaterializationPath(
-                location, location.Document.DocumentId);
-        }
 
         internal static string GetAreaPath(StorageArea area)
         {
@@ -473,101 +410,7 @@ namespace TiltBrush
                 : $"{directory.TrimEnd('/', '\\')}/{name}";
         }
 
-        private string MaterializeFile(
-            DocumentLocation location,
-            StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken,
-            ISet<string> materializedFiles = null)
-        {
-            if (location.Document.IsDirectory)
-            {
-                MaterializeDirectory(
-                    location.Area,
-                    location.RelativePath,
-                    materializationGroupId,
-                    cancellationToken,
-                    materializedFiles);
-                return GetMaterializationPath(location, materializationGroupId);
-            }
 
-            string destination = GetMaterializationPath(
-                location, materializationGroupId);
-            Directory.CreateDirectory(Path.GetDirectoryName(destination));
-            string temporary = $"{destination}.obtmp-{Guid.NewGuid():N}";
-            try
-            {
-                using (Stream input = OpenRead(
-                    location.Document.DocumentId, requireSeekable: false, cancellationToken))
-                using (var output = new FileStream(
-                    temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                {
-                    input.CopyTo(output);
-                    output.Flush(flushToDisk: true);
-                }
-                if (File.Exists(destination))
-                {
-                    File.Replace(temporary, destination, null);
-                }
-                else
-                {
-                    File.Move(temporary, destination);
-                }
-            }
-            finally
-            {
-                if (File.Exists(temporary))
-                {
-                    File.Delete(temporary);
-                }
-            }
-            if (location.Document.LastModified.HasValue)
-            {
-                File.SetLastWriteTime(destination, location.Document.LastModified.Value);
-            }
-            File.SetLastAccessTimeUtc(destination, DateTime.UtcNow);
-            materializedFiles?.Add(destination);
-            return destination;
-        }
-
-        private void MaterializeDirectory(
-            StorageArea area,
-            string relativeDirectory,
-            StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken,
-            ISet<string> materializedFiles)
-        {
-            DocumentLocation directoryLocation = FindLocationByPath(area, relativeDirectory);
-            if (directoryLocation != null)
-            {
-                Directory.CreateDirectory(GetMaterializationPath(
-                    directoryLocation, materializationGroupId));
-            }
-            StorageDirectoryResult listing = List(
-                area, relativeDirectory, cancellationToken);
-            if (!listing.Success)
-            {
-                throw new IOException(listing.Error);
-            }
-            foreach (StorageDocument document in listing.Documents)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                DocumentLocation child = GetLocation(document.DocumentId);
-                if (document.IsDirectory)
-                {
-                    MaterializeDirectory(
-                        area,
-                        child.RelativePath,
-                        materializationGroupId,
-                        cancellationToken,
-                        materializedFiles);
-                }
-                else
-                {
-                    MaterializeFile(
-                        child, materializationGroupId, cancellationToken, materializedFiles);
-                }
-            }
-        }
 
         private DocumentLocation FindLocationByPath(StorageArea area, string relativePath)
         {
@@ -594,133 +437,7 @@ namespace TiltBrush
             m_MappedRootId = rootId;
         }
 
-        private void MaterializeModelDependencies(
-            DocumentLocation model,
-            string localModelPath,
-            StorageDocumentId materializationGroupId,
-            CancellationToken cancellationToken,
-            ISet<string> materializedFiles)
-        {
-            if (model.Document.IsDirectory)
-            {
-                return;
-            }
 
-            var dependencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            string extension = Path.GetExtension(localModelPath).ToLowerInvariant();
-            string modelDirectory = GetLogicalDirectory(model.RelativePath);
-            try
-            {
-                if (extension == ".gltf" || extension == ".gltf2")
-                {
-                    JToken json = JToken.Parse(File.ReadAllText(localModelPath));
-                    foreach (JToken uri in json.SelectTokens("$..uri"))
-                    {
-                        AddLocalDependency(
-                            dependencies, modelDirectory, uri.ToString());
-                    }
-                }
-                else if (extension == ".obj")
-                {
-                    foreach (string line in File.ReadLines(localModelPath))
-                    {
-                        string trimmed = line.Trim();
-                        if (trimmed.StartsWith("mtllib ", StringComparison.OrdinalIgnoreCase))
-                        {
-                            AddLocalDependency(
-                                dependencies,
-                                modelDirectory,
-                                trimmed.Substring(7).Trim());
-                        }
-                    }
-                }
-                else if (extension == ".usda")
-                {
-                    foreach (string line in File.ReadLines(localModelPath))
-                    {
-                        int start = line.IndexOf('@');
-                        int end = start < 0 ? -1 : line.IndexOf('@', start + 1);
-                        if (start >= 0 && end > start)
-                        {
-                            AddLocalDependency(
-                                dependencies,
-                                modelDirectory,
-                                line.Substring(start + 1, end - start - 1));
-                        }
-                    }
-                }
-            }
-            catch (Exception e) when (
-                e is IOException ||
-                e is Newtonsoft.Json.JsonException)
-            {
-                throw new IOException(
-                    $"Could not inspect model dependencies for {model.RelativePath}.", e);
-            }
-
-            foreach (string dependency in dependencies.ToArray())
-            {
-                DocumentLocation dependencyLocation = FindByRelativePath(
-                    model.Area,
-                    dependency,
-                    cancellationToken);
-                if (dependencyLocation == null || dependencyLocation.Document.IsDirectory)
-                {
-                    continue;
-                }
-                string dependencyPath = MaterializeFile(
-                    dependencyLocation,
-                    materializationGroupId,
-                    cancellationToken,
-                    materializedFiles);
-                if (Path.GetExtension(dependencyPath).Equals(
-                        ".mtl", StringComparison.OrdinalIgnoreCase))
-                {
-                    foreach (string line in File.ReadLines(dependencyPath))
-                    {
-                        string texturePath = GetMaterialTexturePath(line);
-                        if (!string.IsNullOrEmpty(texturePath))
-                        {
-                            AddLocalDependency(
-                                dependencies,
-                                GetLogicalDirectory(dependency),
-                                texturePath);
-                        }
-                    }
-                }
-            }
-
-            foreach (string dependency in dependencies)
-            {
-                DocumentLocation dependencyLocation = FindByRelativePath(
-                    model.Area,
-                    dependency,
-                    cancellationToken);
-                if (dependencyLocation != null && !dependencyLocation.Document.IsDirectory)
-                {
-                    MaterializeFile(
-                        dependencyLocation,
-                        materializationGroupId,
-                        cancellationToken,
-                        materializedFiles);
-                }
-            }
-        }
-
-        internal static void RemoveObsoleteMaterializedFiles(
-            string groupRoot, ISet<string> materializedFiles, CancellationToken cancellationToken)
-        {
-            // Only reconcile after the current tree has copied successfully. Missing provider
-            // dependencies must not be supplied by leftovers from an earlier model revision.
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!Directory.Exists(groupRoot)) { return; }
-            foreach (string file in Directory.EnumerateFiles(
-                         Path.GetFullPath(groupRoot), "*", SearchOption.AllDirectories))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!materializedFiles.Contains(file)) { File.Delete(file); }
-            }
-        }
 
         internal static string GetMaterialTexturePath(string line)
         {
@@ -820,104 +537,9 @@ namespace TiltBrush
             }
         }
 
-        private string GetMaterializationPath(
-            DocumentLocation location, StorageDocumentId materializationGroupId)
-        {
-            string root = GetMaterializationGroupRoot(
-                location.Area, materializationGroupId);
-            string fullRoot = Path.GetFullPath(root);
-            string destination = Path.GetFullPath(
-                Path.Combine(fullRoot, location.RelativePath.Replace('/', Path.DirectorySeparatorChar)));
-            string prefix = fullRoot.TrimEnd(
-                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                + Path.DirectorySeparatorChar;
-            if (!destination.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new IOException("Materialization path escapes its cache area.");
-            }
-            return destination;
-        }
 
-        private static string GetMaterializationGroupRoot(
-            StorageArea area, StorageDocumentId materializationGroupId)
-        {
-            if (!materializationGroupId.IsValid)
-            {
-                throw new IOException("Materialization group identity is empty.");
-            }
-            return Path.Combine(
-                GetMaterializationAreaRoot(area),
-                SafTransactionJournal.GetRootNamespaceId(
-                    materializationGroupId.Value));
-        }
 
-        private static string GetMaterializationAreaRoot(StorageArea area)
-        {
-            switch (area)
-            {
-                case StorageArea.MediaLibraryImages: return App.ReferenceImagePath();
-                case StorageArea.MediaLibraryBackgroundImages:
-                    return App.BackgroundImagesLibraryPath();
-                case StorageArea.MediaLibraryModels: return App.ModelLibraryPath();
-                case StorageArea.MediaLibraryVideos: return App.VideoLibraryPath();
-                case StorageArea.MediaLibrarySoundClips: return App.SoundClipLibraryPath();
-                case StorageArea.MediaLibraryQuill: return App.QuillMediaLibraryPath();
-                default:
-                    return Path.Combine(
-                        Application.persistentDataPath,
-                        "OpenBrushSafMaterialized",
-                        SafTransactionJournal.GetRootNamespaceId(
-                            UserStorage.Backend.RootIdentity),
-                        area.ToString());
-            }
-        }
 
-        private static void EvictMaterializationCache(string protectedPath)
-        {
-            const long maxBytes = 512L * 1024L * 1024L;
-            string protectedRoot = Path.GetFullPath(protectedPath).TrimEnd(
-                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            string protectedPrefix = protectedRoot + Path.DirectorySeparatorChar;
-            string cacheRoot = Path.Combine(
-                Application.persistentDataPath,
-                "OpenBrushSafMaterialized",
-                SafTransactionJournal.GetRootNamespaceId(
-                    UserStorage.Backend.RootIdentity));
-            if (!Directory.Exists(cacheRoot))
-            {
-                return;
-            }
-            FileInfo[] files = new DirectoryInfo(cacheRoot)
-                .GetFiles("*", SearchOption.AllDirectories)
-                .Where(file => !file.Name.Contains(".obtmp-"))
-                .OrderBy(file => file.LastAccessTimeUtc)
-                .ToArray();
-            long total = files.Sum(file => file.Length);
-            foreach (FileInfo file in files)
-            {
-                if (total <= maxBytes)
-                {
-                    break;
-                }
-                if (string.Equals(
-                        file.FullName, protectedRoot, StringComparison.OrdinalIgnoreCase) ||
-                    file.FullName.StartsWith(
-                        protectedPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-                long length = file.Length;
-                try
-                {
-                    file.Delete();
-                    total -= length;
-                }
-                catch (IOException)
-                {
-                    // An importer may currently hold this cache entry.
-                }
-            }
-        }
 
         private static string CombinePath(string root, string relativePath)
         {

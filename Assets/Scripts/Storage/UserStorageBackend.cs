@@ -60,11 +60,6 @@ namespace TiltBrush
         Failed,
     }
 
-    public enum MaterializationScope
-    {
-        File,
-        DependencyTree,
-    }
 
     /// An opaque backend-owned document identity. Display paths must never be used in its place.
     public readonly struct StorageDocumentId : IEquatable<StorageDocumentId>
@@ -335,11 +330,6 @@ namespace TiltBrush
             CancellationToken cancellationToken);
         StorageMutationResult Delete(
             StorageDocumentId documentId, CancellationToken cancellationToken);
-        string Materialize(
-            StorageDocumentId documentId,
-            MaterializationScope scope,
-            CancellationToken cancellationToken);
-        string GetMaterializationPath(StorageDocumentId documentId);
     }
 
     public static class UserStorage
@@ -585,21 +575,7 @@ namespace TiltBrush
             }
         }
 
-        public string Materialize(
-            StorageDocumentId documentId,
-            MaterializationScope scope,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            EnsureValidDocumentId(documentId);
-            return documentId.Value;
-        }
 
-        public string GetMaterializationPath(StorageDocumentId documentId)
-        {
-            EnsureValidDocumentId(documentId);
-            return documentId.Value;
-        }
 
         internal static string GetAreaRoot(StorageArea area)
         {

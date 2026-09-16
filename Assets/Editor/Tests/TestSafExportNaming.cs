@@ -29,8 +29,6 @@ namespace TiltBrush
             }
             public StorageMutationResult Rename(StorageDocumentId id, string name, CancellationToken token) => m_Local.Rename(id, name, token);
             public StorageMutationResult Delete(StorageDocumentId id, CancellationToken token) => m_Local.Delete(id, token);
-            public string Materialize(StorageDocumentId id, MaterializationScope scope, CancellationToken token) => m_Local.Materialize(id, scope, token);
-            public string GetMaterializationPath(StorageDocumentId id) => m_Local.GetMaterializationPath(id);
         }
 
         [TestCase(false)]

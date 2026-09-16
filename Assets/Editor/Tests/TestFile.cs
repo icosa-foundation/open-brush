@@ -60,8 +60,6 @@ namespace TiltBrush
             public DateTime DocumentLastModified { get; set; } = DateTime.UtcNow;
             public byte[] CreateBeforeNextWriteData { get; set; }
             public int ReadCount { get; private set; }
-            public string MaterializationPath { get; set; }
-            public MaterializationScope? LastMaterializationScope { get; private set; }
             public string LastListedDirectory { get; private set; }
             public StorageArea LastListedArea { get; private set; }
             public List<string> CommittedNames { get; } = new List<string>();
@@ -284,24 +282,7 @@ namespace TiltBrush
                     : new StorageMutationResult(StorageResultCode.NotFound, documentId);
             }
 
-            public string Materialize(
-                StorageDocumentId documentId,
-                MaterializationScope scope,
-                CancellationToken cancellationToken)
-            {
-                if (MaterializationPath != null)
-                {
-                    LastMaterializationScope = scope;
-                    return MaterializationPath;
-                }
-                throw new NotSupportedException();
-            }
 
-            public string GetMaterializationPath(StorageDocumentId documentId)
-            {
-                if (MaterializationPath != null) { return MaterializationPath; }
-                throw new NotSupportedException();
-            }
         }
 
         private Stream GetReadStream(string zipfile, string subfile, bool useSharpZipLib)
@@ -738,24 +719,21 @@ namespace TiltBrush
                 OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
         }
 
-        [TestCase(StorageArea.MediaLibraryImages, MaterializationScope.File)]
-        [TestCase(StorageArea.MediaLibraryVideos, MaterializationScope.File)]
-        [TestCase(StorageArea.MediaLibraryModels, MaterializationScope.DependencyTree)]
+        [TestCase(StorageArea.MediaLibraryImages)]
+        [TestCase(StorageArea.MediaLibraryVideos)]
+        [TestCase(StorageArea.MediaLibraryModels)]
         public void SafFilenameImport_ResolvesUnscannedDirectoriesAndGuardsRootChanges(
-            StorageArea area, MaterializationScope scope)
+            StorageArea area)
         {
-            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/asset.bin" };
+            var backend = new FakeSafBackend();
             StorageDocumentId id = backend.Add("asset.bin", new byte[] { 7 });
             var source = new OpenBrushStorage.MediaSource(backend, area, "Nested/asset.bin");
             Assert.AreEqual("Nested", backend.LastListedDirectory);
             Assert.AreEqual(area, backend.LastListedArea);
             Assert.AreEqual(id, source.Document.DocumentId);
             using (Stream input = source.OpenRead()) { Assert.AreEqual(7, input.ReadByte()); }
-            Assert.AreEqual(backend.MaterializationPath, source.Materialize(scope));
-            Assert.AreEqual(scope, backend.LastMaterializationScope);
             backend.RootIdentity = "different-root";
             Assert.Throws<IOException>(() => source.OpenRead());
-            Assert.Throws<IOException>(() => source.Materialize(scope));
         }
 
         private static void SetModelCatalogField(ModelCatalog catalog, string name, object value)
@@ -920,50 +898,6 @@ namespace TiltBrush
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void SafModelMaterialization_PrunesOnlyObsoleteFilesInItsGroup(bool cancelled)
-        {
-            string root = Path.Combine(Path.GetTempPath(), $"open-brush-model-test-{Guid.NewGuid():N}");
-            string group = Path.Combine(root, "model-group");
-            string nested = Path.Combine(group, "textures");
-            Directory.CreateDirectory(nested);
-            string model = Path.Combine(group, "model.gltf");
-            string texture = Path.Combine(nested, "current.png");
-            string stale = Path.Combine(nested, "removed.png");
-            string staleMaterial = Path.Combine(group, "old.mtl");
-            string otherGroup = Path.Combine(root, "other-model-group");
-            Directory.CreateDirectory(otherGroup);
-            string otherModel = Path.Combine(otherGroup, "model.gltf");
-            try
-            {
-                foreach (string path in new[] { model, texture, stale, staleMaterial, otherModel })
-                {
-                    File.WriteAllText(path, "fixture");
-                }
-                var current = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { model, texture };
-                if (cancelled)
-                {
-                    Assert.Throws<OperationCanceledException>(() =>
-                        SafUserStorageBackend.RemoveObsoleteMaterializedFiles(
-                            group, current, new CancellationToken(true)));
-                }
-                else
-                {
-                    SafUserStorageBackend.RemoveObsoleteMaterializedFiles(
-                        group, current, CancellationToken.None);
-                }
-                Assert.AreEqual(cancelled, File.Exists(stale));
-                Assert.AreEqual(cancelled, File.Exists(staleMaterial));
-                Assert.AreEqual("fixture", File.ReadAllText(model));
-                Assert.AreEqual("fixture", File.ReadAllText(texture));
-                Assert.AreEqual("fixture", File.ReadAllText(otherModel));
-            }
-            finally
-            {
-                Directory.Delete(root, recursive: true);
-            }
-        }
 
         [Test]
         public void SafMediaIdentity_ChangesWithMetadataButNotRepeatedLookups()
@@ -987,7 +921,7 @@ namespace TiltBrush
         public void VideoRestore_ResolvesSafPathsLazilyWithoutUsingOldCacheFiles()
         {
             string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-video-restore-{Guid.NewGuid():N}");
-            var backend = new FakeSafBackend { MaterializationPath = Path.Combine(root, "cache.mp4") };
+            var backend = new FakeSafBackend();
             backend.Add("first.mp4", new byte[] { 1 });
             backend.Add("second.mp4", new byte[] { 2 });
             var first = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A/first.mp4", new[] { ".mp4" });
@@ -1001,7 +935,6 @@ namespace TiltBrush
             Assert.AreEqual("B/second.mp4", second.PersistentPath);
             Assert.IsFalse(first.IsInitialized);
             Assert.AreEqual(0, backend.ReadCount);
-            Assert.IsNull(backend.LastMaterializationScope);
 
             Directory.CreateDirectory(root);
             try
@@ -1021,7 +954,7 @@ namespace TiltBrush
         [TestCase("import-123/image.png")]
         public void SafSavedImage_ResolvesOutsideTheActiveDirectory(string relativePath)
         {
-            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/image.png" };
+            var backend = new FakeSafBackend();
             backend.Add("image.png", new byte[] { 7 });
             ReferenceImage image = ReferenceImageCatalog.ResolveSafImage(
                 backend, StorageArea.MediaLibraryImages, relativePath);
@@ -1036,7 +969,7 @@ namespace TiltBrush
         [TestCase("../image.png")]
         public void SafSavedImage_MissingOrInvalidPathsRemainMissing(string relativePath)
         {
-            var backend = new FakeSafBackend { MaterializationPath = "cache/document-id/image.png" };
+            var backend = new FakeSafBackend();
             backend.Add("image.png", new byte[] { 7 });
             Assert.IsNull(ReferenceImageCatalog.ResolveSafImage(
                 backend, StorageArea.MediaLibraryImages, relativePath));
