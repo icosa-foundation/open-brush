@@ -107,26 +107,113 @@ external-change path is `AndroidStorageManager.OnApplicationPause(false)`
 (line 470), which on resume refreshes runtime content, refreshes shared
 catalogs and kicks Drive sync.
 
-Removing the resume refresh, together with decision 3, means the projection is
-built exactly once per process. That makes the generational projection in
-`UserRuntimeContent` unnecessary:
+Remove the resume refresh. Combined with decision 3, nothing rebuilds the
+projection while consumers hold paths into it, which removes the reason the
+generational swap exists:
 
-- `ProjectionPointer`, `ProjectionManifest`, `ProjectionEntry`;
-- generation path helpers, generation-name validation,
-  `CleanupOldGenerations`, `DeleteOwnedGeneration`.
+- `ProjectionPointer`, the per-generation directories, generation-name
+  validation, `CleanupOldGenerations` and `DeleteOwnedGeneration`.
 
-The generational swap exists because `LuaManager` and `ApiManager` hold live
-paths into the projection across a rebuild. If there is never a rebuild, a
-single directory suffices.
-
-Most of the concurrent-refresh handling also goes, since refresh-during-scan
-had two sources — resume and root change — and both are now gone.
+**Keep `ProjectionManifest` and `ProjectionEntry`.** An earlier draft of this
+plan proposed deleting them alongside the generations. That was wrong. Their
+fields — `RelativePath`, `DocumentId`, `Size`, `LastModifiedTicks`, `Sha256` —
+are exactly the input a diff needs to decide what changed in SAF since the last
+materialization, which is what both a manual refresh and an incremental
+re-materialization require. See "Unify The File Types" below.
 
 **Do not extend this decision to desktop.** `PlatformConfigPC.asset:22` sets
 `UseFileSystemWatcher: 1` and it works: dropping a model into the folder makes
 it appear. The catalogs are shared code, so removing the Android paths will
 make the desktop watcher paths look vestigial. They are not. Scope the change
 to the SAF backend.
+
+### Optional manual refresh
+
+A user-initiated refresh — "I added a plugin, show it" — is compatible with all
+four decisions and does not bring back generations.
+
+The generational swap solved atomic replacement of an entire tree. That is the
+wrong unit. The materialization target is an ordinary local filesystem, where
+per-file atomic rename works, unlike SAF where the device probe showed rename
+deduplicates. `SafUserStorageBackend.MaterializeFile` already does this
+correctly: write `.obtmp-<guid>`, then `File.Replace` or `File.Move`.
+
+- A new file: copy to temp, rename in. No existing path disturbed.
+- A changed file: the same. A held path stays valid and simply has new content;
+  a path does not dangle when the file it points at is overwritten.
+- A deleted file: out of scope. `LuaManager.cs:311` shows deletion is not
+  supported at runtime on desktop either — the watcher hookup is commented
+  `// m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO`. Requiring a
+  restart for deletion is parity with current behaviour, not a new limitation.
+
+The consumer-side plumbing already exists. `LuaManager` binds `FileChanged` and
+`FileCreated` to `OnScriptsDirectoryChanged` (lines 309-310) and reloads
+individual scripts through `LoadScriptFromPath` (line 662). A manual refresh
+calls the same entry point the desktop watcher calls.
+
+Media, sketches and fonts need even less: media materializes on demand, so a
+refresh is a catalog rescan, and `RequestRefresh()` already exists on those
+catalogs and on `SafSketchSet`.
+
+Keep it user-initiated. Wiring it to resume or a timer reintroduces rebuilding
+underneath live consumers, which is what the generations existed for.
+
+## Unify The File Types
+
+Sketches, media, plugins, scripts, fonts and generated output are currently
+handled by four different subsystems. That split is not principled, and it
+should be collapsed.
+
+`IUserStorageBackend` is already file-type agnostic: `List`, `EnumerateTree`,
+`OpenRead`, `BeginWrite`, `Rename`, `Materialize(documentId, scope)`. Nothing in
+it knows what a sketch or a plugin is, and `MaterializationScope` is already
+`{ File, DependencyTree }` — a model with its textures and a plugin folder with
+its `require`d modules are the same shape.
+
+Only two things actually vary between the callers:
+
+1. **Stream or path.** Determined by the consumer library, not the file type.
+   `TiltFile` is Open Brush's own code and was converted to streams; UnityGLTF,
+   TextMeshPro and MoonSharp take paths, and the device probe established that a
+   detached descriptor exposes no usable `/proc/self/fd` path, so a path must be
+   a real file.
+2. **How long the path is held.** Media paths are transient, used during import
+   and then finished with. Plugin and font paths are held for the session by
+   `LuaManager` and the font APIs.
+
+Axis 2 is the only reason runtime content is not simply `Materialize(tree)`:
+eviction would delete a plugin from under a running script.
+`EvictMaterializationCache(protectedPath)` already implements that concept,
+pinning the group currently being materialized. Generalise "protected" from one
+group to a pinned set and `UserRuntimeContent` becomes a caller rather than a
+parallel subsystem.
+
+The resulting model:
+
+| Content | Unit | Path lifetime | Mechanism |
+| --- | --- | --- | --- |
+| Sketches | document | none, streamed | `OpenRead` |
+| Media | document + dependencies | transient | `Materialize` unpinned |
+| Plugins, scripts, fonts | tree | session | `Materialize` pinned |
+| Captures, exports | document | n/a | `BeginWrite` then publish |
+
+Two mechanisms, one pin flag and a write transaction. Sketches differ only
+because Open Brush owns both ends and could afford to convert its consumer to
+streams; that is a privilege, not a policy.
+
+### Deduplicate the two copy routines
+
+There are currently two implementations of the same operation:
+
+- `SafUserStorageBackend.cs:448` — `OpenRead`, `CopyTo`,
+  `Flush(flushToDisk: true)`, atomic `File.Replace`/`File.Move`, stamp mtime and
+  atime.
+- `UserRuntimeContent.cs:1040` — read loop with running SHA-256, write,
+  `Flush(flushToDisk: true)`, stamp mtime, return a `ProjectionEntry`.
+
+Collapse to one routine. Keep the SHA-256 and manifest-entry production from the
+runtime-content version and the atomic replace from the backend version; both
+are worth having in the single implementation.
 
 ## What Stays, And Why
 
@@ -285,16 +372,33 @@ buffer, one-cursor directory queries with struct-of-arrays JNI marshalling
    awareness. A single 500 MB model nearly exhausts the budget and evicts
    everything else.
 
-3. **The cache is FIFO, not LRU.** Eviction orders by `file.LastAccessTimeUtc`
-   (`SafUserStorageBackend.cs:843`), but Android mounts `/data` with `noatime` —
-   confirmed on a Nothing Phone (3a): `f2fs rw,lazytime,...,noatime,...`. Access
-   time never updates, so eviction order is creation order and the most-used
-   asset is evicted first. Fix: touch `LastWriteTimeUtc` on cache hit (these are
-   local files, so it works) and order by that.
+3. **The materialization cache never serves a hit.** `MaterializeFile`
+   (`SafUserStorageBackend.cs:427`) has no cache-hit branch — no
+   `if (File.Exists(destination) && upToDate) return destination`. It
+   unconditionally re-copies the document from SAF and overwrites through
+   `File.Replace`, every call. So the 512 MB budget is a staging directory with
+   an eviction policy, not a cache: a 500 MB model is re-copied from shared
+   storage on every import, and the eviction pass, the ordering and the tree
+   walk are all managing something that never avoids work.
+
+   Add a hit path keyed on the manifest data (`DocumentId`, `Size`,
+   `LastModifiedTicks`, and `Sha256` when a cheap check is inconclusive). This
+   is the same diff a manual refresh needs, which is why the manifest is
+   retained.
+
+   An earlier draft of this plan attributed the poor eviction ordering to
+   `/data` being mounted `noatime` (confirmed on a Nothing Phone (3a):
+   `f2fs rw,lazytime,...,noatime,...`). That reasoning was wrong: `noatime`
+   suppresses only *implicit* atime updates on read, and
+   `SafUserStorageBackend.cs:478` sets it explicitly via
+   `File.SetLastAccessTimeUtc`, which works regardless. The ordering is
+   materialization order because there is no reuse to record, not because the
+   timestamp is unwritable. Once a hit path exists, stamping access time on a
+   hit makes the ordering a real LRU.
 
 4. **Every materialization walks the whole cache.** `GetFiles("*",
-   SearchOption.AllDirectories)` plus a `Sum` of lengths runs on each call,
-   compounding with the thrashing caused by gap 3.
+   SearchOption.AllDirectories)` plus a `Sum` of lengths runs on each call.
+   Currently this compounds with gap 3, since every use is a fresh copy.
 
 5. **Tree enumeration truncates silently.** `StorageTreeQuery` defaults to
    `MaximumItemCount = 10000`, `UserRuntimeContent` uses 5000, and
@@ -324,39 +428,53 @@ would already be gone. Either order works; this order is cheaper.
 
 ## Estimated Scale
 
-Roughly 1,500–2,500 lines, across 24 files. This is an estimate from reference
-counts, not from doing the work: 255 root-identity references are not 255
-deleted lines, since many are a single argument in a signature that survives.
+Roughly 1,500–2,500 lines, across 24 files, from decisions 1–4. Unifying the
+file types removes most of what remains of `UserRuntimeContent` (1,262 lines)
+by reducing it to a caller of the shared materialization routine, though some
+of that is offset by the pinning and diff logic moving down into the backend.
+
+This is an estimate from reference counts, not from doing the work: 255
+root-identity references are not 255 deleted lines, since many are a single
+argument in a signature that survives.
 
 The line count is not the main benefit. The benefits are that
 `Backend.IsReady` becomes a startup invariant instead of a condition checked in
 twenty places, that nine save/export/capture paths stop being resumable
-mid-operation, and that root identity stops being something every future
-contributor must reason about in every catalog.
+mid-operation, that root identity stops being something every future
+contributor must reason about in every catalog, and that there is one way to
+get a local path for a shared document rather than two subsystems that each
+implement their own copy loop.
 
 ## Suggested Order
 
 1. Run the outstanding IL2CPP device gate.
-2. Gate startup on folder selection; exit on decline. Remove
-   `RequireSharedFolderFor` and unwind the nine call sites.
-3. Remove the resume refresh; collapse the generational projection to a single
-   directory.
-4. Collapse root namespacing to the startup URI comparison.
-5. Then the journal removal.
+2. Gate startup on folder selection (not on enumeration); exit on decline.
+   Remove `RequireSharedFolderFor` and unwind the nine call sites.
+3. Add the missing cache-hit path in `MaterializeFile`, and fsync the payload
+   before the rename sequence while dropping recovery to `testData: false`.
+   These are small, independent correctness fixes and should not queue behind
+   the structural work.
+4. Remove the resume refresh; drop the generational swap while keeping the
+   manifest.
+5. Unify the file types: one copy routine, `Materialize` with a pin flag, and
+   `UserRuntimeContent` reduced to a caller.
+6. Collapse root namespacing to the startup URI comparison.
+7. Then the journal removal.
 
-Each step is independently shippable and independently revertable. Step 2 is
-the highest value and should not wait for the others.
+Each step is independently shippable and independently revertable. Steps 2 and
+3 are the highest value and should not wait for the others.
 
 ## Open Question
 
-Dropping the resume refresh means external edits made while the application is
-backgrounded are not visible until relaunch. On Android every route to editing
-files — USB, the Files app, a browser download — backgrounds the application
-first, so this is the common workflow rather than an edge case.
+Dropping the automatic resume refresh means external edits made while the
+application is backgrounded are not visible until either a relaunch or a
+user-initiated refresh. On Android every route to editing files — USB, the
+Files app, a browser download — backgrounds the application first, so this is
+the common workflow rather than an edge case.
 
-Accepted on the basis that relaunching is cheap and now unavoidable anyway,
-given that declining the folder prompt exits. If it proves annoying in
-practice, add a manual "Refresh" action that performs a full teardown and
-rebuild. That is far cheaper than restoring automatic refresh, because it can
-invalidate every held path rather than having to swap safely underneath live
-consumers.
+Accepted on the basis that the manual refresh described above covers the case
+at a fraction of the cost, because it can update individual files atomically
+on a local filesystem instead of having to swap a whole tree safely underneath
+live consumers.
+
+Deletion remains restart-only, matching `LuaManager.cs:311`.
