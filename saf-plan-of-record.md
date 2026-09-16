@@ -38,86 +38,77 @@ deletions, not by what keeps the branch runnable.
 
 ## Progress
 
-Updated 2026-09-16. Verified by editor compile after each batch (`unity command
-recompile` / `recompile_status`); no runtime testing yet.
+Updated 2026-09-16, late. Every batch compiled in the editor; nothing has been
+run.
 
 ### Done
 
-- **Step 1, complete.** Startup gated on folder selection, exit on decline.
-  `RequireSharedFolderFor`, the continuation slots, the dismissal preference and
-  the save-locally fallback are gone, and the nine call sites are straight-line
-  again.
-- **Step 2, partly.** `OpenRead(area, relativePath)` / `Exists` added to the
-  backend. Lua modules, audio, video and glTF models now read from storage
-  rather than a copy. `SafMediaHttpServer` serves audio and video over the
-  existing loopback HTTP server, token-authenticated with range support.
-- **Step 5, complete.** The payload is fsynced before the rename sequence and
-  recovery validation dropped to `testData: false`, closing the inversion where
-  the journal was durable and the sketch was not.
-- **Deletions.** The legacy runtime-content migration and its tests, the
-  pre-release pending-transfer reporter, four unreachable storage methods, and
-  the helpers each left orphaned. `UserRuntimeContent` is 806 lines, from 1262.
-- **Two repo bugs fixed.** Four `.meta` files had 33-character GUIDs, so those
-  test files had never compiled or run. Corrected.
+- **Startup gated** on folder selection, exit on decline. The degraded mode,
+  its continuation slots and the nine resumable save/export/capture paths are
+  gone.
+- **Nothing is copied out of shared storage.** Materialization is deleted
+  outright - the interface members, both implementations, the cache, the
+  512MB budget, eviction, and every `Func<string>` threading it through the
+  media classes. Sketches, Lua modules and glTF read as streams; OBJ, audio,
+  video and the visualiser's music read over a loopback HTTP handler;
+  reference images decode from bytes.
+- **The runtime-content projection is deleted** - 806 lines. Scripts and
+  plugins enumerate and read through the backend; `LuaManager` keeps only a
+  logical root string so `ModulePaths` and the loader agree on a prefix.
+- **The write path is durable.** Payload fsynced before the rename sequence,
+  recovery validation dropped to structural.
+- **Root identity: 255 to 121 references**, with `SafRootChangeGuard` now
+  providing the single startup comparison the collapse depends on.
+- **Two repo bugs fixed**: four `.meta` files with 33-character GUIDs, whose
+  test files had never compiled; and the legacy migration, dead for a branch
+  that has never run.
 
-### UserRuntimeContent: what is left holding it up
+### What was learned that the plan had wrong
 
-Enumeration is converted - `ApiManager` and `LuaManager` both list and read
-through the backend now - so the projection no longer feeds script discovery.
-Five uses of `GetRuntimePath` remain, in three groups:
+1. **The path-consumer audit asked the wrong question.** It asked "can the
+   importer take a stream?" but not "does anything *later* need the file?"
+   OBJ passes the first test and fails the second: `ImportMaterialCollector`
+   keeps the asset location and reads from it at *export* time. Any future
+   conversion has to ask both.
+2. **Unity's URL-taking loaders are the general answer, not an audio/video
+   workaround.** `UnityWebRequest`, `VideoPlayer.url`, `WWW` and
+   `UnityWebRequestMultimedia` all accept `http://`, so one loopback handler
+   serves OBJ, textures, audio, video and music. Only genuinely path-bound
+   third-party loaders - USD, splats, TMP fonts - resist it.
+3. **Supporting a path-only loader never required a cache.** It requires a
+   temporary file for the duration of one load. The 512MB budget, the
+   eviction policy and the LRU question were all answering a question nobody
+   asked.
+4. **The materialization cache never served a hit.** `MaterializeFile` had no
+   reuse branch at all, so every use re-copied. The eviction ordering that
+   looked like a bug was moot.
+5. **"Silent truncation" was wrong.** `StorageTreeEnumerator` fails loudly on
+   both caps. Withdrawn.
+6. **The publish-surface collapse is semantic, not mechanical.** Thirteen call
+   sites with genuinely different staging, bundling and naming. It wants
+   review rather than a regex.
+7. **Deleting root scoping needs its replacement landing in the same change.**
+   Five commits of collapsing shipped before the startup comparison existed.
+   That window should not have been open.
 
-1. **Module resolution.** `LuaModulesPath` feeds `ScriptLoaderBase.ModulePaths`,
-   and `OpenBrushScriptLoader.TryGetStorageRelativePath` strips that same prefix
-   to recover an area-relative path. This needs a *stable* root, not a real one:
-   a logical sentinel would do, provided both ends agree.
-2. **Writes.** Bundled Lua libraries (`LuaManager.cs:336`) and newly created
-   plugins (`:1467`) write into the projected directory. These should go through
-   `backend.BeginWrite` instead - two sites, and the correct fix regardless.
-3. **Fonts.** `SvgTextUtils.cs:30`. The one genuine path consumer; Unity has no
-   runtime `byte[]` to `Font` route.
+### Deliberately disabled, to reinstate later
 
-Also now dead and removable: the filesystem branches in
-`ApiManager.PopulateUserScripts` and `LuaManager.LoadUserScripts` that sit
-behind the new `UsesStorageBackend` early-returns, and the
-`Directory.CreateDirectory` calls against a projected path that no longer holds
-anything on SAF. The watchers at `ApiManager.cs:259` and `LuaManager.cs:307`
-stay - they are desktop-only and already guarded.
+USD, FBX, PLY and Gaussian splats; SVG reference images; Quill and IMM import;
+OBJ export; bulk sketch export; custom fonts. Each is a guarded early return
+naming its reason, so reversing one is local work once its loader can take a
+stream or a URL.
 
 ### Not done
 
-- **Models other than glTF.** OBJ, USD and splats still materialize. OBJ is
-  reachable cheaply: it is entirely `UnityWebRequest`-based, so it can consume
-  the loopback handler like audio and video, needing only URL-aware path
-  joining in `_Load` and `FixLocalPaths`.
-- **Reference images.** Convertible, but `EnsureMaterialized` has four call
-  sites and `FilePath` keys the image cache, so it is not a small change.
-- **Step 3.** The materialization cache cannot go until the above land; it is
-  still the route for OBJ, USD, splats and images.
-- **Step 4, started.** Root identity is down from 255 references to 243, with the
-  catalog scan guard narrowed. The rest is the per-operation guards in the
-  catalogs, `EnsureSelectedRoot`/`IsSelectedRootCurrent` in the transaction path,
-  the root-scoped preference keys and namespaces, and the `rootChanged` catalog
-  resets. The cache namespacing that fed much of it is already gone with
-  materialization, so the remaining work is smaller than the count suggests.
-- **Step 3, complete.** Materialization is deleted entirely - the interface
-  members, both implementations, the cache, the budget, the eviction and every
-  `Func<string>` threading it through the media classes. Nothing copies out of
-  shared storage.
-- **Step 6.** The publish surface. The
-  publish collapse turned out to be semantic rather than mechanical - thirteen
-  call sites with genuinely different staging, bundling and naming - so it
-  wants review rather than a blind refactor.
-- **Step 8.** Ledger version tolerance is entangled with account and root
-  namespace checks that do real work; only two or three lines are actually
-  dead.
-
-### Net so far
-
-717 insertions against 818 deletions across `Assets/`. The insertions are the
-streaming infrastructure that makes the large deletions reachable, so the
-number understates the direction: the cache and the projection are what remain,
-and both are blocked on consumer conversions rather than on anything
-structural.
+- **The IL2CPP device gate** (step 1) - still unrun, and still the thing that
+  could invalidate the write path.
+- **Root identity's last 121 references.** Three different kinds: dead scan
+  guards in `QuillFileCatalog`; `DriveSyncLedger`, where only the storage-root
+  third of its key is constant and the account and Drive-root parts do real
+  work; and `SafDestinationLocks` / `SafPublicationRecord`, which carry the
+  root as data rather than control flow.
+- **The journal removal** (step 10).
+- **The publish surface** (step 6).
 
 ## Order of work
 
