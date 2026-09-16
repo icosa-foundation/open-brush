@@ -25,10 +25,6 @@ namespace TiltBrush
 {
     public class AndroidStorageManager : MonoBehaviour
     {
-        // Pre-release mirrored-cache builds used this key. Payloads are deliberately retained on
-        // disk, but the obsolete retry records must not drive the FD-backed backend.
-        private const string kPendingTransfersKey = "GooglePlayStorage.PendingTransfers";
-
         // The Android SAF picker is modal, so at most one request is ever outstanding.
         private static bool m_RequestInProgress;
         // Set once the startup grant is in place. A later re-selection is a recovery path that
@@ -45,8 +41,6 @@ namespace TiltBrush
             {
                 return;
             }
-
-            ReportObsoletePendingTransferState();
 
             var existing = GameObject.Find(nameof(AndroidStorageManager));
             if (existing != null)
@@ -511,17 +505,6 @@ namespace TiltBrush
                 VideoCatalog.Instance?.ForceCatalogScan();
                 SoundClipCatalog.Instance?.ForceCatalogScan();
             }
-        }
-
-        private static void ReportObsoletePendingTransferState()
-        {
-            if (!PlayerPrefs.HasKey(kPendingTransfersKey))
-            {
-                return;
-            }
-            Debug.LogWarning(
-                "SAF_STORAGE Obsolete pre-release mirror retry records were found. " +
-                "They are ignored by the SAF backend and retained for explicit cleanup.");
         }
 
         public static void StartStorageOperation(

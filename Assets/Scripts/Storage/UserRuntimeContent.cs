@@ -528,15 +528,6 @@ namespace TiltBrush
 
 
 
-        private string ComputeDocumentHash(
-            StorageDocument document, CancellationToken cancellationToken)
-        {
-            using (Stream stream = m_Backend.OpenRead(
-                document.DocumentId, requireSeekable: false, cancellationToken))
-            {
-                return ComputeStreamHash(stream, cancellationToken);
-            }
-        }
 
 
         private static string ComputeStreamHash(
@@ -556,55 +547,7 @@ namespace TiltBrush
             }
         }
 
-        private static string CopyFileAndHash(
-            string sourcePath,
-            Stream destination,
-            CancellationToken cancellationToken)
-        {
-            byte[] buffer = new byte[64 * 1024];
-            using (var source = new FileStream(
-                sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                int read;
-                while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    sha256.TransformBlock(buffer, 0, read, null, 0);
-                    destination.Write(buffer, 0, read);
-                }
-                sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-                destination.Flush();
-                return ToHex(sha256.Hash);
-            }
-        }
 
-        private static string GetConflictPath(
-            string sourceRelativePath,
-            string startedUtc,
-            HashSet<string> reservedPaths)
-        {
-            string directory = GetLogicalDirectory(sourceRelativePath);
-            string fileName = Path.GetFileName(sourceRelativePath);
-            string extension = Path.GetExtension(fileName);
-            string stem = Path.GetFileNameWithoutExtension(fileName);
-            string baseName = $"{stem}.local-recovered-{startedUtc}";
-            for (int suffix = 0; suffix < 10000; ++suffix)
-            {
-                string candidateName = suffix == 0
-                    ? $"{baseName}{extension}"
-                    : $"{baseName}-{suffix}{extension}";
-                string candidate = string.IsNullOrEmpty(directory)
-                    ? candidateName
-                    : $"{directory}/{candidateName}";
-                if (!reservedPaths.Contains(candidate))
-                {
-                    return candidate;
-                }
-            }
-            throw new IOException(
-                $"Could not reserve a migration conflict name for {sourceRelativePath}.");
-        }
 
         private static string GetLogicalDirectory(string relativePath)
         {
