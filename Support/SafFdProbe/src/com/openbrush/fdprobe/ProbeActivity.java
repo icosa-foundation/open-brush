@@ -3,6 +3,7 @@ package com.openbrush.fdprobe;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -196,6 +197,9 @@ public class ProbeActivity extends Activity {
         // --- 12-14. large-file throughput, fsync cost, read-back cost -------------
         runLargeFileChecks(dir);
 
+        // --- 15. can the platform media stack play a content:// URI directly? -----
+        runMediaPlayerCheck(tree);
+
         // --- 11. cleanup ----------------------------------------------------------
         boolean del = DocumentsContract.deleteDocument(getContentResolver(), doc);
         say((del ? "PASS" : "FAIL") + " 11 deleteDocument");
@@ -295,6 +299,61 @@ public class ProbeActivity extends Activity {
         if (nanos <= 0) return "?";
         double seconds = nanos / 1e9;
         return String.format(java.util.Locale.US, "%.0f", (bytes / 1048576.0) / seconds);
+    }
+
+
+    /**
+     * Check 15. Audio and video are the only large content that Unity cannot load
+     * from a stream -- VideoPlayer.url and UnityWebRequestMultimedia both want a
+     * file. If Android's own MediaPlayer accepts the content:// URI directly, a
+     * small native plugin could play multi-gigabyte media straight out of SAF
+     * instead of copying it into app-private storage first.
+     *
+     * Needs a real media file in the chosen folder; skips if none is present.
+     */
+    private void runMediaPlayerCheck(Uri tree) {
+        Uri mediaUri = null;
+        String mediaName = null;
+        Uri children = DocumentsContract.buildChildDocumentsUriUsingTree(
+                tree, DocumentsContract.getTreeDocumentId(tree));
+        try (Cursor c = getContentResolver().query(children, new String[]{
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null)) {
+            while (c != null && c.moveToNext()) {
+                String mime = c.getString(2) == null ? "" : c.getString(2);
+                if (mime.startsWith("video/") || mime.startsWith("audio/")) {
+                    mediaUri = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                    mediaName = c.getString(1);
+                    break;
+                }
+            }
+        } catch (Throwable t) {
+            say("SKIP 15 could not list for media: " + t.getClass().getSimpleName());
+            return;
+        }
+
+        if (mediaUri == null) {
+            say("SKIP 15 no audio/video file in the chosen folder."
+                    + " Drop one in and re-run to test direct content:// playback.");
+            return;
+        }
+
+        MediaPlayer player = new MediaPlayer();
+        try {
+            player.setDataSource(this, mediaUri);
+            player.prepare();
+            int duration = player.getDuration();
+            say("PASS 15 MediaPlayer played content:// directly (" + mediaName
+                    + ", duration=" + duration + "ms)"
+                    + "  <- large media need not be copied locally");
+        } catch (Throwable t) {
+            say("FAIL 15 MediaPlayer rejected content:// (" + mediaName + "): "
+                    + t.getClass().getSimpleName() + " " + t.getMessage()
+                    + "  <- large media must be materialized");
+        } finally {
+            try { player.release(); } catch (Throwable ignored) { }
+        }
     }
 
     private Fd detach(Uri uri, String mode) throws Exception {

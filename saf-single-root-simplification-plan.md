@@ -180,14 +180,69 @@ once at startup into a small fixed app-private directory and never evict it.
 That needs no eviction policy, no pinning mechanism and no manifest: "this
 directory is not part of the media budget" is the whole rule.
 
+### Audit of every path consumer
+
+Each importer was checked for a stream seam rather than assumed to need a file.
+
+| Consumer | Seam | Verdict |
+| --- | --- | --- |
+| MoonSharp / Lua | `ScriptLoaderBase`; `OpenBrushScriptLoader` already custom, `LoadFile` returns a `Stream` | **Can stream** |
+| TiltBrushToolkit glTF (Icosa/Poly) | `IUriLoader` → `IBufferReader`, a random-access read interface; `TiltBrushUriLoader` already custom | **Can stream** |
+| UnityGLTF (user models) | `IDataLoader` / `IDataLoader2`; currently the stock `FileLoader` (`ImportGltfast.cs:118`) | **Can stream** |
+| Reference images | `ImageCache.LoadImageCache(FilePath, ...)` behind `EnsureMaterialized()`; `ImageUtils.FromImageData(byte[])` already exists | **Probably can stream** — verify |
+| Fonts | `SvgTextUtils.cs:30` takes a directory path; Unity has no runtime `byte[]` → `Font` | **Needs files** |
+| Audio | `UnityWebRequestMultimedia.GetAudioClip(url, …)` (`SoundClip.cs:332`) | **Needs a file or URL** |
+| Video | `m_VideoPlayer.url = …` (`ReferenceVideo.cs:328`) | **Needs a file or URL** |
+
+The pattern is consistent: every importer was designed with a loader
+abstraction, and in each case this branch bypassed it by materializing a path.
+Two of the three already have a *custom* implementation in this repository —
+the seam was built, then fed a file path.
+
+There is an unfortunate inversion in what remains. The content that genuinely
+cannot stream is the largest: audio and video. Models, scripts and images —
+which can stream — are what currently dominate the materialization cache, while
+the multi-gigabyte media that has to be copied is exactly what a 512 MB budget
+cannot hold.
+
+So the work has two halves:
+
+1. Convert models, scripts and images to streams. This removes most cache
+   pressure and, for models, avoids copying a large `.glb` before every import.
+2. Size the remaining cache for what is left — audio and video — where copying
+   is currently unavoidable.
+
+**Threading caveat.** `ImportGltfast.cs` sets `gltf.IsMultithreaded = true` and
+relies on `FileLoader` implementing `IDataLoader2` so the glTF JSON can be read
+off the main thread. A SAF-backed loader reaches the provider through JNI, and
+JNI calls from a non-Unity thread require `AndroidJNI.AttachCurrentThread`.
+Any SAF `IDataLoader` must handle that explicitly or the multithreaded path will
+fail at runtime rather than at compile time.
+
+**Remaining conversions within the glTF loaders.**
+`TiltBrushUriLoader.LoadAsImage` uses `File.ReadAllBytes(Path.Combine(...))` and
+`GltfFileInfo(string path)` reads the JSON header with `File.ReadAllText` or
+`GlbParser.GetJsonChunkAsString(path)`. Both need stream overloads before the
+Icosa path is fully stream-backed. `OpenBrushAudioImportContext.GltfDirectory`
+is also a directory path.
+
+**Open question for video.** Android's own `MediaPlayer.setDataSource(context,
+uri)` accepts `content://` URIs, even though Unity's `VideoPlayer.url` does not.
+If that holds on target devices, a small native plugin could play large video
+straight from SAF instead of copying it. `Support/SafFdProbe` check 15 tests
+this against a real media file in the chosen folder; it skips when none is
+present, so drop a video in before running it.
+
 ### The resulting model
 
 | Content | Mechanism |
 | --- | --- |
 | Sketches | `OpenRead` — streamed |
 | Scripts, plugins | `OpenRead` — streamed, through the existing `OpenBrushScriptLoader` seam |
-| Media | `Materialize` under a budget, evictable |
+| Models | `OpenRead` — streamed, through a SAF `IDataLoader` / `IUriLoader` |
+| Reference images | `OpenRead` — streamed, pending confirmation |
 | Fonts | materialized once at startup, small fixed area, never evicted |
+| Audio, video | `Materialize` under a budget — the only content that must be copied |
 | Captures, exports | `BeginWrite`, then publish |
 
 Two mechanisms, no pin flag, no per-type policy.
