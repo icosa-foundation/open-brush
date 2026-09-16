@@ -261,10 +261,16 @@ namespace TiltBrush
                     if (transactionKind == "tilt-replacement" ||
                         transactionKind == "sketch-replacement")
                     {
+                        // Structural validation only, matching the commit path. The payload is
+                        // fsynced before the rename sequence begins, so an interrupted write shows
+                        // up as a missing or truncated central directory rather than as an intact
+                        // archive with a torn middle. Decompressing every entry here cost a
+                        // multi-gigabyte read at startup and detected corruption the write path
+                        // now prevents.
                         return TiltFile.IsArchiveValid(
                             stream,
                             document.DisplayName,
-                            testData: true);
+                            testData: false);
                     }
                     return stream.CanRead;
                 }
