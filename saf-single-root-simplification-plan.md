@@ -1,5 +1,10 @@
 # SAF Single-Root Simplification Plan
 
+**Superseded as a plan by `saf-plan-of-record.md`.** This document remains the
+supporting analysis — the product decisions, the measurements and the findings,
+including corrections made along the way. The plan of record is the short
+version that should be worked from.
+
 ## Status
 
 Proposal, arising from a design review of `feature/saf-google-play-fd-backed`

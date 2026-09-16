@@ -1,5 +1,8 @@
 # SAF Branch Design Review
 
+**Superseded as a plan by `saf-plan-of-record.md`.** This document remains the
+review and the reasoning; the plan of record is what to do.
+
 ## Status
 
 Review of `feature/saf-google-play-fd-backed` as of commit `01805166b9`,
