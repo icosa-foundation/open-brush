@@ -93,8 +93,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            m_UserScriptsPath =
-                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Scripts);
+            // Scripts are enumerated and read through the backend when storage has no
+            // filesystem, so this path is only used by the desktop watcher and the local reads.
+            m_UserScriptsPath = UsesStorageBackend
+                ? null
+                : Path.Combine(App.UserPath(), "Scripts");
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
@@ -111,7 +114,6 @@ namespace TiltBrush
             ResetBrushTransform();
 
             ConfigureLocalScriptsWatcher();
-            UserRuntimeContent.Instance.Refreshed += OnRuntimeContentRefreshed;
             App.Instance.StateChanged += RunStartupScript;
         }
 
@@ -121,7 +123,6 @@ namespace TiltBrush
             {
                 App.Instance.StateChanged -= RunStartupScript;
             }
-            UserRuntimeContent.Instance.Refreshed -= OnRuntimeContentRefreshed;
             m_FileWatcher?.Dispose();
             m_FileWatcher = null;
         }
@@ -225,22 +226,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
         }
 
-        private void OnRuntimeContentRefreshed(StorageArea area)
-        {
-            if (area != StorageArea.Scripts)
-            {
-                return;
-            }
-            m_UserScriptsPath =
-                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Scripts);
-            foreach (string path in m_UserScripts.Keys.ToArray())
-            {
-                App.HttpServer.RemoveHttpHandler(path);
-            }
-            m_UserScripts.Clear();
-            PopulateUserScripts();
-            RunStartupScriptIfReady();
-        }
 
         private void ConfigureLocalScriptsWatcher()
         {

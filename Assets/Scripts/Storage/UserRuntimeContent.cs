@@ -795,10 +795,11 @@ namespace TiltBrush
             }
         }
 
+        /// Fonts alone. Scripts and plugins are enumerated and read straight from storage now,
+        /// so nothing needs them projected onto a filesystem; fonts stay because Unity offers no
+        /// runtime route from bytes to a Font.
         private static readonly StorageArea[] RuntimeAreas =
         {
-            StorageArea.Scripts,
-            StorageArea.Plugins,
             StorageArea.Fonts,
         };
     }

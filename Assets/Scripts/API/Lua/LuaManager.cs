@@ -215,21 +215,28 @@ namespace TiltBrush
             LatestToolScriptControlPointSpace = space;
         }
 
+        /// Stands in for the plugins directory when there is no filesystem behind it. MoonSharp
+        /// substitutes module names into ModulePaths and hands the result back to the loader, so
+        /// the two only have to agree on a prefix - it never needs to exist on disk.
+        private const string kLogicalPluginsRoot = "/openbrush/Plugins";
+
         void Awake()
         {
             m_Instance = this;
-            m_UserPluginsPath =
-                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Plugins);
+            if (UsesStorageBackend)
+            {
+                m_UserPluginsPath = kLogicalPluginsRoot;
+                return;
+            }
+            m_UserPluginsPath = Path.Combine(App.UserPath(), "Plugins");
             if (!Directory.Exists(m_UserPluginsPath))
             {
                 Directory.CreateDirectory(m_UserPluginsPath);
             }
-            UserRuntimeContent.Instance.Refreshed += OnRuntimeContentRefreshed;
         }
 
         private void OnDestroy()
         {
-            UserRuntimeContent.Instance.Refreshed -= OnRuntimeContentRefreshed;
             m_FileWatcher?.Dispose();
             m_FileWatcher = null;
             if (m_Instance == this)
@@ -281,7 +288,7 @@ namespace TiltBrush
                 ActiveScripts[category] = 0;
             }
 
-            if (!Directory.Exists(LuaModulesPath))
+            if (!UsesStorageBackend && !Directory.Exists(LuaModulesPath))
             {
                 Directory.CreateDirectory(LuaModulesPath);
             }
@@ -329,8 +336,19 @@ namespace TiltBrush
 
         public void CopyLuaModules()
         {
-            // Copy built-in Lua Libraries to User's LuaModules directory
             var libraries = Resources.LoadAll<TextAsset>("LuaModules");
+            if (UsesStorageBackend)
+            {
+                // Published into shared storage rather than a local directory, so the modules sit
+                // beside the user's own and are read back through the same stream loader.
+                foreach (var library in libraries)
+                {
+                    PublishLuaModuleAsync(library).AsAsyncVoid();
+                }
+                return;
+            }
+
+            // Copy built-in Lua Libraries to User's LuaModules directory
             foreach (var library in libraries)
             {
                 var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
@@ -338,6 +356,25 @@ namespace TiltBrush
                 {
                     FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
                 }
+            }
+        }
+
+        private static async Task PublishLuaModuleAsync(TextAsset library)
+        {
+            string relativePath = $"LuaModules/{library.name}.lua";
+            // __autocomplete is regenerated from the current API, so it always overwrites.
+            if (library.name != "__autocomplete" &&
+                UserStorage.Backend.Exists(StorageArea.Plugins, relativePath))
+            {
+                return;
+            }
+            RuntimeContentWriteResult result = await UserRuntimeContent.PublishIfMissingAsync(
+                StorageArea.Plugins, relativePath, "text/x-lua", library.bytes,
+                CancellationToken.None);
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_PLUGINS Could not publish Lua module {library.name}: {result.Error}");
             }
         }
 
@@ -550,19 +587,6 @@ namespace TiltBrush
             return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
-        private void OnRuntimeContentRefreshed(StorageArea area)
-        {
-            if (area != StorageArea.Plugins)
-            {
-                return;
-            }
-            m_UserPluginsPath =
-                UserRuntimeContent.Instance.GetRuntimePath(StorageArea.Plugins);
-            if (m_IsInitialized)
-            {
-                ReloadUserScriptsFromRuntimeContent();
-            }
-        }
 
         private void ReloadUserScriptsFromRuntimeContent()
         {

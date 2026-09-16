@@ -272,9 +272,8 @@ namespace TiltBrush
             onComplete?.Invoke();
         }
 
-        // External changes to Scripts/Plugins/Fonts are picked up here at startup, after folder
-        // selection, and on application resume. There is no live change observation: mobile
-        // platform configs disable file watching, so a resume-time refresh matches Quest behavior.
+        // Seeds bundled content and projects the font tree, which is the one area still needing
+        // real files. Scripts and plugins are read straight from storage.
         private IEnumerator RefreshRuntimeContent()
         {
             App.Instance.RefreshUserConfig();
