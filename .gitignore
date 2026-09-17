@@ -74,6 +74,9 @@
 /Assets/Resources/OVRBuildConfig.asset*
 # Oculus Unitypackage 23.1 (or something in between 1.41 and 23.1) added this as a local file
 /Assets/Resources/OVRPlatformToolSettings.asset*
+# com.unity.test-framework.performance writes these so a run can load them at runtime, then
+# deletes them when the run ends. Every EditMode run therefore removes them from the tree.
+/Assets/Resources/PerformanceTestRun*
 
 # m_DebugWebRequest creates this
 /Requests
