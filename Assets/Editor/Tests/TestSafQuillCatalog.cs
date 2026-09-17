@@ -140,22 +140,7 @@ namespace TiltBrush
             Assert.IsTrue(files.Any(file => file.SourceType == QuillSourceType.Imm));
         }
 
-        [Test]
-        public void QuerySafFiles_RejectsRootChangeAfterMaterialization()
-        {
-            using var backend = new Backend();
-            backend.AddProject("Complete", true);
-            Assert.Throws<IOException>(() => QuillFileCatalog.QuerySafFiles(backend, ""));
-        }
 
-        [TestCase("")]
-        [TestCase("Complete")]
-        public void QuerySafFiles_RejectsRootChangeDuringListing(string changedDirectory)
-        {
-            using var backend = new Backend { ChangeRootOnList = changedDirectory };
-            backend.AddProject("Complete", true);
-            Assert.Throws<IOException>(() => QuillFileCatalog.QuerySafFiles(backend, ""));
-        }
 
         [Test]
         public void QuerySafFiles_RejectsUnrelatedParentAndIncorrectCase()

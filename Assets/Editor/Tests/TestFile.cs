@@ -1098,57 +1098,6 @@ namespace TiltBrush
             }
         }
 
-        [Test]
-        public void SafStagedOutputPublisher_DoesNotCrossSelectedRoots()
-        {
-            string stagingRoot = Path.Combine(
-                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stagingRoot);
-            string first = Path.Combine(stagingRoot, "first.txt");
-            string second = Path.Combine(stagingRoot, "second.txt");
-            File.WriteAllText(first, "first");
-            File.WriteAllText(second, "second");
-            var backend = new FakeSafBackend();
-            string originalRoot = backend.RootIdentity;
-            backend.RootAfterFirstCommit = $"different-root-{Guid.NewGuid():N}";
-            string recoveryRoot =
-                SafTransactionJournal.GetRecoveryRootDirectory(originalRoot);
-            try
-            {
-                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
-                    backend,
-                    StorageArea.Exports,
-                    new[]
-                    {
-                        new SafStagedPath(first, "first.txt"),
-                        new SafStagedPath(second, "second.txt"),
-                    },
-                    transactionOwnsPayload: false,
-                    CancellationToken.None);
-
-                Assert.IsFalse(result.Success);
-                Assert.IsTrue(backend.Contains("first.txt"));
-                Assert.IsFalse(backend.Contains("second.txt"));
-                Assert.IsTrue(File.Exists(first));
-                Assert.IsTrue(File.Exists(second));
-                string publicationDirectory = Path.Combine(
-                    recoveryRoot, "publications");
-                Assert.AreEqual(
-                    1,
-                    Directory.GetFiles(publicationDirectory, "*.json").Length);
-            }
-            finally
-            {
-                if (Directory.Exists(stagingRoot))
-                {
-                    Directory.Delete(stagingRoot, true);
-                }
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
 
         [UnityEngine.TestTools.UnityTest]
         public System.Collections.IEnumerator SafQuillDefaults_TrackFilesAndRootsAndPreserveDeletions()

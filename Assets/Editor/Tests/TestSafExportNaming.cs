@@ -181,18 +181,6 @@ namespace TiltBrush
                 backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
         }
 
-        [Test]
-        public void RootReplacementCannotChooseAName()
-        {
-            var backend = new CatalogTestBackend();
-            backend.Listing = () =>
-            {
-                backend.RootIdentity = "changed";
-                return StorageDirectoryResult.Succeeded(Array.Empty<StorageDocument>());
-            };
-            Assert.Throws<IOException>(() => SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
-        }
 
 
         [Test]

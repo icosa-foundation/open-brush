@@ -650,10 +650,11 @@ namespace TiltBrush
 
         private static string GetPublicationDirectory(string rootId)
         {
-            // Not namespaced by root: SafRootChangeGuard discards this whole tree at startup if
-            // the folder differs from the one last used.
+            // Namespaced by root, and load-bearing: GetPendingTopLevelNames rejects a record
+            // whose RootId does not match, so sharing one directory between roots turns a
+            // foreign record into a hard failure rather than something to ignore.
             return Path.Combine(
-                Application.persistentDataPath, "OpenBrushSafRecovery", "publications");
+                SafTransactionJournal.GetRecoveryRootDirectory(rootId), "publications");
         }
 
         private static StorageArea ParseArea(string value)
