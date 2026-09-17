@@ -194,7 +194,7 @@ namespace TiltBrush
         private readonly string m_MimeType;
         private readonly SafTransactionRecord m_Record;
         private IDisposable m_DestinationLock;
-        private FileStream m_Stream;
+        private Stream m_Stream;
         private bool m_Finished;
         private bool m_NamespaceMutationStarted;
 
@@ -492,7 +492,7 @@ namespace TiltBrush
         private Stream OpenTemporaryRead()
         {
             if (!AndroidSafStorage.TryOpenSeekableReadStream(
-                    TemporaryDocumentId, out FileStream stream, out string error))
+                    TemporaryDocumentId, out Stream stream, out string error))
             {
                 throw new IOException(error);
             }
@@ -588,9 +588,9 @@ namespace TiltBrush
                 // behind an intact zip central directory, which is the corruption recovery would
                 // otherwise have to decompress the whole archive to detect. Measured at ~740ms
                 // per GiB on a Nothing Phone (3a), so roughly 150ms for a 200MB sketch.
-                if (m_Stream is FileStream fileStream)
+                if (m_Stream is ISyncableStream syncable)
                 {
-                    fileStream.Flush(flushToDisk: true);
+                    syncable.FlushToDisk();
                 }
                 else
                 {

@@ -95,7 +95,7 @@ namespace TiltBrush
             cancellationToken.ThrowIfCancellationRequested();
             string path = CombinePath(GetAreaPath(area), relativePath);
             if (!AndroidSafStorage.TryOpenSeekableReadStream(
-                    path, out FileStream stream, out string error))
+                    path, out Stream stream, out string error))
             {
                 throw new IOException(error);
             }
@@ -146,7 +146,7 @@ namespace TiltBrush
                 throw new ArgumentException("Storage document identity is empty.", nameof(documentId));
             }
             if (!AndroidSafStorage.TryOpenSeekableReadStream(
-                    documentId, out FileStream stream, out string error))
+                    documentId, out Stream stream, out string error))
             {
                 throw new IOException(error);
             }

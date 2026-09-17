@@ -30,7 +30,7 @@ namespace TiltBrush
         // Set once the startup grant is in place. A later re-selection is a recovery path that
         // requires a restart rather than a hot swap, so it must not re-enter startup.
         private static bool m_StartupSelectionComplete;
-        private static string m_FileDescriptorProbeRootIdentity;
+        private static string m_StorageStreamProbeRootIdentity;
         private static AndroidStorageManager m_Instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -109,7 +109,7 @@ namespace TiltBrush
             // The only root comparison left. Everything derived from the previous root is
             // discarded here if the folder is not the one this installation last used.
             SafRootChangeGuard.ReconcileAtStartup();
-            RunFileDescriptorProbeOnce();
+            RunStorageStreamProbeOnce();
             yield return RecoverTransactions(null);
         }
 
@@ -173,28 +173,28 @@ namespace TiltBrush
             Debug.Break();
         }
 
-        private static void RunFileDescriptorProbeOnce()
+        private static void RunStorageStreamProbeOnce()
         {
             string rootIdentity = AndroidSafStorage.GetSelectedRootIdentity();
             if (!Debug.isDebugBuild ||
                 string.IsNullOrEmpty(rootIdentity) ||
                 string.Equals(
-                    m_FileDescriptorProbeRootIdentity,
+                    m_StorageStreamProbeRootIdentity,
                     rootIdentity,
                     StringComparison.Ordinal))
             {
                 return;
             }
 
-            m_FileDescriptorProbeRootIdentity = rootIdentity;
-            bool success = AndroidSafStorage.RunFileDescriptorProbe(out string report);
+            m_StorageStreamProbeRootIdentity = rootIdentity;
+            bool success = AndroidSafStorage.RunStorageStreamProbe(out string report);
             if (success)
             {
-                Debug.Log($"SAF_FD {report}");
+                Debug.Log($"SAF_STREAM {report}");
             }
             else
             {
-                Debug.LogError($"SAF_FD {report}");
+                Debug.LogError($"SAF_STREAM {report}");
             }
         }
 

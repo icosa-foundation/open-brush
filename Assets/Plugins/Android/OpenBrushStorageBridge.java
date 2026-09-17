@@ -10,7 +10,12 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class OpenBrushStorageBridge {
@@ -28,13 +33,18 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static final class DescriptorOpenResult {
-        public final int fd;
+    // A handle into the channel table below, not a descriptor. Detaching the descriptor and
+    // wrapping it in a managed FileStream segfaults IL2CPP inside the constructor, so the
+    // descriptor stays here and C# issues positioned reads and writes against it.
+    public static final class ChannelOpenResult {
+        public final int handle;
+        public final long length;
         public final String documentUri;
         public final String error;
 
-        DescriptorOpenResult(int fd, Uri documentUri, String error) {
-            this.fd = fd;
+        ChannelOpenResult(int handle, long length, Uri documentUri, String error) {
+            this.handle = handle;
+            this.length = length;
             this.documentUri = documentUri == null ? "" : documentUri.toString();
             this.error = error == null ? "" : error;
         }
@@ -280,41 +290,41 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static DescriptorOpenResult openFileDescriptor(
+    public static ChannelOpenResult openChannelForPath(
             Context context, String relativePath, String mode) {
-        if (!isSupportedDescriptorMode(mode)) {
-            return new DescriptorOpenResult(-1, null, "Unsupported file descriptor mode");
+        if (!isSupportedChannelMode(mode)) {
+            return new ChannelOpenResult(-1, -1, null, "Unsupported channel mode");
         }
 
         DocumentLookupResult lookup = findDocumentUriResult(
                 context, normalize(relativePath));
         if (lookup.error != null) {
-            return new DescriptorOpenResult(-1, null, lookup.error);
+            return new ChannelOpenResult(-1, -1, null, lookup.error);
         }
         if (lookup.uri == null) {
-            return new DescriptorOpenResult(-1, null, "Shared document does not exist");
+            return new ChannelOpenResult(-1, -1, null, "Shared document does not exist");
         }
 
-        return detachFileDescriptor(context, lookup.uri, mode);
+        return openChannel(context, lookup.uri, mode);
     }
 
-    public static DescriptorOpenResult openDocumentFileDescriptor(
+    public static ChannelOpenResult openChannelForDocument(
             Context context, String documentUri, String mode) {
-        if (!isSupportedDescriptorMode(mode)) {
-            return new DescriptorOpenResult(-1, null, "Unsupported file descriptor mode");
+        if (!isSupportedChannelMode(mode)) {
+            return new ChannelOpenResult(-1, -1, null, "Unsupported channel mode");
         }
         if (documentUri == null || documentUri.length() == 0) {
-            return new DescriptorOpenResult(-1, null, "Document identity is empty");
+            return new ChannelOpenResult(-1, -1, null, "Document identity is empty");
         }
         try {
-            return detachFileDescriptor(context, Uri.parse(documentUri), mode);
+            return openChannel(context, Uri.parse(documentUri), mode);
         } catch (Exception e) {
-            return new DescriptorOpenResult(-1, null, formatProviderError(
+            return new ChannelOpenResult(-1, -1, null, formatProviderError(
                     "Invalid document identity", e));
         }
     }
 
-    public static DescriptorOpenResult createTemporaryFileDescriptor(
+    public static ChannelOpenResult createTemporaryChannel(
             Context context, String relativeDirectory, String targetFileName, String mimeType) {
         String normalizedDirectory = normalize(relativeDirectory);
         if (!isSafeRelativePath(normalizedDirectory)
@@ -322,12 +332,13 @@ public class OpenBrushStorageBridge {
                 || targetFileName.length() == 0
                 || targetFileName.contains("/")
                 || targetFileName.contains("\\")) {
-            return new DescriptorOpenResult(-1, null, "Invalid temporary document path");
+            return new ChannelOpenResult(-1, -1, null, "Invalid temporary document path");
         }
 
         Uri parent = ensureDirectoryUri(context, normalizedDirectory);
         if (parent == null) {
-            return new DescriptorOpenResult(-1, null, "Failed to open temporary document directory");
+            return new ChannelOpenResult(
+                    -1, -1, null, "Failed to open temporary document directory");
         }
 
         String temporaryName = "." + targetFileName + ".openbrush-fd-"
@@ -342,22 +353,22 @@ public class OpenBrushStorageBridge {
                             : mimeType,
                     temporaryName);
         } catch (Exception e) {
-            return new DescriptorOpenResult(-1, null, formatProviderError(
+            return new ChannelOpenResult(-1, -1, null, formatProviderError(
                     "Failed to create temporary document", e));
         }
         if (temporary == null) {
-            return new DescriptorOpenResult(
-                    -1, null, "Provider returned no temporary document");
+            return new ChannelOpenResult(
+                    -1, -1, null, "Provider returned no temporary document");
         }
 
-        DescriptorOpenResult result = detachFileDescriptor(context, temporary, "rwt");
-        if (result.fd < 0) {
+        ChannelOpenResult result = openChannel(context, temporary, "rwt");
+        if (result.handle < 0) {
             deleteDocumentQuietly(context.getContentResolver(), temporary);
         }
         return result;
     }
 
-    public static DescriptorOpenResult createNamedFileDescriptor(
+    public static ChannelOpenResult createNamedChannel(
             Context context, String relativeDirectory, String displayName, String mimeType) {
         String normalizedDirectory = normalize(relativeDirectory);
         if (!isSafeRelativePath(normalizedDirectory)
@@ -365,12 +376,12 @@ public class OpenBrushStorageBridge {
                 || displayName.length() == 0
                 || displayName.contains("/")
                 || displayName.contains("\\")) {
-            return new DescriptorOpenResult(-1, null, "Invalid document path");
+            return new ChannelOpenResult(-1, -1, null, "Invalid document path");
         }
 
         Uri parent = ensureDirectoryUri(context, normalizedDirectory);
         if (parent == null) {
-            return new DescriptorOpenResult(-1, null, "Failed to open document directory");
+            return new ChannelOpenResult(-1, -1, null, "Failed to open document directory");
         }
         try {
             Uri document = DocumentsContract.createDocument(
@@ -381,16 +392,152 @@ public class OpenBrushStorageBridge {
                             : mimeType,
                     displayName);
             if (document == null) {
-                return new DescriptorOpenResult(-1, null, "Provider returned no document");
+                return new ChannelOpenResult(-1, -1, null, "Provider returned no document");
             }
-            DescriptorOpenResult result = detachFileDescriptor(context, document, "rwt");
-            if (result.fd < 0) {
+            ChannelOpenResult result = openChannel(context, document, "rwt");
+            if (result.handle < 0) {
                 deleteDocumentQuietly(context.getContentResolver(), document);
             }
             return result;
         } catch (Exception e) {
-            return new DescriptorOpenResult(-1, null, formatProviderError(
+            return new ChannelOpenResult(-1, -1, null, formatProviderError(
                     "Failed to create document", e));
+        }
+    }
+
+    // Positioned read. Returns the bytes actually read - a short array at end of file, an empty
+    // array at or past it - or null when the read failed, in which case channelError describes it.
+    public static byte[] readChannel(int handle, long position, int length) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return null;
+        }
+        if (length <= 0) {
+            return new byte[0];
+        }
+        try {
+            if (entry.read == null) {
+                throw new IllegalStateException("Channel is not open for reading");
+            }
+            ByteBuffer buffer = ByteBuffer.allocate(length);
+            int total = 0;
+            while (total < length) {
+                int read = entry.read.read(buffer, position + total);
+                if (read <= 0) {
+                    break;
+                }
+                total += read;
+            }
+            entry.error = null;
+            if (total == length) {
+                return buffer.array();
+            }
+            byte[] result = new byte[total];
+            System.arraycopy(buffer.array(), 0, result, 0, total);
+            return result;
+        } catch (Exception e) {
+            entry.error = formatProviderError("Failed to read the shared document", e);
+            return null;
+        }
+    }
+
+    // Positioned write. Returns the number of bytes written, or -1 on failure.
+    public static int writeChannel(int handle, long position, byte[] data) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return -1;
+        }
+        if (data == null || data.length == 0) {
+            return 0;
+        }
+        try {
+            if (entry.write == null) {
+                throw new IllegalStateException("Channel is not open for writing");
+            }
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int total = 0;
+            while (buffer.hasRemaining()) {
+                int written = entry.write.write(buffer, position + total);
+                if (written <= 0) {
+                    break;
+                }
+                total += written;
+            }
+            entry.error = null;
+            return total;
+        } catch (Exception e) {
+            entry.error = formatProviderError("Failed to write the shared document", e);
+            return -1;
+        }
+    }
+
+    public static long channelLength(int handle) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return -1;
+        }
+        try {
+            long length = entry.read != null ? entry.read.size() : entry.write.size();
+            entry.error = null;
+            return length;
+        } catch (Exception e) {
+            entry.error = formatProviderError("Failed to measure the shared document", e);
+            return -1;
+        }
+    }
+
+    public static boolean truncateChannel(int handle, long length) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return false;
+        }
+        try {
+            if (entry.write == null) {
+                throw new IllegalStateException("Channel is not open for writing");
+            }
+            entry.write.truncate(length);
+            entry.error = null;
+            return true;
+        } catch (Exception e) {
+            entry.error = formatProviderError("Failed to resize the shared document", e);
+            return false;
+        }
+    }
+
+    // toDisk is an fsync, not a flush: it is what makes a committed payload survive power loss,
+    // and it is the only reason this is separate from the positioned writes above.
+    public static boolean flushChannel(int handle, boolean toDisk) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return false;
+        }
+        try {
+            if (entry.write != null) {
+                entry.write.force(toDisk);
+            }
+            entry.error = null;
+            return true;
+        } catch (Exception e) {
+            entry.error = formatProviderError("Failed to flush the shared document", e);
+            return false;
+        }
+    }
+
+    public static String channelError(int handle) {
+        ChannelEntry entry = findChannel(handle);
+        if (entry == null) {
+            return "The shared document channel is closed";
+        }
+        return entry.error == null ? "" : entry.error;
+    }
+
+    public static void closeChannel(int handle) {
+        ChannelEntry entry;
+        synchronized (CHANNELS) {
+            entry = CHANNELS.remove(handle);
+        }
+        if (entry != null) {
+            entry.close();
         }
     }
 
@@ -597,33 +744,91 @@ public class OpenBrushStorageBridge {
         return findDocumentUriResult(context, relativePath).uri;
     }
 
-    private static DescriptorOpenResult detachFileDescriptor(
-            Context context, Uri documentUri, String mode) {
+    private static final class ChannelEntry {
+        final ParcelFileDescriptor descriptor;
+        final FileInputStream input;
+        final FileOutputStream output;
+        final FileChannel read;
+        final FileChannel write;
+        volatile String error;
+
+        ChannelEntry(ParcelFileDescriptor descriptor,
+                     FileInputStream input,
+                     FileOutputStream output) {
+            this.descriptor = descriptor;
+            this.input = input;
+            this.output = output;
+            this.read = input == null ? null : input.getChannel();
+            this.write = output == null ? null : output.getChannel();
+        }
+
+        void close() {
+            closeQuietly(read);
+            closeQuietly(write);
+            closeQuietly(input);
+            closeQuietly(output);
+            closeQuietly(descriptor);
+        }
+
+        private static void closeQuietly(java.io.Closeable closeable) {
+            if (closeable == null) {
+                return;
+            }
+            try {
+                closeable.close();
+            } catch (Exception ignored) {
+                // Nothing useful is left to do with a channel that will not close.
+            }
+        }
+    }
+
+    private static final HashMap<Integer, ChannelEntry> CHANNELS =
+            new HashMap<Integer, ChannelEntry>();
+    private static final AtomicInteger NEXT_CHANNEL_HANDLE = new AtomicInteger(1);
+
+    private static ChannelEntry findChannel(int handle) {
+        synchronized (CHANNELS) {
+            return CHANNELS.get(handle);
+        }
+    }
+
+    private static ChannelOpenResult openChannel(Context context, Uri documentUri, String mode) {
         ParcelFileDescriptor descriptor = null;
         try {
             descriptor = context.getContentResolver().openFileDescriptor(documentUri, mode);
             if (descriptor == null) {
-                return new DescriptorOpenResult(
-                        -1, documentUri, "Provider returned no file descriptor");
+                return new ChannelOpenResult(
+                        -1, -1, documentUri, "Provider returned no file descriptor");
             }
-            int fd = descriptor.detachFd();
-            return new DescriptorOpenResult(fd, documentUri, null);
+            // Both streams wrap the same descriptor, so they share nothing but its identity: every
+            // read and write below is positioned and ignores the shared file offset.
+            FileInputStream input = new FileInputStream(descriptor.getFileDescriptor());
+            FileOutputStream output = mode.indexOf('w') < 0
+                    ? null
+                    : new FileOutputStream(descriptor.getFileDescriptor());
+            ChannelEntry entry = new ChannelEntry(descriptor, input, output);
+            long length = entry.read.size();
+            int handle = NEXT_CHANNEL_HANDLE.getAndIncrement();
+            synchronized (CHANNELS) {
+                CHANNELS.put(handle, entry);
+            }
+            descriptor = null;
+            return new ChannelOpenResult(handle, length, documentUri, null);
         } catch (Exception e) {
-            return new DescriptorOpenResult(-1, documentUri, formatProviderError(
-                    "Failed to open file descriptor", e));
+            return new ChannelOpenResult(-1, -1, documentUri, formatProviderError(
+                    "Failed to open the shared document", e));
         } finally {
             if (descriptor != null) {
                 try {
                     descriptor.close();
                 } catch (Exception ignored) {
-                    // After detachFd(), closing the ParcelFileDescriptor object does not close
-                    // the detached descriptor now owned by C#.
+                    // The channel table never took ownership, so this is the only close left.
                 }
             }
         }
     }
 
-    private static boolean isSupportedDescriptorMode(String mode) {
+    private static boolean isSupportedChannelMode(String mode) {
         return "r".equals(mode)
                 || "rw".equals(mode)
                 || "rwt".equals(mode);

@@ -15,7 +15,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Win32.SafeHandles;
 using UnityEngine;
 
 namespace TiltBrush
@@ -27,6 +26,7 @@ namespace TiltBrush
         private static bool sm_HasCachedReadiness;
         private static bool sm_CachedReadiness;
         private static long sm_ReadinessCheckedTimestamp;
+        [ThreadStatic] private static bool sm_ThreadAttachedToJvm;
 
         public static bool IsAvailable
         {
@@ -192,15 +192,22 @@ namespace TiltBrush
         /// resolution - and every one of them reaches the provider through JNI, which is only legal
         /// on a thread attached to the JVM. Unity attaches only its own, so attach here rather than
         /// relying on each caller to remember.
-        private static void AttachToJvmIfNeeded()
+        internal static void AttachToJvmIfNeeded()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            // Attaching an already-attached thread is legal but not free, and reads arrive one
+            // buffer at a time, so remember the answer per thread rather than per read.
+            if (sm_ThreadAttachedToJvm)
+            {
+                return;
+            }
             AndroidJNI.AttachCurrentThread();
+            sm_ThreadAttachedToJvm = true;
 #endif
         }
 
         public static bool TryOpenSeekableReadStream(
-            string relativePath, out FileStream stream, out string error)
+            string relativePath, out Stream stream, out string error)
         {
             stream = null;
             error = null;
@@ -208,17 +215,17 @@ namespace TiltBrush
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "openFileDescriptor", GetActivity(), relativePath, "rw");
-            return TryCreateFileStream(
-                result, FileAccess.Read, out stream, out _, out error);
+                "openChannelForPath", GetActivity(), relativePath, "rw");
+            return TryCreateChannelStream(
+                result, canWrite: false, out stream, out _, out error);
 #else
-            error = "SAF file descriptors are unavailable on this platform.";
+            error = "SAF documents are unavailable on this platform.";
             return false;
 #endif
         }
 
         public static bool TryOpenSeekableReadStream(
-            StorageDocumentId documentId, out FileStream stream, out string error)
+            StorageDocumentId documentId, out Stream stream, out string error)
         {
             stream = null;
             error = null;
@@ -226,11 +233,11 @@ namespace TiltBrush
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "openDocumentFileDescriptor", GetActivity(), documentId.Value, "r");
-            return TryCreateFileStream(
-                result, FileAccess.Read, out stream, out _, out error);
+                "openChannelForDocument", GetActivity(), documentId.Value, "r");
+            return TryCreateChannelStream(
+                result, canWrite: false, out stream, out _, out error);
 #else
-            error = "SAF file descriptors are unavailable on this platform.";
+            error = "SAF documents are unavailable on this platform.";
             return false;
 #endif
         }
@@ -239,7 +246,7 @@ namespace TiltBrush
             string relativeDirectory,
             string targetFileName,
             string mimeType,
-            out FileStream stream,
+            out Stream stream,
             out string documentUri,
             out string error)
         {
@@ -247,17 +254,18 @@ namespace TiltBrush
             documentUri = null;
             error = null;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "createTemporaryFileDescriptor",
+                "createTemporaryChannel",
                 GetActivity(),
                 relativeDirectory,
                 targetFileName,
                 mimeType);
-            return TryCreateFileStream(
-                result, FileAccess.ReadWrite, out stream, out documentUri, out error);
+            return TryCreateChannelStream(
+                result, canWrite: true, out stream, out documentUri, out error);
 #else
-            error = "SAF file descriptors are unavailable on this platform.";
+            error = "SAF documents are unavailable on this platform.";
             return false;
 #endif
         }
@@ -266,7 +274,7 @@ namespace TiltBrush
             string relativeDirectory,
             string displayName,
             string mimeType,
-            out FileStream stream,
+            out Stream stream,
             out StorageDocumentId documentId,
             out string error)
         {
@@ -274,15 +282,16 @@ namespace TiltBrush
             documentId = default;
             error = null;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "createNamedFileDescriptor",
+                "createNamedChannel",
                 GetActivity(),
                 relativeDirectory,
                 displayName,
                 mimeType);
-            bool success = TryCreateFileStream(
-                result, FileAccess.ReadWrite, out stream, out string documentUri, out error);
+            bool success = TryCreateChannelStream(
+                result, canWrite: true, out stream, out string documentUri, out error);
             if (!success && !string.IsNullOrEmpty(documentUri))
             {
                 if (!DeleteDocumentUri(documentUri))
@@ -296,7 +305,7 @@ namespace TiltBrush
                 : default;
             return success;
 #else
-            error = "SAF file descriptors are unavailable on this platform.";
+            error = "SAF documents are unavailable on this platform.";
             return false;
 #endif
         }
@@ -344,11 +353,15 @@ namespace TiltBrush
 #endif
         }
 
-        public static bool RunFileDescriptorProbe(out string report)
+        /// Writes a small Tilt archive to the shared folder through the channel-backed stream and
+        /// reads every entry back out of it, then deletes it. Debug builds only: it is the one
+        /// check that the provider on this device supports positioned writes and seekable reads,
+        /// and it costs a few kilobytes at startup.
+        public static bool RunStorageStreamProbe(out string report)
         {
             report = null;
 #if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
-            FileStream stream = null;
+            Stream stream = null;
             string documentUri = null;
             try
             {
@@ -379,13 +392,13 @@ namespace TiltBrush
                 long endPosition = stream.Seek(0, SeekOrigin.End);
                 if (!stream.CanSeek || endPosition <= TiltFile.HEADER_SIZE)
                 {
-                    report = $"Descriptor is not seekable or has unexpected length {endPosition}.";
+                    report = $"Stream is not seekable or has unexpected length {endPosition}.";
                     return false;
                 }
                 if (!TiltFile.IsArchiveValid(
                         stream, "SAF descriptor probe", testData: true))
                 {
-                    report = "Tilt archive validation failed on the original descriptor.";
+                    report = "Tilt archive validation failed on the freshly written document.";
                     return false;
                 }
 
@@ -403,7 +416,7 @@ namespace TiltBrush
                     return false;
                 }
                 report =
-                    $"Seekable detached descriptor Tilt archive passed ({endPosition} bytes).";
+                    $"Channel-backed Tilt archive passed ({endPosition} bytes).";
                 return true;
             }
             catch (Exception e)
@@ -416,11 +429,11 @@ namespace TiltBrush
                 stream?.Dispose();
                 if (!string.IsNullOrEmpty(documentUri) && !DeleteDocumentUri(documentUri))
                 {
-                    Debug.LogWarning("SAF_FD Failed to delete descriptor probe document.");
+                    Debug.LogWarning("SAF_STREAM Failed to delete the probe document.");
                 }
             }
 #else
-            report = "SAF file descriptors are unavailable on this platform.";
+            report = "SAF documents are unavailable on this platform.";
             return false;
 #endif
         }
@@ -443,7 +456,7 @@ namespace TiltBrush
         {
             error = null;
             if (!TryOpenSeekableReadStream(
-                    documentId, out FileStream archiveStream, out error))
+                    documentId, out Stream archiveStream, out error))
             {
                 return false;
             }
@@ -459,7 +472,7 @@ namespace TiltBrush
                     if (actual.Length != expected.Length)
                     {
                         error =
-                            $"Descriptor probe entry {entryName} had length {actual.Length}.";
+                            $"Probe entry {entryName} had length {actual.Length}.";
                         return false;
                     }
                     for (int i = 0; i < expected.Length; ++i)
@@ -467,7 +480,7 @@ namespace TiltBrush
                         if (actual[i] != expected[i])
                         {
                             error =
-                                $"Descriptor probe entry {entryName} differed at byte {i}.";
+                                $"Probe entry {entryName} differed at byte {i}.";
                             return false;
                         }
                     }
@@ -476,7 +489,7 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                error = $"Failed to read descriptor probe entry {entryName}: {e.Message}";
+                error = $"Failed to read probe entry {entryName}: {e.Message}";
                 return false;
             }
             finally
@@ -525,10 +538,10 @@ namespace TiltBrush
                 .ToLocalTime();
         }
 
-        private static bool TryCreateFileStream(
+        private static bool TryCreateChannelStream(
             AndroidJavaObject result,
-            FileAccess access,
-            out FileStream stream,
+            bool canWrite,
+            out Stream stream,
             out string documentUri,
             out string error)
         {
@@ -537,41 +550,23 @@ namespace TiltBrush
             error = null;
             if (result == null)
             {
-                error = "Provider returned no descriptor result.";
+                error = "Provider returned no channel result.";
                 return false;
             }
 
-            int fd = result.Get<int>("fd");
+            int handle = result.Get<int>("handle");
             documentUri = result.Get<string>("documentUri");
             error = result.Get<string>("error");
-            if (fd < 0)
+            if (handle < 0)
             {
                 if (string.IsNullOrEmpty(error))
                 {
-                    error = "Provider returned an invalid file descriptor.";
+                    error = "Provider returned an invalid document channel.";
                 }
                 return false;
             }
 
-            var handle = new SafeFileHandle(new IntPtr(fd), ownsHandle: true);
-            try
-            {
-                stream = new FileStream(handle, access);
-            }
-            catch (Exception e)
-            {
-                handle.Dispose();
-                error = $"Failed to wrap the detached file descriptor: {e.Message}";
-                return false;
-            }
-
-            if (!stream.CanSeek)
-            {
-                stream.Dispose();
-                stream = null;
-                error = "Provider returned a non-seekable file descriptor.";
-                return false;
-            }
+            stream = new SafDocumentStream(handle, result.Get<long>("length"), canWrite);
             return true;
         }
 
