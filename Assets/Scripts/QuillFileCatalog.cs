@@ -440,15 +440,31 @@ namespace TiltBrush
                         child.DisplayName == "Quill.qbin");
                     if (!hasQuillJson || !hasQuillQbin) { continue; }
 
-                    // QuillFileInfo.FromQuillDirectory takes a DirectoryInfo, so this import
-                    // needs a real directory tree. Shared storage has none, and copying one out
-                    // is what this backend exists to avoid.
+                    // The listing already carries everything QuillFileInfo records - name, size
+                    // and timestamp - so the entry is built from it rather than from a
+                    // DirectoryInfo over a copy.
+                    long estimatedBytes = children.Documents
+                        .Where(child => !child.IsDirectory)
+                        .Sum(child => child.Size ?? 0);
+                    result.Add(new QuillFileInfo(
+                        childDirectory,
+                        document.DisplayName,
+                        estimatedBytes,
+                        document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
+                        QuillSourceType.Quill));
                     continue;
                 }
                 if (!Path.GetExtension(document.DisplayName)
                         .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
-                // FromImmFile takes a FileInfo; same reasoning as the Quill directory above.
-                continue;
+                string immPath = string.IsNullOrEmpty(directory)
+                    ? document.DisplayName
+                    : $"{directory}/{document.DisplayName}";
+                result.Add(new QuillFileInfo(
+                    immPath,
+                    Path.GetFileNameWithoutExtension(document.DisplayName),
+                    document.Size ?? 0,
+                    document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
+                    QuillSourceType.Imm));
             }
             return result;
         }
