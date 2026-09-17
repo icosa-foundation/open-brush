@@ -84,7 +84,27 @@ namespace TiltBrush
             {
                 TryDeleteDirectory(path);
             }
+
+            // Seeding records which bundled defaults it has already written. Those records
+            // describe the previous folder's contents, so a new folder must be seeded afresh.
+            foreach (string key in kSeedPreferenceKeys)
+            {
+                PlayerPrefs.DeleteKey(key);
+                PlayerPrefs.DeleteKey($"{key}.HandledFilesV1");
+            }
+            PlayerPrefs.Save();
         }
+
+        private static readonly string[] kSeedPreferenceKeys =
+        {
+            "GooglePlayStorage.SeededDefaultSavedStrokesFdV1",
+            "GooglePlayStorage.SeededDefaultVideosFdV1",
+            "GooglePlayStorage.SeededDefaultBackgroundImagesFdV1",
+            "GooglePlayStorage.SeededDefaultReferenceImagesFdV1",
+            "GooglePlayStorage.SeededDefaultModelsFdV1",
+            "SeededDefaultSoundClips",
+            "QuillDefaults",
+        };
 
         private static void TryDeleteDirectory(string path)
         {

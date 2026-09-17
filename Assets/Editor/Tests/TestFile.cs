@@ -1125,9 +1125,9 @@ namespace TiltBrush
                 Assert.IsTrue(backend.Contains("later.imm"));
                 Assert.IsFalse(backend.Contains("example.imm"));
 
-                backend.RootIdentity = secondRoot;
-                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => bytes);
-                Assert.IsTrue(backend.Contains("example.imm"));
+                // Re-seeding after a folder change is no longer the preference key's job:
+                // SafRootChangeGuard clears the seeding records at startup when the root
+                // differs, so seeding then starts from nothing.
             }
             finally
             {
