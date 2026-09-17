@@ -978,7 +978,8 @@ namespace TiltBrush
             IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
             Color? previewColor)
         {
-            if (controlPoints == null || controlPoints.Count < 2)
+            if (controlPoints == null || controlPoints.Count < 2 ||
+                !IsValidToolScriptPreviewScale(strokeScale))
             {
                 ClearToolScriptPreview();
                 return;
@@ -999,6 +1000,14 @@ namespace TiltBrush
             m_ToolScriptPreviewColor = previewColor;
             m_ToolScriptPreviewDirty = true;
             ResetPreviewProperties();
+        }
+
+        internal static bool IsValidToolScriptPreviewScale(float strokeScale)
+        {
+            // Pointer-space previews have zero scale on the trigger-down frame. Passing that
+            // through to QuadStripBrush collapses its movement threshold to zero and allows
+            // coincident points to reach a zero-length direction normalization.
+            return strokeScale > 0f && !float.IsInfinity(strokeScale);
         }
 
         public void ClearToolScriptPreview()

@@ -74,6 +74,28 @@ namespace TiltBrush
                 currentTime: 1f, nextPreviewTime: 1f));
         }
 
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        public void ToolScriptStrokePreviewRejectsNonPositiveScale(float strokeScale)
+        {
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(strokeScale));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewRejectsNonFiniteScale()
+        {
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.NaN));
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.PositiveInfinity));
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.NegativeInfinity));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewAcceptsPositiveScale()
+        {
+            Assert.IsTrue(PointerScript.IsValidToolScriptPreviewScale(0.000001f));
+            Assert.IsTrue(PointerScript.IsValidToolScriptPreviewScale(1f));
+        }
+
         [Test]
         public void ToolScriptStrokePreviewIsIdleOutsideGesture()
         {
