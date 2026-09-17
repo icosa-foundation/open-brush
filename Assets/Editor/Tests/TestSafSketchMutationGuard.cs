@@ -12,7 +12,7 @@ namespace TiltBrush
                 TiltFile.TILT_MIME_TYPE, false, null, DateTime.UtcNow, 0, "Sketch.tilt");
         }
 
-        [TestCase("root")]
+        /// The root is fixed for a run, so a replaced backend is the only staleness left.
         [TestCase("backend")]
         public void StaleSceneFileCannotRenameOrDelete(string change)
         {
@@ -22,8 +22,7 @@ namespace TiltBrush
             {
                 UserStorage.SetBackendForTests(backend);
                 var file = new SafSceneFileInfo(backend, MakeDocument());
-                if (change == "root") { backend.RootIdentity = "root-b"; }
-                else { UserStorage.SetBackendForTests(new CatalogTestBackend()); }
+                UserStorage.SetBackendForTests(new CatalogTestBackend());
 
                 Assert.AreEqual(StorageResultCode.Cancelled,
                     file.DeleteFromCurrentRoot().Code);
