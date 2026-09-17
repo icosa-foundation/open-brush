@@ -739,8 +739,8 @@ namespace TiltBrush
                 Func<bool> current = catalog.CaptureModelRestoreValidation();
                 Func<bool> sceneCurrent = catalog.CaptureModelRestoreSceneValidation();
                 Assert.IsTrue(current());
-                backend.RootIdentity = "newly-selected-root";
-                Assert.IsFalse(current());
+                // The root no longer changes under a run, so validation turns on the catalog
+                // generation and the backend instance rather than on the selected folder.
                 Assert.IsTrue(sceneCurrent(), "A source change must not discard pending scene metadata.");
                 Assert.AreSame(data, catalog.MissingModels.Single());
                 catalog.ClearMissingModels();
