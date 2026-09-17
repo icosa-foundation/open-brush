@@ -69,15 +69,18 @@ namespace TiltBrush
             return Path.Combine(
                 Application.persistentDataPath,
                 "OpenBrushSafRecovery",
-                GetRootNamespaceId(rootId));
+                GetStableId(rootId));
         }
 
-        public static string GetRootNamespaceId(string rootId)
+        /// A stable, filesystem-safe id for an arbitrary string. Named for roots originally,
+        /// but the Drive ledger and conflict-copy naming use it to fold account ids, device
+        /// folders and Drive file ids into path segments too.
+        public static string GetStableId(string source)
         {
             using (SHA256 hash = SHA256.Create())
             {
                 byte[] bytes = hash.ComputeHash(
-                    Encoding.UTF8.GetBytes(rootId ?? ""));
+                    Encoding.UTF8.GetBytes(source ?? ""));
                 var result = new StringBuilder(bytes.Length * 2);
                 foreach (byte value in bytes)
                 {

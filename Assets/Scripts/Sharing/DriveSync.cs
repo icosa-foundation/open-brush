@@ -1301,7 +1301,7 @@ namespace TiltBrush
             string stem = Path.GetFileNameWithoutExtension(fileName);
             DateTime timestamp = driveFile?.ModifiedTime ??
                 new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            string identity = SafTransactionJournal.GetRootNamespaceId(
+            string identity = SafTransactionJournal.GetStableId(
                 driveFile?.Id ?? fileName).Substring(0, 8);
             return $"{stem}.drive-conflict-{timestamp:yyyyMMdd-HHmmss}-{identity}";
         }

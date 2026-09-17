@@ -74,7 +74,7 @@ namespace TiltBrush
                 return Path.Combine(
                     Application.persistentDataPath,
                     "OpenBrushSafMaterialized",
-                    SafTransactionJournal.GetRootNamespaceId(rootId),
+                    SafTransactionJournal.GetStableId(rootId),
                     "Media Library");
             }
         }

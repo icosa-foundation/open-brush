@@ -20,6 +20,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -649,8 +650,10 @@ namespace TiltBrush
 
         private static string GetPublicationDirectory(string rootId)
         {
+            // Not namespaced by root: SafRootChangeGuard discards this whole tree at startup if
+            // the folder differs from the one last used.
             return Path.Combine(
-                SafTransactionJournal.GetRecoveryRootDirectory(rootId), "publications");
+                Application.persistentDataPath, "OpenBrushSafRecovery", "publications");
         }
 
         private static StorageArea ParseArea(string value)
