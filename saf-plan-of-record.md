@@ -136,6 +136,23 @@ Compilation caught none of the four bugs above. `unity command run_tests
    Five commits of collapsing shipped before the startup comparison existed.
    That window should not have been open.
 
+### Deferred by decision
+
+- **Which Android flavours build with scoped storage.** The flag that selects it
+  is new on this branch — `main` has no occurrences of it at all — and it is
+  applied asymmetrically: *Android OpenXR* and *Android Viewer OpenXR* are both
+  sideloaded APKs, but only the viewer gets scoped storage. Both AndroidXR
+  flavours have it and emit app bundles.
+
+  Kept as-is for now, deliberately: the viewer APK is the only sideloadable
+  artefact in the matrix with scoped storage active, which makes it the easiest
+  thing to test against without bundletool. **Revisit once it is decided where the
+  APK viewer build is published** — that answer determines whether it should be
+  following Play storage rules at all.
+
+  The flag was renamed `-btb-scoped-storage` so the asymmetry is at least legible;
+  `-btb-google-play` implied a distribution channel it never had.
+
 ### Deliberately disabled, to reinstate later
 
 USD, FBX, PLY and Gaussian splats; SVG reference images; Quill and IMM import;
