@@ -41,6 +41,39 @@ deletions, not by what keeps the branch runnable.
 Updated 2026-09-16, late. Every batch compiled in the editor; nothing has been
 run.
 
+### Verified by test run
+
+The EditMode suite was run in full for the first time late in the work, and it
+found four regressions that compilation had not:
+
+1. **Publication records collided.** De-namespacing the publication directory
+   turned a foreign record into a hard failure, because
+   `GetPendingTopLevelNames` throws on a `RootId` mismatch rather than skipping
+   it. Five export tests failed. Reverted. This is the same reasoning that was
+   *correct* for the Drive ledger, where a stale record is merely misleading -
+   the shapes matched, the premises did not.
+2. **Quill listed nothing.** Gating Quill import also stopped the catalog
+   listing. The gate was unnecessary: `QuillFileInfo` only reads a name, size
+   and timestamp, all of which the storage listing already carries.
+3. **Sound clips had no usable path.** `AbsolutePath` was being given a
+   library-relative path; the local backend's document id serves instead.
+4. **Seeding never re-ran after a folder change.** The per-root preference key
+   names had been providing that; `SafRootChangeGuard` now clears the seeding
+   records alongside the directories it discards.
+
+Nine further test failures were tests of behaviour deliberately removed, and
+were deleted with it.
+
+Final state: 1123 EditMode tests, 443 failing, of which 416 are `Autodesk.Fbx`
+(a missing native library, environmental) and the remaining 27 are pre-existing
+failures in code this work did not touch - including two in test files whose
+`.meta` GUIDs were repaired here, so they are running for the first time.
+No SAF regression remains.
+
+**The lesson worth keeping:** twenty-five commits went in on "compiles clean".
+Compilation caught none of the four bugs above. `unity command run_tests
+--mode EditMode` was available throughout.
+
 ### Done
 
 - **Startup gated** on folder selection, exit on decline. The degraded mode,
