@@ -90,11 +90,21 @@ Compilation caught none of the four bugs above. `unity command run_tests
   logical root string so `ModulePaths` and the loader agree on a prefix.
 - **The write path is durable.** Payload fsynced before the rename sequence,
   recovery validation dropped to structural.
-- **Root identity: 255 to 121 references**, with `SafRootChangeGuard` now
-  providing the single startup comparison the collapse depends on.
+- **Root identity collapsed to one startup comparison**, in
+  `SafRootChangeGuard`. 99 references remain across `Assets` (counting
+  `RootIdentity` and the whole word `RootId`), down from 255 at the start.
 - **Two repo bugs fixed**: four `.meta` files with 33-character GUIDs, whose
   test files had never compiled; and the legacy migration, dead for a branch
   that has never run.
+- **The file descriptor no longer crosses JNI.** The gate below failed, so
+  `OpenBrushStorageBridge` keeps a table of open `FileChannel`s keyed by an int
+  handle and `SafDocumentStream` issues positioned reads and writes against it.
+  Buffered 64 KiB ahead and 256 KiB behind, because each crossing is dear enough
+  that a zip central directory read a few bytes at a time would dominate.
+  `FileStream.Flush(flushToDisk: true)` has no equivalent on a stream whose
+  descriptor is unreachable, so the payload fsync is now an `ISyncableStream`
+  over the channel's `force(true)`.
+- **Free space is checked on the SAF save path.** See step 7.
 
 ### What was learned that the plan had wrong
 
@@ -135,15 +145,25 @@ stream or a URL.
 
 ### Not done
 
-- **The IL2CPP device gate** (step 1) - still unrun, and still the thing that
-  could invalidate the write path.
-- **Root identity's last 121 references.** Three different kinds: dead scan
+- **A device run of any of this.** The gate below has been answered, but the
+  branch as a whole has still never executed on hardware. `RunStorageStreamProbe`
+  runs at startup on debug builds and exercises the channel path end to end -
+  create, write a Tilt archive, seek, validate, reopen by document URI, read
+  every entry back, delete - so the first build says whether the replacement
+  holds.
+- **Root identity's last 99 references.** Three different kinds: dead scan
   guards in `QuillFileCatalog`; `DriveSyncLedger`, where only the storage-root
   third of its key is constant and the account and Drive-root parts do real
   work; and `SafDestinationLocks` / `SafPublicationRecord`, which carry the
   root as data rather than control flow.
-- **The journal removal** (step 10).
-- **The publish surface** (step 6).
+- **The journal removal** (step 5) is half done. Nothing is serialized to disk
+  any more - the fsync-per-save bookkeeping is gone - but `SafTransactionState`,
+  `SafTransactionRecord` and `SafTransactionJournal` all survive as in-memory
+  state plus two path helpers (`GetRecoveryRootDirectory`, `GetStableId`).
+  Deleting the types is what remains.
+- **The publish surface** (step 6) - and see the correction above: it is
+  smaller and less duplicated than the plan claimed, so this may not be worth
+  doing at all.
 
 ## Order of work
 
@@ -231,33 +251,58 @@ directory.
 
 Keep the commit sequence exactly. Change two things:
 
-- **fsync the payload** before the rename sequence. `SafStorageTransaction.cs:682`
-  currently calls plain `Flush()` while the journal at line 114 gets
-  `Flush(flushToDisk: true)` five or six times a save — durable bookkeeping
-  around non-durable data. Measured cost: 740 ms per GiB, so about 150 ms for a
-  200 MB sketch, and net faster once the journal goes.
-- **drop recovery to `testData: false`**, matching the commit path. With the
-  payload fsynced, truncation is caught by the zip central directory and torn
-  middles are prevented rather than detected.
+- ~~**fsync the payload**~~ **Done.** The transaction was calling plain `Flush()`
+  on the payload while the journal was fsynced five or six times a save —
+  durable bookkeeping around non-durable data. Measured cost: 740 ms per GiB, so
+  about 150 ms for a 200 MB sketch, and net faster now the journal writes are
+  gone. Since the replacement stream has no `FileStream.Flush(flushToDisk: true)`
+  to call, this goes through `ISyncableStream` to the channel's `force(true)`.
+- ~~**drop recovery to `testData: false`**~~ **Done.** With the payload fsynced,
+  truncation is caught by the zip central directory and torn middles are
+  prevented rather than detected.
 
-Then delete the journal: `SafTransactionRecord`, `SafTransactionJournal`,
-`SafTransactionState` and the journal-driven recovery pass. Replace it with
-name-encoded sidecars (`MySketch.tilt.ob-bak`) and a startup sweep. No
-compatibility shim is needed for the rename.
+**Still open:** deleting the journal types. Nothing is serialized to disk any
+more, but `SafTransactionRecord`, `SafTransactionJournal` and
+`SafTransactionState` survive as in-memory state plus two path helpers
+(`GetRecoveryRootDirectory`, `GetStableId`). The name-encoded sidecars
+(`MySketch.tilt.ob-bak`) and startup sweep are in place, so what remains is
+removing the types. No compatibility shim is needed.
 
 Keep `SafDestinationLocks`, payload validation, and the presence-based restore.
 
 ### 6. Collapse the publish surface
 
-`OpenBrushStorage`'s twenty near-duplicate publish methods become one
-`Publish(stagedPath, StorageArea, relativePath)`, with async as a wrapper.
+**Probably not worth doing — see the correction under "What was learned".** The
+count was wrong: there are five public entry points on
+`SafStagedOutputPublisher`, not twenty on `OpenBrushStorage`, and most encode
+genuinely different behaviour — frame-sequence bundling, directory publication,
+unique import naming, export READMEs. Collapsing them to one
+`Publish(stagedPath, StorageArea, relativePath)` would hide real differences
+behind flags. Left here so the decision is recorded rather than silently
+dropped.
 
 ### 7. Fix the two real bugs
 
-- **No free-space accounting on the SAF path.** `SaveLoadScript.cs:490` skips
-  `CheckDiskSpaceWithError` for direct SAF saves — correctly, since `m_SaveDir`
-  is the wrong directory — but nothing replaced it. The commit sequence needs
-  twice the sketch size transiently in shared storage.
+- ~~**No free-space accounting on the SAF path.**~~ **Done.** Re-enabling the
+  existing check would not have worked: `FileUtils.HasFreeSpace` ignores its path
+  argument on Android and stats `Application.persistentDataPath`, so it measures
+  app-private storage whatever volume the folder is on — and under SAF that
+  folder can be an SD card. It was also being handed `m_SaveDir`, which on this
+  path is the local staging directory rather than the destination.
+
+  The provider is asked instead. There is no path to stat, and
+  `openFileDescriptor` refuses a directory document, so `getAvailableBytes`
+  creates a throwaway document in the Open Brush folder, runs `fstatvfs` on its
+  descriptor and deletes it. A provider not backed by a local filesystem cannot
+  answer and returns -1; the caller allows the save rather than blocking on a
+  number it could not obtain, which is what `FileUtils` already does on platforms
+  where the query is unavailable.
+
+  **Still open, found while fixing it:** SAF exports check staging, not the
+  destination. `App.UserExportPath()` returns `LocalExportStagingPath` under SAF,
+  so `SketchControlsScript.cs:4838` correctly checks the volume the export stages
+  on, but the publish into the shared folder is unchecked. Non-SAF has no staging
+  step, so its one check covers the destination. A parity gap.
 - ~~**Silent truncation.**~~ **Withdrawn — this was wrong.** The review claimed a capped
   tree walk returned `Succeeded` with a partial list. It does not:
   `StorageTreeEnumerator` returns `StorageTreeResult.Failed` with an explicit
@@ -266,14 +311,77 @@ Keep `SafDestinationLocks`, payload validation, and the presence-based restore.
   (`UserStorageBackend.cs:930`). Both fail loudly. The caps may still be worth
   raising, but there is no correctness bug here.
 
-## Gate
+### 8. Optional: a shared direct ByteBuffer for writes
 
-Before any of this, run `AndroidSafStorage.RunFileDescriptorProbe` from a real
-Google Play build. The provider half of the device gate has passed
-(the SAF probes repository (`open-brush-saf-probes`)); the IL2CPP half — `SafeFileHandle` over a detached
-descriptor under Unity's runtime — has not. Residual risk is low, because the
-descriptor is a regular file, but if it fails the write path changes and steps 2
-and 5 need rebasing.
+**Only if a real performance problem shows up.** This is an optimisation, not a
+correctness gap, and nothing should be built on the assumption that it is needed.
+
+Writes currently cap at 28—31 MB/s, flat from 256 KiB chunks upwards. That is
+not storage: the same document written from Java alone reached 1.6 GB/s. The cost
+is Unity marshalling the `byte[]` argument across JNI on every call, and it is
+paid per write regardless of how the bytes are batched. At that rate a 20 MB
+sketch spends about 0.7 s in marshalling and a 200 MB one about 7 s.
+
+The fix removes the crossing rather than making it cheaper. C# allocates native
+memory, wraps it once with `AndroidJNI.NewDirectByteBuffer`, and hands Java the
+resulting `java.nio.ByteBuffer` when the channel opens. Thereafter a write is a
+`Marshal.Copy` into that memory — a plain memcpy, no JNI — followed by an
+all-primitives call giving Java the byte count. `FileChannel.write` reads
+straight out of the same memory. One copy in total, the same as today, but no
+marshalling. `SafDocumentStream`'s write-behind buffer can be that native
+region, so no copy is added. Reads can use it in reverse, which would also stop
+allocating a Java `byte[]` per 64 KiB refill.
+
+Two reasons it is not done, both worth weighing before starting:
+
+- It is roughly 150 lines of hand-rolled JNI with manual global-reference
+  lifetimes, and **none of it can be verified without a device**.
+- It would sit on a channel path that has itself never run on hardware. If
+  something is wrong on the phone, that is two new layers to debug at once
+  instead of one, and there is no measurement to say whether the second layer
+  helped.
+
+So: get a build onto a phone, confirm `SAF_STREAM`, find out whether saves are
+actually too slow, and only then decide. A per-channel buffer also costs 256 KiB
+of native memory per open stream, which matters if glTF loading opens many at
+once; a small pool is the answer if so.
+
+## Gate — answered, and it failed
+
+The provider half passed in the SAF probes repository
+(`open-brush-saf-probes`). The IL2CPP half did not. The plan judged the residual
+risk low on the grounds that the descriptor is a regular file. That reasoning was
+wrong: the descriptor was never the problem.
+
+Every variant segfaults in `libil2cpp.so`, with the fault address consistently at
+**fd + 4** (fd 401 faults at 0x195, 403 at 0x197, 407 at 0x19b, 396 at 0x190):
+
+| variant | result |
+| --- | --- |
+| `SafeFileHandle` alone | constructs, then crashes on `Dispose()` |
+| `new FileStream(handle, access)` | crashes at construction — what the branch did |
+| buffered `FileStream` overload | crashes at construction |
+| `ownsHandle: false` | crashes at construction |
+
+Not stripping — a `link.xml` made no difference. Not a bad overload. And
+`RandomAccess`, which would have sidestepped `FileStream` entirely, is not in
+Unity's profile.
+
+The contingency the plan named — "if it fails the write path changes" — is what
+happened. The descriptor now stays in Java behind a `FileChannel` and C# issues
+positioned reads and writes against it; see the entry under Done.
+`RunFileDescriptorProbe` is accordingly `RunStorageStreamProbe`, exercising the
+channel path rather than a descriptor.
+
+What the same probe measured, on a Nothing Phone (3a):
+
+- reads 327 MB/s
+- writes flat at 28—31 MB/s from 256 KiB chunks up to 4 MiB
+- fsync 30 ms for 32 MiB
+
+The write figure is not storage. The same document written from Java alone
+reached 1.6 GB/s; the ceiling is marshalling the `byte[]` argument across JNI.
+See the optional step below.
 
 ## Expected outcome
 
