@@ -654,7 +654,7 @@ namespace TiltBrush
             // whose RootId does not match, so sharing one directory between roots turns a
             // foreign record into a hard failure rather than something to ignore.
             return Path.Combine(
-                SafTransactionJournal.GetRecoveryRootDirectory(rootId), "publications");
+                SafPrivatePaths.GetRecoveryRootDirectory(rootId), "publications");
         }
 
         private static StorageArea ParseArea(string value)

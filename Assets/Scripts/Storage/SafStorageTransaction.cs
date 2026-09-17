@@ -59,10 +59,11 @@ namespace TiltBrush
         public string InvalidDisplayName;
     }
 
-    /// Paths for app-private recovery state. What remains after the transaction journal was
-    /// removed: recovery now works from the sidecars an interrupted save leaves in SAF, so
-    /// nothing here records what a transaction intended - only where its leftovers live.
-    internal static class SafTransactionJournal
+    /// Where app-private state for a root lives, and how to fold an arbitrary id into a path
+    /// segment. All that remains of the transaction journal, which is why it is no longer named
+    /// for one: recovery works from the sidecars an interrupted save leaves in shared storage,
+    /// so nothing here records what a transaction intended, only where its leftovers live.
+    internal static class SafPrivatePaths
     {
         public static string GetRecoveryRootDirectory(string rootId)
         {

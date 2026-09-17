@@ -172,11 +172,15 @@ stream or a URL.
   `DriveSyncLedger`'s two are as previously described: only the storage-root
   third of its key is constant, and the account and Drive-root parts do real
   work.
-- **The journal removal** (step 5) is half done. Nothing is serialized to disk
-  any more - the fsync-per-save bookkeeping is gone - but `SafTransactionState`,
-  `SafTransactionRecord` and `SafTransactionJournal` all survive as in-memory
-  state plus two path helpers (`GetRecoveryRootDirectory`, `GetStableId`).
-  Deleting the types is what remains.
+- ~~**The journal removal**~~ (step 5) **done, though not as written.** The plan
+  said to delete `SafTransactionRecord`, `SafTransactionJournal` and
+  `SafTransactionState`. Two of the three earn their place: the record is live
+  in-memory state that the transaction and recovery both read, and the state enum
+  labels the commit sequence in the logs, which is where anyone debugging an
+  interrupted save will start. What was actually deletable was the schema around
+  them — six fields that only mattered across a process restart, and the
+  branches that read them. `SafTransactionJournal` is renamed `SafPrivatePaths`,
+  since what survives is two path helpers and not a journal.
 - **The publish surface** (step 6) - and see the correction above: it is
   smaller and less duplicated than the plan claimed, so this may not be worth
   doing at all.

@@ -300,7 +300,7 @@ namespace TiltBrush
 
         private static string Namespace(string identity)
         {
-            return SafTransactionJournal.GetStableId(identity ?? "");
+            return SafPrivatePaths.GetStableId(identity ?? "");
         }
     }
 }

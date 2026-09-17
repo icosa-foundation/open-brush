@@ -38,7 +38,7 @@ namespace TiltBrush
             string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath, $"export-test-{Guid.NewGuid():N}");
             string shared = Path.Combine(fixture, "shared");
             var backend = new ExportBackend(shared);
-            string recovery = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             Directory.CreateDirectory(shared);
             try
             {
@@ -84,7 +84,7 @@ namespace TiltBrush
                 $"gaussian-test-{Guid.NewGuid():N}");
             string shared = Path.Combine(fixture, "shared");
             var backend = new ExportBackend(shared);
-            string recovery = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             Directory.CreateDirectory(shared);
             try
             {
@@ -189,7 +189,7 @@ namespace TiltBrush
             string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath,
                 $"cleanup-test-{Guid.NewGuid():N}");
             var backend = new ExportBackend(Path.Combine(fixture, "shared"));
-            string recovery = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             string journalDirectory = Path.Combine(recovery, "publications");
             string alreadyDeleted = Path.Combine(fixture, "already-deleted");
             string remaining = Path.Combine(fixture, "remaining");

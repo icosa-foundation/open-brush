@@ -925,7 +925,7 @@ namespace TiltBrush
                 originalId = backend.Add("Picture.png", new byte[] { 1 });
                 File.WriteAllBytes(Path.Combine(stagingRoot, "Picture (1).png"), new byte[] { 2 });
             }
-            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
@@ -971,7 +971,7 @@ namespace TiltBrush
             var backend = new FakeSafBackend();
             StorageDocumentId original = default;
             if (collision) { original = backend.Add("image.png", new byte[] { 1 }); }
-            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(backend,
@@ -1006,7 +1006,7 @@ namespace TiltBrush
             File.WriteAllBytes(Path.Combine(stagingRoot, "nested", "two.bin"), new byte[] { 2 });
             var backend = new FakeSafBackend();
             string recoveryRoot =
-                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = SafStagedOutputPublisher.Publish(
@@ -1069,7 +1069,7 @@ namespace TiltBrush
             File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
             var backend = new FakeSafBackend();
             string recoveryRoot =
-                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = SafStagedOutputPublisher.Publish(
@@ -1177,7 +1177,7 @@ namespace TiltBrush
             File.WriteAllText(first, "original");
             File.WriteAllText(second, "second");
             var backend = new FakeSafBackend { FailCommitNumber = 2 };
-            string recoveryRoot = SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 Assert.IsFalse(SafStagedOutputPublisher.PublishBundle(backend, StorageArea.Exports,
@@ -1228,7 +1228,7 @@ namespace TiltBrush
             File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
             var backend = new FakeSafBackend { FailCommitNumber = 1 };
             string recoveryRoot =
-                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = SafStagedOutputPublisher.Publish(
@@ -1272,7 +1272,7 @@ namespace TiltBrush
             File.WriteAllText(metadata, "complete");
             var backend = new FakeSafBackend();
             string recoveryRoot =
-                SafTransactionJournal.GetRecoveryRootDirectory(backend.RootIdentity);
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
             try
             {
                 SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
