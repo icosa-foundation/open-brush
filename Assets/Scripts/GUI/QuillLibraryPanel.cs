@@ -398,7 +398,7 @@ namespace TiltBrush
             {
                 string suffix = m_Catalog != null &&
                     m_Catalog.CurrentSourceDirectory == QuillFileCatalog.SourceDirectory.Imm
-                    ? "IMM"
+                    ? "Media Library"
                     : "Quill";
                 m_PanelText.text = $"{m_PanelTitle} - {suffix}";
             }

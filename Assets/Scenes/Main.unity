@@ -10239,6 +10239,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 20b076a1d91c04a0a8880683b317bac4, type: 3}
   - {fileID: 2800000, guid: ff5316b1de05b694397fd3576833045a, type: 3}
   m_MeterYOffset: 0.75
+  m_EndpointSnapDistance: 0.2
+  m_EndpointHistoryLength: 16
 --- !u!4 &635119618 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4237745945251962, guid: f158162c2f61e2142b099443643a1f93, type: 3}
@@ -11143,6 +11145,7 @@ MonoBehaviour:
   m_DefaultModels:
   - DefaultModels/Andy.glb
   - DefaultModels/Tiltasaurus.glb
+  - DefaultModels/openbrush.sog
   m_ObjLoaderStandardMaterial: {fileID: 2100000, guid: 33cc179da6d3a704496d940766650951, type: 2}
   m_ObjLoaderTransparentMaterial: {fileID: 2100000, guid: 219cd3c96a1710340b346efd87b2f270, type: 2}
   m_ObjLoaderPointCloudMaterial: {fileID: 2100000, guid: d1e87607973227546a7ed606b4221a8f, type: 2}
@@ -11376,6 +11379,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultSoundClips:
   - DefaultSoundClips/underwater.wav
+  - DefaultSoundClips/qwert.ogg
   m_DebugOutput: 0
   m_supportedSoundClipExtensions:
   - .wav
@@ -11410,6 +11414,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15156cc6acae14f44863628350e2508d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_DefaultQuillFiles:
+  - DefaultQuillFiles/biker_by_nick_ladd.imm
 --- !u!114 &652605577
 MonoBehaviour:
   m_ObjectHideFlags: 0
