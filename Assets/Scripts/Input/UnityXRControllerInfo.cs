@@ -313,9 +313,10 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
-            // Grip is currently unused in Android XR hand mode.
+            // Both fists are exposed by AndroidXRHandBridge as virtual Grip
+            // on both the Wand and Brush controllers.
             if (AndroidXRHandBridge.Active)
-                return 0.0f;
+                return AndroidXRHandBridge.Grip(isBrush) ? 1.0f : 0.0f;
 
             if (IsStylusActive())
             {
@@ -398,12 +399,18 @@ namespace TiltBrush
 
         private bool MapVrInput(VrInput input)
         {
-            // Android XR hand mode currently exposes only the Brush trigger.
+            // Android XR hand mode exposes the virtual Brush trigger plus
+            // virtual Grip on both controllers while both hands are fists.
             if (AndroidXRHandBridge.Active)
             {
                 if (input == VrInput.Trigger)
                 {
                     return AndroidXRHandBridge.Trigger(isBrush);
+                }
+
+                if (input == VrInput.Grip)
+                {
+                    return AndroidXRHandBridge.Grip(isBrush);
                 }
 
                 return false;
@@ -462,8 +469,8 @@ namespace TiltBrush
 
         private bool MapVrInputPerFrame(VrInput input, bool down)
         {
-            // In Android XR hand mode the custom right-hand gesture is the only
-            // per-frame virtual controller button we currently expose.
+            // Android XR hand mode supplies per-frame edges for both the
+            // virtual Brush trigger and the two-hand virtual Grip.
             if (AndroidXRHandBridge.Active)
             {
                 if (input == VrInput.Trigger)
@@ -471,6 +478,13 @@ namespace TiltBrush
                     return down
                         ? AndroidXRHandBridge.TriggerDown(isBrush)
                         : AndroidXRHandBridge.TriggerUp(isBrush);
+                }
+
+                if (input == VrInput.Grip)
+                {
+                    return down
+                        ? AndroidXRHandBridge.GripDown(isBrush)
+                        : AndroidXRHandBridge.GripUp(isBrush);
                 }
 
                 return false;

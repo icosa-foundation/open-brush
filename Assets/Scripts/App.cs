@@ -2020,10 +2020,17 @@ namespace TiltBrush
                             System.Environment.SpecialFolder.Personal),
                         "Documents");
                     break;
-                case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
-                    m_OldUserPath = Application.persistentDataPath;
-                    break;
+case RuntimePlatform.Android:
+    m_UserPath = Application.persistentDataPath;
+    m_OldUserPath = null;
+
+    Debug.Log(
+        $"[AURA_STORAGE] persistentDataPath = {Application.persistentDataPath}"
+    );
+    Debug.Log(
+        $"[AURA_STORAGE] initial UserPath = {m_UserPath}"
+    );
+    break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
                     m_UserPath = Application.persistentDataPath;

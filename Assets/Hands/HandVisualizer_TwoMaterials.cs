@@ -6,10 +6,15 @@ using UnityEngine.XR.Hands;
 namespace TiltBrush
 {
     /// <summary>
-    /// Displays tracked hand meshes using a depth-only material followed by a
-    /// transparent material. The hand models come from Unity's XR Hands Hand
-    /// Visualizer sample; debug-joint and velocity visualization are intentionally
-    /// omitted.
+    /// Displays fully articulated XR Hands meshes, while AndroidXRHandBridge
+    /// remains responsible for high-level pinch/poke/grasp input.
+    ///
+    /// This deliberately does NOT request Android permissions. For development,
+    /// install the APK with adb -g (or grant HAND_TRACKING separately) before launch.
+    ///
+    /// Visibility is hybrid per side:
+    /// - hand source active on a side  -> show that articulated hand
+    /// - physical controller active    -> hide that hand
     /// </summary>
     public class HandVisualizer_TwoMaterials : MonoBehaviour
     {
@@ -40,10 +45,26 @@ namespace TiltBrush
         [SerializeField]
         private bool m_DrawMeshes = true;
 
+        [Header("Hybrid source visibility")]
+        [SerializeField]
+        [Tooltip("Hide a hand mesh whenever AndroidXRHandBridge routes that side to a physical controller.")]
+        private bool m_FollowHybridSourceSelection = true;
+
+        [Header("Debug")]
+        [SerializeField]
+        private bool m_DebugLogging = true;
+
+        [SerializeField]
+        [Min(0.1f)]
+        private float m_DebugInterval = 1.0f;
+
         private XRHandSubsystem m_Subsystem;
         private HandGameObject m_LeftHand;
         private HandGameObject m_RightHand;
-        private bool m_PreviousDrawMeshes;
+
+        private float m_NextDebugTime;
+        private bool m_LastLeftVisible;
+        private bool m_LastRightVisible;
 
         private static readonly List<XRHandSubsystem> s_Subsystems = new();
 
@@ -67,12 +88,13 @@ namespace TiltBrush
 
         private void OnEnable()
         {
-            SetMeshVisibility(m_DrawMeshes);
+            FindRunningSubsystem();
+            RefreshVisibility(force: true);
         }
 
         private void OnDisable()
         {
-            SetMeshVisibility(false);
+            SetBothVisible(false);
             m_Subsystem = null;
         }
 
@@ -93,15 +115,14 @@ namespace TiltBrush
 
             if (m_Subsystem == null || !m_Subsystem.running)
             {
+                SetBothVisible(false);
+                DebugStateIfNeeded();
                 return;
             }
 
             EnsureHandObjects();
-
-            if (m_PreviousDrawMeshes != m_DrawMeshes)
-            {
-                SetMeshVisibility(m_DrawMeshes);
-            }
+            RefreshVisibility(force: false);
+            DebugStateIfNeeded();
         }
 
         private void FindRunningSubsystem()
@@ -115,6 +136,15 @@ namespace TiltBrush
                 if (subsystem != null && subsystem.running)
                 {
                     m_Subsystem = subsystem;
+
+                    if (m_DebugLogging)
+                    {
+                        Debug.Log(
+                            "ANDROIDXR_HAND_VIS: Found running XRHandSubsystem. " +
+                            $"layout={subsystem.detectedHandMeshLayout}",
+                            this);
+                    }
+
                     return;
                 }
             }
@@ -141,7 +171,7 @@ namespace TiltBrush
             m_LeftHand ??= CreateHand(Handedness.Left, leftMesh);
             m_RightHand ??= CreateHand(Handedness.Right, rightMesh);
 
-            SetMeshVisibility(m_DrawMeshes);
+            RefreshVisibility(force: true);
         }
 
         private HandGameObject CreateHand(Handedness handedness, GameObject meshPrefab)
@@ -160,11 +190,88 @@ namespace TiltBrush
                 m_HandMeshTransparentMaterial);
         }
 
-        private void SetMeshVisibility(bool visible)
+        private void RefreshVisibility(bool force)
+        {
+            bool leftTracked =
+                m_Subsystem != null &&
+                m_Subsystem.running &&
+                m_Subsystem.leftHand.isTracked;
+
+            bool rightTracked =
+                m_Subsystem != null &&
+                m_Subsystem.running &&
+                m_Subsystem.rightHand.isTracked;
+
+            bool leftSelectedAsHand = true;
+            bool rightSelectedAsHand = true;
+
+            if (m_FollowHybridSourceSelection && AndroidXRHandBridge.Active)
+            {
+                leftSelectedAsHand = AndroidXRHandBridge.UseHand(false);
+                rightSelectedAsHand = AndroidXRHandBridge.UseHand(true);
+            }
+
+            bool leftVisible =
+                m_DrawMeshes &&
+                leftTracked &&
+                leftSelectedAsHand;
+
+            bool rightVisible =
+                m_DrawMeshes &&
+                rightTracked &&
+                rightSelectedAsHand;
+
+            if (force || leftVisible != m_LastLeftVisible)
+            {
+                m_LeftHand?.SetVisible(leftVisible);
+                m_LastLeftVisible = leftVisible;
+            }
+
+            if (force || rightVisible != m_LastRightVisible)
+            {
+                m_RightHand?.SetVisible(rightVisible);
+                m_LastRightVisible = rightVisible;
+            }
+        }
+
+        private void SetBothVisible(bool visible)
         {
             m_LeftHand?.SetVisible(visible);
             m_RightHand?.SetVisible(visible);
-            m_PreviousDrawMeshes = visible;
+            m_LastLeftVisible = visible;
+            m_LastRightVisible = visible;
+        }
+
+        private void DebugStateIfNeeded()
+        {
+            if (!m_DebugLogging || Time.unscaledTime < m_NextDebugTime)
+                return;
+
+            m_NextDebugTime =
+                Time.unscaledTime + Mathf.Max(0.1f, m_DebugInterval);
+
+            bool running = m_Subsystem != null && m_Subsystem.running;
+            bool leftTracked = running && m_Subsystem.leftHand.isTracked;
+            bool rightTracked = running && m_Subsystem.rightHand.isTracked;
+
+            bool bridgeActive = AndroidXRHandBridge.Active;
+            bool sourceLeftHand =
+                !bridgeActive || AndroidXRHandBridge.UseHand(false);
+            bool sourceRightHand =
+                !bridgeActive || AndroidXRHandBridge.UseHand(true);
+
+            Debug.Log(
+                "ANDROIDXR_HAND_VIS STATE " +
+                $"subsystem={m_Subsystem != null} " +
+                $"running={running} " +
+                $"trackedL={leftTracked} " +
+                $"trackedR={rightTracked} " +
+                $"bridge={bridgeActive} " +
+                $"useHandL={sourceLeftHand} " +
+                $"useHandR={sourceRightHand} " +
+                $"visibleL={m_LastLeftVisible} " +
+                $"visibleR={m_LastRightVisible}",
+                this);
         }
 
         private sealed class HandGameObject
@@ -180,6 +287,7 @@ namespace TiltBrush
                 Material transparentMaterial)
             {
                 bool isSceneObject = meshPrefab.scene.IsValid();
+
                 m_Root = isSceneObject
                     ? meshPrefab
                     : Instantiate(meshPrefab, parent);
@@ -200,6 +308,7 @@ namespace TiltBrush
                 }
 
                 m_MeshController = m_Root.GetComponent<XRHandMeshController>();
+
                 if (m_MeshController == null)
                 {
                     m_MeshController = m_Root.AddComponent<XRHandMeshController>();
@@ -212,6 +321,7 @@ namespace TiltBrush
                 }
 
                 m_MeshController.handTrackingEvents = handEvents;
+
                 AssignMaterials(
                     m_MeshController.handMeshRenderer,
                     depthMaterial,
@@ -246,14 +356,15 @@ namespace TiltBrush
             public void SetVisible(bool visible)
             {
                 if (m_MeshController == null)
-                {
                     return;
-                }
 
+                // Keep the controller enabled while visible so it continuously
+                // receives XRHandTrackingEvents and deforms the skinned mesh.
                 m_MeshController.enabled = visible;
-                if (!visible && m_MeshController.handMeshRenderer != null)
+
+                if (m_MeshController.handMeshRenderer != null)
                 {
-                    m_MeshController.handMeshRenderer.enabled = false;
+                    m_MeshController.handMeshRenderer.enabled = visible;
                 }
             }
 
@@ -272,9 +383,7 @@ namespace TiltBrush
                 Material transparentMaterial)
             {
                 if (renderer == null)
-                {
                     return;
-                }
 
                 if (depthMaterial != null && transparentMaterial != null)
                 {
