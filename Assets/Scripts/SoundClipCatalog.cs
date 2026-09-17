@@ -415,8 +415,11 @@ namespace TiltBrush
 
         internal static SoundClip CreateSafSoundClip(IUserStorageBackend backend, StorageDocument document)
         {
+            // The local backend identifies documents by their path, so this is the real file
+            // there; on SAF it is an opaque URI, which is harmless because the media URL below
+            // takes precedence and nothing opens AbsolutePath directly.
             return new SoundClip(
-                document.RelativeDisplayPath,
+                document.DocumentId.Value,
                 document.RelativeDisplayPath,
                 GetSafCatalogIdentity(backend, document),
                 // Streamed straight from shared storage; nothing is copied out to play it.
