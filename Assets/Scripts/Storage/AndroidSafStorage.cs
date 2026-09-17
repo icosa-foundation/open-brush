@@ -310,6 +310,28 @@ namespace TiltBrush
 #endif
         }
 
+        /// Bytes free on the volume holding the Open Brush folder, or -1 when the provider
+        /// cannot report it - a cloud-backed root, for instance. Callers treat -1 as "unknown"
+        /// and allow the write, matching what FileUtils does when a platform cannot answer.
+        public static long GetSharedFreeSpaceBytes()
+        {
+#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+            try
+            {
+                AttachToJvmIfNeeded();
+                using var bridge = new AndroidJavaClass(kBridgeClass);
+                return bridge.CallStatic<long>("getAvailableBytes", GetActivity());
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"SAF_STORAGE Free space query failed: {e.Message}");
+                return -1;
+            }
+#else
+            return -1;
+#endif
+        }
+
         public static StorageMutationResult RenameDocument(
             StorageDocumentId documentId, string newDisplayName)
         {

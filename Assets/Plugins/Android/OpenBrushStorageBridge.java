@@ -9,6 +9,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
+import android.system.Os;
+import android.system.StructStatVfs;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -402,6 +404,51 @@ public class OpenBrushStorageBridge {
         } catch (Exception e) {
             return new ChannelOpenResult(-1, -1, null, formatProviderError(
                     "Failed to create document", e));
+        }
+    }
+
+    // Bytes available on the volume holding the Open Brush folder, or -1 when it cannot be
+    // determined. There is no path to stat - the folder is a provider grant, not a directory - and
+    // openFileDescriptor refuses a directory document, so this measures the filesystem underneath
+    // a throwaway document created in the folder itself. That is the volume a save actually lands
+    // on, which StatFs on the app's private directory is not: the folder may be on an SD card.
+    public static long getAvailableBytes(Context context) {
+        Uri root = getRootDocumentUri(context);
+        if (root == null) {
+            return -1;
+        }
+        Uri probe = null;
+        ParcelFileDescriptor descriptor = null;
+        try {
+            probe = DocumentsContract.createDocument(
+                    context.getContentResolver(),
+                    root,
+                    "application/octet-stream",
+                    ".openbrush-space-" + NEXT_TEMP_FILE_ID.getAndIncrement() + ".tmp");
+            if (probe == null) {
+                return -1;
+            }
+            descriptor = context.getContentResolver().openFileDescriptor(probe, "rw");
+            if (descriptor == null) {
+                return -1;
+            }
+            StructStatVfs stat = Os.fstatvfs(descriptor.getFileDescriptor());
+            return stat.f_bavail * stat.f_frsize;
+        } catch (Exception e) {
+            // A provider that is not backed by a local filesystem cannot answer this. Reporting
+            // -1 leaves the caller to allow the save rather than block it on an unknown.
+            return -1;
+        } finally {
+            if (descriptor != null) {
+                try {
+                    descriptor.close();
+                } catch (Exception ignored) {
+                    // Nothing useful is left to do with a descriptor that will not close.
+                }
+            }
+            if (probe != null) {
+                deleteDocumentQuietly(context.getContentResolver(), probe);
+            }
         }
     }
 

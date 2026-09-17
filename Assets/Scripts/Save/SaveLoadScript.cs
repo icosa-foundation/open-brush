@@ -476,7 +476,13 @@ namespace TiltBrush
                 throw new ArgumentException("null filename");
             }
 
-            if (!directSafSave && !FileUtils.CheckDiskSpaceWithError(m_SaveDir))
+            // The commit sequence needs room for the payload alongside the sketch it replaces, so
+            // the shared folder is checked on the SAF path rather than skipped: m_SaveDir is the
+            // local staging directory there, which is not where the save lands.
+            bool haveSpace = directSafSave
+                ? FileUtils.CheckSharedStorageSpaceWithError()
+                : FileUtils.CheckDiskSpaceWithError(m_SaveDir);
+            if (!haveSpace)
             {
                 return new List<Timeslice>().GetEnumerator();
             }

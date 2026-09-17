@@ -197,6 +197,29 @@ namespace TiltBrush
             }
         }
 
+        /// Returns true when the shared storage folder has more space than spaceRequired, and
+        /// true when the provider cannot say. Saving through SAF has no path to stat - and
+        /// HasFreeSpace on Android would measure the app's private volume regardless of the one
+        /// the folder is on - so this asks the provider instead.
+        /// Returns false and shows a user-visible error on failure.
+        static public bool CheckSharedStorageSpaceWithError(
+            ulong spaceRequiredMb = MIN_DISK_SPACE_MB, string error = null)
+        {
+            long available = AndroidSafStorage.GetSharedFreeSpaceBytes();
+            if (available < 0)
+            {
+                return true;
+            }
+            if ((ulong)available / 1024 / 1024 > spaceRequiredMb)
+            {
+                return true;
+            }
+            OutputWindowScript.ReportFileSaved(
+                error ?? "Out of space in the Open Brush folder!", null,
+                OutputWindowScript.InfoCardSpawnPos.Brush);
+            return false;
+        }
+
         ///  Returns true the disk containing the file specified has more space than the spaceRequired.
         public static bool HasFreeSpace(string filePath, ulong spaceRequiredMb = MIN_DISK_SPACE_MB)
         {
