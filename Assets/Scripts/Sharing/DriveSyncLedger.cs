@@ -32,7 +32,6 @@ namespace TiltBrush
             public int Version;
             public string AccountNamespace;
             public string DriveRootNamespace;
-            public string StorageRootNamespace;
             public List<Entry> Entries = new List<Entry>();
         }
 
@@ -59,25 +58,23 @@ namespace TiltBrush
         private readonly string m_Path;
         private readonly string m_AccountNamespace;
         private readonly string m_DriveRootNamespace;
-        private readonly string m_StorageRootNamespace;
         private LedgerFile m_File;
 
         public DriveSyncLedger(
             string accountIdentity,
             string driveRootIdentity,
-            string storageRootIdentity,
             string basePath = null)
         {
             m_AccountNamespace = Namespace(accountIdentity);
             m_DriveRootNamespace = Namespace(driveRootIdentity);
-            m_StorageRootNamespace = Namespace(storageRootIdentity);
             string root = basePath ?? Path.Combine(
                 Application.persistentDataPath, "OpenBrushDriveSyncLedger");
+            // The storage root no longer appears here: it is fixed for the life of an
+            // installation, and SafRootChangeGuard discards this ledger if it ever differs.
             m_Path = Path.Combine(
                 root,
                 m_AccountNamespace,
-                m_DriveRootNamespace,
-                $"{m_StorageRootNamespace}.json");
+                $"{m_DriveRootNamespace}.json");
         }
 
         public Entry Get(StorageArea area, string relativePath)
@@ -229,7 +226,6 @@ namespace TiltBrush
                 loaded.Version != kVersion ||
                 loaded.AccountNamespace != m_AccountNamespace ||
                 loaded.DriveRootNamespace != m_DriveRootNamespace ||
-                loaded.StorageRootNamespace != m_StorageRootNamespace ||
                 loaded.Entries == null)
             {
                 throw new IOException(
@@ -245,7 +241,6 @@ namespace TiltBrush
                 Version = kVersion,
                 AccountNamespace = m_AccountNamespace,
                 DriveRootNamespace = m_DriveRootNamespace,
-                StorageRootNamespace = m_StorageRootNamespace,
             };
         }
 

@@ -1755,7 +1755,7 @@ namespace TiltBrush
             try
             {
                 var ledger = new DriveSyncLedger(
-                    "account", "drive-root", "storage-root", root);
+                    "account", "drive-root", root);
                 DateTime modified = DateTime.UtcNow;
                 var document = new StorageDocument(
                     new StorageDocumentId("document-one"),
@@ -1823,7 +1823,7 @@ namespace TiltBrush
             try
             {
                 var ledger = new DriveSyncLedger(
-                    "account", "drive-root", "storage-root", root);
+                    "account", "drive-root", root);
                 var document = new StorageDocument(
                     new StorageDocumentId("document"),
                     default,
@@ -1855,7 +1855,7 @@ namespace TiltBrush
                     .Replace("\"Version\": 1", "\"Version\": 999");
                 File.WriteAllText(ledgerPath, unknown);
                 var reloaded = new DriveSyncLedger(
-                    "account", "drive-root", "storage-root", root);
+                    "account", "drive-root", root);
 
                 Assert.Throws<IOException>(
                     () => reloaded.Get(StorageArea.Plugins, "plugin.lua"));

@@ -1169,8 +1169,7 @@ namespace TiltBrush
                 throw new IOException(
                     "Google Drive sync identities are unavailable.");
             }
-            string identity = $"{accountIdentity}\n{m_DriveAccess.DeviceFolder}\n" +
-                $"{UserStorage.Backend.RootIdentity}";
+            string identity = $"{accountIdentity}\n{m_DriveAccess.DeviceFolder}";
             lock (m_LedgerGate)
             {
                 if (m_Ledger == null ||
@@ -1179,8 +1178,7 @@ namespace TiltBrush
                 {
                     m_Ledger = new DriveSyncLedger(
                         accountIdentity,
-                        m_DriveAccess.DeviceFolder,
-                        UserStorage.Backend.RootIdentity);
+                        m_DriveAccess.DeviceFolder);
                     m_LedgerIdentity = identity;
                 }
                 return m_Ledger;
