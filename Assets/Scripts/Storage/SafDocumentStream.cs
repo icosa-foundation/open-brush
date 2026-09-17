@@ -28,12 +28,15 @@ namespace TiltBrush
 
     /// Positioned access to an open SAF document. The implementation that matters lives in Java;
     /// this exists so the buffering in SafDocumentStream can be tested without a device.
+    /// Signed bytes, because Java's byte is signed and Unity converts element by element -
+    /// with a deprecation warning apiece - when handed a byte[]. Buffer.BlockCopy moves between
+    /// sbyte[] and byte[] freely, so the signedness never reaches the Stream API above.
     internal interface ISafDocumentChannel
     {
         /// Returns the bytes read - fewer than asked for only at end of file - or null on failure.
-        byte[] Read(long position, int count);
+        sbyte[] Read(long position, int count);
         /// Returns the number of bytes written, or -1 on failure.
-        int Write(long position, byte[] data, int count);
+        int Write(long position, sbyte[] data, int count);
         bool Truncate(long length);
         bool Flush(bool toDisk);
         string DescribeLastError();
@@ -62,11 +65,11 @@ namespace TiltBrush
         private long m_Position;
         private long m_Length;
 
-        private byte[] m_ReadBuffer;
+        private sbyte[] m_ReadBuffer;
         private long m_ReadBufferStart;
         private int m_ReadBufferLength;
 
-        private byte[] m_WriteBuffer;
+        private sbyte[] m_WriteBuffer;
         private long m_WriteBufferStart;
         private int m_WriteBufferLength;
 
@@ -187,7 +190,7 @@ namespace TiltBrush
                 return;
             }
 
-            m_WriteBuffer ??= new byte[kWriteBufferSize];
+            m_WriteBuffer ??= new sbyte[kWriteBufferSize];
             if (m_WriteBufferLength == 0)
             {
                 m_WriteBufferStart = m_Position;
@@ -285,7 +288,7 @@ namespace TiltBrush
             m_ReadBufferLength = 0;
             // A read large enough to pay for its own crossing skips the buffer, so a bulk copy
             // does not also pay for a read-ahead it will never look at again.
-            byte[] block = ReadBlock(m_Position, Math.Max(count, kReadBufferSize));
+            sbyte[] block = ReadBlock(m_Position, Math.Max(count, kReadBufferSize));
             if (block.Length == 0)
             {
                 return 0;
@@ -338,9 +341,9 @@ namespace TiltBrush
             WriteThrough(start, m_WriteBuffer, 0, length);
         }
 
-        private byte[] ReadBlock(long position, int count)
+        private sbyte[] ReadBlock(long position, int count)
         {
-            byte[] block = m_Channel.Read(position, count);
+            sbyte[] block = m_Channel.Read(position, count);
             if (block == null)
             {
                 throw new IOException(DescribeError());
@@ -348,16 +351,16 @@ namespace TiltBrush
             return block;
         }
 
-        private void WriteThrough(long position, byte[] buffer, int offset, int count)
+        private void WriteThrough(long position, Array buffer, int offset, int count)
         {
-            byte[] payload;
-            if (offset == 0)
+            sbyte[] payload;
+            if (offset == 0 && buffer is sbyte[] alreadySigned)
             {
-                payload = buffer;
+                payload = alreadySigned;
             }
             else
             {
-                payload = new byte[count];
+                payload = new sbyte[count];
                 Buffer.BlockCopy(buffer, offset, payload, 0, count);
             }
             int written = m_Channel.Write(position, payload, count);
@@ -417,19 +420,19 @@ namespace TiltBrush
             m_Handle = handle;
         }
 
-        public byte[] Read(long position, int count)
+        public sbyte[] Read(long position, int count)
         {
             AndroidSafStorage.AttachToJvmIfNeeded();
-            return Bridge.CallStatic<byte[]>("readChannel", m_Handle, position, count);
+            return Bridge.CallStatic<sbyte[]>("readChannel", m_Handle, position, count);
         }
 
-        public int Write(long position, byte[] data, int count)
+        public int Write(long position, sbyte[] data, int count)
         {
             AndroidSafStorage.AttachToJvmIfNeeded();
             if (count != data.Length)
             {
                 // Java sees whole arrays, so a partly filled buffer has to be trimmed first.
-                var exact = new byte[count];
+                var exact = new sbyte[count];
                 Buffer.BlockCopy(data, 0, exact, 0, count);
                 data = exact;
             }

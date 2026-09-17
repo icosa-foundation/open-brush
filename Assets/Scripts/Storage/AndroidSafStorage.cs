@@ -592,10 +592,25 @@ namespace TiltBrush
             return true;
         }
 
+        private static AndroidJavaObject sm_Activity;
+
+        /// Resolved once and kept. The previous version built an AndroidJavaClass for
+        /// UnityPlayer on every call, disposed it, and returned an activity it never disposed:
+        /// a global reference leaked per call, against a class reference being torn down
+        /// underneath Unity's cache. On device the first lookup succeeded and every later one
+        /// failed with "Field currentActivity or type signature not found", which took out
+        /// seeding, every catalog query and transaction recovery while leaving reads working.
+        /// The activity does not change for the life of the process, so there is nothing to
+        /// re-resolve.
         private static AndroidJavaObject GetActivity()
         {
+            if (sm_Activity != null)
+            {
+                return sm_Activity;
+            }
             using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            return unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            sm_Activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
+            return sm_Activity;
         }
 #endif
     }

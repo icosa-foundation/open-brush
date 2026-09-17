@@ -53,7 +53,7 @@ namespace TiltBrush
                 Array.Resize(ref m_Data, capacity);
             }
 
-            public byte[] Read(long position, int count)
+            public sbyte[] Read(long position, int count)
             {
                 ++Reads;
                 if (FailReads)
@@ -63,15 +63,15 @@ namespace TiltBrush
                 }
                 if (position >= m_Length)
                 {
-                    return Array.Empty<byte>();
+                    return Array.Empty<sbyte>();
                 }
                 int take = (int)Math.Min(count, m_Length - position);
-                var result = new byte[take];
+                var result = new sbyte[take];
                 Buffer.BlockCopy(m_Data, (int)position, result, 0, take);
                 return result;
             }
 
-            public int Write(long position, byte[] data, int count)
+            public int Write(long position, sbyte[] data, int count)
             {
                 ++Writes;
                 Assert.LessOrEqual(count, data.Length);
