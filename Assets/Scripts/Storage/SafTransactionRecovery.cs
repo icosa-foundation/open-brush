@@ -98,7 +98,7 @@ namespace TiltBrush
             }
 
             string invalidName = string.IsNullOrEmpty(record.InvalidDisplayName)
-                ? $".ob-{record.TransactionId}.invalid"
+                ? $"{record.TargetDisplayName}.ob-invalid"
                 : record.InvalidDisplayName;
             StorageDocument canonical = Find(listing, record.TargetDisplayName);
             StorageDocument temporary = Find(listing, record.TemporaryDisplayName);

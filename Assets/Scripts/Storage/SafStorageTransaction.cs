@@ -306,9 +306,12 @@ namespace TiltBrush
                 RelativePath = relativePath.Replace('\\', '/'),
                 TargetDisplayName = targetName,
                 TargetDocumentId = targetDocumentId.Value,
-                TemporaryDisplayName = $".ob-{transactionId}.tmp",
-                BackupDisplayName = $".ob-{transactionId}.bak",
-                InvalidDisplayName = $".ob-{transactionId}.invalid",
+                // Named after the target rather than the transaction, so a sidecar left behind
+                // by an interrupted save says which document it belongs to. Recovery can then
+                // work from the directory alone.
+                TemporaryDisplayName = $"{targetName}.ob-tmp",
+                BackupDisplayName = $"{targetName}.ob-bak",
+                InvalidDisplayName = $"{targetName}.ob-invalid",
                 State = SafTransactionState.CreatingTemporary.ToString(),
                 CreatedUtc = DateTime.UtcNow.ToString("o"),
             };

@@ -664,7 +664,7 @@ namespace TiltBrush
         {
             string rootId = $"test-root-{Guid.NewGuid():N}";
             string transactionId = Guid.NewGuid().ToString("N");
-            string temporaryName = $".ob-{transactionId}.tmp";
+            string temporaryName = "Generic Target.bin.ob-tmp";
             var backend = new FakeSafBackend { RootIdentity = rootId };
             backend.Add(temporaryName, new byte[] { 1, 2, 3 });
             var record = new SafTransactionRecord
@@ -1080,7 +1080,7 @@ namespace TiltBrush
         {
             string rootId = $"test-root-{Guid.NewGuid():N}";
             string transactionId = Guid.NewGuid().ToString("N");
-            string backupName = $".ob-{transactionId}.bak";
+            string backupName = "Recovery Test.tilt.ob-bak";
             var backend = new FakeSafBackend { RootIdentity = rootId };
             backend.Add("Recovery Test.tilt", new byte[] { 1, 2, 3 });
             backend.Add(backupName, CreateMinimalTiltArchive());
@@ -1092,7 +1092,7 @@ namespace TiltBrush
                 RelativePath = "Recovery Test.tilt",
                 TargetDisplayName = "Recovery Test.tilt",
                 BackupDisplayName = backupName,
-                InvalidDisplayName = $".ob-{transactionId}.invalid",
+                InvalidDisplayName = "Recovery Test.tilt.ob-invalid",
                 State = SafTransactionState.RollbackRequired.ToString(),
                 CreatedUtc = DateTime.UtcNow.ToString("o"),
             };
