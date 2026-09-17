@@ -408,7 +408,7 @@ None of the following is external-change or multi-root machinery, and none of
 it is affected by these decisions:
 
 - **The fd read/write path.** Forced by the absence of filesystem access;
-  validated on device (`Support/SafFdProbe`).
+  validated on device (the SAF probes repository (`open-brush-saf-probes`)).
 - **The commit sequence** — write temp, validate, rename canonical to backup,
   rename temp to canonical, delete backup. This is crash safety, not external
   change. The device probe showed `renameDocument` onto an existing name
@@ -514,7 +514,7 @@ detection of it.
 
 ### Unverified assumption
 
-**Measured 2026-09-16, and affordable.** `Support/SafFdProbe` check 13 timed a
+**Measured 2026-09-16, and affordable.** the SAF probes repository (`open-brush-saf-probes`) check 13 timed a
 full `fsync` of 1 GiB through a detached SAF descriptor at 740 ms on a Nothing
 Phone (3a), Android 16. A realistic 200 MB sketch therefore costs roughly
 150 ms — clearly affordable once per save, and set against the five or six

@@ -9,7 +9,7 @@ Static desktop, editor, Android-symbol, and Java compilation can validate the
 code shape, but they do not satisfy the mandatory device gate.
 
 Amendment (2026-09-16): the provider half of that gate has now been run and
-passed. `Support/SafFdProbe` is a standalone Android app that exercises the
+passed. the SAF probes repository (`open-brush-saf-probes`) is a standalone Android app that exercises the
 provider assumptions without a Unity build; on a Nothing Phone (3a), Android 16
 (API 36), against `com.android.externalstorage`, a detached descriptor is a
 seekable regular file (`S_ISREG`, `mode=0100660`) that accepts a 3 MB write,
@@ -17,7 +17,7 @@ supports random-access read-back at mid-file, and round-trips byte-identical
 when reopened by URI. `rwt` and `renameDocument` are both supported
 (`flags=0x146`). Two further results are recorded in the design below: a
 detached descriptor has no usable `/proc/self/fd` path, and `renameDocument`
-deduplicates rather than replaces. See `Support/SafFdProbe/README.md`.
+deduplicates rather than replaces. See the SAF probes repository (`open-brush-saf-probes`).
 
 The IL2CPP half of the gate remains outstanding. Before release, run the
 built-in `SAF_FD` debug probe (`AndroidSafStorage.RunFileDescriptorProbe`) from

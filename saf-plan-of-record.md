@@ -2,7 +2,7 @@
 
 This is the plan. `saf-design-review.md` and
 `saf-single-root-simplification-plan.md` hold the reasoning and the evidence
-behind it; `Support/SafFdProbe/README.md` holds the device measurements. Read
+behind it; the SAF probes repository (`open-brush-saf-probes`) holds the device measurements. Read
 those for *why*. This document is *what*.
 
 ## Decision: reduce in place, do not rebuild
@@ -270,7 +270,7 @@ Keep `SafDestinationLocks`, payload validation, and the presence-based restore.
 
 Before any of this, run `AndroidSafStorage.RunFileDescriptorProbe` from a real
 Google Play build. The provider half of the device gate has passed
-(`Support/SafFdProbe`); the IL2CPP half — `SafeFileHandle` over a detached
+(the SAF probes repository (`open-brush-saf-probes`)); the IL2CPP half — `SafeFileHandle` over a detached
 descriptor under Unity's runtime — has not. Residual risk is low, because the
 descriptor is a regular file, but if it fails the write path changes and steps 2
 and 5 need rebasing.

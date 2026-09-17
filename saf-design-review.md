@@ -16,7 +16,7 @@ broken that requirement; those are corrected below, and the corrections are
 recorded rather than silently removed, because the reasoning that produced
 them is the reasoning a future reviewer is most likely to repeat.
 
-Updated 2026-09-16 with device probe results (`Support/SafFdProbe`), which
+Updated 2026-09-16 with device probe results (the SAF probes repository (`open-brush-saf-probes`)), which
 discharge the provider half of the release gate and independently validate two
 parts of the design this review had questioned.
 
@@ -130,7 +130,7 @@ lacks. Several places here are.
 
 ## Device Probe Results
 
-`Support/SafFdProbe` is a standalone ~16 KB Android app that exercises the
+the SAF probes repository (`open-brush-saf-probes`) is a standalone ~16 KB Android app that exercises the
 provider-side assumptions of this design without building Open Brush. It runs
 in seconds rather than the twenty minutes a Unity Android build takes, so it is
 practical to re-run per device and per OS release.
@@ -293,10 +293,10 @@ marshalling, backend interface, call sites — and is not proposed for change.
 ## Recommended Actions
 
 1. ~~**Run the device probe before any other work.**~~ Done for the provider
-   half; see above and `Support/SafFdProbe/README.md`. **Still outstanding:**
+   half; see above and the SAF probes repository (`open-brush-saf-probes`). **Still outstanding:**
    run `AndroidSafStorage.RunFileDescriptorProbe` (`AndroidSafStorage.cs:351`)
    from a real Google Play build to close the IL2CPP half, and re-run
-   `Support/SafFdProbe` against any further target provider.
+   the SAF probes repository (`open-brush-saf-probes`) against any further target provider.
 
 2. ~~**Amend the fd-backed plan's mirroring language.**~~ Done.
 
