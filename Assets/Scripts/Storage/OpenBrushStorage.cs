@@ -224,38 +224,35 @@ namespace TiltBrush
             return false;
         }
 
-        public static bool PublishGeneratedFileToSharedStorage(
-            string localPath, out string error)
-        {
-            error = null;
-
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedGeneratedFileRelativePath(localPath, out string relativePath))
-            {
-                return true;
-            }
-
-            return PublishPathToSharedStorage(
-                relativePath, localPath, transactionOwnsPayload: true, out error);
-        }
 
         public static void PublishGeneratedFileToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedGeneratedFileRelativePath(localPath, out string relativePath))
+            // A generated file is staged output: the transaction owns it and cleans it up.
+            PublishSinglePathAsync(
+                localPath, label, TryGetSharedGeneratedFileRelativePath,
+                transactionOwnsPayload: true, onComplete);
+        }
+
+        /// Resolves a local path to its shared destination and publishes it, or reports success
+        /// when there is nothing to publish. The resolver decides which tree the path belongs to.
+        private static void PublishSinglePathAsync(
+            string localPath,
+            string label,
+            TryResolveSharedPath resolve,
+            bool transactionOwnsPayload,
+            Action<bool, string> onComplete)
+        {
+            if (!IsGooglePlayStorageMode || !resolve(localPath, out string relativePath))
             {
                 onComplete?.Invoke(true, null);
                 return;
             }
-
             PublishPathToSharedStorageAsync(
-                relativePath,
-                localPath,
-                label,
-                transactionOwnsPayload: true,
-                onComplete);
+                relativePath, localPath, label, transactionOwnsPayload, onComplete);
         }
+
+        private delegate bool TryResolveSharedPath(string localPath, out string relativePath);
 
         public static void PublishGeneratedFilesToSharedStorageAsync(
             IReadOnlyList<string> localPaths,
@@ -333,19 +330,10 @@ namespace TiltBrush
         public static void PublishMediaLibraryPathToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode ||
-                !TryGetSharedMediaLibraryRelativePath(localPath, out string relativePath))
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-
-            PublishPathToSharedStorageAsync(
-                relativePath,
-                localPath,
-                label,
-                transactionOwnsPayload: false,
-                onComplete);
+            // Media-library content stays where it is locally; the copy is additive.
+            PublishSinglePathAsync(
+                localPath, label, TryGetSharedMediaLibraryRelativePath,
+                transactionOwnsPayload: false, onComplete);
         }
 
         internal static string GetUniqueImportPath(IUserStorageBackend backend, StorageArea area,
@@ -605,34 +593,6 @@ namespace TiltBrush
                 onComplete);
         }
 
-        private static bool PublishPathToSharedStorage(
-            string relativePath,
-            string localPath,
-            bool transactionOwnsPayload,
-            out string error)
-        {
-            error = null;
-            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
-            {
-                error = "SAF storage backend is unavailable.";
-                return false;
-            }
-            if (!TryResolveStorageDestination(
-                    relativePath, out StorageArea area, out string areaRelativePath))
-            {
-                error = $"Unsupported shared-storage destination: {relativePath}";
-                return false;
-            }
-            SafPublicationResult result = SafStagedOutputPublisher.Publish(
-                UserStorage.Backend,
-                area,
-                areaRelativePath,
-                localPath,
-                transactionOwnsPayload,
-                CancellationToken.None);
-            error = result.Error;
-            return result.Success;
-        }
 
         internal static bool TryResolveStorageDestination(
             string sharedRelativePath,
