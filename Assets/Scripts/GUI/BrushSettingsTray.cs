@@ -36,9 +36,11 @@ namespace TiltBrush
 
         private void DetectSupportedDevices()
         {
-            // Currently only the Logitech stylus needs this panel
+            // The Logitech stylus and hand tracking both stand in for controllers, and neither
+            // has the inputs that normally drive brush size, so both need this panel.
             bool needsBrushSizeUI =
-                VrStylusHandler.m_Instance?.CurrentState?.isActive == true;
+                VrStylusHandler.m_Instance?.CurrentState?.isActive == true ||
+                HandTrackingUtils.IsActive;
 
             bool wasShowing = m_AnimateIn;
             EnableTray(needsBrushSizeUI);
