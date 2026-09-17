@@ -68,7 +68,6 @@ namespace TiltBrush
             public string Name;
             public StorageArea Area;
             public string RelativeDirectory;
-            public string StorageRootIdentity;
             public string ParentDriveId;
             public DriveData.File Drive;
             public SyncType SyncType;
@@ -87,7 +86,6 @@ namespace TiltBrush
             public StorageArea Area;
             public string RelativeDirectory;
             public StorageDocumentId DocumentId;
-            public string StorageRootIdentity;
             public string ParentId;
             public string FileId;
             public DriveData.File DriveFile;
@@ -719,7 +717,6 @@ namespace TiltBrush
                 Name = name,
                 Area = area,
                 RelativeDirectory = "",
-                StorageRootIdentity = UserStorage.Backend.RootIdentity,
                 Drive = await m_DriveAccess.GetFolderAsync(name, parentId, token),
                 SyncType = syncType,
                 Recursive = recursive,
@@ -744,14 +741,9 @@ namespace TiltBrush
             // number of bytes that was being transferred by the old sync.
             m_PreviousTotalBytesToTransfer = m_TotalBytesToTransfer;
             m_ToTransfer.Clear();
-            // Cancel transfers for disabled folders or a previously selected storage root.
-            string currentRootIdentity = UserStorage.Backend.RootIdentity;
-            var toRemove = m_Transfers.Where(x =>
-                    !IsFolderOfTypeSynced(x.Key.Item.FolderType) ||
-                    !string.Equals(
-                        x.Key.Item.StorageRootIdentity,
-                        currentRootIdentity,
-                        StringComparison.Ordinal))
+            // Cancel transfers for folders that are no longer synced.
+            var toRemove = m_Transfers
+                .Where(x => !IsFolderOfTypeSynced(x.Key.Item.FolderType))
                 .Select(x => x.Key).ToArray();
             foreach (var transfer in toRemove)
             {
@@ -797,14 +789,6 @@ namespace TiltBrush
             if (!backend.IsReady)
             {
                 throw new IOException("User storage is unavailable for Google Drive sync.");
-            }
-            if (!string.Equals(
-                    folder.StorageRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
-            {
-                throw new OperationCanceledException(
-                    "The selected user-storage root changed during Google Drive sync.");
             }
 
             if (folder.Drive == null && folder.Upload)
@@ -883,14 +867,6 @@ namespace TiltBrush
                 localSet.Concat(driveSet), StringComparer.OrdinalIgnoreCase);
             foreach (string fileName in allFileNames)
             {
-                if (!string.Equals(
-                        folder.StorageRootIdentity,
-                        backend.RootIdentity,
-                        StringComparison.Ordinal))
-                {
-                    throw new OperationCanceledException(
-                        "The selected user-storage root changed during Google Drive sync.");
-                }
                 localFiles.TryGetValue(fileName, out StorageDocument localFile);
                 driveFiles.TryGetValue(fileName, out DriveData.File driveFile);
                 string logicalPath = CombineLogicalPath(
@@ -953,7 +929,6 @@ namespace TiltBrush
                             ? default
                             : localFile?.DocumentId ?? default,
                     LedgerDocumentId = localFile?.DocumentId ?? default,
-                    StorageRootIdentity = folder.StorageRootIdentity,
                     ParentId = folder.Drive.Id,
                     FileId = driveFile?.Id,
                     DriveFile = driveFile,
@@ -1005,7 +980,6 @@ namespace TiltBrush
                     Area = folder.Area,
                     RelativeDirectory = CombineLogicalPath(
                         folder.RelativeDirectory, subFolderName),
-                    StorageRootIdentity = folder.StorageRootIdentity,
                     Drive = OnDrive ? driveFolders[subFolderName] : null,
                     SyncType = folder.SyncType,
                     Recursive = folder.Recursive,
@@ -1828,18 +1802,15 @@ namespace TiltBrush
                     StringComparison.OrdinalIgnoreCase));
         }
 
+        /// A transfer must still be running against the live backend; the root behind it is
+        /// fixed for the lifetime of the run.
         private static void EnsureTransferRootMatches(
             SyncItem item, IUserStorageBackend backend)
         {
-            if (!ReferenceEquals(backend, UserStorage.Backend) ||
-                !backend.IsReady ||
-                !string.Equals(
-                    item.StorageRootIdentity,
-                    backend.RootIdentity,
-                    StringComparison.Ordinal))
+            if (!ReferenceEquals(backend, UserStorage.Backend) || !backend.IsReady)
             {
                 throw new OperationCanceledException(
-                    "The selected user-storage root changed during Google Drive transfer.");
+                    "User storage became unavailable during Google Drive transfer.");
             }
         }
 
@@ -1864,11 +1835,10 @@ namespace TiltBrush
             return path;
         }
 
-        internal static bool MatchesTransferDocument(SyncItem item, string storageId,
-            string rootIdentity, StorageBackendKind backendKind)
+        internal static bool MatchesTransferDocument(
+            SyncItem item, string storageId, StorageBackendKind backendKind)
         {
             return item.DocumentId.IsValid && !string.IsNullOrEmpty(storageId) &&
-                string.Equals(item.StorageRootIdentity, rootIdentity, StringComparison.Ordinal) &&
                 string.Equals(item.DocumentId.Value, storageId,
                     backendKind == StorageBackendKind.StorageAccessFramework
                         ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
@@ -1882,7 +1852,7 @@ namespace TiltBrush
             }
             IUserStorageBackend backend = UserStorage.Backend;
             var transfers = m_Transfers.Keys.Where(x => MatchesTransferDocument(
-                x.Item, storageId, backend.RootIdentity, backend.Kind)).ToArray();
+                x.Item, storageId, backend.Kind)).ToArray();
             foreach (var transfer in transfers) { transfer.TaskAndCts.Cancel(); }
             foreach (var transfer in transfers)
             {
