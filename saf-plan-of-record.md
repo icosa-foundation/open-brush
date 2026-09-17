@@ -1,9 +1,15 @@
 # SAF Plan of Record
 
-This is the plan. `saf-design-review.md` and
-`saf-single-root-simplification-plan.md` hold the reasoning and the evidence
-behind it; the SAF probes repository (`open-brush-saf-probes`) holds the device measurements. Read
-those for *why*. This document is *what*.
+The single live document for this branch. Six earlier planning documents were
+removed from the pull request rather than shipped to `main`: they were superseded
+or, worse, wrong. The feature-parity plan described the runtime projection and
+the legacy-content migration as implemented, and both have since been deleted;
+the fd-backed storage plan was built on handing C# a detached file descriptor,
+which the device gate disproved. Their reasoning survives in this branch's
+history and in the commit messages of the work they describe.
+
+The SAF probes repository (`open-brush-saf-probes`) holds the device
+measurements.
 
 ## Decision: reduce in place, do not rebuild
 
