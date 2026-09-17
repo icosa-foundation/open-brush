@@ -151,11 +151,27 @@ stream or a URL.
   create, write a Tilt archive, seek, validate, reopen by document URI, read
   every entry back, delete - so the first build says whether the replacement
   holds.
-- **Root identity's last 99 references.** Three different kinds: dead scan
-  guards in `QuillFileCatalog`; `DriveSyncLedger`, where only the storage-root
-  third of its key is constant and the account and Drive-root parts do real
-  work; and `SafDestinationLocks` / `SafPublicationRecord`, which carry the
-  root as data rather than control flow.
+- ~~**Root identity's last references.**~~ **Closed: there is nothing left to
+  remove.** The earlier description of them was wrong on both counts. It named
+  dead scan guards in `QuillFileCatalog`, which has none; and it did not mention
+  `SafStagedOutputPublisher`, which holds 20 — more than any other file. Of 99
+  references, 26 are test fixtures and 71 are production. Those divide into:
+
+  - the interface member and its two implementations (3);
+  - lock and cache keys, where the root is one component of a key rather than a
+    comparison;
+  - mid-operation staleness checks, which capture `RootIdentity` and re-read it
+    after a long operation. These are live despite the root being fixed for an
+    installation: `ReselectSharedFolder` can still fire after startup — it is the
+    recovery path for a revoked grant — and it asks the user to restart without
+    forcing it, so the root can move underneath work already in flight;
+  - the publication records, which persist across runs. Removing their root
+    comparison was tried, broke `GetPendingTopLevelNames`, and was reverted;
+    `GetPublicationDirectory` now carries a comment saying why.
+
+  `DriveSyncLedger`'s two are as previously described: only the storage-root
+  third of its key is constant, and the account and Drive-root parts do real
+  work.
 - **The journal removal** (step 5) is half done. Nothing is serialized to disk
   any more - the fsync-per-save bookkeeping is gone - but `SafTransactionState`,
   `SafTransactionRecord` and `SafTransactionJournal` all survive as in-memory
