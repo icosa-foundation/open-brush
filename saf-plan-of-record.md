@@ -84,9 +84,11 @@ run.
    looked like a bug was moot.
 5. **"Silent truncation" was wrong.** `StorageTreeEnumerator` fails loudly on
    both caps. Withdrawn.
-6. **The publish-surface collapse is semantic, not mechanical.** Thirteen call
-   sites with genuinely different staging, bundling and naming. It wants
-   review rather than a regex.
+6. **The publish surface was barely duplicated.** Of eight entry points, six
+   encode genuinely different behaviour - frame-sequence bundling, directory
+   publication, unique import naming, export READMEs - and collapsing them
+   would hide real differences behind flags. One was dead; two shared a body.
+   The "twenty near-duplicates" claim was wrong.
 7. **Deleting root scoping needs its replacement landing in the same change.**
    Five commits of collapsing shipped before the startup comparison existed.
    That window should not have been open.

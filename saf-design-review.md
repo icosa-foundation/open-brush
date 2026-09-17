@@ -305,7 +305,8 @@ marshalling, backend interface, call sites — and is not proposed for change.
    to start now that the commit sequence it must preserve has been validated
    on device.
 
-4. **Collapse the publish surface** to one parameterised method. ~300 lines.
+4. ~~**Collapse the publish surface.**~~ Done. It was eight methods, not twenty,
+   and six were not duplicates; 42 lines came out.
 
 5. **Execute `saf-single-root-simplification-plan.md`.** Added 2026-09-16 after
    four product decisions removed constraints the implementation was built to
