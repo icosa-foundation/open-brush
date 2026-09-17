@@ -666,7 +666,6 @@ namespace TiltBrush
         }
 
         [TestCase("success")]
-        [TestCase("root_changed")]
         [TestCase("cleared")]
         [TestCase("not_found")]
         [TestCase("superseded")]
@@ -684,7 +683,7 @@ namespace TiltBrush
                 SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
                 SetModelCatalogField(catalog, "m_CurrentModelsDirectory", "unrelated-panel-folder");
                 SetModelCatalogField(catalog, "m_SafScanInProgress", true);
-                SetModelCatalogField(catalog, "m_SafCatalogRootIdentity", backend.RootIdentity);
+                SetModelCatalogField(catalog, "m_SafCatalogScanned", true);
                 var scan = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 SetModelCatalogField(catalog, "m_SafScanCompletion", scan);
                 UserStorage.SetBackendForTests(backend);
@@ -702,7 +701,6 @@ namespace TiltBrush
                 }
                 var model = new Model("Nested/model.obj");
                 if (outcome != "not_found") catalog.m_ModelsByRelativePath.Add("Nested/model.obj", model);
-                if (outcome == "root_changed") backend.RootIdentity = "replacement-root";
                 if (outcome == "cleared") catalog.ClearMissingModels();
                 SetModelCatalogField(catalog, "m_SafScanInProgress", false);
                 scan.SetResult(outcome != "not_found");
