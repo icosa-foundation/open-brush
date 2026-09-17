@@ -57,11 +57,7 @@ namespace TiltBrush
             foreach (SafTransactionRecord record in records)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (!Enum.TryParse(record.Area, out StorageArea area))
-                {
-                    MarkPending(record, $"Unknown storage area '{record.Area}'.", report);
-                    continue;
-                }
+                StorageArea area = record.Area;
                 using (SafDestinationLocks.Acquire(
                     SafDestinationLocks.GetDestinationKey(
                         rootId, area, record.RelativePath),
@@ -131,14 +127,12 @@ namespace TiltBrush
                         Kind = target.EndsWith(".tilt", StringComparison.OrdinalIgnoreCase)
                             ? "tilt-replacement"
                             : "file-replacement",
-                        Area = area.ToString(),
+                        Area = area,
                         RelativePath = relativePath,
                         TargetDisplayName = target,
                         TemporaryDisplayName = $"{target}.ob-tmp",
                         BackupDisplayName = $"{target}.ob-bak",
                         InvalidDisplayName = $"{target}.ob-invalid",
-                        State = SafTransactionState.RollbackRequired.ToString(),
-                        CreatedUtc = DateTime.UtcNow.ToString("o"),
                     });
                 }
             }
@@ -170,9 +164,7 @@ namespace TiltBrush
                 return false;
             }
 
-            string invalidName = string.IsNullOrEmpty(record.InvalidDisplayName)
-                ? $"{record.TargetDisplayName}.ob-invalid"
-                : record.InvalidDisplayName;
+            string invalidName = record.InvalidDisplayName;
             StorageDocument canonical = Find(listing, record.TargetDisplayName);
             StorageDocument temporary = Find(listing, record.TemporaryDisplayName);
             StorageDocument backup = Find(listing, record.BackupDisplayName);
@@ -181,7 +173,7 @@ namespace TiltBrush
             if (IsValidDocument(backend, canonical, record.Kind, cancellationToken))
             {
                 return CompleteWithCanonical(
-                    backend, record, canonical, temporary, backup, invalid, report,
+                    backend, record, temporary, backup, invalid, report,
                     cancellationToken);
             }
 
@@ -193,13 +185,10 @@ namespace TiltBrush
             }
 
             // Readability cannot establish that a generic payload finished writing.
-            // Archive payloads can instead prove completeness through their validation.
-            bool temporaryComplete = record.TemporaryWriteCompleted ||
-                record.State == SafTransactionState.TemporaryComplete.ToString() ||
-                record.State == SafTransactionState.OriginalBackedUp.ToString() ||
-                record.State == SafTransactionState.ReplacementInstalled.ToString() ||
-                record.State == SafTransactionState.BackupCleanupPending.ToString() ||
-                record.Kind == "tilt-replacement" || record.Kind == "sketch-replacement";
+            // Archive payloads can instead prove completeness through their validation, which
+            // is the only test left here: a record reconstructed from sidecars carries no
+            // memory of how far the interrupted transaction had got.
+            bool temporaryComplete = record.Kind == "tilt-replacement";
             if (temporaryComplete &&
                 IsValidDocument(backend, temporary, record.Kind, cancellationToken))
             {
@@ -215,10 +204,11 @@ namespace TiltBrush
             return false;
         }
 
+        /// The canonical document is already valid, so finishing means clearing the sidecars
+        /// an interrupted save left beside it; the document itself is not touched.
         private static bool CompleteWithCanonical(
             IUserStorageBackend backend,
             SafTransactionRecord record,
-            StorageDocument canonical,
             StorageDocument temporary,
             StorageDocument backup,
             StorageDocument invalid,
@@ -229,15 +219,10 @@ namespace TiltBrush
                 !DeleteIfPresent(backend, backup, cancellationToken, out error) ||
                 !DeleteIfPresent(backend, invalid, cancellationToken, out error))
             {
-                record.State = SafTransactionState.BackupCleanupPending.ToString();
                 MarkPending(record, error, report);
                 return false;
             }
 
-            record.TargetDocumentId = canonical.DocumentId.Value;
-            record.TemporaryDocumentId = null;
-            record.BackupDocumentId = null;
-            record.State = SafTransactionState.Complete.ToString();
             return true;
         }
 
@@ -310,7 +295,7 @@ namespace TiltBrush
             }
 
             return CompleteWithCanonical(
-                backend, record, restored, otherReserved, null, invalid, report,
+                backend, record, otherReserved, null, invalid, report,
                 cancellationToken);
         }
 
@@ -329,8 +314,7 @@ namespace TiltBrush
                 using (Stream stream = backend.OpenRead(
                     document.DocumentId, requireSeekable: true, cancellationToken))
                 {
-                    if (transactionKind == "tilt-replacement" ||
-                        transactionKind == "sketch-replacement")
+                    if (transactionKind == "tilt-replacement")
                     {
                         // Structural validation only, matching the commit path. The payload is
                         // fsynced before the rename sequence begins, so an interrupted write shows
@@ -410,10 +394,8 @@ namespace TiltBrush
         private static void MarkPending(
             SafTransactionRecord record, string error, SafRecoveryReport report)
         {
-            record.AttemptCount++;
-            record.LastError = error ?? "";
             string message =
-                $"SAF_RECOVERY Pending {record.TransactionId}: {record.LastError}";
+                $"SAF_RECOVERY Pending {record.TransactionId}: {error ?? ""}";
             report.Errors.Add(message);
             Debug.LogWarning(message);
         }

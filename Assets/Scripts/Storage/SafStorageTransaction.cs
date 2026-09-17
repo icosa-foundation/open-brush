@@ -36,14 +36,18 @@ namespace TiltBrush
         RollbackRequired,
     }
 
-    [Serializable]
+    /// In-memory bookkeeping for one write transaction, and for one interrupted write that
+    /// recovery reconstructs from the sidecars it left behind. It was a serialized journal
+    /// record once, which is why the fields that survive are the ones two different callers
+    /// both need - the names and ids of the four documents a commit juggles. The schema that
+    /// only mattered across process restarts is gone: a version number, the root the record
+    /// belonged to, when it was created, how many attempts it had survived, and the state it
+    /// had reached.
     internal sealed class SafTransactionRecord
     {
-        public int Version = 1;
         public string TransactionId;
         public string Kind = "tilt-replacement";
-        public string RootId;
-        public string Area;
+        public StorageArea Area;
         public string RelativePath;
         public string TargetDisplayName;
         public string TargetDocumentId;
@@ -53,10 +57,6 @@ namespace TiltBrush
         public string BackupDisplayName;
         public string BackupDocumentId;
         public string InvalidDisplayName;
-        public string State;
-        public string CreatedUtc;
-        public int AttemptCount;
-        public string LastError = "";
     }
 
     /// Paths for app-private recovery state. What remains after the transaction journal was
@@ -228,8 +228,7 @@ namespace TiltBrush
                 Kind = m_MimeType == TiltFile.TILT_MIME_TYPE
                     ? "tilt-replacement"
                     : "file-replacement",
-                RootId = rootId,
-                Area = area.ToString(),
+                Area = area,
                 RelativePath = relativePath.Replace('\\', '/'),
                 TargetDisplayName = targetName,
                 TargetDocumentId = targetDocumentId.Value,
@@ -239,8 +238,6 @@ namespace TiltBrush
                 TemporaryDisplayName = $"{targetName}.ob-tmp",
                 BackupDisplayName = $"{targetName}.ob-bak",
                 InvalidDisplayName = $"{targetName}.ob-invalid",
-                State = SafTransactionState.CreatingTemporary.ToString(),
-                CreatedUtc = DateTime.UtcNow.ToString("o"),
             };
             string destinationKey = SafDestinationLocks.GetDestinationKey(
                 rootId, area, m_Record.RelativePath);
@@ -284,7 +281,6 @@ namespace TiltBrush
                 throw new IOException(error);
             }
             m_Record.TemporaryDocumentId = temporaryId.Value;
-            m_Record.State = SafTransactionState.WritingTemporary.ToString();
             return m_Stream;
         }
 
@@ -528,10 +524,11 @@ namespace TiltBrush
                 : $"{root}/{m_RelativeDirectory}";
         }
 
+        /// The state is a log label rather than stored state: nothing reads it back, because
+        /// recovery works from the sidecars in shared storage rather than from anything this
+        /// process remembers.
         private void Transition(SafTransactionState state)
         {
-            m_Record.State = state.ToString();
-            m_Record.LastError = "";
             Debug.Log($"SAF_TRANSACTION {m_Record.TransactionId} {state}");
         }
 
@@ -555,23 +552,8 @@ namespace TiltBrush
 
         private void Fail(SafTransactionState state, string error)
         {
-            m_Record.State = state.ToString();
-            m_Record.AttemptCount++;
-            m_Record.LastError = error ?? "";
-            try
-            {
-            }
-            catch (Exception e) when (
-                e is IOException ||
-                e is UnauthorizedAccessException)
-            {
-                Debug.LogError(
-                    $"SAF_TRANSACTION {m_Record.TransactionId} could not update its " +
-                    $"recovery journal: {e.Message}");
-            }
             Debug.LogWarning(
-                $"SAF_TRANSACTION {m_Record.TransactionId} {state}: " +
-                $"{m_Record.LastError}");
+                $"SAF_TRANSACTION {m_Record.TransactionId} {state}: {error ?? ""}");
         }
 
         private void CloseStream()
