@@ -59,17 +59,11 @@ namespace TiltBrush
         public string LastError = "";
     }
 
+    /// Paths for app-private recovery state. What remains after the transaction journal was
+    /// removed: recovery now works from the sidecars an interrupted save leaves in SAF, so
+    /// nothing here records what a transaction intended - only where its leftovers live.
     internal static class SafTransactionJournal
     {
-        public const int Version = 1;
-
-        public static string GetJournalDirectory(string rootId)
-        {
-            return Path.Combine(
-                GetRecoveryRootDirectory(rootId),
-                "journals");
-        }
-
         public static string GetRecoveryRootDirectory(string rootId)
         {
             return Path.Combine(
@@ -93,79 +87,9 @@ namespace TiltBrush
             }
         }
 
-        public static string GetJournalPath(SafTransactionRecord record)
-        {
-            return Path.Combine(
-                GetJournalDirectory(record.RootId), $"{record.TransactionId}.json");
-        }
 
-        public static void Persist(SafTransactionRecord record)
-        {
-            string path = GetJournalPath(record);
-            string directory = Path.GetDirectoryName(path);
-            Directory.CreateDirectory(directory);
-            string temporaryPath = $"{path}.tmp";
-            byte[] json = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(
-                JsonConvert.SerializeObject(record, Formatting.Indented));
-            using (var stream = new FileStream(
-                temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                stream.Write(json, 0, json.Length);
-                stream.Flush(flushToDisk: true);
-            }
 
-            if (File.Exists(path))
-            {
-                File.Replace(temporaryPath, path, null);
-            }
-            else
-            {
-                File.Move(temporaryPath, path);
-            }
-        }
 
-        public static void Delete(SafTransactionRecord record)
-        {
-            string path = GetJournalPath(record);
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-
-        public static List<SafTransactionRecord> Load(string rootId, out List<string> errors)
-        {
-            errors = new List<string>();
-            var records = new List<SafTransactionRecord>();
-            string directory = GetJournalDirectory(rootId);
-            if (!Directory.Exists(directory))
-            {
-                return records;
-            }
-            foreach (string path in Directory.EnumerateFiles(directory, "*.json"))
-            {
-                try
-                {
-                    SafTransactionRecord record =
-                        JsonConvert.DeserializeObject<SafTransactionRecord>(
-                            File.ReadAllText(path));
-                    if (record == null ||
-                        record.Version != Version ||
-                        string.IsNullOrEmpty(record.TransactionId) ||
-                        record.RootId != rootId)
-                    {
-                        errors.Add($"Unsupported or malformed SAF journal: {path}");
-                        continue;
-                    }
-                    records.Add(record);
-                }
-                catch (Exception e)
-                {
-                    errors.Add($"Failed to read SAF journal {path}: {e.Message}");
-                }
-            }
-            return records;
-        }
 
     }
 
@@ -322,7 +246,6 @@ namespace TiltBrush
             try
             {
                 FindExistingTarget(cancellationToken);
-                SafTransactionJournal.Persist(m_Record);
                 Debug.Log(
                     $"SAF_TRANSACTION {m_Record.TransactionId} " +
                     $"{SafTransactionState.CreatingTemporary}");
@@ -359,7 +282,6 @@ namespace TiltBrush
             }
             m_Record.TemporaryDocumentId = temporaryId.Value;
             m_Record.State = SafTransactionState.WritingTemporary.ToString();
-            SafTransactionJournal.Persist(m_Record);
             return m_Stream;
         }
 
@@ -432,7 +354,6 @@ namespace TiltBrush
                 }
 
                 Transition(SafTransactionState.Complete);
-                SafTransactionJournal.Delete(m_Record);
                 m_Finished = true;
                 ReleaseLock();
                 return new StorageMutationResult(
@@ -478,7 +399,6 @@ namespace TiltBrush
                     }
                     m_Record.TemporaryDocumentId = null;
                 }
-                SafTransactionJournal.Delete(m_Record);
             }
             m_Finished = true;
             ReleaseLock();
@@ -609,7 +529,6 @@ namespace TiltBrush
         {
             m_Record.State = state.ToString();
             m_Record.LastError = "";
-            SafTransactionJournal.Persist(m_Record);
             Debug.Log($"SAF_TRANSACTION {m_Record.TransactionId} {state}");
         }
 
@@ -638,7 +557,6 @@ namespace TiltBrush
             m_Record.LastError = error ?? "";
             try
             {
-                SafTransactionJournal.Persist(m_Record);
             }
             catch (Exception e) when (
                 e is IOException ||

@@ -611,85 +611,7 @@ namespace TiltBrush
             Assert.IsTrue(document.SupportsRemove);
         }
 
-        [Test]
-        public void SafTransactionJournal_IsVersionedAndAtomicallyUpdated()
-        {
-            string rootId = $"test-root-{Guid.NewGuid():N}";
-            var record = new SafTransactionRecord
-            {
-                TransactionId = Guid.NewGuid().ToString("N"),
-                RootId = rootId,
-                Area = StorageArea.Sketches.ToString(),
-                RelativePath = "Journal Test.tilt",
-                TargetDisplayName = "Journal Test.tilt",
-                State = SafTransactionState.CreatingTemporary.ToString(),
-                CreatedUtc = DateTime.UtcNow.ToString("o"),
-            };
-            string journalDirectory = SafTransactionJournal.GetJournalDirectory(rootId);
-            string recoveryRoot = Directory.GetParent(journalDirectory).FullName;
-            try
-            {
-                SafTransactionJournal.Persist(record);
-                record.State = SafTransactionState.TemporaryComplete.ToString();
-                SafTransactionJournal.Persist(record);
 
-                var loaded = SafTransactionJournal.Load(rootId, out var errors);
-                Assert.AreEqual(0, errors.Count);
-                Assert.AreEqual(1, loaded.Count);
-                Assert.AreEqual(
-                    SafTransactionState.TemporaryComplete.ToString(), loaded[0].State);
-
-                record.Version = SafTransactionJournal.Version + 1;
-                SafTransactionJournal.Persist(record);
-                loaded = SafTransactionJournal.Load(rootId, out errors);
-                Assert.AreEqual(0, loaded.Count);
-                Assert.AreEqual(1, errors.Count);
-                Assert.IsTrue(File.Exists(SafTransactionJournal.GetJournalPath(record)));
-            }
-            finally
-            {
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
-
-        [TestCase("WritingTemporary", false)]
-        [TestCase("CreatingTemporary", false)]
-        [TestCase("RollbackRequired", false)]
-        [TestCase("TemporaryComplete", true)]
-        [TestCase("OriginalBackedUp", true)]
-        public void SafTransactionRecovery_RequiresCompletedGenericTemporary(string state, bool recover)
-        {
-            string rootId = $"test-root-{Guid.NewGuid():N}";
-            string transactionId = Guid.NewGuid().ToString("N");
-            string temporaryName = "Generic Target.bin.ob-tmp";
-            var backend = new FakeSafBackend { RootIdentity = rootId };
-            backend.Add(temporaryName, new byte[] { 1, 2, 3 });
-            var record = new SafTransactionRecord
-            {
-                TransactionId = transactionId, RootId = rootId, Kind = "file-replacement",
-                Area = StorageArea.Scripts.ToString(), RelativePath = "script.lua",
-                TargetDisplayName = "script.lua", TemporaryDisplayName = temporaryName,
-                State = state, CreatedUtc = DateTime.UtcNow.ToString("o"),
-            };
-            string recoveryRoot = Directory.GetParent(
-                SafTransactionJournal.GetJournalDirectory(rootId)).FullName;
-            try
-            {
-                SafTransactionJournal.Persist(record);
-                SafRecoveryReport report = SafTransactionRecovery.RecoverAll(
-                    backend, CancellationToken.None, rootId);
-                Assert.AreEqual(recover ? 1 : 0, report.Recovered);
-                Assert.AreEqual(!recover, backend.Contains(temporaryName));
-                Assert.AreEqual(recover, backend.Contains("script.lua"));
-            }
-            finally
-            {
-                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
-            }
-        }
 
         [Test]
         public void SafCaptureReservation_AccountsForSharedBundlesAndPendingCaptures()
@@ -1075,48 +997,6 @@ namespace TiltBrush
             }
         }
 
-        [Test]
-        public void SafTransactionRecovery_RestoresValidatedBackup()
-        {
-            string rootId = $"test-root-{Guid.NewGuid():N}";
-            string transactionId = Guid.NewGuid().ToString("N");
-            string backupName = "Recovery Test.tilt.ob-bak";
-            var backend = new FakeSafBackend { RootIdentity = rootId };
-            backend.Add("Recovery Test.tilt", new byte[] { 1, 2, 3 });
-            backend.Add(backupName, CreateMinimalTiltArchive());
-            var record = new SafTransactionRecord
-            {
-                TransactionId = transactionId,
-                RootId = rootId,
-                Area = StorageArea.Sketches.ToString(),
-                RelativePath = "Recovery Test.tilt",
-                TargetDisplayName = "Recovery Test.tilt",
-                BackupDisplayName = backupName,
-                InvalidDisplayName = "Recovery Test.tilt.ob-invalid",
-                State = SafTransactionState.RollbackRequired.ToString(),
-                CreatedUtc = DateTime.UtcNow.ToString("o"),
-            };
-            string journalDirectory = SafTransactionJournal.GetJournalDirectory(rootId);
-            string recoveryRoot = Directory.GetParent(journalDirectory).FullName;
-            try
-            {
-                SafTransactionJournal.Persist(record);
-                SafRecoveryReport report = SafTransactionRecovery.RecoverAll(
-                    backend, CancellationToken.None, rootId);
-                Assert.AreEqual(1, report.Recovered);
-                Assert.AreEqual(0, report.Pending);
-                Assert.IsTrue(backend.Contains("Recovery Test.tilt"));
-                Assert.IsFalse(backend.Contains(backupName));
-                Assert.IsFalse(File.Exists(SafTransactionJournal.GetJournalPath(record)));
-            }
-            finally
-            {
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
 
         [Test]
         public void SafStagedOutputPublisher_CommitsWholeDirectory()
