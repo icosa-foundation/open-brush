@@ -169,7 +169,7 @@ namespace TiltBrush
             }
 
             VideoRecorderUtils.StopVideoCapture(saveCapture);
-            if (saveCapture && OpenBrushStorage.IsGooglePlayStorageMode && !string.IsNullOrEmpty(m_PathCaptureFile))
+            if (saveCapture && OpenBrushStorage.IsScopedStorageMode && !string.IsNullOrEmpty(m_PathCaptureFile))
             {
                 StartCoroutine(PublishPathCaptureWhenReady(m_PathCaptureFile));
             }

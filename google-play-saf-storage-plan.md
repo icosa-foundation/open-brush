@@ -12,7 +12,7 @@ The selected `Open Brush` folder is the canonical user-visible storage root. `Ap
 
 Implemented in the current working tree:
 
-- Google Play build profile: `-btb-google-play`, Android-only `OPEN_BRUSH_GOOGLE_PLAY`, Google Play AAB CI wiring, temporary `forceSDCardPermission = false`, and generated-manifest removal of all matching direct external/media storage permission entries, including `uses-permission-sdk-23` and Android partial-media variants.
+- Google Play build profile: `-btb-scoped-storage`, Android-only `OPEN_BRUSH_SCOPED_STORAGE`, Google Play AAB CI wiring, temporary `forceSDCardPermission = false`, and generated-manifest removal of all matching direct external/media storage permission entries, including `uses-permission-sdk-23` and Android partial-media variants.
 - Android SAF bridge: folder picker activity, persisted tree URI, URI validity checks including persisted root name validation, safe relative-path validation, directory/file write helpers, safer overwrite/truncate behavior for existing files, directory copy, delete, list, and copy-to-local-cache helpers.
 - First-run/shared-folder gate: Google Play builds prompt after the main scene becomes usable; startup refusal is remembered as a soft dismissal; feature commands can prompt again later. The current warning is an info card plus console message followed by a native Android `Choose Folder` / `Not Now` dialog, not a custom two-button VR popup.
 - Exports: Play builds stage exports locally, publish them to `Open Brush/Exports`, write the export README through SAF, and keep the staging copy if SAF publishing fails.
@@ -73,21 +73,21 @@ Then reintroduce storage changes behind an explicit Google Play build flag only.
 Add a dedicated Google Play build flag, for example:
 
 ```csharp
-OPEN_BRUSH_GOOGLE_PLAY
+OPEN_BRUSH_SCOPED_STORAGE
 ```
 
 Implementation actions:
 
 1. Extend `BuildTiltBrush.TiltBuildOptions` with `bool GooglePlay`.
-2. Add a command-line option such as `-btb-google-play`.
-3. Pass `OPEN_BRUSH_GOOGLE_PLAY` through `TempDefineSymbols` only when that option is set.
+2. Add a command-line option such as `-btb-scoped-storage`.
+3. Pass `OPEN_BRUSH_SCOPED_STORAGE` through `TempDefineSymbols` only when that option is set.
 4. For Google Play Android builds, temporarily set:
    - `PlayerSettings.Android.forceSDCardPermission = false`
    - `unityplayer.SkipPermissionsDialog = true`
    - no `android.permission.MANAGE_EXTERNAL_STORAGE`
 5. For Quest/Pico/normal Android builds, leave current behavior unchanged.
 
-Manifest handling should be build-time, not a global checked-in Android behavior change. Use `BuildTiltBrushPostProcess.OnPostGenerateGradleAndroidProject()` to remove `MANAGE_EXTERNAL_STORAGE` and set `unityplayer.SkipPermissionsDialog=true` when `OPEN_BRUSH_GOOGLE_PLAY` is defined. Keep the checked-in manifest compatible with Quest/Pico.
+Manifest handling should be build-time, not a global checked-in Android behavior change. Use `BuildTiltBrushPostProcess.OnPostGenerateGradleAndroidProject()` to remove `MANAGE_EXTERNAL_STORAGE` and set `unityplayer.SkipPermissionsDialog=true` when `OPEN_BRUSH_SCOPED_STORAGE` is defined. Keep the checked-in manifest compatible with Quest/Pico.
 
 ## Android SAF Bridge
 
@@ -131,7 +131,7 @@ Do not block the loading scene. The prompt should happen after the main scene is
 Implementation actions:
 
 1. Add an `AndroidStorageManager` MonoBehaviour in `Main.unity` or attach it to an existing app-level singleton.
-2. On startup, if `UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY` and no valid SAF root exists, show a VR popup:
+2. On startup, if `UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE` and no valid SAF root exists, show a VR popup:
    - Title: `Choose Open Brush folder`
    - Body: `Choose or create a folder named Open Brush for sketches and exports. Without it, Open Brush can run, but saving to shared storage, exports, imports, and file browsing will be limited.`
    - Primary action: `Choose Folder`
@@ -249,7 +249,7 @@ After export and sketch save/load are working:
 
 ## Permission and LoadingScene Changes
 
-For `OPEN_BRUSH_GOOGLE_PLAY` only:
+For `OPEN_BRUSH_SCOPED_STORAGE` only:
 
 - Do not declare `android.permission.MANAGE_EXTERNAL_STORAGE`.
 - Do not declare direct external/media storage permissions such as `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, or Android 13 `READ_MEDIA_*` permissions.
@@ -298,11 +298,11 @@ Regression tests:
 - Desktop export still writes to `App.UserExportPath()`.
 - Existing `.tilt` save/load still works on desktop and non-Play Android.
 - `Export.ExportScene()` still handles each enabled format.
-- `SketchCatalog` and `FileSketchSet` behavior remains unchanged outside `OPEN_BRUSH_GOOGLE_PLAY`.
+- `SketchCatalog` and `FileSketchSet` behavior remains unchanged outside `OPEN_BRUSH_SCOPED_STORAGE`.
 
 ## Suggested Milestones
 
-1. Revert accidental global storage changes and add the `OPEN_BRUSH_GOOGLE_PLAY` build profile.
+1. Revert accidental global storage changes and add the `OPEN_BRUSH_SCOPED_STORAGE` build profile.
 2. Add Android SAF bridge and first-run prompt with no save/export behavior changes.
 3. Gate Play export on folder selection and publish staged exports to `Open Brush/Exports`.
 4. Update export success messages for Play.

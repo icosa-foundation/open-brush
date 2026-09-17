@@ -59,7 +59,7 @@ namespace TiltBrush
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts storage location")]
         public static void OpenUserScriptsFolder()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 AndroidStorageManager.ReselectSharedFolder();
                 return;

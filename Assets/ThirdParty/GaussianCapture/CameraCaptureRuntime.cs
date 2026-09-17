@@ -953,7 +953,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         yield return StartCoroutine(captureRoutine);
         if (!ShouldPublishGaussianCapture(
                 captureSucceeded(), m_CaptureCancellationRequested,
-                OpenBrushStorage.IsGooglePlayStorageMode))
+                OpenBrushStorage.IsScopedStorageMode))
         {
             m_CaptureCancellationRequested = false;
             yield break;

@@ -768,7 +768,7 @@ namespace TiltBrush
 
             if (Config.m_AutosaveRestoreEnabled &&
                 AutosaveRestoreFileExists &&
-                !OpenBrushStorage.IsGooglePlayStorageMode)
+                !OpenBrushStorage.IsScopedStorageMode)
             {
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)
@@ -2037,7 +2037,7 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-#if OPEN_BRUSH_GOOGLE_PLAY
+#if OPEN_BRUSH_SCOPED_STORAGE
                     // Google Play builds use app-private storage only as a working cache.
                     // Canonical user-visible files are written through Android SAF.
                     m_UserPath = OpenBrushStorage.LocalUserPathRoot;
@@ -2231,7 +2231,7 @@ namespace TiltBrush
 
         public static string MediaLibraryPath()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 return OpenBrushStorage.LocalMaterializedMediaLibraryPath;
             }
@@ -2322,7 +2322,7 @@ namespace TiltBrush
 
         static public string UserExportPath()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 return OpenBrushStorage.LocalExportStagingPath;
             }
@@ -2336,7 +2336,7 @@ namespace TiltBrush
 
         static public string SnapshotPath()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 return OpenBrushStorage.LocalSnapshotStagingPath;
             }
@@ -2345,7 +2345,7 @@ namespace TiltBrush
 
         static public string VideosPath()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 return OpenBrushStorage.LocalVideoStagingPath;
             }
@@ -2354,7 +2354,7 @@ namespace TiltBrush
 
         static public string VrVideosPath()
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 return OpenBrushStorage.LocalVrVideoStagingPath;
             }
@@ -2368,7 +2368,7 @@ namespace TiltBrush
                 AppExit();
             }
 
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 AutosaveRestoreFileExists = false;
             }

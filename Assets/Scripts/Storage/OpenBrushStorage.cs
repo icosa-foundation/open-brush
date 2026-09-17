@@ -23,11 +23,11 @@ namespace TiltBrush
 {
     public static class OpenBrushStorage
     {
-        public static bool IsGooglePlayStorageMode
+        public static bool IsScopedStorageMode
         {
             get
             {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
                 return Application.platform == RuntimePlatform.Android;
 #else
                 return false;
@@ -243,7 +243,7 @@ namespace TiltBrush
             bool transactionOwnsPayload,
             Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode || !resolve(localPath, out string relativePath))
+            if (!IsScopedStorageMode || !resolve(localPath, out string relativePath))
             {
                 onComplete?.Invoke(true, null);
                 return;
@@ -259,7 +259,7 @@ namespace TiltBrush
             string label,
             Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode || localPaths == null || localPaths.Count == 0)
+            if (!IsScopedStorageMode || localPaths == null || localPaths.Count == 0)
             {
                 onComplete?.Invoke(true, null);
                 return;
@@ -417,7 +417,7 @@ namespace TiltBrush
         public static void PublishVideoCaptureToSharedStorageAsync(
             string localVideoPath, string label, Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode ||
+            if (!IsScopedStorageMode ||
                 !TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
             {
                 onComplete?.Invoke(true, null);
@@ -492,7 +492,7 @@ namespace TiltBrush
             string localReadmePath,
             Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode)
+            if (!IsScopedStorageMode)
             {
                 onComplete?.Invoke(true, null);
                 return;
@@ -537,7 +537,7 @@ namespace TiltBrush
         public static void PublishGaussianCaptureToSharedStorageAsync(
             string localCaptureDirectory, Action<bool, string> onComplete)
         {
-            if (!IsGooglePlayStorageMode)
+            if (!IsScopedStorageMode)
             {
                 onComplete?.Invoke(true, null);
                 return;

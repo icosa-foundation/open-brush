@@ -4289,7 +4289,7 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
                     directoryName,

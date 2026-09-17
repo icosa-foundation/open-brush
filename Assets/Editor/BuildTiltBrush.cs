@@ -70,10 +70,10 @@ static class BuildTiltBrush
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
-        public bool GooglePlay;
+        public bool ScopedStorage;
     }
 
-    public static bool IsGooglePlayBuildActive { get; private set; }
+    public static bool IsScopedStorageBuildActive { get; private set; }
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -810,9 +810,9 @@ static class BuildTiltBrush
                 {
                     tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                 }
-                else if (args[i] == "-btb-google-play")
+                else if (args[i] == "-btb-scoped-storage")
                 {
-                    tiltOptions.GooglePlay = true;
+                    tiltOptions.ScopedStorage = true;
                 }
                 else if (args[i] == "-androidExportType")
                 {
@@ -919,18 +919,18 @@ static class BuildTiltBrush
         }
     }
 
-    class TempSetGooglePlayAndroidSettings : IDisposable
+    class TempSetScopedStorageAndroidSettings : IDisposable
     {
         private readonly bool m_IsActive;
         private readonly bool m_PreviousForceSDCardPermission;
-        private readonly bool m_PreviousGooglePlayBuildActive;
+        private readonly bool m_PreviousScopedStorageBuildActive;
 
-        public TempSetGooglePlayAndroidSettings(TiltBuildOptions tiltOptions)
+        public TempSetScopedStorageAndroidSettings(TiltBuildOptions tiltOptions)
         {
-            m_IsActive = tiltOptions.Target == BuildTarget.Android && tiltOptions.GooglePlay;
-            m_PreviousGooglePlayBuildActive = IsGooglePlayBuildActive;
+            m_IsActive = tiltOptions.Target == BuildTarget.Android && tiltOptions.ScopedStorage;
+            m_PreviousScopedStorageBuildActive = IsScopedStorageBuildActive;
             m_PreviousForceSDCardPermission = PlayerSettings.Android.forceSDCardPermission;
-            IsGooglePlayBuildActive = m_IsActive;
+            IsScopedStorageBuildActive = m_IsActive;
 
             if (!m_IsActive)
             {
@@ -947,7 +947,7 @@ static class BuildTiltBrush
                 PlayerSettings.Android.forceSDCardPermission = m_PreviousForceSDCardPermission;
             }
 
-            IsGooglePlayBuildActive = m_PreviousGooglePlayBuildActive;
+            IsScopedStorageBuildActive = m_PreviousScopedStorageBuildActive;
         }
     }
     class TempSetPlayerSettings : IDisposable
@@ -1653,8 +1653,8 @@ static class BuildTiltBrush
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
             tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
-            target == BuildTarget.Android && tiltOptions.GooglePlay ? "OPEN_BRUSH_GOOGLE_PLAY" : null))
-        using (var unused16 = new TempSetGooglePlayAndroidSettings(tiltOptions))
+            target == BuildTarget.Android && tiltOptions.ScopedStorage ? "OPEN_BRUSH_SCOPED_STORAGE" : null))
+        using (var unused16 = new TempSetScopedStorageAndroidSettings(tiltOptions))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))

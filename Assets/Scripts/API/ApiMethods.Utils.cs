@@ -265,7 +265,7 @@ namespace TiltBrush
             bool publish = true)
         {
             string requestedDirectory = absoluteDestinationPath;
-            bool preserveDestination = publish && OpenBrushStorage.IsGooglePlayStorageMode;
+            bool preserveDestination = publish && OpenBrushStorage.IsScopedStorageMode;
             if (preserveDestination)
             {
                 // Assign the logical path before returning a widget, even without a selected tree.
@@ -302,7 +302,7 @@ namespace TiltBrush
                 fullDestinationPath = GetSafePathInDirectory(
                     absoluteDestinationPath, uniqueFilename, "download filename");
             }
-            if (OpenBrushStorage.IsGooglePlayStorageMode && UserStorage.Backend.IsReady &&
+            if (OpenBrushStorage.IsScopedStorageMode && UserStorage.Backend.IsReady &&
                 OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(fullDestinationPath, out string sharedPath) &&
                 OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area,
                     out string areaRelativePath))
@@ -416,7 +416,7 @@ namespace TiltBrush
         internal static void _PublishSnapshotFilesToSharedStorage(
             string filename, bool renderDepth, bool renderNormals)
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }
@@ -481,7 +481,7 @@ namespace TiltBrush
             string label,
             Action<string, string, Action<bool, string>> publish)
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }

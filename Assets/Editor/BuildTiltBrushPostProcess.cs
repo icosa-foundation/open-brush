@@ -46,7 +46,7 @@ public class BuildTiltBrushPostProcess
             var androidNamespaceURI = element.GetAttribute("xmlns:android");
 
 
-            if (BuildTiltBrush.IsGooglePlayBuildActive)
+            if (BuildTiltBrush.IsScopedStorageBuildActive)
             {
                 UnityEngine.Debug.Log("Apply Google Play Android storage manifest profile");
                 AddOrRemoveTag(doc,

@@ -32,7 +32,7 @@ namespace TiltBrush
         {
             get
             {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
                 return Application.platform == RuntimePlatform.Android;
 #else
                 return false;
@@ -42,7 +42,7 @@ namespace TiltBrush
 
         public static void RequestOpenBrushFolder()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             bridge.CallStatic("requestOpenBrushFolder", GetActivity());
 #endif
@@ -50,7 +50,7 @@ namespace TiltBrush
 
         public static bool HasOpenBrushFolder()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             lock (sm_ReadinessGate)
             {
                 long now = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -84,7 +84,7 @@ namespace TiltBrush
 
         public static string GetSelectedRootIdentity()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             return bridge.CallStatic<string>("getSelectedRootIdentity", GetActivity());
 #else
@@ -95,7 +95,7 @@ namespace TiltBrush
 
         public static bool EnsureDirectory(string relativePath)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             return bridge.CallStatic<bool>("ensureDirectory", GetActivity(), relativePath);
 #else
@@ -105,7 +105,7 @@ namespace TiltBrush
 
         public static StorageDirectoryResult QueryDirectory(string relativePath)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             try
             {
                 using var bridge = new AndroidJavaClass(kBridgeClass);
@@ -211,7 +211,7 @@ namespace TiltBrush
         {
             stream = null;
             error = null;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
@@ -229,7 +229,7 @@ namespace TiltBrush
         {
             stream = null;
             error = null;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
@@ -253,7 +253,7 @@ namespace TiltBrush
             stream = null;
             documentUri = null;
             error = null;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
@@ -281,7 +281,7 @@ namespace TiltBrush
             stream = null;
             documentId = default;
             error = null;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
@@ -315,7 +315,7 @@ namespace TiltBrush
         /// and allow the write, matching what FileUtils does when a platform cannot answer.
         public static long GetSharedFreeSpaceBytes()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             try
             {
                 AttachToJvmIfNeeded();
@@ -335,7 +335,7 @@ namespace TiltBrush
         public static StorageMutationResult RenameDocument(
             StorageDocumentId documentId, string newDisplayName)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "renameDocumentUri", GetActivity(), documentId.Value, newDisplayName);
@@ -350,7 +350,7 @@ namespace TiltBrush
         public static StorageMutationResult DeleteDocument(
             StorageDocumentId documentId, StorageDocumentId parentDocumentId = default)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "deleteDocumentByUri",
@@ -367,7 +367,7 @@ namespace TiltBrush
 
         public static bool DeleteDocumentUri(string documentUri)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             return bridge.CallStatic<bool>("deleteDocumentUri", GetActivity(), documentUri);
 #else
@@ -382,7 +382,7 @@ namespace TiltBrush
         public static bool RunStorageStreamProbe(out string report)
         {
             report = null;
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             Stream stream = null;
             string documentUri = null;
             try
@@ -460,7 +460,7 @@ namespace TiltBrush
 #endif
         }
 
-#if UNITY_ANDROID && OPEN_BRUSH_GOOGLE_PLAY
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
         private static void WriteProbeEntry(
             TiltFile.ArchiveWriter writer, string entryName, byte[] bytes)
         {

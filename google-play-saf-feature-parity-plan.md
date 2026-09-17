@@ -968,8 +968,8 @@ For each applicable target:
 ### Build validation
 
 - compile desktop;
-- compile Android with `OPEN_BRUSH_GOOGLE_PLAY`;
-- compile Android without `OPEN_BRUSH_GOOGLE_PLAY`;
+- compile Android with `OPEN_BRUSH_SCOPED_STORAGE`;
+- compile Android without `OPEN_BRUSH_SCOPED_STORAGE`;
 - compile Editor tests;
 - compile the Android Java bridge;
 - build and run on the target Google Play Android XR device.

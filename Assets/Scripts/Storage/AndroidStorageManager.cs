@@ -36,7 +36,7 @@ namespace TiltBrush
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void CreateInstance()
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }
@@ -67,7 +67,7 @@ namespace TiltBrush
 
         private IEnumerator Start()
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 yield break;
             }
@@ -115,7 +115,7 @@ namespace TiltBrush
 
         public static void ReselectSharedFolder()
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }

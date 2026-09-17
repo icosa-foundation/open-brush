@@ -42,7 +42,7 @@ namespace TiltBrush
 
         public static void Register()
         {
-            if (sm_Registered || !OpenBrushStorage.IsGooglePlayStorageMode)
+            if (sm_Registered || !OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }

@@ -968,7 +968,7 @@ without replacing the currently valid root.
 - cache deletion notifications;
 - shared-to-local sketch reconciliation;
 - concurrent full Media Library synchronization;
-- gameplay-level `#if OPEN_BRUSH_GOOGLE_PLAY` branches superseded by backend
+- gameplay-level `#if OPEN_BRUSH_SCOPED_STORAGE` branches superseded by backend
   dispatch.
 
 ### Development-State Migration
@@ -1203,7 +1203,7 @@ Verify that the local backend preserves existing:
 
 ### Build Validation
 
-- compile Android with and without `OPEN_BRUSH_GOOGLE_PLAY`;
+- compile Android with and without `OPEN_BRUSH_SCOPED_STORAGE`;
 - compile Standalone;
 - inspect Unity Editor logs after compilation;
 - build the Google Play Android target;

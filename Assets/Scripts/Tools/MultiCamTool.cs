@@ -619,7 +619,7 @@ namespace TiltBrush
             string error = m_Task.Error;
             m_Task = null;
 
-            if (error != null || !OpenBrushStorage.IsGooglePlayStorageMode)
+            if (error != null || !OpenBrushStorage.IsScopedStorageMode)
             {
                 FinishGifSave(path, error);
                 return;
@@ -1339,7 +1339,7 @@ namespace TiltBrush
 
         private static string RevalidateCaptureName(string path, MultiCamStyle style)
         {
-            if (OpenBrushStorage.IsGooglePlayStorageMode && sm_AutoCaptureNames.TryGetValue(path, out var reservation) &&
+            if (OpenBrushStorage.IsScopedStorageMode && sm_AutoCaptureNames.TryGetValue(path, out var reservation) &&
                 reservation.Root != UserStorage.Backend.RootIdentity)
             {
                 return ReserveCaptureName(reservation.Format, style);
@@ -1397,7 +1397,7 @@ namespace TiltBrush
                 basename = Path.Combine(m_SnapshotDirectory, basename);
             }
 
-            if (OpenBrushStorage.IsGooglePlayStorageMode) { return ReserveCaptureName(basename, style); }
+            if (OpenBrushStorage.IsScopedStorageMode) { return ReserveCaptureName(basename, style); }
 
             string fullpath;
             int lower = 0;
@@ -1838,7 +1838,7 @@ namespace TiltBrush
 
             if (m_CurrentVideoState == VideoState.Processing && !IsVideoCaptureSaving(recorder))
             {
-                if (OpenBrushStorage.IsGooglePlayStorageMode && !m_VideoCapturePublished)
+                if (OpenBrushStorage.IsScopedStorageMode && !m_VideoCapturePublished)
                 {
                     m_VideoCapturePublished = true;
                     OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
@@ -2151,7 +2151,7 @@ namespace TiltBrush
                     catch (IOException e) { err = e.Message; }
                     catch (UnauthorizedAccessException e) { err = e.Message; }
 
-                    if (err == null && OpenBrushStorage.IsGooglePlayStorageMode)
+                    if (err == null && OpenBrushStorage.IsScopedStorageMode)
                     {
                         bool publishDone = false;
                         bool publishSucceeded = false;

@@ -39,7 +39,7 @@ namespace TiltBrush
         /// grant is in place and before catalogs read anything.
         public static void ReconcileAtStartup()
         {
-            if (!OpenBrushStorage.IsGooglePlayStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;
             }

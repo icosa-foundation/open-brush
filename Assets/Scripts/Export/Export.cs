@@ -343,7 +343,7 @@ URL=" + kExportDocumentationUrl;
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
 
-            if (OpenBrushStorage.IsGooglePlayStorageMode)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 OpenBrushStorage.PublishExportToSharedStorageAsync(parent, readmeFilename, (success, error) =>
                 {
