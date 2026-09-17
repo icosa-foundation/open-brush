@@ -82,10 +82,14 @@ namespace OpenBrush.Multiplayer
 
             if (strokes.Count == 0) return;
 
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
             SendCurrentTargetEnvironmentCommand();
 
             const int chunkSize = 5;
             List<Stroke> strokeList = strokes.ToList();
+            bool useEnrichedStrokeTransport = MultiplayerManager.m_Instance
+                .IsPlayerLiveStrokeCompatible(id);
 
             int counter = 0;
             for (int i = 0; i < strokeList.Count; i += chunkSize)
@@ -94,7 +98,11 @@ namespace OpenBrush.Multiplayer
                 var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
                 counter += chunk.Count;
                 int percentage = (int)((counter / (float)strokeList.Count) * 100);
-                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                byte[] strokesData = useEnrichedStrokeTransport
+                    ? await MultiplayerStrokeSerialization
+                        .SerializeAndCompressContributorMemoryListAsync(chunk)
+                    : await MultiplayerStrokeSerialization
+                        .SerializeAndCompressMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
                 //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
@@ -104,13 +112,21 @@ namespace OpenBrush.Multiplayer
         {
 
             // Decompress and deserialize strokes asynchronously
-            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
+            List<Stroke> strokes = await MultiplayerStrokeSerialization
+                .DecompressAndDeserializeContributorMemoryListAsync(largeData);
 
             Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
+
+            if (strokes.Count > 0)
+            {
+                MultiplayerManager.m_Instance.ApplySketchTimeSync(
+                    strokes.Max(stroke => stroke.TailTimestampMs));
+            }
 
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
             {
+                MultiplayerManager.m_Instance.PlaceStrokeOnContributorLayer(stroke);
                 BrushStrokeCommand c = new BrushStrokeCommand(stroke);
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
@@ -168,10 +184,32 @@ namespace OpenBrush.Multiplayer
 
             SendCurrentTargetEnvironmentCommand();
 
-            foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
+            // History keeps the owner's timestamp domain. Advance the late joiner's sketch
+            // clock before sending it so subsequently rebased live strokes cannot precede it.
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
+
+            foreach (BaseCommand command in commands)
+            {
+                MultiplayerManager.m_Instance.SendCommandToPlayer(command, id);
+            }
 
             _isSendingCommandHistory = false;
 
+        }
+
+        private static uint GetCurrentSketchTimeMs()
+        {
+            uint sketchTimeMs = (uint)Math.Min(
+                uint.MaxValue, Math.Max(0, App.Instance.CurrentSketchTime * 1000.0));
+            if (SketchMemoryScript.m_Instance.GetMemoryList.Count > 0)
+            {
+                sketchTimeMs = Math.Max(
+                    sketchTimeMs,
+                    SketchMemoryScript.m_Instance.GetMemoryList.Max(
+                        stroke => stroke.TailTimestampMs));
+            }
+            return sketchTimeMs;
         }
 
         private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)

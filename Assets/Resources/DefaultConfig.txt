@@ -39,6 +39,7 @@
       }
     ],
     "EnablePluginClipboardAccess": false,
+    "UseDefaultPhotonCloudPorts": true,
   },
   "Export": {
   },
