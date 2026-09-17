@@ -1,403 +1,75 @@
-# SAF Plan of Record
-
-The single live document for this branch. Six earlier planning documents were
-removed from the pull request rather than shipped to `main`: they were superseded
-or, worse, wrong. The feature-parity plan described the runtime projection and
-the legacy-content migration as implemented, and both have since been deleted;
-the fd-backed storage plan was built on handing C# a detached file descriptor,
-which the device gate disproved. Their reasoning survives in this branch's
-history and in the commit messages of the work they describe.
-
-The SAF probes repository (`open-brush-saf-probes`) holds the device
-measurements.
-
-## Decision: reduce in place, do not rebuild
-
-Rebuilding from scratch was considered and rejected. Roughly a third of the
-branch is worth keeping, and it is the part that is hardest to get right again:
-
-- the Java bridge (`OpenBrushStorageBridge.java`, 736 lines) — proven on device,
-  one-cursor directory queries, struct-of-arrays JNI marshalling;
-- the fd path — `detachFd` into `SafeFileHandle` into `FileStream`, measured at
-  1.6 GB/s write and confirmed seekable on a real regular file;
-- the commit sequence — write temp, validate, rename canonical to backup, rename
-  temp into place, delete backup;
-- the media catalog changes, which carry genuine bug fixes unrelated to SAF
-  (case-insensitive extension matching, spaced OBJ texture filenames, network
-  video pointers);
-- the Drive sync port, which parity requires.
-
-What is wrong is concentrated and identifiable, not diffuse. Subtract it.
-
-But **subtract in one pass, not ten shippable steps.** Nothing on this branch
-has ever been run, so there is no working state to preserve between steps and no
-data in any format it introduced. Order the work by what unblocks the largest
-deletions, not by what keeps the branch runnable.
-
-## The four product decisions this rests on
-
-1. Startup is gated on folder selection. Declining exits the application.
-2. The root never changes for the life of an installation.
-3. Shared files are not modified externally while the application runs; a
-   user-initiated refresh is enough.
-4. SAF builds must reach functional parity with non-SAF builds.
-
-## Progress
-
-Updated 2026-09-16, late. Every batch compiled in the editor; nothing has been
-run.
-
-### Verified by test run
-
-The EditMode suite was run in full for the first time late in the work, and it
-found four regressions that compilation had not:
-
-1. **Publication records collided.** De-namespacing the publication directory
-   turned a foreign record into a hard failure, because
-   `GetPendingTopLevelNames` throws on a `RootId` mismatch rather than skipping
-   it. Five export tests failed. Reverted. This is the same reasoning that was
-   *correct* for the Drive ledger, where a stale record is merely misleading -
-   the shapes matched, the premises did not.
-2. **Quill listed nothing.** Gating Quill import also stopped the catalog
-   listing. The gate was unnecessary: `QuillFileInfo` only reads a name, size
-   and timestamp, all of which the storage listing already carries.
-3. **Sound clips had no usable path.** `AbsolutePath` was being given a
-   library-relative path; the local backend's document id serves instead.
-4. **Seeding never re-ran after a folder change.** The per-root preference key
-   names had been providing that; `SafRootChangeGuard` now clears the seeding
-   records alongside the directories it discards.
-
-Nine further test failures were tests of behaviour deliberately removed, and
-were deleted with it.
-
-Final state: 1123 EditMode tests, 443 failing, of which 416 are `Autodesk.Fbx`
-(a missing native library, environmental) and the remaining 27 are pre-existing
-failures in code this work did not touch - including two in test files whose
-`.meta` GUIDs were repaired here, so they are running for the first time.
-No SAF regression remains.
-
-**The lesson worth keeping:** twenty-five commits went in on "compiles clean".
-Compilation caught none of the four bugs above. `unity command run_tests
---mode EditMode` was available throughout.
-
-### Done
-
-- **Startup gated** on folder selection, exit on decline. The degraded mode,
-  its continuation slots and the nine resumable save/export/capture paths are
-  gone.
-- **Nothing is copied out of shared storage.** Materialization is deleted
-  outright - the interface members, both implementations, the cache, the
-  512MB budget, eviction, and every `Func<string>` threading it through the
-  media classes. Sketches, Lua modules and glTF read as streams; OBJ, audio,
-  video and the visualiser's music read over a loopback HTTP handler;
-  reference images decode from bytes.
-- **The runtime-content projection is deleted** - 806 lines. Scripts and
-  plugins enumerate and read through the backend; `LuaManager` keeps only a
-  logical root string so `ModulePaths` and the loader agree on a prefix.
-- **The write path is durable.** Payload fsynced before the rename sequence,
-  recovery validation dropped to structural.
-- **Root identity collapsed to one startup comparison**, in
-  `SafRootChangeGuard`. 99 references remain across `Assets` (counting
-  `RootIdentity` and the whole word `RootId`), down from 255 at the start.
-- **Two repo bugs fixed**: four `.meta` files with 33-character GUIDs, whose
-  test files had never compiled; and the legacy migration, dead for a branch
-  that has never run.
-- **The file descriptor no longer crosses JNI.** The gate below failed, so
-  `OpenBrushStorageBridge` keeps a table of open `FileChannel`s keyed by an int
-  handle and `SafDocumentStream` issues positioned reads and writes against it.
-  Buffered 64 KiB ahead and 256 KiB behind, because each crossing is dear enough
-  that a zip central directory read a few bytes at a time would dominate.
-  `FileStream.Flush(flushToDisk: true)` has no equivalent on a stream whose
-  descriptor is unreachable, so the payload fsync is now an `ISyncableStream`
-  over the channel's `force(true)`.
-- **Free space is checked on the SAF save path.** See step 7.
-
-### What was learned that the plan had wrong
-
-1. **The path-consumer audit asked the wrong question.** It asked "can the
-   importer take a stream?" but not "does anything *later* need the file?"
-   OBJ passes the first test and fails the second: `ImportMaterialCollector`
-   keeps the asset location and reads from it at *export* time. Any future
-   conversion has to ask both.
-2. **Unity's URL-taking loaders are the general answer, not an audio/video
-   workaround.** `UnityWebRequest`, `VideoPlayer.url`, `WWW` and
-   `UnityWebRequestMultimedia` all accept `http://`, so one loopback handler
-   serves OBJ, textures, audio, video and music. Only genuinely path-bound
-   third-party loaders - USD, splats, TMP fonts - resist it.
-3. **Supporting a path-only loader never required a cache.** It requires a
-   temporary file for the duration of one load. The 512MB budget, the
-   eviction policy and the LRU question were all answering a question nobody
-   asked.
-4. **The materialization cache never served a hit.** `MaterializeFile` had no
-   reuse branch at all, so every use re-copied. The eviction ordering that
-   looked like a bug was moot.
-5. **"Silent truncation" was wrong.** `StorageTreeEnumerator` fails loudly on
-   both caps. Withdrawn.
-6. **The publish surface was barely duplicated.** Of eight entry points, six
-   encode genuinely different behaviour - frame-sequence bundling, directory
-   publication, unique import naming, export READMEs - and collapsing them
-   would hide real differences behind flags. One was dead; two shared a body.
-   The "twenty near-duplicates" claim was wrong.
-7. **Deleting root scoping needs its replacement landing in the same change.**
-   Five commits of collapsing shipped before the startup comparison existed.
-   That window should not have been open.
-
-### Deferred by decision
-
-- **Which Android flavours build with scoped storage.** The flag that selects it
-  is new on this branch — `main` has no occurrences of it at all — and it is
-  applied asymmetrically: *Android OpenXR* and *Android Viewer OpenXR* are both
-  sideloaded APKs, but only the viewer gets scoped storage. Both AndroidXR
-  flavours have it and emit app bundles.
-
-  Kept as-is for now, deliberately: the viewer APK is the only sideloadable
-  artefact in the matrix with scoped storage active, which makes it the easiest
-  thing to test against without bundletool. **Revisit once it is decided where the
-  APK viewer build is published** — that answer determines whether it should be
-  following Play storage rules at all.
-
-  The flag was renamed `-btb-scoped-storage` so the asymmetry is at least legible;
-  `-btb-google-play` implied a distribution channel it never had.
-
-### Deliberately disabled, to reinstate later
-
-USD, FBX, PLY and Gaussian splats; SVG reference images; Quill and IMM import;
-OBJ export; bulk sketch export; custom fonts. Each is a guarded early return
-naming its reason, so reversing one is local work once its loader can take a
-stream or a URL.
-
-### Not done
-
-- **A device run of any of this.** The gate below has been answered, but the
-  branch as a whole has still never executed on hardware. `RunStorageStreamProbe`
-  runs at startup on debug builds and exercises the channel path end to end -
-  create, write a Tilt archive, seek, validate, reopen by document URI, read
-  every entry back, delete - so the first build says whether the replacement
-  holds.
-- ~~**Root identity's last references.**~~ **Closed: there is nothing left to
-  remove.** The earlier description of them was wrong on both counts. It named
-  dead scan guards in `QuillFileCatalog`, which has none; and it did not mention
-  `SafStagedOutputPublisher`, which holds 20 — more than any other file. Of 99
-  references, 26 are test fixtures and 71 are production. Those divide into:
-
-  - the interface member and its two implementations (3);
-  - lock and cache keys, where the root is one component of a key rather than a
-    comparison;
-  - mid-operation staleness checks, which capture `RootIdentity` and re-read it
-    after a long operation. These are live despite the root being fixed for an
-    installation: `ReselectSharedFolder` can still fire after startup — it is the
-    recovery path for a revoked grant — and it asks the user to restart without
-    forcing it, so the root can move underneath work already in flight;
-  - the publication records, which persist across runs. Removing their root
-    comparison was tried, broke `GetPendingTopLevelNames`, and was reverted;
-    `GetPublicationDirectory` now carries a comment saying why.
-
-  `DriveSyncLedger`'s two are as previously described: only the storage-root
-  third of its key is constant, and the account and Drive-root parts do real
-  work.
-- ~~**The journal removal**~~ (step 5) **done, though not as written.** The plan
-  said to delete `SafTransactionRecord`, `SafTransactionJournal` and
-  `SafTransactionState`. Two of the three earn their place: the record is live
-  in-memory state that the transaction and recovery both read, and the state enum
-  labels the commit sequence in the logs, which is where anyone debugging an
-  interrupted save will start. What was actually deletable was the schema around
-  them — six fields that only mattered across a process restart, and the
-  branches that read them. `SafTransactionJournal` is renamed `SafPrivatePaths`,
-  since what survives is two path helpers and not a journal.
-- **The publish surface** (step 6) - and see the correction above: it is
-  smaller and less duplicated than the plan claimed, so this may not be worth
-  doing at all.
-
-## Order of work
-
-### 1. Gate startup; delete the degraded mode
-
-Prompt for the folder at startup. Exit on decline. Then delete:
-
-- both `RequireSharedFolderFor` overloads, the
-  `m_PendingAction` / `m_PendingCanceledAction` / `m_RequestInProgress` state
-  machine, and `OnOpenBrushFolderCanceled`'s resumption logic;
-- the `kLegacyStartupPromptDismissedKey` preference and its migration;
-- the save-locally-when-cancelled fallback;
-- the `HasOpenBrushFolder` / `Backend.IsReady` checks, which become a startup
-  invariant.
-
-Nine call sites revert from continuation-passing to straight-line code:
-`SketchControlsScript.cs:4313`, `CameraPathCaptureRig.cs:120`,
-`MultiCamTool.cs:643, 1765, 2016`, `ApiMethods.Utils.cs:464, 516`,
-`Export.cs:131`, `SaveLoadScript.cs:472`.
-
-First because it is the largest structural win and removes an asynchronous
-re-entry point from the save and export paths.
-
-### 2. Point every consumer at a stream
-
-The rule: **stream from storage, unless the library cannot take a stream.**
-
-| Consumer | Change |
-| --- | --- |
-| Scripts, plugins | `OpenBrushScriptLoader.LoadFile` returns `backend.OpenRead(...)`; `ScriptFileExists` becomes a listing lookup. `ApiManager.cs:202` likewise. |
-| Models | SAF `IDataLoader` for UnityGLTF (replacing `FileLoader` at `ImportGltfast.cs:118`); SAF `IUriLoader` for the toolkit importer. |
-| Reference images | Stream into `ImageUtils.FromImageData`. Confirm first. |
-| Audio, video | Loopback HTTP handler (below). |
-| Fonts | The one exception. Copy once at startup to a fixed directory. |
-
-**The loopback handler.** `UnityWebRequestMultimedia.GetAudioClip` and
-`VideoPlayer.url` take only a URL, which is the entire reason media is copied
-today. Both accept `http://`. Register a raw handler on the existing
-`App.HttpServer` that streams `backend.OpenRead(documentId)` to the response,
-and hand Unity `http://127.0.0.1:<port>/saf/<token>/<documentId>`.
-
-Non-negotiable, because `HttpServer.cs:53` binds `http://+:{HTTP_PORT}/` — all
-interfaces, and `IsTrustedLocalBrowserRequest` is opt-in per handler:
-
-- an unguessable per-session token, compared in constant time;
-- `IsTrustedLocalBrowserRequest` applied explicitly;
-- identifiers resolved only within the selected root;
-- registered only on Google Play builds;
-- HTTP range support and `Content-Length`, or seeking re-reads from the start.
-
-**Threading.** `ImportGltfast.cs` sets `IsMultithreaded = true` and depends on
-`IDataLoader2` reading glTF JSON off the main thread. A SAF loader reaches the
-provider through JNI, so it must call `AndroidJNI.AttachCurrentThread` or fail
-at runtime rather than at compile time.
-
-### 3. Delete what streaming makes unnecessary
-
-- `UserRuntimeContent` (1,262 lines) — the projection, `ProjectionPointer`,
-  `ProjectionManifest`, `ProjectionEntry`, the generation directories and their
-  cleanup, and the duplicate SHA-256 copy loop. Replaced by the startup font
-  copy.
-- `MigrationRecord` and `MigrationItem` — their only possible source is an
-  earlier state of this unreleased branch.
-- The materialization cache in `SafUserStorageBackend`: the 512 MB cap,
-  `EvictMaterializationCache`, and the per-call
-  `GetFiles("*", SearchOption.AllDirectories)` walk. Do not add the cache-hit
-  branch; there will be nothing left to cache.
-
-### 4. Collapse root identity to one startup check
-
-Replace 255 references across 24 files with: persist the root URI, compare at
-startup, and if it differs, discard local caches and rebuild. Roughly twenty
-lines.
-
-That removes root-scoped preference keys and namespaces, `EnsureSelectedRoot` /
-`IsSelectedRootCurrent`, the `rootChanged` catalog resets, and
-`CatalogScanGuard`'s root checks.
-
-`ReselectSharedFolder` stays as a recovery path for a revoked grant, but
-requires a restart. A lost root is a terminal error, not a hot swap — report it,
-offer re-grant, restart. A failed query must never be read as an empty
-directory.
-
-### 5. Rewrite the write transaction small
-
-Keep the commit sequence exactly. Change two things:
-
-- ~~**fsync the payload**~~ **Done.** The transaction was calling plain `Flush()`
-  on the payload while the journal was fsynced five or six times a save —
-  durable bookkeeping around non-durable data. Measured cost: 740 ms per GiB, so
-  about 150 ms for a 200 MB sketch, and net faster now the journal writes are
-  gone. Since the replacement stream has no `FileStream.Flush(flushToDisk: true)`
-  to call, this goes through `ISyncableStream` to the channel's `force(true)`.
-- ~~**drop recovery to `testData: false`**~~ **Done.** With the payload fsynced,
-  truncation is caught by the zip central directory and torn middles are
-  prevented rather than detected.
-
-**Still open:** deleting the journal types. Nothing is serialized to disk any
-more, but `SafTransactionRecord`, `SafTransactionJournal` and
-`SafTransactionState` survive as in-memory state plus two path helpers
-(`GetRecoveryRootDirectory`, `GetStableId`). The name-encoded sidecars
-(`MySketch.tilt.ob-bak`) and startup sweep are in place, so what remains is
-removing the types. No compatibility shim is needed.
-
-Keep `SafDestinationLocks`, payload validation, and the presence-based restore.
-
-### 6. Collapse the publish surface
-
-**Probably not worth doing — see the correction under "What was learned".** The
-count was wrong: there are five public entry points on
-`SafStagedOutputPublisher`, not twenty on `OpenBrushStorage`, and most encode
-genuinely different behaviour — frame-sequence bundling, directory publication,
-unique import naming, export READMEs. Collapsing them to one
-`Publish(stagedPath, StorageArea, relativePath)` would hide real differences
-behind flags. Left here so the decision is recorded rather than silently
-dropped.
-
-### 7. Fix the two real bugs
-
-- ~~**No free-space accounting on the SAF path.**~~ **Done.** Re-enabling the
-  existing check would not have worked: `FileUtils.HasFreeSpace` ignores its path
-  argument on Android and stats `Application.persistentDataPath`, so it measures
-  app-private storage whatever volume the folder is on — and under SAF that
-  folder can be an SD card. It was also being handed `m_SaveDir`, which on this
-  path is the local staging directory rather than the destination.
-
-  The provider is asked instead. There is no path to stat, and
-  `openFileDescriptor` refuses a directory document, so `getAvailableBytes`
-  creates a throwaway document in the Open Brush folder, runs `fstatvfs` on its
-  descriptor and deletes it. A provider not backed by a local filesystem cannot
-  answer and returns -1; the caller allows the save rather than blocking on a
-  number it could not obtain, which is what `FileUtils` already does on platforms
-  where the query is unavailable.
-
-  **Still open, found while fixing it:** SAF exports check staging, not the
-  destination. `App.UserExportPath()` returns `LocalExportStagingPath` under SAF,
-  so `SketchControlsScript.cs:4838` correctly checks the volume the export stages
-  on, but the publish into the shared folder is unchecked. Non-SAF has no staging
-  step, so its one check covers the destination. A parity gap.
-- ~~**Silent truncation.**~~ **Withdrawn — this was wrong.** The review claimed a capped
-  tree walk returned `Succeeded` with a partial list. It does not:
-  `StorageTreeEnumerator` returns `StorageTreeResult.Failed` with an explicit
-  message for both limits — "Storage tree exceeds the N item limit"
-  (`UserStorageBackend.cs:910`) and "exceeds the N level depth limit at <path>"
-  (`UserStorageBackend.cs:930`). Both fail loudly. The caps may still be worth
-  raising, but there is no correctness bug here.
-
-### 8. Optional: a shared direct ByteBuffer for writes
-
-**Only if a real performance problem shows up.** This is an optimisation, not a
-correctness gap, and nothing should be built on the assumption that it is needed.
-
-Writes currently cap at 28—31 MB/s, flat from 256 KiB chunks upwards. That is
-not storage: the same document written from Java alone reached 1.6 GB/s. The cost
-is Unity marshalling the `byte[]` argument across JNI on every call, and it is
-paid per write regardless of how the bytes are batched. At that rate a 20 MB
-sketch spends about 0.7 s in marshalling and a 200 MB one about 7 s.
-
-The fix removes the crossing rather than making it cheaper. C# allocates native
-memory, wraps it once with `AndroidJNI.NewDirectByteBuffer`, and hands Java the
-resulting `java.nio.ByteBuffer` when the channel opens. Thereafter a write is a
-`Marshal.Copy` into that memory — a plain memcpy, no JNI — followed by an
-all-primitives call giving Java the byte count. `FileChannel.write` reads
-straight out of the same memory. One copy in total, the same as today, but no
-marshalling. `SafDocumentStream`'s write-behind buffer can be that native
-region, so no copy is added. Reads can use it in reverse, which would also stop
-allocating a Java `byte[]` per 64 KiB refill.
-
-Two reasons it is not done, both worth weighing before starting:
-
-- It is roughly 150 lines of hand-rolled JNI with manual global-reference
-  lifetimes, and **none of it can be verified without a device**.
-- It would sit on a channel path that has itself never run on hardware. If
-  something is wrong on the phone, that is two new layers to debug at once
-  instead of one, and there is no measurement to say whether the second layer
-  helped.
-
-So: get a build onto a phone, confirm `SAF_STREAM`, find out whether saves are
-actually too slow, and only then decide. A per-channel buffer also costs 256 KiB
-of native memory per open stream, which matters if glTF loading opens many at
-once; a small pool is the answer if so.
-
-## Gate — answered, and it failed
-
-The provider half passed in the SAF probes repository
-(`open-brush-saf-probes`). The IL2CPP half did not. The plan judged the residual
-risk low on the grounds that the descriptor is a regular file. That reasoning was
-wrong: the descriptor was never the problem.
-
-Every variant segfaults in `libil2cpp.so`, with the fault address consistently at
-**fd + 4** (fd 401 faults at 0x195, 403 at 0x197, 407 at 0x19b, 396 at 0x190):
+# SAF on Android — Plan of Record and Handover
+
+Branch `feature/saf-google-play-fd-backed`, PR
+[#1120](https://github.com/icosa-foundation/open-brush/pull/1120).
+
+Google Play forbids `MANAGE_EXTERNAL_STORAGE` for an app like this, so Play
+builds cannot reach `/sdcard/Open Brush` the way sideloaded builds do. This
+branch replaces direct filesystem access with the Storage Access Framework: the
+user grants one folder at startup, and every user-visible file is read and
+written through the provider.
+
+This is the single live document. Six earlier planning documents were removed
+from the pull request rather than shipped to `main` — two of them described
+deleted subsystems as implemented, and one was 1,365 lines built on a design the
+device disproved. They remain in this branch's history.
+
+---
+
+## 1. Status
+
+Last updated **2026-09-17**, after the first device run.
+
+### Proven on hardware
+
+On a Nothing Phone (3a), release build, sideloaded:
+
+- **The stream works.** `App.Awake` read the user config out of the shared
+  folder through `SafDocumentStream` → `SafJniDocumentChannel` → a Java
+  `FileChannel`, under IL2CPP, and got the bytes back. **No SIGSEGV.** This is
+  the point of the whole design; see §2.
+- **Folder selection works.** `OpenBrushStorageActivity` launches the system
+  picker and returns.
+- **The grant persists.** After a restart the picker did not reappear, so the
+  persistable URI permission survives and the startup gate passes without
+  re-prompting.
+
+### Not yet verified on hardware
+
+Everything else. In particular **no save has ever been performed on a device.**
+The write path — temp document, fsync, rename sequence — has only ever run in
+EditMode against fakes.
+
+`RunStorageStreamProbe` exercises the whole channel path at startup (write a
+Tilt archive, seek, validate, reopen by document URI, read every entry back,
+delete) but it is gated on `Debug.isDebugBuild`, so it needs a **Development**
+build. See §3.
+
+### Fixed after that run, not yet re-tested
+
+- `AndroidSafStorage.GetActivity` rebuilt an `AndroidJavaClass` for
+  `UnityPlayer` on every call, disposed it, and leaked the activity it returned.
+  The first lookup succeeded and every later one failed with *"Field
+  currentActivity or type signature not found"*, which silently took out
+  seeding, all five catalog queries, the default-destination checks and
+  transaction recovery. The activity is now resolved once and kept.
+- The channel crossed JNI with `byte[]`. Java's `byte` is signed, so Unity
+  converted element by element and logged a deprecation warning on **every read
+  and write**. It now uses `sbyte[]`, with `Buffer.BlockCopy` at the boundary.
+
+### The shape of the remaining risk
+
+The read path is proven end to end. The write path is not, and it is the part
+where a mistake costs someone their sketch rather than an error message.
+
+---
+
+## 2. The finding that shapes everything
+
+The original design detached the file descriptor with `ParcelFileDescriptor
+.detachFd()` and handed it to C# as a `SafeFileHandle` inside a `FileStream`.
+**That segfaults IL2CPP.** Every variant, reproducibly, fault address always at
+**fd + 4**:
 
 | variant | result |
 | --- | --- |
@@ -406,33 +78,265 @@ Every variant segfaults in `libil2cpp.so`, with the fault address consistently a
 | buffered `FileStream` overload | crashes at construction |
 | `ownsHandle: false` | crashes at construction |
 
-Not stripping — a `link.xml` made no difference. Not a bad overload. And
-`RandomAccess`, which would have sidestepped `FileStream` entirely, is not in
-Unity's profile.
+Not managed stripping — a `link.xml` made no difference. `RandomAccess`, which
+would have sidestepped `FileStream`, is not in Unity's profile.
 
-The contingency the plan named — "if it fails the write path changes" — is what
-happened. The descriptor now stays in Java behind a `FileChannel` and C# issues
-positioned reads and writes against it; see the entry under Done.
-`RunFileDescriptorProbe` is accordingly `RunStorageStreamProbe`, exercising the
-channel path rather than a descriptor.
+**So the descriptor never crosses JNI.** `OpenBrushStorageBridge` keeps a table
+of open `FileChannel`s keyed by an `int` handle; `SafDocumentStream` issues
+positioned reads and writes against it. `FileStream.Flush(flushToDisk: true)`
+has no equivalent on a stream whose descriptor is unreachable, so the payload
+fsync goes through `ISyncableStream` to the channel's `force(true)`.
 
-What the same probe measured, on a Nothing Phone (3a):
+Each JNI crossing is dear enough that unbuffered access would dominate — a zip
+central directory is read a few bytes at a time — hence a 64 KiB read-ahead and
+a 256 KiB write-behind, at most one holding data at a time.
 
-- reads 327 MB/s
-- writes flat at 28—31 MB/s from 256 KiB chunks up to 4 MiB
-- fsync 30 ms for 32 MiB
+Measured on the same device:
+
+- reads **327 MB/s**
+- writes flat at **28–31 MB/s** from 256 KiB chunks up to 4 MiB
+- fsync **30 ms** for 32 MiB
 
 The write figure is not storage. The same document written from Java alone
-reached 1.6 GB/s; the ceiling is marshalling the `byte[]` argument across JNI.
-See the optional step below.
+reached 1.6 GB/s; the ceiling is JNI argument marshalling. See §4.
 
-## Expected outcome
+Device measurements live in the `open-brush-saf-probes` repository.
 
-Roughly 15,300 lines of production code today. The deletions above total an
-estimated 5,000–7,000, against perhaps 500 lines of new code — the loopback
-handler, the font copy, the startup gate and the root check.
+---
 
-These are estimates from reference counts, not from doing the work.
+## 3. How to build and test this
 
-The tests already on the branch (3,881 lines) verify the result either way, and
-are the reason this reduction is safe to attempt in one pass.
+**This section exists because getting a testable build is the single most
+time-consuming part of working on this branch.** Read it before you start.
+
+### Which build has SAF active
+
+Scoped storage is selected by `-btb-scoped-storage`, which sets the
+`OPEN_BRUSH_SCOPED_STORAGE` define. It is **not** a distribution flag — nothing
+about it concerns uploading to Play, and Play uploads take only `.aab` files.
+
+Three matrix entries in `.github/workflows/build.yml` carry it:
+
+| flavour | artefact | notes |
+| --- | --- | --- |
+| Android AndroidXR | `.aab` | needs bundletool to install |
+| **Android Viewer OpenXR** | **`.apk`** | **the one to sideload** |
+| Android Viewer AndroidXR | `.aab` | needs bundletool |
+
+Plain *Android OpenXR* — the normal Quest build — does **not** have it, so SAF
+is inactive there. Testing with it will mislead you.
+
+### Triggering a build
+
+`build.yml`'s `configuration` job gates everything:
+
+- a **push** builds only if the head commit message contains **`[CI BUILD]`**;
+- a **pull_request** event builds unconditionally — but only if the PR is
+  mergeable (see §6);
+- **Development** flavours, which are the only ones where the startup probe
+  runs, need **`[CI BUILD DEV]`** — `[CI BUILD]` alone gives release only.
+
+So: **`[CI BUILD DEV]` is almost always what you want.** A build takes ~45
+minutes.
+
+### Installing and reading the log
+
+```bash
+adb install -r "<path>/com.Icosa.OpenBrush-<branch>.apk"
+adb shell monkey -p foundation.icosa.openbrushviewerfeaturesafgoogleplayfdbacked \
+    -c android.intent.category.LAUNCHER 1
+```
+
+The package name is branch-suffixed, so it installs **alongside** any existing
+Open Brush rather than replacing it. No data is at risk.
+
+Three traps that will waste your time:
+
+1. **Enlarge the log buffer first: `adb logcat -G 16M`.** logcat keeps separate
+   ring buffers per source. This device is chatty enough that Unity's `main`
+   buffer rolls within a minute or two while `system` entries survive, so the
+   app's own output vanishes while window-manager noise remains.
+2. **Never put `2>/dev/null` on an adb command.** It hides *"device not
+   found"*, and a disconnected phone then looks identical to a grep that
+   matched nothing.
+3. **Filter to the app.** `adb logcat -d | grep ' Unity'` — the SAF tags are
+   `SAF_STORAGE`, `SAF_CATALOG`, `SAF_TRANSACTION`, `SAF_RECOVERY`,
+   `SAF_SOUND`, `SAF_STREAM`.
+
+The line that confirms the design, on a Development build:
+
+```
+SAF_STREAM Channel-backed Tilt archive passed (N bytes)
+```
+
+### Running the EditMode tests
+
+With the Editor open:
+
+```bash
+unity command run_tests --mode EditMode --filter "TiltBrush.TestSafDocumentStream"
+```
+
+Do **not** pass `--filter_type class`; it silently matches nothing and reports
+`0/0 passed`, which reads like success.
+
+The SAF suites and their runtimes: `TestSafDocumentStream` 17 (~13 s),
+`TestSafExportNaming` 10, `TestSafRecoverySweep` 5, `TestGaussianCapturePublication`
+4, `TestSafQuillCatalog` 3, `TestSafSketchMutationGuard` 2.
+
+A full EditMode run leaves ~443 failures, of which 416 are `Autodesk.Fbx`
+missing a native library and the rest pre-existing in untouched code. It also
+**deletes `Assets/Resources/PerformanceTestRun*.json`** from the working tree;
+those are now gitignored, so ignore them.
+
+### Type-checking the Android path without a device
+
+The Editor compiles only the active platform, so `UNITY_ANDROID` blocks are
+invisible on desktop. To type-check them, copy `Assembly-CSharp.csproj`,
+prepend `UNITY_ANDROID;OPEN_BRUSH_SCOPED_STORAGE;` to `<DefineConstants>`, and
+`msbuild` it. This complements the Editor; it does not replace it, and it sees
+neither Unity's analyzers nor `.meta`/GUID problems.
+
+---
+
+## 4. What is left to do
+
+### Disabled, awaiting reinstatement
+
+USD, FBX, PLY and Gaussian splats; SVG reference images; Quill and IMM import;
+OBJ export; bulk sketch export; custom fonts.
+
+Each is a guarded early return naming its reason, so reversing one is local work
+once its loader can take a stream or a URL. **This is the main outstanding debt**
+— the branch is not at feature parity until they are back, and parity is a
+stated requirement (§5).
+
+### Deferred by decision
+
+**Which Android flavours build with scoped storage.** The flag is new on this
+branch (`main` has no occurrences) and applied asymmetrically: *Android OpenXR*
+and *Android Viewer OpenXR* are both sideloaded APKs, but only the viewer gets
+scoped storage. Kept deliberately — it is the only sideloadable artefact with
+SAF active, which makes it the easiest test target. **Revisit once it is decided
+where the APK viewer build is published**, since that determines whether it
+should follow Play storage rules at all.
+
+### Optional: a shared direct ByteBuffer for writes
+
+**Only if a real performance problem appears.** An optimisation, not a
+correctness gap.
+
+Writes cap at 28–31 MB/s because Unity marshals the array argument across JNI on
+every call — about 0.7 s for a 20 MB sketch, 7 s for a 200 MB one. The fix
+removes the crossing rather than making it cheaper: allocate native memory in
+C#, wrap it once with `AndroidJNI.NewDirectByteBuffer`, hand Java the
+`ByteBuffer` when the channel opens, and thereafter write with `Marshal.Copy`
+plus an all-primitives call giving the byte count. `FileChannel.write` reads the
+same memory. `SafDocumentStream`'s write-behind buffer can *be* that region, so
+no copy is added.
+
+Roughly 150 lines of hand-rolled JNI with manual global-reference lifetimes,
+none of it verifiable without a device, and it costs 256 KiB of native memory
+per open stream. Measure before starting.
+
+### Probably not worth doing
+
+**Collapsing the publish surface.** An earlier plan called for merging "twenty
+near-duplicate publish methods". There are five entry points on
+`SafStagedOutputPublisher` and most encode genuinely different behaviour —
+frame-sequence bundling, directory publication, unique import naming, export
+READMEs. Collapsing them would hide real differences behind flags.
+
+### Known gap
+
+**SAF exports check staging, not the destination.** `App.UserExportPath()`
+returns `LocalExportStagingPath` under SAF, so `SketchControlsScript.cs:4838`
+checks the volume the export stages on while the publish into the shared folder
+is unchecked. Low severity: the failure path keeps the staged copy and reports
+an error, so a full volume costs a worse message rather than data.
+
+---
+
+## 5. Product decisions this rests on
+
+1. Startup is gated on folder selection. Declining exits the application.
+2. The root never changes for the life of an installation.
+3. Shared files are not modified externally while the application runs; a
+   user-initiated refresh is enough.
+4. **SAF builds must reach functional parity with non-SAF builds.** Removing a
+   feature is not an acceptable way to simplify this branch.
+
+---
+
+## 6. Traps that have already cost time
+
+- **"It compiles" proves very little.** Twenty-five commits went in on "compiles
+  clean"; the first full EditMode run then found four real regressions —
+  publication records colliding, Quill listing nothing, sound clips with no
+  usable path, seeding never re-running after a folder change. Run the tests.
+- **Same shape, different premise.** Removing root scoping was *correct* for the
+  Drive ledger, where a stale record is merely misleading, and *wrong* for
+  publication records, where `GetPendingTopLevelNames` throws on a mismatch. The
+  reasoning transferred; the premise did not. `GetPublicationDirectory` carries a
+  comment saying why.
+- **Deleting root scoping needs its replacement in the same change.** Five
+  commits shipped before `SafRootChangeGuard` existed. That window should not
+  have been open.
+- **A conflicted PR silently kills CI.** GitHub cannot compute a merge ref for a
+  conflicted PR, so `pull_request` workflows never fire — while
+  `pull_request_target` keeps working, which makes it look like CI is fine. If
+  builds go quiet, check `gh pr view <n> --json mergeable` first.
+- **Worker threads need `AndroidJNI.AttachCurrentThread`.** Reads are issued from
+  image decoding, glTF loads and Lua resolution. `AndroidSafStorage
+  .AttachToJvmIfNeeded` handles it, cached per thread.
+- **The loopback media server is load-bearing for security.** `HttpServer.cs:53`
+  binds all interfaces and admits remote callers when `EnableApiRemoteCalls` is
+  set, so `SafMediaHttpServer` uses a per-session token compared in constant
+  time, applies `IsTrustedLocalBrowserRequest` explicitly, and resolves
+  identifiers only within the selected root. Do not loosen any of that.
+
+---
+
+## 7. How the code is arranged
+
+| File | Role |
+| --- | --- |
+| `Assets/Plugins/Android/OpenBrushStorageBridge.java` | All provider access. Channel table, directory queries, document mutation, free space. |
+| `Assets/Plugins/Android/OpenBrushStorageActivity.java` | Hosts the folder picker; reports back via `UnitySendMessage`. |
+| `Assets/Scripts/Storage/AndroidSafStorage.cs` | Thin C# face of the bridge. |
+| `Assets/Scripts/Storage/SafDocumentStream.cs` | The seekable stream and its buffering; `ISafDocumentChannel` is the seam the tests use. |
+| `Assets/Scripts/Storage/SafUserStorageBackend.cs` | `IUserStorageBackend` over SAF. |
+| `Assets/Scripts/Storage/SafStorageTransaction.cs` | The write commit sequence and `SafPrivatePaths`. |
+| `Assets/Scripts/Storage/SafTransactionRecovery.cs` | Startup sweep for interrupted saves, driven by `.ob-tmp` / `.ob-bak` / `.ob-invalid` sidecars. |
+| `Assets/Scripts/Storage/SafStagedOutputPublisher.cs` | Publishing staged output into shared storage. |
+| `Assets/Scripts/Storage/SafMediaHttpServer.cs` | Loopback HTTP for URL-only Unity loaders. |
+| `Assets/Scripts/Storage/SafRootChangeGuard.cs` | The single root comparison, at startup. |
+| `Assets/Scripts/Storage/AndroidStorageManager.cs` | Startup gate, folder selection, recovery kickoff. |
+
+**Recovery works from sidecars in shared storage, not from a journal.** An
+interrupted save leaves `MySketch.tilt.ob-tmp` or `.ob-bak` beside its target;
+the startup sweep reconstructs what it needs from those names. Nothing is
+serialized to app-private storage any more.
+
+---
+
+## 8. History
+
+The branch began as a much larger design and was reduced in place rather than
+rebuilt. Deleted outright: the materialization cache and its 512 MB budget
+(which never served a hit), the 806-line runtime-content projection, the degraded
+mode and its nine resumable save/export paths, the on-disk transaction journal,
+and the legacy-content migration. Root identity went from 255 references to 99,
+of which 26 are test fixtures and the rest are keys, staleness checks and
+persisted records that all do real work.
+
+Things earlier plans asserted that turned out to be false, recorded so they are
+not re-derived: the path-consumer audit asked only whether an importer could
+take a stream, not whether anything later needed the file (OBJ's
+`ImportMaterialCollector` reads the asset location at *export* time); Unity's
+URL-taking loaders — `UnityWebRequest`, `VideoPlayer.url`, `WWW`,
+`UnityWebRequestMultimedia` — all accept `http://`, which is what makes one
+loopback handler serve OBJ, textures, audio and video; supporting a path-only
+loader never required a cache, only a temporary file for the duration of one
+load; and `StorageTreeEnumerator` does **not** silently truncate — it fails
+loudly on both caps.
