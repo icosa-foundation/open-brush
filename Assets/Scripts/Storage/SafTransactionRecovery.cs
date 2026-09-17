@@ -53,8 +53,7 @@ namespace TiltBrush
                 return report;
             }
             List<SafTransactionRecord> records =
-                SafTransactionJournal.Load(rootId, out List<string> journalErrors);
-            report.Errors.AddRange(journalErrors);
+                DiscoverInterruptedTransactions(backend, cancellationToken, report.Errors);
             foreach (SafTransactionRecord record in records)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -79,6 +78,80 @@ namespace TiltBrush
                 }
             }
             return report;
+        }
+
+        private static readonly string[] kSidecarExtensions =
+        {
+            ".ob-tmp", ".ob-bak", ".ob-invalid",
+        };
+
+        /// Finds interrupted saves by looking for the sidecars they leave behind, rather than by
+        /// reading a record of what was started. A sidecar is named after its target, so the
+        /// directory listing says everything recovery needs: which document it belongs to, and
+        /// which stage of the rename sequence was reached.
+        private static List<SafTransactionRecord> DiscoverInterruptedTransactions(
+            IUserStorageBackend backend,
+            CancellationToken cancellationToken,
+            List<string> errors)
+        {
+            var records = new List<SafTransactionRecord>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (StorageArea area in (StorageArea[])Enum.GetValues(typeof(StorageArea)))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                StorageTreeResult tree = backend.EnumerateTree(
+                    area,
+                    "",
+                    new StorageTreeQuery(
+                        recursive: true,
+                        includeDirectories: false,
+                        includeExtensions: kSidecarExtensions),
+                    cancellationToken);
+                if (!tree.Success)
+                {
+                    // A missing area is the normal case; anything else is worth reporting, but
+                    // must not stop the other areas being swept.
+                    if (tree.Code != StorageResultCode.NotFound)
+                    {
+                        errors.Add($"Could not sweep {area} for interrupted saves: {tree.Error}");
+                    }
+                    continue;
+                }
+                foreach (StorageDocument document in tree.Entries)
+                {
+                    int cut = document.DisplayName.LastIndexOf(".ob-", StringComparison.Ordinal);
+                    if (cut <= 0) { continue; }
+                    string target = document.DisplayName.Substring(0, cut);
+                    string relativePath = CombineWithDirectory(
+                        document.RelativeDisplayPath, document.DisplayName, target);
+                    if (!seen.Add($"{area}\n{relativePath}")) { continue; }
+                    records.Add(new SafTransactionRecord
+                    {
+                        TransactionId = relativePath,
+                        Kind = target.EndsWith(".tilt", StringComparison.OrdinalIgnoreCase)
+                            ? "tilt-replacement"
+                            : "file-replacement",
+                        Area = area.ToString(),
+                        RelativePath = relativePath,
+                        TargetDisplayName = target,
+                        TemporaryDisplayName = $"{target}.ob-tmp",
+                        BackupDisplayName = $"{target}.ob-bak",
+                        InvalidDisplayName = $"{target}.ob-invalid",
+                        State = SafTransactionState.RollbackRequired.ToString(),
+                        CreatedUtc = DateTime.UtcNow.ToString("o"),
+                    });
+                }
+            }
+            return records;
+        }
+
+        /// Swaps a sidecar's own name for its target's, keeping the directory it sits in.
+        private static string CombineWithDirectory(
+            string sidecarPath, string sidecarName, string target)
+        {
+            string normalized = (sidecarPath ?? sidecarName).Replace('\\', '/');
+            int separator = normalized.LastIndexOf('/');
+            return separator < 0 ? target : $"{normalized.Substring(0, separator)}/{target}";
         }
 
         private static bool RecoverRecord(
@@ -165,8 +238,6 @@ namespace TiltBrush
             record.TemporaryDocumentId = null;
             record.BackupDocumentId = null;
             record.State = SafTransactionState.Complete.ToString();
-            SafTransactionJournal.Persist(record);
-            SafTransactionJournal.Delete(record);
             return true;
         }
 
@@ -341,17 +412,6 @@ namespace TiltBrush
         {
             record.AttemptCount++;
             record.LastError = error ?? "";
-            try
-            {
-                SafTransactionJournal.Persist(record);
-            }
-            catch (Exception e) when (
-                e is IOException ||
-                e is UnauthorizedAccessException)
-            {
-                record.LastError =
-                    $"{record.LastError} Recovery journal update failed: {e.Message}".Trim();
-            }
             string message =
                 $"SAF_RECOVERY Pending {record.TransactionId}: {record.LastError}";
             report.Errors.Add(message);
