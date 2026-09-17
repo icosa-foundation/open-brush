@@ -9,9 +9,14 @@ namespace TiltBrush
     /// a full build, and it is where an off-by-one costs a corrupted sketch rather than an error.
     public class TestSafDocumentStream
     {
+        /// Backed by a plain growable buffer rather than a MemoryStream, because a positioned
+        /// channel wants positioned access: reading through MemoryStream meant a ToArray() copy
+        /// of the whole document on every single read, which turned the randomised test below
+        /// into gigabytes of pointless copying.
         private sealed class FakeChannel : ISafDocumentChannel
         {
-            private readonly MemoryStream m_Data = new MemoryStream();
+            private byte[] m_Data = new byte[0];
+            private int m_Length;
 
             public int Reads;
             public int Writes;
@@ -22,13 +27,30 @@ namespace TiltBrush
             public bool FailWrites;
             private string m_Error;
 
-            public byte[] Contents => m_Data.ToArray();
-            public long Length => m_Data.Length;
+            public byte[] Contents
+            {
+                get
+                {
+                    var copy = new byte[m_Length];
+                    Buffer.BlockCopy(m_Data, 0, copy, 0, m_Length);
+                    return copy;
+                }
+            }
+
+            public long Length => m_Length;
 
             public void Seed(byte[] bytes)
             {
-                m_Data.Position = 0;
-                m_Data.Write(bytes, 0, bytes.Length);
+                Grow(bytes.Length);
+                Buffer.BlockCopy(bytes, 0, m_Data, 0, bytes.Length);
+                m_Length = bytes.Length;
+            }
+
+            private void Grow(int required)
+            {
+                if (m_Data.Length >= required) { return; }
+                int capacity = Math.Max(required, Math.Max(1024, m_Data.Length * 2));
+                Array.Resize(ref m_Data, capacity);
             }
 
             public byte[] Read(long position, int count)
@@ -39,13 +61,13 @@ namespace TiltBrush
                     m_Error = "read failed";
                     return null;
                 }
-                if (position >= m_Data.Length)
+                if (position >= m_Length)
                 {
                     return Array.Empty<byte>();
                 }
-                int take = (int)Math.Min(count, m_Data.Length - position);
+                int take = (int)Math.Min(count, m_Length - position);
                 var result = new byte[take];
-                Buffer.BlockCopy(m_Data.ToArray(), (int)position, result, 0, take);
+                Buffer.BlockCopy(m_Data, (int)position, result, 0, take);
                 return result;
             }
 
@@ -58,14 +80,25 @@ namespace TiltBrush
                     m_Error = "write failed";
                     return -1;
                 }
-                m_Data.Position = position;
-                m_Data.Write(data, 0, count);
+                Grow((int)position + count);
+                // A write past the end leaves a zero-filled gap, as a real file does.
+                if (position > m_Length)
+                {
+                    Array.Clear(m_Data, m_Length, (int)position - m_Length);
+                }
+                Buffer.BlockCopy(data, 0, m_Data, (int)position, count);
+                m_Length = Math.Max(m_Length, (int)position + count);
                 return count;
             }
 
             public bool Truncate(long length)
             {
-                m_Data.SetLength(length);
+                Grow((int)length);
+                if (length > m_Length)
+                {
+                    Array.Clear(m_Data, m_Length, (int)length - m_Length);
+                }
+                m_Length = (int)length;
                 return true;
             }
 
@@ -79,6 +112,26 @@ namespace TiltBrush
             public string DescribeLastError() => m_Error;
 
             public void Close() { Closed = true; }
+        }
+
+        /// Assert.AreEqual on a large byte[] runs NUnit's constraint engine over every element
+        /// and is slow enough at these sizes to look like a hang. Compare directly, and only
+        /// involve NUnit when there is something to report.
+        private static void AssertBytesEqual(byte[] expected, byte[] actual, string message)
+        {
+            if (expected.Length != actual.Length)
+            {
+                Assert.Fail(
+                    $"{message}: expected {expected.Length} bytes, got {actual.Length}.");
+            }
+            for (int i = 0; i < expected.Length; ++i)
+            {
+                if (expected[i] != actual[i])
+                {
+                    Assert.Fail(
+                        $"{message}: byte {i} was {actual[i]}, expected {expected[i]}.");
+                }
+            }
         }
 
         private static byte[] Pattern(int length)
@@ -107,7 +160,7 @@ namespace TiltBrush
                 stream.Flush();
                 Assert.AreEqual(1, channel.Writes);
             }
-            Assert.AreEqual(expected, channel.Contents);
+            AssertBytesEqual(expected, channel.Contents, "Coalesced writes");
         }
 
         [Test]
@@ -120,7 +173,7 @@ namespace TiltBrush
                 stream.Write(expected, 0, expected.Length);
                 Assert.AreEqual(1, channel.Writes);
             }
-            Assert.AreEqual(expected, channel.Contents);
+            AssertBytesEqual(expected, channel.Contents, "Write-through");
         }
 
         [Test]
@@ -146,7 +199,7 @@ namespace TiltBrush
             using var stream = new SafDocumentStream(channel, expected.Length, canWrite: false);
             var actual = new byte[expected.Length];
             Assert.AreEqual(expected.Length, stream.Read(actual, 0, actual.Length));
-            Assert.AreEqual(expected, actual);
+            AssertBytesEqual(expected, actual, "Filled read");
             Assert.AreEqual(expected.Length, stream.Position);
         }
 
@@ -278,6 +331,11 @@ namespace TiltBrush
         /// The cases above are the ones worth naming. This is the one that finds what they miss:
         /// the same random sequence of seeks, reads and writes against both this stream and a
         /// MemoryStream, which is the behaviour it is supposed to be indistinguishable from.
+        ///
+        /// Sizes are deliberately small. The buffers are 64 KiB and 256 KiB, so operations of a
+        /// few hundred KiB already cross every boundary that matters - partial buffer hits,
+        /// buffer misses, writes larger than the write-behind - and running at megabyte scale
+        /// only bought comparison time.
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
@@ -292,7 +350,7 @@ namespace TiltBrush
             reference.Position = 0;
 
             using var stream = new SafDocumentStream(channel, seeded.Length, canWrite: true);
-            for (int step = 0; step < 400; ++step)
+            for (int step = 0; step < 300; ++step)
             {
                 switch (random.Next(5))
                 {
@@ -308,18 +366,18 @@ namespace TiltBrush
                     case 1:
                     case 2:
                         {
-                            int count = random.Next(1, 200_000);
+                            int count = random.Next(1, 150_000);
                             var expected = new byte[count];
                             var actual = new byte[count];
                             int expectedRead = reference.Read(expected, 0, count);
                             int actualRead = stream.Read(actual, 0, count);
                             Assert.AreEqual(expectedRead, actualRead, $"Step {step} read length.");
-                            Assert.AreEqual(expected, actual, $"Step {step} read contents.");
+                            AssertBytesEqual(expected, actual, $"Step {step} read contents");
                             break;
                         }
                     case 3:
                         {
-                            byte[] payload = Pattern(random.Next(1, 400_000));
+                            byte[] payload = Pattern(random.Next(1, 300_000));
                             for (int i = 0; i < payload.Length; ++i)
                             {
                                 payload[i] ^= (byte)step;
@@ -335,14 +393,14 @@ namespace TiltBrush
                                 reference.Length, stream.Length, $"Step {step} length.");
                             Assert.AreEqual(
                                 reference.Position, stream.Position, $"Step {step} position.");
-                            Assert.AreEqual(
-                                reference.ToArray(), channel.Contents, $"Step {step} contents.");
+                            AssertBytesEqual(
+                                reference.ToArray(), channel.Contents, $"Step {step} contents");
                             break;
                         }
                 }
             }
             stream.Flush();
-            Assert.AreEqual(reference.ToArray(), channel.Contents);
+            AssertBytesEqual(reference.ToArray(), channel.Contents, "Final contents");
         }
 
         [Test]
