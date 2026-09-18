@@ -18,7 +18,11 @@ device disproved. They remain in this branch's history.
 
 ## 1. Status
 
-Last updated **2026-09-17**, after the first device run.
+Last updated **2026-09-18**.
+
+**In one line: the branch is code-complete for its scope; what remains is
+testing and the bugs it finds.** See §4 for the distinction between that and the
+future work deliberately left out of scope.
 
 ### Proven on hardware
 
@@ -57,10 +61,18 @@ build. See §3.
   converted element by element and logged a deprecation warning on **every read
   and write**. It now uses `sbyte[]`, with `Buffer.BlockCopy` at the boundary.
 
+### Fixed on 2026-09-18, not yet re-tested
+
+- SAF exports checked the staging volume rather than the shared destination.
+
 ### The shape of the remaining risk
 
 The read path is proven end to end. The write path is not, and it is the part
 where a mistake costs someone their sketch rather than an error message.
+
+There is no known outstanding code work. That is not the same as the branch
+being finished: it means the next thing to do is exercise it on a device, not
+write more of it.
 
 ---
 
@@ -201,32 +213,50 @@ neither Unity's analyzers nor `.meta`/GUID problems.
 
 ## 4. What is left to do
 
-### Disabled, awaiting reinstatement
+### Now: nothing. This branch is code-complete for its scope.
 
-USD, FBX, PLY and Gaussian splats; SVG reference images; Quill and IMM import;
-OBJ export; bulk sketch export; custom fonts.
+Every item that was outstanding has resolved, and the last one closed on
+2026-09-18:
 
-Each is a guarded early return naming its reason, so reversing one is local work
-once its loader can take a stream or a URL. **This is the main outstanding debt**
-— the branch is not at feature parity until they are back, and parity is a
-stated requirement (§5).
+- ~~SAF exports checked the staging volume, not the destination.~~ Closed —
+  `Export.ExportScene` now checks the shared folder before doing any work.
+- ~~Root identity's remaining references.~~ Investigated; all 99 are
+  load-bearing. Nothing to remove.
+- ~~The transaction journal.~~ Removed, though not as originally written: two of
+  its three types earn their place, and what was deletable was the schema around
+  them.
 
-### Deferred by decision
+**What remains is testing and the bugs it finds.** See §1 for where the risk is
+— principally that no save has ever been performed on a device.
 
-**Which Android flavours build with scoped storage.** The flag is new on this
-branch (`main` has no occurrences) and applied asymmetrically: *Android OpenXR*
-and *Android Viewer OpenXR* are both sideloaded APKs, but only the viewer gets
-scoped storage. Kept deliberately — it is the only sideloadable artefact with
-SAF active, which makes it the easiest test target. **Revisit once it is decided
-where the APK viewer build is published**, since that determines whether it
-should follow Play storage rules at all.
+### Future work, deliberately out of scope
 
-### Optional: a shared direct ByteBuffer for writes
+These are switched off on purpose. They are **not** unfinished work on this
+branch, and nothing here blocks merging it. Each is a guarded early return that
+names its reason, so reinstating one is local work once its loader can take a
+stream or a URL.
+
+| Gate | What it disables |
+| --- | --- |
+| `Model.cs:1141` | Model formats other than `.gltf`, `.glb`, `.gltf2`, `.obj` — so USD, FBX, PLY and Gaussian splats. Their importers open a path and shared storage has none to give. |
+| `SvgTextUtils.cs:31` | Custom fonts in SVG text. Unity offers no runtime route from bytes to a `Font`. |
+| `SketchControlsScript.cs:4155` | Bulk sketch export. |
+
+That is the whole list. Earlier revisions of this document also claimed SVG
+reference images, Quill and IMM import, and OBJ export were disabled. **They are
+not** — that list was inherited from a superseded plan and never checked. OBJ is
+explicitly in the allowed import set, and Quill's only scoped-storage code
+*enables* SAF handling for its IMM source.
+
+Reaching full parity (§5, decision 4) means reinstating the three above, and the
+first row is the substantial one.
+
+### Future work, gated on evidence: a shared direct ByteBuffer
 
 **Only if a real performance problem appears.** An optimisation, not a
-correctness gap.
+correctness gap, and nothing should be built assuming it is needed.
 
-Writes cap at 28–31 MB/s because Unity marshals the array argument across JNI on
+Writes cap at 28-31 MB/s because Unity marshals the array argument across JNI on
 every call — about 0.7 s for a 20 MB sketch, 7 s for a 200 MB one. The fix
 removes the crossing rather than making it cheaper: allocate native memory in
 C#, wrap it once with `AndroidJNI.NewDirectByteBuffer`, hand Java the
@@ -237,25 +267,16 @@ no copy is added.
 
 Roughly 150 lines of hand-rolled JNI with manual global-reference lifetimes,
 none of it verifiable without a device, and it costs 256 KiB of native memory
-per open stream. Measure before starting.
+per open stream. Measure first.
 
-### Probably not worth doing
+### Recommended against
 
 **Collapsing the publish surface.** An earlier plan called for merging "twenty
 near-duplicate publish methods". There are five entry points on
-`SafStagedOutputPublisher` and most encode genuinely different behaviour —
+`SafStagedOutputPublisher`, and most encode genuinely different behaviour —
 frame-sequence bundling, directory publication, unique import naming, export
-READMEs. Collapsing them would hide real differences behind flags.
-
-### Known gap
-
-**SAF exports check staging, not the destination.** `App.UserExportPath()`
-returns `LocalExportStagingPath` under SAF, so `SketchControlsScript.cs:4838`
-checks the volume the export stages on while the publish into the shared folder
-is unchecked. Low severity: the failure path keeps the staged copy and reports
-an error, so a full volume costs a worse message rather than data.
-
----
+READMEs. Collapsing them would hide real differences behind flags. Recorded so
+the idea is not revived without the correction attached.
 
 ## 5. Product decisions this rests on
 
