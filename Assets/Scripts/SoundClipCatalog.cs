@@ -145,54 +145,77 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory(
             string directory, List<SoundClip> soundClips, HashSet<string> changedSet, int generation)
         {
-
-            var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath));
-            var detected = new HashSet<string>(
-                Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
-                    x => m_supportedSoundClipExtensions.Contains(
-                        Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
-
-            // Remove deleted sound clips from the list. Currently playing clips may continue to play, but will
-            // not appear in the reference panel.
-            var retiredSoundClips = soundClips.Where(x => toDelete.Contains(x.AbsolutePath)).ToArray();
-            soundClips.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
-            foreach (var soundClip in retiredSoundClips)
+            try
             {
-                soundClip.ReleaseThumbnail();
-            }
-
-            var newSoundClips = new List<SoundClip>();
-            foreach (var filePath in toScan)
-            {
-                SoundClip clipRef = new SoundClip(filePath);
-                newSoundClips.Add(clipRef);
-                soundClips.Add(clipRef);
-            }
-
-            // If we have a lot of clips, they may take a while to create thumbnails. Make sure we refresh
-            // every few seconds so the user sees progress if they go straight to the reference panel.
-            TimeSpan interval = TimeSpan.FromSeconds(4);
-            DateTime nextRefresh = DateTime.Now + interval;
-            foreach (var clipRef in newSoundClips)
-            {
-                if (DateTime.Now > nextRefresh)
+                var existing = new HashSet<string>(soundClips.Select(x => x.AbsolutePath));
+                HashSet<string> detected;
+                try
                 {
-                    CatalogChanged?.Invoke();
-                    nextRefresh = DateTime.Now + interval;
+                    detected = new HashSet<string>(
+                        Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                            x => m_supportedSoundClipExtensions.Contains(
+                                Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
                 }
-                yield return clipRef.Initialize();
-                if (generation != m_ScanGeneration)
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                          e is ArgumentException || e is NotSupportedException)
                 {
-                    clipRef.ReleaseThumbnail();
-                    // The replacement scan owns m_ScanningDirectory. A stale scan must not clear
-                    // it while the replacement may still be running.
-                    yield break;
+                    // An unreadable or missing folder gives an empty catalog rather than
+                    // ending the scan, so the panel stays usable and recovers by itself.
+                    Debug.LogWarning(
+                        $"CATALOG_SCAN Could not scan sound clip folder {directory}: {e.Message}");
+                    detected = new HashSet<string>();
+                }
+                var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
+                var toScan = detected.Except(existing).Concat(changedSet).ToArray();
+
+                // Remove deleted sound clips from the list. Currently playing clips may continue to play, but will
+                // not appear in the reference panel.
+                var retiredSoundClips = soundClips.Where(x => toDelete.Contains(x.AbsolutePath)).ToArray();
+                soundClips.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+                foreach (var soundClip in retiredSoundClips)
+                {
+                    soundClip.ReleaseThumbnail();
+                }
+
+                var newSoundClips = new List<SoundClip>();
+                foreach (var filePath in toScan)
+                {
+                    SoundClip clipRef = new SoundClip(filePath);
+                    newSoundClips.Add(clipRef);
+                    soundClips.Add(clipRef);
+                }
+
+                // If we have a lot of clips, they may take a while to create thumbnails. Make sure we refresh
+                // every few seconds so the user sees progress if they go straight to the reference panel.
+                TimeSpan interval = TimeSpan.FromSeconds(4);
+                DateTime nextRefresh = DateTime.Now + interval;
+                foreach (var clipRef in newSoundClips)
+                {
+                    if (DateTime.Now > nextRefresh)
+                    {
+                        CatalogChanged?.Invoke();
+                        nextRefresh = DateTime.Now + interval;
+                    }
+                    yield return clipRef.Initialize();
+                    if (generation != m_ScanGeneration)
+                    {
+                        clipRef.ReleaseThumbnail();
+                        // The replacement scan owns m_ScanningDirectory. A stale scan must not clear
+                        // it while the replacement may still be running.
+                        yield break;
+                    }
+                }
+            }
+            finally
+            {
+                // Rescans are gated on this flag, so it must be cleared however the scan
+                // ends, but only by the scan that still owns it.
+                if (generation == m_ScanGeneration)
+                {
+                    m_ScanningDirectory = false;
                 }
             }
 
-            m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
             if (m_DebugOutput)
             {

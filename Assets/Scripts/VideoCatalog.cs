@@ -144,48 +144,70 @@ namespace TiltBrush
         private IEnumerator<object> ScanReferenceDirectory()
         {
             m_ScanningDirectory = true;
-            HashSet<string> changedSet = null;
-            // We do a switcheroo on the changed list here so that there isn't a conflict with it
-            // if a filewatch callback happens.
-            lock (m_ChangedFiles)
+            try
             {
-                changedSet = m_ChangedFiles;
-                m_ChangedFiles = new HashSet<string>();
-            }
-
-            var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
-            var detected = new HashSet<string>(
-                Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
-
-            // Remove deleted videos from the list. Currently playing videos may continue to play, but will
-            // not appear in the reference panel.
-            m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
-
-            var newVideos = new List<ReferenceVideo>();
-            foreach (var filePath in toScan)
-            {
-                ReferenceVideo videoRef = new ReferenceVideo(filePath);
-                newVideos.Add(videoRef);
-                m_Videos.Add(videoRef);
-            }
-
-            // If we have a lot of videos, they may take a while to create thumbnails. Make sure we refresh
-            // every few seconds so the user sees progress if they go straight to the reference panel.
-            TimeSpan interval = TimeSpan.FromSeconds(4);
-            DateTime nextRefresh = DateTime.Now + interval;
-            foreach (var videoRef in newVideos)
-            {
-                if (DateTime.Now > nextRefresh)
+                HashSet<string> changedSet = null;
+                // We do a switcheroo on the changed list here so that there isn't a conflict with it
+                // if a filewatch callback happens.
+                lock (m_ChangedFiles)
                 {
-                    CatalogChanged?.Invoke();
-                    nextRefresh = DateTime.Now + interval;
+                    changedSet = m_ChangedFiles;
+                    m_ChangedFiles = new HashSet<string>();
                 }
-                yield return videoRef.Initialize();
+
+                var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
+                HashSet<string> detected;
+                try
+                {
+                    detected = new HashSet<string>(
+                        Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                          e is ArgumentException || e is NotSupportedException)
+                {
+                    // An unreadable or missing folder gives an empty catalog rather than
+                    // ending the scan, so the panel stays usable and recovers by itself.
+                    Debug.LogWarning(
+                        $"CATALOG_SCAN Could not scan video folder {m_CurrentVideoDirectory}: {e.Message}");
+                    detected = new HashSet<string>();
+                }
+                var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
+                var toScan = detected.Except(existing).Concat(changedSet).ToArray();
+
+                // Remove deleted videos from the list. Currently playing videos may continue to play, but will
+                // not appear in the reference panel.
+                m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+
+                var newVideos = new List<ReferenceVideo>();
+                foreach (var filePath in toScan)
+                {
+                    ReferenceVideo videoRef = new ReferenceVideo(filePath);
+                    newVideos.Add(videoRef);
+                    m_Videos.Add(videoRef);
+                }
+
+                // If we have a lot of videos, they may take a while to create thumbnails. Make sure we refresh
+                // every few seconds so the user sees progress if they go straight to the reference panel.
+                TimeSpan interval = TimeSpan.FromSeconds(4);
+                DateTime nextRefresh = DateTime.Now + interval;
+                foreach (var videoRef in newVideos)
+                {
+                    if (DateTime.Now > nextRefresh)
+                    {
+                        CatalogChanged?.Invoke();
+                        nextRefresh = DateTime.Now + interval;
+                    }
+                    yield return videoRef.Initialize();
+                }
+            }
+            finally
+            {
+                // Rescans are gated on this flag, so it must be cleared however the scan
+                // ends. Leaving it set stops the catalog refreshing for the rest of the
+                // session.
+                m_ScanningDirectory = false;
             }
 
-            m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
             if (m_DebugOutput)
             {
