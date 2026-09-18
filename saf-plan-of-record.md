@@ -201,6 +201,24 @@ missing a native library and the rest pre-existing in untouched code. It also
 **deletes `Assets/Resources/PerformanceTestRun*.json`** from the working tree;
 those are now gitignored, so ignore them.
 
+### Satisfying pre-commit
+
+`pre-commit` is a required PR check and runs `dotnet format whitespace`, failing
+if the hook modifies anything. Before pushing:
+
+```bash
+dotnet format whitespace . --folder --include $(git diff --name-only \
+    $(git merge-base origin/main HEAD) HEAD -- '*.cs' \
+    | grep -vE '^(Assets/ThirdParty|Packages/|Assets/Photon/)' | tr '\n' ' ') \
+    --verify-no-changes
+```
+
+That lists the offenders. **Then format them one file at a time** — the same
+command without `--verify-no-changes` and with many files silently does nothing,
+while a single file works. It also splits same-line braces and stacked `case`
+labels, so `git diff -w` will still show those hunks; they are not behaviour
+changes.
+
 ### Type-checking the Android path without a device
 
 The Editor compiles only the active platform, so `UNITY_ANDROID` blocks are
@@ -303,6 +321,9 @@ the idea is not revived without the correction attached.
 - **Deleting root scoping needs its replacement in the same change.** Five
   commits shipped before `SafRootChangeGuard` existed. That window should not
   have been open.
+- **Discussing a CI marker in a commit body fires it.** The push gate is
+  `contains(message, '[CI BUILD]')` against the whole message, body included, so
+  a commit that merely explains the marker triggers a build.
 - **A conflicted PR silently kills CI.** GitHub cannot compute a merge ref for a
   conflicted PR, so `pull_request` workflows never fire — while
   `pull_request_target` keeps working, which makes it look like CI is fine. If
