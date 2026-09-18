@@ -8,6 +8,27 @@
 4. Full Unity widget restoration, native video/audio playback, Android provider behavior and rendered UI reproduction remain release validation. Reproduction instructions below are proposed application-level checks, not claims that every step has already been performed in the UI.
 5. Progress and commit details are tracked in [CATALOG_PARITY_PLAN.md](CATALOG_PARITY_PLAN.md).
 
+## Extraction status
+
+Checked 2026-09-18 against PR
+[#1168](https://github.com/icosa-foundation/open-brush/pull/1168)
+(`fix/upstream-catalog-defects`), which lifts the fixes for these defects out of the
+SAF branch so they can be reviewed and merged into `main` on their own. **Item 2
+above is now out of date for most of these:** the fixes are no longer only "prepared
+locally on the SAF branch".
+
+| Item | State |
+| --- | --- |
+| U1, U2, U3, U4, U5, U6, U8, U9, U11, U12 | Extracted into #1168, open against `main`. U11 is the `Renamed` forwarding in `FileWatcher`; U12 is the new `CatalogChangeSet`. |
+| U7 | No fix exists. Implementation deliberately deferred pending a decision on source identity and old-file compatibility, so there is nothing to extract. |
+| U10 | **Fixed but not extracted.** `Assets/Scripts/Storage/ModelRestoreGate.cs` (97 lines) carries it on the SAF branch and contains no SAF references at all, so it is a candidate for the same treatment. Its location under `Storage/` makes it look SAF-specific when it is not. |
+| U13 | **Stub only** — a heading with no reproduction, sources or status. Either it was never written up or the heading outlived its content. Treat it as unverified rather than as a known defect. |
+
+`main` squash-merges, so #1168 will land as a single commit whose identity differs
+from the ones merged into the SAF branch. The content will match and the diff will
+still collapse, but expect conflicts in the catalogs the SAF branch has since
+layered on.
+
 ## U1 — Saved video lookup depends on the active browser folder (P1)
 
 1. Reproduce: import videos from two sibling folders, save a sketch containing both, then reload while the video panel is at its root or an unrelated folder.
@@ -95,6 +116,10 @@
 4. Status: stable synchronized batching and corrected dirty-state timing implemented. Multiple-change and concurrent producer/drain tests pass; native application stress reproduction remains pending.
 
 ## U13 — Catalog thumbnail lifetime is coupled incorrectly to video playback (P2)
+
+**Stub — no content.** Unlike every other entry this has no reproduction, expected
+behaviour, sources or status, so nothing here supports it being a real defect. Verify
+before acting on the heading.
 
 1. Reproduce locally: open videos and repeatedly navigate/remove their catalog entries; measure whether retired thumbnail textures are released while placed widgets continue playing.
 2. Expected: catalog thumbnails are released independently of widget playback. Local source behavior: removed/navigated entries are abandoned without thumbnail cleanup.
