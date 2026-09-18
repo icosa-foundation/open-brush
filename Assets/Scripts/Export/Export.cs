@@ -127,6 +127,18 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
+            // Under scoped storage the export stages locally and is then published into the
+            // shared folder, so the staging check the callers already do measures the wrong
+            // volume for the half that can still fail. Checked here rather than at the command
+            // sites because every export path funnels through this method, and checked before
+            // any work is done so a doomed export does not leave a staged copy behind.
+            if (OpenBrushStorage.IsScopedStorageMode &&
+                !FileUtils.CheckSharedStorageSpaceWithError(
+                    error: "Not enough space in the Open Brush folder to export!"))
+            {
+                return;
+            }
+
             var current = SaveLoadScript.m_Instance.SceneFile;
             string validHumanName = FileUtils.GetValidFilename(current.HumanName);
             if (string.IsNullOrEmpty(validHumanName))
