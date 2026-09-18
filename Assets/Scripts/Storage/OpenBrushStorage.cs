@@ -35,11 +35,32 @@ namespace TiltBrush
             }
         }
 
+        private static string sm_PersistentDataPath;
+
+        /// Application.persistentDataPath is main-thread only, and storage paths are wanted from
+        /// worker threads - transaction recovery hit exactly that and failed with "can only be
+        /// called from the main thread". The value is fixed for the process, so it is captured
+        /// before the scene loads and read from the cache thereafter.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void CapturePersistentDataPath()
+        {
+            sm_PersistentDataPath = Application.persistentDataPath;
+        }
+
+        public static string PersistentDataPath
+        {
+            get
+            {
+                // A test or an editor path can reach this before the hook has run.
+                return sm_PersistentDataPath ??= Application.persistentDataPath;
+            }
+        }
+
         public static string LocalUserPathRoot
         {
             get
             {
-                return Path.Combine(Application.persistentDataPath, "OpenBrushWorkingCache");
+                return Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushWorkingCache");
             }
         }
 
@@ -72,7 +93,7 @@ namespace TiltBrush
                     ? UserStorage.Backend.RootIdentity
                     : "";
                 return Path.Combine(
-                    Application.persistentDataPath,
+                    OpenBrushStorage.PersistentDataPath,
                     "OpenBrushSafMaterialized",
                     SafPrivatePaths.GetStableId(rootId),
                     "Media Library");

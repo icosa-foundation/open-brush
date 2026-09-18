@@ -68,7 +68,7 @@ namespace TiltBrush
         public static string GetRecoveryRootDirectory(string rootId)
         {
             return Path.Combine(
-                Application.persistentDataPath,
+                OpenBrushStorage.PersistentDataPath,
                 "OpenBrushSafRecovery",
                 GetStableId(rootId));
         }

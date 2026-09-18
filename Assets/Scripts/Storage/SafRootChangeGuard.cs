@@ -75,11 +75,11 @@ namespace TiltBrush
             {
                 OpenBrushStorage.LocalStagingPath,
                 OpenBrushStorage.LocalExportStagingPath,
-                Path.Combine(Application.persistentDataPath, "OpenBrushSafRecovery"),
-                Path.Combine(Application.persistentDataPath, "OpenBrushSafPublications"),
+                Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushSafRecovery"),
+                Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushSafPublications"),
                 // The Drive ledger used to carry the storage root in its path, which is what kept
                 // a stale one from claiming files were already synced. That protection moves here.
-                Path.Combine(Application.persistentDataPath, "OpenBrushDriveSyncLedger"),
+                Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushDriveSyncLedger"),
             })
             {
                 TryDeleteDirectory(path);
