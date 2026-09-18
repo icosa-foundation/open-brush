@@ -168,7 +168,27 @@ namespace TiltBrush
         {
             // A watcher replaced by a directory change can still deliver an event.
             if (!ReferenceEquals(source, m_FileWatcher)) { return; }
-            m_DirectoryScanRequired = true;
+            RequestScanAfterSketchSetRefresh();
+        }
+
+        /// This catalog holds no index of its own - its scan copies FileSketchSet's list - so it
+        /// must run after that set has re-read the folder, never alongside it. Scanning first
+        /// copies the old list, and because the scan clears its own flag while nothing is
+        /// subscribed to OnChanged, the panel then stays stale until some later filesystem event
+        /// happens to trigger another pass.
+        private void RequestScanAfterSketchSetRefresh()
+        {
+            if (m_WaitingForSketchSetUpdate) { return; }
+            var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet == null)
+            {
+                // Nothing to wait for. Scanning on the next Update is worse than waiting but
+                // much better than never refreshing at all.
+                m_DirectoryScanRequired = true;
+                return;
+            }
+            sketchSet.OnChanged += OnFileSketchSetChanged;
+            m_WaitingForSketchSetUpdate = true;
         }
 
         private void StopWatchingCurrentDirectory()
@@ -186,16 +206,7 @@ namespace TiltBrush
         {
             if (IsPathWithinDirectory(m_CurrentSavedStrokesDirectory, fullpath))
             {
-                // Don't scan immediately - wait for FileSketchSet to process the file
-                if (!m_WaitingForSketchSetUpdate)
-                {
-                    var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
-                    if (sketchSet != null)
-                    {
-                        sketchSet.OnChanged += OnFileSketchSetChanged;
-                        m_WaitingForSketchSetUpdate = true;
-                    }
-                }
+                RequestScanAfterSketchSetRefresh();
             }
         }
 
