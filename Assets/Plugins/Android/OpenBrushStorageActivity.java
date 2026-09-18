@@ -62,7 +62,7 @@ public class OpenBrushStorageActivity extends Activity {
         intent.addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             String selectedRoot =
-                    OpenBrushStorageBridge.getSelectedRootIdentity(this);
+                    OpenBrushStorageBridge.getSelectedRootIdentity();
             if (selectedRoot.length() > 0) {
                 intent.putExtra(
                         DocumentsContract.EXTRA_INITIAL_URI,

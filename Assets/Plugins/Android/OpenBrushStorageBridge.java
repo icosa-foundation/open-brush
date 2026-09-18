@@ -9,6 +9,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.DocumentsContract;
+
+import com.unity3d.player.UnityPlayer;
 import android.system.Os;
 import android.system.StructStatVfs;
 
@@ -140,7 +142,8 @@ public class OpenBrushStorageBridge {
         activity.startActivity(intent);
     }
 
-    public static boolean hasOpenBrushFolder(Context context) {
+    public static boolean hasOpenBrushFolder() {
+        Context context = resolveContext();
         String uriString = getOpenBrushFolderUri(context);
         if (uriString == null || uriString.length() == 0) {
             return false;
@@ -159,7 +162,7 @@ public class OpenBrushStorageBridge {
         }
 
         if (!hasPersistedGrant) {
-            clearOpenBrushFolder(context);
+            clearOpenBrushFolder();
             return false;
         }
 
@@ -169,17 +172,18 @@ public class OpenBrushStorageBridge {
             return false;
         }
 
-        String displayName = getOpenBrushFolderDisplayName(context);
+        String displayName = getOpenBrushFolderDisplayName();
         if (OPEN_BRUSH_FOLDER_NAME.equals(displayName)) {
             return true;
         }
         if (displayName.length() > 0) {
-            clearOpenBrushFolder(context);
+            clearOpenBrushFolder();
         }
         return false;
     }
 
-    public static String getOpenBrushFolderDisplayName(Context context) {
+    public static String getOpenBrushFolderDisplayName() {
+        Context context = resolveContext();
         Uri root = getRootDocumentUri(context);
         if (root == null) {
             return "";
@@ -199,20 +203,24 @@ public class OpenBrushStorageBridge {
         return "";
     }
 
-    public static void clearOpenBrushFolder(Context context) {
+    public static void clearOpenBrushFolder() {
+        Context context = resolveContext();
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().remove(OPEN_BRUSH_FOLDER_URI).apply();
     }
 
-    public static String getSelectedRootIdentity(Context context) {
+    public static String getSelectedRootIdentity() {
+        Context context = resolveContext();
         return emptyIfNull(getOpenBrushFolderUri(context));
     }
 
-    public static boolean ensureDirectory(Context context, String relativePath) {
+    public static boolean ensureDirectory(String relativePath) {
+        Context context = resolveContext();
         return ensureDirectoryUri(context, relativePath) != null;
     }
 
-    public static DirectoryQueryResult queryDirectory(Context context, String relativePath) {
+    public static DirectoryQueryResult queryDirectory(String relativePath) {
+        Context context = resolveContext();
         final int success = 0;
         final int notFound = 1;
         final int notReady = 2;
@@ -293,7 +301,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static ChannelOpenResult openChannelForPath(
-            Context context, String relativePath, String mode) {
+            String relativePath, String mode) {
+        Context context = resolveContext();
         if (!isSupportedChannelMode(mode)) {
             return new ChannelOpenResult(-1, -1, null, "Unsupported channel mode");
         }
@@ -311,7 +320,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static ChannelOpenResult openChannelForDocument(
-            Context context, String documentUri, String mode) {
+            String documentUri, String mode) {
+        Context context = resolveContext();
         if (!isSupportedChannelMode(mode)) {
             return new ChannelOpenResult(-1, -1, null, "Unsupported channel mode");
         }
@@ -327,7 +337,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static ChannelOpenResult createTemporaryChannel(
-            Context context, String relativeDirectory, String targetFileName, String mimeType) {
+            String relativeDirectory, String targetFileName, String mimeType) {
+        Context context = resolveContext();
         String normalizedDirectory = normalize(relativeDirectory);
         if (!isSafeRelativePath(normalizedDirectory)
                 || targetFileName == null
@@ -371,7 +382,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static ChannelOpenResult createNamedChannel(
-            Context context, String relativeDirectory, String displayName, String mimeType) {
+            String relativeDirectory, String displayName, String mimeType) {
+        Context context = resolveContext();
         String normalizedDirectory = normalize(relativeDirectory);
         if (!isSafeRelativePath(normalizedDirectory)
                 || displayName == null
@@ -412,7 +424,8 @@ public class OpenBrushStorageBridge {
     // openFileDescriptor refuses a directory document, so this measures the filesystem underneath
     // a throwaway document created in the folder itself. That is the volume a save actually lands
     // on, which StatFs on the app's private directory is not: the folder may be on an SD card.
-    public static long getAvailableBytes(Context context) {
+    public static long getAvailableBytes() {
+        Context context = resolveContext();
         Uri root = getRootDocumentUri(context);
         if (root == null) {
             return -1;
@@ -589,7 +602,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static DocumentMutationResult renameDocumentUri(
-            Context context, String documentUri, String newDisplayName) {
+            String documentUri, String newDisplayName) {
+        Context context = resolveContext();
         if (documentUri == null
                 || documentUri.length() == 0
                 || newDisplayName == null
@@ -626,7 +640,8 @@ public class OpenBrushStorageBridge {
     }
 
     public static DocumentMutationResult deleteDocumentByUri(
-            Context context, String documentUri, String parentDocumentUri) {
+            String documentUri, String parentDocumentUri) {
+        Context context = resolveContext();
         if (documentUri == null || documentUri.length() == 0) {
             return new DocumentMutationResult(6, null, "Invalid delete request");
         }
@@ -666,7 +681,8 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static boolean deleteDocumentUri(Context context, String documentUri) {
+    public static boolean deleteDocumentUri(String documentUri) {
+        Context context = resolveContext();
         if (documentUri == null || documentUri.length() == 0) {
             return false;
         }
@@ -686,6 +702,17 @@ public class OpenBrushStorageBridge {
     private static String getOpenBrushFolderUri(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         return prefs.getString(OPEN_BRUSH_FOLDER_URI, "");
+    }
+
+    // Resolved here rather than passed in from C#. UnityPlayer.currentActivity is populated
+    // late in startup and is null before that, and a null AndroidJavaObject cannot be marshalled
+    // into a JNI argument array - Unity throws NullReferenceException building the array, which
+    // surfaced as a quiet failure in every storage call made before the activity existed.
+    // Reading the field here is a direct field access with no signature inference: currentContext
+    // is the application context and is set earlier than currentActivity.
+    private static Context resolveContext() {
+        Context activity = UnityPlayer.currentActivity;
+        return activity != null ? activity : UnityPlayer.currentContext;
     }
 
     private static Uri getTreeUri(Context context) {

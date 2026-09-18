@@ -44,7 +44,18 @@ namespace TiltBrush
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
-            bridge.CallStatic("requestOpenBrushFolder", GetActivity());
+            // The only call that still needs an activity from this side: starting the picker
+            // requires a real Activity, not the application context. Guarded because a null one
+            // would otherwise fail inside Unity's argument marshalling as a bare
+            // NullReferenceException with nothing naming the cause.
+            using AndroidJavaObject activity = GetActivity();
+            if (activity == null)
+            {
+                Debug.LogError(
+                    "SAF_STORAGE Cannot request the Open Brush folder: no activity yet.");
+                return;
+            }
+            bridge.CallStatic("requestOpenBrushFolder", activity);
 #endif
         }
 
@@ -63,7 +74,7 @@ namespace TiltBrush
                 }
                 using var bridge = new AndroidJavaClass(kBridgeClass);
                 sm_CachedReadiness =
-                    bridge.CallStatic<bool>("hasOpenBrushFolder", GetActivity());
+                    bridge.CallStatic<bool>("hasOpenBrushFolder");
                 sm_ReadinessCheckedTimestamp = now;
                 sm_HasCachedReadiness = true;
                 return sm_CachedReadiness;
@@ -86,7 +97,7 @@ namespace TiltBrush
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
-            return bridge.CallStatic<string>("getSelectedRootIdentity", GetActivity());
+            return bridge.CallStatic<string>("getSelectedRootIdentity");
 #else
             return "";
 #endif
@@ -97,7 +108,7 @@ namespace TiltBrush
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
-            return bridge.CallStatic<bool>("ensureDirectory", GetActivity(), relativePath);
+            return bridge.CallStatic<bool>("ensureDirectory", relativePath);
 #else
             return true;
 #endif
@@ -110,7 +121,7 @@ namespace TiltBrush
             {
                 using var bridge = new AndroidJavaClass(kBridgeClass);
                 using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                    "queryDirectory", GetActivity(), relativePath);
+                    "queryDirectory", relativePath);
                 if (result == null)
                 {
                     return StorageDirectoryResult.Failed(
@@ -215,7 +226,7 @@ namespace TiltBrush
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "openChannelForPath", GetActivity(), relativePath, "rw");
+                "openChannelForPath", relativePath, "rw");
             return TryCreateChannelStream(
                 result, canWrite: false, out stream, out _, out error);
 #else
@@ -233,7 +244,7 @@ namespace TiltBrush
             AttachToJvmIfNeeded();
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "openChannelForDocument", GetActivity(), documentId.Value, "r");
+                "openChannelForDocument", documentId.Value, "r");
             return TryCreateChannelStream(
                 result, canWrite: false, out stream, out _, out error);
 #else
@@ -258,7 +269,6 @@ namespace TiltBrush
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "createTemporaryChannel",
-                GetActivity(),
                 relativeDirectory,
                 targetFileName,
                 mimeType);
@@ -286,7 +296,6 @@ namespace TiltBrush
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "createNamedChannel",
-                GetActivity(),
                 relativeDirectory,
                 displayName,
                 mimeType);
@@ -320,7 +329,7 @@ namespace TiltBrush
             {
                 AttachToJvmIfNeeded();
                 using var bridge = new AndroidJavaClass(kBridgeClass);
-                return bridge.CallStatic<long>("getAvailableBytes", GetActivity());
+                return bridge.CallStatic<long>("getAvailableBytes");
             }
             catch (Exception e)
             {
@@ -338,7 +347,7 @@ namespace TiltBrush
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "renameDocumentUri", GetActivity(), documentId.Value, newDisplayName);
+                "renameDocumentUri", documentId.Value, newDisplayName);
             return ReadMutationResult(result, documentId);
 #else
             return new StorageMutationResult(
@@ -354,7 +363,6 @@ namespace TiltBrush
             using var bridge = new AndroidJavaClass(kBridgeClass);
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "deleteDocumentByUri",
-                GetActivity(),
                 documentId.Value,
                 parentDocumentId.Value ?? "");
             return ReadMutationResult(result, documentId);
@@ -369,7 +377,7 @@ namespace TiltBrush
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             using var bridge = new AndroidJavaClass(kBridgeClass);
-            return bridge.CallStatic<bool>("deleteDocumentUri", GetActivity(), documentUri);
+            return bridge.CallStatic<bool>("deleteDocumentUri", documentUri);
 #else
             return false;
 #endif
@@ -592,25 +600,16 @@ namespace TiltBrush
             return true;
         }
 
-        private static AndroidJavaObject sm_Activity;
-
-        /// Resolved once and kept. The previous version built an AndroidJavaClass for
-        /// UnityPlayer on every call, disposed it, and returned an activity it never disposed:
-        /// a global reference leaked per call, against a class reference being torn down
-        /// underneath Unity's cache. On device the first lookup succeeded and every later one
-        /// failed with "Field currentActivity or type signature not found", which took out
-        /// seeding, every catalog query and transaction recovery while leaving reads working.
-        /// The activity does not change for the life of the process, so there is nothing to
-        /// re-resolve.
+        /// Used by exactly one caller, which needs a real Activity to start the folder picker.
+        /// Everything else lets the Java side resolve its own context: passing one from here
+        /// meant that before UnityPlayer.currentActivity was populated the argument was null,
+        /// and Unity throws NullReferenceException building the JNI argument array rather than
+        /// reporting anything useful. Java reads the field directly, with no timing window and
+        /// no signature inference, and falls back to currentContext.
         private static AndroidJavaObject GetActivity()
         {
-            if (sm_Activity != null)
-            {
-                return sm_Activity;
-            }
             using var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-            sm_Activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-            return sm_Activity;
+            return unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
         }
 #endif
     }
