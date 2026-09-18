@@ -151,8 +151,20 @@ namespace TiltBrush
                 Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
                     x => m_supportedSoundClipExtensions.Contains(
                         Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
+            StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                ? StringComparer.OrdinalIgnoreCase
+                : StringComparer.Ordinal;
+            // The watcher covers subdirectories and reports files of any type, so a changed
+            // path is only a member of this folder's catalog if it is a direct child of the
+            // folder being shown and is a supported sound clip that still exists.
+            var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
+                changedSet.Where(x => IsDirectChildSupportedPath(
+                    directory, x, m_supportedSoundClipExtensions)),
+                detected, pathComparer);
+            var toDelete = existing.Except(detected, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
+            var toScan = detected.Except(existing, pathComparer)
+                .Concat(changedDetected).Distinct(pathComparer).ToArray();
 
             // Remove deleted sound clips from the list. Currently playing clips may continue to play, but will
             // not appear in the reference panel.
@@ -289,6 +301,30 @@ namespace TiltBrush
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
                 m_FileWatcher.EnableRaisingEvents = true;
+            }
+        }
+
+        /// True when path is a direct child of directory and has a supported sound clip
+        /// extension. Changed paths come from a watcher that covers subdirectories and
+        /// every file type, so they need this before joining a folder's catalog.
+        internal static bool IsDirectChildSupportedPath(
+            string directory, string path, IEnumerable<string> supportedExtensions)
+        {
+            try
+            {
+                string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string fullPath = Path.GetFullPath(path);
+                return string.Equals(Path.GetDirectoryName(fullPath), fullDirectory,
+                        Path.DirectorySeparatorChar == '\\'
+                            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) &&
+                    supportedExtensions.Contains(Path.GetExtension(fullPath),
+                        StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return false;
             }
         }
 
