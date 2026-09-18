@@ -359,8 +359,8 @@ namespace TiltBrush
             if (m_Icon == null)
             {
                 // Try to load from cache.
-            m_Icon = ImageCache.LoadIconCache(
-                FilePath, out m_ImageAspect, m_CacheIdentity);
+                m_Icon = ImageCache.LoadIconCache(
+                    FilePath, out m_ImageAspect, m_CacheIdentity);
                 if (m_Icon != null)
                 {
                     m_State = ImageState.Ready;

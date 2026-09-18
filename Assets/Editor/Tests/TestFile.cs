@@ -729,7 +729,8 @@ namespace TiltBrush
                 UserStorage.SetBackendForTests(backend);
                 SetModelCatalogField(catalog, "m_MissingModelsByRelativePath", new Dictionary<string, TrTransform[]>());
                 SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
-                var data = new TiltModels75 {
+                var data = new TiltModels75
+                {
                     FilePath = "Nested/model.obj", RawTransforms = new[] { TrTransform.identity },
                     Subtrees = new[] { "part" }, PinStates = new[] { false }, LayerIds = new[] { 2 },
                     GroupIds = new uint[] { 3 }, SplitMeshPaths = new List<string> { "split" }

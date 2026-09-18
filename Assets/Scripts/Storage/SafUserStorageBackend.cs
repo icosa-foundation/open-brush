@@ -438,9 +438,16 @@ namespace TiltBrush
                     switch (option)
                     {
                         case "-mm": count = 2; break;
-                        case "-blendu": case "-blendv": case "-boost": case "-texres":
-                        case "-clamp": case "-bm": case "-imfchan": case "-type":
-                        case "-cc": case "-colorspace": count = 1; break;
+                        case "-blendu":
+                        case "-blendv":
+                        case "-boost":
+                        case "-texres":
+                        case "-clamp":
+                        case "-bm":
+                        case "-imfchan":
+                        case "-type":
+                        case "-cc":
+                        case "-colorspace": count = 1; break;
                         default: return null;
                     }
                     index += count;

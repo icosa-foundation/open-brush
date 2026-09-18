@@ -48,7 +48,7 @@ namespace TiltBrush
             byte[] data,
             CancellationToken cancellationToken)
         {
-                        if (data == null)
+            if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
             }

@@ -215,7 +215,7 @@ namespace TiltBrush
         {
             m_SeedingSafDefaults = true;
             IUserStorageBackend backend = UserStorage.Backend;
-                        m_SafSeedAttempted = true;
+            m_SafSeedAttempted = true;
             var listingFuture = new Future<StorageDirectoryResult>(
                 () => backend.List(StorageAreaKind, "", CancellationToken.None),
                 cleanupFunction: null,
