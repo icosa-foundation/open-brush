@@ -347,6 +347,8 @@ namespace TiltBrush
             SelfCheck();
             if (m_bVertexDataDirty)
             {
+                TiltBrush.FrameAnimation.AnimationPerformanceStats.RecordMeshUpload(
+                    geometryChanged: true);
                 // Making !resident clears dirtiness; and adding dirtiness requires resident.
                 Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
                 m_bVertexDataDirty = false;
@@ -360,6 +362,8 @@ namespace TiltBrush
             }
             else if (m_bTopologyDirty)
             {
+                TiltBrush.FrameAnimation.AnimationPerformanceStats.RecordMeshUpload(
+                    geometryChanged: false);
                 // Same as above
                 Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
                 m_bTopologyDirty = false;

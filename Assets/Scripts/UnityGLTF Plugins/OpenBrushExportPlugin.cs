@@ -96,6 +96,7 @@ namespace TiltBrush
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
             _meshesToBatches = new Dictionary<int, Batch>();
+            m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
             m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
             m_TemporaryBatchMeshes = new List<Mesh>();

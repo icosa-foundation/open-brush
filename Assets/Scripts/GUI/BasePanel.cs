@@ -112,6 +112,7 @@ namespace TiltBrush
             SnapSettings = 8000,
             QuillLibrary = 11600,
             TransformPanel = 12000,
+            AnimationPanel = 18000,
             LayersPanel = 15000,
             StencilSettings = 20200,
             WhatsNewPanel = 20300,

@@ -301,13 +301,31 @@ namespace TiltBrush
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
                     _ = ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingModelsByRelativePath[relativePath], null, null, null, null, null, null);
+                        relativePath,
+                        null,
+                        m_MissingModelsByRelativePath[relativePath],
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
                 if (m_MissingNormalizedModelsByRelativePath.ContainsKey(relativePath))
                 {
                     _ = ModelWidget.CreateModelsFromRelativePath(
-                        relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
+                        relativePath,
+                        null,
+                        m_MissingNormalizedModelsByRelativePath[relativePath],
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
                     m_MissingModelsByRelativePath.Remove(relativePath);
                 }
             }

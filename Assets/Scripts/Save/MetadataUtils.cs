@@ -29,6 +29,7 @@ namespace TiltBrush
             public bool tinted;
             public uint groupId;
             public int layerId;
+            public int frameId;
             public bool twoSided;
             public float extrusionDepth;
             public Color extrusionColor;
@@ -86,9 +87,21 @@ namespace TiltBrush
                 .ToArray();
         }
 
+        public static CameraPathMetadata[] GetAnimationPaths()
+        {
+            return WidgetManager.m_Instance.AnimationPathWidgets
+                .Select(apw => apw.WidgetScript.AsSerializable())
+                .ToArray();
+        }
+
         public static LayerMetadata[] GetLayers()
         {
             return App.Scene.LayerCanvasesSerialized();
+        }
+
+        public static AnimationMetadata GetAnimationTracks()
+        {
+            return App.Scene.AnimationTracksSerialized();
         }
 
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)
@@ -117,7 +130,8 @@ namespace TiltBrush
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -138,6 +152,7 @@ namespace TiltBrush
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
+                val.FrameIds = new int[ordered.Length];
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.Subtrees[i] = ordered[i].subtree;
@@ -145,6 +160,7 @@ namespace TiltBrush
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
+                    val.FrameIds[i] = ordered[i].frameId;
                 }
                 models.Add(val);
             }
@@ -182,6 +198,8 @@ namespace TiltBrush
 
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 var audioState = widget.GetAudioSaveState();
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
@@ -190,7 +208,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.LocalTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     Paused = audioState.paused,
                     Time = audioState.time,
                     Volume = audioState.volume,
@@ -216,14 +235,20 @@ namespace TiltBrush
 
             return portals
                 .OrderBy(x => ByTranslation(x.GetSaveTransform()))
-                .Select(portal => new TiltPortal
+                .Select(portal =>
                 {
-                    ShapeType = portal.PortalShapeType,
-                    Transform = portal.GetSaveTransform(),
-                    Destination = portal.Destination,
-                    Pinned = portal.Pinned,
-                    GroupId = groupIdMapping.GetId(portal.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(portal.Canvas),
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(portal.Canvas);
+                    return new TiltPortal
+                    {
+                        ShapeType = portal.PortalShapeType,
+                        Transform = portal.GetSaveTransform(),
+                        Destination = portal.Destination,
+                        Pinned = portal.Pinned,
+                        GroupId = groupIdMapping.GetId(portal.Group),
+                        LayerId = layerId,
+                        FrameId = frameId,
+                    };
                 })
                 .ToArray();
         }
@@ -237,6 +262,8 @@ namespace TiltBrush
             var results = captures
                 .Select(widget =>
                 {
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                     if (widget is GaussianCaptureBoxWidget box)
                     {
                         return new TiltGaussianCapture
@@ -249,7 +276,8 @@ namespace TiltBrush
                             SubdivZ = box.SubdivZ,
                             Pinned = box.Pinned,
                             GroupId = groupIdMapping.GetId(box.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(box.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -264,7 +292,8 @@ namespace TiltBrush
                             ViewsPerRing = ellipsoid.ViewsPerRing,
                             Pinned = ellipsoid.Pinned,
                             GroupId = groupIdMapping.GetId(ellipsoid.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(ellipsoid.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -279,7 +308,8 @@ namespace TiltBrush
                             ViewsPerRing = dome.ViewsPerRing,
                             Pinned = dome.Pinned,
                             GroupId = groupIdMapping.GetId(dome.Group),
-                            LayerId = App.Scene.GetIndexOfCanvas(dome.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -298,6 +328,8 @@ namespace TiltBrush
 
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
                 TiltVideo video = new TiltVideo
                 {
                     // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
@@ -308,7 +340,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     TwoSided = widget.TwoSided
                 };
                 if (widget.VideoController != null)
@@ -368,7 +401,8 @@ namespace TiltBrush
                 newEntry.Transform = lightWidget.GetSaveTransform();
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                (newEntry.LayerId, newEntry.FrameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(lightWidget.Canvas);
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
@@ -421,7 +455,8 @@ namespace TiltBrush
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
                 imagesByPath[path].Add(newEntry);
@@ -446,6 +481,7 @@ namespace TiltBrush
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
+                val.FrameIds = new int[ordered.Length];
                 val.TwoSidedFlags = new bool[ordered.Length];
                 val.ExtrusionDepths = new float[ordered.Length];
                 val.ExtrusionColors = new Color[ordered.Length];
@@ -456,6 +492,7 @@ namespace TiltBrush
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
+                    val.FrameIds[i] = ordered[i].frameId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
                     val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
                     val.ExtrusionColors[i] = ordered[i].extrusionColor;
