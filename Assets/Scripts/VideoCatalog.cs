@@ -208,10 +208,44 @@ namespace TiltBrush
             }
         }
 
-        /// Gets a video form the catalog, given its filename. Returns null if no such video is found.
+        /// Gets a video from the catalog, given its saved library-relative path.
+        ///
+        /// Falls back to resolving the path against the library root. The catalog only
+        /// lists the folder the panel is showing, but a sketch records where its videos
+        /// are relative to the library, so restoring one must not depend on panel state.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            return m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            return m_Videos.FirstOrDefault(x => x.PersistentPath == path) ??
+                ResolveVideoByPersistentPath(HomeDirectory, path, m_supportedVideoExtensions);
+        }
+
+        /// Resolves a saved library path independently of the folder shown in the panel.
+        /// Returns null when the path escapes the library, is not a supported video, or
+        /// does not exist.
+        internal static ReferenceVideo ResolveVideoByPersistentPath(
+            string libraryPath, string path, IEnumerable<string> supportedExtensions)
+        {
+            if (string.IsNullOrWhiteSpace(path)) { return null; }
+            try
+            {
+                string normalized = path.Replace('\\', '/');
+                if (Path.IsPathRooted(normalized) || normalized.Contains(":")) { return null; }
+                string root = Path.GetFullPath(libraryPath);
+                string absolutePath = Path.GetFullPath(Path.Combine(root, normalized));
+                string prefix = $"{root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}";
+                StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+                if (!absolutePath.StartsWith(prefix, comparison) ||
+                    !supportedExtensions.Contains(Path.GetExtension(absolutePath))) { return null; }
+
+                return File.Exists(absolutePath) ? new ReferenceVideo(absolutePath) : null;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                      e is ArgumentException || e is NotSupportedException)
+            {
+                return null;
+            }
         }
 
 
