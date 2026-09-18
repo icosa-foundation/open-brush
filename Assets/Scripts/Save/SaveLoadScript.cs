@@ -514,8 +514,15 @@ namespace TiltBrush
             SketchSnapshot snapshot = null,
             bool directSafWrite = false)
         {
-            // Cancel any pending transfers of this file.
-            string transferId = fileInfo.StorageId ?? fileInfo.FullPath;
+            // Cancel any pending transfers of this file. The key has to match
+            // SyncItem.DocumentId, which is only ever the *local* document identity. StorageId is
+            // that identity for a disk or SAF sketch, but for one from the Drive or Icosa sets it
+            // is a remote id - a Drive file id, an asset id - which can never match, so preferring
+            // it stopped a save cancelling that sketch's pending transfer. Only SAF needs it:
+            // SafSceneFileInfo has no FullPath to fall back on.
+            string transferId = fileInfo is SafSceneFileInfo
+                ? fileInfo.StorageId
+                : fileInfo.FullPath;
             Task cancelTask = string.IsNullOrEmpty(transferId)
                 ? Task.CompletedTask
                 : App.DriveSync.CancelTransferAsync(transferId);
