@@ -845,6 +845,9 @@ namespace TiltBrush
             }
             if (refImage == null)
             {
+                // Returned without joining m_Images. That list is the panel's listing of the
+                // folder on screen, and a saved sketch can reference an image in a folder the
+                // panel has never opened, so restoring one must not change what is displayed.
                 refImage = new ReferenceImage(fullPath);
             }
             return refImage;
