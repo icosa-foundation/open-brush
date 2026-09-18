@@ -51,6 +51,7 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            DisposeFileWatcher();
             m_CurrentVideoDirectory = newPath;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
@@ -93,7 +94,21 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
+            DisposeFileWatcher();
+        }
+
+        /// Releases the watcher for the previous folder. Navigating away must not leave a
+        /// live watcher behind: its callbacks would keep firing, and would drive scans of
+        /// the folder now on screen.
+        private void DisposeFileWatcher()
+        {
+            if (m_FileWatcher == null) return;
             m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)

@@ -75,6 +75,7 @@ namespace TiltBrush
 
         public virtual void ChangeDirectory(string newPath)
         {
+            StopWatchingCurrentDirectory();
             m_CurrentImagesDirectory = newPath;
 
             if (Directory.Exists(m_CurrentImagesDirectory))
@@ -89,6 +90,25 @@ namespace TiltBrush
 
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
+        }
+
+        protected virtual void OnDestroy()
+        {
+            StopWatchingCurrentDirectory();
+        }
+
+        /// Releases the watcher for the previous folder. Navigating away must not leave a
+        /// live watcher behind: its callbacks would keep firing, and would drive scans of
+        /// the folder now on screen.
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null) { return; }
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnChanged;
+            m_FileWatcher.FileCreated -= OnChanged;
+            m_FileWatcher.FileDeleted -= OnChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
