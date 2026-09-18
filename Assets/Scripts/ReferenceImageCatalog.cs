@@ -39,6 +39,13 @@ namespace TiltBrush
         public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
         protected List<ReferenceImage> m_Images;
+
+        /// Images resolved for a saved sketch that live outside the folder the panel is
+        /// showing. They deliberately stay out of m_Images, which is the panel's listing, but
+        /// they still need an owner: nothing else calls Unload on them, and without this every
+        /// lookup would build another ReferenceImage and decode the file again.
+        private readonly Dictionary<string, ReferenceImage> m_UnlistedImages =
+            new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
         protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
         private volatile bool m_DirNeedsProcessing;
         private readonly CatalogChangeQueue m_ChangedFiles = new CatalogChangeQueue();
@@ -112,7 +119,13 @@ namespace TiltBrush
             StopWatchingCurrentDirectory();
         }
 
-        private void StopWatchingCurrentDirectory()
+        /// Releases the watcher for the previous folder. Navigating away must not leave a
+        /// live watcher behind: its callbacks would keep firing, and would drive scans of
+        /// the folder now on screen.
+        /// Protected because BackgroundImageCatalog overrides ChangeDirectory without
+        /// calling base, and needs the same cleanup: replacing m_FileWatcher without
+        /// disposing the old one leaks a native watcher on every navigation.
+        protected void StopWatchingCurrentDirectory()
         {
             if (m_FileWatcher == null) { return; }
             m_FileWatcher.EnableRaisingEvents = false;
@@ -433,6 +446,10 @@ namespace TiltBrush
             for (int i = 0; i < m_Images.Count; ++i)
             {
                 m_Images[i].Unload();
+            }
+            foreach (ReferenceImage image in m_UnlistedImages.Values)
+            {
+                image.Unload();
             }
             Resources.UnloadUnusedAssets();
 
@@ -845,10 +862,15 @@ namespace TiltBrush
             }
             if (refImage == null)
             {
-                // Returned without joining m_Images. That list is the panel's listing of the
-                // folder on screen, and a saved sketch can reference an image in a folder the
-                // panel has never opened, so restoring one must not change what is displayed.
-                refImage = new ReferenceImage(fullPath);
+                // Kept out of m_Images: that list is the panel's listing of the folder on
+                // screen, and a saved sketch can reference an image in a folder the panel has
+                // never opened, so restoring one must not change what is displayed. It is
+                // cached here instead so it has an owner and is not decoded twice.
+                if (!m_UnlistedImages.TryGetValue(fullPath, out refImage))
+                {
+                    refImage = new ReferenceImage(fullPath);
+                    m_UnlistedImages[fullPath] = refImage;
+                }
             }
             return refImage;
         }

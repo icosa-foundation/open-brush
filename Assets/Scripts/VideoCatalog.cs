@@ -316,7 +316,13 @@ namespace TiltBrush
             }
             finally
             {
-                m_ScanningDirectory = false;
+                // Rescans are gated on this flag, so it must be cleared however the scan
+                // ends. Leaving it set stops the catalog refreshing for the rest of the
+                // session. Only the current scan may clear it; see the generation above.
+                if (generation == m_ScanGeneration)
+                {
+                    m_ScanningDirectory = false;
+                }
             }
         }
 
@@ -611,9 +617,22 @@ namespace TiltBrush
         /// Resolves a saved library path independently of the folder shown in the panel.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            return m_Videos.FirstOrDefault(x => x.PersistentPath == path) ??
-                ResolveVideoByPersistentPath(
-                    UserStorage.Backend, HomeDirectory, path, m_supportedVideoExtensions);
+            // The listed entry is only preferred while its file is still there. The catalog can
+            // outlive a deletion, and returning a stale entry would bypass the validating
+            // resolver below rather than falling through to it.
+            //
+            // Only checked on the local backend: under SAF, AbsolutePath is a provider document
+            // identity rather than a filesystem path, so File.Exists would answer false for every
+            // entry and send each lookup down the resolver for no reason.
+            ReferenceVideo listed = m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            if (listed != null &&
+                (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework ||
+                 File.Exists(listed.AbsolutePath)))
+            {
+                return listed;
+            }
+            return ResolveVideoByPersistentPath(
+                UserStorage.Backend, HomeDirectory, path, m_supportedVideoExtensions);
         }
 
         internal static ReferenceVideo ResolveVideoByPersistentPath(
