@@ -256,7 +256,8 @@ namespace TiltBrush
                 return string.Equals(Path.GetDirectoryName(fullPath), fullDirectory,
                         Path.DirectorySeparatorChar == '\\'
                             ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) &&
-                    supportedExtensions.Contains(Path.GetExtension(fullPath));
+                    supportedExtensions.Contains(Path.GetExtension(fullPath),
+                        StringComparer.OrdinalIgnoreCase);
             }
             catch (Exception e) when (e is ArgumentException || e is NotSupportedException ||
                 e is PathTooLongException)
