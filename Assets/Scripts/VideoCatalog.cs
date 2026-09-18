@@ -31,6 +31,7 @@ namespace TiltBrush
         public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
         private bool m_ScanningDirectory;
+        private int m_ScanGeneration;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
 
@@ -158,6 +159,11 @@ namespace TiltBrush
 
         private IEnumerator<object> ScanReferenceDirectory()
         {
+            // Numbered so a scan only ever clears the flag it set. ChangeDirectory can start a
+            // replacement while this one is still running, and an unconditional clear in the
+            // finally below would release the flag on the newer scan's behalf - permitting
+            // overlapping rescans and reporting completion before the replacement had finished.
+            int generation = ++m_ScanGeneration;
             m_ScanningDirectory = true;
             try
             {
@@ -231,8 +237,11 @@ namespace TiltBrush
             {
                 // Rescans are gated on this flag, so it must be cleared however the scan
                 // ends. Leaving it set stops the catalog refreshing for the rest of the
-                // session.
-                m_ScanningDirectory = false;
+                // session. Only the current scan may clear it; see the generation above.
+                if (generation == m_ScanGeneration)
+                {
+                    m_ScanningDirectory = false;
+                }
             }
 
             CatalogChanged?.Invoke();
@@ -273,8 +282,16 @@ namespace TiltBrush
         /// are relative to the library, so restoring one must not depend on panel state.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            return m_Videos.FirstOrDefault(x => x.PersistentPath == path) ??
-                ResolveVideoByPersistentPath(HomeDirectory, path, m_supportedVideoExtensions);
+            // The listed entry is only preferred while its file is still there. The catalog
+            // can outlive a deletion, and returning a stale entry here would bypass the
+            // validating resolver below rather than falling through to it.
+            ReferenceVideo listed = m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            if (listed != null && File.Exists(listed.AbsolutePath))
+            {
+                return listed;
+            }
+            return ResolveVideoByPersistentPath(
+                HomeDirectory, path, m_supportedVideoExtensions);
         }
 
         /// Resolves a saved library path independently of the folder shown in the panel.
@@ -295,7 +312,13 @@ namespace TiltBrush
                     ? StringComparison.OrdinalIgnoreCase
                     : StringComparison.Ordinal;
                 if (!absolutePath.StartsWith(prefix, comparison) ||
-                    !supportedExtensions.Contains(Path.GetExtension(absolutePath))) { return null; }
+                    !supportedExtensions.Contains(
+                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase))
+                {
+                    // Matched the way discovery matches. Comparing case-sensitively here
+                    // made a nested clip.MP4 visible in the panel but impossible to restore.
+                    return null;
+                }
 
                 return File.Exists(absolutePath) ? new ReferenceVideo(absolutePath) : null;
             }

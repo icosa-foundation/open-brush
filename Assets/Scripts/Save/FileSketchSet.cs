@@ -221,7 +221,11 @@ namespace TiltBrush
         private Queue m_ToDelete;
         private bool m_ReadOnly;
         private string m_SketchesPath;
-        private volatile bool m_RefreshRequested;
+        /// An int rather than a bool so the consumer can take the request atomically.
+        /// volatile would make the write visible but leaves read-then-clear racy: a
+        /// watcher callback landing between the two would be overwritten and its refresh
+        /// lost for good, since nothing re-raises it.
+        private int m_RefreshRequested;
 
         public SketchSetType Type
         {
@@ -420,17 +424,17 @@ namespace TiltBrush
 
                 fileCreatedHandler = (_, e) =>
                 {
-                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToAdd.Enqueue(e.FullPath);
                 };
                 fileDeletedHandler = (_, e) =>
                 {
-                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToDelete.Enqueue(e.FullPath);
                 };
                 fileChangedHandler = (_, e) =>
                 {
-                    if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; return; }
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
@@ -483,16 +487,15 @@ namespace TiltBrush
 
         public void RequestRefresh()
         {
-            if (m_Type == SketchSetType.SavedStrokes) { m_RefreshRequested = true; }
+            if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); }
         }
 
         public void Update()
         {
             // Coalesce filesystem notifications into one refresh on the main thread.
             // Other sketch sets keep their existing incremental, root-only behavior.
-            if (m_RefreshRequested)
+            if (Interlocked.Exchange(ref m_RefreshRequested, 0) == 1)
             {
-                m_RefreshRequested = false;
                 foreach (FileSketch sketch in m_Sketches) { sketch.UnloadIcon(); }
                 m_RequestedLoads.Clear();
                 m_Sketches.Clear();
