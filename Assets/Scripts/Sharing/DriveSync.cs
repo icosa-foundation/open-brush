@@ -83,6 +83,7 @@ namespace TiltBrush
         public class SyncItem
         {
             public string Name;
+            public string RootIdentity;
             public StorageArea Area;
             public string RelativeDirectory;
             public StorageDocumentId DocumentId;
@@ -790,6 +791,7 @@ namespace TiltBrush
             {
                 throw new IOException("User storage is unavailable for Google Drive sync.");
             }
+            string rootIdentity = backend.RootIdentity;
 
             if (folder.Drive == null && folder.Upload)
             {
@@ -817,6 +819,13 @@ namespace TiltBrush
             var driveContents =
                 await m_DriveAccess.GetFolderContentsAsync(folder.Drive.Id, true, true,
                     token);
+            if (!ReferenceEquals(backend, UserStorage.Backend) ||
+                !backend.IsReady ||
+                !string.Equals(rootIdentity, backend.RootIdentity, StringComparison.Ordinal))
+            {
+                throw new OperationCanceledException(
+                    "User storage changed while Google Drive transfers were being enumerated.");
+            }
             var driveFiles = new Dictionary<string, DriveData.File>();
             foreach (var item in driveContents
                 .Where(x => x.MimeType != "application/vnd.google-apps.folder"))
@@ -921,6 +930,7 @@ namespace TiltBrush
                 var item = new SyncItem
                 {
                     Name = destinationName,
+                    RootIdentity = rootIdentity,
                     Area = folder.Area,
                     RelativeDirectory = folder.RelativeDirectory,
                     DocumentId = upload
@@ -1807,11 +1817,22 @@ namespace TiltBrush
         private static void EnsureTransferRootMatches(
             SyncItem item, IUserStorageBackend backend)
         {
-            if (!ReferenceEquals(backend, UserStorage.Backend) || !backend.IsReady)
+            if (!ReferenceEquals(backend, UserStorage.Backend) ||
+                !backend.IsReady ||
+                !string.Equals(
+                    item.RootIdentity, backend.RootIdentity, StringComparison.Ordinal))
             {
                 throw new OperationCanceledException(
-                    "User storage became unavailable during Google Drive transfer.");
+                    "User storage changed during Google Drive transfer.");
             }
+        }
+
+        internal static bool TransferRootMatches(
+            SyncItem item, IUserStorageBackend backend)
+        {
+            return item != null && backend != null && backend.IsReady &&
+                string.Equals(
+                    item.RootIdentity, backend.RootIdentity, StringComparison.Ordinal);
         }
 
         private static string GetLocalSyncPath(SyncItem item)

@@ -1574,6 +1574,17 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafReviewTransfer_RejectsAReplacementStorageRoot()
+        {
+            var backend = new FakeSafBackend { RootIdentity = "root-b" };
+            var item = new DriveSync.SyncItem { RootIdentity = "root-a" };
+
+            Assert.IsFalse(DriveSync.TransferRootMatches(item, backend));
+            item.RootIdentity = "root-b";
+            Assert.IsTrue(DriveSync.TransferRootMatches(item, backend));
+        }
+
+        [Test]
         public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
         {
             string root = Path.Combine(
