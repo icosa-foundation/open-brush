@@ -48,9 +48,6 @@ namespace TiltBrush
         private static void InitializeSessionLocked()
         {
             if (sm_Initialized) { return; }
-            // A crash cannot run the quit handler, so clear the preceding session's private
-            // URL-import copies during storage startup.
-            CleanupOrphans(OpenBrushStorage.MediaLibraryAnchorPath);
             Application.quitting += CleanupCurrentSession;
             sm_Initialized = true;
         }
@@ -67,7 +64,7 @@ namespace TiltBrush
                          .OrderByDescending(path => path.Length)
                          .ToList())
                 {
-                    DeleteBestEffort(directory);
+                    if (!IsCurrentDirectory(directory)) { DeleteBestEffort(directory); }
                 }
             }
             catch (Exception e) when (
@@ -82,6 +79,11 @@ namespace TiltBrush
             string name = Path.GetFileName(directory);
             return name.StartsWith("import-", StringComparison.Ordinal) &&
                 Guid.TryParseExact(name.Substring("import-".Length), "N", out _);
+        }
+
+        private static bool IsCurrentDirectory(string directory)
+        {
+            lock (sm_Gate) { return sm_CurrentDirectories.Contains(directory); }
         }
 
         private static void CleanupCurrentSession()

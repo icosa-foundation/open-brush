@@ -101,7 +101,6 @@ namespace TiltBrush
             // This must precede Main scene loading too: catalog-local caches and seed markers
             // belong to the selected root and must not be observed for a newly selected one.
             SafRootChangeGuard.ReconcileAtStartup();
-            SafApiImportStaging.InitializeSession();
             m_StartupStorageReady = true;
 
             while (App.CurrentState != App.AppState.Standard)
@@ -230,6 +229,7 @@ namespace TiltBrush
                 yield break;
             }
 
+            bool publicationRecoveryComplete = false;
             var future = new Future<SafRecoveryReport>(
                 () =>
                 {
@@ -239,6 +239,7 @@ namespace TiltBrush
                     SafRecoveryReport publicationReport =
                         SafStagedOutputPublisher.RecoverAll(
                             UserStorage.Backend, default);
+                    publicationRecoveryComplete = publicationReport.Pending == 0;
                     transactionReport.Recovered += publicationReport.Recovered;
                     transactionReport.Pending += publicationReport.Pending;
                     transactionReport.Errors.AddRange(publicationReport.Errors);
@@ -267,6 +268,13 @@ namespace TiltBrush
                 yield return null;
             }
             future.Close();
+
+            SafApiImportStaging.InitializeSession();
+            if (publicationRecoveryComplete)
+            {
+                SafApiImportStaging.CleanupOrphans(
+                    OpenBrushStorage.MediaLibraryAnchorPath);
+            }
 
             if (recoveryError != null)
             {

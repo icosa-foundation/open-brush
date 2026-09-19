@@ -175,6 +175,27 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafApiImports_PreserveCurrentSessionStagingDuringCleanup()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"saf-api-import-current-{Guid.NewGuid():N}");
+            string current = SafApiImportStaging.CreateDirectory(
+                Path.Combine(root, "Videos"));
+            Directory.CreateDirectory(current);
+            File.WriteAllText(Path.Combine(current, "video.mp4"), "staged video");
+            try
+            {
+                SafApiImportStaging.CleanupOrphans(root);
+
+                Assert.IsTrue(Directory.Exists(current));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
+        [Test]
         public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
         {
             var gltf = Newtonsoft.Json.Linq.JObject.Parse(@"{
