@@ -113,6 +113,44 @@ namespace TiltBrush
             }
         }
 
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
+            SdfStencil clone = Instantiate(WidgetManager.m_Instance.SdfStencilPrefab);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.m_SkipIntroAnim = true;
+            clone.m_ShowTimer = clone.m_ShowDuration;
+            clone.transform.parent = transform.parent;
+            clone.Show(true, false);
+            clone.SetSignedWidgetSize(size);
+            clone.CloneInitialMaterials(this);
+            clone.Extents = Extents;
+            clone.ReplaceComponents(GetComponentDefinitions());
+            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+
+            CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
+            if (canvas != null)
+            {
+                IEnumerable<Material> materials = clone
+                    .GetComponentsInChildren<Renderer>()
+                    .SelectMany(renderer => renderer.materials);
+                foreach (Material material in materials)
+                {
+                    foreach (string keyword in canvas.BatchManager.MaterialKeywords)
+                    {
+                        material.EnableKeyword(keyword);
+                    }
+                }
+            }
+            return clone;
+        }
+
         protected override void Awake()
         {
             m_Type = StencilType.Custom;
