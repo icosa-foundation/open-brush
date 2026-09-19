@@ -1475,6 +1475,13 @@ static class BuildTiltBrush
         {
             if (m_backup != null)
             {
+                // Restoring an open scene on disk makes Unity show a modal asking whether to
+                // reload it. Close the temporary scene before replacing its file so scripted
+                // builds can finish without requiring editor interaction.
+                if (EditorSceneManager.GetActiveScene().path == m_scene)
+                {
+                    EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                }
                 FileUtil.DeleteFileOrDirectory(m_scene);
                 FileUtil.MoveFileOrDirectory(m_backup, m_scene);
             }
