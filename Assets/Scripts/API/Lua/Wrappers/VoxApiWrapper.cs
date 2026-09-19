@@ -337,6 +337,9 @@ namespace TiltBrush
         [LuaDocsDescription("False after this document's widget has been deleted")]
         public bool isValid => !m_WidgetBacked || !m_WidgetWasCreated || m_Widget != null;
 
+        [MoonSharpHidden]
+        internal ModelWidget Widget => m_Widget;
+
         [LuaDocsDescription("Returns a model with the given name")]
         [LuaDocsExample("local m = doc:FindModel('model_0')")]
         public VoxModelApiWrapper FindModel(string name)
