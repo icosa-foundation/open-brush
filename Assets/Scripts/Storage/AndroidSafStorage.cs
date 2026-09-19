@@ -43,6 +43,7 @@ namespace TiltBrush
         public static void RequestOpenBrushFolder()
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             // The only call that still needs an activity from this side: starting the picker
             // requires a real Activity, not the application context. Guarded because a null one
@@ -72,6 +73,7 @@ namespace TiltBrush
                 {
                     return sm_CachedReadiness;
                 }
+                AttachToJvmIfNeeded();
                 AndroidJavaClass bridge = Bridge;
                 sm_CachedReadiness =
                     bridge.CallStatic<bool>("hasOpenBrushFolder");
@@ -96,6 +98,7 @@ namespace TiltBrush
         public static string GetSelectedRootIdentity()
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             return bridge.CallStatic<string>("getSelectedRootIdentity");
 #else
@@ -107,6 +110,7 @@ namespace TiltBrush
         public static bool EnsureDirectory(string relativePath)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             return bridge.CallStatic<bool>("ensureDirectory", relativePath);
 #else
@@ -119,6 +123,7 @@ namespace TiltBrush
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             try
             {
+                AttachToJvmIfNeeded();
                 AndroidJavaClass bridge = Bridge;
                 using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                     "queryDirectory", relativePath);
@@ -345,6 +350,7 @@ namespace TiltBrush
             StorageDocumentId documentId, string newDisplayName)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "renameDocumentUri", documentId.Value, newDisplayName);
@@ -360,6 +366,7 @@ namespace TiltBrush
             StorageDocumentId documentId, StorageDocumentId parentDocumentId = default)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
                 "deleteDocumentByUri",
@@ -376,6 +383,7 @@ namespace TiltBrush
         public static bool DeleteDocumentUri(string documentUri)
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             return bridge.CallStatic<bool>("deleteDocumentUri", documentUri);
 #else
