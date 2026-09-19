@@ -1122,7 +1122,16 @@ namespace TiltBrush
             }
 
             List<StencilWidget> guides = m_SelectedWidgets.OfType<StencilWidget>().ToList();
-            CanvasScript targetCanvas = guides[0].Canvas ?? App.ActiveCanvas;
+            List<CanvasScript> sourceCanvases = guides
+                .Select(guide => guide.Canvas == App.Scene.SelectionCanvas
+                    ? guide.m_PreviousCanvas
+                    : guide.Canvas)
+                .Where(IsValidDestination)
+                .Distinct()
+                .ToList();
+            CanvasScript targetCanvas = sourceCanvases.Count == 1
+                ? sourceCanvases[0]
+                : App.ActiveCanvas;
             try
             {
                 var command = new ConvertGuidesToSdfCommand(guides, targetCanvas);

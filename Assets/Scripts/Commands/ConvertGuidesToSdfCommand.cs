@@ -40,6 +40,10 @@ namespace TiltBrush
             SdfGuideConversion.Result conversion = SdfGuideConversion.Build(guides, targetCanvas);
             var definitions = new List<SdfStencil.ComponentDefinition>(conversion.Components);
             var sourceWidgets = guides.Cast<GrabWidget>().ToList();
+            SketchGroupTag group = guides.All(guide => guide.Group == guides[0].Group)
+                ? guides[0].Group
+                : SketchGroupTag.None;
+            bool pinned = guides.All(guide => guide.Pinned);
 
             m_CreateCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.SdfStencilPrefab,
@@ -47,7 +51,8 @@ namespace TiltBrush
                 forceTransform: true,
                 parent: this,
                 canvas: targetCanvas);
-            new ConfigureCreatedSdfCommand(m_CreateCommand, definitions, this);
+            new ConfigureCreatedSdfCommand(
+                m_CreateCommand, definitions, group, pinned, this);
             new DeleteSelectionCommand(null, sourceWidgets, this);
             new SelectCreatedSdfCommand(m_CreateCommand, targetCanvas, this);
         }
@@ -56,14 +61,20 @@ namespace TiltBrush
         {
             private readonly CreateWidgetCommand m_CreateCommand;
             private readonly IReadOnlyList<SdfStencil.ComponentDefinition> m_Definitions;
+            private readonly SketchGroupTag m_Group;
+            private readonly bool m_Pinned;
 
             internal ConfigureCreatedSdfCommand(
                 CreateWidgetCommand createCommand,
                 IReadOnlyList<SdfStencil.ComponentDefinition> definitions,
+                SketchGroupTag group,
+                bool pinned,
                 BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_Definitions = definitions;
+                m_Group = group;
+                m_Pinned = pinned;
             }
 
             protected override void OnRedo()
@@ -75,6 +86,11 @@ namespace TiltBrush
                         "The configured SDF guide prefab did not create an SDF guide.");
                 }
                 stencil.ReplaceComponents(m_Definitions);
+                stencil.Group = m_Group;
+                if (stencil.Pinned != m_Pinned)
+                {
+                    stencil.SetPinned(m_Pinned, fromSave: true);
+                }
             }
         }
 
