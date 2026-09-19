@@ -51,6 +51,10 @@ namespace TiltBrush
             LuaDocsRegistration.RegisterForDocs(typeof(ModelListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(VideoListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(StrokeListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VoxDocumentApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VoxModelApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VoxModelListApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VoxMeshStatsApiWrapper), false);
 
             // Add the per-frame Tool Script state to the Tool helper API registered above.
             var transformProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform" };
@@ -77,10 +81,8 @@ namespace TiltBrush
             string autocompleteFilePath = Path.Combine("Assets/Resources/LuaModules", "__autocomplete.lua");
             foreach (var klass in LuaDocsRegistration.ApiDocClasses)
             {
-                // Only top level classes are included in autocomplete
-                // This excludes all ListWrapper classes which can't be instantiated directly
-                // And don't have any useful static members
-                if (!klass.IsTopLevelClass) continue;
+                // VOX methods return document/model wrappers, so include their instance API too.
+                if (!klass.IsTopLevelClass && !klass.Name.StartsWith("Vox")) continue;
                 autocomplete.Append(klass.AutocompleteSerialize());
             }
 

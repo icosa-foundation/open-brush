@@ -24,6 +24,7 @@ namespace TiltBrush
         public struct WidgetMetadata
         {
             public TrTransform xf;
+            public ModelWidget modelWidget;
             public string subtree;
             public bool pinned;
             public bool tinted;
@@ -33,6 +34,12 @@ namespace TiltBrush
             public float extrusionDepth;
             public Color extrusionColor;
             public float opacity;
+        }
+
+        public sealed class EditableVoxSavePayload
+        {
+            public string FilePath;
+            public byte[] VoxBytes;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -91,12 +98,15 @@ namespace TiltBrush
             return App.Scene.LayerCanvasesSerialized();
         }
 
-        public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)
+        public static TiltModels75[] GetTiltModels(
+            GroupIdMapping groupIdMapping, out EditableVoxSavePayload[] editableVoxPayloads)
         {
+            var voxPayloads = new List<EditableVoxSavePayload>();
             var widgets =
                 WidgetManager.m_Instance.ModelWidgets.Where(w => w.gameObject.activeSelf).ToArray();
             if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any())
             {
+                editableVoxPayloads = null;
                 return null;
             }
             var widgetModels = widgets.Select(w => w.Model).Distinct();
@@ -114,6 +124,7 @@ namespace TiltBrush
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = widget.GetSaveTransform();
+                newEntry.modelWidget = widget;
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
@@ -138,6 +149,8 @@ namespace TiltBrush
                 val.RawTransforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
+                string[] editableVoxPaths = null;
+                bool[] editableVoxPreserveSource = null;
                 for (int i = 0; i < ordered.Length; ++i)
                 {
                     val.Subtrees[i] = ordered[i].subtree;
@@ -145,10 +158,27 @@ namespace TiltBrush
                     val.RawTransforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
+                    RuntimeVoxDocument document = ordered[i].modelWidget.EditableVoxDocument;
+                    if (document != null)
+                    {
+                        editableVoxPaths ??= new string[ordered.Length];
+                        editableVoxPreserveSource ??= new bool[ordered.Length];
+                        string path = $"vox/widgets/{voxPayloads.Count}.vox";
+                        editableVoxPaths[i] = path;
+                        editableVoxPreserveSource[i] = document.HasPreservedSourceData;
+                        voxPayloads.Add(new EditableVoxSavePayload
+                        {
+                            FilePath = path,
+                            VoxBytes = document.ToVoxBytes(),
+                        });
+                    }
                 }
+                val.EditableVoxPaths = editableVoxPaths;
+                val.EditableVoxPreserveSource = editableVoxPreserveSource;
                 models.Add(val);
             }
 
+            editableVoxPayloads = voxPayloads.Count == 0 ? null : voxPayloads.ToArray();
             return models
                 .Concat(ModelCatalog.m_Instance.MissingModels)
                 .OrderBy(ByModelLocation).ToArray();
