@@ -151,6 +151,20 @@ namespace TiltBrush
             Assert.IsEmpty(ApiMethods.GetGltfExternalFiles(new Newtonsoft.Json.Linq.JObject()));
         }
 
+        [TestCase("Models/Robot", "mesh.bin", "Models/Robot/mesh.bin", true)]
+        [TestCase("Models/Robot", "../Textures/albedo.png", "Models/Textures/albedo.png", true)]
+        [TestCase("Models/Robot", "take..final.bin", "Models/Robot/take..final.bin", true)]
+        [TestCase("Models", "../../outside.bin", null, false)]
+        [TestCase("", "../outside.bin", null, false)]
+        [TestCase("Models", "/absolute.bin", null, false)]
+        public void SafGltfDependencies_NormalizeWithinTheStorageArea(
+            string directory, string reference, string expected, bool valid)
+        {
+            Assert.AreEqual(valid, SafGltfDataLoader.TryResolveAreaRelativePath(
+                directory, reference, out string resolved));
+            Assert.AreEqual(expected, resolved);
+        }
+
         [TestCase("map_Kd My Texture.png", "My Texture.png")]
         [TestCase("map_Kd -s 1 1 1 -o -1 0 My Texture.png", "My Texture.png")]
         [TestCase("bump -bm 0.5 Textures/My  Texture.png", "Textures/My  Texture.png")]
