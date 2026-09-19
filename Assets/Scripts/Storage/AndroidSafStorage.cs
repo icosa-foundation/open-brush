@@ -235,7 +235,7 @@ namespace TiltBrush
             AttachToJvmIfNeeded();
             AndroidJavaClass bridge = Bridge;
             using AndroidJavaObject result = bridge.CallStatic<AndroidJavaObject>(
-                "openChannelForPath", relativePath, "rw");
+                "openChannelForPath", relativePath, "r");
             return TryCreateChannelStream(
                 result, canWrite: false, out stream, out _, out error);
 #else
