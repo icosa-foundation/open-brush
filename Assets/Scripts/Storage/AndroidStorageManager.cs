@@ -268,6 +268,7 @@ namespace TiltBrush
             }
             yield return RefreshRuntimeContent();
             RefreshSharedCatalogs();
+            ApiManager.Instance?.RunStartupScriptIfReady();
             if (App.DriveSync?.SyncEnabled == true)
             {
                 App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();

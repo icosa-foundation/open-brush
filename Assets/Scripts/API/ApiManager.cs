@@ -192,7 +192,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             RunStartupScriptIfReady();
         }
 
-        private void RunStartupScriptIfReady()
+        internal void RunStartupScriptIfReady()
         {
             if (m_StartupScriptRun || App.CurrentState != App.AppState.Standard)
             {
